@@ -116,6 +116,7 @@ def top_movers(
     tf: str = "1D",
     n: int = 8,
     min_abs: float = 3.0,
+    tier_map: dict | None = None,
 ) -> dict[str, list[dict]]:
     """Return top N gainers and losers from S&P 500 tiles.
 
@@ -150,6 +151,9 @@ def top_movers(
         name = tile.get("name", ticker)
         sector = tile.get("sector", "")
         eligible.append({"ticker": ticker, "name": name, "pct": pct, "sector": sector})
+
+    if tier_map:
+        eligible = [m for m in eligible if tier_map.get(m.get("ticker"), "") != "T3"]
 
     gainers = sorted([e for e in eligible if e["pct"] > 0], key=lambda x: x["pct"], reverse=True)[:n]
     losers = sorted([e for e in eligible if e["pct"] < 0], key=lambda x: x["pct"])[:n]

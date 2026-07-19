@@ -469,6 +469,74 @@ def seeded_content_root(tmp_path):
     return tmp_path
 
 
+# ---------------------------------------------------------------------------
+# Radar fixtures (§data contracts — authored here, no Lane A dep)
+# ---------------------------------------------------------------------------
+
+MINIMAL_RADAR_REPORT = {
+    "schema": "marketing.radar_report/v1",
+    "as_of": "2026-07-18",
+    "produced_at": "2026-07-18T06:00:00Z",
+    "feeds": [
+        {"name": "prophet",    "ok": True,  "n_assets": 42, "as_of": "2026-07-18"},
+        {"name": "confluence", "ok": True,  "n_assets": 18, "as_of": "2026-07-18"},
+        {"name": "movers",     "ok": True,  "n_assets": 25, "as_of": "2026-07-18"},
+        {"name": "earnings",   "ok": False, "n_assets": 0,  "as_of": None},
+        {"name": "stage",      "ok": True,  "n_assets": 2710, "as_of": "2026-07-17"},
+    ],
+    "posted_recent": {"n_tickers": 6, "window_plans": 7},
+    "surplus": [
+        {"ticker": "TNDM", "feed": "prophet", "why": "Momentum turned up after a catalyst; not yet posted this week.",
+         "as_of": "2026-07-18", "staleness_days": 0, "opportunity_id": "opp-tndm-001"},
+        {"ticker": "AMKR", "feed": "movers", "why": "Big down day on volume — a name readers will ask about.",
+         "as_of": "2026-07-15", "staleness_days": 3, "opportunity_id": "opp-amkr-002"},
+        {"ticker": "CRDO", "feed": "confluence", "why": "Two feeds agree; a similar name went out yesterday, so it's held.",
+         "as_of": "2026-07-10", "staleness_days": 8, "opportunity_id": "opp-crdo-003"},
+    ],
+    "queue": {"added": 4, "expired": 1, "total": 12, "open": 9},
+    "tiers_summary": {"as_of": "2026-07-18", "t1": 3, "t2": 4, "t3": 2},
+    "cadence": {"available": True, "source": "public timelines", "competitors": ["@deskA", "@deskB"], "posts_per_day": 5.5},
+}
+
+MINIMAL_CASHTAG_TIERS = {
+    "schema": "marketing.cashtag_tiers/v1",
+    "as_of": "2026-07-18",
+    "universe_n": 9,
+    "tiers": {
+        "T1": ["NVDA", "TSLA", "AAPL"],
+        "T2": ["TNDM", "AMKR", "CRDO", "BG"],
+        "T3": ["UNIT", "GIII"],
+    },
+    "tickers": {
+        "NVDA": {"tier": "T1", "reasons": ["mega-cap", "high retail attention"],
+                 "proxies": {"mcap_weight": 0.07, "pct_1d": 1.2, "pct_1w": 3.4, "earnings_in_days": 21, "dollar_vol_musd": 32000}},
+        "TNDM": {"tier": "T2", "reasons": ["mid-cap", "catalyst pending"],
+                 "proxies": {"mcap_weight": 0.001, "pct_1d": -0.4, "pct_1w": 5.1, "earnings_in_days": 8, "dollar_vol_musd": 120}},
+        "UNIT": {"tier": "T3", "reasons": ["thin volume", "low attention"],
+                 "proxies": {"mcap_weight": 0.0001, "pct_1d": 0.1, "pct_1w": -1.2, "earnings_in_days": 40, "dollar_vol_musd": 6}},
+    },
+}
+
+
+@pytest.fixture()
+def seeded_radar_root(tmp_path):
+    """Fixture root with marketing_state.json + radar_report.json + cashtag_tiers.json."""
+    nw_dir = tmp_path / "data" / "neuralweb"
+    nw_dir.mkdir(parents=True)
+    (nw_dir / "marketing_state.json").write_text(
+        json.dumps(MINIMAL_STATE, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
+    mkt_dir = tmp_path / "data" / "marketing"
+    mkt_dir.mkdir(parents=True)
+    (mkt_dir / "radar_report.json").write_text(
+        json.dumps(MINIMAL_RADAR_REPORT, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
+    (mkt_dir / "cashtag_tiers.json").write_text(
+        json.dumps(MINIMAL_CASHTAG_TIERS, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
+    return tmp_path
+
+
 @pytest.fixture()
 def empty_root(tmp_path):
     """Fixture root with NO marketing_state.json (simulates day-0 / missing)."""
@@ -609,7 +677,7 @@ class TestEmptyRoot:
     def test_no_panel_raises(self, empty_root):
         """Belt-and-suspenders: none of the panels may raise on empty root."""
         for fn_name in ("overview", "departments", "channels", "campaigns",
-                        "experiments", "lobes", "settings", "content"):
+                        "experiments", "lobes", "settings", "content", "radar"):
             fn = getattr(marketing, fn_name)
             try:
                 result = fn(empty_root)
@@ -1205,3 +1273,106 @@ class TestOutboxPanel:
 
         result = marketing.decide_outbox(item["id"], "publish", root=tmp_path)
         assert result is False
+# Tests — radar() panel (MKT-D06 · intelligence department view)
+# ---------------------------------------------------------------------------
+
+class TestRadarPanel:
+    def test_radar_ok_with_data(self, seeded_radar_root):
+        r = marketing.radar(seeded_radar_root)
+        assert r["ok"] is True
+        assert r["available"] is True
+        assert r["as_of"] == "2026-07-18"
+        assert r["produced_at"] == "2026-07-18T06:00:00Z"
+
+    def test_radar_feeds(self, seeded_radar_root):
+        r = marketing.radar(seeded_radar_root)
+        feeds = r["feeds"]
+        assert len(feeds) == 5
+        names = {f["name"] for f in feeds}
+        assert names == {"prophet", "confluence", "movers", "earnings", "stage"}
+        # The earnings feed is down in the fixture — carried through faithfully.
+        earnings = next(f for f in feeds if f["name"] == "earnings")
+        assert earnings["ok"] is False
+
+    def test_radar_surplus_is_the_hero(self, seeded_radar_root):
+        r = marketing.radar(seeded_radar_root)
+        surplus = r["surplus"]
+        assert len(surplus) == 3
+        first = surplus[0]
+        assert first["ticker"] == "TNDM"
+        assert "why" in first and first["why"]
+        assert first["feed"] == "prophet"
+        assert first["staleness_days"] == 0
+        # Order preserved as delivered (sorted upstream).
+        assert [s["ticker"] for s in surplus] == ["TNDM", "AMKR", "CRDO"]
+
+    def test_radar_queue(self, seeded_radar_root):
+        r = marketing.radar(seeded_radar_root)
+        q = r["queue"]
+        assert q["open"] == 9
+        assert q["total"] == 12
+        assert q["added"] == 4
+        assert q["expired"] == 1
+
+    def test_radar_tiers(self, seeded_radar_root):
+        r = marketing.radar(seeded_radar_root)
+        assert r["tiers_summary"]["t1"] == 3
+        assert r["tiers_summary"]["t3"] == 2
+        assert r["universe_n"] == 9
+        assert r["tiers"]["T1"] == ["NVDA", "TSLA", "AAPL"]
+        # Per-ticker proxies present for hover/detail (never the glance line).
+        assert r["tickers"]["NVDA"]["proxies"]["mcap_weight"] == 0.07
+
+    def test_radar_cadence(self, seeded_radar_root):
+        r = marketing.radar(seeded_radar_root)
+        cad = r["cadence"]
+        assert cad["available"] is True
+        assert cad["posts_per_day"] == 5.5
+        assert cad["competitors"] == ["@deskA", "@deskB"]
+
+    def test_radar_joins_opportunity_queue_from_state(self, seeded_radar_root):
+        """radar() surfaces the scored opportunity pipeline from marketing_state.json."""
+        r = marketing.radar(seeded_radar_root)
+        assert r["opportunities"] is not None
+        assert r["opportunities"]["open"] == 1
+        newest = r["opportunities"]["newest"]
+        assert newest and newest[0]["half_life_class"] == "evergreen"
+
+    def test_radar_fail_soft_report_absent(self, seeded_root):
+        """radar_report.json absent (but state present) → available:False + honest note,
+        and the opportunity queue still surfaces from state."""
+        r = marketing.radar(seeded_root)
+        assert r["ok"] is True
+        assert r["available"] is False
+        assert r.get("note") is not None
+        assert "nightly" in r["note"].lower() or "hasn't" in r["note"].lower()
+        assert r["feeds"] == []
+        assert r["surplus"] == []
+        assert r["queue"] is None
+        # Even without the report, the live opportunity queue is exposed.
+        assert r["opportunities"] is not None
+        assert r["opportunities"]["open"] == 1
+
+    def test_radar_fail_soft_empty_root(self, empty_root):
+        """No files at all → available:False, everything empty, never raises."""
+        r = marketing.radar(empty_root)
+        _assert_fail_soft(r, "radar")
+        assert r["available"] is False
+        assert r["surplus"] == []
+        assert r["feeds"] == []
+        assert r["opportunities"] is None
+        assert r["universe_n"] is None
+
+    def test_radar_tiers_without_report(self, tmp_path):
+        """cashtag_tiers present but radar_report absent → available:False but the
+        tier universe still comes through (fail-soft per-file)."""
+        mkt_dir = tmp_path / "data" / "marketing"
+        mkt_dir.mkdir(parents=True)
+        (mkt_dir / "cashtag_tiers.json").write_text(
+            json.dumps(MINIMAL_CASHTAG_TIERS, ensure_ascii=False, indent=2), encoding="utf-8",
+        )
+        r = marketing.radar(tmp_path)
+        assert r["ok"] is True
+        assert r["available"] is False
+        assert r["universe_n"] == 9
+        assert r["tiers"]["T1"] == ["NVDA", "TSLA", "AAPL"]

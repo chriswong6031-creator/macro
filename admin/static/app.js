@@ -154,11 +154,12 @@ const ICONS = {
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
   marketing_outbox:      NAV_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
   marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
+  marketing_radar:       NAV_ICO('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.4-6.4"/><circle cx="16.2" cy="7.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15" r="1" fill="currentColor" stroke="none"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -4547,6 +4548,259 @@ async function alliesDoTransition(tid, to) {
     toast((r && r.error) || "transition rejected", true);
     if (goBtn) { goBtn.disabled = false; goBtn.textContent = "Record decision"; }
   }
+}
+
+/* ---- RADAR (intelligence department) -------------------------------------- */
+/* Radar answers the operator's exact complaint: "the machine looks autonomous,
+   I can't see what it's holding back." The hero is the signal surplus — what the
+   feeds surfaced that we are deliberately NOT posting yet. Everything technical
+   (opportunity ids, exact scores, per-ticker proxies) demotes to hover/detail. */
+
+/* Plain-word half-life — the raw enum ("weekly_signal") never reaches the glance line. */
+const MKT_HALFLIFE_WORD = {
+  breaking_event:       "fades in hours",
+  earnings_follow_up:   "fades in a day",
+  weekly_signal:        "good for about a week",
+  evergreen_comparison: "good for months",
+  category_positioning: "good all year",
+};
+function mktHalfLifeWord(cls) { return MKT_HALFLIFE_WORD[cls] || "timing unclear"; }
+
+/* Plain-word staleness from an integer day count. */
+function mktStaleWord(days) {
+  if (days == null) return "fresh";
+  const n = Number(days);
+  if (n <= 0) return "today";
+  if (n === 1) return "1d old";
+  return `${n}d old`;
+}
+/* Staleness colour cue — quiet until it's genuinely getting old. */
+function mktStaleCls(days) {
+  const n = Number(days);
+  if (isNaN(n)) return "s-mut";
+  if (n >= 7) return "s-bad";
+  if (n >= 3) return "s-warn";
+  return "s-mut";
+}
+
+/* Feed display names — the raw slug never shows as a heading. */
+const MKT_FEED_NAME = {
+  prophet:    "Prophet signals",
+  confluence: "Confluence",
+  movers:     "Big movers",
+  earnings:   "Earnings soon",
+  stage:      "Trend stage",
+};
+function mktFeedName(name) { return MKT_FEED_NAME[name] || (name ? name[0].toUpperCase() + name.slice(1) : "Feed"); }
+
+/* One feed-health chip: name + up/down dot + n assets. */
+function mktFeedChip(f) {
+  const ok = !!f.ok;
+  const n = f.n_assets != null ? Number(f.n_assets) : null;
+  const tip = `${mktFeedName(f.name)} — ${ok ? "up" : "down"}${n != null ? `, ${n} names` : ""}${f.as_of ? ` · as of ${f.as_of}` : ""}`;
+  return `<span class="mkt-feed-chip ${ok ? "up" : "down"}" title="${esc(tip)}">
+    <span class="mkt-feed-dot"></span>
+    <span class="mkt-feed-name">${esc(mktFeedName(f.name))}</span>
+    <span class="mkt-feed-n">${ok ? (n != null ? n : "✓") : "✗"}</span>
+  </span>`;
+}
+
+/* Tier chip — a cashtag with its proxies tucked into the hover. */
+function mktTierChip(tk, tickers) {
+  const meta = (tickers && tickers[tk]) || {};
+  const px = meta.proxies || {};
+  const bits = [];
+  if (px.pct_1w != null) bits.push(`1w ${(px.pct_1w >= 0 ? "+" : "")}${Number(px.pct_1w).toFixed(1)}%`);
+  if (px.earnings_in_days != null) bits.push(`earnings in ${px.earnings_in_days}d`);
+  if (px.dollar_vol_musd != null) bits.push(`$${Number(px.dollar_vol_musd).toFixed(0)}M/day`);
+  const reasons = (meta.reasons || []).join(" · ");
+  const tip = [reasons, bits.join(" · ")].filter(Boolean).join(" — ") || tk;
+  return `<span class="mkt-cash-chip" title="${esc(tip)}">$${esc(tk)}</span>`;
+}
+
+RENDER.marketing_radar = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/radar");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Radar unavailable", (d && d.error) || "panel error"); return; }
+
+  const feeds   = d.feeds || [];
+  const surplus = d.surplus || [];
+  const queue   = d.queue || null;
+  const opps    = d.opportunities || null;
+  const oppList = (opps && opps.newest) || [];
+  const tiersSum = d.tiers_summary || null;
+  const tiers   = d.tiers || null;
+  const tickers = d.tickers || null;
+  const cadence = d.cadence || null;
+  const posted  = d.posted_recent || null;
+
+  /* ---- Header: the mission, plus feed intake ---- */
+  const upFeeds = feeds.filter(f => f.ok).length;
+  const headerHtml = `<div class="section">Radar — what we could be posting but aren't
+      <span class="cnt">as of ${esc(d.as_of || "—")}</span>
+    </div>
+    <div class="mkt-radar-lede">
+      Radar watches five signal feeds and scores every name. Most of what it sees, it
+      holds back on purpose. This page shows the backlog — the names with a real reason
+      to post that haven't gone out yet — so you can see the machine's judgement, not just its output.
+    </div>
+    <div class="mkt-feed-strip">
+      <span class="mkt-feed-strip-lab">Feeds in${feeds.length ? ` — ${upFeeds}/${feeds.length} up` : ""}</span>
+      ${feeds.length ? feeds.map(mktFeedChip).join("") : `<span class="sub">no feed report yet</span>`}
+    </div>`;
+
+  /* ---- Day-0 accruing state (report absent) ---- */
+  if (!d.available) {
+    const day0 = `<div class="card mkt-radar-empty">
+        <div class="empty-icon">◍</div>
+        <div class="empty-text">Radar is still warming up</div>
+        <div class="empty-sub">${esc(d.note || "The nightly report hasn't been produced yet.")}</div>
+      </div>`;
+    /* Even on day 0, the opportunity queue may already carry live entries from state. */
+    v.innerHTML = headerHtml + day0 + radarQueueBlock(queue, oppList);
+    return;
+  }
+
+  /* ---- Signal surplus — THE HERO: "Not posting yet" ---- */
+  const surplusHtml = `<div class="section">Not posting yet
+      <span class="cnt">${surplus.length} name${surplus.length !== 1 ? "s" : ""} held back</span>
+      ${posted ? `<span class="statpill s-mut" title="tickers posted in the last ${posted.window_plans || 7} plans">${Number(posted.n_tickers || 0)} posted recently</span>` : ""}
+    </div>`
+    + (surplus.length
+      ? `<div class="mkt-surplus-note">Each of these has a live reason to post. Radar is holding — usually because a similar name went out recently, or the desk mix is already full. Hover a row for the receipt.</div>
+         <table class="mkt-surplus-tbl"><thead><tr>
+           <th>Ticker</th><th>Why it's on the radar</th><th>Feed</th><th class="r">Age</th>
+         </tr></thead><tbody>
+         ${surplus.map(s => {
+           const feedName = mktFeedName(s.feed);
+           const rowTip = [s.opportunity_id ? `id ${s.opportunity_id}` : "", s.as_of ? `as of ${s.as_of}` : ""].filter(Boolean).join(" · ");
+           return `<tr title="${esc(rowTip)}">
+             <td><span class="mkt-cash-strong">$${esc(s.ticker || "—")}</span></td>
+             <td class="sub">${esc(s.why || "—")}</td>
+             <td><span class="mkt-feed-badge" title="${esc(feedName)}">${esc(feedName)}</span></td>
+             <td class="r"><span class="statpill ${mktStaleCls(s.staleness_days)}" style="font-size:11px">${esc(mktStaleWord(s.staleness_days))}</span></td>
+           </tr>`;
+         }).join("")}
+         </tbody></table>`
+      : nwEmpty("Nothing held back right now", "Every scored name has either posted or aged out. The next nightly refills this."));
+
+  /* ---- Cashtag tiers ---- */
+  const tiersHtml = radarTiersBlock(tiersSum, tiers, tickers, d.universe_n);
+
+  /* ---- Competitor cadence ---- */
+  const cadenceHtml = radarCadenceBlock(cadence);
+
+  v.innerHTML = headerHtml
+    + surplusHtml
+    + radarQueueBlock(queue, oppList)
+    + tiersHtml
+    + cadenceHtml;
+};
+
+/* Opportunity queue block — shared by the day-0 and live paths. */
+function radarQueueBlock(queue, oppList) {
+  const openN   = queue ? Number(queue.open || 0) : (oppList ? oppList.length : 0);
+  const totalN  = queue ? Number(queue.total || 0) : null;
+  const addedN  = queue ? Number(queue.added || 0) : null;
+  const expireN = queue ? Number(queue.expired || 0) : null;
+
+  const head = `<div class="section">Opportunity queue
+      <span class="cnt">${openN} open${totalN != null ? ` · ${totalN} total` : ""}</span>
+      ${addedN != null ? `<span class="statpill s-ok" style="font-size:11px" title="added since last run">+${addedN} new</span>` : ""}
+      ${expireN != null && expireN > 0 ? `<span class="statpill s-mut" style="font-size:11px" title="aged out since last run">${expireN} expired</span>` : ""}
+    </div>`;
+
+  if (!oppList.length) {
+    return head + nwEmpty("No scored opportunities yet", "The queue fills as Radar detects and scores names overnight.");
+  }
+
+  const rows = oppList.map(o => {
+    const score = o.score != null ? Number(o.score) : null;
+    const pct = score != null ? Math.max(0, Math.min(100, score * 100)) : 0;
+    const barCls = pct >= 66 ? "" : pct >= 33 ? "warn" : "bad";
+    const half = mktHalfLifeWord(o.half_life_class);
+    const idTip = o.opportunity_id ? `id ${o.opportunity_id}${o.detected_at ? ` · detected ${o.detected_at}` : ""}` : (o.detected_at || "");
+    return `<div class="mkt-opp-row" title="${esc(idTip)}">
+      <div class="mkt-opp-main">
+        <div class="mkt-opp-desc">${esc(o.problem_or_desire || "—")}</div>
+        <div class="mkt-opp-meta">
+          <span class="statpill ${o.status === "active" ? "s-ok" : o.status === "scored" ? "s-warn" : "s-mut"}" style="font-size:10px">${esc(o.status || "open")}</span>
+          <span class="mkt-opp-half">${esc(half)}</span>
+        </div>
+      </div>
+      <div class="mkt-opp-score">
+        <div class="mkt-opp-score-bar"><i class="${barCls}" style="width:${pct.toFixed(0)}%"></i></div>
+        <div class="mkt-opp-score-lab">${score != null ? score.toFixed(2) : "—"}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  return head
+    + `<div class="mkt-opp-hint">Newest scored names. The bar is Radar's priority score — how strong the reason to post is right now.</div>`
+    + `<div class="mkt-opp-list">${rows}</div>`;
+}
+
+/* Cashtag tiers block — T1/T2 prominent, T3 collapsed (the "dead attention" list). */
+function radarTiersBlock(sum, tiers, tickers, universeN) {
+  if (!sum && !tiers) {
+    return `<div class="section">Cashtag tiers</div>`
+      + nwEmpty("Tiers not built yet", "The cashtag universe is ranked on the first nightly run.");
+  }
+  const t1n = sum ? Number(sum.t1 || 0) : ((tiers && tiers.T1) || []).length;
+  const t2n = sum ? Number(sum.t2 || 0) : ((tiers && tiers.T2) || []).length;
+  const t3n = sum ? Number(sum.t3 || 0) : ((tiers && tiers.T3) || []).length;
+
+  const T1 = (tiers && tiers.T1) || [];
+  const T2 = (tiers && tiers.T2) || [];
+  const T3 = (tiers && tiers.T3) || [];
+
+  const head = `<div class="section">Cashtag tiers
+      <span class="cnt">${universeN != null ? `${universeN} names ranked` : `${t1n + t2n + t3n} names`}</span>
+    </div>
+    <div class="mkt-tier-legend">Where a name lands decides how much attention a post about it can earn. Top tier gets the machine's push; the bottom tier is dead attention — posted only when nothing better exists.</div>
+    <div class="mkt-tier-counts">
+      <div class="mkt-tier-count t1"><b>${t1n}</b><span>Top — worth pushing</span></div>
+      <div class="mkt-tier-count t2"><b>${t2n}</b><span>Middle — situational</span></div>
+      <div class="mkt-tier-count t3"><b>${t3n}</b><span>Bottom — dead attention</span></div>
+    </div>`;
+
+  const t1Chips = T1.length
+    ? `<div class="mkt-tier-row"><div class="mkt-tier-tag t1">Top</div><div class="mkt-tier-chips">${T1.map(tk => mktTierChip(tk, tickers)).join("")}</div></div>`
+    : "";
+  const t2Chips = T2.length
+    ? `<div class="mkt-tier-row"><div class="mkt-tier-tag t2">Middle</div><div class="mkt-tier-chips">${T2.map(tk => mktTierChip(tk, tickers)).join("")}</div></div>`
+    : "";
+  const t3Chips = T3.length
+    ? `<details class="mkt-tier-details"><summary>Show bottom tier — ${T3.length} name${T3.length !== 1 ? "s" : ""} rarely worth a post</summary>
+         <div class="mkt-tier-chips mkt-tier-chips-mut">${T3.map(tk => mktTierChip(tk, tickers)).join("")}</div>
+       </details>`
+    : "";
+
+  const chips = (t1Chips || t2Chips || t3Chips)
+    ? `<div class="mkt-tier-body">${t1Chips}${t2Chips}${t3Chips}</div>`
+    : `<div class="mkt-tier-note sub">Counts only — the ranked ticker lists arrive with the next nightly.</div>`;
+
+  return head + chips;
+}
+
+/* Competitor cadence — small card, honest about availability. */
+function radarCadenceBlock(cad) {
+  if (!cad) {
+    return `<div class="section">Competitor cadence</div>`
+      + nwEmpty("No competitor data yet", "Cadence tracking turns on once a source is wired.");
+  }
+  const comps = cad.competitors || [];
+  const ppd = cad.posts_per_day;
+  const body = cad.available
+    ? `${ppd != null ? `<div class="big" style="color:var(--accent-cyan)">${Number(ppd).toFixed(1)}<span class="sub"> posts/day</span></div>` : `<div class="big">—</div><div class="sub">rate not measured yet</div>`}
+       <div class="kv"><span>Accounts watched</span><b>${comps.length}</b></div>
+       ${cad.source ? `<div class="note muted">Source: ${esc(cad.source)}</div>` : ""}
+       ${comps.length ? `<div class="mkt-comp-chips">${comps.map(c => `<span class="statpill s-mut" style="font-size:11px">${esc(c)}</span>`).join("")}</div>` : ""}`
+    : `<div class="sub">Not tracking any competitors yet.</div>
+       ${cad.source ? `<div class="note muted">Would read from: ${esc(cad.source)}</div>` : ""}`;
+  return `<div class="section">Competitor cadence</div>
+    <div class="grid"><div class="card">${body}</div></div>`;
 }
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */

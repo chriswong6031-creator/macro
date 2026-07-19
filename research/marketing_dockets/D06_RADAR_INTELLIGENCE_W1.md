@@ -1,6 +1,8 @@
 # MKT-D06 — Radar W1: Real Opportunity Feeds + Cashtag Traffic Tiers
 
-**Department:** Radar (intelligence) · **Priority: P2** · **Status: ready now**
+**Department:** Radar (intelligence) · **Priority: P2** · **Status: W1 SHIPPED — PR #3059 (2026-07-19)**
+
+> **W1 status (2026-07-19, PR #3059):** all five deliverables built + merged — `engine/marketing/radar_internal.py` (5-feed surplus scan, round-robin cap, DOA-filtered opportunity sync), nightly `data/marketing/cashtag_tiers.json` (sp500∪NDX∪t1_always, T1 28 / T2 190 / T3 302 on first bake), `config/marketing_competitor_cadence.yml` (receipted TrendSpider baseline; corpus has NO numeric X posts/day — noted low-confidence), admin Radar page (`/api/marketing/radar`), 43 new tests. Movers tier pick is behind `settings.radar_tiers_enabled` (OFF) — flip after first nightly verifies tiers. **Come-back:** first nightly bakes radar artifacts; W2 = live competitor scrape lane (needs its own red-team pass) + D03 Lab replacing proxies with measured reach.
 **Charter:** `engine/marketing/departments.py` id=`intelligence` ("Market, Audience & Opportunity Intelligence", wave 1, 10 chartered engines — stubs).
 
 ## Why

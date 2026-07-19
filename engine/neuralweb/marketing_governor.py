@@ -314,6 +314,14 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
                 )
         except Exception as _exc:  # noqa: BLE001
             log.warning("marketing_governor: outbox emit failed: %s", _exc)
+        # Build radar report (D06 — fail-soft)
+        try:
+            from engine.marketing.radar_internal import build_radar
+            radar = build_radar(r)
+            result["radar_report_path"] = str(r / "data" / "marketing" / "radar_report.json")
+            log.info("marketing_governor: radar surplus=%s tiers=%s", len(radar.get("surplus", [])), (radar.get("tiers_summary") or {}))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("marketing_governor: radar build failed: %s", exc)
 
         # Build state
         from engine.marketing.state import build_state
