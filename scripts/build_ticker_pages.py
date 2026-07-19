@@ -47,11 +47,28 @@ SITE = _ROOT / "site"
 TEMPLATES_DIR = _ROOT / "templates"
 
 # ---------------------------------------------------------------------------
+# Share-card (og:image) — fail-soft import; None disables the feature silently
+# ---------------------------------------------------------------------------
+try:
+    from engine.marketing import share_cards as _SHARE_CARDS  # noqa: E402
+    from engine.marketing import logo_cache as _LOGO_CACHE    # noqa: E402
+except Exception as _sc_import_err:  # noqa: BLE001
+    _SHARE_CARDS = None  # type: ignore[assignment]
+    _LOGO_CACHE = None   # type: ignore[assignment]
+    log.warning("::warning title=share_cards_import::share_cards/logo_cache not available: %s", _sc_import_err)
+
+# ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 CANONICAL_BASE = "https://mastermind-x.com"
 STALENESS_DAYS = 14
 SEASONALITY_MIN_BARS = 750  # require at least this many ohlc bars
+
+OG_DIR = SITE / "og" / "stocks"
+LOGO_DIR = _ROOT / "data" / "marketing" / "logos"
+MAX_LOGO_FETCH_PER_RUN = 300
+_LOGO_ATTEMPTS_PATH = _ROOT / "data" / "marketing" / "share_cards" / "logo_attempts.json"
+_LOGO_NEGATIVE_CACHE_DAYS = 30
 
 # Plain-word sector display names
 _SECTOR_DISPLAY = {
@@ -2370,8 +2387,13 @@ def run(
     site: Path | None = None,
     context_only: bool = False,
     dump_context: Path | None = None,
+    only_tickers: set[str] | None = None,
 ) -> int:
-    """Main entrypoint. Returns exit code 0 always (non-fatal)."""
+    """Main entrypoint. Returns exit code 0 always (non-fatal).
+
+    only_tickers: when provided, restrict the loop to those tickers only and skip
+    sitemap merge (for fast spot-verification of specific tickers via --only flag).
+    """
     if site is None:
         site = SITE
 
@@ -2437,9 +2459,33 @@ def run(
 
     generated_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
+    # Share-card counters (per-run)
+    _sc_rendered = 0
+    _sc_skipped = 0
+    _sc_logo_fetches = 0
+    _sc_fetch_skipped_recent = 0
+    import time as _time
+    _sc_t0 = _time.perf_counter()
+
+    # Negative logo-fetch cache: {ticker: "YYYY-MM-DD"} — skip re-fetching recently
+    # attempted logos (both successes and failures) for _LOGO_NEGATIVE_CACHE_DAYS days.
+    _logo_attempts: dict[str, str] = {}
+    try:
+        if _LOGO_ATTEMPTS_PATH.exists():
+            _logo_attempts = json.loads(_LOGO_ATTEMPTS_PATH.read_text(encoding="utf-8"))
+            if not isinstance(_logo_attempts, dict):
+                _logo_attempts = {}
+    except Exception as _lae:  # noqa: BLE001
+        log.warning("::warning::logo_attempts load failed (fail-soft): %s", _lae)
+        _logo_attempts = {}
+    _today_iso = date.today().isoformat()
+
     for _, row in active.iterrows():
         ticker = _clean_str(row.get("ticker"))
         if not ticker:
+            continue
+        # --only filter: skip tickers not in the requested set
+        if only_tickers is not None and ticker not in only_tickers:
             continue
         name = _clean_str(row.get("name") or ticker)
         sector = _clean_str(row.get("sector") or "")
@@ -2467,6 +2513,77 @@ def run(
                 continue
 
             ctx = build_page_context(ticker, name, sector, per, agg, generated_utc)
+
+            # ── Share card (og:image) ─────────────────────────────────────
+            # Fingerprint-gated: only re-renders when ticker/name/sector/
+            # industry/logo/CARD_VERSION changes. Never kills a dossier render.
+            og_image_url: str | None = None
+            if _SHARE_CARDS is not None and not context_only:
+                try:
+                    _og_out = OG_DIR / f"{ticker}.png"
+                    # Industry from blob profile (not in membership.parquet)
+                    _profile = (blob or {}).get("profile") or {}
+                    _industry = _profile.get("industry") or None
+
+                    # Logo: check cache first, then attempt one CDN fetch per run.
+                    # Negative cache: skip tickers attempted within the last
+                    # _LOGO_NEGATIVE_CACHE_DAYS days (recorded regardless of outcome).
+                    _logo_path: Path | None = LOGO_DIR / f"{ticker}_white.png"
+                    if not (_logo_path and _logo_path.exists()):
+                        _logo_path = None
+                        _last_attempt = _logo_attempts.get(ticker)
+                        _recently_attempted = False
+                        if _last_attempt:
+                            try:
+                                from datetime import timedelta
+                                _delta = date.today() - date.fromisoformat(_last_attempt)
+                                _recently_attempted = _delta.days < _LOGO_NEGATIVE_CACHE_DAYS
+                            except (ValueError, TypeError):
+                                pass
+                        if _recently_attempted:
+                            _sc_fetch_skipped_recent += 1
+                        elif _LOGO_CACHE is not None and _sc_logo_fetches < MAX_LOGO_FETCH_PER_RUN:
+                            _logo_attempts[ticker] = _today_iso
+                            try:
+                                _LOGO_CACHE.white_logo_datauri(ticker, _ROOT, fetch=True)
+                                _sc_logo_fetches += 1
+                            except Exception:  # noqa: BLE001
+                                pass
+                            _candidate = LOGO_DIR / f"{ticker}_white.png"
+                            if _candidate.exists():
+                                _logo_path = _candidate
+
+                    _sector_disp = ctx.get("sector") or _sector_display(sector)
+                    _sc_payload = {
+                        "type": "ticker",
+                        "ticker": ticker,
+                        "name": name,
+                        "sector": _sector_disp,
+                        "industry": _industry,
+                        "logo": _logo_path.name if _logo_path else None,
+                    }
+                    _sc_rendered_flag = _SHARE_CARDS.save_card_if_changed(
+                        payload=_sc_payload,
+                        out_path=_og_out,
+                        render=lambda _t=ticker, _n=name, _s=_sector_disp, _i=_industry, _lp=_logo_path: (
+                            _SHARE_CARDS.render_ticker_card(
+                                ticker=_t, name=_n, sector=_s, industry=_i, logo_path=_lp
+                            )
+                        ),
+                        root=_ROOT,
+                    )
+                    if _sc_rendered_flag:
+                        _sc_rendered += 1
+                    else:
+                        _sc_skipped += 1
+                    # Only pass og_image_url if PNG actually exists
+                    if _og_out.exists():
+                        og_image_url = f"https://mastermind-x.com/og/stocks/{ticker}.png"
+                except Exception as _sc_err:  # noqa: BLE001
+                    log.debug("share card failed for %s: %s", ticker, _sc_err)
+                    og_image_url = None
+            # Inject into context for template
+            ctx["og_image_url"] = og_image_url
 
             # Dump context JSON if requested
             if dump_context:
@@ -2562,11 +2679,39 @@ def run(
         except Exception as e:  # noqa: BLE001
             log.warning("::warning title=index::index page render failed: %s", e)
 
-    # --- Sitemap update ---
+    # --- Share-card summary ---
+    _sc_elapsed = _time.perf_counter() - _sc_t0
+    log.info(
+        "[share_cards] ticker cards rendered=%d skipped=%d logo_fetches=%d fetch_skipped_recent=%d in %.1fs",
+        _sc_rendered, _sc_skipped, _sc_logo_fetches, _sc_fetch_skipped_recent, _sc_elapsed,
+    )
+
+    # Persist logo negative-cache atomically (temp file + os.replace).
+    if _logo_attempts:
+        try:
+            _LOGO_ATTEMPTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            import tempfile as _tempfile
+            _tmp_fd, _tmp_name = _tempfile.mkstemp(
+                dir=str(_LOGO_ATTEMPTS_PATH.parent), suffix=".tmp"
+            )
+            try:
+                with os.fdopen(_tmp_fd, "w", encoding="utf-8") as _fh:
+                    json.dump(_logo_attempts, _fh, ensure_ascii=False, indent=2)
+                os.replace(_tmp_name, str(_LOGO_ATTEMPTS_PATH))
+            except Exception:  # noqa: BLE001
+                try:
+                    os.unlink(_tmp_name)
+                except OSError:
+                    pass
+                raise
+        except Exception as _persist_err:  # noqa: BLE001
+            log.warning("::warning::logo_attempts persist failed: %s", _persist_err)
+
+    # --- Sitemap update --- (skipped when --only restricts to a subset)
     real_sitemap = site / "sitemap.xml"
     is_production = (out.resolve() == (site / "stocks").resolve())
 
-    if sitemap_out or is_production:
+    if (sitemap_out or is_production) and only_tickers is None:
         target_sitemap = sitemap_out if sitemap_out else real_sitemap
         try:
             existing = real_sitemap.read_text() if real_sitemap.exists() else '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>'
@@ -2592,17 +2737,24 @@ def main(argv: list[str] | None = None) -> int:
                         help="Skip HTML rendering; only compute context dicts")
     parser.add_argument("--dump-context", default=None,
                         help="Directory to write per-ticker ctx JSON files (contract for template builder)")
+    parser.add_argument("--only", default=None,
+                        help="Comma-separated list of tickers to render (skips sitemap merge when used)")
     args = parser.parse_args(argv)
 
     out = Path(args.out) if args.out else (SITE / "stocks")
     sitemap_out = Path(args.sitemap_out) if args.sitemap_out else None
     dump_context = Path(args.dump_context) if args.dump_context else None
+    only_tickers: set[str] | None = (
+        {t.strip().upper() for t in args.only.split(",") if t.strip()}
+        if args.only else None
+    )
 
     rc = run(
         out=out,
         sitemap_out=sitemap_out,
         context_only=args.context_only,
         dump_context=dump_context,
+        only_tickers=only_tickers,
     )
     return rc
 

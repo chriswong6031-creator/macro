@@ -1,6 +1,6 @@
 # MKT-D10 — Workshop W1: Free Public Tools as Lead Magnets
 
-**Department:** Workshop (products) · **Priority: P3** · **Status: ready now**
+**Department:** Workshop (products) · **Priority: P3** · **Status: W1 SHIPPED 2026-07-19 (PR #3061)** — free screener page (`templates/confluence_screener.html.j2` + `scripts/build_confluence_screener.py`, gated rows omitted server-side, baked in the tech_lab offrender job) + `/movers.html` + og:image share-cards (`engine/marketing/share_cards.py`, PIL, fingerprint-cached, ~46ms/card one-time bake) on Beacon dossiers + both new pages. CTAs = TODO(D07) seam (untagged `app.mastermind-x.com`). Come-back: first nightly bakes pages + ~1,500 ticker cards; W2 = D07 tagged links + ZH theme names upstream.
 **Charter:** id=`products` ("Intelligence Products & Public Tools", wave 3, 12 chartered engines — stubs).
 
 ## Why
