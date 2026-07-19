@@ -23,6 +23,7 @@ import hashlib
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
+from pathlib import Path
 from typing import Any, Callable
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -473,9 +474,12 @@ class ContentItem:
     chart_id: str | None
     slot: str
     status: str = "drafted"
+    # Optional confluence provenance fields (additive; absent on Prophet-sourced items)
+    source: str | None = None
+    combo_id: str | None = None
 
     def as_dict(self) -> dict:
-        return {
+        d: dict = {
             "id": self.id,
             "type": self.type,
             "account": self.account,
@@ -488,6 +492,11 @@ class ContentItem:
             "slot": self.slot,
             "status": self.status,
         }
+        if self.source is not None:
+            d["source"] = self.source
+        if self.combo_id is not None:
+            d["combo_id"] = self.combo_id
+        return d
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -732,7 +741,7 @@ def content_plan(
             "queue": [item.as_dict() for item in items],
         })
 
-    # Select featured charts: ≤2 per account, max 6 total (v2 charts are larger).
+    # Select featured charts: ≤2 per account, max 6 Prophet + up to 2 confluence = 8 total.
     # Only with closes. Eligibility gate always applies.
     _CHART_CAP = 6
     featured_charts: list[dict] = []
@@ -865,6 +874,150 @@ def content_plan(
                 chart_id_counter += 1
                 acct_count += 1
 
+    # ── Confluence-sourced signal posts (§3 confluence→chart-post loop) ───────
+    # Read fired combos from tech_confluence.json. Cap confluence charts so total
+    # featured_charts stays <= 8 (Prophet uses up to 6). Fail-soft: if the file is
+    # absent or has no fresh fired combos, Prophet posts still flow unchanged.
+    _TOTAL_CHART_CAP = 8
+    confluence_posts_added: list[dict] = []  # for the summary block
+    conf_charts_added = 0
+
+    try:
+        from engine.marketing.confluence_source import (
+            load_confluence,
+            fired_combo_signals,
+            win_rate_hook,
+        )
+
+        _ohlcv_root_conf: str = str(root) if root is not None else "."
+        conf = load_confluence(_ohlcv_root_conf)
+        if conf is not None:
+            fired = fired_combo_signals(
+                conf,
+                side="long",
+                top_n=8,
+                min_edge=0.05,
+                max_age_days=10,
+                today=today,
+            )
+            # Also get short-side fired combos
+            fired_short = fired_combo_signals(
+                conf,
+                side="short",
+                top_n=4,
+                min_edge=0.05,
+                max_age_days=10,
+                today=today,
+            )
+            all_fired = fired + fired_short
+
+            # Dedupe tickers already used by Prophet charts
+            prophet_chart_tickers = {fc["ticker"] for fc in featured_charts}
+
+            # Use first account's voice for confluence posts (or authoritative desk)
+            conf_voice = (
+                account_rows[0].get("voice", "authoritative desk")
+                if account_rows else "authoritative desk"
+            )
+            conf_account_id = account_rows[0].get("id", "confluence") if account_rows else "confluence"
+
+            conf_item_counter = 1
+            for sig in all_fired:
+                conf_ticker = sig["ticker"]
+                # Skip tickers already charted by Prophet
+                if conf_ticker in prophet_chart_tickers:
+                    continue
+
+                headline, body = win_rate_hook(sig)
+                cashtag = f"${conf_ticker}"
+
+                # Assign a slot label (append after Prophet-generated slots)
+                slot_label = f"CONF-{conf_item_counter:02d}"
+
+                # Build ContentItem — signal type, confluence provenance
+                conf_item = ContentItem(
+                    id=f"post-conf-{conf_account_id}-{conf_item_counter:03d}",
+                    type="signal",
+                    account=conf_account_id,
+                    cashtag=cashtag,
+                    ticker=conf_ticker,
+                    headline=headline,
+                    body=body,
+                    provenance="neural_web",
+                    chart_id=None,
+                    slot=slot_label,
+                    status="drafted",
+                    source="confluence",
+                    combo_id=sig["combo_id"],
+                )
+
+                # Attempt v2 chart for this confluence ticker
+                # Only if we have headroom under the total cap
+                if len(featured_charts) < _TOTAL_CHART_CAP and _ohlcv_root_conf:
+                    from engine.marketing.chart_render import load_ohlcv, render_chart_v2
+                    ohlcv = load_ohlcv(conf_ticker, _ohlcv_root_conf, n=90)
+                    if ohlcv is not None:
+                        ohlcv_dates, ohlcv_o, ohlcv_h, ohlcv_l, ohlcv_c, ohlcv_v = ohlcv
+                        # Marker at last_fire date if in window, else latest
+                        conf_marker = len(ohlcv_dates) - 1
+                        lf = sig.get("last_fire", "")
+                        if lf and lf in ohlcv_dates:
+                            conf_marker = ohlcv_dates.index(lf)
+
+                        chart_id = f"chart-{chart_id_counter:03d}"
+                        svg = render_chart_v2(
+                            ticker=conf_ticker,
+                            dates=ohlcv_dates,
+                            o=ohlcv_o,
+                            h=ohlcv_h,
+                            l=ohlcv_l,
+                            c=ohlcv_c,
+                            volume=ohlcv_v,
+                            timeframe="DAILY",
+                            marker_index=conf_marker,
+                            highlight_index=conf_marker,
+                            pct_from_index=conf_marker,
+                            show_indicators=True,
+                            indicators=("volume", "macd"),
+                            company_name=conf_ticker,
+                        )
+
+                        conf_item.chart_id = chart_id
+                        featured_charts.append({
+                            "id": chart_id,
+                            "ticker": conf_ticker,
+                            "account": conf_account_id,
+                            "cashtag": cashtag,
+                            "marker_source": "last_fire" if (lf and lf in ohlcv_dates) else "latest",
+                            "marker_date": ohlcv_dates[conf_marker] if conf_marker < len(ohlcv_dates) else "",
+                            "marker_price": round(ohlcv_c[conf_marker], 4) if conf_marker < len(ohlcv_c) else 0.0,
+                            "svg": svg,
+                            "headline": headline,
+                            "body": body,
+                            "source": "confluence",
+                            "combo_id": sig["combo_id"],
+                        })
+                        chart_id_counter += 1
+                        conf_charts_added += 1
+                        prophet_chart_tickers.add(conf_ticker)
+
+                # Add to the first account's queue (additive)
+                if account_rows:
+                    account_rows[0]["queue"].append(conf_item.as_dict())
+
+                all_items.append(conf_item)
+                confluence_posts_added.append({
+                    "ticker": conf_ticker,
+                    "combo_id": sig["combo_id"],
+                    "win_rate": sig["win_rate"],
+                    "edge": sig["edge"],
+                })
+                conf_item_counter += 1
+
+    except Exception:  # noqa: BLE001
+        # Fail-soft: confluence unavailable — Prophet posts unchanged
+        pass
+
     # Distinctness check
     dist = distinctness(all_items)
 
@@ -899,6 +1052,19 @@ def content_plan(
             "signal_posts": signal_posts,
             "charts": n_charts,
             "accounts": len(account_rows),
+        },
+        "content": {
+            "confluence": {
+                "fired_combos": len(confluence_posts_added),
+                "charts": conf_charts_added,
+                "posts": confluence_posts_added,
+                "note": (
+                    f"{len(confluence_posts_added)} confluence signal posts added "
+                    f"({conf_charts_added} charts)."
+                    if confluence_posts_added
+                    else "No fresh fired confluence combos today — Prophet posts only."
+                ),
+            },
         },
     }
     return artifact
