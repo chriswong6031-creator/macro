@@ -1559,17 +1559,32 @@
     {% set _risk_state = (latest.risk_radar.state if latest.risk_radar else 'calm') %}
     {% set _show_risk = _risk_state in ('caution', 'elevated', 'risk-off') %}
     {% if _show_risk %}
-    {# Pullback Risk card #}
-    <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-risk')" style="border-color:rgba(224,100,100,.35)">
-      <div class="cnx-ctitle">{{ t('Pullback Risk','回撤风险') }} <span class="cnx-alert-pill" style="background:rgba(224,100,100,.16);color:var(--act)">{{ t('HIGH','高') }}</span></div>
+    {# Pullback Risk card. NOTE: china INTENTIONALLY hand-rolls its pullback surfaces
+       (this card + hero popover + cnx-dlg-risk) in the bespoke cnx-* design rather than
+       the shared .rrx card (_risk_radar_card.html.j2, used by macro / HK / Canada): this
+       card sits in a cnx-rack beside the Sentiment/Sector cards, and the dialog carries
+       CN-only gauges (deep-drawdown, slowdown, FX context) the .rrx card doesn't have.
+       Keep all danger colours on the NON-flipping --ok/--warn/--act pair (never --up/--down)
+       so a risk-off state stays red in zh.
+       Severity tier drives the pill/number colour (was hardcoded HIGH/red for caution,
+       elevated AND risk-off alike): caution → amber CAUTION, elevated/risk-off → red. #}
+    {% set _rr_sev_col  = 'var(--warn)' if _risk_state == 'caution' else 'var(--act)' %}
+    {% set _rr_sev_bg   = 'rgba(224,160,48,.16)' if _risk_state == 'caution' else 'rgba(224,100,100,.16)' %}
+    {% set _rr_sev_bord = 'rgba(224,160,48,.35)' if _risk_state == 'caution' else 'rgba(224,100,100,.35)' %}
+    {% set _rr_sev_en   = 'HIGH' if _risk_state == 'risk-off' else ('ELEVATED' if _risk_state == 'elevated' else 'CAUTION') %}
+    {% set _rr_sev_zh   = '高' if _risk_state == 'risk-off' else ('偏高' if _risk_state == 'elevated' else '谨慎') %}
+    <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-risk')" style="border-color:{{ _rr_sev_bord }}">
+      <div class="cnx-ctitle">{{ t('Pullback Risk','回撤风险') }} <span class="cnx-alert-pill" style="background:{{ _rr_sev_bg }};color:{{ _rr_sev_col }}">{{ t(_rr_sev_en, _rr_sev_zh) }}</span></div>
       {% if _rr_score is not none %}
-      <div class="cnx-bignum" style="color:var(--act)">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)"> /100</span></div>
-      <div class="cnx-bigsub" style="color:var(--act)">{{ t(_rr.label_en or '', _rr.label_zh or '') }}</div>
+      <div class="cnx-bignum" style="color:{{ _rr_sev_col }}">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)"> /100</span></div>
+      <div class="cnx-bigsub" style="color:{{ _rr_sev_col }}">{{ t(_rr.label_en or '', _rr.label_zh or '') }}</div>
       {% endif %}
       <div class="cnx-kv"><span class="k">{{ t('≥5% dip odds','≥5%回撤概率') }}</span><span class="v">{% if _rr_p21 is not none %}{{ (_rr_p21*100)|round|int }}%{% else %}{{ t('—','—') }}{% endif %}</span></div>
-      <div class="cnx-kv"><span class="k">{{ t('Deep-crash gauge','深跌仪表') }}</span>
-        {% set _rr_rec = (latest.conditions.recession.label if latest.conditions and latest.conditions.get('recession') and latest.conditions.recession else none) %}
-        <span class="v"><span class="cnx-stword {{ 'ok' if _rr_rec == 'low' else 'warn' }}">{{ t('Calm','平静') if not _rr_rec or _rr_rec == 'low' else t('Elevated','偏高') }}</span></span></div>
+      <div class="cnx-kv"><span class="k">{{ t('Deep-drawdown gauge','深跌仪表') }}</span>
+        {# SAME recession score + 60/40 bands as the detail dialog (was label-based, which
+           could disagree with the dialog's score-based colour); non-flipping health tokens. #}
+        {% set _rr_rec_sc = (latest.conditions.recession.score if latest.conditions and latest.conditions.get('recession') and latest.conditions.recession else none) %}
+        <span class="v"><span style="font-weight:700;color:{{ 'var(--act)' if (_rr_rec_sc or 0) >= 60 else ('var(--warn)' if (_rr_rec_sc or 0) >= 40 else 'var(--ok)') }}">{{ t('High','高危') if (_rr_rec_sc or 0) >= 60 else (t('Elevated','偏高') if (_rr_rec_sc or 0) >= 40 else t('Calm','平静')) }}</span></span></div>
       <div class="cnx-foot">{{ t(_rr_do_en or 'High pullback risk — size down, watch alerts.', _rr_do_zh or '回撤风险高 — 缩仓，关注警报。') }}</div>
     </div>
     {% else %}
