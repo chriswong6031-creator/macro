@@ -1275,6 +1275,37 @@ class TestOutboxPanel:
 
         result = marketing.decide_outbox(item["id"], "publish", root=tmp_path)
         assert result is False
+
+    # ------------------------------------------------------------------
+    # Decision log (per-item audit trail) — complements pipeline activity
+    # ------------------------------------------------------------------
+
+    def test_empty_root_decision_log_empty(self, tmp_path):
+        r = marketing.outbox(tmp_path)
+        assert r["decision_log"] == []
+
+    def test_seeded_decision_log_present_newest_first(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        dl = r["decision_log"]
+        assert isinstance(dl, list) and len(dl) > 0
+        stamps = [e["at"] for e in dl if e.get("at")]
+        assert stamps == sorted(stamps, reverse=True)
+        for e in dl:
+            assert {"type", "id", "account", "kind", "at", "actor"} <= set(e.keys())
+        types = {e["type"] for e in dl}
+        # both operator decisions and the actuator posted transition are present
+        assert "posted" in types and "hold" in types and "approve" in types
+
+    def test_seeded_decision_log_carries_account_and_kind(self, tmp_path):
+        id1, id2, id3 = self._seed_outbox(tmp_path)
+        r = marketing.outbox(tmp_path)
+        posted = next(e for e in r["decision_log"] if e["type"] == "posted")
+        assert posted["id"] == id3
+        assert posted["account"] == "research_a"
+        assert posted["kind"] == "education"
+
+
 # Tests — radar() panel (MKT-D06 · intelligence department view)
 # ---------------------------------------------------------------------------
 

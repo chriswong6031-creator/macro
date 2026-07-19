@@ -788,6 +788,7 @@ def outbox(root=None) -> dict:
                 "accounts": [],
                 "history": [],
                 "activity": activity,
+                "decision_log": [],
             }
 
         # Compute effective status per item (folded status + held overlay)
@@ -891,6 +892,14 @@ def outbox(root=None) -> dict:
             for e in terminal[:50]
         ]
 
+        # Per-item decision log — the operator's audit trail (holds/approvals +
+        # actuator transitions), which the pipeline `activity` (run tallies) does
+        # not surface. Derived from the rows fold_state already read; no extra IO
+        # beyond the two cheap reads below.
+        id_meta = {e["id"]: (e["_account"], e.get("kind") or "") for e in enriched}
+        decision_log = _build_decision_log(
+            _ob.read_decisions(repo), _ob.read_ledger(repo), id_meta, limit=12)
+
         return {
             "ok": True,
             "as_of": max_as_of,
@@ -900,11 +909,50 @@ def outbox(root=None) -> dict:
             "accounts": accounts_out,
             "history": history_out,
             "activity": activity,
+            "decision_log": decision_log,
         }
 
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.outbox failed: %s", exc)
         return {"ok": False, "error": str(exc)}
+
+
+def _build_decision_log(all_decisions: list, ledger: list, id_meta: dict,
+                        limit: int = 12) -> list:
+    """Merge decision + ledger rows into one newest-first per-item audit trail.
+
+    Complements the pipeline `activity` feed (run tallies): this answers "what
+    has been decided/done to each post, and by whom". Each event:
+    {type, id, account, kind, at, actor, detail}. `type` is "approve"/"hold"
+    (operator decisions) or "posted"/"failed"/"approved"/"quarantined"
+    (actuator transitions). Rows for ids absent from id_meta still appear with
+    account/kind = "" — the audit trail never silently drops an event.
+    Fail-soft: never raises; malformed rows are skipped.
+    """
+    events: list[dict] = []
+    for row in all_decisions or []:
+        item_id = row.get("id")
+        if not item_id:
+            continue
+        acct, kind = id_meta.get(item_id, ("", ""))
+        events.append({
+            "type": row.get("decision") or "decision",
+            "id": item_id, "account": acct, "kind": kind,
+            "at": row.get("at"), "actor": row.get("actor"), "detail": row.get("note"),
+        })
+    for row in ledger or []:
+        item_id = row.get("id")
+        if not item_id:
+            continue
+        acct, kind = id_meta.get(item_id, ("", ""))
+        events.append({
+            "type": row.get("to") or "transition",
+            "id": item_id, "account": acct, "kind": kind,
+            "at": row.get("at"), "actor": row.get("actor"), "detail": row.get("note"),
+        })
+    # Newest first; rows with no timestamp sort last (empty string).
+    events.sort(key=lambda e: (e.get("at") or ""), reverse=True)
+    return events[:limit]
 
 
 def decide_outbox(item_id: str, decision: str, note: str | None = None, root=None) -> bool:
