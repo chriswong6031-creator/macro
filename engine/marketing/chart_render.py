@@ -751,13 +751,94 @@ def render_chart_v2(
     axis_svg = "\n  ".join(axis_parts)
 
     # ── SMA overlays ────────────────────────────────────────────────────────
+    # The SMA curves paint quiet, UNDER the candles. Their end-labels, however,
+    # are a LEGEND — they must read at thumbnail size — so each rides its own
+    # backing plate (same idiom the M2 chips use) rather than bare text that a
+    # busy candle field and the last-price pill defeat at the panel's right edge.
+    #
+    # This block is deliberately self-contained (no shared overlay helpers /
+    # claim list): it seeds its OWN vertical-lane bookkeeping so it compiles and
+    # renders standalone. Seeds: the last-price pill band and — defensively — the
+    # top-right % callout region, so a chip never lands on either even though the
+    # callout is opt-in and often absent.
     sma_svg = ""
     if show_indicators and n >= 50:
         sma50 = _sma(c, 50)
         sma200 = _sma(c, 200) if n >= 200 else [None] * n
-        for sma_vals, sma_color, sma_label in [
-            (sma50, "#F59E0B", "50 SMA"),
-            (sma200, "#FBBF24", "200 SMA"),
+
+        # Chip geometry — mirrors the quiet legend plate: rounded #0E1420 plate,
+        # 1px accent hairline at reduced opacity, colored 11px text, end-anchored
+        # just inside the panel's right edge (clear of the price axis).
+        _sma_chip_h = 17
+        _sma_right_x = PAD_L + chart_w - 5
+
+        # The chips paint UNDER the candles (this whole layer does), so a chip
+        # dropped at the price-line's end y would be punched through by the last
+        # candle cluster's wicks/bodies and read as chopped — the exact defect we
+        # are fixing. So the chip must land in CLEAR AIR at the right edge: above
+        # the recent highs or below the recent lows, where no candle crosses it.
+        # Build that candle band from the last ~8 bars (in-scope h/l) and reserve
+        # it as a claimed span, alongside the last-price pill band (±12 clearance,
+        # matching the M2 chips) and — defensively — the top-right % callout box
+        # footprint (box_y = PAD_TOP+10, box_h = 42; opt-in, often absent).
+        _sma_pill_cy = py_price(last_close)
+        _tail0 = max(0, n - 8)
+        _tail_top = min(py_price(h[i]) for i in range(_tail0, n))  # smaller y = higher
+        _tail_bot = max(py_price(l[i]) for i in range(_tail0, n))
+        _sma_claimed: list[tuple[float, float]] = [
+            (_tail_top, _tail_bot),                      # the last candle cluster
+            (_sma_pill_cy - 12, _sma_pill_cy + 12),      # last-price pill band
+            (PAD_TOP + 8, PAD_TOP + 54),                 # top-right % callout box
+        ]
+
+        def _sma_chip(text: str, cy: float, color: str, *, nudge_up: bool) -> str:
+            """Quiet amber legend chip, right-anchored, de-conflicted against the
+            candle cluster / pill / callout / the other SMA chip via _sma_claimed.
+
+            cy is the preferred baseline centre (the curve's end y); nudge_up
+            biases which way the chip steps into clear air when a band collision
+            forces a move (50 SMA up, 200 SMA down) so converging lines split
+            their chips apart and neither sits on the tape.
+            """
+            _cw = int(len(text) * 6.4) + 14
+            _cy = cy
+            for _ in range(8):
+                _band = (_cy - _sma_chip_h / 2, _cy + _sma_chip_h / 2)
+                _hit = None
+                for (st, sb) in _sma_claimed:
+                    if _band[0] < sb and st < _band[1]:
+                        _hit = (st, sb)
+                        break
+                if _hit is None:
+                    break
+                if nudge_up:
+                    _cy = _hit[0] - _sma_chip_h / 2 - 3
+                else:
+                    _cy = _hit[1] + _sma_chip_h / 2 + 3
+            # Clamp fully inside the price panel (never spill into header/subpanels).
+            _cy = max(
+                PAD_TOP + _sma_chip_h / 2 + 2,
+                min(PAD_TOP + PRICE_H - _sma_chip_h / 2 - 2, _cy),
+            )
+            _sma_claimed.append((_cy - _sma_chip_h / 2, _cy + _sma_chip_h / 2))
+            _lx = _sma_right_x - _cw
+            return (
+                f'<rect x="{_lx:.1f}" y="{_cy - _sma_chip_h / 2:.1f}" '
+                f'width="{_cw}" height="{_sma_chip_h}" rx="4" '
+                f'fill="#0E1420" fill-opacity="0.82" '
+                f'stroke="{color}" stroke-opacity="0.55" stroke-width="1"/>'
+                f'<text x="{_sma_right_x - 7:.1f}" y="{_cy + 4:.1f}" '
+                f'fill="{color}" font-size="11" text-anchor="end" '
+                f'font-family="sans-serif">{_xesc(text)}</text>'
+            )
+
+        # Draw curves first (under candles), then collect chip specs; emit chips
+        # last so they sit above the curves within this layer and de-conflict in
+        # a stable order (50 SMA claims first, biased up; 200 SMA biased down).
+        _sma_chip_specs: list[tuple[str, float, str, bool]] = []
+        for sma_vals, sma_color, sma_label, _nudge_up in [
+            (sma50, "#F59E0B", "50 SMA", True),
+            (sma200, "#FBBF24", "200 SMA", False),
         ]:
             pts_sma: list[str] = []
             for i, sv in enumerate(sma_vals):
@@ -770,15 +851,12 @@ def render_chart_v2(
                     f'fill="none" stroke="{sma_color}" stroke-width="1.2" '
                     f'opacity="0.8" stroke-dasharray="4,2"/>'
                 )
-                # Inline label at end
                 last_sma = next(sv for sv in reversed(sma_vals) if sv is not None)
-                label_x = cx_bar(n - 1) - 2
-                label_y = py_price(last_sma) - 4
-                sma_svg += (
-                    f'<text x="{label_x:.1f}" y="{label_y:.1f}" '
-                    f'fill="{sma_color}" font-size="9" text-anchor="end" '
-                    f'opacity="0.9">{_xesc(sma_label)}</text>'
+                _sma_chip_specs.append(
+                    (sma_label, py_price(last_sma), sma_color, _nudge_up)
                 )
+        for _label, _cy, _color, _nudge_up in _sma_chip_specs:
+            sma_svg += _sma_chip(_label, _cy, _color, nudge_up=_nudge_up)
 
     # ── % Change callout box ─────────────────────────────────────────────────
     pct_callout_svg = ""
