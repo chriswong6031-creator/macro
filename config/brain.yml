@@ -92,41 +92,11 @@ research:
   tool_budget: 20
   max_tokens: 8000   # token ceiling note: billed against pro lane ceiling
 
-# ── Chart-command bus allowlists (MNZ-W6b) ───────────────────────────────────
-# Client-executed tools offered ONLY when context.page == 'terminal'.
-# The server emits SSE 'command' events; it performs no filesystem/network action.
-chart_commands:
-  timeframes:
-    - 1m
-    - 5m
-    - 15m
-    - 30m
-    - 1h
-    - 4h
-    - D
-    - 3D
-    - W
-    - 1M
-  indicators:
-    - ema
-    - rsi
-    - stochrsi
-    - macd
-    - bb
-    - vwap
-    - vol
-    - supertrend
-    - ichimoku
-    - adx
-    - cvd
-    - squeeze
-  detection_kinds:
-    - trendlines
-    - fib
-    - sr
-    - mtfa
-    - clear
-    - clearAll
+# Chart-command bus (MNZ-W6b) allowlists are NOT config: they mirror the Terminal chart's
+# actual capabilities (its DetectCmd kinds, indicator keys, timeframe set — all defined in
+# the Terminal TS code), so they live as module constants in engine/neuralweb/brain_gateway.py
+# (_CHART_TF_ALLOWLIST / _CHART_INDICATOR_ALLOWLIST / _CHART_DETECTION_ALLOWLIST). Editing a
+# list here would not change what the chart can do — it must track the Terminal build.
 
 # ── Supabase thread store table names ────────────────────────────────────────
 thread_tables:

@@ -1285,9 +1285,10 @@ def test_chart_command_emitted_as_sse_event_in_stream(tmp_path):
     command_events = [p for p in parsed if p.get("type") == "command"]
     assert command_events, f"No 'command' SSE events emitted: {parsed}"
     cmd = command_events[0]
+    # FLAT shape (mirrors annotate) — fields at top level, NOT nested under 'payload'.
     assert cmd.get("action") == "set_symbol"
-    payload = cmd.get("payload", {})
-    assert payload.get("symbol") == "AAPL"
+    assert cmd.get("symbol") == "AAPL", f"symbol must be flat/top-level: {cmd}"
+    assert "payload" not in cmd, f"command event must not nest under 'payload': {cmd}"
 
 
 def test_chart_command_returned_in_chat_result(tmp_path):
@@ -1489,6 +1490,25 @@ def test_chat_mode_system_prompt_unchanged():
     prompt = gw._build_system_prompt("chat")
     assert "RESEARCH MODE" not in prompt
     assert "ABSOLUTE PROHIBITIONS" in prompt
+    # Non-terminal pages must NOT be told about the chart-control tools.
+    assert "CHART CONTROL" not in prompt
+
+
+def test_terminal_system_prompt_describes_chart_tools_as_display_only():
+    """page='terminal' appends the chart-control directive framing the 4 tools as
+    display actions that are never recommendations (fixes the 'READ tools only'
+    contradiction and satisfies the W6b governance requirement)."""
+    prompt = gw._build_system_prompt("chat", page="terminal")
+    assert "CHART CONTROL" in prompt
+    assert "set_chart_symbol" in prompt
+    assert "run_chart_detection" in prompt
+    # display-only framing, never a recommendation
+    assert "DISPLAY ACTIONS ONLY" in prompt or "display action" in prompt.lower()
+    assert "recommendation" in prompt.lower()
+    # the base prompt must no longer claim READ-only tools verbatim
+    assert "READ tools only" not in prompt
+    # dashboard (no page) stays chart-free
+    assert "CHART CONTROL" not in gw._build_system_prompt("chat", page="")
 
 
 def test_research_stream_blocked_for_free_tier(tmp_path):
@@ -1541,6 +1561,8 @@ def test_unknown_sse_event_type_ignored_gracefully(tmp_path):
     assert "meta" in event_types
     assert "done" in event_types
     assert "command" in event_types, f"Expected 'command' event type, got: {event_types}"
-    # Verify 'command' event has expected shape
+    # Verify 'command' event has the FLAT expected shape (fields top-level, no 'payload')
     cmd_ev = next(p for p in parsed if p.get("type") == "command")
     assert cmd_ev.get("action") == "set_symbol"
+    assert cmd_ev.get("symbol"), f"command event must carry a flat 'symbol': {cmd_ev}"
+    assert "payload" not in cmd_ev
