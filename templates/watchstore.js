@@ -26,6 +26,7 @@
   // ---- state -----------------------------------------------------------------
   var sb = null;           // shared Supabase client, set on auth
   var user = null;         // current auth user
+  var lastAuthUid = undefined;  // dedup guard: undefined = never seen; null = signed-out
   var wlId = null;         // resolved primary watchlist row id
   var cloudSet = null;     // Set of symbol strings last pulled/pushed (null = not yet pulled)
   var pullPending = false; // pull in progress
@@ -417,6 +418,12 @@
 
   // ---- auth reactions --------------------------------------------------------
   function onAuthUser(u) {
+    // Dedup: TOKEN_REFRESHED, USER_UPDATED, INITIAL_SESSION all fire onAuthUser.
+    // Only re-init when the effective uid actually changes (null = signed-out).
+    var uid = (u && u.id) ? u.id : null;
+    if (uid === lastAuthUid) return;
+    lastAuthUid = uid;
+
     user = u || null;
     if (!user) {
       sb = null;
@@ -477,6 +484,9 @@
     if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
 
     showSignedOut();
+    // Establish the signed-out baseline so lastAuthUid=null; a later real
+    // sign-in (null→uid) still transitions correctly.
+    lastAuthUid = null;
 
     // Refetch on tab focus (already wired above for >60s gate)
     document.addEventListener('langchange', relabel);

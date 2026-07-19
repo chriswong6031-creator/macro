@@ -99,16 +99,6 @@
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function fmtNum(v, nd) {
-    if (v === null || v === undefined || v === '' || isNaN(Number(v))) return '—';
-    return Number(v).toFixed(nd != null ? nd : 2);
-  }
-  function fmtPct(num, denom) {
-    if (!num || !denom || denom === 0) return '—';
-    var pct = (num - denom) / denom * 100;
-    return (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
-  }
-
   // ---- state ---------------------------------------------------------------
   var rows = null;          // array of portfolio_positions rows, null until loaded
   var editingId = null;
@@ -122,13 +112,6 @@
   function showEl(id) { var e = el(id); if (e) e.style.display = ''; }
   function hideEl(id) { var e = el(id); if (e) e.style.display = 'none'; }
   function setText(id, txt) { var e = el(id); if (e) e.textContent = txt; }
-
-  function showSigned(user) {
-    hideEl('pf_signedout');
-    hideEl('pf_err_inline');
-    // show desk or empty depending on rows
-    refreshView();
-  }
 
   function showSignedOut() {
     hideEl('pf_desk');
@@ -225,7 +208,7 @@
     if (entryP !== null && curPrice !== null && entryP !== 0) {
       var pct = (curPrice - entryP) / entryP * 100;
       var color = pct >= 0 ? 'var(--up, #22c55e)' : 'var(--down, #ef4444)';
-      sinceHtml = '<span style="color:' + color + '">' +
+      sinceHtml = '<span style="color:' + color + '">~' +
         (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</span>';
     }
     return '<tr>' +
@@ -259,6 +242,14 @@
   // ---- render --------------------------------------------------------------
   function render() {
     if (!section()) return;
+    // Guard: rows===null means signed-out. Only relabel static chrome and ensure
+    // the signed-out prompt is visible; don't fall into the empty/table branches
+    // (would show an Add button on top of the signed-out prompt with no save path).
+    if (rows === null) {
+      relabelStatic();
+      showSignedOut();
+      return;
+    }
     var open = openRows();
     var closed = closedRows();
 
@@ -476,10 +467,14 @@
   // ---- ticker suggest in modal ---------------------------------------------
   function updateTickerHint(ticker) {
     var hintEl = el('pfm_hint'); if (!hintEl) return;
-    if (!ticker) { hintEl.textContent = ''; return; }
-    if (!sdIndex) { hintEl.textContent = ''; return; }
+    if (!ticker) { hintEl.textContent = ''; hintEl.style.display = 'none'; return; }
+    if (!sdIndex) { hintEl.textContent = ''; hintEl.style.display = 'none'; return; }
     var covered = sdIndex.byTicker && sdIndex.byTicker[ticker.toUpperCase()];
-    hintEl.textContent = covered ? '' : L('notCovered');
+    if (covered) {
+      hintEl.textContent = ''; hintEl.style.display = 'none';
+    } else {
+      hintEl.textContent = L('notCovered'); hintEl.style.display = 'block';
+    }
   }
 
   function wireTickerSuggest() {
@@ -495,11 +490,12 @@
         return x.t.toLowerCase().indexOf(vl) === 0 ||
                (x.n && x.n.toLowerCase().indexOf(vl) >= 0);
       }).slice(0, 8);
-      if (!matches.length) { suggEl.innerHTML = ''; return; }
+      if (!matches.length) { suggEl.innerHTML = ''; suggEl.style.display = 'none'; return; }
       suggEl.innerHTML = matches.map(function (x) {
         return '<div data-sugg="' + esc(x.t) + '"><b>' + esc(x.t) + '</b> <small>' +
           esc(x.n || '') + '</small></div>';
       }).join('');
+      suggEl.style.display = 'block';
     });
 
     suggEl.addEventListener('mousedown', function (e) {
@@ -507,13 +503,13 @@
       var t = d.getAttribute('data-sugg');
       input.value = t;
       updateTickerHint(t);
-      suggEl.innerHTML = '';
+      suggEl.innerHTML = ''; suggEl.style.display = 'none';
       e.preventDefault(); // prevent blur from firing before mousedown completes
     });
 
     // clear suggestions on blur
     input.addEventListener('blur', function () {
-      setTimeout(function () { if (suggEl) suggEl.innerHTML = ''; }, 200);
+      setTimeout(function () { if (suggEl) { suggEl.innerHTML = ''; suggEl.style.display = 'none'; } }, 200);
     });
   }
 
@@ -577,7 +573,6 @@
   }
 
   // ---- visibility refetch --------------------------------------------------
-  var lastRefetchAt = 0;
   document.addEventListener('visibilitychange', function () {
     if (!section()) return;
     if (document.hidden) return;
@@ -587,7 +582,6 @@
     if (now - lastListAt < 60000) return;
     if (!window.WatchStore || !window.WatchStore.user || !window.WatchStore.user()) return;
     lastListAt = now;
-    lastRefetchAt = now;
     window.WatchStore.portfolio.list().then(function (newRows) {
       rows = newRows || [];
       pricesLoaded = false;

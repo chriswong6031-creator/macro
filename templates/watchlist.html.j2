@@ -349,7 +349,7 @@
   <div class="panel" id="pf_section">
     <div class="pf-sh">
       <h2>{{ t('Portfolio', '持仓') }}</h2>
-      <button class="pf-help" aria-label="About portfolio"
+      <button class="pf-help" aria-label="{{ t('About portfolio', '关于持仓') | striptags }}"
         data-tip-en="Track your open and closed positions. Prices shown are the last nightly close — not live. Your holdings are stored privately in your account and sync across devices when signed in. Add a position with the button below."
         data-tip-zh="记录你的开仓和已平仓持仓。显示的价格为最近夜间收盘价——非实时。你的持仓仅保存在账户中，登录后跨设备同步。点击下方按钮添加持仓。">?</button>
     </div>
@@ -357,7 +357,7 @@
     <!-- signed-out state -->
     <div id="pf_signedout">
       <p>{{ t('Sign in to track your holdings — synced across your devices.', '登录以记录持仓——多设备同步。') }}</p>
-      <button class="wl-btn" id="pf_signin_btn" onclick="window.MDXAuth && MDXAuth.open('signin')">{{ t('Sign in', '登录') }}</button>
+      <button class="wl-btn" id="pf_signin_btn">{{ t('Sign in', '登录') }}</button>
     </div>
 
     <!-- inline error -->
@@ -428,7 +428,7 @@
     <div class="mx5-dlg-panel mx5-dlg-panel-narrow">
       <div class="mx5-dlg-header">
         <span class="mx5-dlg-title" id="pfm_title">{{ t('Add holding', '添加持仓') }}</span>
-        <button class="mx5-dlg-close" data-close aria-label="{{ t('Close', '关闭') }}">✕</button>
+        <button class="mx5-dlg-close" data-close aria-label="{{ t('Close', '关闭') | striptags }}">✕</button>
       </div>
       <div class="mx5-dlg-body">
         <div class="pfm-row">

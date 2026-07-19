@@ -131,7 +131,9 @@ Supabase (fsldfzlxyavsuwqbceod)                      ┌── Terminal (Next.js
     `watchstore.js?v=2`, `portfolio.js?v=1` added after watchstore).
   - FX auto-weights: `portfolio.js` pushes `{ticker->dollarValue}` to
     `window.FX.setAutoWeights()` after every render (factor exposure panel reflects actual
-    book).
+    book). Note: `mdash.fx_weights.v1` manual weights are RETAINED as the logged-out /
+    no-portfolio fallback (AUTO takes precedence when ≥2 priced holdings are present);
+    full retirement of the manual editor is deferred.
   - `watchlist.js` stale `auth.js` comments updated to `watchstore.js` (4 occurrences,
     comment-only, no code changes).
   - `site/watchlist.html` re-bakes at first nightly render (render-owned artifact).
