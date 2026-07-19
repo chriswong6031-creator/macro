@@ -2934,6 +2934,69 @@ body.page-macro .mxfs-k{flex:none;width:118px;font-size:10.5px;font-weight:700;l
 body.page-macro .mxfs-v{min-width:0}
 body.page-macro .mxfs-v b{font-weight:700;color:var(--text)}
 body.page-macro .mxfs-stance{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5;padding-top:4px;border-top:1px solid var(--line);margin-top:2px}
+/* ── Task 5: quad-map illustration inside the flipctx pop ── */
+body.page-macro .mxqm-glance{font-size:12px;line-height:1.55;color:var(--ink-2,rgba(255,255,255,.75));margin-bottom:8px}
+body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b)}
+body.page-macro .mxqm-wrap{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+body.page-macro .mxqm-svg-box{flex:none;width:150px;height:150px}
+body.page-macro .mxqm-svg-box svg{width:100%;height:100%}
+/* Quad fill classes — uses fixed hex values (SVG can't read var()); matches theme.css dark defaults */
+body.page-macro .mxqm-q1-fill{fill:#2e9e4f;opacity:.18}
+body.page-macro .mxqm-q2-fill{fill:#d4a017;opacity:.18}
+body.page-macro .mxqm-q3-fill{fill:#d04545;opacity:.18}
+body.page-macro .mxqm-q4-fill{fill:#3f78d8;opacity:.18}
+body.page-macro .mxqm-q1-fill.active{opacity:.48}
+body.page-macro .mxqm-q2-fill.active{opacity:.48}
+body.page-macro .mxqm-q3-fill.active{opacity:.48}
+body.page-macro .mxqm-q4-fill.active{opacity:.48}
+body.page-macro .mxqm-axis-line{stroke:rgba(255,255,255,.18);stroke-width:1}
+body.page-macro .mxqm-axis-label{fill:rgba(255,255,255,.38);font-size:8px;font-family:-apple-system,Inter,sans-serif}
+body.page-macro .mxqm-quad-label{fill:rgba(255,255,255,.55);font-size:7.5px;font-family:-apple-system,Inter,sans-serif;font-weight:600}
+body.page-macro .mxqm-dot{fill:var(--warn,#f59e0b);stroke:rgba(255,255,255,.9);stroke-width:1.5}
+body.page-macro .mxqm-arrow{stroke:var(--warn,#f59e0b);stroke-width:2;fill:none;marker-end:url(#mxqmArrowHead)}
+body.page-macro .mxqm-arrowhead{fill:var(--warn,#f59e0b)}
+/* P-bar strip */
+body.page-macro .mxqm-pbar-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;padding-top:4px}
+body.page-macro .mxqm-pbar-label{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+body.page-macro .mxqm-pbar-row{display:flex;align-items:center;gap:6px;font-size:10px}
+body.page-macro .mxqm-pbar-name{flex:none;width:60px;color:var(--ink-3,rgba(255,255,255,.45));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.page-macro .mxqm-pbar-track{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+body.page-macro .mxqm-pbar-fill-q1{height:100%;border-radius:4px;background:#2e9e4f}
+body.page-macro .mxqm-pbar-fill-q2{height:100%;border-radius:4px;background:#d4a017}
+body.page-macro .mxqm-pbar-fill-q3{height:100%;border-radius:4px;background:#d04545}
+body.page-macro .mxqm-pbar-fill-q4{height:100%;border-radius:4px;background:#3f78d8}
+body.page-macro .mxqm-pbar-pct{flex:none;width:28px;font-size:9.5px;color:var(--ink-3,rgba(255,255,255,.45));text-align:right}
+[data-theme="light"] body.page-macro .mxqm-q1-fill{fill:#1f8b41}
+[data-theme="light"] body.page-macro .mxqm-q2-fill{fill:#b07d05}
+[data-theme="light"] body.page-macro .mxqm-q3-fill{fill:#c12f2f}
+[data-theme="light"] body.page-macro .mxqm-q4-fill{fill:#2f63c4}
+[data-theme="light"] body.page-macro .mxqm-axis-line{stroke:rgba(0,0,0,.18)}
+[data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.38)}
+[data-theme="light"] body.page-macro .mxqm-quad-label{fill:rgba(0,0,0,.55)}
+[data-theme="light"] body.page-macro .mxqm-pbar-fill-q1{background:#1f8b41}
+[data-theme="light"] body.page-macro .mxqm-pbar-fill-q2{background:#b07d05}
+[data-theme="light"] body.page-macro .mxqm-pbar-fill-q3{background:#c12f2f}
+[data-theme="light"] body.page-macro .mxqm-pbar-fill-q4{background:#2f63c4}
+/* ── Task 6: leadership drawdown bar strip ── */
+body.page-macro .rsx-ldr-bars{margin:6px 0 4px;display:flex;flex-direction:column;gap:3px;position:relative}
+body.page-macro .rsx-ldr-bar-row{display:flex;align-items:center;gap:5px;font-size:10.5px;min-height:16px}
+body.page-macro .rsx-ldr-bar-ticker{flex:none;width:38px;font-weight:700;color:var(--ink-2,rgba(255,255,255,.72));font-size:10px}
+body.page-macro .rsx-ldr-bar-track{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.06);position:relative;overflow:visible}
+body.page-macro .rsx-ldr-bar-fill{height:100%;border-radius:4px;background-color:var(--down,#ef4444);opacity:.75}
+body.page-macro .rsx-ldr-bar-pct{flex:none;font-size:10px;font-weight:700}
+/* index reference line — absolutely positioned over the track; drawn via inline style left:% */
+body.page-macro .rsx-ldr-idx-line{
+  position:absolute;top:0;bottom:0;width:1.5px;
+  background:rgba(255,255,255,.35);border-radius:1px;pointer-events:none;
+}
+body.page-macro .rsx-ldr-idx-label{
+  position:absolute;top:-12px;transform:translateX(-50%);
+  font-size:8.5px;color:var(--ink-3,rgba(255,255,255,.4));white-space:nowrap;
+}
+[data-theme="light"] body.page-macro .rsx-ldr-bar-ticker{color:rgba(0,0,0,.72)}
+[data-theme="light"] body.page-macro .rsx-ldr-bar-fill{background-color:#ef4444}
+[data-theme="light"] body.page-macro .rsx-ldr-idx-line{background:rgba(0,0,0,.3)}
+[data-theme="light"] body.page-macro .rsx-ldr-idx-label{color:rgba(0,0,0,.4)}
 @media(max-width:640px){body.page-macro .mxfs-row{flex-direction:column;gap:1px}body.page-macro .mxfs-k{width:auto}
 /* the longer honest-stance pill text ("… — not all-clear") must wrap on narrow
    phones instead of bleeding past the card edge (pill is nowrap on desktop; nowrap removed
@@ -6128,6 +6191,160 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
       
       <div class="mx5-flipctx-pop" id="mx5FlipCtxPop" role="group" aria-label="What could change the regime call">
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <div class="mxqm-glance">
+          
+          
+          
+          <span class="l-en"><b>Goldilocks</b> now, but drifting toward <b>Reflation</b> — treat the label as backdrop, watch the risk score.</span>
+          <span class="l-zh"><b>理想增长</b>当前周期，但正向<b>再通胀</b>漂移 — 以标签为背景，关注风险评分。</span>
+          
+          
+        </div>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <div class="mxqm-wrap">
+          <div class="mxqm-svg-box">
+            <svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quad map — current regime position">
+              <defs>
+                <marker id="mxqmArrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <polygon class="mxqm-arrowhead" points="0 0, 6 3, 0 6"/>
+                </marker>
+              </defs>
+              
+              
+              <rect class="mxqm-q3-fill" x="5" y="5" width="70" height="70"/>
+              
+              <rect class="mxqm-q2-fill" x="75" y="5" width="70" height="70"/>
+              
+              <rect class="mxqm-q4-fill" x="5" y="75" width="70" height="70"/>
+              
+              <rect class="mxqm-q1-fill active" x="75" y="75" width="70" height="70"/>
+              
+              <line class="mxqm-axis-line" x1="75" y1="5" x2="75" y2="145"/>
+              <line class="mxqm-axis-line" x1="5" y1="75" x2="145" y2="75"/>
+              
+              <text class="mxqm-quad-label" x="40" y="22" text-anchor="middle">Stagflation</text>
+              <text class="mxqm-quad-label" x="110" y="22" text-anchor="middle">Reflation</text>
+              <text class="mxqm-quad-label" x="110" y="140" text-anchor="middle">Goldilocks</text>
+              <text class="mxqm-quad-label" x="40" y="140" text-anchor="middle">Growth-scare</text>
+              
+              <text class="mxqm-axis-label" x="75" y="153" text-anchor="middle">growth →</text>
+              <text class="mxqm-axis-label" x="1" y="75" dominant-baseline="middle" text-anchor="start" transform="rotate(-90 4 75)">infl ↑</text>
+              
+              
+              <line class="mxqm-arrow" x1="71" y1="59" x2="103" y2="43"/>
+              
+              
+              <circle class="mxqm-dot" cx="71" cy="59" r="5"/>
+            </svg>
+          </div>
+          
+          
+          
+          <div class="mxqm-pbar-wrap">
+            <div class="mxqm-pbar-label"><span class="l-en">Odds / quad</span><span class="l-zh">各象限概率</span></div>
+            
+            
+            
+            <div class="mxqm-pbar-row">
+              <div class="mxqm-pbar-name">
+                <span class="l-en">Goldilocks</span>
+                <span class="l-zh">理想增长</span>
+              </div>
+              <div class="mxqm-pbar-track">
+                <div class="mxqm-pbar-fill-q1" style="width:19%"></div>
+              </div>
+              <div class="mxqm-pbar-pct">19%</div>
+            </div>
+            
+            
+            
+            <div class="mxqm-pbar-row">
+              <div class="mxqm-pbar-name">
+                <span class="l-en">Reflation</span>
+                <span class="l-zh">再通胀</span>
+              </div>
+              <div class="mxqm-pbar-track">
+                <div class="mxqm-pbar-fill-q2" style="width:51%"></div>
+              </div>
+              <div class="mxqm-pbar-pct">51%</div>
+            </div>
+            
+            
+            
+            <div class="mxqm-pbar-row">
+              <div class="mxqm-pbar-name">
+                <span class="l-en">Stagflation</span>
+                <span class="l-zh">滞胀</span>
+              </div>
+              <div class="mxqm-pbar-track">
+                <div class="mxqm-pbar-fill-q3" style="width:11%"></div>
+              </div>
+              <div class="mxqm-pbar-pct">11%</div>
+            </div>
+            
+            
+            
+            <div class="mxqm-pbar-row">
+              <div class="mxqm-pbar-name">
+                <span class="l-en">Growth-scare</span>
+                <span class="l-zh">增长恐慌</span>
+              </div>
+              <div class="mxqm-pbar-track">
+                <div class="mxqm-pbar-fill-q4" style="width:18%"></div>
+              </div>
+              <div class="mxqm-pbar-pct">18%</div>
+            </div>
+            
+          </div>
+          
+        </div>
+        
+        
+        
     
     
     
@@ -6189,7 +6406,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </div>
     
-    </div>
+    
+      </div>
       </div>
 
       
@@ -10088,9 +10306,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">NFLX</span>
         
-        <span class="mx5-ai-ticker-pill">XLF</span>
-        
         <span class="mx5-ai-ticker-pill">GLD</span>
+        
+        <span class="mx5-ai-ticker-pill">XLF</span>
         
       </div>
       
@@ -11181,8 +11399,142 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
           </div>
           
+          
+          
+          
+          
+          <div class="rsx-ldr-bars">
+            
+            
+            <div class="rsx-ldr-bar-row">
+              <div class="rsx-ldr-bar-ticker">SMCI</div>
+              <div class="rsx-ldr-bar-track">
+                
+                <div class="rsx-ldr-bar-fill" style="width:52%"></div>
+                
+                
+                
+                <div class="rsx-ldr-idx-line" style="left:2%">
+                  <div class="rsx-ldr-idx-label">
+                    <span class="l-en">index</span>
+                    <span class="l-zh">指数</span>
+                  </div>
+                </div>
+                
+              </div>
+              
+              
+              <div class="rsx-ldr-bar-pct">
+                <span class="l-en" style="color:var(--down)">−52%</span>
+                <span class="l-zh" style="color:var(--down)">−52%</span>
+              </div>
+              
+            </div>
+            
+            
+            <div class="rsx-ldr-bar-row">
+              <div class="rsx-ldr-bar-ticker">CRWV</div>
+              <div class="rsx-ldr-bar-track">
+                
+                <div class="rsx-ldr-bar-fill" style="width:47%"></div>
+                
+                
+                
+              </div>
+              
+              
+              <div class="rsx-ldr-bar-pct">
+                <span class="l-en" style="color:var(--down)">−47%</span>
+                <span class="l-zh" style="color:var(--down)">−47%</span>
+              </div>
+              
+            </div>
+            
+            
+            <div class="rsx-ldr-bar-row">
+              <div class="rsx-ldr-bar-ticker">SNDK</div>
+              <div class="rsx-ldr-bar-track">
+                
+                <div class="rsx-ldr-bar-fill" style="width:42%"></div>
+                
+                
+                
+              </div>
+              
+              
+              <div class="rsx-ldr-bar-pct">
+                <span class="l-en" style="color:var(--down)">−42%</span>
+                <span class="l-zh" style="color:var(--down)">−42%</span>
+              </div>
+              
+            </div>
+            
+            
+            <div class="rsx-ldr-bar-row">
+              <div class="rsx-ldr-bar-ticker">MRVL</div>
+              <div class="rsx-ldr-bar-track">
+                
+                <div class="rsx-ldr-bar-fill" style="width:40%"></div>
+                
+                
+                
+              </div>
+              
+              
+              <div class="rsx-ldr-bar-pct">
+                <span class="l-en" style="color:var(--down)">−40%</span>
+                <span class="l-zh" style="color:var(--down)">−40%</span>
+              </div>
+              
+            </div>
+            
+            
+            <div class="rsx-ldr-bar-row">
+              <div class="rsx-ldr-bar-ticker">CIEN</div>
+              <div class="rsx-ldr-bar-track">
+                
+                <div class="rsx-ldr-bar-fill" style="width:40%"></div>
+                
+                
+                
+              </div>
+              
+              
+              <div class="rsx-ldr-bar-pct">
+                <span class="l-en" style="color:var(--down)">−40%</span>
+                <span class="l-zh" style="color:var(--down)">−40%</span>
+              </div>
+              
+            </div>
+            
+            
+            <div class="rsx-ldr-bar-row">
+              <div class="rsx-ldr-bar-ticker">GLW</div>
+              <div class="rsx-ldr-bar-track">
+                
+                <div class="rsx-ldr-bar-fill" style="width:40%"></div>
+                
+                
+                
+              </div>
+              
+              
+              <div class="rsx-ldr-bar-pct">
+                <span class="l-en" style="color:var(--down)">−40%</span>
+                <span class="l-zh" style="color:var(--down)">−40%</span>
+              </div>
+              
+            </div>
+            
+          </div>
+          
+          
+          
+          
+          
           <div class="rsx-leaders-sub">
-            SMCI -52% · CRWV -47% · SNDK -42%
+            <span class="l-en">40 of 42 names 10%+ off their highs; 20 are 30%+ off.</span>
+            <span class="l-zh">42个成分中40个较高点跌超10%；其中20个跌超30%。</span>
           </div>
           
           
@@ -11209,10 +11561,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow">
           <span class="l-en">Overseas</span><span class="l-zh">海外</span>
+          <span class="help">?<span class="tip"><span class="l-en">Context only — does not move the US score. Tiles link to the full International page.</span><span class="l-zh">仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。</span></span></span>
           
           <span class="mx5-pop-asof">2026-07-17</span>
           
         </div>
+        
+        
+        
         
         
           
@@ -11221,7 +11577,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-pop-intl-grid">
             
             
-            <div class="mx5-pop-intl-tile intl-alert">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile intl-alert" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot intl-dot-alert"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">China A</span>
@@ -11230,10 +11589,45 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score intl-score-alert">98</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">China A</span>
+                    <span class="l-zh">中国A股</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 98/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <div class="row-pop-grid">
+                  
+                  
+                  <div class="row-pop-cell wide">
+                    <span class="row-pop-lbl">
+                      <span class="l-en">Pullback risk: Risk-off</span>
+                      <span class="l-zh">回撤风险：避险</span>
+                    </span>
+                  </div>
+                  
+                </div>
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile intl-alert">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile intl-alert" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot intl-dot-alert"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">Taiwan</span>
@@ -11242,10 +11636,74 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score intl-score-alert">98</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">Taiwan</span>
+                    <span class="l-zh">台股</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 98/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>Turn risk</b> — Early breakdown signs — tighten stops</span>
+                    <span class="l-zh"><b>拐点风险</b> — 出现早期破位迹象 — 收紧止损</span>
+                  </li>
+                </ul>
+                
+                <div class="row-pop-grid">
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-0.4%</span>
+                  </div>
+                  
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-4.4%</span>
+                  </div>
+                  
+                </div>
+                
+                
+                
+                <div class="row-pop-div"></div>
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en">Pullback risk: <b style="color:var(--act,#ef4444)">Risk-off</b>
+                     — Overextended</span>
+                    <span class="l-zh">回撤风险：<b style="color:var(--act,#ef4444)">避险</b>
+                     — 过度延伸</span>
+                  </li>
+                  
+                  <li>
+                    <span class="l-en">≥5% dip within a month: ~27%</span>
+                    <span class="l-zh">一个月内≥5%回撤：约27%</span>
+                  </li>
+                  
+                </ul>
+                
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile intl-alert">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile intl-alert" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot intl-dot-alert"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">Hong Kong</span>
@@ -11254,10 +11712,45 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score intl-score-alert">91</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">Hong Kong</span>
+                    <span class="l-zh">港股</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 91/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <div class="row-pop-grid">
+                  
+                  
+                  <div class="row-pop-cell wide">
+                    <span class="row-pop-lbl">
+                      <span class="l-en">Pullback risk: Risk-off</span>
+                      <span class="l-zh">回撤风险：避险</span>
+                    </span>
+                  </div>
+                  
+                </div>
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">Korea</span>
@@ -11266,10 +11759,74 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score">59</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">Korea</span>
+                    <span class="l-zh">韩股</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 59/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>Crash in progress</b> — Stand aside — the fall is not over</span>
+                    <span class="l-zh"><b>崩跌进行中</b> — 观望离场 — 跌势未止</span>
+                  </li>
+                </ul>
+                
+                <div class="row-pop-grid">
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-24.7%</span>
+                  </div>
+                  
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-25.2%</span>
+                  </div>
+                  
+                </div>
+                
+                
+                
+                <div class="row-pop-div"></div>
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en">Pullback risk: <b style="color:var(--warn,#f59e0b)">Watch</b>
+                     — Overextended</span>
+                    <span class="l-zh">回撤风险：<b style="color:var(--warn,#f59e0b)">留意</b>
+                     — 过度延伸</span>
+                  </li>
+                  
+                  <li>
+                    <span class="l-en">≥5% dip within a month: ~29%</span>
+                    <span class="l-zh">一个月内≥5%回撤：约29%</span>
+                  </li>
+                  
+                </ul>
+                
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">Japan</span>
@@ -11278,10 +11835,74 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score">76</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">Japan</span>
+                    <span class="l-zh">日股</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 76/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>Turn risk</b> — Early breakdown signs — tighten stops</span>
+                    <span class="l-zh"><b>拐点风险</b> — 出现早期破位迹象 — 收紧止损</span>
+                  </li>
+                </ul>
+                
+                <div class="row-pop-grid">
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-5.9%</span>
+                  </div>
+                  
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-7.6%</span>
+                  </div>
+                  
+                </div>
+                
+                
+                
+                <div class="row-pop-div"></div>
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en">Pullback risk: <b style="color:var(--warn,#f59e0b)">Caution</b>
+                     — Overextended</span>
+                    <span class="l-zh">回撤风险：<b style="color:var(--warn,#f59e0b)">谨慎</b>
+                     — 过度延伸</span>
+                  </li>
+                  
+                  <li>
+                    <span class="l-en">≥5% dip within a month: ~31%</span>
+                    <span class="l-zh">一个月内≥5%回撤：约31%</span>
+                  </li>
+                  
+                </ul>
+                
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">Canada</span>
@@ -11290,10 +11911,45 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score">79</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">Canada</span>
+                    <span class="l-zh">加股</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 79/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <div class="row-pop-grid">
+                  
+                  
+                  <div class="row-pop-cell wide">
+                    <span class="row-pop-lbl">
+                      <span class="l-en">Pullback risk: Caution</span>
+                      <span class="l-zh">回撤风险：谨慎</span>
+                    </span>
+                  </div>
+                  
+                </div>
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">Australia</span>
@@ -11302,10 +11958,74 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score">62</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">Australia</span>
+                    <span class="l-zh">澳股</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 62/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>Quiet</b> — Nothing to do</span>
+                    <span class="l-zh"><b>平静</b> — 无需操作</span>
+                  </li>
+                </ul>
+                
+                <div class="row-pop-grid">
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-0.8%</span>
+                  </div>
+                  
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-3.9%</span>
+                  </div>
+                  
+                </div>
+                
+                
+                
+                <div class="row-pop-div"></div>
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en">Pullback risk: <b style="color:var(--warn,#f59e0b)">Watch</b>
+                     — Capital outflow</span>
+                    <span class="l-zh">回撤风险：<b style="color:var(--warn,#f59e0b)">留意</b>
+                     — 资本外流</span>
+                  </li>
+                  
+                  <li>
+                    <span class="l-en">≥5% dip within a month: ~15%</span>
+                    <span class="l-zh">一个月内≥5%回撤：约15%</span>
+                  </li>
+                  
+                </ul>
+                
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">India</span>
@@ -11314,10 +12034,74 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score">72</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">India</span>
+                    <span class="l-zh">印度</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 72/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>Quiet</b> — Nothing to do</span>
+                    <span class="l-zh"><b>平静</b> — 无需操作</span>
+                  </li>
+                </ul>
+                
+                <div class="row-pop-grid">
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-0.1%</span>
+                  </div>
+                  
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-8.6%</span>
+                  </div>
+                  
+                </div>
+                
+                
+                
+                <div class="row-pop-div"></div>
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en">Pullback risk: <b style="color:var(--warn,#f59e0b)">Caution</b>
+                     — Capital outflow</span>
+                    <span class="l-zh">回撤风险：<b style="color:var(--warn,#f59e0b)">谨慎</b>
+                     — 资本外流</span>
+                  </li>
+                  
+                  <li>
+                    <span class="l-en">≥5% dip within a month: ~18%</span>
+                    <span class="l-zh">一个月内≥5%回撤：约18%</span>
+                  </li>
+                  
+                </ul>
+                
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">UK</span>
@@ -11326,10 +12110,58 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score">40</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">UK</span>
+                    <span class="l-zh">英股</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 40/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>Healthy trend</b> — Healthy trend</span>
+                    <span class="l-zh"><b>趋势健康</b> — 趋势健康</span>
+                  </li>
+                </ul>
+                
+                <div class="row-pop-grid">
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
+                    <span class="row-pop-val" style="color:var(--up)">+1.7%</span>
+                  </div>
+                  
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
+                    <span class="row-pop-val" style="color:var(--down)">-3.1%</span>
+                  </div>
+                  
+                </div>
+                
+                
+                
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
             
-            <div class="mx5-pop-intl-tile">
+            
+            
+            
+            <a href="intl.html" class="mx5-pop-intl-tile" style="text-decoration:none;color:inherit;" data-rpop>
               <span class="mx5-intl-dot"></span>
               <span class="mx5-intl-name">
                 <span class="l-en">Eurozone</span>
@@ -11338,7 +12170,68 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               
               <span class="mx5-intl-score">74</span>
               
-            </div>
+              
+              <span class="rp-src" hidden>
+                
+                <div class="row-pop-hd">
+                  <span class="row-pop-name">
+                    <span class="l-en">Eurozone</span>
+                    <span class="l-zh">欧元区</span>
+                  </span>
+                  
+                  <span class="row-pop-kind"><span class="l-en">Risk score</span><span class="l-zh">风险评分</span> 74/100</span>
+                  
+                </div>
+                <div class="row-pop-div"></div>
+                
+                
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>Turn risk</b> — Early breakdown signs — tighten stops</span>
+                    <span class="l-zh"><b>拐点风险</b> — 出现早期破位迹象 — 收紧止损</span>
+                  </li>
+                </ul>
+                
+                <div class="row-pop-grid">
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
+                    <span class="row-pop-val" style="color:var(--up)">+1.0%</span>
+                  </div>
+                  
+                  
+                  <div class="row-pop-cell">
+                    <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
+                    <span class="row-pop-val">-1.4%</span>
+                  </div>
+                  
+                </div>
+                
+                
+                
+                <div class="row-pop-div"></div>
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en">Pullback risk: <b style="color:var(--warn,#f59e0b)">Caution</b>
+                     — Capital outflow</span>
+                    <span class="l-zh">回撤风险：<b style="color:var(--warn,#f59e0b)">谨慎</b>
+                     — 资本外流</span>
+                  </li>
+                  
+                  <li>
+                    <span class="l-en">≥5% dip within a month: ~20%</span>
+                    <span class="l-zh">一个月内≥5%回撤：约20%</span>
+                  </li>
+                  
+                </ul>
+                
+                
+                <div class="row-pop-ft">
+                  <span class="l-en">Context only — see intl.html for full detail.</span>
+                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
+                </div>
+              </span>
+            </a>
             
           </div>
           
@@ -11359,35 +12252,45 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-pop-intl-legs">
             
             
-            <span class="mx5-pop-intl-leg">
+            
+            
+            <span class="mx5-pop-intl-leg" data-tip-en="US high-yield credit spread velocity — rising spreads signal stress reaching US credit markets. Reading: 2.71 (quiet)." data-tip-zh="美国高收益信用利差速度——利差走阔信号显示压力已传至美国信贷市场。 当前读数：2.71（平静）。">
               <span class="mx5-leg-dot"></span>
               <span class="l-en">Credit spreads</span>
               <span class="l-zh">信用利差</span>
             </span>
             
             
-            <span class="mx5-pop-intl-leg">
+            
+            
+            <span class="mx5-pop-intl-leg" data-tip-en="Regional bank stocks vs broad market (KRE/SPY ratio) — bank underperformance flags funding stress. Reading: 7.8 (quiet)." data-tip-zh="地区银行股vs大盘（KRE/SPY比率）——银行股跑输预示融资压力。 当前读数：7.8（平静）。">
               <span class="mx5-leg-dot"></span>
               <span class="l-en">Bank stocks</span>
               <span class="l-zh">银行股</span>
             </span>
             
             
-            <span class="mx5-pop-intl-leg">
+            
+            
+            <span class="mx5-pop-intl-leg" data-tip-en="MOVE index percentile — elevated rates volatility precedes spread-widening and risk-off moves. Reading: 70.88 (quiet)." data-tip-zh="MOVE指数分位数——利率波动率偏高往往先于利差走阔和避险行情。 当前读数：70.88（平静）。">
               <span class="mx5-leg-dot"></span>
               <span class="l-en">Rates volatility</span>
               <span class="l-zh">利率波动</span>
             </span>
             
             
-            <span class="mx5-pop-intl-leg">
+            
+            
+            <span class="mx5-pop-intl-leg" data-tip-en="SOFR vs IORB corridor — positive gap signals funding pressure in overnight money markets. Reading: -0.03 (quiet)." data-tip-zh="SOFR与IORB走廊——正差值预示隔夜货币市场融资压力。 当前读数：-0.03（平静）。">
               <span class="mx5-leg-dot"></span>
               <span class="l-en">Funding stress</span>
               <span class="l-zh">融资压力</span>
             </span>
             
             
-            <span class="mx5-pop-intl-leg">
+            
+            
+            <span class="mx5-pop-intl-leg" data-tip-en="Safety bid — simultaneous dollar strength and 2y yield drop flags flight to safety." data-tip-zh="避险买盘——美元同步走强且2年期收益率下跌，显示资金撤至避险资产。">
               <span class="mx5-leg-dot"></span>
               <span class="l-en">Safety bid</span>
               <span class="l-zh">避险买盘</span>
@@ -11401,11 +12304,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         
         
-        <div class="mx5-pop-intl-footer">
-          <span class="l-en">Context only — accruing; does not move the US score.</span>
-          <span class="l-zh">仅供背景参考——积累中；不影响美国评分。</span>
-          <br><a href="intl.html" class="mx5-pop-intl-link"><span class="l-en">Full international detail →</span><span class="l-zh">完整国际详情 →</span></a>
-        </div>
         
 
         
@@ -11739,8 +12637,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">初步迹象——初现火花，未经确认</span>
             </div>
             <div class="igd-asof">
-              <span class="l-en">as of 2026-07-18</span>
-              <span class="l-zh">截至 2026-07-18</span>
+              <span class="l-en">as of 2026-07-19</span>
+              <span class="l-zh">截至 2026-07-19</span>
             </div>
           </div>
         </div>
@@ -12834,17 +13732,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Bank of America revamps Tesla forecast before earnings</span><span class="l-zh">Bank of America revamps Tesla forecast before earnings</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://finance.yahoo.com/markets/stocks/articles/bank-america-revamps-tesla-forecast-210600094.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
               <span class="nb-htitle"><span class="l-en">Best Oil Stocks Right Now</span><span class="l-zh">Best Oil Stocks Right Now</span></span>
             </summary>
@@ -12872,6 +13759,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.benzinga.com/money/best-semiconductor-stocks" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">Walmart pulls lettuce items amid cyclosporiasis-linked recalls</span><span class="l-zh">Walmart pulls lettuce items amid cyclosporiasis-linked recalls</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4615107-walmart-pulls-lettuce-items-amid-cyclosporiasis-linked-recalls?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -15624,9 +16522,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-18 21:24 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-18 22:49 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-18 21:24 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-18 22:49 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
