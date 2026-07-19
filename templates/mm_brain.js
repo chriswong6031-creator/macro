@@ -65,7 +65,7 @@
     transition:opacity .24s ease,transform .24s cubic-bezier(.2,.8,.2,1),width .28s ease,height .28s ease,right .28s ease,bottom .28s ease,top .28s ease}
   #mmb-panel.mmb-top{right:18px;top:64px;bottom:auto;transform:translateY(-16px) scale(.98)}
   #mmb-panel.open{transform:none;opacity:1;pointer-events:auto}
-  #mmb-panel.max{right:50%;bottom:50%;top:auto;transform:translate(50%,50%);width:min(1240px,80vw);height:min(880px,86vh)}
+  #mmb-panel.max{right:50%;bottom:50%;top:auto;transform:translate(50%,50%);width:min(1480px,90vw);height:min(1240px,95vh)}
   #mmb-panel.max.open{transform:translate(50%,50%)}
   .mmb-body{display:flex;flex:1;min-height:0}
   .mmb-rail{width:52px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0;border-right:1px solid color-mix(in srgb,var(--mmb-line) 55%,transparent)}
@@ -212,9 +212,9 @@
     '<div id="mmb-scrim"></div>' +
     '<div id="mmb-panel"><div class="mmb-body">' +
       '<div class="mmb-rail"><div class="logo">' + ORB + '</div>' +
-        '<button class="mmb-icon" data-act="new" title="New chat>' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
-        '<button class="mmb-icon" title="Search>' + ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>') + '</button>' +
-        '<button class="mmb-icon" data-act="home" title="Dashboard>' + ic('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>') + '</button>' +
+        '<button class="mmb-icon" data-act="new" title="New chat">' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
+        '<button class="mmb-icon" title="Search">' + ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>') + '</button>' +
+        '<button class="mmb-icon" data-act="home" title="Dashboard">' + ic('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>') + '</button>' +
         '<div class="sp"></div>' +
       '</div>' +
       '<div class="mmb-threads"><div class="mmb-th-h"><span>' + L('Chats', '对话') + '</span>' +
@@ -223,13 +223,13 @@
       '</div>' +
       '<div class="mmb-main"><div class="mmb-sidescrim" data-act="side"></div>' +
         '<div class="mmb-head">' +
-          '<button class="mmb-icon mmb-menu" data-act="side" title="Chats>' + ic('<path d="M4 6h16M4 12h16M4 18h16"/>') + '</button>' +
+          '<button class="mmb-icon mmb-menu" data-act="side" title="Chats">' + ic('<path d="M4 6h16M4 12h16M4 18h16"/>') + '</button>' +
           '<span class="ttl"><span class="dot"></span>' + L('Mastermind Brain', '操盘大脑') + '</span>' +
           '<button class="mmb-rpill mmb-off" data-act="research">' + ic('<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/>') + L('Deep Research', '深度研究') + '</button>' +
           '<div class="sp"></div>' +
-          '<button class="mmb-icon" data-act="max" title="Expand>' + ic('<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/>') + '</button>' +
-          '<button class="mmb-icon" data-act="new" title="New chat>' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
-          '<button class="mmb-icon" data-act="close" title="Close>' + ic('<path d="M6 6l12 12M18 6L6 18"/>') + '</button>' +
+          '<button class="mmb-icon" data-act="max" title="Expand">' + ic('<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/>') + '</button>' +
+          '<button class="mmb-icon" data-act="new" title="New chat">' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
+          '<button class="mmb-icon" data-act="close" title="Close">' + ic('<path d="M6 6l12 12M18 6L6 18"/>') + '</button>' +
         '</div>' +
         '<div class="mmb-scroll" id="mmb-scroll"></div>' +
         '<div class="mmb-comp"><div class="mmb-upgrade" id="mmb-upgrade"></div>' +
@@ -239,7 +239,7 @@
               '<div class="mmb-seg" id="mmb-lane"><button data-lane="fast" class="on">⚡ ' + L('Fast', '快速') + '</button><button data-lane="pro">◈ Pro</button></div>' +
               '<div class="sp"></div>' +
               '<span class="mmb-q" id="mmb-q"></span>' +
-              '<button class="mmb-tbtn" data-act="voice" title="Voice>' + ic('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/>') + '</button>' +
+              '<button class="mmb-tbtn" data-act="voice" title="Voice">' + ic('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/>') + '</button>' +
               '<button class="mmb-send" id="mmb-send" disabled>' + ic('<path d="M5 12h14M13 6l6 6-6 6"/>') + '</button>' +
             '</div></div>' +
           '<div class="mmb-foot">' + L('Research context — not investment advice. Grounded in the dashboard’s calibrated signals.', '研究参考，非投资建议。基于看板的校准信号。') + '</div>' +

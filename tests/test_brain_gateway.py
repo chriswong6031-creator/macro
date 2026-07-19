@@ -1770,3 +1770,29 @@ def test_brain_gateway_imports_without_pandas():
             sys.modules["pandas"] = original_pandas
         if original_pyarrow is not None:
             sys.modules["pyarrow"] = original_pyarrow
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# W6c: thread title auto-generation (_title_from) — the fix that makes the
+# now-persisting Chats sidebar legible instead of a wall of "Untitled".
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_title_from_short_message_kept_verbatim():
+    assert gw._title_from("What regime are we in?") == "What regime are we in?"
+
+
+def test_title_from_collapses_whitespace():
+    assert gw._title_from("  show   me\n\nNVDA  ") == "show me NVDA"
+
+
+def test_title_from_truncates_on_word_boundary_with_ellipsis():
+    long = "explain the options gamma positioning and how dealer hedging flows drive the tape into opex"
+    t = gw._title_from(long, limit=60)
+    assert len(t) <= 61  # 60 chars + ellipsis
+    assert t.endswith("…")
+    assert " " in t and not t[:-1].endswith(" ")  # trimmed at a word, no trailing space
+
+
+def test_title_from_empty_is_empty():
+    assert gw._title_from("") == ""
+    assert gw._title_from("   ") == ""
