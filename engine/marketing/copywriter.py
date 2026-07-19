@@ -1865,9 +1865,15 @@ def write_posts_llm(
         return None
 
     try:
-        from engine import config as _config
+        try:
+            from lib import config as _config  # noqa: PLC0415
+            llm_models = _config.load().get("llm_models", {}) or {}
+        except Exception:  # noqa: BLE001 — fall back to reading config.yml directly
+            import yaml as _yaml  # noqa: PLC0415
+            from pathlib import Path as _Path  # noqa: PLC0415
+            _cfgp = _Path(__file__).resolve().parents[2] / "config.yml"
+            llm_models = (_yaml.safe_load(_cfgp.read_text(encoding="utf-8")) or {}).get("llm_models", {}) or {}
         model_key = llm_cfg.get("model_key", "marketing_copy")
-        llm_models = _config.load().get("llm_models", {}) or {}
         model_id = llm_models.get(model_key, "")
         if not model_id:
             return None
@@ -1875,43 +1881,87 @@ def write_posts_llm(
         max_posts = int(llm_cfg.get("max_posts_per_run", 60))
         batch = contexts[:max_posts]
 
-        # Build prompt
+        # ── The prompt IS the product: personas + copy laws + hook grammar ────
+        personas_cfg = cfg.get("personas", {}) or {}
+        copy_laws = cfg.get("copy_laws", []) or []
+        # Only ship the persona cards actually used in this batch.
+        used_accounts = {str(c.get("account", "")) for c in batch}
+        persona_cards = {
+            k: {
+                "name": v.get("name", k),
+                "voice": str(v.get("voice_notes", "")).strip(),
+                "example_lines": v.get("example_lines", [])[:2],
+            }
+            for k, v in personas_cfg.items() if k in used_accounts
+        }
+
         system_prompt = (
-            "You are a professional financial copywriter. "
-            "For each item in the provided JSON array, write a short social post "
-            "(headline + body) in the specified voice, weaving in the top chart fact "
-            "and the exact numbers provided. "
-            "Output a JSON array of objects with 'headline' and 'body' keys only. "
-            "No markdown, no preamble."
+            "You are the copy desk for Mastermind, a market-intelligence brand, "
+            "writing X posts for six distinct desk personas. Your one job: kill the "
+            "bot-voice. Every post must sound like a specific sharp human, not a "
+            "template.\n\n"
+            "PERSONAS (write each post in its account's persona; the example_lines "
+            "show the register — match their rhythm, never copy them):\n"
+            + json.dumps(persona_cards, indent=1)
+            + "\n\nHOOK GRAMMAR (learned from what actually reaches — pick what fits, "
+            "vary across the batch): lead with an emotion, superlative, or contrarian "
+            "one-liner; state ONE checkable fact the reader can verify; milestone "
+            "breaks ('first time since...'), records ('highest volume in...'), and "
+            "pain ('brutal month for...') travel best; end list/sector posts with a "
+            "question to the reader; bearish and neutral posts are welcome.\n\n"
+            "HARD LAWS (a validator rejects violations — obey exactly):\n"
+            + "\n".join(f"- {law}" for law in copy_laws)
+            + "\n- Use ONLY numbers from each item's numbers_whitelist, verbatim. "
+            "Never invent or recompute a number.\n"
+            "- Each item's cashtag(s) must appear. Body <= 275 chars. Headline <= 90 chars.\n"
+            "- signal posts must keep an invalidation ('what would change this') line "
+            "and an honesty disclosure (e.g. 'historical, not a guarantee').\n"
+            "- No two headlines in the batch may share their opening words or shape.\n\n"
+            "OUTPUT: a JSON array, same length and order as the input, each object "
+            "exactly {\"headline\": str, \"body\": str}. No markdown, no preamble."
         )
         items_payload = [
             {
                 "index": i,
+                "account": ctx.get("account"),
                 "type": ctx.get("type"),
                 "voice": ctx.get("voice"),
                 "cashtag": ctx.get("cashtag"),
-                "top_fact": ctx.get("top_fact_text"),
+                "cashtags": ctx.get("cashtags") or None,
+                "facts": [f.get("text") for f in (ctx.get("top_facts") or [])[:3]],
                 "entry": ctx.get("entry_str"),
                 "t1": ctx.get("t1_str"),
                 "inv": ctx.get("inv_str"),
-                "numbers_whitelist": ctx.get("numbers_whitelist", [])[:10],
+                "win_rate": ctx.get("win_rate_str") or None,
+                "numbers_whitelist": ctx.get("numbers_whitelist", [])[:14],
             }
             for i, ctx in enumerate(batch)
         ]
 
-        import anthropic
-        client = anthropic.Anthropic()
-        response = client.messages.create(
-            model=model_id,
-            max_tokens=4096,
-            messages=[{
-                "role": "user",
-                "content": (
-                    system_prompt + "\n\nItems:\n" + json.dumps(items_payload, indent=2)
-                ),
-            }],
-        )
-        raw_text = response.content[0].text if response.content else ""
+        # House LLM path: llm_auth provider waterfall (OAuth pool -> API key ->
+        # deepseek), same as cortex/metabolism — NOT a bare Anthropic() client.
+        from engine import llm_auth  # noqa: PLC0415
+        providers = llm_auth.build_providers({}, opus_model=model_id)
+        if not providers:
+            return None
+        max_tokens = int(llm_cfg.get("max_tokens", 6000))
+
+        def _do_call(client, model):
+            resp = client.messages.create(
+                model=model, max_tokens=max_tokens, system=system_prompt,
+                messages=[{"role": "user", "content":
+                           "Items:\n" + json.dumps(items_payload, indent=1)}],
+            )
+            if getattr(resp, "stop_reason", None) == "refusal":
+                return None, "stop_refusal"
+            text = "".join(b.text for b in resp.content
+                           if getattr(b, "type", "") == "text")
+            return (text or None), None
+
+        raw_text, _reason, _provider = llm_auth.make_call(
+            providers, _do_call, context="marketing_copy")
+        if not raw_text:
+            return None
         # Extract JSON array from response
         match = re.search(r"\[.*\]", raw_text, re.DOTALL)
         if not match:

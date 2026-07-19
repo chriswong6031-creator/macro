@@ -615,3 +615,62 @@ def test_graded_receipts_empty_plans():
     from engine.marketing.receipt_source import graded_receipts
     assert graded_receipts([]) == []
     assert graded_receipts(None) == []
+
+
+# ── LLM copy lane (mocked — never a live call in tests) ──────────────────────
+
+def _llm_ctx():
+    from engine.marketing.copywriter import build_context
+    c = build_context(
+        {"type": "mover", "ticker": "ISRG", "cashtag": "$ISRG", "account": "research_b"},
+        persona={"name": "The Tape Reader", "voice_notes": "fast, clipped", "example_lines": ["$X up 4% 👀"]},
+        facts={"facts": [{"text": "ISRG crashed -14.2% today (Healthcare), the biggest single-stock move in the index."}],
+               "numbers_whitelist": ["-14.2%"]},
+        extra=None,
+    )
+    c["voice"] = "fast, reactive"; c["type"] = "mover"
+    return c
+
+
+def test_llm_lane_disabled_without_env(monkeypatch):
+    """Default (no MARKETING_LLM_ENABLED) → None, so tests/local never call out."""
+    from engine.marketing.copywriter import write_posts_llm
+    monkeypatch.delenv("MARKETING_LLM_ENABLED", raising=False)
+    assert write_posts_llm([_llm_ctx()], {"llm": {"enabled": True}}) is None
+
+
+def test_llm_lane_good_output_ships_as_llm(monkeypatch):
+    import json as _j
+    import engine.llm_auth as la
+    from engine.marketing import copywriter as cw
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    monkeypatch.setattr(la, "build_providers", lambda *a, **k: [{"name": "mock"}])
+    good = _j.dumps([{"headline": "$ISRG just got smoked",
+                      "body": "$ISRG cratered -14.2% today — worst move in the whole index. Overreaction? 👀"}])
+    monkeypatch.setattr(la, "make_call", lambda p, d, context="": (good, None, "mock"))
+    out = cw.write_posts_llm([_llm_ctx()], {"llm": {"enabled": True, "model_key": "marketing_copy"},
+                                            "personas": {}, "copy_laws": []})
+    assert out and out[0]["mode"] == "llm"
+    assert "-14.2%" in out[0]["body"]
+
+
+def test_llm_lane_bad_output_falls_back(monkeypatch):
+    """Invented number + banned vocab → validator rejects → deterministic fallback."""
+    import json as _j
+    import engine.llm_auth as la
+    from engine.marketing import copywriter as cw
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    monkeypatch.setattr(la, "build_providers", lambda *a, **k: [{"name": "mock"}])
+    bad = _j.dumps([{"headline": "$ISRG down 99%", "body": "buy now, guaranteed rebound $ISRG"}])
+    monkeypatch.setattr(la, "make_call", lambda p, d, context="": (bad, None, "mock"))
+    out = cw.write_posts_llm([_llm_ctx()], {"llm": {"enabled": True, "model_key": "marketing_copy"},
+                                            "personas": {}, "copy_laws": []})
+    assert out and out[0]["mode"] == "llm_fallback"
+
+
+def test_llm_lane_no_provider_returns_none(monkeypatch):
+    import engine.llm_auth as la
+    from engine.marketing import copywriter as cw
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    monkeypatch.setattr(la, "build_providers", lambda *a, **k: [])
+    assert cw.write_posts_llm([_llm_ctx()], {"llm": {"enabled": True, "model_key": "marketing_copy"}}) is None

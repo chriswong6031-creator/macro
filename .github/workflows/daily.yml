@@ -2711,6 +2711,11 @@ jobs:
           exit 0
       - name: Marketing — NW lobe governor
         continue-on-error: true
+        env:
+          # Arms the nightly LLM copywriter lane (persona posts). Double-guarded
+          # (config copywriter.llm.enabled AND this env var); any LLM failure or
+          # per-post validation failure falls back to the deterministic templates.
+          MARKETING_LLM_ENABLED: "1"
         run: |
           set +e
           python -m scripts.build_marketing; rc=$?
