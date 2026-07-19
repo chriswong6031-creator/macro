@@ -1,0 +1,1286 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Mastermind Chat</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text);
+       font: 14px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+       display: flex; flex-direction: column; padding-top: 24px; }
+
+/* ── layout shell ──────────────────────────────────────────────────────── */
+#chat-shell {
+  display: flex; flex: 1; overflow: hidden; min-height: 0;
+}
+
+/* ── thread rail ────────────────────────────────────────────────────────── */
+#thread-rail {
+  width: 240px; flex: none; border-right: 1px solid var(--line);
+  background: var(--panel); display: flex; flex-direction: column;
+  overflow: hidden; transition: width .2s ease;
+}
+#thread-rail.collapsed { width: 0; border-right: none; }
+#thread-rail-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px 10px; border-bottom: 1px solid var(--line); flex: none;
+}
+#thread-rail-head h2 { font-size: 13px; font-weight: 700; margin: 0; color: var(--text); }
+#new-thread-btn {
+  background: var(--link); border: none; color: #fff; border-radius: 6px;
+  padding: 4px 9px; font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: inherit; white-space: nowrap;
+}
+#thread-list {
+  flex: 1; overflow-y: auto; padding: 6px;
+}
+.thread-item {
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid transparent; margin-bottom: 2px; transition: background .12s;
+}
+.thread-item:hover { background: color-mix(in srgb, var(--link) 10%, var(--panel)); }
+.thread-item.active {
+  background: color-mix(in srgb, var(--link) 14%, var(--panel));
+  border-color: color-mix(in srgb, var(--link) 30%, transparent);
+}
+.thread-title {
+  font-size: 12.5px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.thread-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+#thread-empty { color: var(--muted); font-size: 13px; padding: 14px 10px; }
+
+/* ── center column ─────────────────────────────────────────────────────── */
+#chat-main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+}
+
+/* ── messages ───────────────────────────────────────────────────────────── */
+#msg-list {
+  flex: 1; overflow-y: auto; padding: 18px 16px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+@media (min-width: 900px) { #msg-list { padding: 22px max(20px, calc((100% - 760px) / 2)); } }
+
+.msg { display: flex; flex-direction: column; gap: 3px; max-width: 680px; }
+.msg.user { align-self: flex-end; align-items: flex-end; }
+.msg.assistant { align-self: flex-start; align-items: flex-start; }
+.msg-bubble {
+  padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.55;
+  word-break: break-word;
+}
+.msg.user .msg-bubble {
+  background: var(--link); color: #fff; border-bottom-right-radius: 4px;
+}
+.msg.assistant .msg-bubble {
+  background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 4px;
+  color: var(--text);
+}
+.msg-bubble p { margin: 0 0 8px; }
+.msg-bubble p:last-child { margin-bottom: 0; }
+.msg-bubble ul, .msg-bubble ol { margin: 6px 0 8px 20px; padding: 0; }
+.msg-bubble li { margin: 3px 0; }
+.msg-bubble strong, .msg-bubble b { font-weight: 700; }
+.msg-meta { font-size: 11px; color: var(--muted); padding: 0 4px; }
+.msg-tool {
+  font-size: 11.5px; color: var(--muted); font-style: italic;
+  display: flex; align-items: center; gap: 5px;
+}
+.msg-tool::before { content: ''; display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--link); opacity: .6; }
+
+/* citations */
+.msg-citations {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px;
+}
+.cite-chip {
+  font-size: 11px; background: color-mix(in srgb, var(--link) 12%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--link) 25%, transparent);
+  border-radius: 4px; padding: 2px 7px; color: var(--link);
+  text-decoration: none; white-space: nowrap;
+}
+.cite-chip:hover { background: color-mix(in srgb, var(--link) 20%, var(--panel)); }
+
+/* ── empty-state ────────────────────────────────────────────────────────── */
+#empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 32px 20px;
+}
+#empty-state h2 {
+  font-size: 20px; font-weight: 700; margin: 0 0 8px; color: var(--text);
+}
+#empty-state p {
+  font-size: 14px; color: var(--muted); margin: 0 0 22px; max-width: 440px;
+}
+.prompt-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  max-width: 480px; width: 100%;
+}
+@media (max-width: 500px) { .prompt-grid { grid-template-columns: 1fr; } }
+.prompt-btn {
+  text-align: left; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 11px 13px; cursor: pointer; font-family: inherit;
+  color: var(--text); font-size: 13px; line-height: 1.4;
+  transition: background .13s, border-color .13s;
+}
+.prompt-btn:hover {
+  background: color-mix(in srgb, var(--link) 9%, var(--panel));
+  border-color: color-mix(in srgb, var(--link) 30%, transparent);
+}
+.prompt-btn .prompt-ic { font-size: 18px; display: block; margin-bottom: 4px; }
+.prompt-btn .prompt-en { display: block; }
+.prompt-btn .prompt-zh { display: none; }
+html[data-lang="zh"] .prompt-btn .prompt-en { display: none; }
+html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
+
+/* ── quota chip ─────────────────────────────────────────────────────────── */
+.quota-chip {
+  font-size: 11px; color: var(--muted); background: var(--panel2, var(--panel));
+  border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px;
+}
+.quota-chip.warn { color: #f59e0b; border-color: #f59e0b44; }
+.quota-chip.empty { color: #ef4444; border-color: #ef444444; }
+
+/* ── composer ───────────────────────────────────────────────────────────── */
+#composer-wrap {
+  border-top: 1px solid var(--line); padding: 10px 14px 12px;
+  background: var(--bg); flex: none;
+}
+@media (min-width: 900px) {
+  #composer-wrap { padding: 10px max(16px, calc((100% - 760px) / 2)) 14px; }
+}
+#composer-row {
+  display: flex; align-items: flex-end; gap: 8px;
+}
+#composer-top {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
+}
+/* lane toggle */
+#lane-toggle {
+  display: flex; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 99px; padding: 2px; gap: 1px;
+}
+.lane-btn {
+  border: none; border-radius: 99px; padding: 4px 12px; font-size: 12px;
+  font-weight: 600; cursor: pointer; font-family: inherit; transition: background .13s;
+  color: var(--muted); background: transparent;
+}
+.lane-btn.active { background: var(--link); color: #fff; }
+#quota-info { display: flex; align-items: center; gap: 6px; }
+
+#msg-input {
+  flex: 1; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; padding: 10px 14px; font: 14px/1.5 inherit;
+  color: var(--text); resize: none; min-height: 44px; max-height: 180px;
+  outline: none; transition: border-color .15s;
+}
+#msg-input:focus { border-color: var(--link); }
+#send-btn {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--link); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; transition: opacity .15s;
+}
+#send-btn:disabled { opacity: .45; cursor: not-allowed; }
+#send-btn svg { width: 18px; height: 18px; }
+
+/* ── right panel: symbol context card ─────────────────────────────────── */
+#ctx-panel {
+  width: 280px; flex: none; border-left: 1px solid var(--line);
+  background: var(--panel); display: flex; flex-direction: column;
+  overflow-y: auto; padding: 14px;
+}
+@media (max-width: 1100px) { #ctx-panel { display: none; } }
+#ctx-panel.has-sym { display: flex; }
+#ctx-sym-head { font-size: 15px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+#ctx-chart { width: 100%; height: 180px; background: var(--panel2, var(--bg)); border-radius: 8px; margin-bottom: 10px; }
+#ctx-anns { display: flex; flex-direction: column; gap: 4px; }
+.ctx-ann {
+  display: flex; align-items: center; gap: 7px; font-size: 12px;
+  padding: 4px 8px; border-radius: 6px;
+  background: color-mix(in srgb, var(--link) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--link) 20%, transparent);
+}
+.ctx-ann-price { font-weight: 700; color: var(--link); }
+.ctx-ann-lbl { color: var(--text); }
+
+/* ── signed-out hero ────────────────────────────────────────────────────── */
+#auth-gate {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 20px; text-align: center;
+}
+.glass-card {
+  background: var(--glass-bg, color-mix(in srgb, var(--panel) 86%, transparent));
+  border: 1px solid var(--glass-brd, color-mix(in srgb, var(--text) 10%, transparent));
+  border-radius: 18px; padding: 32px 28px; max-width: 420px; width: 100%;
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+}
+.glass-card h2 { font-size: 21px; font-weight: 700; margin: 0 0 8px; }
+.glass-card p { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+.tier-list { list-style: none; margin: 0 0 22px; padding: 0; text-align: left; }
+.tier-list li {
+  padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.tier-list li:last-child { border-bottom: none; }
+.tier-name { font-weight: 600; color: var(--text); }
+.tier-desc { color: var(--muted); font-size: 12px; }
+.sign-in-btn {
+  width: 100%; padding: 11px 18px; border-radius: 10px; border: none;
+  background: var(--link); color: #fff; font: 600 15px/1 inherit;
+  cursor: pointer; transition: opacity .15s;
+}
+.sign-in-btn:hover { opacity: .88; }
+
+/* ── 402 / error ─────────────────────────────────────────────────────────── */
+#upgrade-card {
+  background: color-mix(in srgb, #f59e0b 8%, var(--panel));
+  border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent);
+  border-radius: 12px; padding: 14px 16px; margin: 0 0 12px;
+  font-size: 13px; display: none;
+}
+#upgrade-card a {
+  color: var(--link); text-decoration: underline; font-weight: 600;
+}
+
+.err-msg {
+  font-size: 13px; color: #ef4444;
+  padding: 8px 12px; border-radius: 8px;
+  background: color-mix(in srgb, #ef4444 8%, var(--panel));
+  border: 1px solid color-mix(in srgb, #ef4444 20%, transparent);
+}
+
+/* ── typing indicator ───────────────────────────────────────────────────── */
+.typing-dot {
+  display: inline-flex; align-items: flex-end; gap: 3px; padding: 4px 2px;
+}
+.typing-dot span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+.typing-dot span:nth-child(2) { animation-delay: .2s; }
+.typing-dot span:nth-child(3) { animation-delay: .4s; }
+@keyframes dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: .55; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ── disclaimer footer ──────────────────────────────────────────────────── */
+#chat-footer {
+  font-size: 11px; color: var(--muted); text-align: center;
+  padding: 4px 14px 6px;
+}
+
+/* ── rail toggle btn ────────────────────────────────────────────────────── */
+#rail-toggle {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  padding: 4px 6px; border-radius: 6px; font-size: 15px; line-height: 1;
+}
+#rail-toggle:hover { color: var(--text); }
+@media (max-width: 700px) { #thread-rail { display: none !important; } }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+
+
+
+    <div class="nav-links">
+
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html"><span class="nav-sub-text">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="gex.html"><span class="nav-sub-text">🧲 <span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">GEX · screener · flow · dark pool</span><span class="l-zh">GEX · 筛选台 · 资金流 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+            <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+            <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+            <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
+            <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+            <a href="market_structure.html">🏗️ <span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
+          </div>
+        </div>
+        <a href="leader_radar.html">📡 <span class="l-en">Leader Radar</span><span class="l-zh">领袖雷达</span><span class="d"><span class="l-en">Lifecycle board · regime · handoff watch · rerating watch</span><span class="l-zh">生命周期看板 · 领导力制度 · 交接观察 · 重估观察</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · alpha · setups</span><span class="l-zh">先知 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html"><span class="nav-sub-text">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html"><span class="nav-sub-text">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet HK · alpha</span><span class="l-zh">先知港股 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet TSX · sectors · alpha</span><span class="l-zh">先知TSX · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html"><span class="nav-sub-text">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html"><span class="nav-sub-text">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+
+    <style>
+    @media (min-width:701px){
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+          </div>
+
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ── main chat shell ────────────────────────────────────────────────────── -->
+<div id="chat-shell">
+
+  <!-- left: thread rail -->
+  <div id="thread-rail">
+    <div id="thread-rail-head">
+      <h2><span class="l-en">Threads</span><span class="l-zh">对话</span></h2>
+      <button id="new-thread-btn" type="button">
+        <span class="l-en">+ New</span><span class="l-zh">+ 新建</span>
+      </button>
+    </div>
+    <div id="thread-list">
+      <div id="thread-empty">
+        <span class="l-en">No threads yet</span><span class="l-zh">暂无对话</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- center: messages + composer -->
+  <div id="chat-main">
+
+    <!-- auth gate — shown when signed out -->
+    <div id="auth-gate" style="display:none">
+      <div class="glass-card">
+        <h2>💬 <span class="l-en">Mastermind Chat</span><span class="l-zh">操盘大脑对话</span></h2>
+        <p>
+          <span class="l-en">Ask questions about any dashboard — the AI reads the dashboards and explains what they show. Research context only.</span>
+          <span class="l-zh">就任何看板提问 — AI 读取看板内容并解释所显示的内容。仅供研究参考。</span>
+        </p>
+        <ul class="tier-list">
+          <li>
+            <span class="tier-name"><span class="l-en">Free</span><span class="l-zh">免费</span></span>
+            <span class="tier-desc"><span class="l-en">5 fast messages / week</span><span class="l-zh">每周 5 条快速消息</span></span>
+          </li>
+          <li>
+            <span class="tier-name"><span class="l-en">Trial</span><span class="l-zh">试用</span></span>
+            <span class="tier-desc"><span class="l-en">25 fast + 3 pro / trial period</span><span class="l-zh">试用期 25 条快速 + 3 条专业</span></span>
+          </li>
+          <li>
+            <span class="tier-name"><span class="l-en">Insider</span><span class="l-zh">会员</span></span>
+            <span class="tier-desc"><span class="l-en">300 fast + 10 pro / month</span><span class="l-zh">每月 300 条快速 + 10 条专业</span></span>
+          </li>
+          <li>
+            <span class="tier-name"><span class="l-en">Pro</span><span class="l-zh">专业</span></span>
+            <span class="tier-desc"><span class="l-en">1000 fast + 150 pro / month</span><span class="l-zh">每月 1000 条快速 + 150 条专业</span></span>
+          </li>
+        </ul>
+        <button class="sign-in-btn" id="auth-gate-btn" type="button">
+          <span class="l-en">Sign in to start</span><span class="l-zh">登录以开始</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 402 upgrade card -->
+    <div id="upgrade-card">
+      <strong><span class="l-en">Quota reached</span><span class="l-zh">配额已用尽</span></strong> —
+      <span class="l-en">upgrade your plan to keep chatting.</span>
+      <span class="l-zh">升级套餐以继续对话。</span>
+      <a href="plans.html"><span class="l-en">See plans</span><span class="l-zh">查看套餐</span></a>
+    </div>
+
+    <!-- message area -->
+    <div id="msg-list" role="log" aria-live="polite" aria-label="Chat messages">
+      <!-- empty state -->
+      <div id="empty-state">
+        <h2>💬 <span class="l-en">Ask Mastermind</span><span class="l-zh">向操盘大脑提问</span></h2>
+        <p>
+          <span class="l-en">Questions about dashboards, signals, or what any panel is showing. Research context only — always verify against the underlying data.</span>
+          <span class="l-zh">关于看板、信号或任意面板内容的问题。仅供研究参考 — 请始终对照底层数据核实。</span>
+        </p>
+        <div class="prompt-grid" id="prompt-grid">
+          <button class="prompt-btn" type="button" data-prompt-en="What is the current US macro regime and what does it mean for equities?" data-prompt-zh="目前美国宏观周期是什么阶段？对股票意味着什么？">
+            <span class="prompt-ic">🇺🇸</span>
+            <span class="prompt-en">What is the US macro regime right now?</span>
+            <span class="prompt-zh">当前美国宏观周期处于什么阶段？</span>
+          </button>
+          <button class="prompt-btn" type="button" data-prompt-en="Which thematic baskets are showing the strongest momentum right now?" data-prompt-zh="当前哪些主题篮子动量最强？">
+            <span class="prompt-ic">🧺</span>
+            <span class="prompt-en">Which thematic baskets have strongest momentum?</span>
+            <span class="prompt-zh">哪些主题篮子当前动量最强？</span>
+          </button>
+          <button class="prompt-btn" type="button" data-prompt-en="What is the dollar doing and how is it affecting other assets?" data-prompt-zh="美元走势如何？对其他资产有何影响？">
+            <span class="prompt-ic">💱</span>
+            <span class="prompt-en">What is the dollar doing and how does it affect other assets?</span>
+            <span class="prompt-zh">美元走势如何？如何影响其他资产？</span>
+          </button>
+          <button class="prompt-btn" type="button" data-prompt-en="Where does Bitcoin sit in its market cycle right now?" data-prompt-zh="比特币目前处于市场周期的哪个位置？">
+            <span class="prompt-ic">₿</span>
+            <span class="prompt-en">Where is Bitcoin in its cycle?</span>
+            <span class="prompt-zh">比特币目前处于周期何处？</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- composer -->
+    <div id="composer-wrap">
+      <div id="composer-top">
+        <div id="lane-toggle" role="group">
+          <button class="lane-btn active" data-lane="fast" type="button">
+            ⚡ <span class="l-en">Fast</span><span class="l-zh">快速</span>
+          </button>
+          <button class="lane-btn" data-lane="pro" type="button">
+            ◈ <span class="l-en">Pro</span><span class="l-zh">专业</span>
+          </button>
+        </div>
+        <div id="quota-info">
+          <span id="quota-fast" class="quota-chip" style="display:none"></span>
+          <span id="quota-pro" class="quota-chip" style="display:none"></span>
+        </div>
+        <span id="sym-ctx-label" style="font-size:12px;color:var(--muted);display:none">
+          <span class="l-en">Symbol context:</span><span class="l-zh">标的上下文：</span>
+          <strong id="sym-ctx-name" style="color:var(--link)"></strong>
+          <button id="sym-ctx-clear" type="button" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:0 0 0 4px">×</button>
+        </span>
+      </div>
+      <div id="composer-row">
+        <textarea id="msg-input" rows="1" maxlength="2000"
+          placeholder="Ask about any dashboard…"
+          data-ph-zh="就任何看板提问…"
+          aria-label="Message input"></textarea>
+        <button id="send-btn" type="button" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- footer disclaimer -->
+    <div id="chat-footer">
+      <span class="l-en">Research context only — not investment advice. Always verify against the underlying dashboards.</span>
+      <span class="l-zh">仅供研究参考，非投资建议。请始终对照底层看板核实。</span>
+    </div>
+  </div>
+
+  <!-- right: symbol context card -->
+  <div id="ctx-panel">
+    <div id="ctx-sym-head"></div>
+    <canvas id="ctx-chart"></canvas>
+    <div id="ctx-anns"></div>
+  </div>
+
+</div>
+
+<script src="theme.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ── state ─────────────────────────────────────────────────────────────── */
+  var lane = 'fast';
+  var threadId = null;
+  var streaming = false;
+  var ctxSymbol = null;  // active ticker context
+  var quotas = { fast: null, pro: null };  // {remaining, limit, period}
+  var annotations = [];  // [{type, price, label}]
+
+  /* ── DOM refs ───────────────────────────────────────────────────────────── */
+  var shell = document.getElementById('chat-shell');
+  var authGate = document.getElementById('auth-gate');
+  var msgList = document.getElementById('msg-list');
+  var emptyState = document.getElementById('empty-state');
+  var upgradeCard = document.getElementById('upgrade-card');
+  var msgInput = document.getElementById('msg-input');
+  var sendBtn = document.getElementById('send-btn');
+  var threadList = document.getElementById('thread-list');
+  var threadEmpty = document.getElementById('thread-empty');
+  var newThreadBtn = document.getElementById('new-thread-btn');
+  var quotaFast = document.getElementById('quota-fast');
+  var quotaPro = document.getElementById('quota-pro');
+  var symCtxLabel = document.getElementById('sym-ctx-label');
+  var symCtxName = document.getElementById('sym-ctx-name');
+  var symCtxClear = document.getElementById('sym-ctx-clear');
+  var ctxPanel = document.getElementById('ctx-panel');
+  var ctxSymHead = document.getElementById('ctx-sym-head');
+  var ctxAnns = document.getElementById('ctx-anns');
+
+  /* ── helpers ────────────────────────────────────────────────────────────── */
+  function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
+  function L(en, zh) { return lang() === 'zh' ? zh : en; }
+
+  /* HTML-escape so arbitrary server text never injects markup */
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* Minimal markdown-lite: paragraphs, bold, lists — nothing else */
+  function renderMd(text) {
+    if (!text) return '';
+    var lines = text.split('\n');
+    var out = [], inList = false;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var liMatch = /^[\-\*]\s+(.*)/.exec(line) || /^\d+\.\s+(.*)/.exec(line);
+      if (liMatch) {
+        if (!inList) { out.push('<ul>'); inList = true; }
+        out.push('<li>' + boldify(esc(liMatch[1])) + '</li>');
+      } else {
+        if (inList) { out.push('</ul>'); inList = false; }
+        var t = line.trim();
+        if (t) out.push('<p>' + boldify(esc(t)) + '</p>');
+      }
+    }
+    if (inList) out.push('</ul>');
+    return out.join('');
+  }
+  function boldify(s) {
+    /* **bold** and *italic* */
+    return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  }
+
+  /* Map known artifact paths to friendly page links */
+  function citationLink(cite) {
+    var MAP = {
+      'macro_context': 'macro_context.html',
+      'us_stocks': 'us_stocks.html',
+      'macro': 'macro.html',
+      'baskets': 'baskets.html',
+      'china': 'china.html',
+      'hk': 'hk.html',
+      'commodities': 'commodities.html',
+      'forex': 'forex.html',
+      'crossasset': 'crossasset.html',
+      'factors': 'factors.html',
+      'vector': 'vector.html',
+      'committee': 'committee.html',
+      'cycle': 'cycle.html',
+      'gex': 'gex.html'
+    };
+    var slug = cite.replace(/\.json$/, '').replace(/^.*\//, '');
+    for (var k in MAP) {
+      if (slug.indexOf(k) !== -1) return MAP[k];
+    }
+    return null;
+  }
+
+  /* ── auth wiring ────────────────────────────────────────────────────────── */
+  function showAuthGate(on) {
+    authGate.style.display = on ? 'flex' : 'none';
+    document.getElementById('composer-wrap').style.display = on ? 'none' : '';
+    msgList.style.display = on ? 'none' : '';
+    document.getElementById('chat-footer').style.display = on ? 'none' : '';
+  }
+
+  var _authed = false;
+  function onAuthState(user) {
+    _authed = !!user;
+    showAuthGate(!user);
+    if (user) {
+      loadThreads();
+      loadQuotas();
+      checkSymParam();
+    }
+  }
+
+  if (window.MDXAuth) {
+    document.getElementById('auth-gate-btn').addEventListener('click', function () {
+      window.MDXAuth.open('signin');
+    });
+    window.MDXAuth.onChange(onAuthState);
+  } else {
+    /* theme.js not yet ready — wait */
+    window.addEventListener('load', function () {
+      if (window.MDXAuth) {
+        document.getElementById('auth-gate-btn').addEventListener('click', function () {
+          window.MDXAuth.open('signin');
+        });
+        window.MDXAuth.onChange(onAuthState);
+      } else {
+        showAuthGate(false);  /* no auth configured — degrade open */
+      }
+    });
+  }
+
+  /* ── quota display ──────────────────────────────────────────────────────── */
+  function loadQuotas() {
+    fetch('/api/brain/me', { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        quotas.fast = d.quotas && d.quotas.fast;
+        quotas.pro = d.quotas && d.quotas.pro;
+        renderQuotas();
+      }).catch(function () {});
+  }
+  function renderQuotas() {
+    function chipText(q) {
+      if (!q) return '';
+      return q.remaining + ' / ' + q.limit + ' ' + q.period;
+    }
+    function chipClass(q) {
+      if (!q) return 'quota-chip';
+      if (q.remaining === 0) return 'quota-chip empty';
+      if (q.remaining <= Math.ceil(q.limit * 0.1)) return 'quota-chip warn';
+      return 'quota-chip';
+    }
+    if (quotas.fast) {
+      quotaFast.textContent = '⚡ ' + chipText(quotas.fast);
+      quotaFast.className = chipClass(quotas.fast);
+      quotaFast.style.display = '';
+    }
+    if (quotas.pro) {
+      quotaPro.textContent = '◈ ' + chipText(quotas.pro);
+      quotaPro.className = chipClass(quotas.pro);
+      quotaPro.style.display = '';
+    }
+  }
+
+  /* ── threads ────────────────────────────────────────────────────────────── */
+  function loadThreads() {
+    fetch('/api/brain/threads', { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : { threads: [] }; })
+      .then(function (d) {
+        var threads = (d && d.threads) || [];
+        renderThreads(threads);
+      }).catch(function () {});
+  }
+  function renderThreads(threads) {
+    if (!threads.length) {
+      threadEmpty.style.display = '';
+      return;
+    }
+    threadEmpty.style.display = 'none';
+    threadList.innerHTML = '';
+    threads.forEach(function (t) {
+      var div = document.createElement('div');
+      div.className = 'thread-item' + (t.id === threadId ? ' active' : '');
+      div.dataset.id = t.id;
+      var date = '';
+      try { date = new Date(t.updated_at).toLocaleDateString(); } catch (e) {}
+      div.innerHTML = '<div class="thread-title">' + esc(t.title || L('Untitled', '无标题')) + '</div>'
+        + '<div class="thread-meta">' + esc(t.lane || 'fast') + ' · ' + esc(date) + '</div>';
+      div.addEventListener('click', function () { openThread(t.id); });
+      threadList.appendChild(div);
+    });
+  }
+  function openThread(id) {
+    threadId = id;
+    document.querySelectorAll('.thread-item').forEach(function (el) {
+      el.classList.toggle('active', el.dataset.id === id);
+    });
+    fetch('/api/brain/threads/' + id, { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        clearMessages();
+        (d.messages || []).forEach(function (m) {
+          appendMessage(m.role, m.content, []);
+        });
+      }).catch(function () {});
+  }
+  newThreadBtn.addEventListener('click', function () {
+    threadId = null;
+    document.querySelectorAll('.thread-item').forEach(function (el) {
+      el.classList.remove('active');
+    });
+    clearMessages();
+  });
+
+  /* ── messages ───────────────────────────────────────────────────────────── */
+  function clearMessages() {
+    /* remove all .msg children; keep #empty-state and #upgrade-card */
+    var kids = Array.prototype.slice.call(msgList.children);
+    kids.forEach(function (k) {
+      if (k.id !== 'empty-state' && k.id !== 'upgrade-card') msgList.removeChild(k);
+    });
+    emptyState.style.display = '';
+    upgradeCard.style.display = 'none';
+    annotations = [];
+    renderAnnotations();
+  }
+  function appendMessage(role, content, citations) {
+    emptyState.style.display = 'none';
+    var div = document.createElement('div');
+    div.className = 'msg ' + role;
+    var bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    /* Always escape/render through the safe pipeline — never set innerHTML to raw content */
+    bubble.innerHTML = role === 'user' ? '<p>' + esc(content) + '</p>' : renderMd(content);
+    div.appendChild(bubble);
+    if (citations && citations.length) {
+      var cc = document.createElement('div');
+      cc.className = 'msg-citations';
+      citations.forEach(function (c) {
+        var href = citationLink(c);
+        var chip = document.createElement(href ? 'a' : 'span');
+        chip.className = 'cite-chip';
+        chip.textContent = c.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
+        if (href) { chip.href = href; }
+        cc.appendChild(chip);
+      });
+      div.appendChild(cc);
+    }
+    msgList.appendChild(div);
+    msgList.scrollTop = msgList.scrollHeight;
+    return bubble;
+  }
+  function appendTyping() {
+    emptyState.style.display = 'none';
+    var div = document.createElement('div');
+    div.className = 'msg assistant';
+    div.id = 'typing-msg';
+    var bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.innerHTML = '<span class="typing-dot"><span></span><span></span><span></span></span>';
+    div.appendChild(bubble);
+    msgList.appendChild(div);
+    msgList.scrollTop = msgList.scrollHeight;
+    return bubble;
+  }
+  function appendToolMsg(name) {
+    var div = document.createElement('div');
+    div.className = 'msg assistant';
+    var d = document.createElement('div');
+    d.className = 'msg-tool';
+    d.textContent = L('Checking: ', '查询：') + name;
+    div.appendChild(d);
+    msgList.appendChild(div);
+    msgList.scrollTop = msgList.scrollHeight;
+  }
+  function appendError(txt) {
+    var div = document.createElement('div');
+    div.className = 'msg assistant';
+    var d = document.createElement('div');
+    d.className = 'msg-bubble err-msg';
+    d.textContent = txt;
+    div.appendChild(d);
+    msgList.appendChild(div);
+    msgList.scrollTop = msgList.scrollHeight;
+  }
+
+  /* ── context symbol ─────────────────────────────────────────────────────── */
+  function checkSymParam() {
+    var m = /[?&]symbol=([A-Z0-9._:%-]+)/i.exec(location.search);
+    if (m) setCtxSymbol(decodeURIComponent(m[1]).toUpperCase());
+  }
+  function setCtxSymbol(sym) {
+    ctxSymbol = sym || null;
+    if (sym) {
+      symCtxName.textContent = sym;
+      symCtxLabel.style.display = '';
+      ctxSymHead.textContent = sym;
+      /* ctx panel visible on wide screens */
+      ctxPanel.classList.add('has-sym');
+    } else {
+      symCtxLabel.style.display = 'none';
+      ctxPanel.classList.remove('has-sym');
+      ctxAnns.innerHTML = '';
+    }
+  }
+  symCtxClear.addEventListener('click', function () { setCtxSymbol(null); });
+
+  /* @TICKER detection in composer */
+  msgInput.addEventListener('input', function () {
+    var m = /@([A-Z]{1,6})/.exec(msgInput.value.toUpperCase());
+    if (m) setCtxSymbol(m[1]);
+  });
+
+  /* ── annotation rendering ───────────────────────────────────────────────── */
+  function renderAnnotations() {
+    if (!ctxAnns) return;
+    ctxAnns.innerHTML = '';
+    if (!annotations.length) return;
+    annotations.forEach(function (a) {
+      var div = document.createElement('div');
+      div.className = 'ctx-ann';
+      div.innerHTML = '<span class="ctx-ann-price">$' + esc(String(a.price)) + '</span>'
+        + '<span class="ctx-ann-lbl">' + esc(a.label || a.type) + '</span>';
+      ctxAnns.appendChild(div);
+    });
+  }
+
+  /* ── lane toggle ────────────────────────────────────────────────────────── */
+  document.querySelectorAll('.lane-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      lane = btn.dataset.lane;
+      document.querySelectorAll('.lane-btn').forEach(function (b) {
+        b.classList.toggle('active', b.dataset.lane === lane);
+      });
+    });
+  });
+
+  /* ── suggested prompts ──────────────────────────────────────────────────── */
+  document.querySelectorAll('.prompt-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var txt = lang() === 'zh'
+        ? (btn.dataset.promptZh || btn.dataset.promptEn)
+        : btn.dataset.promptEn;
+      if (txt) {
+        msgInput.value = txt;
+        autoResize();
+        sendBtn.disabled = false;
+        send();
+      }
+    });
+  });
+
+  /* ── composer ───────────────────────────────────────────────────────────── */
+  function autoResize() {
+    msgInput.style.height = 'auto';
+    msgInput.style.height = Math.min(180, msgInput.scrollHeight) + 'px';
+  }
+  msgInput.addEventListener('input', function () {
+    autoResize();
+    sendBtn.disabled = !msgInput.value.trim() || streaming;
+  });
+  msgInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) send();
+    }
+  });
+
+  /* lang-aware placeholder */
+  function syncPlaceholder() {
+    msgInput.placeholder = lang() === 'zh'
+      ? (msgInput.getAttribute('data-ph-zh') || msgInput.placeholder)
+      : 'Ask about any dashboard…';
+  }
+  syncPlaceholder();
+  document.addEventListener('langchange', syncPlaceholder);
+
+  /* ── send & SSE ─────────────────────────────────────────────────────────── */
+  document.getElementById('send-btn').addEventListener('click', send);
+
+  function send() {
+    var text = msgInput.value.trim();
+    if (!text || streaming) return;
+    if (!_authed && window.MDXAuth && window.MDXAuth.enabled()) {
+      window.MDXAuth.open('signin');
+      return;
+    }
+
+    /* user bubble — pass raw text; appendMessage escapes internally */
+    appendMessage('user', text, []);
+    msgInput.value = '';
+    autoResize();
+    sendBtn.disabled = true;
+    streaming = true;
+    upgradeCard.style.display = 'none';
+
+    /* start typing indicator */
+    var typingBubble = appendTyping();
+    var replyBubble = null;
+    var replyText = '';
+
+    var body = JSON.stringify({
+      message: text,
+      lane: lane,
+      thread_id: threadId || undefined,
+      context: ctxSymbol ? { symbol: ctxSymbol, page: 'chat' } : { page: 'chat' }
+    });
+
+    fetch('/api/brain/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: body
+    }).then(function (res) {
+      if (res.status === 401) {
+        /* session expired mid-stream — clear and re-prompt sign-in */
+        var typing = document.getElementById('typing-msg');
+        if (typing) msgList.removeChild(typing);
+        streaming = false;
+        sendBtn.disabled = !msgInput.value.trim();
+        if (window.MDXAuth && window.MDXAuth.enabled()) {
+          window.MDXAuth.open('signin');
+        }
+        return;
+      }
+      if (res.status === 402) {
+        /* quota exhausted */
+        return res.json().then(function (d) {
+          var typing = document.getElementById('typing-msg');
+          if (typing) msgList.removeChild(typing);
+          upgradeCard.style.display = '';
+          streaming = false;
+          sendBtn.disabled = !msgInput.value.trim();
+        }).catch(function () {
+          var typing = document.getElementById('typing-msg');
+          if (typing) msgList.removeChild(typing);
+          upgradeCard.style.display = '';
+          streaming = false;
+          sendBtn.disabled = !msgInput.value.trim();
+        });
+      }
+      if (!res.ok) {
+        return res.text().then(function () {
+          var typing = document.getElementById('typing-msg');
+          if (typing) msgList.removeChild(typing);
+          appendError(L('Something went wrong. Please try again.', '出错了，请重试。'));
+          streaming = false;
+          sendBtn.disabled = !msgInput.value.trim();
+        });
+      }
+
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder();
+      var buf = '';
+
+      function read() {
+        reader.read().then(function (chunk) {
+          if (chunk.done) {
+            finishStream();
+            return;
+          }
+          buf += decoder.decode(chunk.value, { stream: true });
+          var parts = buf.split('\n\n');
+          buf = parts.pop();  /* last partial event */
+          parts.forEach(function (part) {
+            part.split('\n').forEach(function (line) {
+              if (!line.startsWith('data: ')) return;
+              var raw = line.slice(6).trim();
+              if (!raw) return;
+              var ev;
+              try { ev = JSON.parse(raw); } catch (e) { return; }
+              handleEvent(ev);
+            });
+          });
+          read();
+        }).catch(function () {
+          finishStream();
+        });
+      }
+
+      function handleEvent(ev) {
+        if (ev.type === 'meta') {
+          threadId = ev.thread_id || threadId;
+          if (ev.quota) {
+            if (ev.lane === 'fast') quotas.fast = ev.quota;
+            else quotas.pro = ev.quota;
+            renderQuotas();
+          }
+        } else if (ev.type === 'delta') {
+          if (!replyBubble) {
+            /* swap typing indicator for real bubble */
+            var typing = document.getElementById('typing-msg');
+            if (typing) msgList.removeChild(typing);
+            var msgDiv = document.createElement('div');
+            msgDiv.className = 'msg assistant';
+            replyBubble = document.createElement('div');
+            replyBubble.className = 'msg-bubble';
+            msgDiv.appendChild(replyBubble);
+            msgList.appendChild(msgDiv);
+          }
+          replyText += ev.text;
+          replyBubble.innerHTML = renderMd(replyText);
+          msgList.scrollTop = msgList.scrollHeight;
+        } else if (ev.type === 'tool') {
+          appendToolMsg(ev.name);
+        } else if (ev.type === 'annotate') {
+          if (ev.annotations) {
+            annotations = annotations.concat(ev.annotations);
+            renderAnnotations();
+          }
+        } else if (ev.type === 'done') {
+          if (ev.quota) {
+            if (lane === 'fast') quotas.fast = ev.quota;
+            else quotas.pro = ev.quota;
+            renderQuotas();
+          }
+          if (ev.citations && ev.citations.length && replyBubble) {
+            var par = replyBubble.parentNode;
+            if (par) {
+              var cc = document.createElement('div');
+              cc.className = 'msg-citations';
+              ev.citations.forEach(function (c) {
+                var href = citationLink(c);
+                var chip = document.createElement(href ? 'a' : 'span');
+                chip.className = 'cite-chip';
+                chip.textContent = c.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
+                if (href) chip.href = href;
+                cc.appendChild(chip);
+              });
+              par.appendChild(cc);
+            }
+          }
+          /* bilingual probation chip — shown when backend flags is_context_only */
+          if (ev.is_context_only && replyBubble) {
+            var par2 = replyBubble.parentNode;
+            if (par2) {
+              var chip2 = document.createElement('div');
+              chip2.className = 'msg-meta';
+              chip2.style.cssText = 'margin-top:4px;font-style:italic;';
+              chip2.innerHTML = '<span class="l-en">Research context — not investment advice</span>'
+                + '<span class="l-zh">仅供研究参考，非投资建议</span>';
+              par2.appendChild(chip2);
+            }
+          }
+        }
+      }
+
+      function finishStream() {
+        var typing = document.getElementById('typing-msg');
+        if (typing) msgList.removeChild(typing);
+        streaming = false;
+        sendBtn.disabled = !msgInput.value.trim();
+        loadThreads();
+      }
+
+      read();
+    }).catch(function () {
+      var typing = document.getElementById('typing-msg');
+      if (typing) msgList.removeChild(typing);
+      appendError(L('Network error. Please check your connection and try again.', '网络错误，请检查连接后重试。'));
+      streaming = false;
+      sendBtn.disabled = !msgInput.value.trim();
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>

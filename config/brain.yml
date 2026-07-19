@@ -1,0 +1,89 @@
+# config/brain.yml — Brain gateway lane config (MNZ-W6a, §3.5 + Amendment 2).
+#
+# MNZ-R12: quotas and model ids live here, never hardcoded in the gateway.
+# The loader (brain_gateway._load_brain_config) falls back to sane hardcoded
+# defaults when this file is missing or a key is absent.
+#
+# Schema: brain_config.v1
+
+schema: brain_config.v1
+
+# ── Lane definitions ───────────────────────────────────────────────────────────
+lanes:
+  fast:
+    # Primary: DeepSeek via Anthropic-compatible endpoint.
+    # Fallback: claude-haiku-4-5 when DEEPSEEK_API_KEY absent/dead.
+    provider_order:
+      - deepseek
+      - anthropic        # haiku fallback only — model overridden below
+    deepseek_model: deepseek-chat
+    deepseek_key_env: DEEPSEEK_API_KEY
+    deepseek_base_url: https://api.deepseek.com/anthropic
+    # Fallback model when DeepSeek unavailable (operator-configurable)
+    fallback_model: claude-haiku-4-5
+    max_tokens: 2000
+    tool_budget: 5
+    usage_lane: brain-fast
+
+  pro:
+    # Primary: claude-opus-4-8.
+    # Fallback: claude-sonnet-4-6 when Opus unavailable.
+    provider_order:
+      - oauth
+      - anthropic
+    opus_model: claude-opus-4-8
+    fallback_model: claude-sonnet-4-6
+    max_tokens: 4000
+    tool_budget: 10
+    usage_lane: brain-pro
+
+# ── Per-tier request allowances (MNZ-R12: config-not-literals) ────────────────
+# Periods: week = ISO week (UTC), month = calendar month (UTC),
+#          trial = within current_period_end window when status='trialing'
+quotas:
+  free:
+    fast:
+      limit: 5
+      period: week
+    pro:
+      limit: 0
+      period: month
+
+  trial:
+    # status='trialing' uses trial allowances regardless of tier name
+    fast:
+      limit: 25
+      period: trial
+    pro:
+      limit: 3
+      period: trial
+
+  insider:
+    fast:
+      limit: 300
+      period: month
+    pro:
+      limit: 10
+      period: month
+
+  pro:
+    fast:
+      limit: 1000
+      period: month
+    pro:
+      limit: 150
+      period: month
+
+# ── Token backstop ceilings per user per calendar month ───────────────────────
+# First ceiling hit wins; tracked separately from request quotas.
+token_ceilings:
+  fast: 5000000    # 5M tokens/month per user on fast lane
+  pro: 2000000     # 2M tokens/month per user on pro lane
+
+# ── Tier resolver cache TTL ───────────────────────────────────────────────────
+tier_cache_ttl_seconds: 60
+
+# ── Supabase thread store table names ────────────────────────────────────────
+thread_tables:
+  threads: brain_threads
+  messages: brain_messages

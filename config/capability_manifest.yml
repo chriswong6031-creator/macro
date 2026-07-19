@@ -53,6 +53,8 @@ capabilities:
       - news-llm
       - ask-brain
       - orchestrator-chat
+      - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
+      - brain-pro        # MNZ-W6a: opus/sonnet pro lane
     allowed_tiers:
       - T0
       - T1
@@ -125,6 +127,8 @@ capabilities:
       - news-llm
       - ask-brain
       - orchestrator-chat
+      - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
+      - brain-pro        # MNZ-W6a: opus/sonnet pro lane
     allowed_tiers:
       - T0
       - T1
@@ -169,6 +173,8 @@ capabilities:
       - news-llm
       - ask-brain
       - orchestrator-chat
+      - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
+      - brain-pro        # MNZ-W6a: opus/sonnet pro lane
     allowed_tiers:
       - T0
       - T1
@@ -211,6 +217,8 @@ capabilities:
       - news-llm
       - ask-brain
       - orchestrator-chat
+      - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
+      - brain-pro        # MNZ-W6a: opus/sonnet pro lane
     allowed_tiers:
       - T0
       - T1
@@ -253,6 +261,8 @@ capabilities:
       - news-llm
       - ask-brain
       - orchestrator-chat
+      - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
+      - brain-pro        # MNZ-W6a: opus/sonnet pro lane
     allowed_tiers:
       - T0
       - T1
@@ -295,6 +305,8 @@ capabilities:
       - news-llm
       - ask-brain
       - orchestrator-chat
+      - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
+      - brain-pro        # MNZ-W6a: opus/sonnet pro lane
     allowed_tiers:
       - T0
       - T1
@@ -337,6 +349,8 @@ capabilities:
       - news-llm
       - ask-brain
       - orchestrator-chat
+      - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
+      - brain-pro        # MNZ-W6a: opus/sonnet pro lane
     allowed_tiers:
       - T0
       - T1
@@ -379,6 +393,8 @@ capabilities:
       - news-llm
       - ask-brain
       - orchestrator-chat
+      - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
+      - brain-pro        # MNZ-W6a: opus/sonnet pro lane
     allowed_tiers:
       - T0
       - T1
@@ -388,6 +404,29 @@ capabilities:
     notes: >
       V2-B pool key 7 of 7. Optional — pool works with only _1 present.
       Same ledger / cooling semantics as claude_code_oauth_1.
+
+  # ── DeepSeek API key (brain-fast lane primary provider, MNZ-W6a) ─────────
+
+  - capability_id: deepseek_api_key
+    kind: llm_api_key
+    secret_ref: DEEPSEEK_API_KEY
+    scope: >
+      DeepSeek API key for the brain-fast lane (deepseek-chat via Anthropic-compatible
+      endpoint at https://api.deepseek.com/anthropic).  Primary provider for the fast
+      lane; falls back to claude-haiku-4-5 via Anthropic key when absent/dead.
+    storage_locus: gh-secret
+    allowed_lanes:
+      - brain-fast        # MNZ-W6a: fast lane primary
+    allowed_tiers:
+      - T0
+      - T1
+      - T2
+    rotation_state: active
+    kill_state: active
+    notes: >
+      MNZ-W6a §3.5 Amendment 2: deepseek-chat via Anthropic-compatible endpoint.
+      Gateway degrades to claude-haiku-4-5 (ANTHROPIC_API_KEY) when this key is absent.
+      Conservative least-privilege: brain-fast only; not allowed for pro lane.
 
   # ── GitHub token (read/write for PR operations) ──────────────────────────
 
