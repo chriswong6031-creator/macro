@@ -349,3 +349,54 @@ if __name__ == "__main__":
         p = outdir / f"breaking_{name}.svg"
         p.write_text(svg, encoding="utf-8")
         print(f"{name:14s} → {p} ({len(svg.encode())} bytes)")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Quality-upgrade round 2: event-class kicker + cashtag-only rows
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("cls,word", [
+    ("macro_print", "MACRO PRINT"),
+    ("policy", "POLICY"),
+    ("geopolitical", "GEOPOLITICAL"),
+    ("company_news", "COMPANY NEWS"),
+])
+def test_kicker_plain_words_per_class(cls, word):
+    svg = render_breaking_card(
+        _CPI, "Bureau of Labor Statistics", "official",
+        "2026-07-14T12:31:00Z", event_class=cls,
+    )
+    _parse(svg)
+    assert word in svg
+    assert cls not in svg  # raw snake_case key never shown (plain-word law)
+
+
+@pytest.mark.parametrize("cls", ["none", None, "", "unknown_class"])
+def test_kicker_omitted_for_none_and_unknown(cls):
+    svg = render_breaking_card(
+        _CPI, "Bureau of Labor Statistics", "official",
+        "2026-07-14T12:31:00Z", event_class=cls,
+    )
+    _parse(svg)
+    assert "bc-kicker" not in svg
+
+
+def test_cashtag_only_row_no_dashes():
+    svg = render_breaking_card(
+        _CPI, "CNBC", "wire", "2026-07-14T12:31:00Z",
+        tickers=[{"ticker": "SPY"}],  # no price, no pct
+    )
+    _parse(svg)
+    assert "$SPY" in svg
+    assert "—" not in svg  # a dash row reads as broken, not honest
+    assert "nan" not in svg.lower().replace("sans-serif", "")
+
+
+def test_price_only_row_renders_price_no_pct_arrows():
+    svg = render_breaking_card(
+        _CPI, "CNBC", "wire", "2026-07-14T12:31:00Z",
+        tickers=[{"ticker": "SPY", "price": 512.30}],
+    )
+    _parse(svg)
+    assert "$512.30" in svg
+    assert "▲" not in svg and "▼" not in svg

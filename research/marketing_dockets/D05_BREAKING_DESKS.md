@@ -1,6 +1,6 @@
 # MKT-D05 — Breaking Desks: News / Policy-Feed Ingestion + Cite Cards
 
-**Department:** Radar (intelligence) + Studio · **Priority: P1** · **Status: W0 MERGED 2026-07-19 (PR #3054) — breaking_feed/breaking_relevance/breaking_summary + render_breaking_card + fixture tests (adversarial unsourced-number rejection incl.); next = W1 wiring through D01's fastlane outbox (#3053)**
+**Department:** Radar (intelligence) + Studio · **Priority: P1** · **Status: W0 MERGED 2026-07-19 (PR #3054) — breaking_feed/breaking_relevance/breaking_summary + render_breaking_card + fixture tests (adversarial unsourced-number rejection incl.); W0.5 quality-hardening pass same day (operator-ordered opus/main-loop re-review: RFC-2822 named-zone dates, Atom content fix, real 304/Retry-After/backoff handling, stance+alias word-boundary fixes, ticker price enrichment, event-class kicker, ops smoke CLI); next = W1 wiring through D01's fastlane outbox (#3053)**
 **Operator intent:** breaking market-moving news (macro prints, policy/tariff headlines, Truth Social posts, CENTCOM-class geopolitical events) should become fast, cited, illustrated posts — the second immediate-content lane beside earnings.
 
 ## Why

@@ -63,6 +63,7 @@ _DEFAULT_INTERVAL = 300  # seconds between polls per source
 _DEFAULT_UA = "MastermindBreakingBot/1.0 (+https://mastermind-x.com)"
 _FEED_TIMEOUT = 10       # urllib timeout in seconds
 _MAX_FEED_BYTES = 10 * 1024 * 1024  # per-fetch cap — a hostile/broken feed must not OOM the poller
+_MAX_BACKOFF_S = 3600    # exponential-backoff ceiling for failing feeds
 
 # Strip HTML tags (including script/style content)
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -99,36 +100,31 @@ def _make_id(source_key: str, guid_or_url: str) -> str:
 
 
 def _parse_pub_date(raw: str) -> str:
-    """Parse RSS pubDate or Atom <updated>/<published> → ISO8601 UTC str.
+    """Parse RSS pubDate / Atom updated/published / dc:date → ISO8601 UTC str.
 
-    Falls back to current UTC if unparseable.
+    RFC 2822 is tried first via email.utils — it handles NAMED zones
+    ("Mon, 14 Jul 2026 08:30:00 EST", which BLS/BEA datelines actually use)
+    and arbitrary numeric offsets that strptime format lists miss. Then
+    ISO 8601. Ingest time is the documented last resort only — a real
+    date must never fall through to it (freshness is this lane's product).
     """
-    if not raw:
-        return datetime.now(tz=timezone.utc).isoformat()
-    raw = raw.strip()
-    # Try common RSS formats
-    for fmt in (
-        "%a, %d %b %Y %H:%M:%S %z",
-        "%a, %d %b %Y %H:%M:%S GMT",
-        "%a, %d %b %Y %H:%M:%S +0000",
-    ):
+    raw = (raw or "").strip()
+    if raw:
         try:
-            dt = datetime.strptime(raw, fmt)
+            from email.utils import parsedate_to_datetime  # noqa: PLC0415
+            dt = parsedate_to_datetime(raw)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc).isoformat()
+        except (TypeError, ValueError):
+            pass
+        try:
+            dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
             return dt.astimezone(timezone.utc).isoformat()
         except ValueError:
             pass
-    # Try ISO8601 (Atom)
-    try:
-        # Replace Z suffix with +00:00
-        clean = raw.replace("Z", "+00:00")
-        dt = datetime.fromisoformat(clean)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc).isoformat()
-    except ValueError:
-        pass
     return datetime.now(tz=timezone.utc).isoformat()
 
 
@@ -178,12 +174,6 @@ def _parse_xml_feed(
 
     root = ET.fromstring(text)
 
-    # Detect Atom vs RSS
-    ns = ""
-    tag = root.tag
-    if "}" in tag:
-        ns = tag.split("}")[0][1:]
-
     atom_ns = "{http://www.w3.org/2005/Atom}"
     # If root tag contains Atom namespace, treat as Atom
     if "w3.org/2005/Atom" in (root.tag + " " + (root.get("xmlns", ""))):
@@ -205,8 +195,10 @@ def _parse_xml_feed(
         link = _elem_text(item.find("link"))
         guid_el = item.find("guid")
         guid = _elem_text(guid_el) if guid_el is not None else link
-        pub_el = item.find("pubDate")
-        pub_raw = _elem_text(pub_el) if pub_el is not None else ""
+        # pubDate, with dc:date fallback (some government feeds use Dublin Core)
+        pub_raw = _elem_text(item.find("pubDate")) or _elem_text(
+            item.find("{http://purl.org/dc/elements/1.1/}date")
+        )
         desc_el = item.find("description")
         desc_raw = _elem_text(desc_el) if desc_el is not None else ""
         # Also check content:encoded
@@ -259,13 +251,13 @@ def _parse_atom(
         published_el = entry.find(f"{ns}published")
         pub_raw = _elem_text(updated_el if updated_el is not None else published_el)
 
-        summary_el = entry.find(f"{ns}summary")
+        # Prefer <content>, fall back to <summary> — with EXPLICIT None checks:
+        # ElementTree Elements with no children are falsy, so `content_el or
+        # summary_el` silently drops text-only <content> nodes.
         content_el = entry.find(f"{ns}content")
-        desc_raw = (
-            _elem_text(content_el or summary_el)
-            if (content_el is not None or summary_el is not None)
-            else ""
-        )
+        summary_el = entry.find(f"{ns}summary")
+        desc_el = content_el if content_el is not None else summary_el
+        desc_raw = _elem_text(desc_el)
 
         if not title and not link:
             continue
@@ -416,7 +408,6 @@ def poll_source(
     """
     key = source_cfg.get("key", "unknown")
     url = source_cfg.get("url", "")
-    kind = source_cfg.get("kind", "rss")
     interval = int(source_cfg.get("poll_interval_s", _DEFAULT_INTERVAL))
     user_agent = str(source_cfg.get("user_agent", _DEFAULT_UA))
 
@@ -430,9 +421,24 @@ def poll_source(
         session_state = _load_state(root)
 
     src_state = session_state.get(key, {})
-    last_poll = src_state.get("last_poll_ts", 0)
-    if (time.time() - float(last_poll)) < interval:
-        return []  # politeness floor — too soon
+    now_ts = time.time()
+    last_poll = float(src_state.get("last_poll_ts", 0))
+    fail_count = int(src_state.get("fail_count", 0))
+    backoff_until = float(src_state.get("backoff_until", 0))
+
+    # Politeness floor + failure backoff. A failing feed backs off
+    # exponentially (interval·2^fails, capped) instead of being re-hit at
+    # full rate forever; a Retry-After ask is honored via backoff_until.
+    effective_interval = min(interval * (2 ** min(fail_count, 8)), _MAX_BACKOFF_S)
+    if now_ts < backoff_until or (now_ts - last_poll) < effective_interval:
+        return []
+
+    # Stamp the ATTEMPT time up front so every outcome (success, 304, error)
+    # respects the floor on the next tick.
+    src_state["last_poll_ts"] = now_ts
+    session_state[key] = src_state
+
+    from urllib.error import HTTPError  # noqa: PLC0415
 
     try:
         req = Request(url, headers={"User-Agent": user_agent})  # noqa: S310
@@ -444,36 +450,46 @@ def poll_source(
             req.add_header("If-Modified-Since", last_mod)
 
         with urlopen(req, timeout=_FEED_TIMEOUT) as resp:  # noqa: S310
-            status = resp.getcode()
-            if status == 304:
-                # Not modified — update last_poll_ts and return empty
-                src_state["last_poll_ts"] = time.time()
-                session_state[key] = src_state
-                return []
             raw = resp.read(_MAX_FEED_BYTES + 1)
             if len(raw) > _MAX_FEED_BYTES:
                 print(
                     f"[breaking_feed] {key}: feed exceeds {_MAX_FEED_BYTES} bytes — dropped",
                     file=sys.stderr,
                 )
-                src_state["last_poll_ts"] = time.time()
-                session_state[key] = src_state
+                src_state["fail_count"] = fail_count + 1
                 return []
             text = raw.decode("utf-8", errors="replace")
             new_etag = resp.headers.get("ETag", "")
             new_last_mod = resp.headers.get("Last-Modified", "")
 
-        # Update state
-        src_state["last_poll_ts"] = time.time()
+        src_state["fail_count"] = 0
+        src_state.pop("backoff_until", None)
         if new_etag:
             src_state["etag"] = new_etag
         if new_last_mod:
             src_state["last_modified"] = new_last_mod
-        session_state[key] = src_state
 
         return parse_feed(text, source_cfg)
 
+    except HTTPError as exc:
+        # urllib raises for every non-2xx, INCLUDING 304 — a Not-Modified
+        # response is the conditional GET working, not an error.
+        if exc.code == 304:
+            src_state["fail_count"] = 0
+            return []
+        if exc.code in (429, 503):
+            retry_after = (exc.headers.get("Retry-After", "") if exc.headers else "")
+            try:
+                delay = float(retry_after)
+            except (TypeError, ValueError):
+                delay = 0.0  # HTTP-date form / absent — exponential backoff covers it
+            if delay > 0:
+                src_state["backoff_until"] = now_ts + delay
+        src_state["fail_count"] = fail_count + 1
+        print(f"[breaking_feed] poll_source HTTP {exc.code} ({key})", file=sys.stderr)
+        return []
     except Exception as exc:  # noqa: BLE001
+        src_state["fail_count"] = fail_count + 1
         print(f"[breaking_feed] poll_source error ({key}): {exc}", file=sys.stderr)
         return []
 
@@ -513,3 +529,41 @@ def poll_all(root: Path | str, cfg: dict) -> list[FeedItem]:
     _save_seen(root, updated_seen)
 
     return new_items
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Manual ops smoke driver — `python -m engine.marketing.breaking_feed`
+# Network is fine here (operator-run lane check); never invoked by CI/tests.
+# ─────────────────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":  # pragma: no cover
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Poll breaking sources once and print new items.")
+    ap.add_argument("--root", default=".", help="repo root (default: cwd)")
+    ap.add_argument("--score", action="store_true", help="run the deterministic relevance scorer")
+    ap.add_argument("--json", action="store_true", help="emit JSON instead of a table")
+    args = ap.parse_args()
+
+    try:
+        import yaml  # noqa: PLC0415
+        _cfg_all = yaml.safe_load(
+            (Path(args.root) / "config" / "marketing.yml").read_text(encoding="utf-8")
+        ) or {}
+    except Exception as exc:  # noqa: BLE001
+        print(f"config load failed: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    fetched_items = poll_all(args.root, _cfg_all.get("breaking", {}))
+    rows: list[dict] = list(fetched_items)
+    if args.score and rows:
+        from engine.marketing.breaking_relevance import rank_items  # noqa: PLC0415
+        rows = rank_items(rows, cfg=_cfg_all.get("breaking", {}), root=args.root)
+
+    if args.json:
+        print(json.dumps(rows, indent=2))
+    else:
+        print(f"{len(rows)} new item(s)")
+        for r in rows:
+            sal = f"  sal={r['salience']:5.1f} {r.get('event_class', ''):<12}" if args.score else ""
+            print(f"- [{r['source_tier']:<10}] {r['published_at'][:16]}{sal}  {r['headline'][:80]}")

@@ -1554,6 +1554,7 @@ def render_breaking_card(
     tickers: "list[dict] | None" = None,
     suppress_cta: bool = False,
     summary: "str | None" = None,
+    event_class: "str | None" = None,
     logo_root: "Path | str | None" = None,  # noqa: ARG001 — reserved; text cashtags used
     width: int = 1000,
     height: int = 560,
@@ -1578,6 +1579,10 @@ def render_breaking_card(
         suppress_cta: Sentinel tone rule — True on human-tragedy items removes
             the trial CTA line so the footer collapses to just the brand mark.
         summary: Optional ≤2-sentence cited summary; omitted cleanly when None.
+        event_class: Optional relevance class ("macro_print"|"policy"|
+            "geopolitical"|"company_news") rendered as a quiet plain-word
+            kicker beside the BREAKING eyebrow; unknown/none/None → omitted
+            (the raw snake_case key is never shown — plain-word law).
         logo_root: Reserved for future logomark use; text cashtags are used now.
         width, height: Card dimensions (family default 1000×560).
 
@@ -1634,6 +1639,24 @@ def render_breaking_card(
             f'font-size="15" font-weight="900" font-family="sans-serif" '
             f'letter-spacing="3.5">BREAKING</text>'
         )
+        # Plain-word event-class kicker — quiet grey, subordinate to the tier
+        # chip (the signature). Unknown/none keys are omitted, never echoed raw.
+        _KICKER_WORDS = {
+            "macro_print": "MACRO PRINT",
+            "policy": "POLICY",
+            "geopolitical": "GEOPOLITICAL",
+            "company_news": "COMPANY NEWS",
+        }
+        kicker = _KICKER_WORDS.get(str(event_class or "").strip().lower(), "")
+        if kicker:
+            eyebrow_svg += (
+                f'<circle cx="{pad_l + 152:.0f}" cy="{eyebrow_y - 6:.1f}" r="2" '
+                f'fill="{_BREAK_GREY}"/>'
+                f'<text x="{pad_l + 164}" y="{eyebrow_y - 1:.1f}" '
+                f'fill="{_BREAK_GREY}" font-size="12.5" font-weight="700" '
+                f'font-family="sans-serif" letter-spacing="2.5" '
+                f'class="bc-kicker">{_xesc(kicker)}</text>'
+            )
 
         # Tier chip — the signature. Weight encodes trust; anti-laundering law.
         ts_str = _break_fmt_ts(published_at)
@@ -1739,11 +1762,14 @@ def render_breaking_card(
             for i, row in enumerate(rows):
                 cx0 = pad_l + i * cell_w
                 cashtag = ("$" + str(row.get("ticker", "") or "").upper())[:8]
+                # Missing numbers render as a clean cashtag-only chip — never
+                # placeholder dashes (a "—" row reads as broken, not honest).
                 try:
-                    price = float(row.get("price"))
-                    price_s = f"${price:,.2f}"
+                    price_s = f"${float(row.get('price')):,.2f}"
                 except (TypeError, ValueError):
-                    price_s = "—"
+                    price_s = ""
+                pct_s = ""
+                pcol = _BREAK_GREY
                 try:
                     pct = float(row.get("pct"))
                     up = pct >= 0
@@ -1752,25 +1778,27 @@ def render_breaking_card(
                     sign = "+" if up else ""
                     pct_s = f"{arrow} {sign}{pct:.1f}%"
                 except (TypeError, ValueError):
-                    pcol = _BREAK_GREY
-                    pct_s = "—"
+                    pass
                 # Cashtag (white) and pct (colored) share line 1; the pct x is
                 # derived from the cashtag length so it can NEVER reach the card's
                 # right edge (fixed far-right offsets overflow on wide cells).
                 pct_x = cx0 + 10 + len(cashtag) * 11
                 strip_svg += (
-                    # Cashtag — line 1 left
                     f'<text x="{cx0:.0f}" y="{strip_y:.0f}" fill="#e2e8f0" '
                     f'font-size="17" font-weight="bold" font-family="sans-serif">'
                     f'{_xesc(cashtag)}</text>'
-                    # Signed pct with arrow, house color — line 1, right of cashtag
-                    f'<text x="{pct_x:.0f}" y="{strip_y:.0f}" fill="{pcol}" '
-                    f'font-size="15" font-weight="bold" font-family="sans-serif">'
-                    f'{_xesc(pct_s)}</text>'
-                    # Price — line 2, muted
-                    f'<text x="{cx0:.0f}" y="{strip_y + 22:.0f}" fill="{_BREAK_GREY}" '
-                    f'font-size="13" font-family="sans-serif">{_xesc(price_s)}</text>'
                 )
+                if pct_s:
+                    strip_svg += (
+                        f'<text x="{pct_x:.0f}" y="{strip_y:.0f}" fill="{pcol}" '
+                        f'font-size="15" font-weight="bold" font-family="sans-serif">'
+                        f'{_xesc(pct_s)}</text>'
+                    )
+                if price_s:
+                    strip_svg += (
+                        f'<text x="{cx0:.0f}" y="{strip_y + 22:.0f}" fill="{_BREAK_GREY}" '
+                        f'font-size="13" font-family="sans-serif">{_xesc(price_s)}</text>'
+                    )
 
         # ── Footer — CTA collapses to brand mark when suppress_cta (tragedy) ──
         footer_y = height - 10
