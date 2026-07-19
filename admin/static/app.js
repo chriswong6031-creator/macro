@@ -152,11 +152,12 @@ const ICONS = {
   marketing_lobes:       NAV_ICO('<rect x="3" y="3" width="5" height="5" rx="1.2"/><rect x="10" y="3" width="5" height="5" rx="1.2"/><rect x="17" y="3" width="4" height="5" rx="1.2"/><rect x="3" y="10" width="5" height="5" rx="1.2"/><rect x="10" y="10" width="5" height="5" rx="1.2"/><path d="M5.5 15v2a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2"/>'),
   marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
+  marketing_outbox:      NAV_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -3934,6 +3935,292 @@ RENDER.marketing_lab = async () => {
 
   v.innerHTML = headerHtml + waitingHtml + boardHtml + reachHtml + topHtml;
 };
+
+/* ---- OUTBOX (D02 W0 — X posting queue review) ---------------------------- */
+/* Char budget for a single X post — the copy-review yardstick. */
+const OBX_CHAR_CAP = 275;
+
+/* Plain-word stance for each review/ledger state. state token IS the label.
+   The two "queued" variants below carry the operator's recorded decision:
+   an item stays ledger-queued until the actuator applies the decision, so an
+   approved-decision item is honestly "cleared, not yet sent". */
+const OBX_STATE = {
+  held:         { cls: "obx-held",     label: "Held",       stance: "Won't post" },
+  queued:       { cls: "obx-ready",    label: "Ready",      stance: "Awaiting your call" },
+  approve_ok:   { cls: "obx-approved", label: "Cleared",    stance: "Actuator will post" },
+  approved:     { cls: "obx-approved", label: "Approved",   stance: "Actuator will post" },
+  posted:       { cls: "obx-posted",   label: "Posted",     stance: "Went out" },
+  failed:       { cls: "obx-failed",   label: "Failed",     stance: "Did not send" },
+  quarantined:  { cls: "obx-quar",     label: "Quarantined",stance: "Blocked" },
+};
+/* Effective review-state of an item. The operator's recorded decision overlays
+   the ledger-folded status while the item is still queued. */
+function obxEffState(it) {
+  if (it.status === "queued") {
+    if (it.decision === "hold") return "held";
+    if (it.decision === "approve") return "approve_ok";
+    return "queued";
+  }
+  return it.status || "queued";
+}
+/* An item is still operator-decidable while its ledger status is 'queued'
+   (held is queued+hold — still flippable). Approved/posted/failed are locked. */
+function obxIsDecidable(it) { return it.status === "queued"; }
+
+function obxStamp(ts) {
+  if (!ts) return "—";
+  return esc(String(ts).replace("T", " ").replace("Z", " UTC"));
+}
+
+/* Summarise a receipt object/string into one muted line. */
+function obxReceiptLine(r) {
+  if (!r) return "";
+  if (typeof r === "string") return esc(r);
+  /* Only http(s) receipts become links — anything else renders as text. */
+  if (r.url && /^https?:\/\//i.test(String(r.url)))
+    return `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a>`;
+  if (r.url) return esc(String(r.url));
+  const keys = Object.keys(r);
+  if (!keys.length) return "";
+  return esc(keys.map(k => `${k}: ${r[k]}`).join(" · "));
+}
+
+RENDER.marketing_outbox = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/outbox");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Outbox unavailable", (d && d.error) || "panel error"); return; }
+
+  const cap = d.cap != null ? d.cap : "—";
+  const asOf = d.as_of || null;
+  const summary = d.summary || {};
+  const accounts = d.accounts || [];
+  const history = d.history || [];
+
+  /* Header — honest shadow-mode state pill carries the stance in plain words. */
+  const asOfChip = asOf ? `<span class="cnt">reviewing ${esc(asOf)}</span>` : "";
+  const header = `<div class="section">Outbox ${asOfChip}
+    <span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Review only — nothing posts externally</span>
+  </div>
+  <div class="obx-lede">The queue below is what each desk account is <b>about to post to X</b>. Read the exact copy, then approve or hold. In this shadow phase nothing leaves the building — approvals are recorded, but no post is sent. Daily ceiling: <b>${esc(String(cap))} posts per desk</b>.</div>`;
+
+  /* Day-0 empty state — sibling-page accruing card, an invitation to act. */
+  if (d.note && !accounts.length) {
+    v.innerHTML = header + `<div class="card">
+      <div class="note muted" style="margin-bottom:8px">${esc(d.note)}</div>
+      <div class="note muted">Items appear here after a nightly governor run with <code>MARKETING_OUTBOX_ENABLED=1</code> emits the desk queue from the day's content plan. Until then there is nothing waiting to post.</div>
+    </div>`;
+    return;
+  }
+
+  /* Summary tiles — approved reads ok-ish, held warn, failed/quarantined bad. */
+  const tileDefs = [
+    ["queued",      "Ready",       null],
+    ["held",        "Held",        "var(--warn)"],
+    ["approved",    "Approved",    "var(--ok)"],
+    ["posted",      "Posted",      "var(--muted)"],
+    ["failed",      "Failed",      "var(--bad)"],
+    ["quarantined", "Quarantined", "var(--bad)"],
+  ];
+  const tiles = `<div class="metric-tiles-row">
+    ${tileDefs.map(([k, lbl, color]) => {
+      const val = summary[k] != null ? summary[k] : 0;
+      return `<div class="metric-tile"${val === 0 ? ' style="opacity:.55"' : ""}>
+        <div class="eyebrow">${esc(lbl)}</div>
+        <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>
+      </div>`;
+    }).join("")}
+  </div>`;
+
+  /* Account switcher — reuse the mkt-acct pill idiom. */
+  const acctPills = `<div class="mkt-acct-switcher" id="obx-acct-sw">
+    <button class="mkt-acct-pill active" data-acct="all" onclick="obxSwitchAcct('all',this)">All desks</button>
+    ${accounts.map(a => {
+      const c = a.counts || {};
+      const pend = (c.queued || 0) + (c.held || 0);
+      const badge = pend ? ` <span class="obx-pill-n">${pend}</span>` : "";
+      return `<button class="mkt-acct-pill" data-acct="${esc(a.id)}" onclick="obxSwitchAcct('${esc(a.id)}',this)">${esc(a.id)}${badge}</button>`;
+    }).join("")}
+  </div>`;
+
+  /* Per-account review sections. */
+  let sections = "";
+  accounts.forEach(acct => {
+    const items = acct.items || [];
+    /* Review stage = items still in the decision window (queued/held) first,
+       then approved (locked but awaiting the actuator). Posted/failed/quar are
+       history — shown in the history section, not the review queue. */
+    const review = items.filter(it => ["queued", "approved"].includes(it.status));
+    review.sort((a, b) => {
+      /* decidable (queued/held) before locked (approved) */
+      const da = obxIsDecidable(a) ? 0 : 1, db = obxIsDecidable(b) ? 0 : 1;
+      if (da !== db) return da - db;
+      return (a.scheduled_at || "").localeCompare(b.scheduled_at || "");
+    });
+
+    const cards = review.map(it => obxItemCard(it, acct.id)).join("");
+    const c = acct.counts || {};
+    const pend = (c.queued || 0) + (c.held || 0);
+    const countChip = pend
+      ? `<span class="cnt">${pend} awaiting review${c.approved ? ` · ${c.approved} approved` : ""}</span>`
+      : (c.approved ? `<span class="cnt">${c.approved} approved · all reviewed</span>` : `<span class="cnt">nothing to review</span>`);
+
+    sections += `<div class="obx-acct-section" data-acct="${esc(acct.id)}">
+      <div class="section obx-acct-head">${esc(acct.id)} ${countChip}</div>
+      ${cards || `<div class="card"><div class="note muted">No items in the review window for this desk.</div></div>`}
+    </div>`;
+  });
+
+  /* Posted / terminal history. */
+  let historyHtml;
+  if (history.length) {
+    const rows = history.map(h => {
+      const st = OBX_STATE[h.status] || { cls: "obx-posted", label: h.status || "—", stance: "" };
+      const rl = obxReceiptLine(h.receipt);
+      const txt = (h.text || "").replace(/\s+/g, " ").trim();
+      const short = txt.length > 90 ? txt.slice(0, 90) + "…" : txt;
+      return `<tr>
+        <td class="obx-h-acct">${esc(h.account || "—")}</td>
+        <td>${obxKindChip(h.kind)}</td>
+        <td class="obx-h-text">${esc(short)}</td>
+        <td><span class="statpill obx-state ${st.cls}">${esc(st.label)}</span></td>
+        <td class="obx-h-at">${obxStamp(h.at)}</td>
+        <td class="obx-h-rc">${rl || '<span class="faint">—</span>'}</td>
+      </tr>`;
+    }).join("");
+    historyHtml = `<div class="section" style="margin-top:26px">Posted history <span class="cnt">${history.length} recorded</span></div>
+      <div class="table-wrap"><table class="exp-table obx-h-table">
+        <thead><tr><th>Desk</th><th>Kind</th><th>Post</th><th>Result</th><th>When (UTC)</th><th>Receipt</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+  } else {
+    historyHtml = `<div class="section" style="margin-top:26px">Posted history</div>
+      <div class="card"><div class="note muted">Nothing has reached a terminal state yet. Once the actuator posts (or an item fails or is blocked), it lands here with its receipt.</div></div>`;
+  }
+
+  v.innerHTML = header + tiles + acctPills + `<div id="obx-review">${sections}</div>` + historyHtml;
+  obxLoadAllMedia();
+};
+
+/* Kind chip — reuse the content-type color map where a kind matches. */
+function obxKindChip(kind) {
+  if (!kind) return "";
+  const color = mktTypeColor(kind);
+  return `<span class="mkt-type-chip" style="background:${color}22;border-color:${color}44;color:${color}">${esc(kind)}</span>`;
+}
+
+/* One review-queue item card — the signature surface. */
+function obxItemCard(it, acctId) {
+  const eff = obxEffState(it);
+  const stateMeta = OBX_STATE[eff] || OBX_STATE.queued;
+  const text = it.text || "";
+  const n = [...text].length;               /* codepoint count, not UTF-16 units */
+  const over = n > OBX_CHAR_CAP;
+  const nearCap = !over && n > OBX_CHAR_CAP * 0.9;
+  const meterCls = over ? "obx-over" : nearCap ? "obx-near" : "";
+
+  const kindChip = obxKindChip(it.kind);
+  const schedChip = (it.scheduled_at && it.scheduled_at !== "immediate")
+    ? `<span class="statpill s-mut obx-mini">${obxStamp(it.scheduled_at)}</span>`
+    : `<span class="statpill s-mut obx-mini">send when approved</span>`;
+  const slotChip = it.slot ? `<span class="statpill s-mut obx-mini">${esc(it.slot)}</span>` : "";
+  const prioChip = (it.priority != null) ? `<span class="obx-prio" title="posting priority">P${esc(String(it.priority))}</span>` : "";
+
+  /* Decision / state chip — plain-word outcome, not a machine enum. */
+  const stateChip = `<span class="statpill obx-state ${stateMeta.cls}">${stateMeta.label} · ${stateMeta.stance}</span>`;
+
+  /* Media — lazy-loaded via the media endpoint (populated by obxLoadAllMedia). */
+  const media = (it.media || []).filter(m => m && m.path);
+  const mediaHtml = media.map((m, i) => {
+    const dis = `${esc(m.ticker || m.chart_id || "chart")}`;
+    return `<div class="obx-media" data-media-path="${esc(m.path)}">
+      <div class="obx-media-head"><span class="obx-media-tag">chart · ${dis}</span></div>
+      <div class="obx-media-slot"><span class="obx-media-load">loading preview…</span></div>
+    </div>`;
+  }).join("");
+
+  /* Controls — only while decidable (ledger status queued, incl. held). */
+  let controls = "";
+  if (obxIsDecidable(it)) {
+    controls = `<div class="obx-controls" data-item="${esc(it.id)}">
+      <button class="btn primary obx-btn-approve" onclick="obxDecide('${esc(it.id)}','approve',this)">Approve</button>
+      <button class="btn obx-btn-hold" onclick="obxDecide('${esc(it.id)}','hold',this)">Hold</button>
+      <span class="obx-ctrl-msg"></span>
+    </div>`;
+  } else {
+    controls = `<div class="obx-controls obx-locked"><span class="obx-lock-note">${eff === "approved" ? "Approved — waiting for the actuator." : "Locked — decision window closed."}</span></div>`;
+  }
+
+  return `<div class="obx-card obx-edge-${eff}" data-item-card="${esc(it.id)}" data-acct="${esc(it.account || acctId)}">
+    <div class="obx-card-top">
+      ${kindChip}${prioChip}${slotChip}${schedChip}
+      <span class="obx-prov">${esc(it.provenance || "")}</span>
+      ${stateChip}
+    </div>
+    <div class="obx-compose">
+      <pre class="obx-text">${esc(text)}</pre>
+      <div class="obx-meter">
+        <div class="obx-meter-bar"><div class="obx-meter-fill ${meterCls}" style="width:${Math.min(100, (n / OBX_CHAR_CAP) * 100).toFixed(1)}%"></div></div>
+        <span class="obx-count ${meterCls}">${n} / ${OBX_CHAR_CAP}${over ? " · over limit" : ""}</span>
+      </div>
+    </div>
+    ${mediaHtml}
+    ${controls}
+  </div>`;
+}
+
+/* Lazy-fetch each media SVG through the auth-guarded endpoint. */
+function obxLoadAllMedia() {
+  document.querySelectorAll(".obx-media[data-media-path]").forEach(async el => {
+    const p = el.getAttribute("data-media-path");
+    const slot = el.querySelector(".obx-media-slot");
+    if (!p || !slot) return;
+    /* Render via <img>: SVG loaded as an image cannot execute embedded script,
+       so served media never runs in the admin origin. The endpoint re-validates
+       path containment server-side — it is the trust boundary for `p`. */
+    const img = document.createElement("img");
+    img.className = "obx-media-svg";
+    img.alt = "chart preview";
+    img.onload = () => {
+      slot.innerHTML = "";
+      slot.appendChild(img);
+      slot.classList.add("obx-media-ready");
+      img.onclick = () => img.classList.toggle("obx-media-expand");
+    };
+    img.onerror = () => {
+      slot.innerHTML = `<span class="statpill s-mut obx-mini">media unavailable</span>`;
+    };
+    img.src = "/api/marketing/outbox/media?path=" + encodeURIComponent(p);
+  });
+}
+
+/* Filter the review queue to one desk (client-side, mirrors Content Studio). */
+function obxSwitchAcct(acct, btn) {
+  document.querySelectorAll("#obx-acct-sw .mkt-acct-pill").forEach(el => el.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  document.querySelectorAll(".obx-acct-section").forEach(el => {
+    el.style.display = (acct === "all" || el.dataset.acct === acct) ? "" : "none";
+  });
+}
+
+/* POST an approve/hold decision, then refetch to fold the new state in. */
+async function obxDecide(id, decision, btn) {
+  const ctrl = btn ? btn.closest(".obx-controls") : null;
+  const msg = ctrl ? ctrl.querySelector(".obx-ctrl-msg") : null;
+  const btns = ctrl ? ctrl.querySelectorAll("button") : [];
+  btns.forEach(b => { b.disabled = true; });
+  if (msg) { msg.className = "obx-ctrl-msg"; msg.textContent = decision === "approve" ? "approving…" : "holding…"; }
+  try {
+    const r = await post("/api/marketing/outbox/decide", { id, decision });
+    if (!r || !r.ok) throw new Error((r && r.error) || "decision failed");
+    toast(decision === "approve" ? "Approved for posting" : "Held — won't post");
+    /* Refetch so summary tiles + counts + state chips all re-fold consistently. */
+    await RENDER.marketing_outbox();
+  } catch (e) {
+    btns.forEach(b => { b.disabled = false; });
+    if (msg) { msg.className = "obx-ctrl-msg obx-ctrl-err"; msg.textContent = (e && e.message) || "failed — try again"; }
+  }
+}
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */
 const MAI_SETTING_FIELDS = [   /* [key, kind, label, note, min, max] — bounds mirror the bot's */

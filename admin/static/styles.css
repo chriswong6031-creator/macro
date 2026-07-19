@@ -2417,3 +2417,293 @@ tr.lab-cell-floor td { opacity: .72; }
   margin-top: 3px;
 }
 
+/* --------------------------------------------------------------------------
+   OUTBOX — X posting-queue review (D02 W0)
+   -------------------------------------------------------------------------- */
+
+/* Shadow-mode state pill in the header — the honest "safety is on" chip. */
+.obx-shadow-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 1px solid rgba(255,184,77,.28);
+  letter-spacing: .01em;
+}
+.obx-shadow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+  box-shadow: 0 0 0 0 rgba(255,184,77,.5);
+  animation: obx-breathe 2.6s var(--ease) infinite;
+}
+@keyframes obx-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,184,77,.45); }
+  50%      { box-shadow: 0 0 0 5px rgba(255,184,77,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .obx-shadow-dot { animation: none; }
+}
+
+.obx-lede {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 760px;
+  margin: -4px 0 20px;
+}
+.obx-lede b { color: var(--text); font-weight: 600; }
+
+/* Pending-count badge on desk pills */
+.obx-pill-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--warn-bg);
+  color: var(--warn);
+  margin-left: 2px;
+}
+
+.obx-acct-section { margin-bottom: 26px; }
+.obx-acct-head { margin-bottom: 10px; }
+
+/* --- Item card: the signature surface --- */
+.obx-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 16px 14px 18px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color var(--dur) var(--ease);
+}
+.obx-card:hover { border-color: var(--grid); }
+/* Left status spine — encodes review state without any words. */
+.obx-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--faint);
+}
+.obx-edge-queued::before      { background: var(--accent-cyan); }
+.obx-edge-held::before        { background: var(--warn); }
+.obx-edge-approve_ok::before,
+.obx-edge-approved::before    { background: var(--ok); }
+.obx-edge-posted::before   { background: var(--muted); }
+.obx-edge-failed::before,
+.obx-edge-quarantined::before { background: var(--bad); }
+
+.obx-card-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.obx-mini { font-size: 10px; padding: 2px 7px; }
+.obx-prov {
+  font-size: 10px;
+  color: var(--faint);
+  font-family: var(--mono);
+}
+.obx-prio {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  font-family: var(--mono);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+/* State chip pushed to the right edge of the top row */
+.obx-card-top .obx-state { margin-left: auto; }
+.obx-state {
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.obx-state.obx-ready    { background: rgba(56,224,212,.12);  color: var(--accent-cyan); border-color: rgba(56,224,212,.28); }
+.obx-state.obx-held     { background: var(--warn-bg); color: var(--warn); border-color: rgba(255,184,77,.28); }
+.obx-state.obx-approved { background: var(--ok-bg);   color: var(--ok);   border-color: rgba(61,220,132,.28); }
+.obx-state.obx-posted   { background: var(--surface2); color: var(--muted); }
+.obx-state.obx-failed,
+.obx-state.obx-quar     { background: var(--bad-bg);  color: var(--bad);  border-color: rgba(255,107,107,.28); }
+
+/* Compose well — the post text as it will read on X. */
+.obx-compose {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px 13px 10px;
+}
+.obx-text {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.62;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.obx-meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+}
+.obx-meter-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--grid);
+  overflow: hidden;
+}
+.obx-meter-fill {
+  height: 100%;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  transition: width var(--dur) var(--ease);
+}
+.obx-meter-fill.obx-near { background: var(--warn); }
+.obx-meter-fill.obx-over { background: var(--bad); }
+.obx-count {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--faint);
+  white-space: nowrap;
+}
+.obx-count.obx-near { color: var(--warn); }
+.obx-count.obx-over { color: var(--bad); font-weight: 700; }
+
+/* Media preview */
+.obx-media {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: #0d1117;
+}
+.obx-media-head {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.obx-media-tag {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.obx-media-slot {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+.obx-media-slot.obx-media-ready { padding: 0; }
+.obx-media-load {
+  font-size: 11px;
+  color: var(--faint);
+  font-family: var(--mono);
+}
+.obx-media-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 160px;
+  object-fit: contain;
+  cursor: zoom-in;
+  transition: max-height var(--dur) var(--ease);
+}
+.obx-media-svg.obx-media-expand {
+  max-height: 520px;
+  cursor: zoom-out;
+}
+
+/* Decision controls */
+.obx-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.obx-btn-approve, .obx-btn-hold { padding: 6px 16px; font-size: 12.5px; }
+.obx-btn-hold {
+  background: transparent;
+  color: var(--warn);
+  border-color: rgba(255,184,77,.35);
+}
+.obx-btn-hold:hover:not(:disabled) {
+  border-color: var(--warn);
+  background: var(--warn-bg);
+}
+.obx-ctrl-msg {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.obx-ctrl-msg.obx-ctrl-err { color: var(--bad); }
+.obx-controls.obx-locked { margin-top: 10px; }
+.obx-lock-note {
+  font-size: 11.5px;
+  color: var(--faint);
+  font-style: italic;
+}
+
+/* Posted-history table — rides .exp-table (fixed layout + scroll wrap) but
+   redefines its own column widths, overriding the experiments-schema nth-child
+   widths for this 6-column shape. */
+.obx-h-table { min-width: 760px; }
+.obx-h-table td { vertical-align: middle; }
+.obx-h-table th:nth-child(1), .obx-h-table td:nth-child(1) { width: 130px; }  /* Desk */
+.obx-h-table th:nth-child(2), .obx-h-table td:nth-child(2) { width: 96px;  }  /* Kind */
+.obx-h-table th:nth-child(3), .obx-h-table td:nth-child(3) { width: auto;  }  /* Post (elastic) */
+.obx-h-table th:nth-child(4), .obx-h-table td:nth-child(4) { width: 86px;  }  /* Result */
+.obx-h-table th:nth-child(5), .obx-h-table td:nth-child(5) { width: 108px; }  /* When */
+.obx-h-table th:nth-child(6), .obx-h-table td:nth-child(6) { width: 190px; }  /* Receipt */
+.obx-h-acct { font-weight: 600; color: var(--text); white-space: nowrap; }
+.obx-h-text {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.obx-h-at {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+  line-height: 1.4;
+}
+.obx-h-rc {
+  font-size: 11px;
+  color: var(--muted);
+  max-width: 220px;
+  word-break: break-all;
+}
+.obx-h-rc .faint { color: var(--faint); }
+
+/* Narrow (<820px): top row wraps state chip under the meta chips. */
+@media (max-width: 820px) {
+  .obx-shadow-pill { margin-left: 0; margin-top: 6px; }
+  .obx-card-top .obx-state { margin-left: 0; }
+  .obx-controls { flex-wrap: wrap; }
+}
+

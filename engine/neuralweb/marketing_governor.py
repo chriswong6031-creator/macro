@@ -179,6 +179,20 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
         except Exception as exc:  # noqa: BLE001
             log.warning("marketing_governor: short-link pages failed: %s", exc)
 
+        # Outbox: emit today's D1 items if the feature flag is set.
+        try:
+            if os.environ.get("MARKETING_OUTBOX_ENABLED") == "1":
+                from engine.marketing.outbox import emit_from_content_plan
+                outbox_summary = emit_from_content_plan(content_plan_obj, root=r, cfg=cfg)
+                result["outbox"] = outbox_summary
+                log.info("marketing_governor: outbox emit summary: %s", outbox_summary)
+            else:
+                log.info(
+                    "marketing_governor: outbox emit skipped (MARKETING_OUTBOX_ENABLED not set)"
+                )
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("marketing_governor: outbox emit failed: %s", _exc)
+
         # Build state
         from engine.marketing.state import build_state
         state = build_state(root=r, cfg=cfg)
