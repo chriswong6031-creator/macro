@@ -98,6 +98,13 @@ LEX: dict[str, str] = {
     "NEARING A HIGH": "接近高点",
     "TOPPING": "做顶中",
     "UNCONFIRMED TURN": "未确认转向",
+    "TURN IN PROGRESS": "转向进行中",
+    # legacy label frozen in data/ticker_alerts/ladder_log.parquet history rows
+    # (renamed to UNCONFIRMED TURN in code; the accruing log keeps the old vocab)
+    "COUNTER-TREND BOUNCE": "逆势反弹",
+    # sentinel ladder state for recent listings below the cycle-history floor
+    # (matches the '历史不足' copy the lookup/stock templates already use)
+    "LIMITED": "历史不足",
     # cycle-ladder actions (STATE_DISPLAY 'action')
     "AVOID": "回避",
     "GET READY": "准备",
@@ -106,6 +113,8 @@ LEX: dict[str, str] = {
     "HOLD": "持有",
     "TAKE PROFITS": "止盈",
     "SELL SETUP": "卖出预备",
+    "HIGH-RISK · NIMBLE ONLY": "高风险 · 仅限灵活操作",
+    "WATCH — DON'T CHASE": "观察 — 勿追高",
     # entry-timing headlines
     "BUY NOW": "立即买入",
     "BUY SOON": "即将买入",
