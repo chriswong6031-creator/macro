@@ -587,6 +587,7 @@ def render_chart_v2(
     logo_root: Path | str | None = None,
     width: int = 1000,
     height: int = 850,
+    footer_cta: str | None = None,
 ) -> str:
     """Render a TrendSpider-grade candlestick SVG chart.
 
@@ -1051,17 +1052,24 @@ def render_chart_v2(
     # The footer is the ad: a soft-glow pill with the offer tagline, then the
     # brand URL big enough to read in a timeline screenshot.
     footer_y = height - 10
-    cta_text = "Powerful stock signals · free 14-day trial"
+    # footer_cta overrides the marketing tagline (dossier pages pass a plain
+    # research note); empty string suppresses the pill entirely
+    cta_text = footer_cta if footer_cta is not None else "Powerful stock signals · free 14-day trial"
     cta_w = 8 + int(len(cta_text) * 6.6) + 8
+    cta_pill_svg = ""
+    if cta_text:
+        cta_pill_svg = (
+            # tagline pill (accent-tinted, rounded)
+            f'<rect x="{PAD_L + 2}" y="{footer_y - 30}" width="{cta_w}" height="19" rx="9.5" '
+            f'fill="#3b82f6" fill-opacity="0.16" stroke="#5b9dff" stroke-opacity="0.45" stroke-width="1"/>'
+            f'<text x="{PAD_L + 10}" y="{footer_y - 16.5}" '
+            f'fill="#9db8e8" font-size="11" font-family="sans-serif" letter-spacing="0.3">'
+            f'{_xesc(cta_text)}</text>'
+        )
     footer_svg = (
-        # tagline pill (accent-tinted, rounded)
-        f'<rect x="{PAD_L + 2}" y="{footer_y - 30}" width="{cta_w}" height="19" rx="9.5" '
-        f'fill="#3b82f6" fill-opacity="0.16" stroke="#5b9dff" stroke-opacity="0.45" stroke-width="1"/>'
-        f'<text x="{PAD_L + 10}" y="{footer_y - 16.5}" '
-        f'fill="#9db8e8" font-size="11" font-family="sans-serif" letter-spacing="0.3">'
-        f'{_xesc(cta_text)}</text>'
+        cta_pill_svg
         # big brand URL
-        f'<text x="{PAD_L + 4}" y="{footer_y}" '
+        + f'<text x="{PAD_L + 4}" y="{footer_y}" '
         f'fill="#7f97c4" font-size="16" font-weight="bold" font-family="sans-serif" '
         f'letter-spacing="0.4">mastermind-x.com</text>'
         f'<text x="{width - PAD_R - 4}" y="{footer_y}" '
