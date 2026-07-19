@@ -6,6 +6,15 @@ v1.2, frozen 2026-07-18, 96 questions (CTX-001..CTX-096).
 
 ### Amendment log
 
+- **v1.3 (2026-07-18, adjudicated with CXI-2):** 13 `adjudication_replay` rows re-golded
+  from `mode: research`/`operations` to `mode: adjudication`. The rows' mode fields were
+  authored before CXI-2 defined mode semantics; `research` mode excludes killed/forbidden
+  results, which made the flagship family unpassable by construction (a vetting session
+  asking "was this killed?" uses adjudication mode, which includes kills). Queries, golden
+  sources, and statuses unchanged. First eval (BENCHMARK_RESULTS.md): global 51.5%, replay
+  50.0%, governance precision 60.0% — gates FAIL, printed honestly; dominant miss class is
+  negative controls 0/10 (no no-answer score floor yet — first CXI-2.x iteration target).
+
 - **v1.2 (2026-07-18, CXI-R16):** 15 cross-repo questions appended (CTX-082..CTX-096)
   covering Terminal (charting-app) and Mastermind placement/adjudication-replay, contracts,
   location, gotcha, doctrine, and negative-control families per CXI-R16. External-repo
