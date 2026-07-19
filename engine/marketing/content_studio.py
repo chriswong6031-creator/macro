@@ -1429,8 +1429,21 @@ def content_plan(
                 ctx["slot"] = item_dict.get("slot", "")
                 contexts.append(ctx)
 
-            # Phase 3: batch call — preserves rotating counter across all items
-            posts = write_posts_deterministic(contexts)
+            # Phase 3: batch call — LLM lane first (persona ceiling; guarded by
+            # config copywriter.llm.enabled AND the MARKETING_LLM_ENABLED env var,
+            # so tests/local runs never trigger it), deterministic floor otherwise.
+            # write_posts_llm validates every output and falls back per-post.
+            posts = None
+            try:
+                from engine.marketing.copywriter import write_posts_llm  # noqa: PLC0415
+                _cw_cfg = (cfg or {}).get("copywriter", {}) or {}
+                posts = write_posts_llm(contexts, _cw_cfg)
+            except Exception:  # noqa: BLE001
+                posts = None
+            if posts is not None:
+                _copy_mode = "llm"
+            else:
+                posts = write_posts_deterministic(contexts)
             for item_dict, post in zip(queue, posts):
                 # Confluence signal posts keep the win_rate_hook copy — it is the
                 # crown-jewel framing ("worked 86% of the time historically") and

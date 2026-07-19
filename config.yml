@@ -20,6 +20,7 @@ llm_models:
   extraction:   "claude-haiku-4-5"               # qual_extraction.v1 8-K lane + catalyst_tone
   classify:     "claude-haiku-4-5"               # news_llm batch summaries + tag labels
   deliberation: "claude-fable-5"                 # PR-R8: Prophet/standout auditor deliberation (fallback=claude-opus-4-8)
+  marketing_copy: "claude-sonnet-4-6"            # Marketing Content Studio nightly copywriter (persona posts; deterministic fallback)
 
 # ---------------------------------------------------------------------------
 # prophet — Prophet NW lobe governor config (PR-W2/PR-R3/PR-R8)
