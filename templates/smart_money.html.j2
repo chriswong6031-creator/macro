@@ -363,7 +363,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 {#- ===== set desk shorthand ===== -#}
 {% set d_fresh = desk.get('freshness') or {} %}
 {% set d_wire = desk.get('wire') or [] %}
-{% set d_wire_show = desk.get('wire_display') or d_wire[:60] %}
+{% set WIRE_FOLD = 20 %}{#- newest N shown by default; "See more" reveals the rest (client-side) -#}
 {% set d_gp = desk.get('grand_portfolio') or [] %}
 {% set d_crowd = desk.get('crowding') or [] %}
 {% set d_init = desk.get('initiations') or [] %}
@@ -458,7 +458,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 {# ======================================================================== #}
 <div class="sm-sec" id="sec-wire">
   <h2>{{ t('Ownership event wire','持仓事件播报') }}</h2>
-  <span class="h-note">{{ t('newest events per axis (of ' ~ (d_wire | length) ~ ' in the feed) — each row carries its own clock', '各轴最新事件（数据流共' ~ (d_wire | length) ~ '条）——每行带独立时间戳') }}</span>
+  <span class="h-note">{{ t('newest ' ~ WIRE_FOLD ~ ' events (of ' ~ (d_wire | length) ~ ' in the feed) — each row carries its own clock', '最新' ~ WIRE_FOLD ~ '条事件（数据流共' ~ (d_wire | length) ~ '条）——每行带独立时间戳') }}</span>
 </div>
 
 <div class="filters" id="wire-filters">
@@ -470,17 +470,14 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
 </div>
 
 <div class="sm-card">
-  <p class="wire-count">{{ t('Showing','展示') }} <span class="num" id="wire-shown-n">{{ d_wire_show | length }}</span> / <span class="num" id="wire-total-n">{{ d_wire | length }}</span> {{ t('— the fold is the newest per axis (balanced); the full feed is loaded on this page','——默认按轴均衡显示最新事件；完整数据流已加载于本页') }}</p>
+  <p class="wire-count">{{ t('Showing','展示') }} <span class="num" id="wire-shown-n">{{ [d_wire | length, WIRE_FOLD] | min }}</span> / <span class="num" id="wire-total-n">{{ d_wire | length }}</span> {{ t('— the newest ' ~ WIRE_FOLD ~ ' across all axes; the full feed is loaded on this page','——所有轴最新' ~ WIRE_FOLD ~ '条；完整数据流已加载于本页') }}</p>
   <ul class="wire" id="wire-list">
-  {#- v3: render the FULL wire with progressive disclosure. wire_display rows are
-      the same dict objects as in wire, stamped _fold=1 by the build; if no stamps
-      are present (stale data file) fall back to treating the first
-      len(wire_display) rows as the fold so the default view never renders empty. -#}
-  {% set _wf = namespace(any=false) %}
-  {% for _r in d_wire %}{% if _r.get('_fold') %}{% set _wf.any = true %}{% endif %}{% endfor %}
-  {% set _fold_n = d_wire_show | length %}
+  {#- Render the FULL wire with progressive disclosure. The fold is the newest
+      WIRE_FOLD rows across all axes (wire is newest-first); "See more" reveals the
+      rest client-side. The JS re-derives the fold for the active axis filter
+      (first WIRE_FOLD matching rows), so the counts above are recomputed on load. -#}
   {% for row in d_wire %}
-    {% set _fold01 = 1 if (row.get('_fold') or (not _wf.any and loop.index0 < _fold_n)) else 0 %}
+    {% set _fold01 = 1 if loop.index0 < WIRE_FOLD else 0 %}
     {% set ax_raw = row.get('axis') or '' %}
     {% set is_amend = row.get('type') == '13f_amendment' %}
     {% set ax = 'insider' if ax_raw[:5] == 'form4' else ('13fa' if is_amend else ax_raw) %}
@@ -524,7 +521,7 @@ details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; ma
     <li><span class="sub">{{ t('No wire events available.','暂无播报事件。') }}</span></li>
   {% endfor %}
   </ul>
-  {% set _wire_hidden0 = (d_wire | length) - (d_wire_show | length) %}
+  {% set _wire_hidden0 = [(d_wire | length) - WIRE_FOLD, 0] | max %}
   <div class="wire-more-row" id="wire-more-row"{% if _wire_hidden0 <= 0 %} style="display:none"{% endif %}>
     <button type="button" class="wire-more" id="wire-more-btn">{{ t('See more','展开更多') }} (<span class="num" id="wire-hidden-n">{{ _wire_hidden0 }}</span>)</button>
     <button type="button" class="wire-more" id="wire-all-btn">{{ t('Show all','全部展开') }}</button>
@@ -2056,24 +2053,22 @@ var wireFewerBtn = document.getElementById('wire-fewer-btn');
 var wireShownN = document.getElementById('wire-shown-n');
 var wireTotalN = document.getElementById('wire-total-n');
 var wireHiddenN = document.getElementById('wire-hidden-n');
-var WIRE_STEP = 40;
+var WIRE_FOLD = 20;   /* newest N shown by default, per active axis */
+var WIRE_STEP = 40;   /* rows revealed per "See more" click */
 var wireAxis = 'all';
-var wireExtra = 0; /* non-fold rows revealed beyond the balanced fold */
+var wireExtra = 0; /* rows revealed beyond the first WIRE_FOLD */
 
 function applyWireView(){
   if(!wireList) return;
-  var shownExtra = 0, visible = 0, matching = 0;
+  var visible = 0, matching = 0;
+  var budget = WIRE_FOLD + wireExtra;
+  /* rows are newest-first in the DOM; show the first `budget` that match the
+     active axis, hide the rest. `visible` only climbs on shown rows, so once the
+     budget is spent every later match stays folded. */
   wireList.querySelectorAll('li[data-axis]').forEach(function(li){
     var axisMatch = (wireAxis === 'all') || (li.getAttribute('data-axis') === wireAxis);
-    var show = false;
-    if(axisMatch){
-      matching++;
-      if(li.getAttribute('data-fold') === '1'){
-        show = true;
-      } else if(shownExtra < wireExtra){
-        show = true; shownExtra++;
-      }
-    }
+    if(axisMatch) matching++;
+    var show = axisMatch && (visible < budget);
     li.style.display = show ? '' : 'none';
     if(show) visible++;
   });
