@@ -153,7 +153,7 @@ def test_invalidated_plan_never_appears_in_signal_posts_or_charts():
     cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
     plans = _SAMPLE_PLANS + [_INVALIDATED_PLAN]
     loader = lambda t: load_closes(t, ROOT, n=90)  # noqa: E731
-    plan = content_plan(cfg, plans, closes_loader=loader)
+    plan = content_plan(cfg, plans, closes_loader=loader, root=ROOT)
     sig_tickers = {
         p.get("ticker")
         for a in plan["accounts"] for p in a["queue"]

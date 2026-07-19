@@ -667,12 +667,15 @@ def content_plan(
     plans: list[dict],
     *,
     closes_loader: Callable[[str], tuple[list[str], list[float]] | None] | None = None,
+    root: str | Path | None = None,
 ) -> dict:
     """Build the full content plan artifact (frozen §2.3 shape).
 
     cfg:          parsed config/marketing.yml
     plans:        list of Prophet plan dicts (may be empty)
     closes_loader: callable(ticker) -> (dates, closes) | None
+    root:         repo root for OHLCV loading (data/stocks/<TICKER>.parquet). If
+                  None, inferred from a closes_loader built by _make_closes_loader.
 
     Returns the frozen dict structure with envelope fields caller will stamp.
     """
@@ -738,18 +741,8 @@ def content_plan(
     if closes_loader is not None and plans:
         # Deduplicate: one chart per ticker
         seen_tickers: set[str] = set()
-        # Root path for OHLCV loader (inferred from closes_loader's captures if needed)
-        _ohlcv_root: str | None = None
-        # Try to get root from the closes_loader closure (typically a lambda over ROOT)
-        try:
-            import inspect
-            _cl = closes_loader
-            _cells = _cl.__code__.co_freevars  # type: ignore[union-attr]
-            _vals = _cl.__closure__ or ()       # type: ignore[union-attr]
-            _cv = dict(zip(_cells, (c.cell_contents for c in _vals)))
-            _ohlcv_root = str(_cv.get("root") or _cv.get("ROOT") or _cv.get("_root") or ".")
-        except Exception:
-            _ohlcv_root = "."
+        # Root for OHLCV loading: explicit param preferred; "." as a safe default.
+        _ohlcv_root: str = str(root) if root is not None else "."
 
         for acct_row in account_rows:
             if len(featured_charts) >= _CHART_CAP:

@@ -128,7 +128,7 @@ def _build_content_plan(r: Path, cfg: dict) -> dict:
         def closes_loader(ticker: str):  # type: ignore[return]
             return load_closes(ticker, r, n=90)
 
-        return _content_plan(cfg=cfg, plans=plans, closes_loader=closes_loader)
+        return _content_plan(cfg=cfg, plans=plans, closes_loader=closes_loader, root=r)
 
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing_governor: content_plan build failed: %s", exc)
