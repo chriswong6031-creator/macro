@@ -2,9 +2,43 @@
 
 ## Version
 
-v1.2, frozen 2026-07-18, 96 questions (CTX-001..CTX-096).
+v1.4 — question set frozen 2026-07-18, 96 questions (CTX-001..CTX-096); rows unchanged
+since v1.3, grading rule amended per CXI-R17.
 
 ### Amendment log
+
+- **v1.4 (2026-07-18, adjudicated, CXI-R17 — grading semantics fix pass; one row
+  regold):** the v1.2 grading-rule wording ("the labeled `required_status` is returned …
+  **for each required source**") was unsatisfiable by construction for the 23 kill-class
+  rows that pair an ACTIVE source (masterplan or engine file) with the registry verdict
+  row (e.g. CTX-008, CTX-013, CTX-051, CTX-052): an active masterplan can never carry
+  `killed`/`forbidden`. The CXI-2 grader as merged (#2981) already scoped the status
+  check to verdict sources, but the rule text was never amended — this pass ratifies it
+  (CXI-R17a): `required_status` binds ONLY to verdict-carrying registry sources among
+  `required_sources`; all other required sources grade on top-10 presence alone.
+  Two companions: (CXI-R17b) DO_NOT_REBUILD ingest now labels registry-row chunks by
+  SECTION (§1→forbidden, §2→killed, §3→unknown, §4→deferred), implementing the
+  already-ratified CXI-R4/finding-11 gate — verdict-cell keyword matching had mislabeled
+  §2 rows quoting §1 vocabulary (WA-R1 "STRUCK — positioning-fusion illegal" derived
+  `forbidden`, failing CTX-013 with the correct chunk at top rank); (CXI-R17c)
+  `required_status: superseded` rows (CTX-010, CTX-082) grade presence-only — the
+  one-status-per-chunk model cannot honestly label the amended PRD row, which stays
+  live-`forbidden` for its surviving ban while recording the struck PRD-R1 sub-clause
+  in text; supersession evidence = amended registry row + superseding masterplan, both
+  still required in top-10. One regold rides with the pass: CTX-054 `killed`→`forbidden`
+  — its TI-R5 target row is FILED in DO_NOT_REBUILD §1 (design-level prohibition; the
+  verdict cell's KILLED wording is vocabulary drift), and under the section-is-authority
+  gate §1 labels `forbidden`; the sweep found no other section-vs-gold mismatch across
+  all 25 kill-class rows. Genuine retrieval misses (e.g. CTX-041/042/059/066: right
+  chunk absent or below top-10) keep failing — gates stay honest.
+  Status histogram after the regold: 59 active / 15 forbidden / 8 killed / 2 superseded /
+  12 no_answer. BENCHMARK_RESULTS.md is now append-only (each eval appends a new run
+  section; prior runs remain unchanged, matching the Append-only policy below).
+  Run v2 recorded with this pass: global 51.5% (still FAIL), adjudication-replay
+  50.0%→57.1%, governance 60.0%→70.0%; CTX-013/CTX-082 fixed by semantics, CTX-025/
+  CTX-044 newly fail on adjudication-doc rank drift under the moving corpus (CTX-025
+  already failed at origin/main before this pass) — retrieval quality, not grading;
+  negative-control 0/10 remains the dominant miss class (CXI-2.x no-answer floor).
 
 - **v1.3 (2026-07-18, adjudicated with CXI-2):** 13 `adjudication_replay` rows re-golded
   from `mode: research`/`operations` to `mode: adjudication`. The rows' mode fields were
@@ -62,10 +96,20 @@ marker for negative-control rows where an honest "not found" packet is the corre
 
 ## Grading rule
 
+*(amended v1.4 per CXI-R17 — see Amendment log; v1.2 text bound `required_status` to
+"each required source", which active companion sources cannot satisfy)*
+
 A retrieval result satisfies a benchmark row when:
 
 - Every file listed in `required_sources` appears in the top-10 retrieved results.
-- The labeled `required_status` is returned in the result packet for each required source.
+- The labeled `required_status` is returned in the result packet by the verdict-carrying
+  registry source(s) among the required sources (`research/DO_NOT_REBUILD.md`,
+  `config/ruling_graph.yml`, `config/compiled_kill_registry.yml`). All other required
+  sources are graded on top-10 presence alone (CXI-R17a).
+- Exception — `required_status: superseded` rows are presence-only (CXI-R17c): the
+  amended registry row keeps the live status of its surviving ban; the supersession
+  evidence is the amended row text plus the superseding masterplan, both required in
+  top-10.
 - For `no_answer` rows: the packet is an honest null/empty answer with no fabricated source.
 
 Rows with `acceptable_sources` may use those sources to supplement or corroborate but are
