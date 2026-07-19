@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-19T03:21:53.566679+00:00",
+  "produced_at": "2026-07-19T03:30:29.702931+00:00",
   "as_of": "2026-07-17",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
@@ -584,7 +584,7 @@
   },
   "evidence_clock": {
     "available": true,
-    "as_of": "2026-07-18",
+    "as_of": "2026-07-19",
     "counts": {
       "overdue": 8,
       "due": 16,
