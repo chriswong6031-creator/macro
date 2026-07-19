@@ -2493,9 +2493,55 @@ def _leadership_board_view() -> dict | None:
             earn = earnings_by_sym.get(sym)         # None if absent / stale / >14d
             members_out.append({**m, "lifecycle": lifecycle, "earnings": earn})
 
+        # ── "The Big Seven" rebuild — display ARITHMETIC over the raw returns the
+        #    payload already carries. No new signal/score: sort by the week move so
+        #    the green/red split reads before any word; the cohort verdict is a
+        #    literal count of the up rows, so it cannot contradict the tape.
+        def _r5key(mm):
+            v = mm.get("r5")
+            return v if isinstance(v, (int, float)) else -9.99
+        members_out.sort(key=_r5key, reverse=True)
+        up_count = sum(1 for mm in members_out
+                       if isinstance(mm.get("r5"), (int, float)) and mm["r5"] > 0)
+        n_total = sum(1 for mm in members_out
+                      if isinstance(mm.get("r5"), (int, float))) or len(members_out)
+        # Stance DERIVED from the visible up-count by a fixed, disclosed rule.
+        # De-escalatory by construction: caps at "In favour" (never "Act"/"Buy"),
+        # and a mostly-red tape can only read "Watch"/"Stand aside". This is display
+        # arithmetic, not an originated signal (house epistemics).
+        if up_count >= 5:
+            stance_en, stance_zh = "In favour", "有利"
+        elif up_count >= 3:
+            stance_en, stance_zh = "Watch — don't chase", "观望 — 勿追"
+        else:
+            stance_en, stance_zh = "Stand aside", "观望为主"
+        # Trading-day staleness (weekend-false-alarm-proof) + a plain close-date
+        # label ("Fri Jul 17") that names the last print instead of doing age math.
+        sess_lag = _asof_session_lag(m7.get("as_of"))
+        _days_en = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        _mons_en = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        _wd_zh = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        try:
+            # NB: `datetime` is the *module* inside this function (local `import
+            # datetime` above shadows the top-level class import) — use datetime.date.
+            _ad = datetime.date.fromisoformat(str(m7.get("as_of"))[:10])
+            as_of_label_en = f"{_days_en[_ad.weekday()]} {_mons_en[_ad.month]} {_ad.day}"
+            as_of_label_zh = f"{_wd_zh[_ad.weekday()]} {_ad.month}月{_ad.day}日"
+        except Exception:  # noqa: BLE001 — display-only, never fatal
+            as_of_label_en = str(m7.get("as_of") or "")
+            as_of_label_zh = as_of_label_en
+
         return {
             "as_of": m7.get("as_of"),
             "age_days": _asof_age_days(m7.get("as_of")),
+            "sessions_stale": sess_lag,       # trading-day lag (0 = fresh; weekend-safe)
+            "up_count": up_count,             # names up over the last 5 sessions
+            "n_total": n_total,               # names with a week return
+            "stance_en": stance_en,           # count-derived, de-escalatory
+            "stance_zh": stance_zh,
+            "as_of_label_en": as_of_label_en,  # "Fri Jul 17"
+            "as_of_label_zh": as_of_label_zh,  # "周五 7月17日"
             "lifecycle_stale": lifecycle_stale,
             "trend_state": m7.get("trend_state"),
             "run": m7.get("run") or {},
@@ -2525,6 +2571,30 @@ def _asof_age_days(asof: str | None) -> int | None:
         if not asof:
             return None
         return (datetime.now(timezone.utc).date() - datetime.fromisoformat(str(asof)).date()).days
+    except Exception:  # noqa: BLE001 — display-only, never fatal
+        return None
+
+
+def _asof_session_lag(asof: str | None) -> int | None:
+    """NYSE trading sessions between an as_of close date and the session the market
+    should already have printed. 0 = fresh — INCLUDING weekends/holidays after a
+    Friday close, where _asof_age_days (calendar days) would falsely read "2 days
+    old" and paint an amber weekend scare. None on parse error. Display-only."""
+    try:
+        if not asof:
+            return None
+        from datetime import timedelta as _td
+        from lib import nyse_calendar as _nyse
+        a = datetime.fromisoformat(str(asof)[:10]).date()
+        exp = _nyse.expected_last_session()
+        if a >= exp:
+            return 0
+        n, cur = 0, a
+        while cur < exp and n < 40:
+            cur = cur + _td(days=1)
+            if _nyse.is_session(cur):
+                n += 1
+        return n
     except Exception:  # noqa: BLE001 — display-only, never fatal
         return None
 
