@@ -1,0 +1,265 @@
+{# =====================================================================
+   Daily Movers — free lead-magnet page (marketing docket D10).
+
+   Today's biggest gainers and losers across the large-cap US list, plus
+   which theme groups moved together. All free (no gating). Ticker rows
+   link to the SEO stock dossiers at stocks/<TICKER>.html. One trial CTA.
+
+   Bilingual (EN/ZH) via the local t() macro + .l-en/.l-zh spans.
+   Self-contained <style>; links theme.css for the token system.
+   ZH follows the Asia colour convention (red = up) automatically because
+   the .up/.down colours resolve to theme.css --up/--down, which the zh
+   block swaps globally.
+
+   Context contract (builder passes EXACTLY this):
+     asof, tf ("1D"), cta_url,
+     gainers / losers = [ {ticker, name, pct, sector} ]   # up to 8 each
+     themes = [ {theme, direction ("up"|"down"), agg_pct,
+                 members: [{ticker, pct}] } ]              # up to 6
+   ===================================================================== #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro pct(v) -%}
+{{ '+' if (v or 0) >= 0 else '' }}{{ (v or 0)|round(2) }}%
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Today's Movers — {{ asof }}</title>
+{% set seo_title = "Today's Market Movers — Free Daily Gainers, Losers & Themes | Mastermind" %}
+{% set seo_desc = "Free daily market movers: the biggest large-cap US gainers and losers today, plus which theme groups are moving together — each name links to its full stock profile." %}
+{% set seo_path = 'movers.html' %}
+{% set seo_image = 'og/movers.png' %}
+{% set seo_card = 'summary_large_image' %}
+{% include "_seo_head.html.j2" %}
+<link rel="stylesheet" href="theme.css">
+<style>
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.pg-brand{font-weight:800;font-size:23px;color:var(--text);letter-spacing:-.02em;margin:8px 0 2px;display:flex;align-items:center;gap:9px}
+.pg-brand .gn{color:var(--info)}
+.pg-lead{color:var(--muted);font-size:14px;margin:0 0 22px;max-width:60ch}
+.asof-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:4px 12px;margin-left:4px;vertical-align:middle}
+.asof-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--info)}
+
+/* ── two-column tape ── */
+.tape{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+@media(max-width:720px){.tape{grid-template-columns:1fr}}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:6px 6px 8px;overflow:hidden}
+.col-h{display:flex;align-items:center;gap:9px;padding:14px 16px 10px}
+.col-h .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.col.gain .col-h .dot{background:var(--up)}
+.col.lose .col-h .dot{background:var(--down)}
+.col-h .lbl{font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.col-h .cnt{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted);font-family:var(--font-mono)}
+
+/* mover row */
+.mv{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  padding:10px 14px;border-radius:11px;transition:background .14s}
+.mv:hover{background:color-mix(in srgb,var(--info) 7%,transparent)}
+.mv .rank{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--muted);width:16px;text-align:right}
+.mv .mid{min-width:0}
+.mv .tkr{font-family:var(--font-mono);font-weight:800;font-size:14.5px;color:var(--text);letter-spacing:.01em}
+.mv .co{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.mv .co .sect{opacity:.72}
+.mv .chg{font-family:var(--font-mono);font-weight:800;font-size:15px;text-align:right;white-space:nowrap}
+.chg.up{color:var(--up)}.chg.down{color:var(--down)}
+/* subtle magnitude bar under the row — shared scale within a column */
+.mv .bar{grid-column:2 / -1;height:3px;border-radius:2px;margin-top:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);overflow:hidden}
+.mv .bar i{display:block;height:100%;border-radius:2px}
+.col.gain .bar i{background:color-mix(in srgb,var(--up) 65%,transparent)}
+.col.lose .bar i{background:color-mix(in srgb,var(--down) 65%,transparent)}
+
+/* ── theme ribbon (signature) ── */
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:34px 0 4px;flex-wrap:wrap}
+.sec-h h2{margin:0;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.sec-h .sub{font-size:12.5px;color:var(--muted)}
+.ribbons{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.rb{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 16px;transition:border-color .16s}
+.rb:hover{border-color:color-mix(in srgb,var(--info) 32%,var(--line))}
+.rb-head{min-width:0}
+.rb-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.25;display:flex;align-items:center;gap:8px}
+.rb-arrow{font-size:13px;font-weight:800}
+.rb.up .rb-arrow{color:var(--up)}.rb.down .rb-arrow{color:var(--down)}
+.rb-agg{font-family:var(--font-mono);font-size:12px;font-weight:700;margin-top:2px}
+.rb.up .rb-agg{color:var(--up)}.rb.down .rb-agg{color:var(--down)}
+.rb-members{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{display:inline-flex;align-items:baseline;gap:5px;font-family:var(--font-mono);font-size:12px;font-weight:700;
+  color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 9px;transition:transform .14s,border-color .14s}
+.mchip:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.mchip .mp{font-size:10.5px;font-weight:700}
+.mchip .mp.up{color:var(--up)}.mchip .mp.down{color:var(--down)}
+@media(max-width:560px){.rb{grid-template-columns:1fr;gap:9px}}
+
+/* CTA */
+.cta-band{margin-top:26px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:16px;padding:20px 24px;box-shadow:var(--glass-shadow)}
+.cta-band .cb-tx{font-size:15px;font-weight:700;color:var(--text)}
+.cta-band .cb-sub{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;border-radius:10px;padding:9px 16px;
+  background:var(--info);color:#fff;border:0;cursor:pointer;transition:filter .15s,transform .15s;white-space:nowrap}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--info);border:1px solid color-mix(in srgb,var(--info) 40%,var(--line))}
+
+/* empty / degraded */
+.empty-col{padding:26px 16px 30px;text-align:center;color:var(--muted);font-size:13px;line-height:1.5}
+.empty-col .ec-ic{font-size:22px;display:block;margin-bottom:6px;opacity:.7}
+.empty-block{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:36px 24px;text-align:center;margin-top:14px}
+.empty-block .ec-ic{font-size:28px;margin-bottom:10px;opacity:.7}
+.empty-block h3{margin:0 0 6px;font-size:17px;font-weight:800;color:var(--text)}
+.empty-block p{margin:0 auto;font-size:13.5px;color:var(--muted);max-width:42ch;line-height:1.55}
+
+.site-foot{max-width:1080px;margin:34px auto 0;padding:18px 20px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+
+a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:8px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<nav class="site-nav" style="max-width:1080px;margin:18px auto 14px;padding:0 20px">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="pg-brand">📈 <span class="l-en">Today's <span class="gn">Movers</span></span><span class="l-zh">今日<span class="gn">异动</span></span>
+    <span class="asof-chip mono"><span class="l-en">{{ asof }} · daily</span><span class="l-zh">{{ asof }} · 日线</span></span></div>
+  <p class="pg-lead">
+    <span class="l-en">The biggest one-day moves across our large-cap US list, and which theme groups are moving together. Tap any name for its full profile. Free, updated daily.</span>
+    <span class="l-zh">大盘股名单中今日单日涨跌最大的个股，以及哪些主题板块正在联动。点击任意标的查看完整档案。免费，每日更新。</span>
+  </p>
+
+  {% set _has_movers = (gainers and gainers|length) or (losers and losers|length) %}
+  {% if _has_movers %}
+  {# ---- pre-compute column maxima for shared magnitude bars ---- #}
+  {% set _gmax = (gainers | map(attribute='pct') | map('abs') | max) if (gainers and gainers|length) else 1 %}
+  {% set _lmax = (losers | map(attribute='pct') | map('abs') | max) if (losers and losers|length) else 1 %}
+
+  <div class="tape">
+    {# ===== GAINERS ===== #}
+    <div class="col gain">
+      <div class="col-h">
+        <span class="dot"></span>
+        <span class="lbl"><span class="l-en">Top gainers</span><span class="l-zh">领涨</span></span>
+        <span class="cnt">{{ (gainers|length) if gainers else 0 }}</span>
+      </div>
+      {% if gainers and gainers|length %}
+        {% for m in gainers %}
+        <a class="mv" href="stocks/{{ m.ticker }}.html">
+          <span class="rank mono">{{ loop.index }}</span>
+          <span class="mid">
+            <span class="tkr">{{ m.ticker }}</span>
+            <span class="co">{{ m.name }}{% if m.sector %} · <span class="sect">{{ m.sector }}</span>{% endif %}</span>
+          </span>
+          <span class="chg up mono">{{ pct(m.pct) }}</span>
+          <span class="bar"><i style="width:{{ ((m.pct|abs) / _gmax * 100)|round(0)|int if _gmax else 0 }}%"></i></span>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty-col"><span class="ec-ic" aria-hidden="true">·</span><span class="l-en">No clear gainers today.</span><span class="l-zh">今日无明显领涨。</span></div>
+      {% endif %}
+    </div>
+
+    {# ===== LOSERS ===== #}
+    <div class="col lose">
+      <div class="col-h">
+        <span class="dot"></span>
+        <span class="lbl"><span class="l-en">Top losers</span><span class="l-zh">领跌</span></span>
+        <span class="cnt">{{ (losers|length) if losers else 0 }}</span>
+      </div>
+      {% if losers and losers|length %}
+        {% for m in losers %}
+        <a class="mv" href="stocks/{{ m.ticker }}.html">
+          <span class="rank mono">{{ loop.index }}</span>
+          <span class="mid">
+            <span class="tkr">{{ m.ticker }}</span>
+            <span class="co">{{ m.name }}{% if m.sector %} · <span class="sect">{{ m.sector }}</span>{% endif %}</span>
+          </span>
+          <span class="chg down mono">{{ pct(m.pct) }}</span>
+          <span class="bar"><i style="width:{{ ((m.pct|abs) / _lmax * 100)|round(0)|int if _lmax else 0 }}%"></i></span>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty-col"><span class="ec-ic" aria-hidden="true">·</span><span class="l-en">No clear losers today.</span><span class="l-zh">今日无明显领跌。</span></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ===== THEME RIBBONS ===== #}
+  {% if themes and themes|length %}
+  <div class="sec-h">
+    <h2>{{ t('Themes moving together', '联动主题') }}</h2>
+    <span class="sub">{{ t('Groups where several names moved the same way today', '今日多只成分股同向异动的板块') }}</span>
+  </div>
+  <div class="ribbons">
+    {% for th in themes %}
+    <div class="rb {{ 'up' if th.direction == 'up' else 'down' }}">
+      <div class="rb-head">
+        <div class="rb-name">
+          <span class="rb-arrow">{{ '▲' if th.direction == 'up' else '▼' }}</span>
+          <span><span class="l-en">{{ th.theme }}</span><span class="l-zh">{{ th.theme }}</span></span>
+        </div>
+        <div class="rb-agg mono">{{ t('avg', '均') }} {{ pct(th.agg_pct) }}</div>
+      </div>
+      <div class="rb-members">
+        {% for mm in th.members %}
+        <a class="mchip" href="stocks/{{ mm.ticker }}.html">{{ mm.ticker }}<span class="mp {{ 'up' if (mm.pct or 0) >= 0 else 'down' }}">{{ pct(mm.pct) }}</span></a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="cta-band">
+    <div>
+      <div class="cb-tx"><span class="l-en">Go deeper than the movers list</span><span class="l-zh">超越异动榜的深度研判</span></div>
+      <div class="cb-sub"><span class="l-en">See why a name is moving, which signals are firing, and the setups lining up — updated daily.</span><span class="l-zh">查看个股异动原因、正在触发的信号，以及正在共振的布局——每日更新。</span></div>
+    </div>
+    <a class="btn" href="{{ cta_url }}"><span class="l-en">Start free trial →</span><span class="l-zh">开始免费试用 →</span></a>
+  </div>
+
+  {% else %}
+  {# ===== FULL EMPTY / DEGRADED STATE ===== #}
+  <div class="empty-block">
+    <div class="ec-ic" aria-hidden="true">🌙</div>
+    <h3><span class="l-en">Movers aren't in yet</span><span class="l-zh">异动数据尚未就绪</span></h3>
+    <p><span class="l-en">Today's moves haven't been tallied — this usually means the market hasn't opened or the daily data is still landing. Check back shortly.</span>
+      <span class="l-zh">今日涨跌尚未统计——通常表示市场未开盘或当日数据仍在更新。请稍后再来。</span></p>
+    <div style="margin-top:18px">
+      <a class="btn ghost" href="{{ cta_url }}"><span class="l-en">Explore the full dashboard</span><span class="l-zh">探索完整仪表盘</span></a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="site-foot">
+    <span><span class="l-en">Data as of {{ asof }} · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 {{ asof }} · 美国大盘股 · 每日更新。</span></span>
+    <span><span class="l-en">Context, not investment advice.</span><span class="l-zh">仅供参考，非投资建议。</span></span>
+  </div>
+</div>
+
+<script src="theme.js"></script>
+</body>
+</html>

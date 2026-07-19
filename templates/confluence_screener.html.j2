@@ -1,0 +1,391 @@
+{# =====================================================================
+   Confluence Screener — free lead-magnet page (marketing docket D10).
+
+   "When several buy signals line up at once." Today's top 3 signal
+   combos firing right now, with honest train/test win rates printed
+   side by side. Rank-1 combo's matching tickers are free; the other
+   two are OMITTED server-side (the builder passes active_tickers=[]
+   for gated rows) and shown as an honest locked state built from
+   active_count + the trial CTA. NO fake blurred text — the data is
+   simply absent.
+
+   Bilingual (EN/ZH) via the local t() macro + .l-en/.l-zh spans.
+   Self-contained <style>; links theme.css for the token system.
+   Doctrine: plain words on the glance tier (the word "confluence"
+   stays in the slug, never in copy); "X wins per 10" idiom; every
+   panel answers "so what do I do" (here: watch / research, not buy).
+
+   Context contract (builder passes EXACTLY this):
+     generated_utc, asof, universe_n, split_date,
+     n_active_total, cta_url,
+     combos = [ { rank, combo_id, name_en, name_zh,
+       legs: [ {en, zh, tf} ],          # tf "D" | "W"
+       wr_test_pct, wr_train_pct,
+       n_test, months_test, n_train, months_train,
+       n_fires, first_fire, last_fire, fires_per_year,
+       edge_test_pp, consistent, is_free,
+       active_tickers: [ {ticker, name} ],   # [] for gated combos
+       active_count } ]                       # length 0-3
+   ===================================================================== #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{# Segmented "wins per 10" bar: fills round(v/10) of 10 cells. `tone` = free|gated #}
+{% macro wins_bar(pct, tone='free') -%}
+{% set _filled = ((pct or 0) / 10)|round|int %}
+<span class="w10 tone-{{ tone }}" aria-hidden="true">{% for i in range(10) %}<i class="{{ 'on' if i < _filled else '' }}"></i>{% endfor %}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Signals Lining Up — {{ asof }}</title>
+{% set seo_title = 'Signals Lining Up — Free Daily Setup Screener | Mastermind' %}
+{% set seo_desc = 'Free daily screener: the technical buy-signal combinations firing across large US stocks right now, with honest recent and older-era win rates printed side by side.' %}
+{% set seo_path = 'confluence_screener.html' %}
+{% set seo_image = 'og/confluence_screener.png' %}
+{% set seo_card = 'summary_large_image' %}
+{% include "_seo_head.html.j2" %}
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ── bilingual toggle (mirrors theme.css mechanism for the self-contained head) ── */
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* ── page brand / lead ── */
+.pg-brand{font-weight:800;font-size:23px;color:var(--text);letter-spacing:-.02em;margin:8px 0 2px;display:flex;align-items:center;gap:9px}
+.pg-brand .gn{color:var(--info)}
+.pg-lead{color:var(--muted);font-size:14px;margin:0 0 22px;max-width:60ch}
+
+/* ── HERO — glass state card ── */
+.hero{position:relative;background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:20px;padding:26px 28px;box-shadow:var(--glass-shadow);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 140% at 88% -20%, color-mix(in srgb,var(--info) 20%,transparent), transparent 60%)}
+.hero-inner{position:relative;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:9px}
+.hero-state{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin:0;color:var(--text)}
+.hero-state .n{color:var(--info)}
+.stance{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:700;margin-top:14px;
+  background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.stance::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero-sentence{font-size:14px;color:var(--muted);margin:12px 0 0;max-width:46ch;line-height:1.55}
+/* right rail — the "line-up" motif: 3 stacked leg ticks converging into a dot */
+.hero-motif{width:132px;height:112px;flex:none}
+
+/* ── section head ── */
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:34px 0 4px;flex-wrap:wrap}
+.sec-h h2{margin:0;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.sec-h .sub{font-size:12.5px;color:var(--muted)}
+
+/* ── LEDGER CARD (signature) ── */
+.ledger{display:flex;flex-direction:column;gap:16px;margin-top:14px}
+.lc{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:20px 22px 18px;transition:border-color .16s,box-shadow .16s,transform .16s}
+.lc:hover{border-color:color-mix(in srgb,var(--info) 40%,var(--line));box-shadow:0 10px 30px -18px rgba(0,0,0,.5)}
+.lc.free{border-color:color-mix(in srgb,var(--info) 34%,var(--line))}
+.lc-top{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start}
+/* rank chip — rank_score IS a real ordering, so the numeral carries information */
+.lc-rank{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--muted);
+  border:1px solid var(--line);border-radius:9px;padding:5px 9px;line-height:1;letter-spacing:.02em;white-space:nowrap;margin-top:2px}
+.lc.free .lc-rank{color:var(--info);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.lc-title{font-size:16px;font-weight:700;color:var(--text);line-height:1.35;letter-spacing:-.01em}
+.lc-since{font-size:11.5px;color:var(--muted);margin-top:3px}
+/* win-rate hero block — the number is the type hero, honestly paired with the older era */
+.lc-wr{text-align:right;flex:none;min-width:118px}
+.lc-wr-big{font-family:var(--font-mono);font-size:30px;font-weight:800;line-height:1;color:var(--up);letter-spacing:-.02em}
+.lc-wr-unit{font-size:11px;color:var(--muted);font-weight:600;margin-top:3px}
+.lc-wr-old{font-size:11.5px;color:var(--muted);margin-top:8px;font-family:var(--font-mono)}
+.lc-wr-old b{color:var(--text);font-weight:700}
+
+/* the line-up leg stack */
+.legs{display:flex;flex-direction:column;gap:7px;margin:16px 0 4px}
+.leg{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:center}
+.leg-tf{font-family:var(--font-mono);font-size:10.5px;font-weight:700;text-align:center;border-radius:6px;padding:3px 0;line-height:1}
+.leg-tf.d{background:color-mix(in srgb,var(--muted) 20%,transparent);color:var(--muted)}
+.leg-tf.w{background:color-mix(in srgb,var(--info) 20%,transparent);color:var(--info)}
+.leg-txt{font-size:13px;color:var(--text);line-height:1.35;display:flex;align-items:center;gap:9px}
+.leg-txt::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--up) 70%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 14%,transparent)}
+
+/* wins-per-10 segmented bar */
+.w10{display:inline-flex;gap:3px;vertical-align:middle}
+.w10 i{width:10px;height:10px;border-radius:3px;background:color-mix(in srgb,var(--muted) 26%,transparent)}
+.w10.tone-free i.on{background:var(--up)}
+.w10.tone-gated i.on{background:color-mix(in srgb,var(--muted) 60%,transparent)}
+
+/* footer receipts row */
+.lc-foot{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted)}
+.chip.ok{color:var(--up)}
+.chip .w10{margin-left:2px}
+.tickers{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.tkr{display:inline-flex;align-items:baseline;gap:6px;font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--text);
+  background:color-mix(in srgb,var(--up) 12%,transparent);border:1px solid color-mix(in srgb,var(--up) 26%,transparent);
+  border-radius:8px;padding:5px 10px}
+.tkr .nm{font-family:var(--font-ui);font-weight:500;font-size:11px;color:var(--muted)}
+
+/* locked state — honest, built from active_count only. NO blurred text. */
+.locked{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;padding:14px 16px;border-radius:12px;
+  background:color-mix(in srgb,var(--info) 7%,transparent);border:1px dashed color-mix(in srgb,var(--info) 34%,var(--line))}
+.locked .ic{flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info)}
+.locked .lk-tx{flex:1;min-width:180px;font-size:13px;color:var(--text);line-height:1.4}
+.locked .lk-tx b{font-weight:700}
+.locked .lk-tx .sub{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;border-radius:10px;padding:9px 16px;
+  background:var(--info);color:#fff;border:0;cursor:pointer;transition:filter .15s,transform .15s;white-space:nowrap}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--info);border:1px solid color-mix(in srgb,var(--info) 40%,var(--line))}
+
+/* honesty footer + big CTA */
+.honesty{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.honesty h3{margin:0 0 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.honesty ul{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+.honesty li{position:relative;padding-left:20px;font-size:13px;color:var(--text);line-height:1.5}
+.honesty li::before{content:"";position:absolute;left:2px;top:8px;width:7px;height:7px;border-radius:2px;background:color-mix(in srgb,var(--warn) 70%,transparent)}
+.cta-band{margin-top:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:16px;padding:20px 24px;box-shadow:var(--glass-shadow)}
+.cta-band .cb-tx{font-size:15px;font-weight:700;color:var(--text)}
+.cta-band .cb-sub{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:3px}
+
+/* empty state */
+.empty{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:40px 24px;text-align:center;margin-top:14px}
+.empty .ec-ic{font-size:30px;margin-bottom:10px;opacity:.7}
+.empty h3{margin:0 0 6px;font-size:18px;font-weight:800;color:var(--text)}
+.empty p{margin:0 auto;font-size:13.5px;color:var(--muted);max-width:40ch;line-height:1.55}
+
+/* footer */
+.site-foot{max-width:1080px;margin:34px auto 0;padding:18px 20px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+
+/* zh Asia colour convention — theme.css swaps --up/--down globally, but our
+   green-tinted ticker chips + win cells reference --up so they follow for free.
+   Keep the wins bar semantic (win = good), so we DON'T flip it: a win is a win in
+   both languages. Guard only the ticker chip, which reads as "price up = green"
+   and should invert in zh. */
+html[data-lang="zh"] .tkr{background:color-mix(in srgb,var(--down) 12%,transparent);border-color:color-mix(in srgb,var(--down) 26%,transparent)}
+
+/* focus visibility */
+a:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:8px}
+
+/* responsive */
+@media(max-width:640px){
+  .hero-inner{grid-template-columns:1fr}
+  .hero-motif{display:none}
+  .hero-state{font-size:26px}
+  .lc-top{grid-template-columns:auto 1fr;grid-template-areas:"rank title" "wr wr"}
+  .lc-rank{grid-area:rank}.lc-title-wrap{grid-area:title}.lc-wr{grid-area:wr;text-align:left;margin-top:6px}
+  .lc-wr-old{margin-top:4px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<nav class="site-nav" style="max-width:1080px;margin:18px auto 14px;padding:0 20px">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="pg-brand">📊 <span class="l-en">Signals <span class="gn">Lining Up</span></span><span class="l-zh">信号<span class="gn">共振</span></span></div>
+  <p class="pg-lead">
+    <span class="l-en">Free daily screener. When several proven buy signals line up on the same stock at once, we surface the pattern — with honest win rates from the recent years and the years before, printed side by side.</span>
+    <span class="l-zh">免费每日筛选器。当同一只股票上多个经检验的买入信号同时共振时，我们呈现该形态——并把近年与更早年份的胜率并排如实列出。</span>
+  </p>
+
+  {% set _n_today = combos|length %}
+  {% if _n_today > 0 %}
+  {# ================= HERO ================= #}
+  <div class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-eyebrow">{{ t('SETUP TAPE · ' ~ asof, '布局磁带 · ' ~ asof) }}</div>
+        <h1 class="hero-state">
+          <span class="l-en"><span class="n">{{ _n_today }}</span> {{ 'setup' if _n_today == 1 else 'setups' }} lining up today</span>
+          <span class="l-zh"><span class="n">{{ _n_today }}</span> 组信号今日共振</span>
+        </h1>
+        <span class="stance">
+          <span class="l-en">Watch &amp; research — don't chase</span>
+          <span class="l-zh">观察研究，别追高</span>
+        </span>
+        <p class="hero-sentence">
+          <span class="l-en">These are historical leads, not buy calls. The strongest one below is free — see the stock it's matching now. Two more are lining up behind it.</span>
+          <span class="l-zh">这些是历史线索，非买入建议。下方最强的一组免费——查看它当前匹配的股票。另有两组正在其后共振。</span>
+        </p>
+      </div>
+      {# right-rail motif: three signal ticks converging into one node = "lining up" #}
+      <svg class="hero-motif" viewBox="0 0 132 112" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g fill="none" stroke-width="2.4" stroke-linecap="round">
+          <path d="M6 26 H84" stroke="var(--info)" opacity=".55"/>
+          <path d="M6 56 H84" stroke="var(--info)" opacity=".8"/>
+          <path d="M6 86 H84" stroke="var(--info)" opacity=".55"/>
+          <path d="M84 26 Q108 26 112 56" stroke="var(--info)" opacity=".5"/>
+          <path d="M84 86 Q108 86 112 56" stroke="var(--info)" opacity=".5"/>
+        </g>
+        <circle cx="6" cy="26" r="3.4" fill="var(--info)"/>
+        <circle cx="6" cy="56" r="3.4" fill="var(--info)"/>
+        <circle cx="6" cy="86" r="3.4" fill="var(--info)"/>
+        <circle cx="118" cy="56" r="9" fill="var(--up)"/>
+        <circle cx="118" cy="56" r="15" fill="none" stroke="var(--up)" stroke-width="1.5" opacity=".4"/>
+      </svg>
+    </div>
+  </div>
+
+  {# ================= LEDGER ================= #}
+  <div class="sec-h">
+    <h2>{{ t("Today's line-ups", '今日共振组合') }}</h2>
+    <span class="sub">{{ t('Ranked strongest first · large established US stocks', '按强度排序 · 大型成熟美股') }}</span>
+  </div>
+
+  <div class="ledger">
+    {% for c in combos %}
+    <div class="lc {{ 'free' if c.is_free else 'gated' }}">
+      <div class="lc-top">
+        <div class="lc-rank">{{ '%02d'|format(c.rank) }}</div>
+        <div class="lc-title-wrap">
+          <div class="lc-title"><span class="l-en">{{ c.name_en }}</span><span class="l-zh">{{ c.name_zh }}</span></div>
+          <div class="lc-since">
+            <span class="l-en">Seen {{ c.n_fires }} times since {{ c.first_fire[:4] }} · about {{ c.fires_per_year|round(1) }} a year · last {{ c.last_fire }}</span>
+            <span class="l-zh">自 {{ c.first_fire[:4] }} 年出现 {{ c.n_fires }} 次 · 约每年 {{ c.fires_per_year|round(1) }} 次 · 最近 {{ c.last_fire }}</span>
+          </div>
+        </div>
+        <div class="lc-wr">
+          <div class="lc-wr-big mono">{{ (c.wr_test_pct / 10)|round(1) }}<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
+          <div class="lc-wr-unit">{{ t('wins recently (2018+)', '近年胜率 (2018起)') }}</div>
+          <div class="lc-wr-old">{{ t('older years:', '更早年份:') }} <b>{{ (c.wr_train_pct / 10)|round(1) }}/10</b></div>
+        </div>
+      </div>
+
+      {# the line-up: each leg lined up, timeframe-tagged #}
+      <div class="legs">
+        {% for leg in c.legs %}
+        <div class="leg">
+          <span class="leg-tf {{ 'w' if leg.tf == 'W' else 'd' }}">{{ 'W' if leg.tf == 'W' else 'D' }}</span>
+          <span class="leg-txt"><span class="l-en">{{ leg.en }}</span><span class="l-zh">{{ leg.zh }}</span></span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="lc-foot">
+        <span class="chip ok">{{ wins_bar(c.wr_test_pct, 'free' if c.is_free else 'gated') }}
+          <span class="l-en">{{ (c.wr_test_pct/10)|round(1) }} in 10 recently</span>
+          <span class="l-zh">近年 {{ (c.wr_test_pct/10)|round(1) }}/10</span></span>
+        {% set _edge = c.edge_test_pp|round|int %}
+        <span class="chip">
+          <span class="l-en">+{{ _edge }} points better than a coin-flip entry</span>
+          <span class="l-zh">较随机入场高 {{ _edge }} 个百分点</span>
+        </span>
+        {% if c.consistent %}
+        <span class="chip ok">✓ <span class="l-en">held up in both eras</span><span class="l-zh">两期均稳</span></span>
+        {% else %}
+        <span class="chip">
+          <span class="l-en">recent read only — thinner older record</span>
+          <span class="l-zh">仅近年数据 — 更早记录较薄</span>
+        </span>
+        {% endif %}
+      </div>
+
+      {# matching-now: free combo shows real tickers; gated shows honest locked state #}
+      {% if c.is_free %}
+        {% if c.active_tickers %}
+        <div class="lc-foot" style="border-top:0;padding-top:6px;margin-top:8px">
+          <span class="chip ok" style="color:var(--text)">
+            <span class="l-en">Matching now &nbsp;→</span><span class="l-zh">当前匹配 &nbsp;→</span>
+          </span>
+          <div class="tickers">
+            {% for tk in c.active_tickers %}
+            <a class="tkr" href="stocks/{{ tk.ticker }}.html">{{ tk.ticker }}<span class="nm">{{ tk.name }}</span></a>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="lc-foot" style="border-top:0;padding-top:6px;margin-top:8px">
+          <span class="chip"><span class="l-en">No stock matches this one today — it fires rarely.</span><span class="l-zh">今日无股票匹配此组合——它触发较少。</span></span>
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="locked">
+          <span class="ic" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          </span>
+          <span class="lk-tx">
+            <b>
+              <span class="l-en">{{ c.active_count }} {{ 'stock' if c.active_count == 1 else 'stocks' }} lining up now</span>
+              <span class="l-zh">{{ c.active_count }} 只股票当前共振</span>
+            </b>
+            <span class="sub">
+              <span class="l-en">Unlock this line-up's matching tickers with the free trial.</span>
+              <span class="l-zh">开启免费试用即可查看此组合匹配的股票。</span>
+            </span>
+          </span>
+          <a class="btn" href="{{ cta_url }}"><span class="l-en">Start free trial</span><span class="l-zh">开始免费试用</span></a>
+        </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ================= HONESTY + CTA ================= #}
+  <div class="honesty">
+    <h3>{{ t('How to read this honestly', '如何客观解读') }}</h3>
+    <ul>
+      <li><span class="l-en"><b>Leads, not proof.</b> These combos were found by searching a large pool of signal recipes. Treat them as things to watch and research, not a guarantee.</span>
+        <span class="l-zh"><b>线索，非定论。</b>这些组合由自动搜索大量信号配方得出。请将其视为值得观察与研究的线索，而非保证。</span></li>
+      <li><span class="l-en"><b>The stocks are survivors.</b> The list covers {{ universe_n }} large, established US companies — names that made it. That flatters the win rates. Small and failed companies aren't here.</span>
+        <span class="l-zh"><b>标的是幸存者。</b>名单覆盖 {{ universe_n }} 家大型成熟美国公司——都是活下来的赢家。这会美化胜率。小盘股与失败公司不在其中。</span></li>
+      <li><span class="l-en"><b>Small recent samples.</b> A recent-era rate can rest on only a couple dozen monthly readings — samples that thin will wobble. The exact counts sit next to every rate.</span>
+        <span class="l-zh"><b>近期样本偏小。</b>近期胜率可能只基于二十来个月度读数——样本这么小，数字会有波动。具体次数就标在每个胜率旁边。</span></li>
+      <li><span class="l-en"><b>Win rates are historical, month-by-month reads.</b> Each calendar month counts once, so clusters don't inflate them. We show the recent years and the older years so you can see if a pattern is cherry-picked.</span>
+        <span class="l-zh"><b>胜率是逐月的历史读数。</b>每个日历月只计一次，密集触发不会虚增。我们同时展示近年与更早年份，便于你判断某形态是否被挑选出来。</span></li>
+      <li><span class="l-en"><b>The honest stance is watch, not buy.</b> A signal lining up tells you where to look. Your own entry, sizing and stop are still your call.</span>
+        <span class="l-zh"><b>客观立场是观察，而非买入。</b>信号共振告诉你该看哪里。具体入场、仓位与止损仍由你决定。</span></li>
+    </ul>
+  </div>
+
+  <div class="cta-band">
+    <div>
+      <div class="cb-tx"><span class="l-en">See every line-up's matching stocks</span><span class="l-zh">查看每组共振匹配的股票</span></div>
+      <div class="cb-sub"><span class="l-en">The full screener updates daily. Build your own combos and screen all {{ universe_n }} names.</span><span class="l-zh">完整筛选器每日更新。自建组合并筛选全部 {{ universe_n }} 只标的。</span></div>
+    </div>
+    <a class="btn" href="{{ cta_url }}"><span class="l-en">Start free trial →</span><span class="l-zh">开始免费试用 →</span></a>
+  </div>
+
+  {% else %}
+  {# ================= EMPTY STATE ================= #}
+  <div class="empty">
+    <div class="ec-ic" aria-hidden="true">🔭</div>
+    <h3><span class="l-en">Nothing lining up today</span><span class="l-zh">今日暂无共振</span></h3>
+    <p><span class="l-en">No proven signal combos are firing across our large-cap list right now. That's normal — the strongest setups are rare by design. Check back tomorrow.</span>
+      <span class="l-zh">目前大盘股名单中没有经检验的信号组合触发。这很正常——最强的布局本就稀少。请明日再来。</span></p>
+    <div style="margin-top:18px">
+      <a class="btn ghost" href="{{ cta_url }}"><span class="l-en">Get notified when setups fire</span><span class="l-zh">布局触发时通知我</span></a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="site-foot">
+    <span><span class="l-en">Data as of {{ asof }} · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 {{ asof }} · 美国大盘股 · 每日更新。</span></span>
+    <span><span class="l-en">Context, not investment advice.</span><span class="l-zh">仅供参考，非投资建议。</span></span>
+  </div>
+</div>
+
+<script src="theme.js"></script>
+</body>
+</html>

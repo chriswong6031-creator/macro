@@ -2626,6 +2626,14 @@ jobs:
             echo "::warning title=tech_confluence::build_tech_confluence rc=$rc (combo artifact may be stale)"
           fi
           exit 0
+      - name: render free confluence screener page (+ share card)
+        run: |
+          set +e
+          python -m scripts.build_confluence_screener; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=confluence_screener::build_confluence_screener rc=$rc (page may be stale)"
+          fi
+          exit 0
       - name: commit Technical Lab artifacts
         run: |
           git config user.name "dashboard-bot"
@@ -2637,6 +2645,12 @@ jobs:
           # tech_events is written by a sibling PR (TLT-W3); pick it up once present.
           if [ -d site/factordata/tech_events ]; then
             git add site/factordata/tech_events
+          fi
+          if [ -f site/confluence_screener.html ]; then
+            git add site/confluence_screener.html
+          fi
+          if [ -f site/og/confluence_screener.png ]; then
+            git add site/og/confluence_screener.png
           fi
           if git diff --cached --quiet; then echo "no tech-lab artifact changes"; exit 0; fi
           git commit -m "tech-lab: nightly 64-signal screener + lab refresh $(date -u +%F)"

@@ -2,6 +2,11 @@
      seo_title  — plain-text page title for social cards (NO t()/markup)
      seo_desc   — ~150-char meta description (plain text)
      seo_path   — page filename for the canonical URL, e.g. "macro.html"
+     seo_image  — per-page social image, path relative to the site root
+                  (e.g. "og/movers.png"). Defaults to the apple-touch-icon.
+     seo_card   — Twitter card type ("summary" | "summary_large_image").
+                  Defaults to "summary"; pages with a wide og image set
+                  "summary_large_image" so the card renders full-bleed.
    Falls back to sensible site-wide defaults if a var is unset. Emits the meta
    description, canonical, Open Graph + Twitter cards, and favicon links. Social
    scrapers (Slack/X/iMessage/Facebook) do NOT run JS, so this MUST be static
@@ -11,7 +16,8 @@
 {%- set _title = seo_title | default('Mastermind — Macro Regime & Market Cycle Intelligence') -%}
 {%- set _desc = seo_desc | default('Live macro-regime, market-cycle and sector-rotation intelligence across US, China, Hong Kong, Canada and global markets — risk radar, signals and cycle clocks in one dashboard.') -%}
 {%- set _url = _base ~ (seo_path | default('')) -%}
-{%- set _img = _base ~ 'apple-touch-icon.png' -%}
+{%- set _img = _base ~ (seo_image | default('apple-touch-icon.png')) -%}
+{%- set _card = seo_card | default('summary') -%}
 <meta name="description" content="{{ _desc }}">
 <link rel="canonical" href="{{ _url }}">
 <meta property="og:type" content="website">
@@ -20,7 +26,7 @@
 <meta property="og:description" content="{{ _desc }}">
 <meta property="og:url" content="{{ _url }}">
 <meta property="og:image" content="{{ _img }}">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="{{ _card }}">
 <meta name="twitter:title" content="{{ _title }}">
 <meta name="twitter:description" content="{{ _desc }}">
 <meta name="twitter:image" content="{{ _img }}">
