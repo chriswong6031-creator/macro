@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-18T22:48:14.675666+00:00",
-  "as_of": "2026-07-18",
+  "generated_utc": "2026-07-19T00:11:54.969737+00:00",
+  "as_of": "2026-07-19",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5942,15 +5942,6 @@
           "parties": "D/Democratic"
         },
         {
-          "ticker": "TDG",
-          "net": 14,
-          "buys": 14,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 112007.0,
-          "parties": "D"
-        },
-        {
           "ticker": "STE",
           "net": 12,
           "buys": 12,
@@ -5967,6 +5958,15 @@
           "members": 2,
           "est_usd": 96006.0,
           "parties": "D/Republican"
+        },
+        {
+          "ticker": "TDG",
+          "net": 12,
+          "buys": 12,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 96006.0,
+          "parties": "D"
         },
         {
           "ticker": "GIL",
@@ -6226,7 +6226,7 @@
         "total_usd": 23746146.0,
         "contracts": 10,
         "agencies": 5,
-        "accel_x": 46.81,
+        "accel_x": 53.67,
         "top_agency": "Department of Homeland Security"
       },
       {
@@ -6242,7 +6242,7 @@
         "total_usd": 19341424.0,
         "contracts": 52,
         "agencies": 7,
-        "accel_x": 0.98,
+        "accel_x": 1.0,
         "top_agency": "Department of Transportation"
       },
       {
@@ -6298,7 +6298,7 @@
         "total_usd": 8823158.0,
         "contracts": 6,
         "agencies": 5,
-        "accel_x": 1.38,
+        "accel_x": 1.56,
         "top_agency": "Department of Homeland Security"
       },
       {
@@ -45131,11 +45131,74 @@
     ],
     "lobbying": [
       {
+        "ticker": "LLY",
+        "spend_usd": 3618850.0,
+        "filings": 7,
+        "spike_x": null,
+        "top_issue": "Health Issues"
+      },
+      {
+        "ticker": "PLTR",
+        "spend_usd": 2660000.0,
+        "filings": 9,
+        "spike_x": null,
+        "top_issue": "Science/Technology"
+      },
+      {
+        "ticker": "VRTX",
+        "spend_usd": 1510000.0,
+        "filings": 7,
+        "spike_x": null,
+        "top_issue": "Medicare/Medicaid"
+      },
+      {
         "ticker": "NTR",
         "spend_usd": 1420000.0,
         "filings": 4,
         "spike_x": null,
         "top_issue": "Agriculture"
+      },
+      {
+        "ticker": "TXT",
+        "spend_usd": 1222452.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Defense"
+      },
+      {
+        "ticker": "NXST",
+        "spend_usd": 1005000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Communications/Broadcasting/Radio/TV"
+      },
+      {
+        "ticker": "BBIO",
+        "spend_usd": 970000.0,
+        "filings": 5,
+        "spike_x": null,
+        "top_issue": "Pharmacy"
+      },
+      {
+        "ticker": "NKE",
+        "spend_usd": 910000.0,
+        "filings": 6,
+        "spike_x": null,
+        "top_issue": "Copyright/Patent/Trademark"
+      },
+      {
+        "ticker": "EMN",
+        "spend_usd": 900000.0,
+        "filings": 3,
+        "spike_x": null,
+        "top_issue": "Energy/Nuclear"
+      },
+      {
+        "ticker": "HPQ",
+        "spend_usd": 850000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Trade (domestic/foreign)"
       },
       {
         "ticker": "AMAT",
@@ -45145,95 +45208,32 @@
         "top_issue": "Taxation/Internal Revenue Code"
       },
       {
-        "ticker": "MSI",
-        "spend_usd": 630000.0,
-        "filings": 4,
+        "ticker": "INTC",
+        "spend_usd": 760000.0,
+        "filings": 3,
         "spike_x": null,
-        "top_issue": "Communications/Broadcasting/Radio/TV"
+        "top_issue": "Budget/Appropriations"
       },
       {
-        "ticker": "SEM",
-        "spend_usd": 560000.0,
-        "filings": 1,
+        "ticker": "BKNG",
+        "spend_usd": 755000.0,
+        "filings": 3,
+        "spike_x": null,
+        "top_issue": "Travel/Tourism"
+      },
+      {
+        "ticker": "HOLX",
+        "spend_usd": 680000.0,
+        "filings": 4,
         "spike_x": null,
         "top_issue": "Health Issues"
       },
       {
-        "ticker": "WHR",
-        "spend_usd": 490000.0,
-        "filings": 2,
-        "spike_x": null,
-        "top_issue": "Labor Issues/Antitrust/Workplace"
-      },
-      {
-        "ticker": "CRMD",
-        "spend_usd": 380000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Health Issues"
-      },
-      {
-        "ticker": "STT",
-        "spend_usd": 370000.0,
+        "ticker": "BF.A",
+        "spend_usd": 670000.0,
         "filings": 4,
         "spike_x": null,
-        "top_issue": "Taxation/Internal Revenue Code"
-      },
-      {
-        "ticker": "GIS",
-        "spend_usd": 320000.0,
-        "filings": 2,
-        "spike_x": null,
-        "top_issue": "Agriculture"
-      },
-      {
-        "ticker": "ENTG",
-        "spend_usd": 300000.0,
-        "filings": 3,
-        "spike_x": null,
-        "top_issue": "Computer Industry"
-      },
-      {
-        "ticker": "TXN",
-        "spend_usd": 300000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Immigration"
-      },
-      {
-        "ticker": "ICE",
-        "spend_usd": 289471.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Financial Institutions/Investments/Securities"
-      },
-      {
-        "ticker": "BWXT",
-        "spend_usd": 270000.0,
-        "filings": 2,
-        "spike_x": null,
-        "top_issue": "Energy/Nuclear"
-      },
-      {
-        "ticker": "HAWK",
-        "spend_usd": 270000.0,
-        "filings": 3,
-        "spike_x": null,
-        "top_issue": "Aerospace"
-      },
-      {
-        "ticker": "BALL",
-        "spend_usd": 220000.0,
-        "filings": 2,
-        "spike_x": null,
-        "top_issue": "Environment/Superfund"
-      },
-      {
-        "ticker": "QVCGB",
-        "spend_usd": 220000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Trade (domestic/foreign)"
+        "top_issue": "Beverage Industry"
       }
     ],
     "offexchange": [
@@ -48559,16 +48559,17 @@
     ],
     "convergence": [
       {
-        "ticker": "BWXT",
-        "score": 4,
-        "weighted_score": 1.95,
+        "ticker": "INTC",
+        "score": 5,
+        "weighted_score": 2.15,
         "channel_list": [
-          "activist_13d",
-          "congress_buy",
+          "darkpool_accum",
+          "gov_grant",
           "lobbying",
-          "unusual_options"
+          "patent_cluster",
+          "special_situation"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 congress_buy: 1 member(s) net +8 \u00b7 lobbying: $270,000 lobbied \u00b7 unusual_options: 3.01\u00d7 vol/OI, balanced"
+        "why": "darkpool_accum: DPI 0.333 \u00b7 gov_grant: $7,937,735 federal grant/loan \u00b7 lobbying: $760,000 lobbied \u00b7 patent_cluster: 175 grants, 33 IPC classes \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MRK",
@@ -48581,18 +48582,6 @@
           "trump"
         ],
         "why": "clinical_phase3_start: 8 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 special_situation: Tender Offers \u00b7 trump: Merck & Co Inc"
-      },
-      {
-        "ticker": "INTC",
-        "score": 4,
-        "weighted_score": 1.85,
-        "channel_list": [
-          "darkpool_accum",
-          "gov_grant",
-          "patent_cluster",
-          "special_situation"
-        ],
-        "why": "darkpool_accum: DPI 0.333 \u00b7 gov_grant: $7,937,735 federal grant/loan \u00b7 patent_cluster: 175 grants, 33 IPC classes \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "IBM",
@@ -48618,6 +48607,29 @@
           "special_situation"
         ],
         "why": "congress_cluster: 3 members net +14 \u00b7 github_momentum: +0.31% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
+      },
+      {
+        "ticker": "PLTR",
+        "score": 4,
+        "weighted_score": 1.65,
+        "channel_list": [
+          "github_momentum",
+          "gov_contract_accel",
+          "lobbying",
+          "retail_buzz"
+        ],
+        "why": "github_momentum: +0.13% stars \u00b7 gov_contract_accel: $86,884,454, 20.6x accel \u00b7 lobbying: $2,660,000 lobbied \u00b7 retail_buzz: 91 WSB mentions"
+      },
+      {
+        "ticker": "BWXT",
+        "score": 3,
+        "weighted_score": 1.65,
+        "channel_list": [
+          "activist_13d",
+          "congress_buy",
+          "unusual_options"
+        ],
+        "why": "activist_13d: 13D activist campaign \u00b7 congress_buy: 1 member(s) net +8 \u00b7 unusual_options: 3.01\u00d7 vol/OI, balanced"
       },
       {
         "ticker": "NVDA",
@@ -48739,15 +48751,16 @@
         "why": "insider_cluster: 16 insiders, $33,115,993 net \u00b7 special_situation: Capital Returns"
       },
       {
-        "ticker": "PLTR",
-        "score": 3,
-        "weighted_score": 1.35,
+        "ticker": "LLY",
+        "score": 4,
+        "weighted_score": 1.3,
         "channel_list": [
-          "github_momentum",
-          "gov_contract_accel",
-          "retail_buzz"
+          "clinical_phase3_start",
+          "cnbc_pick",
+          "lobbying",
+          "special_situation"
         ],
-        "why": "github_momentum: +0.13% stars \u00b7 gov_contract_accel: $86,884,454, 20.6x accel \u00b7 retail_buzz: 91 WSB mentions"
+        "why": "clinical_phase3_start: 7 new Phase-3 \u00b7 cnbc_pick: Bill Baruch \u00b7 lobbying: $3,618,850 lobbied \u00b7 special_situation: Delistings"
       },
       {
         "ticker": "DASH",
@@ -48767,7 +48780,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $23,746,146, 46.8x accel \u00b7 special_situation: Restructuring"
+        "why": "gov_contract_accel: $23,746,146, 53.7x accel \u00b7 special_situation: Restructuring"
       },
       {
         "ticker": "ACM",
@@ -48799,17 +48812,6 @@
           "unusual_options"
         ],
         "why": "trump: CITIZENS FINANCIAL GROUP INC \u00b7 unusual_options: 3.53\u00d7 vol/OI, call-skew"
-      },
-      {
-        "ticker": "TXN",
-        "score": 3,
-        "weighted_score": 1.1,
-        "channel_list": [
-          "lobbying",
-          "patent_cluster",
-          "special_situation"
-        ],
-        "why": "lobbying: $300,000 lobbied \u00b7 patent_cluster: 75 grants, 27 IPC classes \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "BIIB",
