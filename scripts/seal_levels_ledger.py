@@ -143,7 +143,9 @@ def main(argv: list[str] | None = None) -> int:
     ledger_file, sha = seal(args.date, sealed_boards, sealed_at=sealed_at)
     _LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     out = _LEDGER_DIR / f"{args.date}.json"
-    out.write_text(json.dumps(ledger_file, separators=(",", ":")))
+    # write the EXACT canonical bytes that were hashed, so an independent
+    # `shasum -a 256` of the downloaded file reproduces the published hash.
+    out.write_bytes(canonical_bytes(ledger_file))
 
     # append/replace the manifest entry (idempotent by session_date)
     idx = _load_index()
