@@ -916,3 +916,72 @@ class TestCompletenessGuard:
             assert asof in out_payload["no_data_reason"]
         finally:
             builder._load_oi_for_date = orig_oi
+
+
+# --------------------------------------------------------------------------- #
+# WP-B: vex wiring in build_options_hub_nightly.build_root
+# --------------------------------------------------------------------------- #
+
+class TestVexWiring:
+    """build_root must return (vol, gex, vex); vex is the vega-weighted sibling of gex.
+
+    Monkeypatches the three store loaders so build_root runs hermetically on
+    crafted greeks + OI frames — exercising the real wiring (compute_vex is called
+    with greeks[asof] + OI[t-1]) without touching any parquet store.
+    """
+
+    def _fixtures(self, asof: str = "2025-01-10", spot: float = 500.0):
+        # a call above spot (positive vex) + a put below spot (negative vex),
+        # both with OI[t-1] > 0 so they survive the OI merge.
+        greeks = pd.DataFrame([
+            {**_make_greeks_row(expiration="2025-03-21", strike=505.0, right="C", date=asof,
+                                gamma=0.01, underlying_price=spot), "vega": 0.30},
+            {**_make_greeks_row(expiration="2025-03-21", strike=495.0, right="P", date=asof,
+                                gamma=0.01, underlying_price=spot), "vega": 0.30},
+        ])
+        oi = pd.DataFrame([
+            {"expiration": "2025-03-21", "strike": 505.0, "right": "C",
+             "open_interest": 1000.0, "date": asof},
+            {"expiration": "2025-03-21", "strike": 495.0, "right": "P",
+             "open_interest": 1000.0, "date": asof},
+        ])
+        return greeks, oi
+
+    def test_build_root_returns_vex_triple(self, monkeypatch):
+        import scripts.build_options_hub_nightly as builder
+
+        asof = "2025-01-10"
+        greeks, oi = self._fixtures(asof)
+        monkeypatch.setattr(builder, "_load_greeks", lambda root, ts: greeks)
+        monkeypatch.setattr(builder, "_load_oi_for_date", lambda root, date_str, ts: oi)
+        monkeypatch.setattr(builder, "_load_yahoo", lambda root: None)
+
+        out = builder.build_root("SPY", asof, None)
+        assert isinstance(out, tuple) and len(out) == 3, "build_root must return (vol, gex, vex)"
+        vol_payload, gex_payload, vex_payload = out
+
+        # vex is a real options_hub.vex/v1 board on the SAME PIT inputs as gex
+        assert vex_payload["schema"] == "options_hub.vex/v1"
+        assert vex_payload["root"] == "SPY" and vex_payload["asof"] == asof
+        assert vex_payload["spot_ref"] == 500.0
+        assert vex_payload["by_strike"], "expected non-empty vex by_strike"
+        assert vex_payload["pos_vex_wall"] == 505.0  # positive vex above spot
+        assert vex_payload["neg_vex_wall"] == 495.0  # negative vex below spot
+
+        # gex still built alongside it (regression: the toggle needs both)
+        assert gex_payload["schema"] == "options_hub.gex/v1"
+        assert vol_payload["schema"] == "options_hub.vol/v1"
+
+    def test_build_root_vex_empty_store(self, monkeypatch):
+        """Empty store → vex is an honest empty board (schema present, no strikes)."""
+        import scripts.build_options_hub_nightly as builder
+
+        asof = "2025-01-10"
+        monkeypatch.setattr(builder, "_load_greeks", lambda root, ts: pd.DataFrame())
+        monkeypatch.setattr(builder, "_load_oi_for_date", lambda root, date_str, ts: pd.DataFrame())
+        monkeypatch.setattr(builder, "_load_yahoo", lambda root: None)
+
+        _vol, _gex, vex_payload = builder.build_root("SPY", asof, None)
+        assert vex_payload["schema"] == "options_hub.vex/v1"
+        assert vex_payload["by_strike"] == []
+        assert vex_payload["spot_ref"] is None

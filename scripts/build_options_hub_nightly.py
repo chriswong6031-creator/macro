@@ -49,6 +49,7 @@ from engine.options_hub import (
     build_oi_confirmed,
 )
 from engine.levels_publish import levels_payload_from_gex, LEVELS_PREFIX
+from engine.vex_engine import compute_vex
 
 log = logging.getLogger(__name__)
 
@@ -297,11 +298,13 @@ def build_root(
     asof: str,
     theta_store: str | Path | None,
     polygon_gex_dir: Path | None = None,
-) -> tuple[dict, dict]:
-    """Build vol + gex payloads for one root.
+) -> tuple[dict, dict, dict]:
+    """Build vol + gex + vex payloads for one root.
 
-    Returns (vol_payload, gex_payload). Both are non-null dicts (may be empty
-    analytics when data is absent).
+    Returns (vol_payload, gex_payload, vex_payload). All three are non-null dicts
+    (may be empty analytics when data is absent). vex is the vega-weighted sibling
+    of gex — the same PIT inputs (greeks[asof] + OI[t-1]), the same options_hub.*
+    namespace — powering the GEX↔VEX toggle on the levels board.
 
     OI TIMING LAW: we load OI for asof (= OPRA report representing EOD(asof-1)
     positions) as OI[t-1]. The previous session's OI is used for ΔOI comparisons.
@@ -343,7 +346,19 @@ def build_root(
         except Exception as _he:  # noqa: BLE001
             log.warning("build_root: gex_history attach failed for %s — %s", root, _he)
 
-    return vol_payload, gex_payload
+    # ── vex ──────────────────────────────────────────────────────────────────
+    # Vega exposure: the SAME point-in-time inputs as gex (greeks[asof] + OI[t-1])
+    # weighted by VEGA instead of gamma — how dealer hedging reacts to a VOLATILITY
+    # move rather than a price move. options_hub.vex/v1, published as a sibling of
+    # gex/{root}.json. compute_vex returns honest empties (never raises); the guard
+    # here is belt-and-suspenders so a vex hiccup can never sink the gex/vol build.
+    try:
+        vex_payload = compute_vex(greeks_asof, oi_t1, asof, root)
+    except Exception as _ve:  # noqa: BLE001
+        log.warning("build_root: vex compute failed for %s — %s", root, _ve)
+        vex_payload = {}
+
+    return vol_payload, gex_payload, vex_payload
 
 
 # --------------------------------------------------------------------------- #
@@ -593,7 +608,7 @@ def main() -> None:
         log.info("options_hub_builder: processing %s …", root)
         _root_start = time.monotonic()
         try:
-            vol_payload, gex_payload = build_root(root, asof, theta_store, polygon_gex_dir)
+            vol_payload, gex_payload, vex_payload = build_root(root, asof, theta_store, polygon_gex_dir)
 
             _elapsed = time.monotonic() - _root_start
             if _elapsed > ROOT_WALL_BUDGET_S:
@@ -679,6 +694,26 @@ def main() -> None:
                 log.warning(
                     "options_hub_builder: levels publish failed for %s — %s",
                     root, _lv_err,
+                )
+
+            # ── WP-B: vex.v1 (vega exposure — the GEX↔VEX toggle) ──────────────
+            # Sibling of gex/{root}.json in the options_hub plane: the same board,
+            # one toggle. Written locally always (reflects what was computed);
+            # uploaded only when it carries strikes AND the SAME completeness guard
+            # that lets gex publish is satisfied (gex_publish) — a mid-backfill
+            # store that suppressed the gex upload must suppress vex too, or the
+            # toggle would show a fresh vex board over a stale/last-good gex board.
+            # INERT per root like everything else in this loop.
+            try:
+                if vex_payload:
+                    vex_path = out_dir / "vex" / f"{root}.json"
+                    _write_json(vex_path, vex_payload)
+                    if s3 and bucket and gex_publish and vex_payload.get("by_strike"):
+                        _upload_r2(s3, bucket, vex_path, f"{R2_PREFIX}vex/{root}.json")
+            except Exception as _vx_err:  # noqa: BLE001
+                log.warning(
+                    "options_hub_builder: vex publish failed for %s — %s",
+                    root, _vx_err,
                 )
 
             roots_ok.append(root)
