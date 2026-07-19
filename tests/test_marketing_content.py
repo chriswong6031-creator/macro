@@ -452,10 +452,22 @@ def test_governor_content_plan_featured_charts_have_svg(tmp_path):
         for fc in cp["featured_charts"]:
             svg = fc.get("svg", "")
             assert svg.strip().startswith("<svg"), f"featured chart {fc['id']} has invalid SVG"
-            assert "BUY" in svg, f"featured chart {fc['id']} missing BUY marker"
-            assert not re.search(r"MACD|RSI|EMA|cross", svg, re.I), (
-                f"featured chart {fc['id']} leaks indicator text"
+            # v2 charts: have candlestick rects, MASTERMIND brand, SETUP pill.
+            # v1 fallback charts: have "BUY" marker. Both are valid.
+            is_v2 = svg.count("<rect") >= 10  # v2 has many candle rects
+            is_v1 = "BUY" in svg              # v1 has explicit BUY text
+            assert is_v2 or is_v1, (
+                f"featured chart {fc['id']} is neither v2 (candle rects) nor v1 (BUY text)"
             )
+            if is_v2:
+                # v2 charts must have brand lockup
+                assert "MASTERMIND" in svg, f"v2 chart {fc['id']} missing MASTERMIND"
+                # v2 SVG subpanel labels (MACD/RSI) are intentional — not a leak
+            else:
+                # v1 fallback: no indicator vocabulary in SVG
+                assert not re.search(r"MACD|RSI|EMA|cross", svg, re.I), (
+                    f"v1 fallback chart {fc['id']} leaks indicator text"
+                )
 
 
 def test_governor_content_plan_fail_soft_no_prophet(tmp_path):
@@ -500,3 +512,198 @@ def test_load_closes_returns_dates_and_closes_for_known_ticker():
     assert len(dates) <= 90
     assert len(dates) == len(closes)
     assert all(isinstance(c, float) for c in closes)
+
+
+# ---------------------------------------------------------------------------
+# v2: render_chart_v2 tests
+# ---------------------------------------------------------------------------
+
+def _synthetic_ohlcv(n: int = 90) -> tuple:
+    """Synthetic OHLCV for testing."""
+    dates = [f"2026-0{(i // 30) + 1}-{(i % 28) + 1:02d}" for i in range(n)]
+    c_vals = _synthetic_closes(n)
+    # prev-close proxy for open
+    o_vals = [c_vals[0]] + c_vals[:-1]
+    h_vals = [max(o, c) + abs(c - o) * 0.3 + 0.5 for o, c in zip(o_vals, c_vals)]
+    l_vals = [min(o, c) - abs(c - o) * 0.3 - 0.5 for o, c in zip(o_vals, c_vals)]
+    v_vals = [1_000_000.0 + i * 10_000 for i in range(n)]
+    return dates, o_vals, h_vals, l_vals, c_vals, v_vals
+
+
+def test_render_chart_v2_is_valid_svg():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TEST", dates, o, h, l, c, v)
+    assert svg.strip().startswith("<svg"), f"Expected SVG, got: {svg[:80]}"
+    assert "</svg>" in svg
+
+
+def test_render_chart_v2_has_candlestick_rects():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("AAPL", dates, o, h, l, c, v)
+    # Candlestick bodies are <rect> elements; should have many
+    rect_count = svg.count("<rect")
+    assert rect_count >= 10, f"Too few <rect> elements ({rect_count}); expected candlesticks"
+
+
+def test_render_chart_v2_has_ticker_in_header():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("NVDA", dates, o, h, l, c, v)
+    assert "NVDA" in svg, "Ticker not found in chart SVG"
+
+
+def test_render_chart_v2_has_mastermind_lockup():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TEST", dates, o, h, l, c, v)
+    assert "MASTERMIND" in svg, "MASTERMIND brand lockup missing from chart"
+
+
+def test_render_chart_v2_has_last_price_pill():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TEST", dates, o, h, l, c, v)
+    # Last price pill: the last close formatted with commas
+    last_close = c[-1]
+    # The pill contains the formatted last price
+    pill_label = f"{last_close:,.2f}"
+    assert pill_label in svg, f"Last-price pill value '{pill_label}' not found in SVG"
+
+
+def test_render_chart_v2_has_macd_subpanel_when_show_indicators():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TEST", dates, o, h, l, c, v, show_indicators=True, indicators=("macd",))
+    assert "MACD" in svg, "MACD subpanel label missing when show_indicators=True"
+
+
+def test_render_chart_v2_no_subpanels_when_show_indicators_false():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TEST", dates, o, h, l, c, v, show_indicators=False)
+    # No subpanel labels when disabled
+    assert "MACD" not in svg
+    assert "RSI" not in svg
+    assert "VOLUME" not in svg
+
+
+def test_render_chart_v2_no_script():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TEST", dates, o, h, l, c, v)
+    assert "<script" not in svg.lower(), "SVG must not contain <script> tags"
+
+
+def test_render_chart_v2_under_45kb():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TEST", dates, o, h, l, c, v,
+                           show_indicators=True, indicators=("volume", "macd", "rsi"))
+    size = len(svg.encode("utf-8"))
+    assert size < 45 * 1024, f"SVG too large: {size} bytes (max 45KB)"
+
+
+def test_render_chart_v2_hostile_ticker_escaped():
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    hostile = '<script>alert(1)</script>'
+    svg = render_chart_v2(hostile, dates, o, h, l, c, v)
+    # Raw unescaped injection must NOT appear
+    assert "<script>" not in svg, "Hostile ticker not escaped: raw <script> tag present"
+    assert "</script>" not in svg, "Hostile ticker not escaped: raw </script> tag present"
+    # Escaped forms must appear (ticker is uppercased in header; watermark uppercases it)
+    assert "&lt;" in svg, "Hostile ticker text not found in any escaped form"
+
+
+# ---------------------------------------------------------------------------
+# v2: render_earnings_card tests
+# ---------------------------------------------------------------------------
+
+def test_render_earnings_card_is_valid_svg():
+    from engine.marketing.chart_render import render_earnings_card
+    svg = render_earnings_card("AAPL", "Apple Inc.", 1.53, 1.48, 94.9e9, 93.1e9)
+    assert svg.strip().startswith("<svg"), "Earnings card must be valid SVG"
+    assert "</svg>" in svg
+
+
+def test_render_earnings_card_beat_eps():
+    from engine.marketing.chart_render import render_earnings_card
+    svg = render_earnings_card("NVDA", "NVIDIA", 6.10, 5.89, 44.1e9, 43.0e9)
+    # Both EPS and Rev beat → both chips show BEAT
+    assert "BEAT" in svg
+    # Green chip used for beat
+    assert "#4CAF50" in svg
+
+
+def test_render_earnings_card_miss_eps():
+    from engine.marketing.chart_render import render_earnings_card
+    svg = render_earnings_card("INTC", "Intel", 0.12, 0.28, 12.1e9, 13.5e9)
+    # EPS miss, Rev miss → both chips show MISS
+    assert "MISS" in svg
+    # Red chip used for miss
+    assert "#E23B3B" in svg
+
+
+def test_render_earnings_card_mixed_beat_miss():
+    from engine.marketing.chart_render import render_earnings_card
+    # EPS beats, Rev misses
+    svg = render_earnings_card("META", "Meta Platforms", 4.92, 4.70, 38.5e9, 40.0e9)
+    assert "BEAT" in svg
+    assert "MISS" in svg
+
+
+def test_render_earnings_card_has_ticker_and_company():
+    from engine.marketing.chart_render import render_earnings_card
+    svg = render_earnings_card("TSLA", "Tesla Inc.", 0.82, 0.75, 25.7e9, 24.9e9)
+    assert "TSLA" in svg
+    assert "Tesla Inc." in svg
+    assert "MASTERMIND" in svg
+
+
+def test_render_earnings_card_no_script():
+    from engine.marketing.chart_render import render_earnings_card
+    svg = render_earnings_card("AMZN", "Amazon", 1.83, 1.72, 148.0e9, 145.0e9)
+    assert "<script" not in svg.lower()
+
+
+# ---------------------------------------------------------------------------
+# v2: content_plan featured charts use v2 (candlestick rects in SVG)
+# ---------------------------------------------------------------------------
+
+def test_content_plan_featured_charts_use_v2_when_ohlcv_available():
+    """Featured charts built from real parquet must contain candlestick rects."""
+    parquet_path = ROOT / "data" / "stocks" / "PLTR.parquet"
+    if not parquet_path.exists():
+        pytest.skip("PLTR.parquet not present — skipping v2 chart integration test")
+
+    from engine.marketing.content_studio import content_plan
+    from engine.marketing.chart_render import load_closes
+
+    cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
+    loader = lambda t: load_closes(t, ROOT, n=90)  # noqa: E731
+    plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=loader)
+
+    fc_list = plan["featured_charts"]
+    assert isinstance(fc_list, list)
+    # At least one featured chart should exist (PLTR and SBUX parquets present)
+    if not fc_list:
+        pytest.skip("No featured charts produced (no eligible ticker parquets found)")
+
+    for fc in fc_list:
+        svg = fc.get("svg", "")
+        assert svg.strip().startswith("<svg"), f"chart {fc['id']} not valid SVG"
+        # v2 charts have many <rect> (candlestick bodies); v1 has none
+        # Accept either (v1 fallback is fine) but assert at least one chart used v2
+    v2_charts = [
+        fc for fc in fc_list
+        if fc.get("svg", "").count("<rect") >= 10
+    ]
+    assert len(v2_charts) >= 1, (
+        "Expected at least one v2 candlestick chart in featured_charts; "
+        f"got rect counts: {[fc.get('svg','').count('<rect') for fc in fc_list]}"
+    )
+    # All v2 charts must have MASTERMIND
+    for fc in v2_charts:
+        assert "MASTERMIND" in fc["svg"], f"MASTERMIND missing from v2 chart {fc['id']}"

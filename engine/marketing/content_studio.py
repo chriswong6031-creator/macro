@@ -676,7 +676,12 @@ def content_plan(
 
     Returns the frozen dict structure with envelope fields caller will stamp.
     """
-    from engine.marketing.chart_render import macd_cross, render_signal_chart
+    from engine.marketing.chart_render import (
+        macd_cross,
+        render_signal_chart,
+        load_ohlcv,
+        render_chart_v2,
+    )
 
     dn_cfg = (cfg or {}).get("desk_network", {}) or {}
     raw_accounts = dn_cfg.get("accounts", []) or []
@@ -724,21 +729,35 @@ def content_plan(
             "queue": [item.as_dict() for item in items],
         })
 
-    # Select featured charts: ≤2 per account, max 12 total, only with closes
+    # Select featured charts: ≤2 per account, max 6 total (v2 charts are larger).
+    # Only with closes. Eligibility gate always applies.
+    _CHART_CAP = 6
     featured_charts: list[dict] = []
     chart_id_counter = 1
 
     if closes_loader is not None and plans:
         # Deduplicate: one chart per ticker
         seen_tickers: set[str] = set()
+        # Root path for OHLCV loader (inferred from closes_loader's captures if needed)
+        _ohlcv_root: str | None = None
+        # Try to get root from the closes_loader closure (typically a lambda over ROOT)
+        try:
+            import inspect
+            _cl = closes_loader
+            _cells = _cl.__code__.co_freevars  # type: ignore[union-attr]
+            _vals = _cl.__closure__ or ()       # type: ignore[union-attr]
+            _cv = dict(zip(_cells, (c.cell_contents for c in _vals)))
+            _ohlcv_root = str(_cv.get("root") or _cv.get("ROOT") or _cv.get("_root") or ".")
+        except Exception:
+            _ohlcv_root = "."
 
         for acct_row in account_rows:
-            if len(featured_charts) >= 12:
+            if len(featured_charts) >= _CHART_CAP:
                 break
             acct_id = acct_row["id"]
             acct_count = 0
             for item_dict in acct_row["queue"]:
-                if len(featured_charts) >= 12 or acct_count >= 2:
+                if len(featured_charts) >= _CHART_CAP or acct_count >= 2:
                     break
                 if item_dict["type"] != "signal":
                     continue
@@ -786,15 +805,46 @@ def content_plan(
 
                 cashtag = f"${ticker}"
                 chart_id = f"chart-{chart_id_counter:03d}"
-                subtitle = f"{cashtag} · signal"
 
-                svg = render_signal_chart(
-                    ticker=ticker,
-                    dates=dates,
-                    closes=closes,
-                    marker_index=marker_index,
-                    subtitle=subtitle,
-                )
+                # ── v2 chart: attempt OHLCV load for candlestick render ──────
+                svg: str | None = None
+                if _ohlcv_root:
+                    ohlcv = load_ohlcv(ticker, _ohlcv_root, n=90)
+                    if ohlcv is not None:
+                        ohlcv_dates, ohlcv_o, ohlcv_h, ohlcv_l, ohlcv_c, ohlcv_v = ohlcv
+                        # Re-compute marker_index against the OHLCV date list
+                        ohlcv_marker = len(ohlcv_dates) - 1
+                        if signal_date and signal_date in ohlcv_dates:
+                            ohlcv_marker = ohlcv_dates.index(signal_date)
+                        elif marker_index < len(ohlcv_dates):
+                            ohlcv_marker = marker_index
+                        svg = render_chart_v2(
+                            ticker=ticker,
+                            dates=ohlcv_dates,
+                            o=ohlcv_o,
+                            h=ohlcv_h,
+                            l=ohlcv_l,
+                            c=ohlcv_c,
+                            volume=ohlcv_v,
+                            timeframe="DAILY",
+                            marker_index=ohlcv_marker,
+                            highlight_index=ohlcv_marker,
+                            pct_from_index=ohlcv_marker,
+                            show_indicators=True,
+                            indicators=("volume", "macd"),
+                            company_name=ticker,
+                        )
+
+                # Fallback: v1 render (marker-only) so nothing breaks
+                if svg is None:
+                    subtitle = f"{cashtag} · signal"
+                    svg = render_signal_chart(
+                        ticker=ticker,
+                        dates=dates,
+                        closes=closes,
+                        marker_index=marker_index,
+                        subtitle=subtitle,
+                    )
 
                 # Get headline/body from queue item
                 headline = item_dict.get("headline", f"{cashtag} opportunity flagged")
