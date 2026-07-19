@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>BLS News Releases</title>
+    <link>https://www.bls.gov/</link>
+    <description>Bureau of Labor Statistics news releases</description>
+
+    <item>
+      <title>Consumer Price Index rose 0.3% in June; 12-month inflation rate 3.1%</title>
+      <link>https://www.bls.gov/news.release/cpi.nr0.htm</link>
+      <guid isPermaLink="true">https://www.bls.gov/news.release/cpi.nr0.htm</guid>
+      <pubDate>Fri, 12 Jul 2024 08:30:00 +0000</pubDate>
+      <description>The Consumer Price Index for All Urban Consumers (CPI-U) rose 0.3 percent in June on a seasonally adjusted basis, the U.S. Bureau of Labor Statistics reported today. Over the last 12 months, the all items index increased 3.1 percent before seasonal adjustment. The index for shelter rose 0.2 percent in June and the index for energy rose 1.0 percent.</description>
+    </item>
+
+    <item>
+      <title>Pop Star Breaks World Record for Ticket Sales at Stadium Tour</title>
+      <link>https://entertainment.example.com/pop-star-record</link>
+      <guid isPermaLink="true">https://entertainment.example.com/pop-star-record</guid>
+      <pubDate>Fri, 12 Jul 2024 10:00:00 +0000</pubDate>
+      <description>A famous pop star has broken the world record for ticket sales, selling 2 million tickets in under 24 hours for their upcoming world tour. Fans from over 50 countries rushed to purchase tickets as soon as they went on sale.</description>
+    </item>
+
+    <item>
+      <title>Earthquake kills 45 in coastal region; rescue teams deployed</title>
+      <link>https://news.example.com/earthquake-45-killed</link>
+      <guid isPermaLink="true">https://news.example.com/earthquake-45-killed</guid>
+      <pubDate>Fri, 12 Jul 2024 06:00:00 +0000</pubDate>
+      <description>A magnitude 6.8 earthquake struck the coastal region early Friday, killing 45 people and injuring more than 200. Rescue teams have been deployed to search for survivors in collapsed buildings. Casualties are expected to rise as teams reach remote areas.</description>
+    </item>
+
+    <item>
+      <title>White House announces new tariffs on steel and aluminum imports from China</title>
+      <link>https://www.whitehouse.gov/briefings-statements/tariff-announcement</link>
+      <guid isPermaLink="true">https://www.whitehouse.gov/briefings-statements/tariff-announcement</guid>
+      <pubDate>Thu, 11 Jul 2024 14:00:00 +0000</pubDate>
+      <description>The White House announced today that the administration will impose 25 percent tariffs on steel and aluminum imports from China, effective August 1st. The executive order also extends existing tariffs on solar panels and electric vehicles.</description>
+    </item>
+
+  </channel>
+</rss>

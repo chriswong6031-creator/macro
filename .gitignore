@@ -412,3 +412,6 @@ data/marketing/fastlane_seen.jsonl
 data/marketing/fastlane_quarantine.jsonl
 data/marketing/outbox/
 data/marketing/fastlane_heartbeat.txt
+# D05 breaking-feed local-only poller state (seen ledger + ETag state);
+# the nightly blanket "git add data/" must never stage these.
+data/marketing/breaking/

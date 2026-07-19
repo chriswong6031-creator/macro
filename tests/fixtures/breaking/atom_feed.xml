@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Federal Reserve Press Releases</title>
+  <link href="https://www.federalreserve.gov/feeds/press_all.xml" rel="self"/>
+  <id>https://www.federalreserve.gov/feeds/press_all.xml</id>
+  <updated>2024-07-12T18:00:00Z</updated>
+
+  <entry>
+    <id>https://www.federalreserve.gov/newsevents/pressreleases/monetary20240731a.htm</id>
+    <title>Federal Reserve issues FOMC statement: holds rates at 5.25-5.50 percent</title>
+    <link href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20240731a.htm" rel="alternate"/>
+    <updated>2024-07-31T18:00:00Z</updated>
+    <published>2024-07-31T18:00:00Z</published>
+    <summary>The Federal Open Market Committee decided to maintain the target range for the federal funds rate at 5-1/4 to 5-1/2 percent. The Committee seeks to achieve maximum employment and inflation at the rate of 2 percent over the longer run.</summary>
+  </entry>
+
+  <entry>
+    <id>https://www.federalreserve.gov/newsevents/pressreleases/monetary20240612b.htm</id>
+    <title>FOMC projects one rate cut in 2024, cuts outlook from three</title>
+    <link href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20240612b.htm" rel="alternate"/>
+    <updated>2024-06-12T18:00:00Z</updated>
+    <published>2024-06-12T18:00:00Z</published>
+    <summary>Updated Summary of Economic Projections (SEP) shows median fed funds rate projection of 5.1 percent for 2024, implying one 25 basis points cut versus the March projection of three cuts.</summary>
+  </entry>
+
+</feed>

@@ -1420,3 +1420,422 @@ def render_earnings_card(
         f'</svg>'
     )
     return svg
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# v2: Breaking-news card renderer (Radar / Breaking Desks — docket D05)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Design intent (see docs/DESIGN_DOCTRINE.md + research/marketing_dockets/D05):
+#   The SOURCE is the hero, not the scream. This is an accountable market-
+#   intelligence brand, so the signature element is a self-grading credibility
+#   chip — the tier the card actually used (official > wire > aggregator) is
+#   encoded in the chip's *weight* so an aggregator can never look as
+#   authoritative as an official feed (the anti-laundering trap is law).
+#   Amber (#F5A623) is the breaking accent — urgent like a wire dateline, not
+#   tabloid red (red stays reserved for "down" price semantics). The card never
+#   adds interpretation ("bullish") — stance lives in the signal lanes.
+#
+# Tier chip system (weight = trust):
+#   official    → filled amber, dark ink        (strongest)
+#   wire        → amber outline, hollow          (medium)
+#   aggregator  → grey outline, muted            (visibly lighter, honest)
+
+# Shared with render_breaking_card; kept module-private.
+_BREAK_AMBER = "#F5A623"       # breaking accent — wire-dateline urgency, not tabloid red
+_BREAK_GREY = "#6b7a99"        # family neutral (matches earnings-card muted ink)
+_BREAK_UP = "#4CAF50"          # family up-color
+_BREAK_DOWN = "#E23B3B"        # family down-color
+
+
+def _break_tier_style(tier: str) -> dict[str, str]:
+    """Map a source_tier to its chip visual treatment (weight encodes trust).
+
+    Returns a dict with: key (canonical id — official|wire|aggregator|unknown),
+    label (badge word), fill, ink, stroke, and fill_opacity. Unknown tiers route
+    to the most cautious (aggregator-grade) treatment — never launder up.
+    """
+    t = str(tier or "").strip().lower()
+    if t == "official":
+        # Strongest: filled amber, dark ink — the verified-primary look.
+        return {
+            "key": "official", "label": "OFFICIAL SOURCE",
+            "fill": _BREAK_AMBER, "fill_opacity": "1", "ink": "#1A1200",
+            "stroke": _BREAK_AMBER,
+        }
+    if t == "wire":
+        # Medium: amber outline, hollow — a credible wire, not a primary print.
+        return {
+            "key": "wire", "label": "WIRE SERVICE",
+            "fill": _BREAK_AMBER, "fill_opacity": "0.14", "ink": _BREAK_AMBER,
+            "stroke": _BREAK_AMBER,
+        }
+    # Aggregator (and any unknown tier): visibly lighter grey outline.
+    return {
+        "key": "aggregator", "label": "AGGREGATOR",
+        "fill": _BREAK_GREY, "fill_opacity": "0.08", "ink": _BREAK_GREY,
+        "stroke": _BREAK_GREY,
+    }
+
+
+def _break_fmt_ts(published_at: str) -> str:
+    """Format an ISO8601 UTC string as a compact dateline, e.g. '14:32 UTC · Jul 19'.
+
+    Deterministic (no now()): the stamp comes only from *published_at*. On any
+    parse failure returns the raw string trimmed — never raises (fail-soft; the
+    caller wraps everything, but keep this leaf honest too).
+    """
+    import datetime as _dt
+    raw = str(published_at or "").strip()
+    try:
+        s = raw.replace("Z", "+00:00")
+        dt = _dt.datetime.fromisoformat(s)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(_dt.timezone.utc)
+        mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.month - 1]
+        return f"{dt.hour:02d}:{dt.minute:02d} UTC · {mon} {dt.day}"
+    except Exception:  # noqa: BLE001
+        # Unparseable stamp: show a trimmed echo rather than a fake time.
+        return raw[:24] if raw else "TIME UNKNOWN"
+
+
+def _break_wrap(text: str, max_chars: int, max_lines: int) -> list[str]:
+    """Greedy word-wrap to at most *max_lines* lines of ~*max_chars* each.
+
+    Overflow past the last line is hard-clipped with a trailing ellipsis so a
+    runaway headline can never blow the card layout. Deterministic.
+    """
+    words = str(text or "").split()
+    if not words:
+        return [""]
+    lines: list[str] = []
+    cur = ""
+    for w in words:
+        cand = w if not cur else f"{cur} {w}"
+        if len(cand) <= max_chars or not cur:
+            cur = cand
+        else:
+            lines.append(cur)
+            cur = w
+            if len(lines) == max_lines:
+                break
+    if len(lines) < max_lines and cur:
+        lines.append(cur)
+    # Hard-clip: if words remain unplaced, ellipsize the final line.
+    placed = sum(len(ln.split()) for ln in lines)
+    if placed < len(words) and lines:
+        last = lines[-1]
+        if len(last) > max_chars - 1:
+            last = last[: max_chars - 1].rstrip()
+        lines[-1] = last + "…"
+    return lines[:max_lines]
+
+
+def _break_fallback_svg(width: int, height: int) -> str:
+    """Minimal valid fallback card — used when rendering raises internally."""
+    return (
+        f'<svg viewBox="0 0 {width} {height}" '
+        f'xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">'
+        f'<rect width="{width}" height="{height}" fill="#0E1420"/>'
+        f'<text x="{width / 2:.0f}" y="{height / 2:.0f}" fill="#6b7a99" '
+        f'font-size="16" text-anchor="middle" font-family="sans-serif">'
+        f'MASTERMIND · Breaking</text>'
+        f'</svg>'
+    )
+
+
+def render_breaking_card(
+    headline: str,
+    source_name: str,
+    source_tier: str,
+    published_at: str,
+    *,
+    tickers: "list[dict] | None" = None,
+    suppress_cta: bool = False,
+    summary: "str | None" = None,
+    logo_root: "Path | str | None" = None,  # noqa: ARG001 — reserved; text cashtags used
+    width: int = 1000,
+    height: int = 560,
+) -> str:
+    """Render a branded breaking-news card SVG in the Mastermind card family.
+
+    The card belongs to the render_earnings_card visual family (dark #0E1420
+    base, favicon lockup + wordmark, branded footer CTA) but its signature is a
+    self-grading SOURCE-TIER chip: the tier actually used is encoded in the
+    chip's weight (official = filled amber / wire = amber outline / aggregator =
+    muted grey outline), so an aggregator can never be laundered as an official
+    print (docket D05 trap — this is law). The model behind this card only
+    summarizes-with-citation; the card adds no interpretation.
+
+    Args:
+        headline: The breaking headline (hero; auto-wraps + scales + hard-clips).
+        source_name: Display name of the source ("Reuters", "Federal Reserve").
+        source_tier: "official" | "wire" | "aggregator" (unknown → aggregator).
+        published_at: ISO8601 UTC timestamp — the ONLY time input (deterministic).
+        tickers: Optional [{"ticker","price","pct"}, ...]; capped at 4, house
+            up/down coloring; strip omitted entirely when empty/None.
+        suppress_cta: Sentinel tone rule — True on human-tragedy items removes
+            the trial CTA line so the footer collapses to just the brand mark.
+        summary: Optional ≤2-sentence cited summary; omitted cleanly when None.
+        logo_root: Reserved for future logomark use; text cashtags are used now.
+        width, height: Card dimensions (family default 1000×560).
+
+    Returns:
+        Self-contained SVG string. No <script>. All source/user text _xesc'd.
+        Deterministic. On any internal error returns a minimal valid fallback
+        SVG (fail-soft, stderr note) — never raises.
+    """
+    try:
+        center_x = width / 2  # noqa: F841 — kept for layout symmetry with siblings
+        bc_uid = str(abs(hash((headline or "") + "bc")) % 10_000_000)
+
+        # ── Brand lockup (top-left) — identical family treatment ──────────────
+        bc_logo_tile = 30.0
+        logo_cx = 14 + bc_logo_tile / 2
+        logo_cy = 14 + bc_logo_tile / 2
+        bc_logo_defs, bc_logo_group = _favicon_logomark(
+            logo_cx, logo_cy, size=bc_logo_tile, uid=bc_uid
+        )
+        wordmark_x = logo_cx + bc_logo_tile / 2 + 8
+        wordmark_y = logo_cy + 7
+        wordmark_svg = (
+            f'<text x="{wordmark_x:.1f}" y="{wordmark_y:.1f}" '
+            f'fill="#ffffff" font-size="17" font-weight="900" '
+            f'font-family="sans-serif" letter-spacing="0.07em">MASTERMIND</text>'
+        )
+        # "RADAR" desk tag, right of the header — signals the intelligence lane.
+        desk_svg = (
+            f'<text x="{width - 14}" y="{logo_cy + 5:.1f}" fill="{_BREAK_GREY}" '
+            f'font-size="11" text-anchor="end" font-family="sans-serif" '
+            f'letter-spacing="2">RADAR</text>'
+        )
+        header_h = 60
+        header_bg = (
+            f'<rect x="0" y="0" width="{width}" height="{header_h}" '
+            f'fill="#0A1020" opacity="0.92"/>'
+        )
+        # Thin amber urgency rule directly under the header band (the "dateline").
+        break_rule = (
+            f'<rect x="0" y="{header_h}" width="{width}" height="3" '
+            f'fill="{_BREAK_AMBER}"/>'
+        )
+
+        pad_l = 46
+        content_top = header_h + 40
+
+        # ── BREAKING eyebrow (left) + tier chip + timestamp (dateline row) ────
+        eyebrow_y = content_top
+        # A small amber square + "BREAKING" — restrained, not a siren.
+        eyebrow_svg = (
+            f'<rect x="{pad_l}" y="{eyebrow_y - 12:.1f}" width="11" height="11" '
+            f'rx="2" fill="{_BREAK_AMBER}"/>'
+            f'<text x="{pad_l + 19}" y="{eyebrow_y - 1:.1f}" fill="{_BREAK_AMBER}" '
+            f'font-size="15" font-weight="900" font-family="sans-serif" '
+            f'letter-spacing="3.5">BREAKING</text>'
+        )
+
+        # Tier chip — the signature. Weight encodes trust; anti-laundering law.
+        ts_str = _break_fmt_ts(published_at)
+        tier = _break_tier_style(source_tier)
+        chip_label = f"{source_name} · {tier['label']}"
+        if len(chip_label) > 48:
+            chip_label = chip_label[:47] + "…"
+        chip_text = _xesc(chip_label)
+        # Caps-aware width estimate (deterministic; no font metrics): bold caps
+        # at 12.5px run ~8.6px vs ~6.9px lowercase, plus tracking — a flat
+        # per-char guess undersizes ALL-CAPS tier labels and the label touches
+        # the pill border. Generous right pad keeps it clear in any renderer.
+        chip_tw = sum(8.6 if (c.isupper() or c.isdigit()) else 6.9 for c in chip_label)
+        chip_tw += 0.4 * len(chip_label)
+        chip_w = 26 + int(chip_tw) + 16
+        chip_h = 30
+        chip_x = pad_l
+        chip_y = eyebrow_y + 14
+        # A leading dot in the chip echoes the tier ink — a tiny "seal".
+        chip_svg = (
+            f'<rect x="{chip_x}" y="{chip_y}" width="{chip_w}" height="{chip_h}" '
+            f'rx="6" fill="{tier["fill"]}" fill-opacity="{tier["fill_opacity"]}" '
+            f'stroke="{tier["stroke"]}" stroke-width="1.5" '
+            f'class="bc-tier bc-tier-{tier["key"]}"/>'
+            f'<circle cx="{chip_x + 15:.0f}" cy="{chip_y + chip_h / 2:.0f}" r="4" '
+            f'fill="{tier["ink"]}"/>'
+            f'<text x="{chip_x + 26:.0f}" y="{chip_y + chip_h / 2 + 4:.0f}" '
+            f'fill="{tier["ink"]}" font-size="12.5" font-weight="bold" '
+            f'font-family="sans-serif" letter-spacing="0.4">{chip_text}</text>'
+        )
+        # Timestamp dateline, to the right of the chip.
+        ts_svg = (
+            f'<text x="{chip_x + chip_w + 14:.0f}" '
+            f'y="{chip_y + chip_h / 2 + 4:.0f}" fill="{_BREAK_GREY}" '
+            f'font-size="12.5" font-family="sans-serif" letter-spacing="0.5">'
+            f'{_xesc(ts_str)}</text>'
+        )
+
+        # ── Headline hero — auto-wrap + scale by length + hard-clip ───────────
+        hl = str(headline or "").strip()
+        n = len(hl)
+        # Longer headline → smaller type + more chars/line + up to 3 lines.
+        if n <= 42:
+            hl_size, hl_max_chars, hl_max_lines = 44, 30, 2
+        elif n <= 90:
+            hl_size, hl_max_chars, hl_max_lines = 36, 40, 2
+        elif n <= 150:
+            hl_size, hl_max_chars, hl_max_lines = 30, 48, 3
+        else:
+            hl_size, hl_max_chars, hl_max_lines = 26, 56, 3
+        hl_lines = _break_wrap(hl, hl_max_chars, hl_max_lines)
+        hl_lh = hl_size + 8
+        sm = (summary or "").strip() if summary is not None else ""
+        sm_lines = _break_wrap(sm, 84, 3) if sm else []
+        sm_lh = 22
+        # Vertical balance: center the hero block (headline + summary) between
+        # the dateline row and the bottom zone (ticker strip or footer) instead
+        # of top-anchoring — short cards otherwise leave a dead void mid-card.
+        # The downshift is capped so the headline stays visually attached to
+        # its dateline chip.
+        min_top = chip_y + chip_h + 40
+        rows_present = bool(tickers if isinstance(tickers, list) else [])
+        bottom_limit = (height - 116 - 26) if rows_present else (height - 64)
+        block_span = (len(hl_lines) - 1) * hl_lh
+        if sm_lines:
+            block_span += 34 + (len(sm_lines) - 1) * sm_lh
+        v_offset = max(0.0, (bottom_limit - (min_top + block_span)) / 2)
+        hl_top = min_top + min(v_offset, 56.0)
+        hl_tspans = "".join(
+            f'<text x="{pad_l}" y="{hl_top + i * hl_lh:.1f}" fill="#ffffff" '
+            f'font-size="{hl_size}" font-weight="800" font-family="sans-serif" '
+            f'letter-spacing="-0.01em">{_xesc(ln)}</text>'
+            for i, ln in enumerate(hl_lines)
+        )
+        hl_bottom = hl_top + (len(hl_lines) - 1) * hl_lh
+
+        # ── Summary block (quieter secondary) — omit cleanly when None ────────
+        summary_svg = ""
+        summary_bottom = hl_bottom
+        if sm_lines:
+            sm_top = hl_bottom + 34
+            summary_svg = "".join(
+                f'<text x="{pad_l}" y="{sm_top + i * sm_lh:.1f}" '
+                f'fill="#a7b4cc" font-size="15.5" font-family="sans-serif">'
+                f'{_xesc(ln)}</text>'
+                for i, ln in enumerate(sm_lines)
+            )
+            summary_bottom = sm_top + (len(sm_lines) - 1) * sm_lh
+
+        # ── Related-ticker mini strip (cap 4) — omit entirely when empty ──────
+        strip_svg = ""
+        rows = tickers if isinstance(tickers, list) else []
+        rows = rows[:4]
+        if rows:
+            strip_y = height - 96
+            # Faint divider above the strip.
+            strip_svg += (
+                f'<line x1="{pad_l}" y1="{strip_y - 20:.0f}" '
+                f'x2="{width - pad_l}" y2="{strip_y - 20:.0f}" '
+                f'stroke="#232A3D" stroke-width="1"/>'
+            )
+            cell_w = (width - pad_l * 2) / len(rows)
+            for i, row in enumerate(rows):
+                cx0 = pad_l + i * cell_w
+                cashtag = ("$" + str(row.get("ticker", "") or "").upper())[:8]
+                try:
+                    price = float(row.get("price"))
+                    price_s = f"${price:,.2f}"
+                except (TypeError, ValueError):
+                    price_s = "—"
+                try:
+                    pct = float(row.get("pct"))
+                    up = pct >= 0
+                    pcol = _BREAK_UP if up else _BREAK_DOWN
+                    arrow = "▲" if up else "▼"
+                    sign = "+" if up else ""
+                    pct_s = f"{arrow} {sign}{pct:.1f}%"
+                except (TypeError, ValueError):
+                    pcol = _BREAK_GREY
+                    pct_s = "—"
+                # Cashtag (white) and pct (colored) share line 1; the pct x is
+                # derived from the cashtag length so it can NEVER reach the card's
+                # right edge (fixed far-right offsets overflow on wide cells).
+                pct_x = cx0 + 10 + len(cashtag) * 11
+                strip_svg += (
+                    # Cashtag — line 1 left
+                    f'<text x="{cx0:.0f}" y="{strip_y:.0f}" fill="#e2e8f0" '
+                    f'font-size="17" font-weight="bold" font-family="sans-serif">'
+                    f'{_xesc(cashtag)}</text>'
+                    # Signed pct with arrow, house color — line 1, right of cashtag
+                    f'<text x="{pct_x:.0f}" y="{strip_y:.0f}" fill="{pcol}" '
+                    f'font-size="15" font-weight="bold" font-family="sans-serif">'
+                    f'{_xesc(pct_s)}</text>'
+                    # Price — line 2, muted
+                    f'<text x="{cx0:.0f}" y="{strip_y + 22:.0f}" fill="{_BREAK_GREY}" '
+                    f'font-size="13" font-family="sans-serif">{_xesc(price_s)}</text>'
+                )
+
+        # ── Footer — CTA collapses to brand mark when suppress_cta (tragedy) ──
+        footer_y = height - 10
+        if suppress_cta:
+            # Sentinel tone rule: no trial pitch on human-tragedy items. Footer
+            # collapses to just the brand attribution — no blank CTA pill.
+            footer_svg = (
+                f'<text x="{pad_l}" y="{footer_y - 6:.0f}" fill="{_BREAK_GREY}" '
+                f'font-size="11" font-family="sans-serif" letter-spacing="0.3">'
+                f'MASTERMIND · Market Intelligence</text>'
+                f'<text x="{width - 14}" y="{footer_y - 6:.0f}" fill="#3a4466" '
+                f'font-size="9" text-anchor="end" font-family="sans-serif">'
+                f'© 2026 Mastermind</text>'
+            )
+        else:
+            cta_text = "free 14-day trial · mastermind-x.com"
+            cta_w = 8 + int(len(cta_text) * 6.4) + 8
+            footer_svg = (
+                f'<rect x="{pad_l}" y="{footer_y - 24:.0f}" width="{cta_w}" '
+                f'height="18" rx="9" fill="#3b82f6" fill-opacity="0.14" '
+                f'stroke="#5b9dff" stroke-opacity="0.4" stroke-width="1"/>'
+                f'<text x="{pad_l + 8}" y="{footer_y - 10:.0f}" fill="#9db8e8" '
+                f'font-size="11" font-family="sans-serif" letter-spacing="0.3">'
+                f'{_xesc(cta_text)}</text>'
+                f'<text x="{width - 14}" y="{footer_y - 4:.0f}" fill="#3a4466" '
+                f'font-size="9" text-anchor="end" font-family="sans-serif">'
+                f'© 2026 Mastermind · cited source above</text>'
+            )
+
+        # summary_bottom documents where the summary block ends; the ticker strip
+        # is pinned to the card bottom so there is no overlap by construction.
+        _ = summary_bottom
+
+        svg = (
+            f'<svg viewBox="0 0 {width} {height}" '
+            f'xmlns="http://www.w3.org/2000/svg" '
+            f'width="{width}" height="{height}">\n'
+            f'  <defs>{bc_logo_defs}</defs>\n'
+            f'  <!-- background -->\n'
+            f'  <rect width="{width}" height="{height}" fill="#0E1420"/>\n'
+            f'  <!-- breaking eyebrow + tier chip + timestamp -->\n'
+            f'  {eyebrow_svg}\n'
+            f'  {chip_svg}\n'
+            f'  {ts_svg}\n'
+            f'  <!-- headline hero -->\n'
+            f'  {hl_tspans}\n'
+            f'  <!-- summary -->\n'
+            f'  {summary_svg}\n'
+            f'  <!-- related-ticker strip -->\n'
+            f'  {strip_svg}\n'
+            f'  <!-- header band (on top) -->\n'
+            f'  {header_bg}\n'
+            f'  {break_rule}\n'
+            f'  {bc_logo_group}\n'
+            f'  {wordmark_svg}\n'
+            f'  {desk_svg}\n'
+            f'  <!-- footer -->\n'
+            f'  {footer_svg}\n'
+            f'</svg>'
+        )
+        return svg
+    except Exception as exc:  # noqa: BLE001
+        import sys
+        print(
+            f"render_breaking_card: fail-soft fallback ({type(exc).__name__}: {exc})",
+            file=sys.stderr,
+        )
+        return _break_fallback_svg(width, height)
