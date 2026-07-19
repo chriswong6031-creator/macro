@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-07-18",
+  "as_of": "2026-07-19",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -1387,7 +1387,7 @@
           "id": "seed-opp-001",
           "problem_or_desire": "Why did yields spike 20bp today and who are the winners/losers?",
           "expected_value": 0.7,
-          "score": 0.000335,
+          "score": 8.6e-05,
           "half_life_class": "breaking_event",
           "status": "open"
         },
@@ -1395,7 +1395,7 @@
           "id": "seed-opp-002",
           "problem_or_desire": "How exposed is my portfolio to the current rate regime?",
           "expected_value": 0.6,
-          "score": 0.474828,
+          "score": 0.474232,
           "half_life_class": "evergreen_comparison",
           "status": "open"
         },
@@ -1403,7 +1403,7 @@
           "id": "seed-opp-003",
           "problem_or_desire": "Semis sector rotation: who is leading and who is lagging?",
           "expected_value": 0.5,
-          "score": 0.290651,
+          "score": 0.285989,
           "half_life_class": "weekly_signal",
           "status": "open"
         }
@@ -1657,10 +1657,10 @@
   "content": {
     "total_posts": 126,
     "signal_posts": 42,
-    "charts": 6,
+    "charts": 3,
     "accounts": 6,
     "state": "present",
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -1670,7 +1670,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-18T21:45:26Z",
-  "inputs_hash": "sha256:b5ef0952073c7502fa9ac7c025fe06bd85cfd6b7cc00cd9afd7837f11ff45d67",
+  "produced_at": "2026-07-19T01:40:35Z",
+  "inputs_hash": "sha256:53d25e4719cba87b631c747373944767e66532aa45f1e60769fc2f4f4724abe6",
   "tier": "display"
 }

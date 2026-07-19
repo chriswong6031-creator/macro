@@ -22,7 +22,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Callable
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -344,6 +344,72 @@ def _account_hash(account_id: str) -> int:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Signal eligibility gate — NEVER post a stale / failed / invalidated signal
+# ─────────────────────────────────────────────────────────────────────────────
+# A live post is a public commitment. A signal whose stop has been breached, or
+# that has expired, or that we hold low confidence in, must never leave the desk
+# — that is how the QCOM invalidated-signal leak happened. This gate is the
+# single chokepoint every signal post and featured chart passes through.
+
+# Prophet lifecycle phases / actions that mean the trade is dead or exiting.
+_DEAD_PHASES = frozenset({"invalidated", "stopped_out", "closed", "expired", "overtime"})
+_DEAD_ACTIONS = frozenset({"invalidated", "exit", "close", "stop", "trim", "reduce", "avoid"})
+# Only genuinely live, healthy, pre-first-target plans are postable as signals.
+_LIVE_PHASES = frozenset({"triggered_pre_t1", "triggered", "active", "pre_trigger", "running"})
+_MIN_CONFIDENCE = 50.0        # management_confidence floor (QCOM was 13.5)
+_MAX_SIGNAL_AGE_DAYS = 21     # a signal older than this is stale, not news
+
+
+def _signal_age_days(signal_date: object, *, today: str | None = None) -> int | None:
+    """Whole days between the plan's signal date and today (UTC). None if unparseable."""
+    try:
+        s = str(signal_date)[:10]
+        y, m, d = (int(x) for x in s.split("-"))
+        sd = date(y, m, d)
+        if today:
+            ty, tm, td = (int(x) for x in str(today)[:10].split("-"))
+            now = date(ty, tm, td)
+        else:
+            now = datetime.now(timezone.utc).date()
+        return (now - sd).days
+    except Exception:
+        return None
+
+
+def is_postable_signal(plan: dict, *, today: str | None = None) -> bool:
+    """True only if *plan* is a live, healthy, fresh, confident signal worth posting.
+
+    Rejects: invalidated / stopped-out / expired / trimming plans, low-confidence
+    plans, and stale signals. This is the gate the QCOM failed signal skipped.
+    """
+    if not isinstance(plan, dict):
+        return False
+    if plan.get("direction") not in ("BULL", "BEAR"):
+        return False
+    phase = str(plan.get("phase", "")).lower()
+    action = str(plan.get("recommended_action", "")).lower()
+    if phase in _DEAD_PHASES or action in _DEAD_ACTIONS:
+        return False
+    if _LIVE_PHASES and phase and phase not in _LIVE_PHASES:
+        return False
+    try:
+        conf = float(plan.get("management_confidence", 0) or 0)
+    except (TypeError, ValueError):
+        conf = 0.0
+    if conf < _MIN_CONFIDENCE:
+        return False
+    age = _signal_age_days(plan.get("_signal_date"), today=today)
+    if age is None or age < 0 or age > _MAX_SIGNAL_AGE_DAYS:
+        return False
+    return True
+
+
+def postable_signals(plans: list[dict], *, today: str | None = None) -> list[dict]:
+    """Filter a plan list to only the signals that pass the eligibility gate."""
+    return [p for p in (plans or []) if is_postable_signal(p, today=today)]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Largest-remainder allocation (no RNG)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -476,8 +542,9 @@ def plan_account(
         j = lcg_state % (i + 1)
         seq[i], seq[j] = seq[j], seq[i]
 
-    # Map plan tickers deterministically
-    signal_plans = [p for p in plans if p.get("direction") in ("BULL", "BEAR")]
+    # Map plan tickers deterministically — ONLY postable (live/fresh/healthy)
+    # signals. A stale, invalidated, or low-confidence plan never becomes a post.
+    signal_plans = postable_signals(plans)
     bull_plans = [p for p in signal_plans if p.get("direction") == "BULL"]
     plan_pool = bull_plans if bull_plans else signal_plans
 
@@ -679,9 +746,12 @@ def content_plan(
                 if not ticker or ticker in seen_tickers:
                     continue
 
-                # Find plan for this ticker
+                # Find plan for this ticker — must pass the eligibility gate.
+                # Defense-in-depth: never chart a stale/invalidated signal.
                 plan_match = next(
-                    (p for p in plans if p.get("asset") == ticker), None
+                    (p for p in plans
+                     if p.get("asset") == ticker and is_postable_signal(p)),
+                    None,
                 )
                 if plan_match is None:
                     continue
@@ -694,22 +764,22 @@ def content_plan(
                 if len(closes) < 10:
                     continue
 
-                # Find the BUY-marker index. Neutral marker_source tokens only —
-                # no technical-indicator vocabulary in the shipped artifact, even
-                # in internal metadata (operator: reveal no technicals anywhere).
-                marker_source = "latest"          # honest default: newest bar
+                # Place the BUY marker at the REAL signal — the Prophet signal
+                # date — first. That is the honest anchor and it avoids marking a
+                # cosmetic local peak. Only if the signal date is out of the chart
+                # window do we fall back to the internal momentum turn, then latest.
+                # Neutral marker_source tokens only (no indicator vocabulary).
+                marker_source = "latest"
                 marker_index = len(closes) - 1
-
-                turn = macd_cross(closes)         # internal only; name never surfaced
-                if turn is not None:
-                    marker_index = turn["index"]
-                    marker_source = "momentum_turn"
+                signal_date = str(plan_match.get("_signal_date", ""))[:10]
+                if signal_date and signal_date in dates:
+                    marker_index = dates.index(signal_date)
+                    marker_source = "signal_date"
                 else:
-                    # Fall back to the Prophet plan's signal date if in range.
-                    signal_date = str(plan_match.get("_signal_date", ""))[:10]
-                    if signal_date and signal_date in dates:
-                        marker_index = dates.index(signal_date)
-                        marker_source = "signal_date"
+                    turn = macd_cross(closes)     # internal only; name never surfaced
+                    if turn is not None:
+                        marker_index = turn["index"]
+                        marker_source = "momentum_turn"
 
                 marker_date = dates[marker_index] if marker_index < len(dates) else dates[-1]
                 marker_price = closes[marker_index]
