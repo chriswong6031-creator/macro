@@ -2457,9 +2457,166 @@ tr.lab-cell-floor td { opacity: .72; }
   color: var(--muted);
   line-height: 1.6;
   max-width: 760px;
-  margin: -4px 0 20px;
+  margin: -4px 0 16px;
 }
 .obx-lede b { color: var(--text); font-weight: 600; }
+
+/* --- Sentinel contract card: why the caps are what they are --- */
+.obx-sentinel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 13px 16px 14px;
+  margin-bottom: 16px;
+}
+.obx-sentinel-head { margin-bottom: 11px; }
+.obx-sentinel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.obx-sentinel-sub {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.obx-sentinel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.obx-sentinel-cell {
+  padding: 9px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+.obx-sentinel-val {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+.obx-sentinel-tier {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  background: rgba(56,224,212,.10);
+  border: 1px solid rgba(56,224,212,.22);
+  border-radius: 5px;
+  padding: 1px 6px;
+  vertical-align: middle;
+  letter-spacing: 0;
+}
+.obx-sentinel-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* --- Command bar: the single global action --- */
+.obx-command {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.obx-gbtn { padding: 7px 18px; font-size: 13px; }
+.obx-gbtn:disabled { opacity: .45; cursor: not-allowed; }
+.obx-gbtn.obx-armed {
+  background: var(--warn);
+  border-color: var(--warn);
+  color: #1a1205;
+  animation: obx-armpulse 1s var(--ease) infinite;
+}
+@keyframes obx-armpulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,184,77,.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(255,184,77,0); }
+}
+@media (prefers-reduced-motion: reduce) { .obx-gbtn.obx-armed { animation: none; } }
+.obx-gmsg {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.obx-gmsg.obx-g-err { color: var(--bad); }
+
+/* --- Pipeline activity strip --- */
+.obx-activity {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 13px 16px 14px;
+  margin-bottom: 20px;
+}
+.obx-activity-head {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 11px;
+}
+.obx-activity-sub, .obx-activity-head .obx-activity-sub {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--faint);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 8px;
+}
+.obx-act-rows { display: flex; flex-direction: column; gap: 9px; }
+.obx-act-emit, .obx-act-run {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.obx-act-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.obx-act-seg { white-space: nowrap; }
+.obx-act-seg b { color: var(--text); font-weight: 700; }
+.obx-act-when {
+  font-size: 10.5px;
+  font-family: var(--mono);
+  color: var(--faint);
+  white-space: nowrap;
+}
+.obx-act-timeline {
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.obx-act-tl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--faint);
+}
+.obx-act-tl-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.obx-tl-emit { background: var(--accent-cyan); }
+.obx-tl-act  { background: var(--accent); }
+.obx-act-tl-txt { color: var(--muted); }
+.obx-act-tl-at { margin-left: auto; font-family: var(--mono); }
 
 /* Pending-count badge on desk pills */
 .obx-pill-n {
@@ -2478,7 +2635,82 @@ tr.lab-cell-floor td { opacity: .72; }
 }
 
 .obx-acct-section { margin-bottom: 26px; }
-.obx-acct-head { margin-bottom: 10px; }
+.obx-acct-section.obx-sec-empty { display: none; }
+.obx-acct-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 22px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.obx-acct-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--text);
+  text-transform: none;
+}
+.obx-acct-title .cnt { font-weight: 500; }
+
+/* Slot meter — cap-many dots, filled = daily slots this desk has spent. */
+.obx-slots {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+.obx-slots-dots { display: inline-flex; gap: 4px; align-items: center; }
+.obx-slot-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--faint);
+  background: transparent;
+}
+.obx-slot-dot.obx-slot-on {
+  background: var(--muted);
+  border-color: var(--muted);
+}
+.obx-slots-txt {
+  font-size: 10.5px;
+  font-family: var(--mono);
+  color: var(--faint);
+  letter-spacing: .02em;
+}
+
+/* Per-account bulk bar */
+.obx-acct-bulk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.obx-bulk-btn {
+  padding: 5px 13px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.obx-bulk-btn:disabled { opacity: .4; cursor: not-allowed; }
+.obx-bulk-approve:not(:disabled) { color: var(--ok); border-color: rgba(61,220,132,.32); }
+.obx-bulk-approve:not(:disabled):hover { background: var(--ok-bg); border-color: var(--ok); }
+.obx-bulk-hold:not(:disabled) { color: var(--warn); border-color: rgba(255,184,77,.32); }
+.obx-bulk-hold:not(:disabled):hover { background: var(--warn-bg); border-color: var(--warn); }
+.obx-bulk-msg {
+  font-size: 11.5px;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.obx-bulk-msg.obx-bulk-err { color: var(--bad); }
 
 /* --- Item card: the signature surface --- */
 .obx-card {
@@ -2628,14 +2860,9 @@ tr.lab-cell-floor td { opacity: .72; }
   display: block;
   width: 100%;
   height: auto;
-  max-height: 160px;
+  max-height: 200px;
   object-fit: contain;
   cursor: zoom-in;
-  transition: max-height var(--dur) var(--ease);
-}
-.obx-media-svg.obx-media-expand {
-  max-height: 520px;
-  cursor: zoom-out;
 }
 
 /* Decision controls */
@@ -2667,6 +2894,24 @@ tr.lab-cell-floor td { opacity: .72; }
   color: var(--faint);
   font-style: italic;
 }
+/* Failed-item hints inside the controls row */
+.obx-fail-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.obx-fail-warn {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--bad);
+}
+
+/* Kind filter chip row — extra top gap so it reads as its own control band */
+.obx-filters { margin: 0 0 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Decided items recede — held/cleared already have the operator's call, so they
+   dim and let undecided (ready) + failed work pop during the review pass. */
+.obx-card.obx-recede { opacity: .62; }
+.obx-card.obx-recede:hover { opacity: 1; }
 
 /* Posted-history table — rides .exp-table (fixed layout + scroll wrap) but
    redefines its own column widths, overriding the experiments-schema nth-child
@@ -2700,11 +2945,93 @@ tr.lab-cell-floor td { opacity: .72; }
 }
 .obx-h-rc .faint { color: var(--faint); }
 
+/* Outcome-separated history rows — a left accent by result, and quarantined
+   items recede (muted-red). */
+.obx-h-row td:first-child { border-left: 2px solid transparent; }
+.obx-h-posted td:first-child { border-left-color: var(--ok); }
+.obx-h-failed td:first-child { border-left-color: var(--bad); }
+.obx-h-quarantined td:first-child { border-left-color: rgba(255,107,107,.4); }
+.obx-h-quarantined { opacity: .68; }
+.obx-h-att {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--faint);
+}
+
+/* --- Media lightbox: dimmed backdrop, centered preview, caption --- */
+.obx-lb {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(5,7,11,.78);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+.obx-lb.obx-lb-on { opacity: 1; }
+.obx-lb-inner {
+  position: relative;
+  max-width: min(920px, 92vw);
+  max-height: 88vh;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lift);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.obx-lb-img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(88vh - 60px);
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: #0d1117;
+}
+.obx-lb-cap {
+  margin-top: 10px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.obx-lb-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.obx-lb-close:hover { color: var(--text); border-color: var(--accent); }
+
 /* Narrow (<820px): top row wraps state chip under the meta chips. */
 @media (max-width: 820px) {
   .obx-shadow-pill { margin-left: 0; margin-top: 6px; }
   .obx-card-top .obx-state { margin-left: 0; }
   .obx-controls { flex-wrap: wrap; }
+  .obx-acct-head { align-items: flex-start; }
+  .obx-command { align-items: flex-start; }
+  .obx-lb { padding: 16px; }
+  .obx-lb-close { top: 6px; right: 6px; }
 }
 
 /* =========================================================================

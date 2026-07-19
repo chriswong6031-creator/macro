@@ -3943,6 +3943,9 @@ RENDER.marketing_lab = async () => {
 /* Char budget for a single X post — the copy-review yardstick. */
 const OBX_CHAR_CAP = 275;
 
+/* Attempt ceiling — the actuator quarantines (never re-arms) at this many fails. */
+const OBX_MAX_ATTEMPTS = 2;
+
 /* Plain-word stance for each review/ledger state. state token IS the label.
    The two "queued" variants below carry the operator's recorded decision:
    an item stays ledger-queued until the actuator applies the decision, so an
@@ -3967,8 +3970,29 @@ function obxEffState(it) {
   return it.status || "queued";
 }
 /* An item is still operator-decidable while its ledger status is 'queued'
-   (held is queued+hold — still flippable). Approved/posted/failed are locked. */
+   (held is queued+hold — still flippable). Approved/posted are locked. */
 function obxIsDecidable(it) { return it.status === "queued"; }
+/* A failed item is re-armable UNLESS it has already spent its attempts — at the
+   ceiling a fresh approval quarantines instead of retrying (backend contract). */
+function obxIsFailedRearmable(it) {
+  return it.status === "failed" && (it.attempts || 0) < OBX_MAX_ATTEMPTS;
+}
+/* Which items belong in the account review rail: undecided/held (queued) +
+   cleared (approved, awaiting the actuator) + failed (actionable — re-arm or a
+   spent-attempts warning). Posted/quarantined are terminal → history only. */
+function obxInRail(it) {
+  return ["queued", "approved", "failed"].includes(it.status);
+}
+/* Items an "approve all ready" control should COUNT and act on — approving these
+   actually changes something. Excludes no-ops: a queued item already carrying an
+   approve decision (effective "cleared") and a failed item already re-armed
+   (approve decision recorded, awaiting the actuator). A held item is a no-op for
+   the count here — bulk-approve skips holds (see obxBulkIds). Re-armable, still
+   un-re-armed failures count. */
+function obxIsBulkApprovable(it) {
+  if (obxIsFailedRearmable(it)) return it.decision !== "approve";
+  return obxIsDecidable(it) && obxEffState(it) !== "approve_ok";
+}
 
 function obxStamp(ts) {
   if (!ts) return "—";
@@ -3988,17 +4012,25 @@ function obxReceiptLine(r) {
   return esc(keys.map(k => `${k}: ${r[k]}`).join(" · "));
 }
 
+/* Module-scoped snapshot of the last payload — lets the kind filter and bulk
+   controls work off decided state without re-fetching per keystroke. Cleared and
+   rebuilt on every render. */
+let OBX_LAST = null;
+
 RENDER.marketing_outbox = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
   const d = await api("/api/marketing/outbox");
   if (!d || !d.ok) { v.innerHTML = nwEmpty("Outbox unavailable", (d && d.error) || "panel error"); return; }
+  OBX_LAST = d;
 
   const cap = d.cap != null ? d.cap : "—";
   const asOf = d.as_of || null;
   const summary = d.summary || {};
   const accounts = d.accounts || [];
   const history = d.history || [];
+  const sentinel = d.sentinel || null;
+  const activity = d.activity || [];
 
   /* Cross-link to Sentinel — surface any policy holds so a reviewer here knows
      the gate caught something worth reading before they approve. Fail-soft:
@@ -4019,22 +4051,33 @@ RENDER.marketing_outbox = async () => {
   const header = `<div class="section">Outbox ${asOfChip}${sentinelChip}
     <span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Review only — nothing posts externally</span>
   </div>
-  <div class="obx-lede">The queue below is what each desk account is <b>about to post to X</b>. Read the exact copy, then approve or hold. In this shadow phase nothing leaves the building — approvals are recorded, but no post is sent. Daily ceiling: <b>${esc(String(cap))} posts per desk</b>.</div>`;
+  <div class="obx-lede">The queue below is what each desk account is <b>about to post to X</b>. Read the exact copy, then approve or hold. In this shadow phase nothing leaves the building — approvals are recorded, but no post is sent.</div>`;
 
   /* Day-0 empty state — sibling-page accruing card, an invitation to act. */
   if (d.note && !accounts.length) {
-    v.innerHTML = header + `<div class="card">
+    v.innerHTML = header + obxSentinelCard(sentinel, cap) + `<div class="card">
       <div class="note muted" style="margin-bottom:8px">${esc(d.note)}</div>
       <div class="note muted">Items appear here after a nightly governor run with <code>MARKETING_OUTBOX_ENABLED=1</code> emits the desk queue from the day's content plan. Until then there is nothing waiting to post.</div>
-    </div>`;
+    </div>` + obxActivityStrip(activity);
     return;
   }
+
+  /* Global work count — how many undecided/re-armable items across all desks. */
+  let globalReady = 0;
+  accounts.forEach(a => (a.items || []).forEach(it => { if (obxIsBulkApprovable(it) && obxEffState(it) !== "held") globalReady++; }));
+
+  /* Command bar — the one global action (confirm-flow) + the honest work count. */
+  const commandBar = `<div class="obx-command">
+    <button class="btn primary obx-gbtn" id="obx-approve-all" ${globalReady ? "" : "disabled"}
+      data-n="${globalReady}" onclick="obxApproveAllGlobal(this)">Approve all ready${globalReady ? ` (${globalReady})` : ""}</button>
+    <span class="obx-gmsg" id="obx-gmsg"></span>
+  </div>`;
 
   /* Summary tiles — approved reads ok-ish, held warn, failed/quarantined bad. */
   const tileDefs = [
     ["queued",      "Ready",       null],
     ["held",        "Held",        "var(--warn)"],
-    ["approved",    "Approved",    "var(--ok)"],
+    ["approved",    "Cleared",     "var(--ok)"],
     ["posted",      "Posted",      "var(--muted)"],
     ["failed",      "Failed",      "var(--bad)"],
     ["quarantined", "Quarantined", "var(--bad)"],
@@ -4049,6 +4092,19 @@ RENDER.marketing_outbox = async () => {
     }).join("")}
   </div>`;
 
+  /* Kind filter chips — reuse Content Studio's type-color idiom. Only kinds that
+     actually appear in the rail become chips (no empty filters). */
+  const railKinds = new Set();
+  accounts.forEach(a => (a.items || []).forEach(it => { if (obxInRail(it) && it.kind) railKinds.add(it.kind); }));
+  const kindList = [...railKinds].sort();
+  const filterChips = kindList.length > 1 ? `<div class="obx-filters" id="obx-filters">
+    <button class="mkt-filter-chip active" data-kind="all" onclick="obxFilterKind('all',this)">All kinds</button>
+    ${kindList.map(k => {
+      const color = mktTypeColor(k);
+      return `<button class="mkt-filter-chip" data-kind="${esc(k)}" onclick="obxFilterKind(${esc(JSON.stringify(k))},this)"><span class="mkt-dot" style="background:${color}"></span>${esc(k)}</button>`;
+    }).join("")}
+  </div>` : "";
+
   /* Account switcher — reuse the mkt-acct pill idiom. */
   const acctPills = `<div class="mkt-acct-switcher" id="obx-acct-sw">
     <button class="mkt-acct-pill active" data-acct="all" onclick="obxSwitchAcct('all',this)">All desks</button>
@@ -4056,7 +4112,7 @@ RENDER.marketing_outbox = async () => {
       const c = a.counts || {};
       const pend = (c.queued || 0) + (c.held || 0);
       const badge = pend ? ` <span class="obx-pill-n">${pend}</span>` : "";
-      return `<button class="mkt-acct-pill" data-acct="${esc(a.id)}" onclick="obxSwitchAcct('${esc(a.id)}',this)">${esc(a.id)}${badge}</button>`;
+      return `<button class="mkt-acct-pill" data-acct="${esc(a.id)}" onclick="obxSwitchAcct(${esc(JSON.stringify(a.id))},this)">${esc(a.id)}${badge}</button>`;
     }).join("")}
   </div>`;
 
@@ -4064,58 +4120,61 @@ RENDER.marketing_outbox = async () => {
   let sections = "";
   accounts.forEach(acct => {
     const items = acct.items || [];
-    /* Review stage = items still in the decision window (queued/held) first,
-       then approved (locked but awaiting the actuator). Posted/failed/quar are
-       history — shown in the history section, not the review queue. */
-    const review = items.filter(it => ["queued", "approved"].includes(it.status));
-    review.sort((a, b) => {
-      /* decidable (queued/held) before locked (approved) */
-      const da = obxIsDecidable(a) ? 0 : 1, db = obxIsDecidable(b) ? 0 : 1;
-      if (da !== db) return da - db;
+    /* Rail = still-decidable (queued/held) first, then cleared (approved,
+       awaiting actuator), then failed (actionable). Within a bucket: by
+       scheduled_at. Posted/quarantined are history — not in the rail. */
+    const rail = items.filter(obxInRail);
+    const rank = it => obxIsDecidable(it) ? 0 : (it.status === "approved" ? 1 : 2);
+    rail.sort((a, b) => {
+      const r = rank(a) - rank(b);
+      if (r !== 0) return r;
       return (a.scheduled_at || "").localeCompare(b.scheduled_at || "");
     });
 
-    const cards = review.map(it => obxItemCard(it, acct.id)).join("");
+    const cards = rail.map(it => obxItemCard(it, acct.id)).join("");
     const c = acct.counts || {};
     const pend = (c.queued || 0) + (c.held || 0);
-    const countChip = pend
-      ? `<span class="cnt">${pend} awaiting review${c.approved ? ` · ${c.approved} approved` : ""}</span>`
-      : (c.approved ? `<span class="cnt">${c.approved} approved · all reviewed</span>` : `<span class="cnt">nothing to review</span>`);
+    const failN = c.failed || 0;
+    const parts = [];
+    if (pend) parts.push(`${pend} awaiting review`);
+    if (c.approved) parts.push(`${c.approved} cleared`);
+    if (failN) parts.push(`${failN} failed`);
+    const countChip = parts.length
+      ? `<span class="cnt">${parts.join(" · ")}</span>`
+      : `<span class="cnt">nothing to review</span>`;
+
+    /* Slot meter — cap-many dots, filled = slots this desk has already spent
+       today (posted). The visual explanation for the small daily ceiling. */
+    const slotMeter = obxSlotMeter(c.posted || 0, cap);
+
+    /* Per-account bulk bar — one batch POST each; only when there is ready work.
+       "ready" here = undecided queued + re-armable failures (not held). */
+    const acctReady = items.filter(it => obxIsBulkApprovable(it) && obxEffState(it) !== "held");
+    const acctHeld = items.filter(it => obxEffState(it) === "held");
+    const bulk = (acctReady.length || acctHeld.length) ? `<div class="obx-acct-bulk">
+      <button class="obx-bulk-btn obx-bulk-approve" ${acctReady.length ? "" : "disabled"}
+        onclick="obxBulkAccount(${esc(JSON.stringify(acct.id))},'approve',this)">Approve all ready${acctReady.length ? ` (${acctReady.length})` : ""}</button>
+      <button class="obx-bulk-btn obx-bulk-hold" ${acctReady.length ? "" : "disabled"}
+        onclick="obxBulkAccount(${esc(JSON.stringify(acct.id))},'hold',this)">Hold all ready</button>
+      <span class="obx-bulk-msg"></span>
+    </div>` : "";
 
     sections += `<div class="obx-acct-section" data-acct="${esc(acct.id)}">
-      <div class="section obx-acct-head">${esc(acct.id)} ${countChip}</div>
+      <div class="obx-acct-head">
+        <div class="obx-acct-title">${esc(acct.id)} ${countChip}</div>
+        ${slotMeter}
+      </div>
+      ${bulk}
       ${cards || `<div class="card"><div class="note muted">No items in the review window for this desk.</div></div>`}
     </div>`;
   });
 
-  /* Posted / terminal history. */
-  let historyHtml;
-  if (history.length) {
-    const rows = history.map(h => {
-      const st = OBX_STATE[h.status] || { cls: "obx-posted", label: h.status || "—", stance: "" };
-      const rl = obxReceiptLine(h.receipt);
-      const txt = (h.text || "").replace(/\s+/g, " ").trim();
-      const short = txt.length > 90 ? txt.slice(0, 90) + "…" : txt;
-      return `<tr>
-        <td class="obx-h-acct">${esc(h.account || "—")}</td>
-        <td>${obxKindChip(h.kind)}</td>
-        <td class="obx-h-text">${esc(short)}</td>
-        <td><span class="statpill obx-state ${st.cls}">${esc(st.label)}</span></td>
-        <td class="obx-h-at">${obxStamp(h.at)}</td>
-        <td class="obx-h-rc">${rl || '<span class="faint">—</span>'}</td>
-      </tr>`;
-    }).join("");
-    historyHtml = `<div class="section" style="margin-top:26px">Posted history <span class="cnt">${history.length} recorded</span></div>
-      <div class="table-wrap"><table class="exp-table obx-h-table">
-        <thead><tr><th>Desk</th><th>Kind</th><th>Post</th><th>Result</th><th>When (UTC)</th><th>Receipt</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>`;
-  } else {
-    historyHtml = `<div class="section" style="margin-top:26px">Posted history</div>
-      <div class="card"><div class="note muted">Nothing has reached a terminal state yet. Once the actuator posts (or an item fails or is blocked), it lands here with its receipt.</div></div>`;
-  }
+  /* Posted / terminal history — outcomes visually separated. */
+  const historyHtml = obxHistoryBlock(history);
 
-  v.innerHTML = header + tiles + acctPills + `<div id="obx-review">${sections}</div>` + historyHtml;
+  v.innerHTML = header + obxSentinelCard(sentinel, cap) + commandBar + tiles
+    + obxActivityStrip(activity)
+    + filterChips + acctPills + `<div id="obx-review">${sections}</div>` + historyHtml;
   obxLoadAllMedia();
 };
 
@@ -4432,6 +4491,141 @@ function sentFooter(d) {
   return `<div class="sent-footer">Caps set by the D08 red-team appendix · ramp tiers in <code>config/marketing.yml</code> <code>sentinel:</code>${stamp}</div>`;
 }
 
+/* Sentinel contract card — plain words, no config-key slugs. Explains the small
+   caps to the operator instead of the page looking broken. Degrades to nothing
+   when an older payload omits the sentinel block. */
+function obxSentinelCard(s, cap) {
+  if (!s) return "";
+  const capN = (s.effective_cap != null ? s.effective_cap : cap);
+  const newTier = (s.source === "sentinel_defaults") || (Number(capN) <= 2);
+  const capNote = newTier ? "new-account tier" : "steady tier";
+  const spacing = s.min_minutes_between_posts;
+  const links = s.links_allowed ? "allowed" : "off";
+  const mediaN = s.max_media_posts_per_account_per_day;
+  const rows = [
+    ["Posts per desk each day", `${esc(String(capN))}`, esc(capNote)],
+    ["Minimum gap between posts", (spacing != null ? `${esc(String(spacing))} min` : "—"), ""],
+    ["Links in posts", esc(links), ""],
+    ["Charts per desk each day", (mediaN != null ? `${esc(String(mediaN))}` : "—"), ""],
+  ];
+  return `<div class="obx-sentinel">
+    <div class="obx-sentinel-head">
+      <span class="obx-sentinel-title">Posting limits in force</span>
+      <span class="obx-sentinel-sub">What the actuator will honour — this is why the daily counts are low, not a bug.</span>
+    </div>
+    <div class="obx-sentinel-grid">
+      ${rows.map(([lbl, val, note]) => `<div class="obx-sentinel-cell">
+        <div class="obx-sentinel-val">${val}${note ? ` <span class="obx-sentinel-tier">${note}</span>` : ""}</div>
+        <div class="obx-sentinel-lbl">${esc(lbl)}</div>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+/* Slot meter — cap-many dots; `used` filled, the rest hollow. A non-verbal
+   encoding of how many of the desk's daily slots are spent. */
+function obxSlotMeter(used, cap) {
+  const capN = Number(cap);
+  if (!Number.isFinite(capN) || capN <= 0 || capN > 12) return "";  /* only render for a small, sane cap */
+  const u = Math.max(0, Math.min(capN, Number(used) || 0));
+  let dots = "";
+  for (let i = 0; i < capN; i++) dots += `<span class="obx-slot-dot${i < u ? " obx-slot-on" : ""}"></span>`;
+  return `<div class="obx-slots" title="${u} of ${capN} daily post slots used by this desk">
+    <span class="obx-slots-dots">${dots}</span>
+    <span class="obx-slots-txt">${u}/${capN} slots</span>
+  </div>`;
+}
+
+/* Pipeline activity strip — answers "why is the queue this size". Newest emit as
+   a sentence-like breakdown, newest actuator run as an applied read-out, then a
+   muted timeline of the rest. Honest empty state when nothing has run. */
+function obxActivityStrip(activity) {
+  if (!activity || !activity.length) {
+    return `<div class="obx-activity">
+      <div class="obx-activity-head">Pipeline activity</div>
+      <div class="note muted">No pipeline runs recorded yet. Once the nightly emit and the actuator run, their tallies appear here so you can see how the queue was built.</div>
+    </div>`;
+  }
+  const emit = activity.find(r => r.lane === "emit");
+  const act = activity.find(r => r.lane === "actuator_dry_run");
+
+  let emitLine = "";
+  if (emit) {
+    const seg = (n, label) => `<span class="obx-act-seg"><b>${Number(n) || 0}</b> ${esc(label)}</span>`;
+    emitLine = `<div class="obx-act-emit">
+      <div class="obx-act-line">
+        ${seg(emit.emitted, "queued")}
+        ${seg(emit.skipped_dupe, "duplicates")}
+        ${seg(emit.skipped_gate, "not-live skips")}
+        ${seg(emit.skipped_sentinel, "limit skips")}
+        ${seg(emit.skipped_cap, "over-cap skips")}
+      </div>
+      <div class="obx-act-when">Last queue build${emit.at ? ` · ${obxStamp(emit.at)}` : ""}</div>
+    </div>`;
+  }
+
+  let actLine = "";
+  if (act) {
+    const a = act.applied || {};
+    const parts = [
+      `<b>${Number(a.approved) || 0}</b> cleared`,
+      `<b>${Number(a.rearmed) || 0}</b> re-armed`,
+      `<b>${Number(a.quarantined) || 0}</b> quarantined`,
+      `<b>${Number(act.would_post) || 0}</b> would post`,
+    ];
+    actLine = `<div class="obx-act-run">
+      <div class="obx-act-line">${parts.map(p => `<span class="obx-act-seg">${p}</span>`).join("")}</div>
+      <div class="obx-act-when">Last actuator run${act.at ? ` · ${obxStamp(act.at)}` : ""}</div>
+    </div>`;
+  }
+
+  /* Muted timeline of the remaining rows (skip the two we already surfaced). */
+  const rest = activity.filter(r => r !== emit && r !== act).slice(0, 5);
+  let timeline = "";
+  if (rest.length) {
+    timeline = `<div class="obx-act-timeline">${rest.map(r => {
+      const label = r.lane === "emit"
+        ? `queue build · ${Number(r.emitted) || 0} queued`
+        : `actuator run · ${(r.applied && Number(r.applied.approved)) || 0} cleared`;
+      return `<div class="obx-act-tl-row"><span class="obx-act-tl-dot ${r.lane === "emit" ? "obx-tl-emit" : "obx-tl-act"}"></span><span class="obx-act-tl-txt">${esc(label)}</span><span class="obx-act-tl-at">${obxStamp(r.at)}</span></div>`;
+    }).join("")}</div>`;
+  }
+
+  return `<div class="obx-activity">
+    <div class="obx-activity-head">Pipeline activity <span class="obx-activity-sub">why the queue looks like this</span></div>
+    <div class="obx-act-rows">${emitLine}${actLine}</div>
+    ${timeline}
+  </div>`;
+}
+
+/* Posted / terminal history block — outcomes visually separated by result. */
+function obxHistoryBlock(history) {
+  if (!history.length) {
+    return `<div class="section" style="margin-top:26px">Posted history</div>
+      <div class="card"><div class="note muted">Nothing has reached a terminal state yet. Once the actuator posts (or an item fails or is blocked), it lands here with its receipt.</div></div>`;
+  }
+  const rows = history.map(h => {
+    const st = OBX_STATE[h.status] || { cls: "obx-posted", label: h.status || "—", stance: "" };
+    const rl = obxReceiptLine(h.receipt);
+    const txt = (h.text || "").replace(/\s+/g, " ").trim();
+    const short = txt.length > 90 ? txt.slice(0, 90) + "…" : txt;
+    const att = (h.attempts && h.attempts > 0) ? ` <span class="obx-h-att">${h.attempts} attempt${h.attempts > 1 ? "s" : ""}</span>` : "";
+    return `<tr class="obx-h-row obx-h-${esc(h.status)}">
+      <td class="obx-h-acct">${esc(h.account || "—")}</td>
+      <td>${obxKindChip(h.kind)}</td>
+      <td class="obx-h-text">${esc(short)}</td>
+      <td><span class="statpill obx-state ${st.cls}">${esc(st.label)}</span>${att}</td>
+      <td class="obx-h-at">${obxStamp(h.at)}</td>
+      <td class="obx-h-rc">${rl || '<span class="faint">—</span>'}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="section" style="margin-top:26px">Posted history <span class="cnt">${history.length} recorded</span></div>
+    <div class="table-wrap"><table class="exp-table obx-h-table">
+      <thead><tr><th>Desk</th><th>Kind</th><th>Post</th><th>Result</th><th>When (UTC)</th><th>Receipt</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
 /* Kind chip — reuse the content-type color map where a kind matches. */
 function obxKindChip(kind) {
   if (!kind) return "";
@@ -4442,12 +4636,20 @@ function obxKindChip(kind) {
 /* One review-queue item card — the signature surface. */
 function obxItemCard(it, acctId) {
   const eff = obxEffState(it);
+  const isFailed = it.status === "failed";
+  const attempts = it.attempts || 0;
+  const spent = isFailed && attempts >= OBX_MAX_ATTEMPTS;   /* re-arm would quarantine */
   const stateMeta = OBX_STATE[eff] || OBX_STATE.queued;
   const text = it.text || "";
   const n = [...text].length;               /* codepoint count, not UTF-16 units */
   const over = n > OBX_CHAR_CAP;
   const nearCap = !over && n > OBX_CHAR_CAP * 0.9;
   const meterCls = over ? "obx-over" : nearCap ? "obx-near" : "";
+
+  /* Decided items recede: held + cleared already have the operator's call, so
+     they drop emphasis and let undecided (ready) + failed work pop. */
+  const decided = (eff === "held" || eff === "approved");
+  const recedeCls = decided ? " obx-recede" : "";
 
   const kindChip = obxKindChip(it.kind);
   const schedChip = (it.scheduled_at && it.scheduled_at !== "immediate")
@@ -4456,20 +4658,25 @@ function obxItemCard(it, acctId) {
   const slotChip = it.slot ? `<span class="statpill s-mut obx-mini">${esc(it.slot)}</span>` : "";
   const prioChip = (it.priority != null) ? `<span class="obx-prio" title="posting priority">P${esc(String(it.priority))}</span>` : "";
 
-  /* Decision / state chip — plain-word outcome, not a machine enum. */
-  const stateChip = `<span class="statpill obx-state ${stateMeta.cls}">${stateMeta.label} · ${stateMeta.stance}</span>`;
+  /* Decision / state chip — plain-word outcome. Failed carries the attempt count. */
+  const stateLabel = isFailed
+    ? `Failed · attempt ${attempts} of ${OBX_MAX_ATTEMPTS}`
+    : `${stateMeta.label} · ${stateMeta.stance}`;
+  const stateChip = `<span class="statpill obx-state ${stateMeta.cls}">${esc(stateLabel)}</span>`;
 
-  /* Media — lazy-loaded via the media endpoint (populated by obxLoadAllMedia). */
+  /* Media — lazy-loaded via the media endpoint (populated by obxLoadAllMedia).
+     Caption text is passed on the wrapper for the lightbox to read. */
   const media = (it.media || []).filter(m => m && m.path);
-  const mediaHtml = media.map((m, i) => {
-    const dis = `${esc(m.ticker || m.chart_id || "chart")}`;
-    return `<div class="obx-media" data-media-path="${esc(m.path)}">
-      <div class="obx-media-head"><span class="obx-media-tag">chart · ${dis}</span></div>
+  const mediaHtml = media.map((m) => {
+    const cap = m.ticker || m.chart_id || "chart";
+    return `<div class="obx-media" data-media-path="${esc(m.path)}" data-media-cap="${esc(cap)}">
+      <div class="obx-media-head"><span class="obx-media-tag">chart · ${esc(cap)}</span></div>
       <div class="obx-media-slot"><span class="obx-media-load">loading preview…</span></div>
     </div>`;
   }).join("");
 
-  /* Controls — only while decidable (ledger status queued, incl. held). */
+  /* Controls — decidable (queued/held), re-armable failure, spent failure, or
+     locked (cleared / posted). */
   let controls = "";
   if (obxIsDecidable(it)) {
     controls = `<div class="obx-controls" data-item="${esc(it.id)}">
@@ -4477,11 +4684,21 @@ function obxItemCard(it, acctId) {
       <button class="btn obx-btn-hold" onclick="obxDecide('${esc(it.id)}','hold',this)">Hold</button>
       <span class="obx-ctrl-msg"></span>
     </div>`;
+  } else if (isFailed && !spent) {
+    controls = `<div class="obx-controls" data-item="${esc(it.id)}">
+      <button class="btn primary obx-btn-approve" onclick="obxDecide('${esc(it.id)}','approve',this)">Approve retry</button>
+      <span class="obx-fail-hint">Records a fresh approval — the actuator will re-arm it on its next run.</span>
+      <span class="obx-ctrl-msg"></span>
+    </div>`;
+  } else if (isFailed && spent) {
+    controls = `<div class="obx-controls obx-locked">
+      <span class="obx-fail-warn">Out of retries — the next actuator run will quarantine this item.</span>
+    </div>`;
   } else {
-    controls = `<div class="obx-controls obx-locked"><span class="obx-lock-note">${eff === "approved" ? "Approved — waiting for the actuator." : "Locked — decision window closed."}</span></div>`;
+    controls = `<div class="obx-controls obx-locked"><span class="obx-lock-note">${eff === "approved" ? "Cleared — waiting for the actuator." : "Locked — decision window closed."}</span></div>`;
   }
 
-  return `<div class="obx-card obx-edge-${eff}" data-item-card="${esc(it.id)}" data-acct="${esc(it.account || acctId)}">
+  return `<div class="obx-card obx-edge-${eff}${recedeCls}" data-item-card="${esc(it.id)}" data-acct="${esc(it.account || acctId)}" data-kind="${esc(it.kind || "")}">
     <div class="obx-card-top">
       ${kindChip}${prioChip}${slotChip}${schedChip}
       <span class="obx-prov">${esc(it.provenance || "")}</span>
@@ -4499,29 +4716,57 @@ function obxItemCard(it, acctId) {
   </div>`;
 }
 
-/* Lazy-fetch each media SVG through the auth-guarded endpoint. */
+/* Lazy-fetch each media SVG through the auth-guarded endpoint. Clicking opens
+   the overlay lightbox (not an inline stretch). */
 function obxLoadAllMedia() {
-  document.querySelectorAll(".obx-media[data-media-path]").forEach(async el => {
+  document.querySelectorAll(".obx-media[data-media-path]").forEach(el => {
     const p = el.getAttribute("data-media-path");
+    const cap = el.getAttribute("data-media-cap") || "chart";
     const slot = el.querySelector(".obx-media-slot");
     if (!p || !slot) return;
+    const src = "/api/marketing/outbox/media?path=" + encodeURIComponent(p);
     /* Render via <img>: SVG loaded as an image cannot execute embedded script,
        so served media never runs in the admin origin. The endpoint re-validates
-       path containment server-side — it is the trust boundary for `p`. */
+       path containment server-side — it is the trust boundary for `p`. NEVER
+       inject fetched SVG text via innerHTML (the XSS the security review killed). */
     const img = document.createElement("img");
     img.className = "obx-media-svg";
-    img.alt = "chart preview";
+    img.alt = "chart preview for " + cap;
     img.onload = () => {
       slot.innerHTML = "";
       slot.appendChild(img);
       slot.classList.add("obx-media-ready");
-      img.onclick = () => img.classList.toggle("obx-media-expand");
+      img.onclick = () => obxLightbox(src, cap);
     };
     img.onerror = () => {
       slot.innerHTML = `<span class="statpill s-mut obx-mini">media unavailable</span>`;
     };
-    img.src = "/api/marketing/outbox/media?path=" + encodeURIComponent(p);
+    img.src = src;
   });
+}
+
+/* Media lightbox — dimmed backdrop, esc / click-outside closes, caption shows
+   the chart id. One overlay reused for all previews. */
+function obxLightbox(src, caption) {
+  obxCloseLightbox();
+  const ov = document.createElement("div");
+  ov.className = "obx-lb";
+  ov.id = "obx-lb";
+  ov.innerHTML = `<div class="obx-lb-inner" role="dialog" aria-label="Chart preview">
+    <button class="obx-lb-close" aria-label="Close preview" onclick="obxCloseLightbox()">✕</button>
+    <img class="obx-lb-img" src="${esc(src)}" alt="chart preview for ${esc(caption || "chart")}">
+    <div class="obx-lb-cap">${esc(caption || "chart")}</div>
+  </div>`;
+  ov.addEventListener("click", (e) => { if (e.target === ov) obxCloseLightbox(); });
+  document.body.appendChild(ov);
+  document.addEventListener("keydown", obxLbKey);
+  requestAnimationFrame(() => ov.classList.add("obx-lb-on"));
+}
+function obxLbKey(e) { if (e.key === "Escape") obxCloseLightbox(); }
+function obxCloseLightbox() {
+  const ov = document.getElementById("obx-lb");
+  if (ov) ov.remove();
+  document.removeEventListener("keydown", obxLbKey);
 }
 
 /* Filter the review queue to one desk (client-side, mirrors Content Studio). */
@@ -4533,22 +4778,141 @@ function obxSwitchAcct(acct, btn) {
   });
 }
 
-/* POST an approve/hold decision, then refetch to fold the new state in. */
+/* Filter the rail to one content kind (client-side). Hides non-matching cards
+   AND any account section left with no visible cards, so empty desks recede. */
+function obxFilterKind(kind, btn) {
+  document.querySelectorAll("#obx-filters .mkt-filter-chip").forEach(el => el.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  document.querySelectorAll(".obx-acct-section").forEach(sec => {
+    let shown = 0;
+    sec.querySelectorAll(".obx-card").forEach(card => {
+      const match = (kind === "all" || card.dataset.kind === kind);
+      card.style.display = match ? "" : "none";
+      if (match) shown++;
+    });
+    /* When a kind filter is on, hide desks with no matching cards entirely. */
+    sec.classList.toggle("obx-sec-empty", kind !== "all" && shown === 0);
+  });
+}
+
+/* POST a single approve/hold decision, then refetch to fold the new state in. */
 async function obxDecide(id, decision, btn) {
   const ctrl = btn ? btn.closest(".obx-controls") : null;
   const msg = ctrl ? ctrl.querySelector(".obx-ctrl-msg") : null;
   const btns = ctrl ? ctrl.querySelectorAll("button") : [];
+  const isRetry = btn && /retry/i.test(btn.textContent || "");
   btns.forEach(b => { b.disabled = true; });
-  if (msg) { msg.className = "obx-ctrl-msg"; msg.textContent = decision === "approve" ? "approving…" : "holding…"; }
+  if (msg) { msg.className = "obx-ctrl-msg"; msg.textContent = decision === "approve" ? (isRetry ? "re-arming…" : "approving…") : "holding…"; }
   try {
     const r = await post("/api/marketing/outbox/decide", { id, decision });
     if (!r || !r.ok) throw new Error((r && r.error) || "decision failed");
-    toast(decision === "approve" ? "Approved for posting" : "Held — won't post");
+    toast(decision === "approve" ? (isRetry ? "Approved to retry" : "Approved for posting") : "Held — won't post");
     /* Refetch so summary tiles + counts + state chips all re-fold consistently. */
     await RENDER.marketing_outbox();
   } catch (e) {
     btns.forEach(b => { b.disabled = false; });
     if (msg) { msg.className = "obx-ctrl-msg obx-ctrl-err"; msg.textContent = (e && e.message) || "failed — try again"; }
+  }
+}
+
+/* Collect the ids a bulk control should act on, from the last payload snapshot.
+   scope = account id (per-desk) or "*" (global). "ready" excludes held items —
+   holding-what's-held is a no-op, and approving-what's-held is a real flip we
+   deliberately leave to the per-item control so it's never a surprise. */
+function obxBulkIds(scope, decision) {
+  if (!OBX_LAST) return [];
+  const ids = [];
+  (OBX_LAST.accounts || []).forEach(a => {
+    if (scope !== "*" && a.id !== scope) return;
+    (a.items || []).forEach(it => {
+      const held = obxEffState(it) === "held";
+      if (decision === "approve") {
+        /* "Approve all ready" acts on the genuinely-ready work: undecided queued
+           items + re-armable failures. It deliberately does NOT sweep up held
+           items — an explicit hold is only reversed via that item's own control,
+           so bulk-approve never silently undoes an operator decision. */
+        if (obxIsBulkApprovable(it) && !held) ids.push(it.id);
+      } else {
+        /* Hold only undecided queued items — don't re-hold the already-held,
+           and failed/cleared aren't holdable. */
+        if (obxIsDecidable(it) && !held) ids.push(it.id);
+      }
+    });
+  });
+  return ids;
+}
+
+/* One batched decision for a whole desk. No confirm step (≤ a few items). */
+async function obxBulkAccount(acctId, decision, btn) {
+  const bar = btn ? btn.closest(".obx-acct-bulk") : null;
+  const msg = bar ? bar.querySelector(".obx-bulk-msg") : null;
+  const ids = obxBulkIds(acctId, decision);
+  if (!ids.length) { if (msg) { msg.className = "obx-bulk-msg"; msg.textContent = "nothing ready"; } return; }
+  await obxRunBatch(ids, decision, bar, msg,
+    decision === "approve" ? "approving all…" : "holding all…");
+}
+
+/* Global "Approve all ready" with a single inline confirm step: the button
+   flips to "Confirm approve N" for a few seconds, then reverts if not clicked. */
+let OBX_GCONFIRM_T = null;
+async function obxApproveAllGlobal(btn) {
+  const n = Number(btn.getAttribute("data-n")) || 0;
+  const msg = document.getElementById("obx-gmsg");
+  if (!n) return;
+  if (btn.dataset.armed === "1") {
+    clearTimeout(OBX_GCONFIRM_T);
+    btn.dataset.armed = "0";
+    const ids = obxBulkIds("*", "approve");
+    await obxRunBatch(ids, "approve", btn.parentElement, msg, "approving all…");
+    return;
+  }
+  /* Arm: flip to a confirm label; auto-disarm after 4s. */
+  btn.dataset.armed = "1";
+  btn.classList.add("obx-armed");
+  btn.textContent = `Confirm approve ${n}`;
+  if (msg) { msg.className = "obx-gmsg"; msg.textContent = "click again to confirm"; }
+  clearTimeout(OBX_GCONFIRM_T);
+  OBX_GCONFIRM_T = setTimeout(() => {
+    btn.dataset.armed = "0";
+    btn.classList.remove("obx-armed");
+    btn.textContent = `Approve all ready (${n})`;
+    if (msg) msg.textContent = "";
+  }, 4000);
+}
+
+/* Shared batch runner: ONE POST for all ids, refetch once at the end. On partial
+   failure surfaces which ids failed, honestly, before the refetch. */
+async function obxRunBatch(ids, decision, barEl, msgEl, workingText) {
+  const btns = barEl ? barEl.querySelectorAll("button") : [];
+  btns.forEach(b => { b.disabled = true; });
+  if (msgEl) { msgEl.className = msgEl.className.replace(/\s*obx-(bulk|g)-err/g, ""); msgEl.textContent = workingText; }
+  try {
+    const r = await post("/api/marketing/outbox/decide", { ids, decision });
+    if (!r || !r.ok) throw new Error((r && r.error) || "batch failed");
+    const results = r.results || {};
+    const failed = Object.keys(results).filter(id => results[id] === false);
+    const okN = (r.decided != null) ? r.decided : ids.length - failed.length;
+    if (failed.length) {
+      /* Honest partial failure — count + which ids, then still refetch so the
+         successes fold in. */
+      toast(`${okN} done · ${failed.length} failed`, true);
+      if (msgEl) {
+        const errCls = msgEl.classList.contains("obx-gmsg") ? "obx-g-err" : "obx-bulk-err";
+        msgEl.className = msgEl.className + " " + errCls;
+        msgEl.textContent = `${failed.length} didn't take: ${failed.map(x => x.slice(0, 8)).join(", ")}`;
+      }
+      await new Promise(res => setTimeout(res, 1400));
+    } else {
+      toast(decision === "approve" ? `Approved ${okN}` : `Held ${okN}`);
+    }
+    await RENDER.marketing_outbox();
+  } catch (e) {
+    btns.forEach(b => { b.disabled = false; });
+    if (msgEl) {
+      const errCls = msgEl.classList.contains("obx-gmsg") ? "obx-g-err" : "obx-bulk-err";
+      msgEl.className = msgEl.className + " " + errCls;
+      msgEl.textContent = (e && e.message) || "failed — try again";
+    }
   }
 }
 

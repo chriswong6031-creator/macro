@@ -1108,9 +1108,11 @@ class TestOutboxPanel:
         r = marketing.outbox(tmp_path)
         assert r["history"] == []
 
-    def test_empty_root_cap_is_8(self, tmp_path):
+    def test_empty_root_cap_is_sentinel_floor(self, tmp_path):
+        # No config in the tmp root → Sentinel in-code weeks_1_2 default (2).
         r = marketing.outbox(tmp_path)
-        assert r["cap"] == 8
+        assert r["cap"] == 2
+        assert r["sentinel"]["source"] == "sentinel_defaults"
 
     def test_empty_root_as_of_null(self, tmp_path):
         r = marketing.outbox(tmp_path)
@@ -1228,10 +1230,10 @@ class TestOutboxPanel:
         assert c["held"] == 1
         assert c["posted"] == 0
 
-    def test_seeded_cap_is_8(self, tmp_path):
+    def test_seeded_cap_is_sentinel_floor(self, tmp_path):
         self._seed_outbox(tmp_path)
         r = marketing.outbox(tmp_path)
-        assert r["cap"] == 8
+        assert r["cap"] == 2
 
     def test_seeded_as_of_set(self, tmp_path):
         self._seed_outbox(tmp_path)
@@ -1376,3 +1378,68 @@ class TestRadarPanel:
         assert r["available"] is False
         assert r["universe_n"] == 9
         assert r["tiers"]["T1"] == ["NVDA", "TSLA", "AAPL"]
+
+
+class TestOutboxBatchDecide:
+    """decide_outbox_batch — bulk approve/hold from the admin."""
+
+    def _seed(self, tmp_path, n=3):
+        from engine.marketing.outbox import enqueue, make_item
+        ids = []
+        for i in range(n):
+            item = make_item(
+                account="flagship", kind="signal",
+                text=f"Batch decide post number {i}.",
+                as_of=_AS_OF_OB, provenance="content_studio", now=_FIXED_NOW_OB,
+            )
+            enqueue(item, root=tmp_path, max_per_account_day=8)
+            ids.append(item["id"])
+        return ids
+
+    def test_batch_approve_all(self, tmp_path):
+        ids = self._seed(tmp_path)
+        res = marketing.decide_outbox_batch(ids, "approve", root=tmp_path)
+        assert res["decided"] == 3
+        assert all(res["results"][i] for i in ids)
+        from engine.marketing.outbox import latest_decisions
+        decs = latest_decisions(tmp_path)
+        assert all(decs[i]["decision"] == "approve" for i in ids)
+
+    def test_batch_unknown_id_does_not_block_rest(self, tmp_path):
+        ids = self._seed(tmp_path, n=2)
+        res = marketing.decide_outbox_batch(
+            [ids[0], "ob-2026-07-19-nonexist00", ids[1]], "hold", root=tmp_path)
+        assert res["decided"] == 2
+        assert res["results"][ids[0]] is True
+        assert res["results"]["ob-2026-07-19-nonexist00"] is False
+        assert res["results"][ids[1]] is True
+
+    def test_batch_invalid_decision_all_false(self, tmp_path):
+        ids = self._seed(tmp_path, n=2)
+        res = marketing.decide_outbox_batch(ids, "publish", root=tmp_path)
+        assert res["decided"] == 0
+
+
+class TestOutboxActivityPayload:
+    """The panel surfaces pipeline activity + per-item attempts."""
+
+    def test_activity_surfaced_newest_first(self, tmp_path):
+        from engine.marketing.outbox import _append_activity
+        _append_activity(tmp_path, {"at": "2026-07-19T01:00:00Z", "lane": "emit"})
+        _append_activity(tmp_path, {"at": "2026-07-19T02:00:00Z", "lane": "actuator_dry_run"})
+        r = marketing.outbox(tmp_path)
+        assert [a["lane"] for a in r["activity"]] == ["actuator_dry_run", "emit"]
+
+    def test_items_carry_attempts(self, tmp_path):
+        from engine.marketing.outbox import enqueue, make_item, transition
+        item = make_item(
+            account="flagship", kind="signal", text="Attempts surfaced post.",
+            as_of=_AS_OF_OB, provenance="content_studio", now=_FIXED_NOW_OB,
+        )
+        enqueue(item, root=tmp_path)
+        transition(item["id"], "approved", actor="t", root=tmp_path)
+        transition(item["id"], "failed", actor="t", root=tmp_path)
+        r = marketing.outbox(tmp_path)
+        it = r["accounts"][0]["items"][0]
+        assert it["attempts"] == 1
+        assert it["status"] == "failed"
