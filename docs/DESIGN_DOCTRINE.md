@@ -197,3 +197,22 @@ lightweight honesty chips ("~" approx prefix, "≈15-min delayed bars",
 render (STANCE_ZH / BAND_ZH pattern) — extend them to the leak sites rather than
 inventing new mechanisms; non-verbal encodings (K/7 dot-bars, quadrant colors,
 severity dots) that need no vocabulary at all.
+
+---
+
+## Execution routing (who does design work — operator order 2026-07-18)
+
+Design is judgment work, not mechanical work. Model routing for it is law (CLAUDE.md
+§Model routing, "Design lane"):
+
+- **Choosing** palette, type, layout, signature elements, or user-facing copy happens at
+  **opus or above** — default home is the `designer` agent type (opus-pinned), or the main
+  loop. Never a sonnet `builder`.
+- **Taste-as-deliverable** surfaces (heroes, new visual language, flagship revamps) that
+  fail the draft-and-review test → main loop, or fable via the `orchestrator` gate with
+  `FABLE-WHY: creative: <reason>`.
+- A sonnet `builder` may implement a design only when handed a **fully specified** spec
+  (exact markup/CSS decided elsewhere).
+- Every design task starts by loading BOTH inputs: this doctrine (content law — wins on
+  conflict) and the `frontend-design:frontend-design` skill (visual bar: deliberate
+  palette/type/signature, no templated defaults, one risk you can justify).
