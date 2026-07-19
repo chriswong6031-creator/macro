@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-17",
-  "generated_at": "2026-07-18T03:35:54.992865+00:00",
+  "generated_at": "2026-07-19T03:26:17.772478+00:00",
   "degraded": null,
   "notes": [
     {
@@ -9,17 +9,19 @@
       "ticker": "AMKR",
       "name": null,
       "lean": "avoid",
-      "conviction": "low",
+      "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "The deterministic cycle is blocked (downtrend) and board urgency is 'avoid'; the event-edge selection cannot overcome the negative tape.",
+      "thesis": "The engine's deterministic cycle block and entry gate both flag a DECLINE; the strong fundamental selection is overridden by a persistent downtrend, making AMKR likely to underperform the S&P 500 as risk controls dominate.",
       "evidence": [
-        "cycle_blocked true",
-        "entry blocked (z -0.62)",
-        "board state DECLINE, off-high -32.7%"
+        "cycle_blocked: true",
+        "entry axis blocked with z -0.62 and present pullback/extended, vol-squeeze",
+        "verdict: 'Strong name \u00b7 wrong tape \u2014 wait for a base'",
+        "board state: DECLINE, off-high -32.7%",
+        "caution: cycle DOWNTREND"
       ],
-      "dissent": "A sharp industry-wide rebound in semiconductor demand could reverse the trend, but there is no sign yet.",
+      "dissent": "The insider buying and positive earnings momentum (SUE) could ignite a sharp reversal if a sudden positive catalyst overrides the technical damage.",
       "falsifier": {
-        "text": "AMKR closes above its 50-day simple moving average on above-average volume.",
+        "text": "If AMKR closes above its 50-day moving average on above-average volume within 20 trading days, the avoid call is disproven.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "AMKR",
@@ -39,15 +41,16 @@
       "lean": "cautious",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "While selection factors (revisions, momentum) are supportive, the accounting warning and countertrend bounce introduce significant uncertainty; wait for clarification.",
+      "thesis": "While the selection cycle (revisions, momentum) is strong, the engine's accounting warning and 'verify before buying' verdict elevate idiosyncratic risk, suggesting BG may not reliably outperform the S&P 500 until the accounting concern is cleared.",
       "evidence": [
-        "accounting flag warn",
-        "board dir 'caution', state COUNTERTREND BOUNCE",
-        "selection z 0.84 but SUE z -0.81"
+        "verdict: 'Leader \u00b7 accounting warning \u2014 verify before buying'",
+        "quality flags: accounting warn",
+        "SUE z -0.81, stale at 79 days",
+        "board state: COUNTERTREND BOUNCE, urgency caution"
       ],
-      "dissent": "The accounting issue may be a false alarm or quickly resolved; a clean audit could quickly re-rate the stock.",
+      "dissent": "If the accounting flag is benign\u2014e.g., a one-time item\u2014BG's >9% pullback and strong revisions could fuel a rapid recovery and outperform.",
       "falsifier": {
-        "text": "Company issues a statement that the accounting flag was due to a non-recurring item and the previous trend high is taken out.",
+        "text": "If BG's stock price forms a higher low and closes above its 20-day moving average with above-average volume within 20 trading days, the cautious lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BG",
@@ -67,22 +70,23 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Strong earnings/revisions edge and high quality, but poor entry with extension; the risk of a pullback likely offsets the alpha, suggesting flat relative performance.",
+      "thesis": "Despite high selection scores (SUE, revisions, momentum), the engine places GIII in a neutral band with mixed entry signals; no validated edge supports a directional call relative to the S&P 500.",
       "evidence": [
-        "selection z 1.53 with SUE 1.33 fresh",
-        "quality z 1.04, accounting clean",
-        "entry: extension present, off-high -1.3%, urgency 'hold'"
+        "band: neutral",
+        "entry axis z only 0.08, not blocking but not supportive",
+        "tailwind z -0.32 (negative spot)",
+        "board urgency: hold, state RALLY ON but near highs"
       ],
-      "dissent": "If momentum persists, the stock could continue to run without correcting, defying the poor entry signal.",
+      "dissent": "The exceptionally clean accounting and strong fundamentals could lead to outperformance if the market continues to favor the stock's factor profile.",
       "falsifier": {
-        "text": "GIII posts a new 20-day high on above-average volume without a prior 5% pullback.",
+        "text": "If GIII outperforms the S&P 500 by more than 3% over the next 20 trading days, the neutral call is falsified.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
       "check_by": "2026-08-14",
-      "engine_verdict": "Leader \u00b7 poor entry \u2014 wait for a base"
+      "engine_verdict": "High-confluence leader (context)"
     },
     {
       "id": "2026-07-17-PLD-4",
@@ -91,15 +95,16 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The verdict is 'no clear edge'; mixed selection, neutral tailwind, and cautious board state do not argue for outperformance.",
+      "thesis": "The engine's verdict 'Neutral \u2014 no clear edge' is confirmed by a soft entry setup (vol-squeeze, off-high) and only moderate selection metrics; no risk-control reset or directional edge warrants a lean away from the S&P 500.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection z 0.35, revisions z -0.23",
-        "board state COUNTERTREND BOUNCE, urgency caution"
+        "verdict: 'Neutral \u2014 no clear edge'",
+        "band: neutral",
+        "entry z -0.64, present vol-squeeze and off-high",
+        "quality z -0.51, factors flag present but below average"
       ],
-      "dissent": "If real-estate sentiment improves on macro tailwind, PLD could catch a bid, but there's no evidence yet.",
+      "dissent": "Real estate sector tailwinds and a quiet macro backdrop could allow PLD to grind higher and break out, outpacing the index.",
       "falsifier": {
-        "text": "PLD rises above its last swing high ($150+) on an expansion in real-estate ETF flows.",
+        "text": "If PLD closes above its 52-week high on a weekly chart within 20 trading days, the neutral lean is proven wrong.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -112,47 +117,50 @@
       "id": "2026-07-17-HR-5",
       "ticker": "HR",
       "name": null,
-      "lean": "cautious",
-      "conviction": "low",
+      "lean": "constructive",
+      "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "The stock is extended (off-high 0%, HOLD \u2014 EXTENDED, urgency 'now') which historically leads to suboptimal entry; the strong selection edge is offset by near-term reversion risk.",
+      "thesis": "The engine's highest-confluence read\u2014a FRESH BUY board state, all axes positive (especially revisions and entry momentum), and clean risk controls\u2014supports an edge for HR to outperform the S&P 500 over the next month.",
       "evidence": [
-        "board state 'HOLD \u2014 EXTENDED', urgency 'now'",
-        "entry: extension present, off-high 0%",
-        "selection z 1.55, revisions z 2.23 (strong)"
+        "band: constructive",
+        "board: FRESH BUY, urgency now, off-high 0%",
+        "selection: revision z 2.23, momentum z 1.22, SUE present",
+        "entry z 0.45 with positive urgency",
+        "no cautions, cycle not blocked"
       ],
-      "dissent": "HR could be in a sustained uptrend where extension does not hinder further gains, but that's not the base case.",
+      "dissent": "The SUE signal is weak (z=0.04, 77 days old) and a sudden macro shock to REITs or a spike in rates could overwhelm the technical setup, causing underperformance.",
       "falsifier": {
-        "text": "HR pulls back to its 20-day moving average, clearing the extension risk and establishing a valid base.",
+        "text": "If HR closes below its 20-day moving average on a daily chart within 20 trading days, the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "HR",
           "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
+          "op": "<",
+          "threshold": -0.05,
           "horizon_d": 20
         }
       },
       "check_by": "2026-08-14",
-      "engine_verdict": "Leader \u00b7 poor entry \u2014 wait for a base"
+      "engine_verdict": "High-confluence leader (context)"
     },
     {
       "id": "2026-07-17-AEIS-6",
       "ticker": "AEIS",
       "name": null,
       "lean": "avoid",
-      "conviction": "low",
+      "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "The name is in a downtrend (cycle blocked) with a deteriorating semiconductor equipment narrative; risk controls forbid entry.",
+      "thesis": "Cycle-blocked with a DECLINE board state and entry gate closed; the engine explicitly warns on the narrative basket (WFE) deterioration, making AEIS likely to underperform the S&P 500 as downtrend risk dominates any stock-level fundamentals.",
       "evidence": [
-        "cycle_blocked true",
-        "entry blocked true",
-        "board state DECLINE, off-high -27%",
-        "cautions: narrative basket deteriorating"
+        "cycle_blocked: true",
+        "entry blocked: z -0.62, present vol-squeeze, extended",
+        "verdict: 'Strong name \u00b7 wrong tape \u2014 wait for a base'",
+        "board: DECLINE, off-high -27%",
+        "caution: Narrative basket (Semiconductor Equipment) deteriorating"
       ],
-      "dissent": "Semiconductor equipment demand could surprise to the upside due to new fab announcements, turning the trend.",
+      "dissent": "Clean accounting and solid fundamental selection (SUE, revisions) could attract value buyers if the sector narrative shifts, sparking a V-shaped recovery.",
       "falsifier": {
-        "text": "AEIS closes above its 50-day moving average and the Philadelphia Semiconductor Index (SOX) turns up.",
+        "text": "If AEIS rallies above its 50-day moving average and holds that level for three consecutive trading days within the horizon, the avoid call is wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "AEIS",
