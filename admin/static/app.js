@@ -153,13 +153,14 @@ const ICONS = {
   marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
   marketing_outbox:      NAV_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
+  marketing_sentinel:    NAV_ICO('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4"/>'),
   marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
   marketing_radar:       NAV_ICO('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.4-6.4"/><circle cx="16.2" cy="7.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15" r="1" fill="currentColor" stroke="none"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -3999,9 +4000,23 @@ RENDER.marketing_outbox = async () => {
   const accounts = d.accounts || [];
   const history = d.history || [];
 
+  /* Cross-link to Sentinel — surface any policy holds so a reviewer here knows
+     the gate caught something worth reading before they approve. Fail-soft:
+     the outbox never blocks on the sentinel fetch. */
+  let sentinelChip = "";
+  try {
+    const sd = await api("/api/marketing/sentinel");
+    const held = sd && sd.ok ? (sd.policy_quarantined || []).length : 0;
+    if (held > 0) {
+      sentinelChip = `<span class="obx-sentinel-link" onclick="go('marketing_sentinel')" role="button" tabindex="0"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();go('marketing_sentinel')}"
+        >&#9940; ${held} held by Sentinel</span>`;
+    }
+  } catch (_e) { /* sentinel optional — ignore */ }
+
   /* Header — honest shadow-mode state pill carries the stance in plain words. */
   const asOfChip = asOf ? `<span class="cnt">reviewing ${esc(asOf)}</span>` : "";
-  const header = `<div class="section">Outbox ${asOfChip}
+  const header = `<div class="section">Outbox ${asOfChip}${sentinelChip}
     <span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Review only — nothing posts externally</span>
   </div>
   <div class="obx-lede">The queue below is what each desk account is <b>about to post to X</b>. Read the exact copy, then approve or hold. In this shadow phase nothing leaves the building — approvals are recorded, but no post is sent. Daily ceiling: <b>${esc(String(cap))} posts per desk</b>.</div>`;
@@ -4103,6 +4118,319 @@ RENDER.marketing_outbox = async () => {
   v.innerHTML = header + tiles + acctPills + `<div id="obx-review">${sections}</div>` + historyHtml;
   obxLoadAllMedia();
 };
+
+/* =========================================================================
+   SENTINEL — trust-office pre-publication gate review (D08)
+   One page answering: is anything trying to get us banned, and is the
+   kill-switch doing its job? Verdict-first per the design doctrine.
+   ========================================================================= */
+
+/* Translate a raw sentinel reason slug into a plain-word flag: the head
+   becomes a legible label, the detail (a slug, a phrase) is preserved. */
+function sentReasonChip(reason) {
+  const raw = String(reason || "").trim();
+  if (!raw) return "";
+  const [head, ...rest] = raw.split(":");
+  const detail = rest.join(":");
+  let label, cls = "sent-flag-caution", tip = raw;
+  switch (head) {
+    case "near_dup":
+      label = detail ? `Near-duplicate of ${detail}` : "Near-duplicate of another post";
+      break;
+    case "advice_lexicon":
+      label = detail ? `Advice phrasing: “${detail}”` : "Advice-style phrasing";
+      cls = "sent-flag-hot";
+      break;
+    case "missing_disclosure":
+      label = "Missing disclosure line"; cls = "sent-flag-hot"; break;
+    case "cherry_pick_suspected":
+      label = "Cherry-picked receipts (window has losers not shown)";
+      cls = "sent-flag-hot"; break;
+    case "cashtag_cap":
+      label = detail ? `Cashtag over cap: ${detail}` : "Cashtag over the daily cap"; break;
+    case "cashtag_breadth":
+      label = "Too many cashtags in one post"; break;
+    case "cadence_cap_daily":
+      label = "Over the daily post cap"; cls = "sent-flag-inert"; break;
+    case "slot_collision":
+      label = "Two posts share a slot"; break;
+    case "reply_cap_daily":
+      label = "Over the reply cap"; break;
+    case "media_cap_daily":
+      label = "Over the media cap"; break;
+    case "shared_media":
+      label = detail ? `Same image as ${detail}` : "Reused image across accounts"; break;
+    case "link_not_allowed":
+      label = "Link not allowed yet"; cls = "sent-flag-hot"; break;
+    case "account_disabled":
+      label = "Account is switched off"; cls = "sent-flag-hot"; break;
+    case "stale_receipts_ledger":
+      label = "Receipts ledger stale — plan refused"; cls = "sent-flag-hot"; break;
+    case "receipts_age_unknown":
+      label = "Receipts ledger age unknown"; break;
+    default:
+      /* Unknown head → prettify the slug, keep the machine string in the tip. */
+      label = raw.replace(/_/g, " ").replace(/:/g, " · ");
+      cls = "sent-flag-caution";
+  }
+  return `<span class="sent-flag ${cls}" title="${esc(tip)}">${esc(label)}</span>`;
+}
+
+/* Compact UTC stamp, "2026-07-19 13:23 UTC" from an ISO string. */
+function sentStamp(ts) {
+  if (!ts) return "—";
+  return String(ts).replace("T", " ").replace(/:\d\dZ?$/, "").replace("Z", "") + " UTC";
+}
+
+/* Verdict metadata for the hero strip. publish_enabled is the hero:
+   false = SHADOW MODE, the SAFE armed-and-holding state (steel, not green,
+   not red); true = LIVE, the loud warning. plan_status colors the sub-line. */
+function sentVerdict(d) {
+  const live = d.publish_enabled === true;
+  const ps = d.plan_status;
+  const planMeta = {
+    pass:               { cls: "sent-plan-ok",   word: "Plan clean — no policy holds" },
+    pass_with_warnings: { cls: "sent-plan-warn", word: "Plan cleared with warnings" },
+    refused:            { cls: "sent-plan-bad",  word: "Plan refused — gate held the day" },
+    error:              { cls: "sent-plan-bad",  word: "Gate errored — treat as held" },
+  }[ps] || { cls: "sent-plan-mut", word: ps ? `Plan: ${ps}` : "Plan not yet gated" };
+  return { live, planMeta };
+}
+
+RENDER.marketing_sentinel = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/sentinel");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Sentinel unavailable", (d && d.error) || "panel error"); return; }
+
+  /* --- Day-0 accruing state: report file not yet written. Honest, not empty. --- */
+  if (d.note && d.plan_status == null) {
+    v.innerHTML = `<div class="section">Sentinel</div>
+      <div class="sent-lede">The pre-publication gate reads the whole day's post plan before anything can go out — checking for near-duplicate posts across the six accounts, advice-style phrasing, missing disclosures, and cadence caps. It de-escalates only: it can hold or trim a post, never write one.</div>
+      <div class="sent-hero sent-hero-accruing">
+        <div class="sent-hero-dot sent-dot-hold"></div>
+        <div class="sent-hero-main">
+          <div class="sent-hero-state">Standing by — no report yet</div>
+          <div class="sent-hero-sub">The gate hasn't run over a plan on this machine. The first nightly after D08 shipped bakes the report; until then there is nothing to review and nothing can post.</div>
+        </div>
+      </div>
+      <div class="card"><div class="note muted">${esc(d.note)}</div></div>
+      ${sentFooter()}`;
+    return;
+  }
+
+  const counts   = d.counts || {};
+  const policyQ  = d.policy_quarantined || [];
+  const overQ    = d.overflow_quarantined || [];
+  const checks   = d.checks || {};
+  const notes    = d.notes || [];
+  const topR     = d.top_reasons || [];
+  const { live, planMeta } = sentVerdict(d);
+
+  /* ---------- 1 · VERDICT STRIP (the hero) ---------- */
+  const heroCls  = live ? "sent-hero-live" : "sent-hero-hold";
+  const dotCls   = live ? "sent-dot-live"  : "sent-dot-hold";
+  const heroState = live
+    ? "LIVE — publishing armed"
+    : "Shadow mode — nothing posts externally";
+  const heroSub = live
+    ? "The kill-switch is OFF: approved posts will go out to X. Every hold below is the last line before publication."
+    : "The kill-switch is holding. Posts are gated and reviewed, but nothing leaves the building. This is the safe resting state.";
+  const strictChip = d.auditor_strict
+    ? `<span class="sent-chip sent-chip-on">Strict review on</span>`
+    : `<span class="sent-chip sent-chip-off">Strict review off</span>`;
+  const disabled = (checks.kill_switch && checks.kill_switch.accounts_disabled) || [];
+  const disabledChip = disabled.length
+    ? `<span class="sent-chip sent-chip-mut">${disabled.length} account${disabled.length > 1 ? "s" : ""} switched off</span>`
+    : "";
+
+  /* One-glance triptych: cleared / to review / trimmed. */
+  const trip = `<div class="sent-trip">
+    <div class="sent-trip-cell"><div class="sent-trip-n sent-n-ok">${counts.passed != null ? counts.passed : "—"}</div><div class="sent-trip-l">cleared to post</div></div>
+    <div class="sent-trip-div"></div>
+    <div class="sent-trip-cell"><div class="sent-trip-n ${policyQ.length ? "sent-n-warn" : "sent-n-mut"}">${counts.quarantined_policy != null ? counts.quarantined_policy : policyQ.length}</div><div class="sent-trip-l">held to review</div></div>
+    <div class="sent-trip-div"></div>
+    <div class="sent-trip-cell"><div class="sent-trip-n sent-n-mut">${counts.quarantined_overflow != null ? counts.quarantined_overflow : overQ.length}</div><div class="sent-trip-l">trimmed by caps</div></div>
+  </div>`;
+
+  const hero = `<div class="sent-hero ${heroCls}">
+    <div class="sent-hero-dot ${dotCls}"></div>
+    <div class="sent-hero-main">
+      <div class="sent-hero-state">${esc(heroState)}</div>
+      <div class="sent-hero-sub">${esc(heroSub)}</div>
+      <div class="sent-hero-meta">
+        <span class="sent-plan ${planMeta.cls}">${esc(planMeta.word)}</span>
+        ${strictChip}${disabledChip}
+        <span class="sent-chip sent-chip-mut">${counts.items != null ? counts.items : "—"} posts checked</span>
+      </div>
+    </div>
+    ${trip}
+  </div>`;
+
+  /* ---------- 2 · POLICY FLAGS (the reviewable list) ---------- */
+  let policyHtml;
+  if (policyQ.length) {
+    const cards = policyQ.map(sentPolicyCard).join("");
+    policyHtml = `<div class="section">Policy flags <span class="cnt">${policyQ.length} held for a human read</span></div>
+      <div class="sent-lede sent-lede-tight">These posts tripped a ban-risk rule — near-duplicate text across accounts, advice-style phrasing, or a missing disclosure. Read each one. They stay held until you grant an exception; nothing here posts on its own.</div>
+      ${cards}`;
+  } else {
+    policyHtml = `<div class="section">Policy flags <span class="cnt">nothing held</span></div>
+      <div class="sent-clear-card">
+        <span class="sent-clear-mark">✓</span>
+        <div><div class="sent-clear-title">No ban-risk flags in this plan</div>
+        <div class="sent-clear-sub">No near-duplicate posts, advice phrasing, or disclosure gaps caught across the six accounts. The only holds are routine capacity trims, below.</div></div>
+      </div>`;
+  }
+
+  /* ---------- 3 · OVERFLOW (collapsed — benign by design) ---------- */
+  let overHtml = "";
+  if (overQ.length) {
+    const rows = overQ.map(q => `<tr>
+      <td class="sent-of-acct">${esc(q.account || "—")}</td>
+      <td>${sentTypeChip(q.type)}</td>
+      <td class="sent-of-cash">${esc(q.cashtag || "")}</td>
+      <td class="sent-of-head">${esc(q.headline || "")}</td>
+      <td class="sent-of-slot">${esc(q.slot || "")}</td>
+    </tr>`).join("");
+    overHtml = `<details class="sent-overflow">
+      <summary><span class="sent-of-count">${overQ.length}</span> posts trimmed by cadence &amp; media caps <span class="sent-of-why">— the plan over-generates on purpose; caps sit at the new-account tier (2 posts / account / day). These are queued, not problems.</span></summary>
+      <div class="table-wrap"><table class="exp-table sent-of-table">
+        <thead><tr><th>Desk</th><th>Type</th><th>Cashtag</th><th>Headline</th><th>Slot</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </details>`;
+  }
+
+  /* ---------- 4 · CHECKS GRID + notes ---------- */
+  const checksHtml = sentChecksGrid(checks, topR);
+  let notesHtml = "";
+  if (notes.length) {
+    notesHtml = `<div class="section sent-sec-tight">Gate notes</div>
+      <div class="card sent-notes">${notes.map(n => `<div class="sent-note-row">${esc(String(n))}</div>`).join("")}</div>`;
+  }
+
+  v.innerHTML = `<div class="section">Sentinel <span class="cnt">gate over ${esc(d.as_of || "—")}</span></div>
+    ${hero}
+    ${policyHtml}
+    ${overHtml}
+    <div class="section sent-sec-tight">Gate checks</div>
+    <div class="sent-lede sent-lede-tight">Each cell is one rule the gate ran over the whole plan. A steel dot means it ran and found nothing; amber means it caught something (see the flags above).</div>
+    ${checksHtml}
+    ${notesHtml}
+    ${sentFooter(d)}`;
+};
+
+/* One policy-flag card — a reviewable ban-risk hold. */
+function sentPolicyCard(q) {
+  const reasons = (q.reasons || []).map(sentReasonChip).join("");
+  const cash = q.cashtag ? `<span class="mkt-cash-chip">${esc(q.cashtag)}</span>` : "";
+  const slot = q.slot ? `<span class="statpill s-mut obx-mini">${esc(q.slot)}</span>` : "";
+  return `<div class="sent-flag-card">
+    <div class="sent-flag-top">
+      <span class="sent-flag-acct">${esc(q.account || "—")}</span>
+      ${sentTypeChip(q.type)}${cash}${slot}
+      <span class="sent-flag-id">${esc(q.id || "")}</span>
+    </div>
+    <div class="sent-flag-head">${esc(q.headline || "(no headline)")}</div>
+    <div class="sent-flag-reasons">${reasons || '<span class="faint">held — reason not recorded</span>'}</div>
+    <div class="sent-flag-foot">Should this post go anyway? Add
+      <code>{"item_id": "${esc(q.id || "")}", "allow": true, "reason": "…"}</code>
+      to <code>data/marketing/sentinel_exceptions.jsonl</code> and re-run the gate.</div>
+  </div>`;
+}
+
+/* Content-type chip, reusing the marketing type-color map. */
+function sentTypeChip(type) {
+  if (!type) return "";
+  const c = mktTypeColor(type);
+  return `<span class="mkt-type-chip" style="background:${c}22;border-color:${c}44;color:${c}">${esc(type)}</span>`;
+}
+
+/* Checks grid — one compact cell per gate check. Non-verbal severity dot:
+   steel = ran clean, amber = caught something, muted = skipped/off. */
+function sentCheckCell(title, state, value, sub) {
+  const dot = state === "hit" ? "sent-ck-hit" : state === "skip" ? "sent-ck-skip" : "sent-ck-ok";
+  return `<div class="sent-check">
+    <div class="sent-check-head"><span class="sent-ck-dot ${dot}"></span>${esc(title)}</div>
+    <div class="sent-check-val">${value}</div>
+    ${sub ? `<div class="sent-check-sub">${esc(sub)}</div>` : ""}
+  </div>`;
+}
+
+function sentChecksGrid(checks, topR) {
+  const c = checks || {};
+  const cells = [];
+  const nd = c.near_dup || {};
+  cells.push(sentCheckCell(
+    "Duplicate posts",
+    (nd.hits || 0) > 0 ? "hit" : "ok",
+    (nd.hits || 0) > 0 ? `${nd.hits} caught` : "none",
+    `${nd.pairs_checked != null ? nd.pairs_checked.toLocaleString() : "—"} pairs checked${nd.shared_media_hits ? ` · ${nd.shared_media_hits} shared images` : ""}`));
+
+  const cad = c.cadence || {};
+  const cadHit = (cad.cashtag_cap_hits || 0) + (cad.slot_collision_hits || 0) + (cad.reply_cap_hits || 0);
+  cells.push(sentCheckCell(
+    "Cadence caps",
+    cadHit > 0 ? "hit" : "ok",
+    cadHit > 0 ? `${cadHit} over cap` : "within caps",
+    `${cad.cadence_cap_daily_hits || 0} trimmed to the daily limit`));
+
+  const lex = c.lexicon || {};
+  cells.push(sentCheckCell("Advice phrasing", (lex.hits || 0) > 0 ? "hit" : "ok",
+    (lex.hits || 0) > 0 ? `${lex.hits} caught` : "clean", "no “guaranteed / can’t lose” language"));
+
+  const disc = c.disclosure || {};
+  cells.push(sentCheckCell("Disclosure line", (disc.hits || 0) > 0 ? "hit" : "ok",
+    (disc.hits || 0) > 0 ? `${disc.hits} missing` : "all present", "signal posts carry the standing line"));
+
+  const link = c.link_rule || {};
+  cells.push(sentCheckCell("Link rule", (link.hits || 0) > 0 ? "hit" : "ok",
+    link.links_allowed ? "links allowed" : "no links",
+    (link.hits || 0) > 0 ? `${link.hits} posts had links` : "new-account tier: links off"));
+
+  const breadth = c.cashtag_breadth || {};
+  cells.push(sentCheckCell("Cashtags per post", (breadth.hits || 0) > 0 ? "hit" : "ok",
+    (breadth.hits || 0) > 0 ? `${breadth.hits} over` : "within limit",
+    `cap ${breadth.max_cashtags_per_post != null ? breadth.max_cashtags_per_post : "—"} per post`));
+
+  const media = c.media_cap || {};
+  cells.push(sentCheckCell("Media per day", (media.hits || 0) > 0 ? "hit" : "ok",
+    (media.hits || 0) > 0 ? `${media.hits} over` : "within limit",
+    `cap ${media.max_media_posts_per_account_per_day != null ? media.max_media_posts_per_account_per_day : "—"} / account / day`));
+
+  const cp = c.cherry_pick || {};
+  if (cp.status === "skip" || cp.status === "skipped") {
+    cells.push(sentCheckCell("Cherry-picked receipts", "skip", "not run this plan",
+      "no receipt posts in the plan to check"));
+  } else {
+    const detected = cp.cherry_pick_detected === true;
+    const losers = (cp.loss_tickers_in_window || []).length;
+    cells.push(sentCheckCell("Cherry-picked receipts", detected ? "hit" : "ok",
+      detected ? "losers hidden" : "losers shown",
+      losers ? `${losers} losing name${losers > 1 ? "s" : ""} in the window` : "no losers in the window"));
+  }
+
+  const sr = c.stale_receipts || {};
+  const srStale = sr.age_days != null && sr.max != null && sr.age_days > sr.max;
+  cells.push(sentCheckCell("Receipts freshness", srStale ? "hit" : "ok",
+    sr.age_days != null ? `${sr.age_days}d old` : "—",
+    `refuses the plan past ${sr.max != null ? sr.max : "—"} days`));
+
+  const ks = c.kill_switch || {};
+  const nDisabled = (ks.accounts_disabled || []).length;
+  cells.push(sentCheckCell("Accounts switched off", nDisabled > 0 ? "skip" : "ok",
+    nDisabled > 0 ? `${nDisabled} off` : "all live",
+    nDisabled > 0 ? (ks.accounts_disabled || []).join(", ") : "none disabled in config"));
+
+  return `<div class="sent-checks-grid">${cells.join("")}</div>`;
+}
+
+/* Doctrine footer — where the caps live. Text only, no external links. */
+function sentFooter(d) {
+  const stamp = d && d.produced_at ? ` · gate ran ${esc(sentStamp(d.produced_at))}` : "";
+  return `<div class="sent-footer">Caps set by the D08 red-team appendix · ramp tiers in <code>config/marketing.yml</code> <code>sentinel:</code>${stamp}</div>`;
+}
 
 /* Kind chip — reuse the content-type color map where a kind matches. */
 function obxKindChip(kind) {

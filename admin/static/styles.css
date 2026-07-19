@@ -3158,3 +3158,387 @@ tr.lab-cell-floor td { opacity: .72; }
 /* Competitor cadence chips */
 .mkt-comp-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 
+/* --------------------------------------------------------------------------
+   SENTINEL — trust-office pre-publication gate (D08)
+   Instrument-panel language: the kill-switch is the hero. SHADOW MODE is the
+   SAFE armed state — steel/indigo, calm, not green (which would falsely read
+   "publishing fine") and not red (which is reserved for LIVE / refused).
+   -------------------------------------------------------------------------- */
+
+/* Cross-link chip on the Outbox header. */
+.obx-sentinel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 1px solid rgba(255,184,77,.3);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.obx-sentinel-link:hover { border-color: var(--warn); background: rgba(255,184,77,.2); }
+.obx-sentinel-link:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
+
+.sent-lede {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 780px;
+  margin: -4px 0 16px;
+}
+.sent-lede-tight { margin: 2px 0 12px; }
+.sent-sec-tight { margin-top: 26px; }
+
+/* --- 1 · VERDICT STRIP (the hero) --- */
+.sent-hero {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  padding: 18px 20px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(106,141,255,.10), transparent 60%),
+    var(--surface);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+/* SHADOW / hold — steel armed-and-holding. The safe resting state. */
+.sent-hero-hold, .sent-hero-accruing {
+  border-color: rgba(106,141,255,.4);
+  box-shadow: inset 0 0 0 1px rgba(106,141,255,.08), 0 8px 30px rgba(0,0,0,.28);
+}
+/* LIVE — the loud warning. */
+.sent-hero-live {
+  border-color: rgba(255,107,107,.55);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255,107,107,.14), transparent 60%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(255,107,107,.12), 0 8px 30px rgba(0,0,0,.28);
+}
+
+/* Breathing status dot — the SCRAM indicator. */
+.sent-hero-dot {
+  flex: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  margin-top: 5px;
+}
+.sent-dot-hold {
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(106,141,255,.5);
+  animation: sent-breathe 3s var(--ease) infinite;
+}
+.sent-dot-live {
+  background: var(--bad);
+  box-shadow: 0 0 0 0 rgba(255,107,107,.6);
+  animation: sent-breathe-fast 1.5s var(--ease) infinite;
+}
+@keyframes sent-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(106,141,255,.5); }
+  50%      { box-shadow: 0 0 0 8px rgba(106,141,255,0); }
+}
+@keyframes sent-breathe-fast {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,107,.6); }
+  50%      { box-shadow: 0 0 0 9px rgba(255,107,107,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sent-dot-hold, .sent-dot-live { animation: none; }
+}
+
+.sent-hero-main { flex: 1 1 auto; min-width: 0; }
+.sent-hero-state {
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: -.01em;
+  color: var(--text);
+  line-height: 1.15;
+}
+.sent-hero-live .sent-hero-state { color: var(--bad); }
+.sent-hero-hold .sent-hero-state { color: var(--accent); }
+.sent-hero-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 6px 0 12px;
+  max-width: 620px;
+}
+.sent-hero-meta { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+
+/* Plan-status word. */
+.sent-plan {
+  font-size: 11.5px;
+  font-weight: 650;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+.sent-plan-ok   { color: var(--accent); background: var(--info-bg); border-color: rgba(106,141,255,.3); }
+.sent-plan-warn { color: var(--warn);   background: var(--warn-bg); border-color: rgba(255,184,77,.3); }
+.sent-plan-bad  { color: var(--bad);    background: var(--bad-bg);  border-color: rgba(255,107,107,.35); }
+.sent-plan-mut  { color: var(--muted);  background: var(--surface2); border-color: var(--border); }
+
+.sent-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: var(--surface2);
+}
+.sent-chip-on  { color: var(--ok);   background: var(--ok-bg);   border-color: rgba(61,220,132,.28); }
+.sent-chip-off { color: var(--warn); background: var(--warn-bg); border-color: rgba(255,184,77,.28); }
+.sent-chip-mut { color: var(--faint); }
+
+/* One-glance triptych — cleared / to review / trimmed. */
+.sent-trip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 20px;
+  border-left: 1px solid var(--border);
+}
+.sent-trip-cell { text-align: center; min-width: 78px; }
+.sent-trip-n {
+  font-size: 27px;
+  font-weight: 750;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+.sent-n-ok   { color: var(--accent); }
+.sent-n-warn { color: var(--warn); }
+.sent-n-mut  { color: var(--faint); }
+.sent-trip-l {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.sent-trip-div { width: 1px; align-self: stretch; background: var(--border); margin: 8px 0; }
+
+/* --- 2 · POLICY FLAGS --- */
+.sent-flag-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--r-md);
+  padding: 13px 16px 12px;
+  margin-bottom: 11px;
+}
+.sent-flag-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.sent-flag-acct {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.sent-flag-id {
+  margin-left: auto;
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--faint);
+}
+.sent-flag-head {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 9px;
+}
+.sent-flag-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.sent-flag {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: default;
+}
+.sent-flag-hot     { color: var(--bad);  background: var(--bad-bg);  border-color: rgba(255,107,107,.3); }
+.sent-flag-caution { color: var(--warn); background: var(--warn-bg); border-color: rgba(255,184,77,.3); }
+.sent-flag-inert   { color: var(--muted); background: var(--surface2); border-color: var(--border); }
+.sent-flag-foot {
+  font-size: 11px;
+  color: var(--faint);
+  line-height: 1.6;
+  border-top: 1px dashed var(--border);
+  padding-top: 9px;
+}
+.sent-flag-foot code {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  word-break: break-word;
+}
+
+/* No-flags clear card — steel confirmation, not green all-clear. */
+.sent-clear-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: linear-gradient(120deg, rgba(106,141,255,.06), transparent);
+  border: 1px solid rgba(106,141,255,.28);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+}
+.sent-clear-mark {
+  flex: none;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--info-bg);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 14px;
+}
+.sent-clear-title { font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.sent-clear-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* --- 3 · OVERFLOW (collapsed) --- */
+.sent-overflow {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  margin: 6px 0 8px;
+  overflow: hidden;
+}
+.sent-overflow summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text);
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sent-overflow summary::-webkit-details-marker { display: none; }
+.sent-overflow summary::before {
+  content: "▸";
+  color: var(--faint);
+  font-size: 11px;
+  transition: transform var(--dur) var(--ease);
+}
+.sent-overflow[open] summary::before { transform: rotate(90deg); }
+.sent-overflow summary:hover { background: var(--surface2); }
+.sent-of-count {
+  font-weight: 750;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.sent-of-why { color: var(--faint); font-size: 12px; font-weight: 400; }
+.sent-of-table { min-width: 720px; }
+.sent-of-table thead th {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--faint);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sent-of-table td { padding: 7px 12px; border-bottom: 1px solid var(--grid); font-size: 12px; color: var(--muted); vertical-align: middle; }
+.sent-of-table tr:last-child td { border-bottom: none; }
+.sent-of-acct { color: var(--text); font-weight: 600; white-space: nowrap; }
+.sent-of-cash { font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap; }
+.sent-of-head { color: var(--muted); }
+.sent-of-slot { font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap; }
+
+/* --- 4 · CHECKS GRID --- */
+.sent-checks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sent-check {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 11px 13px;
+}
+.sent-check-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.sent-ck-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.sent-ck-ok   { background: var(--accent); }
+.sent-ck-hit  { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-bg); }
+.sent-ck-skip { background: var(--faint); }
+.sent-check-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.15;
+}
+.sent-check-sub { font-size: 11px; color: var(--faint); line-height: 1.45; margin-top: 4px; }
+
+/* Gate notes */
+.sent-notes { padding: 12px 16px; }
+.sent-note-row {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--grid);
+}
+.sent-note-row:last-child { border-bottom: none; }
+
+.sent-footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--faint);
+  line-height: 1.6;
+}
+.sent-footer code {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Accruing (day-0) hero variant. */
+.sent-hero-accruing .sent-hero-state { color: var(--accent); }
+
+/* Narrow: verdict strip stacks, triptych drops below the copy. */
+@media (max-width: 720px) {
+  .sent-hero { flex-direction: column; gap: 14px; }
+  .sent-trip {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: 12px 0 0;
+    justify-content: space-around;
+  }
+  .sent-flag-id { margin-left: 0; width: 100%; }
+}
+

@@ -686,6 +686,12 @@ def sentinel(root=None) -> dict:
         # Derive top reasons from reasons_histogram
         histogram = rpt.get("reasons_histogram") or {}
         top_reasons = sorted(histogram.items(), key=lambda x: x[1], reverse=True)[:10]
+        quarantined = rpt.get("quarantined") or []
+        # Partition by class: "policy" = real ban-risk/content flags the operator
+        # reviews; "overflow" = capacity trims (plan over-generates by design).
+        # Entries without a class (pre-split reports) count as policy — conservative.
+        policy_q = [q for q in quarantined if q.get("class") != "overflow"]
+        overflow_q = [q for q in quarantined if q.get("class") == "overflow"]
         return {
             "ok": True,
             "plan_status": rpt.get("plan_status"),
@@ -695,7 +701,9 @@ def sentinel(root=None) -> dict:
             "produced_at": rpt.get("produced_at"),
             "counts": rpt.get("counts"),
             "top_reasons": [{"reason": r, "count": c} for r, c in top_reasons],
-            "quarantined": rpt.get("quarantined") or [],
+            "quarantined": quarantined,
+            "policy_quarantined": policy_q,
+            "overflow_quarantined": overflow_q,
             "checks": rpt.get("checks"),
             "notes": rpt.get("notes") or [],
         }
