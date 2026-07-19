@@ -753,20 +753,50 @@ class TestRunGate:
         # Return value matches file
         assert report["counts"]["items"] == 1
 
-    def test_run_gate_returns_error_report_on_bad_plan(self, tmp_path):
-        """run_gate with an empty/missing plan still writes error report (fail-closed)."""
-        # Don't seed plan → run_gate uses empty plan
+    def test_run_gate_fails_closed_on_missing_plan(self, tmp_path):
+        """Unreadable plan → error report written, exception raised, and
+        content_plan.json is NEVER fabricated/overwritten (fail-closed)."""
         cfg_dir = tmp_path / "config"
         cfg_dir.mkdir(parents=True)
         import yaml
-        (cfg_dir / "marketing.yml").write_text(yaml.dump({"settings": {}, "sentinel": {}, "desk_network": {"accounts": []}}), encoding="utf-8")
+        (cfg_dir / "marketing.yml").write_text(
+            yaml.dump({"settings": {}, "sentinel": {}, "desk_network": {"accounts": []}}),
+            encoding="utf-8",
+        )
 
-        # No plan file → gate_plan will get empty accounts
-        report = run_gate(root=tmp_path)
+        with pytest.raises(Exception):
+            run_gate(root=tmp_path)
 
-        assert report["counts"]["items"] == 0
-        # sentinel_report.json should exist
-        assert (tmp_path / "data" / "marketing" / "sentinel_report.json").exists()
+        report_path = tmp_path / "data" / "marketing" / "sentinel_report.json"
+        assert report_path.exists()
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        assert report["plan_status"] == "error"
+        assert any("unreadable" in n for n in report["notes"])
+        # The gate must not conjure a plan out of thin air
+        assert not (tmp_path / "data" / "marketing" / "content_plan.json").exists()
+
+    def test_run_gate_fails_closed_on_corrupt_plan(self, tmp_path):
+        """Corrupt JSON plan → same fail-closed contract, original bytes preserved."""
+        cfg_dir = tmp_path / "config"
+        cfg_dir.mkdir(parents=True)
+        import yaml
+        (cfg_dir / "marketing.yml").write_text(
+            yaml.dump({"settings": {}, "sentinel": {}, "desk_network": {"accounts": []}}),
+            encoding="utf-8",
+        )
+        plan_path = tmp_path / "data" / "marketing" / "content_plan.json"
+        plan_path.parent.mkdir(parents=True)
+        plan_path.write_text("{not valid json", encoding="utf-8")
+
+        with pytest.raises(Exception):
+            run_gate(root=tmp_path)
+
+        report = json.loads(
+            (tmp_path / "data" / "marketing" / "sentinel_report.json").read_text(encoding="utf-8")
+        )
+        assert report["plan_status"] == "error"
+        # Corrupt file left exactly as it was — never clobbered with a stub
+        assert plan_path.read_text(encoding="utf-8") == "{not valid json"
 
 
 # ---------------------------------------------------------------------------
@@ -1374,3 +1404,194 @@ class TestM4MarkAllUnverified:
         assert item["body"] == "Original body. Size appropriately."
         assert item["type"] == "signal"
         assert item["sentinel_ok"] is False
+
+
+# ---------------------------------------------------------------------------
+# 18. Quality pass (W1b): full reason lists, slot economics, reason classes,
+#     exception override of caps, receipts_context, error_report
+# ---------------------------------------------------------------------------
+
+class TestFullReasonLists:
+
+    def test_lexicon_collects_every_hit(self):
+        """An item with three lexicon phrases lists ALL of them, not just the first."""
+        plan = _plan({"flagship": [_item(
+            "bad1", "flagship",
+            headline="A guaranteed winner",
+            body="Sure thing, get in now. Size appropriately.",
+        )]})
+        cfg = _cfg()
+        cfg["sentinel"]["lexicon_phrases"] = ["guaranteed", "sure thing", "get in now"]
+        _, report = gate_plan(plan, cfg, receipts_age_days=3)
+        (entry,) = report["quarantined"]
+        matched = {r for r in entry["reasons"] if r.startswith("advice_lexicon:")}
+        assert matched == {
+            "advice_lexicon:guaranteed",
+            "advice_lexicon:sure thing",
+            "advice_lexicon:get in now",
+        }, f"expected all three hits, got {matched}"
+
+    def test_lexicon_phrase_and_pattern_both_recorded(self):
+        """A phrase hit does not shadow a pattern hit on the same item."""
+        plan = _plan({"flagship": [_item(
+            "bad2", "flagship",
+            headline="Guaranteed — this will hit 10x",
+            body="Size appropriately.",
+        )]})
+        _, report = gate_plan(plan, _cfg(), receipts_age_days=3)
+        (entry,) = report["quarantined"]
+        assert "advice_lexicon:guaranteed" in entry["reasons"]
+        assert any(r.startswith("advice_lexicon:will hit") for r in entry["reasons"])
+
+
+class TestCapSlotEconomics:
+
+    def test_media_killed_item_consumes_no_media_slot(self):
+        """Check-then-commit: a cadence-killed media item must not burn the media
+        slot a later clean media item needed."""
+        cfg = _cfg(max_posts=2)
+        cfg["sentinel"]["max_media_posts_per_account_per_day"] = 1
+        body = "Size appropriately."
+        plan = _plan({"flagship": [
+            _item("a1", "flagship", headline="Post one plain", body=body, cashtag="$A", ticker="A", slot="s1"),
+            _item("a2", "flagship", headline="Post two plain", body=body, cashtag="$B", ticker="B", slot="s2"),
+            # a3 is over the daily cap (2) — killed by cadence, has media
+            _item("a3", "flagship", headline="Post three chart", body=body, cashtag="$C", ticker="C",
+                  slot="s3", chart_id="c3"),
+        ]})
+        _, report = gate_plan(plan, cfg, receipts_age_days=3)
+        q = {e["id"]: e["reasons"] for e in report["quarantined"]}
+        assert q == {"a3": ["cadence_cap_daily"]}
+        # Media counter untouched by the dead a3: hits recorded = 0
+        assert report["checks"]["media_cap"]["hits"] == 0
+
+    def test_empty_string_chart_id_is_not_media(self):
+        """chart_id '' is no media (matches outbox truthiness), never counts."""
+        cfg = _cfg(max_posts=4)
+        cfg["sentinel"]["max_media_posts_per_account_per_day"] = 0
+        plan = _plan({"flagship": [
+            _item("a1", "flagship", body="Size appropriately.", chart_id=""),
+        ]})
+        _, report = gate_plan(plan, cfg, receipts_age_days=3)
+        assert report["counts"]["quarantined"] == 0
+
+    def test_reply_cap_uses_distinct_reason(self):
+        """Reply overflow reports reply_cap_daily, not the generic cadence reason."""
+        plan = _plan({"flagship": [
+            _item("r1", "flagship", type="reply", body="Size appropriately."),
+        ]})
+        _, report = gate_plan(plan, _cfg(), receipts_age_days=3)
+        (entry,) = report["quarantined"]
+        assert entry["reasons"] == ["reply_cap_daily"]
+        assert report["checks"]["cadence"]["reply_cap_hits"] == 1
+
+
+class TestReasonClasses:
+
+    def test_counts_split_policy_vs_overflow(self):
+        """Capacity trims and policy flags are counted separately."""
+        cfg = _cfg(max_posts=1)
+        body = "Size appropriately."
+        plan = _plan({"flagship": [
+            _item("ok1", "flagship", headline="Fine post", body=body, slot="s1"),
+            _item("over1", "flagship", headline="Over the cap", body=body, slot="s2"),
+            _item("bad1", "flagship", headline="A guaranteed winner", body=body, slot="s3"),
+        ]})
+        _, report = gate_plan(plan, cfg, receipts_age_days=3)
+        counts = report["counts"]
+        assert counts["quarantined"] == 2
+        assert counts["quarantined_policy"] == 1
+        assert counts["quarantined_overflow"] == 1
+        by_id = {e["id"]: e["class"] for e in report["quarantined"]}
+        assert by_id == {"over1": "overflow", "bad1": "policy"}
+
+    def test_mixed_reasons_classify_as_policy(self):
+        """Any policy reason on an item outranks its overflow reasons."""
+        from engine.marketing.sentinel import reason_class
+        assert reason_class("cadence_cap_daily") == "overflow"
+        assert reason_class("cashtag_cap:$AAPL") == "overflow"
+        assert reason_class("slot_collision:D1-AM") == "overflow"
+        assert reason_class("media_cap_daily") == "overflow"
+        assert reason_class("reply_cap_daily") == "overflow"
+        assert reason_class("advice_lexicon:guaranteed") == "policy"
+        assert reason_class("near_dup:x") == "policy"
+        assert reason_class("shared_media:c1") == "policy"
+        assert reason_class("missing_disclosure") == "policy"
+        assert reason_class("account_disabled") == "policy"
+        assert reason_class("stale_receipts_ledger") == "policy"
+
+
+class TestExceptionOverridesCaps:
+
+    def test_exception_restores_cap_killed_item(self):
+        """An operator allow-exception clears a step-5 cap violation (human
+        override by design)."""
+        cfg = _cfg(max_posts=1)
+        body = "Size appropriately."
+        plan = _plan({"flagship": [
+            _item("k1", "flagship", headline="First post fine", body=body, slot="s1"),
+            _item("k2", "flagship", headline="Second post over cap", body=body, slot="s2"),
+        ]})
+        exceptions = {"k2": {"item_id": "k2", "allow": True, "reason": "operator ok"}}
+        annotated, report = gate_plan(plan, cfg, receipts_age_days=3, exceptions=exceptions)
+        assert report["counts"]["quarantined"] == 0
+        assert report["counts"]["exceptions_applied"] == 1
+        item = annotated["accounts"][0]["queue"][1]
+        assert item["sentinel_ok"] is True
+        assert item["exception_applied"] == "operator ok"
+
+    def test_exception_restored_item_recounted_once(self):
+        """An item restored from a content violation, then cap-killed, then
+        restored again counts as ONE exception application."""
+        cfg = _cfg(max_posts=1)
+        body = "Size appropriately."
+        plan = _plan({"flagship": [
+            _item("k1", "flagship", headline="First post fine", body=body, slot="s1"),
+            # lexicon-killed in step 1, restored in step 3, over cap in step 5,
+            # restored again in step 6
+            _item("k2", "flagship", headline="A guaranteed winner", body=body, slot="s2"),
+        ]})
+        exceptions = {"k2": {"item_id": "k2", "allow": True, "reason": "operator ok"}}
+        annotated, report = gate_plan(plan, cfg, receipts_age_days=3, exceptions=exceptions)
+        assert report["counts"]["quarantined"] == 0
+        assert report["counts"]["exceptions_applied"] == 1
+
+
+class TestReceiptsContext:
+
+    def test_receipts_context_missing_index(self, tmp_path):
+        from engine.marketing.sentinel import receipts_context
+        age, window = receipts_context(tmp_path)
+        assert age is None and window is None
+
+    def test_receipts_context_age_from_newest_signal(self, tmp_path):
+        """Age = days since the NEWEST _signal_date across plans."""
+        from datetime import date, timedelta
+        from engine.marketing.sentinel import receipts_context
+        idx_dir = tmp_path / "site" / "prophet"
+        idx_dir.mkdir(parents=True)
+        newest = (date.today() - timedelta(days=2)).isoformat()
+        older = (date.today() - timedelta(days=30)).isoformat()
+        idx_dir.joinpath("index.json").write_text(json.dumps({"plans": [
+            {"_signal_date": older}, {"_signal_date": newest}, {"_signal_date": ""},
+        ]}), encoding="utf-8")
+        age, _window = receipts_context(tmp_path)
+        assert age == 2
+
+
+class TestErrorReport:
+
+    def test_error_report_shape(self):
+        from engine.marketing.sentinel import error_report
+        rpt = error_report(as_of="2026-07-19", exc="boom")
+        assert rpt["plan_status"] == "error"
+        assert rpt["as_of"] == "2026-07-19"
+        assert rpt["counts"]["quarantined_policy"] == 0
+        assert any("boom" in n for n in rpt["notes"])
+
+    def test_error_report_reads_live_kill_switch(self, monkeypatch):
+        from engine.marketing.sentinel import error_report
+        monkeypatch.delenv("MARKETING_PUBLISH_ENABLED", raising=False)
+        assert error_report()["publish_enabled"] is False
+        monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1")
+        assert error_report()["publish_enabled"] is True
