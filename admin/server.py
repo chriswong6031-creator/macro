@@ -440,6 +440,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.lab())
             if path == "/api/marketing/sentinel":
                 return self._json(marketing.sentinel())
+            if path == "/api/marketing/radar":
+                return self._json(marketing.radar())
             if path == "/api/marketing/department":
                 dept_id = (q.get("id") or [None])[0]
                 return self._json(marketing.department(dept_id=dept_id))

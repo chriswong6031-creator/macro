@@ -26,6 +26,11 @@ settings:
   paid_enabled: false
   auditor_strict: true
   north_star_window_days: 90
+  radar_tiers_enabled: false           # D06: Movers Desk drops T3 (dead-attention) cashtags when true; off until first nightly verified
+
+radar:
+  # megacap/meme always-liquid attention list, operator-editable
+  t1_always: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, AVGO, AMD, NFLX, PLTR, COIN, HOOD, MSTR, SMCI, GME, AMC]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Sentinel — trust_office W1 plan-level policy gate (engine/marketing/sentinel.py)

@@ -1,10 +1,11 @@
 """admin/marketing.py — Marketing NW lobe admin page.
 
 Panel payloads for GET /api/marketing/{overview,departments,channels,campaigns,
-experiments,lobes}.  All sources are fail-soft (try/except → None/[]).  Panels
-read only committed artifacts; they never write.
+experiments,lobes,content,radar}.  All sources are fail-soft (try/except → None/[]).
+Panels read only committed artifacts; they never write.
 
 The single source of truth is data/neuralweb/marketing_state.json (marketing.state/v1).
+Radar additionally reads data/marketing/radar_report.json + cashtag_tiers.json.
 config/marketing.yml is read for the settings echo.
 
 All public functions return {"ok": True, ...} or {"ok": False, "error": ...}.
@@ -34,6 +35,9 @@ _CONFIG_REL   = Path("config/marketing.yml")
 # N-floor (docket D03 §Traps + small-N humility): a reach cell backed by fewer
 # than this many posts is display-only — never allowed to crown a winner.
 _LAB_N_FLOOR = 20
+
+_RADAR_REL = Path("data/marketing/radar_report.json")
+_TIERS_REL = Path("data/marketing/cashtag_tiers.json")
 
 _ACCRUING_NOTE = (
     "marketing_state.json not yet written — "
@@ -66,6 +70,10 @@ _ALLIES_REFERRAL_NOTE = (
 _ALLIES_OPERATOR_GATE = (
     "Every transition past candidate is an operator-only action. "
     "This page records decisions; it never contacts anyone."
+)
+_RADAR_ACCRUING_NOTE = (
+    "Radar hasn't produced its nightly report yet — "
+    "this fills in after the first nightly run."
 )
 
 
@@ -537,6 +545,81 @@ def allies_kit(root=None, target_id=None) -> dict:
         return {"ok": True, "target_id": tid, "markdown": p.read_text(encoding="utf-8")}
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.allies_kit failed: %s", exc)
+def _opportunity_pipeline(root: Path) -> dict | None:
+    """Pull the scored opportunity-queue block out of marketing state.
+
+    Mirrors the shape campaigns() exposes (pipeline.opportunities). Returns
+    None when state is absent so radar() can render an honest empty block.
+    """
+    s = _state(root)
+    if s is None:
+        return None
+    pipeline = s.get("pipeline") or {}
+    return pipeline.get("opportunities")
+
+
+def radar(root=None) -> dict:
+    """Radar (intelligence department) admin view — "what we could be posting
+    but aren't".
+
+    Reads data/marketing/radar_report.json + data/marketing/cashtag_tiers.json
+    and joins the scored opportunity queue from marketing_state.json.  All three
+    sources are fail-soft: a missing file degrades that section to null/empty,
+    never raises.
+
+    When the radar report itself is absent (first nightly hasn't run) returns
+    ok:True with available:False and a plain-word note so the page renders an
+    honest accruing state on day 0.
+
+    Response keys: ok, available, note?, as_of, produced_at, feeds, posted_recent,
+    surplus, queue, tiers_summary, cadence, opportunities, universe_n.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        report = _read_json(repo / _RADAR_REL)
+        tiers  = _read_json(repo / _TIERS_REL)
+        opportunities = _opportunity_pipeline(repo)
+
+        if report is None:
+            # First nightly hasn't produced the report. Still surface the
+            # opportunity queue if state exists — it's the one live signal on day 0.
+            return {
+                "ok": True,
+                "available": False,
+                "note": _RADAR_ACCRUING_NOTE,
+                "as_of": None,
+                "produced_at": None,
+                "feeds": [],
+                "posted_recent": None,
+                "surplus": [],
+                "queue": None,
+                "tiers_summary": None,
+                "cadence": None,
+                "opportunities": opportunities,
+                "universe_n": (tiers or {}).get("universe_n"),
+                "tiers": (tiers or {}).get("tiers"),
+                "tickers": (tiers or {}).get("tickers"),
+            }
+
+        return {
+            "ok": True,
+            "available": True,
+            "as_of": report.get("as_of"),
+            "produced_at": report.get("produced_at"),
+            "feeds": report.get("feeds") or [],
+            "posted_recent": report.get("posted_recent"),
+            "surplus": report.get("surplus") or [],
+            "queue": report.get("queue"),
+            "tiers_summary": report.get("tiers_summary"),
+            "cadence": report.get("cadence"),
+            "opportunities": opportunities,
+            # Full cashtag-tier universe (fail-soft: null when the tiers file is absent).
+            "universe_n": (tiers or {}).get("universe_n"),
+            "tiers": (tiers or {}).get("tiers"),
+            "tickers": (tiers or {}).get("tickers"),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.radar failed: %s", exc)
         return {"ok": False, "error": str(exc)}
 
 

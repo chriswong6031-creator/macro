@@ -1073,7 +1073,16 @@ def content_plan(
         _movers_data = load_movers(_ohlcv_root_mv)
 
         if _movers_data is not None:
-            _mv_result = _top_movers_fn(_movers_data)
+            _radar_tier_map: dict | None = None
+            try:
+                if (cfg or {}).get("settings", {}).get("radar_tiers_enabled"):
+                    from engine.marketing.radar_internal import load_cashtag_tiers as _lct
+                    _tiers = _lct(Path(str(root)) if root is not None else Path("."))
+                    if _tiers:
+                        _radar_tier_map = {t: v["tier"] for t, v in (_tiers.get("tickers") or {}).items()}
+            except Exception:  # noqa: BLE001
+                _radar_tier_map = None
+            _mv_result = _top_movers_fn(_movers_data, tier_map=_radar_tier_map)
             _tl_result = _theme_lists_fn(_movers_data)
 
             # Determine the single biggest mover (prefer loser for reach — crashes > rallies)

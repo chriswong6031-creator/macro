@@ -1,0 +1,209 @@
+schema: marketing.competitor_cadence/v1
+schema_version: 1
+tier: display
+mode: manual_corpus_baseline   # W1 — live scrape lane is W2, not built
+distilled_from: research/TRENDSPIDER_GROWTH_SEO_AND_GUERRILLA_MARKETING_INTELLIGENCE_FOR_FABLE.md
+distilled_at: "2026-07-19"
+
+competitors:
+  trendspider:
+    name: TrendSpider
+    channels:
+      x:
+        followers: "~670,000 (operator-observed)"
+        followers_receipt: "§3.1"
+        followers_confidence: high
+
+        posting_cadence:
+          notes: >
+            Doc does not state a specific posts-per-day or posts-per-week figure for X.
+            The account is described as operating at 'industrial cadence' and as a
+            'market newsroom', but no numeric cadence is given.
+          receipt: "§5.3"
+          confidence: low   # numeric cadence not in corpus
+
+        reach_per_post:
+          observed_range: "5–8% of follower count per post (34,000–52,000 views across 3 screenshots)"
+          engagement_rate: "0.26–0.42% of views (visible likes + reposts + replies)"
+          receipt: "§3.3"
+          confidence: medium   # 3-screenshot sample, not a channel audit
+
+        formats:
+          - format: branded_market_chart
+            notes: >
+              Native chart with large logo/title embedded in image; one sharp numeric
+              or emotional hook in post text; one highlighted technical observation;
+              copyright mark on every image. Design earns algorithmic distribution
+              without appearing as an ad.
+            receipt: "§3.3"
+            confidence: high   # directly observed in operator screenshots
+
+          - format: ticker_event_post
+            notes: >
+              Live ticker or product name + one sharp numeric/emotional hook + branded
+              chart readable without opening the product + native X link or thread path
+              (no obvious off-platform sales pitch). Observed content families include:
+              startling % moves, breakouts/squeezes/gaps/divergences, unusual volume,
+              long-horizon chart context, company-logo charts, ETF/theme narratives,
+              options/insider/congressional/seasonality observations, repostable market
+              reactions, product demos inserted into live market stories.
+            receipt: "§5.3"
+            confidence: high
+
+        thread_patterns:
+          - pattern: single_post_with_chart
+            notes: >
+              Most observed posts are standalone — one image, one hook, no elaborated
+              thread. The doc notes the 'intellectual object is disposable': no stable
+              public claim record, falsifier, future check date, or outcome grade.
+            receipt: "§3.3"
+            confidence: high
+          - pattern: thread_depth
+            notes: >
+              Doc does not confirm multi-reply threads as a recurring format for
+              TrendSpider. Thread structures are described only as a recommended
+              counter-strategy for Mastermind (§7.2), not as observed TrendSpider
+              behavior.
+            receipt: "§7.2"
+            confidence: low   # not observed in corpus for competitor
+
+        hooks_and_voice:
+          receipt: "§3.3, §5.3"
+          items:
+            - "Sharp numeric or emotional hook in post text (e.g. 'They don't call it risky for nothing')"
+            - "Ticker or ETF name leads the post"
+            - "No explicit product pitch — brand is in the watermark, not the copy"
+            - "Market entertainment framing extends reach beyond active shoppers"
+
+      youtube:
+        subscribers: "~58,800 (third-party tracker estimate)"
+        lifetime_views: "~3.1 million (third-party estimate)"
+        video_count: "~970 (third-party estimate)"
+        upload_cadence: "~1.5 uploads/day (observed ~45 uploads over one 29-day window → ~103,000 views)"
+        cadence_confidence: medium   # third-party tracker, not server logs
+        receipt: "§3.2"
+        content_families:
+          - "Live market analysis"
+          - "Product education"
+          - "Interviews"
+          - "Recorded webinars"
+          - "Shorts"
+          - "Current-event videos"
+        strategic_role: >
+          Similarweb model makes YouTube the largest modeled social traffic referrer
+          ahead of X. YouTube supplies durable search discovery, longer product
+          demonstrations, embeddable content for landing/learning pages, and
+          recurring viewing that can move a user from curiosity to competence.
+        receipt: "§3.2, §5.4"
+        confidence: medium   # Similarweb is a modeled estimate, not server logs
+
+      seo:
+        inventory_snapshot:
+          blog_posts: "~1,540 URLs"
+          learning_center_posts: "~1,051 URLs across ~58 topic categories"
+          core_site_urls: "~104"
+          comparison_pages: "28 under /compare-trendspider/"
+          enterprise_solution_pages: "~25"
+          programmatic_market_pages: "symbols, transactions, forecasts, flow, seasonality, news"
+        receipt: "§5.5"
+        confidence: medium   # crawl-based snapshot; inventory changes
+
+        editorial_layers:
+          - layer: category_education
+            description: "Free technical-analysis encyclopedia (Learning Center); captures definition/'how does this work?' searches"
+            receipt: "§5.5 Layer 1"
+          - layer: recurring_editorial_blog
+            description: "Covers current markets, product changes, strategy education, commentary; reusable by social and email"
+            receipt: "§5.5 Layer 2"
+          - layer: bottom_funnel_comparisons
+            description: "28 comparison pages intercept high-commercial-intent searches; frames competitor set on TrendSpider's terms"
+            receipt: "§5.5 Layer 3"
+          - layer: programmatic_market_objects
+            description: "Ticker-level charts and data pages (e.g. AAPL government trades, insider trades); capture long-tail queries"
+            receipt: "§5.5 Layer 4"
+          - layer: enterprise_and_role_pages
+            description: "~25 use-case/industry pages for educators, advisors, institutions; same platform, different vocabularies"
+            receipt: "§5.5 Layer 5"
+          - layer: ai_answer_positioning
+            description: >
+              Explicit llms.txt with official company description, target users, pricing ranges,
+              desired competitive set, what assistants should not say, and how product should
+              appear in 'alternative to' recommendations. Weakness: static file can drift from
+              live promotional pricing.
+            receipt: "§5.5 Layer 6"
+
+        search_traffic_split: "~92.77% organic / ~7.23% paid (Similarweb estimate)"
+        estimated_keywords: "~14,400 (Similarweb estimate)"
+        receipt: "§3.2"
+        confidence: medium   # Similarweb modeled, not audited
+
+    what_works:
+      - tactic: "Product output IS the marketing asset"
+        why: "Branded charts are simultaneously utility, content, and attribution; creators share naturally"
+        receipt: "§6.1"
+      - tactic: "Market events as infinite creative supply"
+        why: "Live ticker/event flow refreshes the content calendar every minute; no editorial bottleneck"
+        receipt: "§6.1, §5.3"
+      - tactic: "Multi-layer intent capture (education + comparison + ticker + free tools + video + social)"
+        why: "Catches users at every funnel stage; reduces single-channel dependence"
+        receipt: "§6.1, §5.5"
+      - tactic: "Annual prepay with large monthly-to-annual anchor and first-year promotional price"
+        why: "Improves cash flow, creates value anchor, reduces churn window"
+        receipt: "§4.2, §6.1"
+      - tactic: "Embedded affiliate codes in shared charts"
+        why: "Turns natural product output into trackable distribution; creator need not build a separate funnel"
+        receipt: "§5.7"
+      - tactic: "Paid 14-day trial (no permanent free tier)"
+        why: "Filters low-intent accounts; offsets support and market-data costs"
+        receipt: "§4.2, §5.8"
+      - tactic: "Training and university included"
+        why: "Reduces perceived switching risk for a complex product; education is both acquisition and customer success"
+        receipt: "§6.1"
+      - tactic: "llms.txt / generative-engine optimization"
+        why: "Low-cost attempt to control brand positioning in AI-mediated discovery"
+        receipt: "§5.5 Layer 6, §6.1"
+
+    vulnerabilities:
+      - gap: "Reach >> customer penetration (670K followers vs 20,000+ users)"
+        opportunity_for_us: "Audience enjoys charts without converting; a proof-accountability loop could unlock qualified intent"
+        receipt: "§1, §6.2"
+      - gap: "No durable outcome accountability — posts rarely reopen a claim or grade it"
+        opportunity_for_us: "Receipt Engine + scheduled outcome reopens create an information moat that is hard to copy with a chart template"
+        receipt: "§3.3, §6.2"
+      - gap: "Weak portfolio relevance — a chart about META is not an answer to 'what changed for my holdings?'"
+        opportunity_for_us: "Personalized 'What Changed' return product tied to watchlist/portfolio"
+        receipt: "§6.2"
+      - gap: "Limited causal depth — technical observations show state without connecting macro, flow, company events, second-order exposure"
+        opportunity_for_us: "Neural Web causal + second-order context as differentiated signal layer"
+        receipt: "§6.2"
+      - gap: "Promotional pricing can erode trust (extreme discounts, changing baselines)"
+        opportunity_for_us: "Stable annual offer with explicit renewal terms and versioned pricing history"
+        receipt: "§4.2, §6.2"
+      - gap: "Reddit appears underused relative to category"
+        opportunity_for_us: "Transparent, disclosed Reddit presence answering real questions with free data objects"
+        receipt: "§3.2, §6.2, §8.11"
+      - gap: "Static llms.txt can drift from live product/prices"
+        opportunity_for_us: "Self-correcting AI facts layer with effective_at / expires_at / source_url per claim"
+        receipt: "§6.2, §7.5"
+
+studio_guidance:
+  - directive: "Post format = ticker/event name + one sharp numeric or emotional hook + branded chart + no explicit sales pitch; branding lives in the watermark"
+    receipt: "§3.3"
+  - directive: "Do not optimize for maximum posts per day; optimize for qualified return, evidence quality, and a portfolio action being understood"
+    receipt: "§9"
+  - directive: "Treat YouTube as a qualified search channel, not a vanity channel; Similarweb ranks it above X as a social traffic source"
+    receipt: "§3.2, §5.4"
+  - directive: "Every public chart should carry a Receipt ID, as_of timestamp, and follow-up date — not just a logo watermark"
+    receipt: "§7.1"
+  - directive: "For high-value events, publish a five-stage reply ladder: reach post → mechanism → falsifier → exposure → outcome reopen; use ~1 activation CTA per 5 native value posts"
+    receipt: "§7.2"
+  - directive: "Do not replicate TrendSpider's 2,500+ education/blog page volume with generic AI articles; index only pages with unique evidence, a live update contract, and genuine user intent"
+    receipt: "§7.4, §9"
+  - directive: "Publish /llms.txt, /brand-facts.json, and /offers.json with timestamps; auto-expire stale offers rather than letting AI assistants quote old prices"
+    receipt: "§7.5"
+  - directive: "Embed attribution envelope (receipt_id, source_creator_id, campaign_id, content_family, created_at) into every public URL and widget — mirrors TrendSpider's chart affiliate-code embed"
+    receipt: "§7.3, §5.7"
+  - directive: "Content compiler should produce channel-native objects (X post, short video, YouTube explanation, email block, embeddable widget) from one proof object — do not spray identical copy everywhere"
+    receipt: "§7.6"
+  - directive: "Measure qualified returning users who reach a meaningful product state with positive expected contribution margin; exclude follower count and raw post volume from executive scorecard"
+    receipt: "§12.1, §12.3"
