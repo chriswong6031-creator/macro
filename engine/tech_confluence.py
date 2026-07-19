@@ -98,6 +98,10 @@ class MinerConfig:
 W_FAMILIES = frozenset({
     "trend", "trend_ribbon", "ichimoku", "ma_price", "ma_crosses",
     "rsi_bands", "rsi_stack", "tech_stars",
+    # Momentum cross events — weekly is a natural home (weekly MACD / RSI / Stoch-RSI
+    # crosses). stoch_events_2w is deliberately excluded (a "weekly of a biweekly" is
+    # meaningless; it is a daily leg that resamples to 2 weeks internally).
+    "macd_events", "rsi_events", "stoch_events",
 })
 
 # Never legs: snapshot families without dated per-bar fires (TLT canonical
