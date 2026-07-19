@@ -160,66 +160,105 @@ def latest_top10(fund: str) -> pd.DataFrame | None:
     return df.loc[[df.index.max()]].sort_values("rank")
 
 
+_DEEP_MIN_ROWS = 250  # below this a "healthy" file is a throttled seed stub, not history
+
+
 class StockPriceAdapter(Adapter):
     """Daily closes for the union of top-N holdings (cycle engine fuel)."""
 
     name = "stock_prices"
     group = "stocks"
+    overwrite_overlap = True  # yfinance auto_adjust=True → seam-free re-adjust of the refresh window
 
     def __init__(self) -> None:
         self.ycfg = config.load()["yahoo"]
 
     def _needs_full(self, ticker: str) -> bool:
-        """A ticker whose stored history is missing volume for a meaningful share of
-        its rows needs a one-time full-history re-fetch (volume was added to this
-        adapter after the price history was first seeded). Self-heals the gap; once
-        coverage is restored the ticker falls back to the cheap daily window."""
+        """A ticker needs a full-history re-fetch when its stored file is missing
+        volume for a meaningful share of rows (volume was added to this adapter
+        after the price history was first seeded) OR is too shallow to be real
+        history — a throttled period='max' seed pull can leave a ~40-row stub that
+        a volume-share check alone calls healthy forever (CBRE/ISRG/KMI/MLM,
+        2026-05 class). Self-heals both; once deep with volume the ticker falls
+        back to the cheap daily window."""
         old = store.read("stocks", ticker)
         if old is None or old.empty or "volume" not in old.columns:
             return True
+        if len(old) < _DEEP_MIN_ROWS:
+            return True
         return float(old["volume"].notna().mean()) < 0.95
 
-    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+    def _download(self, batch: list[str], period: str) -> pd.DataFrame:
         import yfinance as yf
+        last_exc: Exception | None = None
+        for attempt in range(self.ycfg["retries"]):
+            try:
+                return yf.download(batch, period=period, auto_adjust=True,
+                                   progress=False, group_by="ticker", threads=True)
+            except Exception as e:  # noqa: BLE001
+                last_exc = e
+                if attempt < self.ycfg["retries"] - 1:
+                    time.sleep(self.ycfg["backoff_base_s"] * (2 ** attempt))
+        raise last_exc  # type: ignore[misc]
+
+    def _pull(self, period: str, tlist: list[str], frames: dict[str, pd.DataFrame],
+              rebase: list[str] | None, tol: float) -> None:
+        """Batched download into *frames*. When *rebase* is a list (the cheap 1mo
+        window), a ticker whose window disagrees with its stored closes on the
+        overlap dates (store.basis_shifted) was re-adjusted by Yahoo since the last
+        pull — an ex-div/split/spin-off re-bases the WHOLE series, so splicing the
+        window would strand every pre-window row on the stale basis. The window is
+        queued for a period='max' re-pull instead (measured 2026-07: 30/231 stored
+        names off basis this way; worst a 5.7% spin-off factor = a fabricated
+        -7.8% one-day step inside live 126-bar indicator windows)."""
+        for i in range(0, len(tlist), self.ycfg["batch_size"]):
+            batch = tlist[i:i + self.ycfg["batch_size"]]
+            if not batch:
+                continue
+            df = self._download(batch, period)
+            for t in batch:
+                try:
+                    cols = [c for c in ["Close", "High", "Low", "Volume"] if c in df[t].columns]
+                    sub = df[t][cols].rename(columns={"Close": "close", "High": "high",
+                                                      "Low": "low", "Volume": "volume"})
+                    sub = sub.dropna(subset=["close"])
+                except KeyError:
+                    log.warning("stocks: no data for %s", t)
+                    continue
+                if sub.empty:
+                    continue
+                if rebase is not None and store.basis_shifted(self.group, t, sub, tol=tol):
+                    rebase.append(t)  # discard the window; re-pull full history below
+                    continue
+                frames[t] = sub
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         tickers = top10_union()
         if not tickers:
             raise RuntimeError("no holdings stored yet — run sector_holdings first")
-        # daily runs fetch a short window, EXCEPT thin-volume tickers which get a
-        # full-history backfill so volume can never silently stay sparse.
+        # daily runs fetch a short window, EXCEPT thin-volume/shallow tickers which
+        # get a full-history backfill so a bad seed can never silently persist.
         if full_history:
             groups = [("max", tickers)]
         else:
             heal = [t for t in tickers if self._needs_full(t)]
             groups = [("1mo", [t for t in tickers if t not in heal])]
             if heal:
-                log.info("stocks: full-history backfill for %d thin-volume tickers", len(heal))
+                log.info("stocks: full-history backfill for %d thin/shallow tickers", len(heal))
                 groups.append(("max", heal))
         frames: dict[str, pd.DataFrame] = {}
-        bs = self.ycfg["batch_size"]
+        rebase: list[str] = []
+        tol = float(self.ycfg.get("upsert_basis_tol", 1e-3))
         for period, tlist in groups:
-            for i in range(0, len(tlist), bs):
-                batch = tlist[i:i + bs]
-                if not batch:
-                    continue
-                for attempt in range(self.ycfg["retries"]):
-                    try:
-                        df = yf.download(batch, period=period, auto_adjust=True,
-                                         progress=False, group_by="ticker", threads=True)
-                        break
-                    except Exception as e:  # noqa: BLE001
-                        if attempt == self.ycfg["retries"] - 1:
-                            raise
-                        time.sleep(self.ycfg["backoff_base_s"] * (2 ** attempt))
-                for t in batch:
-                    try:
-                        cols = [c for c in ["Close", "High", "Low", "Volume"] if c in df[t].columns]
-                        sub = df[t][cols].rename(columns={"Close": "close", "High": "high",
-                                                          "Low": "low", "Volume": "volume"})
-                        sub = sub.dropna(subset=["close"])
-                        if not sub.empty:
-                            frames[t] = sub
-                    except KeyError:
-                        log.warning("stocks: no data for %s", t)
+            self._pull(period, tlist, frames, rebase if period == "1mo" else None, tol)
+        if rebase:
+            log.info("stocks: %d name(s) on a re-adjusted basis — refetching "
+                     "period='max': %s", len(rebase), rebase[:12])
+            try:
+                self._pull("max", rebase, frames, None, tol)
+            except Exception as e:  # noqa: BLE001 — skip tonight; the guard re-flags next run
+                log.warning("stocks: basis refetch failed for %d name(s) (%s) — "
+                            "kept out of this run", len(rebase), e)
         if len(frames) < len(tickers) * 0.7:
             raise RuntimeError(f"stocks: only {len(frames)}/{len(tickers)} returned")
         return frames
