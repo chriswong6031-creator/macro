@@ -1,6 +1,6 @@
 {
   "schema": "standout_audit.scoreboard.v1",
-  "as_of": "2026-07-18",
+  "as_of": "2026-07-19",
   "note": "CIs are cluster-unit (entry-date-collapsed) and descriptive only. No significance claims. Cells with effective_n<3 print state='ACCRUING'.",
   "timing_basis": [
     "board_tenure"

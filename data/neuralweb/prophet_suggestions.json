@@ -1,16 +1,16 @@
 {
   "schema": "prophet.suggestions/v1",
-  "as_of": "2026-07-18T09:09:48+00:00",
+  "as_of": "2026-07-19T03:25:03+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "suggestions": [
     {
-      "code": "stale_site_china_standouts_cn",
+      "code": "stale_us_board_outcomes_us",
       "kind": "staleness",
       "severity": "medium",
-      "detail": "site-china-standouts is 33h old (SLA 30.0h) [CN]",
-      "market": "cn",
-      "first_seen": "2026-07-18",
-      "asof": "2026-07-18"
+      "detail": "us-board-outcomes is 51h old (SLA 48h) [US]",
+      "market": "us",
+      "first_seen": "2026-07-19",
+      "asof": "2026-07-19"
     }
   ]
 }

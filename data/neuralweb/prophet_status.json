@@ -1,6 +1,6 @@
 {
   "schema": "prophet.status/v1",
-  "as_of": "2026-07-18T09:09:48+00:00",
+  "as_of": "2026-07-19T03:25:03+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "markets": {
     "us": {
@@ -33,13 +33,13 @@
         "status": null
       },
       "audit_scoreboard": {
-        "as_of": "2026-07-18",
+        "as_of": "2026-07-19",
         "status": null,
         "n_matured": null,
         "win_rate": null
       },
       "fitness_card": {
-        "as_of": "2026-07-18",
+        "as_of": "2026-07-19",
         "hit_quality": null,
         "coverage_health": null,
         "process_integrity": null
@@ -48,7 +48,9 @@
         "as_of": "2026-07-18",
         "n_cohorts": null,
         "status": null
-      }
+      },
+      "engine_label": "Prophet US",
+      "engine_label_zh": "\u5148\u77e5\u7f8e\u80a1"
     },
     "cn": {
       "market": "cn",
@@ -63,15 +65,17 @@
         "fill_basis_note": "t1_hl2 \u2014 accruing"
       },
       "fitness_card": {
-        "as_of": "2026-07-17",
+        "as_of": "2026-07-18",
         "hit_quality": null,
         "process_integrity": null
       },
       "audit_scoreboard": {
-        "as_of": "2026-07-18",
+        "as_of": "2026-07-19",
         "status": null,
         "n_matured": null
-      }
+      },
+      "engine_label": "Prophet China",
+      "engine_label_zh": "\u5148\u77e5A\u80a1"
     },
     "hk": {
       "market": "hk",
@@ -85,7 +89,9 @@
         "n_matured": null,
         "as_of": null,
         "survivorship_note": null
-      }
+      },
+      "engine_label": "Prophet HK",
+      "engine_label_zh": "\u5148\u77e5\u6e2f\u80a1"
     },
     "ca": {
       "market": "ca",
@@ -99,7 +105,9 @@
         "n_matured": null,
         "as_of": null,
         "survivorship_note": null
-      }
+      },
+      "engine_label": "Prophet CA",
+      "engine_label_zh": "\u5148\u77e5\u52a0\u80a1"
     },
     "intl": {
       "market": "intl",
@@ -108,12 +116,14 @@
       "ledger_born": null,
       "data_gaps": [],
       "maturity_state": "no_stock_ledger",
-      "disclosure": "International standout scores are a context read, not a graded ranker \u2014 no forward ledger accrues for this board yet.",
+      "disclosure": "Prophet Intl signals are a context read, not a graded ranker \u2014 no forward ledger accrues for this board yet.",
       "coverage": {
         "n_markets": 0,
         "as_of": null,
         "status": null
-      }
+      },
+      "engine_label": "Prophet Intl",
+      "engine_label_zh": "\u5148\u77e5\u56fd\u9645"
     }
   },
   "cross_market": {
@@ -162,26 +172,26 @@
           "artifact": "us-audit-scoreboard",
           "path": "site/factordata/us_audit_scoreboard.json",
           "status": "ok",
-          "age_hours": 9.2,
+          "age_hours": 3.4,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-track-history",
           "path": "site/factordata/us_track_history.json",
           "status": "ok",
-          "age_hours": 9.2,
+          "age_hours": 27.4,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-board-outcomes",
           "path": "site/factordata/us_board_outcomes.json",
-          "status": "ok",
-          "age_hours": 33.2,
+          "status": "stale",
+          "age_hours": 51.4,
           "sla_hours": 48
         }
       ],
       "data_gap_count": 0,
-      "overall_health": "ok"
+      "overall_health": "degraded"
     },
     "cn": {
       "market": "cn",
@@ -189,13 +199,13 @@
         {
           "artifact": "site-china-standouts",
           "path": "data/metabolism/fitness/standouts_cn.json",
-          "status": "stale",
-          "age_hours": 33.2,
+          "status": "ok",
+          "age_hours": 27.4,
           "sla_hours": 30.0
         }
       ],
       "data_gap_count": 0,
-      "overall_health": "degraded"
+      "overall_health": "ok"
     },
     "hk": {
       "market": "hk",
@@ -204,7 +214,7 @@
           "artifact": "hk-board-ledger",
           "path": "data/board_ledger/hk_board.parquet",
           "status": "ok",
-          "age_hours": 0.0,
+          "age_hours": 15.4,
           "sla_hours": 48
         }
       ],
@@ -218,7 +228,7 @@
           "artifact": "ca-board-ledger",
           "path": "data/board_ledger/ca_board.parquet",
           "status": "ok",
-          "age_hours": 0.0,
+          "age_hours": 21.1,
           "sla_hours": 48
         }
       ],
@@ -232,7 +242,7 @@
           "artifact": "intl-setups",
           "path": "site/factordata/intl_setups.json",
           "status": "ok",
-          "age_hours": 0.7,
+          "age_hours": 0.0,
           "sla_hours": 48
         }
       ],
@@ -256,7 +266,7 @@
     },
     "index": {
       "as_of": null,
-      "plan_count": 34
+      "plan_count": 35
     }
   },
   "pick_lab": {
