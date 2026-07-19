@@ -219,7 +219,7 @@ fred:
     recession:                    # forward + concurrent recession reads
       SAHMREALTIME: sahm          # real-time Sahm rule (>=0.50 => recession underway)
       RECPROUSM156N: recession_prob   # Chauvet-Piger smoothed recession probability (%)
-      THREEFYTP10: term_premium_10y   # NY Fed ACM 10y term premium (low/neg => curve inverts w/o recession)
+      THREEFYTP10: term_premium_10y   # Kim-Wright 10y term premium (FRED THREEFYTP10; ACM is the NY Fed series, collected separately later)
     nowcast:                      # real-time GROWTH nowcasts (lead the lagging PAYEMS/INDPRO)
       GDPNOW: gdpnow              # Atlanta Fed GDPNow (quarterly SAAR, refreshed intra-quarter)
       WEI: wei                    # Weekly Economic Index (Lewis-Mertens-Stock; weekly, YoY-scaled)

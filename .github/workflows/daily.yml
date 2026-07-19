@@ -1832,6 +1832,18 @@ jobs:
         # display_only=True; all authority booleans False (MRI-R7). Fail-open.
         # Outputs covered by 'git add data/' and 'git add site/' below.
         run: python -m scripts.build_release_forecast || echo "::warning::build_release_forecast failed (non-fatal — last committed artifact stands)"
+      - name: forward path board (RIC W7 P5, display-only, non-fatal)
+        if: always()   # deterministic join over committed artifacts — build whatever exists
+        # RIC W7 P5: deterministic Forward Path board (rates_command.v1). Deliberately
+        # placed AFTER build_release_forecast AND after the market clusters
+        # (bonds/transmission/commodities) so every input it joins — fed_path, curve
+        # regime, breakevens, CPI/NFP projections, oil, market_state — comes from the
+        # SAME nightly (a self-consistent join beats a same-night render; macro.html
+        # picks the committed artifact up on the next build_site pass, the standard
+        # transmission-context T+1 pattern). display_only=True; authority False.
+        # Fail-open; forward_log.jsonl append is COLLECT_LANE=nightly gated, keep-FIRST.
+        # Outputs covered by 'git add data/' below.
+        run: python -m scripts.build_rates_command || echo "::warning::build_rates_command failed (non-fatal — last committed artifact stands)"
       - name: signal sanity (correctness tripwire — warn mode)
         if: always()   # validate whatever DID build, even if an earlier optional builder failed
         # The CORRECTNESS dead-man's switch over the per-ticker boards BOTH books select from

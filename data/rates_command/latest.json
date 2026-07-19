@@ -1,0 +1,340 @@
+{
+  "schema": "rates_command.v1",
+  "asof": "2026-07-17",
+  "built": "2026-07-19T05:58:41.392213+00:00",
+  "display_only": true,
+  "authority": false,
+  "board": {
+    "rate_path_row": {
+      "asof": "2026-07-17",
+      "policy_rate": 3.63,
+      "implied_path": {
+        "m1": 3.65,
+        "m3": 3.76,
+        "m6": 3.93,
+        "m12": 4.04
+      },
+      "implied_bp_12m": 41,
+      "implied_cuts_12m": -2,
+      "path_plain": {
+        "en": "about two hikes",
+        "zh": "约两次加息"
+      },
+      "dots": [
+        {
+          "year": 2026,
+          "median": 3.8
+        },
+        {
+          "year": 2027,
+          "median": 3.6
+        },
+        {
+          "year": 2028,
+          "median": 3.4
+        }
+      ],
+      "gap": {
+        "horizon_label": "end-2026",
+        "horizon_months": 5,
+        "fed_dot": 3.8,
+        "market": 3.87,
+        "gap_bp": 7,
+        "lean_en": "market ≈ the Fed",
+        "lean_zh": "市场与美联储基本一致"
+      },
+      "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.04%)",
+      "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.04%）",
+      "read_en": "At end-2026 the market implies 3.87% vs the Fed's 3.80% median dot (+7bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.67pp).",
+      "read_zh": "在end-2026，市场隐含 3.87% 对比美联储 3.80% 的中位点（+7基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.67个百分点）。",
+      "source_en": "ZQ fed-funds futures",
+      "source_zh": "ZQ 联邦基金期货"
+    },
+    "inflation_row": {
+      "core_pce_yoy": 3.41,
+      "core_cpi_yoy": 2.81,
+      "core_pce_3m_ann": 3.52,
+      "vs_target_pp": 1.41,
+      "regime": "above target",
+      "direction": "steady",
+      "breakeven_10y": 2.24,
+      "breakeven_5y5y": 2.21,
+      "anchoring": "anchored",
+      "nearest_cpi": {
+        "release_type": "cpi_headline",
+        "period": "2026-07",
+        "release_date": "2026-08-12",
+        "days_to": 25,
+        "point": -0.1325,
+        "surprise_skew_tag": "hotter",
+        "surprise_skew_sigma": 1.3975
+      }
+    },
+    "risk_row": {
+      "real_speed_pctile": 0.74,
+      "real_speed_note_en": "Flags risk, not return — high percentile = fast real-rate moves, not directional signal.",
+      "real_speed_note_zh": "标记风险而非收益——高百分位表示实际利率快速波动，并非方向性信号。",
+      "curve_regime_key": "bear_steepener",
+      "curve_regime_label_en": "Bear steepener",
+      "curve_regime_label_zh": "熊市变陡",
+      "term_premium_dir": "rising",
+      "term_premium_chg_bp": 15.0,
+      "term_premium_note_en": "Kim-Wright model (FRED THREEFYTP10); ACM pending",
+      "term_premium_note_zh": "Kim-Wright模型（FRED THREEFYTP10）；ACM待接入",
+      "front2y_speed_bp": 38.0,
+      "real10y_speed_bp": 43.0,
+      "recession_ntfs": 0.67,
+      "nyfed_prob": 16.0
+    },
+    "policy_row": {
+      "state": "ELEVATED",
+      "jawboning": {
+        "n_7d": 3,
+        "n_30d": 9,
+        "last_alert_ts": "2026-07-13T22:23:12+00:00",
+        "last_alert_summary": "Trump delays costly EPA chemical emissions rule by 2 years — domestic producers' margins shielded",
+        "last_alert_summary_zh": "特朗普推迟EPA化学品排放新规2年，本土化工厂利润率受保护"
+      },
+      "lever_asof": "2026-07-17",
+      "chair": "Kevin Warsh",
+      "chair_profile_en": "Warsh's revealed agenda (CFR confirmation-hearing analysis + his June 17 debut): narrow the Fed's mandate, revert to a strict 2% target (abandoning 2020 flexible-average-inflation-targeting), cut reliance on unconventional tools (QE/balance sheet), and abandon forward guidance — potentially making the dot plot obsolete. He withheld his own dot, dropped guidance, issued a ~114-word statement, and c…",
+      "chair_profile_zh": "",
+      "optionality_read_en": "Decode the Warsh redesign as PIVOT INFRASTRUCTURE, not just hawkishness. (1) Deleting the dot plot / forward guidance removes the time-stamped record against which a future political-looking cut could be judged — a sudden post-midterm cut violates no prior, it is just 'the new data' (accountability-deletion as optionality). (2) The inflation-frameworks task force is the machinery to re-specify what '2%' operationally means (index, horizon, tariff look-through) — watch for language splitting 'tariff level-shifts' from 'underlying inflation', the cut permission slip that prices first in breakevens and the belly. (3) The productivity/AI task force furnishes a higher-trend-growth / lower-required-real-rate alibi so ~3.3% core PCE becomes compatible with easing without formally moving the target. One week on, the design has already done the Fed's tightening FOR it: dollar 13-mo high, real 10y +57bp, the AI froth and the debasement trade both flushed — with the policy rate UNCHANGED. ADVERSARY CAVEATS: Warsh's anti-guidance ideology predates any 2026-27 cut calculus and cuts both ways; tariff look-through is orthodox decades-old doctrine; any chair would study AI — only TIMING relative to the pivot window discriminates intent from coincidence.",
+      "intel_as_of": "2026-07-13",
+      "intel_staleness_days": 6,
+      "iran_context": {
+        "title_en": "Iran / Middle East -- ceasefire COLLAPSED (as of 7/8)",
+        "title_zh": "伊朗/中东 —— 停火已崩溃（截至7/8）",
+        "facts_en": "A ~6-week 2026 Iran war pushed oil above $120/bbl (Brent peak at Hormuz closure) as shipping lanes went offline; Apr 8 2026 a Pakistan-mediated conditional ceasefire. Jun 17 2026: US-Iran signed 14-point MOU opening ~60-day talks window on Hormuz navigation, nuclear/missile limits, and sanctions. Jun 20: Iran briefly re-declared Strait closed. Jun 27: JMIC widened transit route near Oman -- coinciding with the tanker Kiku struck by Iranian projectile and CENTCOM retaliatory airstrikes. Jul 6-7: additional tanker attacks (Al Rekayyat, Wedyan). OVERTAKEN (7/8): Trump declared the ceasefire 'OVER' at the NATO Ankara summit; CENTCOM launched sustained strikes on Iranian sites 7/8-7/11; Brent spiked ~$80 intraday (+8.7%), JMIC raised Hormuz threat to 'severe'; Hormuz tanker traffic near-standstill by 7/9. Doha talks (7/1) said 'going well' (Vance); no comprehensive deal. NUCLEAR GAP: as of Jun 14 the US had shifted to accepting a 15-20 year enrichment SUSPENSION (not permanent zero-enrichment); live gap = suspension duration + HEU down-blended material location; US messaging inconsistent (Vance 6/18: 'Ours will not [allow enrichment]').",
+        "facts_zh": "约6周的2026年伊朗战争在霍尔木兹封锁高峰期将布伦特推升至120美元以上，航道一度中断；2026年4月8日达成巴基斯坦斡旋的有条件停火。2026年6月17日：美伊签署14点谅解备忘录，开启约60天谈判窗口，议题涵盖霍尔木兹通航、核/导弹限制、制裁。6月20日：伊朗短暂宣布海峡再次关闭。6月27日：JMIC在阿曼附近拓宽通行航路——同日油轮Kiku遇伊朗投射物打击，CENTCOM展开报复性空袭。7月6-7日：更多油轮遇袭（Al Rekayyat、Wedyan）。已被推翻（7/8）：特朗普在北约安卡拉峰会宣告停火“已终结”；CENTCOM于7/8-7/11对伊朗境内目标发动持续打击；布伦特盘中飙至约80美元（+8.7%），JMIC将霍尔木兹威胁评级升至“严峻”；7/9起霍尔木兹油轮交通濒临停滞。多哈谈判（7/1）万斯称“进展顺利”；无全面协议。核谈分歧：截至6月14日，美方已转为接受15-20年的浓缩暂停（而非永久零浓缩）；现实分歧在于暂停期限及高浓铀下混后材料的存放地点，且美方表态不一致（万斯6/18：“我们不允许浓缩”）。",
+        "as_of_note_en": "Intel as of 2026-07-13 (6d old)",
+        "as_of_note_zh": "情报截至2026-07-13（6天前）",
+        "unsigned_display": true
+      }
+    }
+  },
+  "expectations_pressure": {
+    "legs": [
+      {
+        "key": "H1_path_repricing",
+        "active": false,
+        "weight": 2,
+        "value": -10.8,
+        "detail_en": "12-month rate futures moved -10.8bp over 20 trading days (threshold: +15bp).",
+        "detail_zh": "20个交易日内12个月利率期货变动-10.8个基点（阈值：+15bp）。",
+        "null_reason": null
+      },
+      {
+        "key": "H2_breakeven_momentum",
+        "active": false,
+        "weight": 1,
+        "value": -1.0,
+        "detail_en": "10y breakeven moved -1.0bp over 20 days (threshold: +8bp).",
+        "detail_zh": "10年期盈亏平衡点20天变动-1.0个基点（阈值：+8bp）。",
+        "null_reason": null
+      },
+      {
+        "key": "H3_oil_impulse",
+        "active": false,
+        "weight": 1,
+        "value": "up",
+        "detail_en": "Oil trend: up; shock or oil-driver condition not met. (shock_state stale >7d — judged on trend+cause_badge only)",
+        "detail_zh": "原油趋势：up；冲击或油价驱动条件未满足。（shock_state超过7天未更新——仅依据趋势和原因标识判断）",
+        "null_reason": null
+      },
+      {
+        "key": "H4_inflation_trajectory",
+        "active": true,
+        "weight": 1,
+        "value": "steady",
+        "detail_en": "Nearest cpi headline (due 2026-08-12) skewed hotter (sigma=1.40).",
+        "detail_zh": "近期cpi headline（预定2026-08-12）偏热（sigma=1.40）。",
+        "null_reason": null
+      },
+      {
+        "key": "H5_curve_regime",
+        "active": true,
+        "weight": 1,
+        "value": "bear_steepener",
+        "detail_en": "Bear steepener with rising term premium — fiscal/risk-premium driven steepening, not growth-led.",
+        "detail_zh": "熊市变陡叠加期限溢价上升——财政/风险溢价驱动，并非增长主导。",
+        "null_reason": null
+      },
+      {
+        "key": "H6_anchoring_strain",
+        "active": false,
+        "weight": 1,
+        "value": "anchored",
+        "detail_en": "Inflation expectations anchored: 'anchored'.",
+        "detail_zh": "通胀预期稳定：'锚定'。",
+        "null_reason": null
+      },
+      {
+        "key": "E1_equity_deleveraging",
+        "active": true,
+        "weight": 2,
+        "value": "caution",
+        "detail_en": "Equity radar in 'caution' — risk-off pressure historically cools inflation and rate expectations.",
+        "detail_zh": "股票雷达处于'caution'状态——历史上风险规避会压制通胀和加息预期。",
+        "null_reason": null
+      },
+      {
+        "key": "E2_growth_cooling",
+        "active": false,
+        "weight": 1,
+        "value": "rising",
+        "detail_en": "No NFP cooler skew; complex growth direction not falling.",
+        "detail_zh": "无NFP偏冷倾斜；商品综合增长方向未下行。",
+        "null_reason": null
+      },
+      {
+        "key": "E3_dollar_tightening",
+        "active": true,
+        "weight": 1,
+        "value": "strengthening",
+        "detail_en": "Dollar strengthening — acts as an external tightening offset to domestic inflation pressure.",
+        "detail_zh": "美元走强——作为对国内通胀压力的外部紧缩对冲。",
+        "null_reason": null
+      },
+      {
+        "key": "E4_credit_stress",
+        "active": false,
+        "weight": 1,
+        "value": -0.84,
+        "detail_en": "HY OAS z-score: -0.84 (threshold: +1.0).",
+        "detail_zh": "高收益利差z分数：-0.84（阈值：+1.0）。",
+        "null_reason": null
+      },
+      {
+        "key": "E5_policy_easing_chain",
+        "active": false,
+        "weight": 1,
+        "value": false,
+        "detail_en": "Policy easing transmission chain inactive.",
+        "detail_zh": "政策宽松传导链未激活。",
+        "null_reason": null
+      }
+    ],
+    "hawk_score": 2,
+    "ease_score": 3,
+    "net_state": "two_sided",
+    "state_label": {
+      "en": "Two-sided — watch the tape",
+      "zh": "双向——观察市场走势"
+    }
+  },
+  "divergence": [
+    {
+      "key": "D1_dots_vs_market",
+      "active": false,
+      "value_bp": 7.0,
+      "detail_en": "Market vs dot gap: +7bp — within normal range (threshold: ±50bp).",
+      "detail_zh": "市场与点阵图利差：+7个基点——在正常范围内。"
+    },
+    {
+      "key": "D2_projection_vs_breakeven",
+      "active": false,
+      "detail_en": "No projection-breakeven wedge: CPI tag=hotter, 20d breakeven=-1bp.",
+      "detail_zh": "无预测-盈亏平衡楔形：CPI标签=hotter，20天盈亏平衡点=-1bp。"
+    },
+    {
+      "key": "D3_pressure_vs_market",
+      "active": false,
+      "detail_en": "Pressure-vs-market gap not active (net_state=two_sided, implied=+41bp).",
+      "detail_zh": "压力与市场背离未激活（net_state=two_sided，隐含=+41bp）。"
+    }
+  ],
+  "conditions": [
+    {
+      "key": "H4_inflation_trajectory",
+      "direction": "hawkish",
+      "en": "Nearest cpi headline (due 2026-08-12) skewed hotter (sigma=1.40).",
+      "zh": "近期cpi headline（预定2026-08-12）偏热（sigma=1.40）。",
+      "watch_en": "If this pressure persists, upward rate repricing stays at risk; a deepening equity correction historically pulls the other way.",
+      "watch_zh": "若该压力持续，利率上调风险上升；股市进一步下跌历史上会起到反向对冲作用。"
+    },
+    {
+      "key": "E1_equity_deleveraging",
+      "direction": "easing",
+      "en": "Equity radar in 'caution' — risk-off pressure historically cools inflation and rate expectations.",
+      "zh": "股票雷达处于'caution'状态——历史上风险规避会压制通胀和加息预期。",
+      "watch_en": "If this offset fades, the hawkish legs would have less counterweight — watch the tape for repricing.",
+      "watch_zh": "若该对冲因素消退，鹰派腿将减少制衡——关注市场定价变化。"
+    },
+    {
+      "key": "geo_iran",
+      "direction": "geopolitical",
+      "en": "Iran / Middle East -- ceasefire COLLAPSED (as of 7/8)",
+      "zh": "伊朗/中东 —— 停火已崩溃（截至7/8）",
+      "watch_en": "Conditions-only: oil market conditions may shift if the theater escalates or de-escalates — unsigned, no probability assigned.",
+      "watch_zh": "条件性观察：若局势升级或缓和，油市条件可能变化——无定向，不赋予概率。"
+    }
+  ],
+  "market_check": {
+    "futures": {
+      "m1": 3.65,
+      "m3": 3.76,
+      "m6": 3.93,
+      "m12": 4.04,
+      "implied_bp_12m": 41,
+      "plain_read_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.04%)",
+      "plain_read_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.04%）"
+    },
+    "prediction_markets": {
+      "as_of": "2026-07-18",
+      "source": "Polymarket",
+      "events": [
+        {
+          "key": "fed_next",
+          "label_en": "Next Fed decision",
+          "label_zh": "下次美联储决议",
+          "top_outcome": "No change",
+          "top_prob": 94.5,
+          "chg_pp": 0.1,
+          "source": "Polymarket",
+          "type": "market_implied_benchmark"
+        },
+        {
+          "key": "fed_cuts",
+          "label_en": "Fed cuts this year",
+          "label_zh": "今年降息次数",
+          "top_outcome": "0 (0 bps)",
+          "top_prob": 84.7,
+          "chg_pp": 0.6,
+          "source": "Polymarket",
+          "type": "market_implied_benchmark"
+        },
+        {
+          "key": "recession",
+          "label_en": "US recession",
+          "label_zh": "美国衰退",
+          "top_outcome": "US recession by end of 2026?",
+          "top_prob": 15.5,
+          "chg_pp": 6.0,
+          "source": "Polymarket",
+          "type": "market_implied_benchmark"
+        }
+      ]
+    },
+    "benchmark_note_en": "What markets price — a benchmark, not our read.",
+    "benchmark_note_zh": "市场定价内容——作为参考基准，不代表本系统观点。"
+  },
+  "caveats": [
+    "futures-implied path reflects risk premium not stripped — not a forecast",
+    "All legs are display-tier context only; no scoring or authority.",
+    "commodity/shock_state.json oil entry is 16d old (>7d threshold) — H3 leg judged on trend+cause_badge only",
+    "policy/intel.json is 6d old — policy row quotes as-of 2026-07-13"
+  ],
+  "stance": {
+    "en": "Outlook is two-sided: futures price about two hikes; hawkish and easing inputs are roughly balanced (2 vs 3). A hotter-than-expected inflation print and a deeper equity pullback are pulling against each other.",
+    "zh": "前景双向：期货定价约两次加息；鹰派与宽松因素大体制衡（2对3）。 高于预期的通胀数据与股市进一步回调相互制衡。"
+  },
+  "changes": {
+    "vs_asof": null,
+    "items": []
+  },
+  "prev_state": {
+    "as_of": null,
+    "state": {}
+  }
+}

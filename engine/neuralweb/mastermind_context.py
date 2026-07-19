@@ -1206,6 +1206,53 @@ def _summarize_fx_dollar(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_rates_command(repo: Path) -> tuple[dict, str | None]:
+    """Distil world_state.rates_command into the rates_command lobe.
+
+    Source: data/neuralweb/world_state.json (rates_command sub-block, composed by
+    world_state._compose_rates_command from data/rates_command/latest.json).
+    All fields are display_only=True, authority=False.
+    LLM consumers read this — they never originate or escalate from it.
+    Fail-soft: absent world_state or absent rates_command sub-block -> empty lobe
+    with gap note.
+
+    Standing laws:
+    - 100% deterministic re-projection of already-computed artifact values.
+    - No LLM-originated content; no invented scores; no forward guidance.
+    - Nothing here may gate, rank, size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    - MRI-R4: never originates a projection/probability; reads existing values only.
+    """
+    ws_path = repo / "data" / "neuralweb" / "world_state.json"
+    ws = _read_json(ws_path)
+    if ws is None:
+        return {}, "data/neuralweb/world_state.json absent or unreadable"
+
+    rc = (ws.get("rates_command") or {}) if isinstance(ws, dict) else {}
+    if not rc:
+        return {}, "world_state.rates_command absent (pre-rates-command build)"
+
+    lobe: dict = {
+        "is_context_only":    True,
+        "display_only":       True,
+        "authority":          False,
+        "asof":               rc.get("asof"),
+        "net_state":          rc.get("net_state"),
+        "state_label_en":     rc.get("state_label_en"),
+        "state_label_zh":     rc.get("state_label_zh"),
+        "hawk_score":         rc.get("hawk_score"),
+        "ease_score":         rc.get("ease_score"),
+        "stance_en":          rc.get("stance_en"),
+        "stance_zh":          rc.get("stance_zh"),
+        "implied_m12":        rc.get("implied_m12"),
+        "policy_rate":        rc.get("policy_rate"),
+        "path_plain_en":      rc.get("path_plain_en"),
+        "futures_plain_en":   rc.get("futures_plain_en"),
+        "honesty_note":       "context only — measured rates data, not a trade signal or forecast",
+    }
+    return lobe, None
+
+
 def _summarize_special_sits(repo: Path) -> tuple[dict, str | None]:
     """Distil special_situations context into the special_sits lobe.
 
@@ -1414,6 +1461,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "special_sits": _summarize_special_sits,  # SS-NW-W1 special-situations event context lobe
     "theme_rotation": _summarize_theme_rotation,  # theme_context.v1 NW integration
     "market_structure": _summarize_market_structure,  # MSP-W3 market-structure context lobe
+    "rates_command": _summarize_rates_command,  # RCB Forward Path board lobe
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1435,6 +1483,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "special_sits": ["special-sits-context-latest"],  # SS-NW-W1: reads context artifact directly
     "theme_rotation": ["theme-context-latest"],  # reads world_state.theme_rotation
     "market_structure": ["market-structure-latest"],  # MSP-W3: reads world_state.market_structure
+    "rates_command": ["rates-command-latest"],  # RCB: reads world_state.rates_command (data/rates_command/latest.json)
 }
 
 

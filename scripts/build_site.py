@@ -4404,6 +4404,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("prediction markets failed: %s", e)
 
+    # rates_command: Forward Path board (data/rates_command/latest.json).
+    # DISPLAY-ONLY leaf; RIC-R1 compliant.  Missing file -> None (graceful absent).
+    rates_command: "dict | None" = None
+    try:
+        import json as _json
+        _rc_path = config.data_dir() / "rates_command" / "latest.json"
+        if _rc_path.exists():
+            rates_command = _json.loads(_rc_path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("rates_command load failed: %s", e)
+
     # narrative-regime context (news_vector PIT bus + EPU/GPR uncertainty regime).
     # DISPLAY-ONLY leaf — measures the policy/geo narrative backdrop; never scored.
     # If news_vector.enabled the daily ingest accrues first-print events here too.
@@ -4890,6 +4901,7 @@ def main() -> int:
         event_strip=event_strip,
         event_risk=event_risk,
         prediction_markets=prediction_markets,
+        rates_command=rates_command,
         narrative_regime=narrative_regime,
         ndi=ndi,
         macro_news=macro_news_data,
