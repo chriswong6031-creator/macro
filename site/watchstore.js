@@ -35,6 +35,7 @@
 
   var SECTION = 'Watchlist';
   var LIST_NAME = 'Watchlist';
+  var maxPos = -1;  // monotonic high-water mark for position; avoids collisions after delete+add cycles
 
   // ---- i18n (verbatim from auth.js) ------------------------------------------
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
@@ -112,6 +113,7 @@
       .select('id')
       .eq('user_id', user.id)
       .order('position')
+      .order('created_at', { ascending: true })
       .limit(1)
       .then(function (res) {
         if (res.error) throw res.error;
@@ -141,7 +143,7 @@
       .then(function (id) {
         wlId = id;
         return sb.from('watchlist_symbols')
-          .select('symbol, created_at')
+          .select('symbol, position, created_at')
           .eq('watchlist_id', wlId)
           .order('position');
       })
@@ -149,6 +151,8 @@
         if (res.error) throw res.error;
         var rows = res.data || [];
         cloudSet = {};
+        // rows are ordered by position; last row holds the current max (monotonic)
+        maxPos = rows.length > 0 ? (rows[rows.length - 1].position || 0) : -1;
         var items = rows.map(function (r) {
           cloudSet[r.symbol] = true;
           return { t: r.symbol, added: r.created_at, note: '' };
@@ -190,17 +194,17 @@
 
     var blob = window.WL && window.WL.getBlob ? window.WL.getBlob() : null;
     if (!blob || !Array.isArray(blob.items) || blob.items.length === 0) {
-      _markFolded();
+      // Do NOT mark folded: local is empty (fresh device or signed-out-built list).
+      // Marking here would permanently consume the one-shot fold before any items exist.
       return Promise.resolve();
     }
 
     var toInsert = blob.items.filter(function (it) { return it && it.t && !cloudSet[it.t]; });
     if (toInsert.length === 0) { _markFolded(); return Promise.resolve(); }
 
-    // Insert sequentially to keep positions sane (position = current count + index)
-    var basePosition = Object.keys(cloudSet).length;
+    // Insert sequentially; use maxPos+1 to avoid collisions after delete+add cycles
     var rows = toInsert.map(function (it, i) {
-      return { watchlist_id: wlId, symbol: it.t, section: SECTION, position: basePosition + i };
+      return { watchlist_id: wlId, symbol: it.t, section: SECTION, position: maxPos + 1 + i };
     });
 
     return sb.from('watchlist_symbols')
@@ -208,6 +212,7 @@
       .then(function (res) {
         if (res.error) throw res.error;
         toInsert.forEach(function (it) { cloudSet[it.t] = true; });
+        maxPos += toInsert.length;
         _markFolded();
       })
       .catch(function (err) {
@@ -254,14 +259,14 @@
     var ops = [];
 
     if (toInsert.length > 0) {
-      var basePos = Object.keys(cloudSet).length;
       var rows = toInsert.map(function (t, i) {
-        return { watchlist_id: wlId, symbol: t, section: SECTION, position: basePos + i };
+        return { watchlist_id: wlId, symbol: t, section: SECTION, position: maxPos + 1 + i };
       });
       ops.push(
         sb.from('watchlist_symbols').insert(rows).then(function (res) {
           if (res.error) throw res.error;
           toInsert.forEach(function (t) { cloudSet[t] = true; });
+          maxPos += toInsert.length;
         })
       );
     }
@@ -336,11 +341,16 @@
     // pos: { ticker, shares, entry_price, entry_date, notes, status }
     // status must be 'open' or 'closed'
     return _portfolioGuard().then(function () {
+      function toNumOrNull(v) {
+        if (v === '' || v === undefined || v === null) return null;
+        var n = Number(v);
+        return isNaN(n) ? null : n;
+      }
       var row = {
         user_id: user.id,
         ticker: pos.ticker,
-        shares: pos.shares,
-        entry_price: pos.entry_price,
+        shares: toNumOrNull(pos.shares),
+        entry_price: toNumOrNull(pos.entry_price),
         entry_date: pos.entry_date || null,
         notes: pos.notes || null,
         status: pos.status === 'closed' ? 'closed' : 'open',
@@ -410,6 +420,7 @@
       sb = null;
       wlId = null;
       cloudSet = null;
+      maxPos = -1;
       pullDoneAt = 0;
       queuedBlob = null;
       portfolioOk = true;
