@@ -24,8 +24,17 @@ if str(_ROOT) not in sys.path:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _cta_url() -> str:
-    # TODO(D07): route through engine/marketing/links.py tagged CTA builder once D07 merges (campaign=movers).
-    return "https://app.mastermind-x.com/"
+    # Tagged trial CTA via the D07 Funnel link builder (#3052); untagged fallback
+    # keeps the page fail-soft if links.py is ever absent.
+    try:
+        from engine.marketing.links import canonical_link
+
+        return canonical_link(
+            "free_tools", "movers", "cta",
+            base_url="https://app.mastermind-x.com/", utm_source="site",
+        )
+    except Exception:
+        return "https://app.mastermind-x.com/"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
