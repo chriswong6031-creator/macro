@@ -449,7 +449,7 @@
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
       return fetch(API + '/api/brain/stream', { method: 'POST', headers: h, credentials: 'include', body: body, signal: ac ? ac.signal : undefined });
     }).then(function (res) {
-      if (res.status === 401) { typing.remove(); streaming = false; syncSend(); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); return; }
+      if (res.status === 401) { typing.remove(); streaming = false; syncSend(); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); else if (CFG.onAuthRequired) { try { CFG.onAuthRequired(); } catch (e) {} } return; }
       if (res.status === 402) { typing.remove(); streaming = false; syncSend(); return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
       if (!res.ok || !res.body) { typing.remove(); bub = appendMsg('assistant', ''); bub.innerHTML = '<p>' + L('Something went wrong. Please try again.', '出错了，请重试。') + '</p>'; streaming = false; syncSend(); return; }
       var reader = res.body.getReader(), dec = new TextDecoder(), buf = '';
@@ -466,6 +466,10 @@
             else if (j.type === 'chart' && j.svg) { ensureBub(); var cw = DOC.createElement('div'); cw.className = 'mmb-chart'; cw.innerHTML = j.svg; (bub.querySelector('.mmb-charts') || bub).appendChild(cw); stick(); }
             else if (j.type === 'delta') { ensureBub(); if (steps) { steps.remove(); steps = null; } acc += j.text; bubTxt(bub).innerHTML = renderMd(acc); stick(); }
             else if (j.type === 'suggest') { if (j.items && j.items.length) suggestions = j.items.slice(0, 3); }
+            /* host bridges (Terminal): chart-command + annotate events are executed by the
+               host page, not the widget — forward them to the CFG callbacks when provided. */
+            else if (j.type === 'command') { try { if (CFG.onCommand) CFG.onCommand(j); } catch (e) {} }
+            else if (j.type === 'annotate') { try { if (CFG.onAnnotate) CFG.onAnnotate(j); } catch (e) {} }
             else if (j.type === 'done') { ensureBub(); if (steps) { steps.remove(); steps = null; } if (acc) bubTxt(bub).innerHTML = renderMd(acc); if (j.citations && j.citations.length) addCites(bub, j.citations); if (suggestions && suggestions.length) addSuggest(bub, suggestions); if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } stick(); }
             else if (j.type === 'error') { ensureBub(); acc += (acc ? '\n\n' : '') + '_' + (j.message || 'error') + '_'; bubTxt(bub).innerHTML = renderMd(acc); }
           });
@@ -524,10 +528,12 @@
   function autosize() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 150) + 'px'; }
 
   /* ── widget mechanics ── */
-  function open() { refreshCtx(); scrim.classList.add('open'); panel.classList.add('open', 'max'); if (launch) launch.classList.add('mmb-hide'); if (ANCHOR === 'top') panel.classList.add('mmb-top'); if (authed) { loadThreads(); loadQuotas(); } setTimeout(function () { ta.focus(); }, 260); }
+  /* dashboard (br) opens straight to the big overlay; the Terminal (top) drops down
+     compact from its own launcher — the expand button still offers the overlay. */
+  function open() { refreshCtx(); scrim.classList.add('open'); panel.classList.add('open'); if (ANCHOR === 'top') panel.classList.add('mmb-top'); else panel.classList.add('max'); if (launch) launch.classList.add('mmb-hide'); if (authed) { loadThreads(); loadQuotas(); } setTimeout(function () { ta.focus(); }, 260); }
   function close() { if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; streaming = false; } scrim.classList.remove('open'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
   function toggle() { panel.classList.contains('open') ? close() : open(); }
-  function toggleMax() { panel.classList.toggle('max'); panel.classList.remove('show-side'); panel.classList.remove('mmb-top'); }
+  function toggleMax() { var max = panel.classList.toggle('max'); panel.classList.remove('show-side'); if (max) panel.classList.remove('mmb-top'); else if (ANCHOR === 'top') panel.classList.add('mmb-top'); }
   function toggleSide() { panel.classList.toggle('show-side'); }
   function newChat() { threadId = null; pendingImages = []; renderThumbs(); root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
 
