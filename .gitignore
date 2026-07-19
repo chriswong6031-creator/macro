@@ -385,3 +385,5 @@ data/odds_ohlcv/*.parquet
 # data/flow_signals/scores.parquet IS committed (like grades.parquet — covered by
 # the nightly `git add data/` commit glob; see .github/workflows/daily.yml).
 data/flow_signals/models/
+# CXI-1: derived context index DB (never committed)
+.context-index/
