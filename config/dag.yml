@@ -958,6 +958,17 @@ lanes:
           path. Display-only / research framing; no gauntlet-promotion. Reads
           data/stocks/ parquets (committed, ~219 tickers). Non-fatal: exits 0
           on script error, commits only if artifacts changed.
+      - id: build_confluence_screener
+        module: scripts.build_confluence_screener
+        note: >
+          Render the free confluence screener page (+ share card):
+          site/confluence_screener.html + site/og/confluence_screener.png.
+          Follows build_tech_lab_data in the live lane; the two intervening
+          steps (`python scripts/build_tech_confluence.py` and
+          `python scripts/build_m2_profiles.py`) use the bare-script form,
+          which the conformance extractor does not track — only `python -m`
+          invocations are compared, so build_confluence_screener is the second
+          tracked module here. Display-only; non-fatal (exits 0 on error).
 
   # ── daily.yml / standout_audit_us ───────────────────────────────────────
   # SA-W1: US two-axis attribution organ. Off-render, reads committed
