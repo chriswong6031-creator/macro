@@ -1,0 +1,24 @@
+{
+  "stance": "Flow concentrates in high-RS defensives (Health Care, Real Estate) amid elevated VIX and fear rebuild; cooling Tech/Industrials divergence suggests the rotation has legs. This lens favours overweighting the dominant defensive cluster and underweighting expiring momentum on the tech side.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "overweight",
+      "rationale": "Top relative strength (100th percentile) and part of the dominant cluster; stress-conditional cohering signals institutional defence positioning in a fear-rebuilding regime.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Real Estate",
+      "lean": "overweight",
+      "rationale": "94th percentile RS within the dominant cluster, broad breadth, and a natural yield/defensive play when VIX is elevated and no snap relief is near.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "rationale": "Most negative flow score among sectors while still at 87th percentile RS, indicative of cooling participation; lack of cohesion and high VIX make growth vulnerable.",
+      "strength": "moderate"
+    }
+  ],
+  "key_risk": "A sharp VIX collapse that triggers a violent rotation back into high-beta Tech/growth, invalidating the flow defensive tilt."
+}

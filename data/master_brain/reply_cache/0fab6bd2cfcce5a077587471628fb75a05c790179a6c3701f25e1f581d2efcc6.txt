@@ -1,0 +1,38 @@
+{
+  "regime_context": "Hong Kong detector shows a narrow eligibility set (4/17 themes). Tech Hardware & Semis leads with durable trend (durability 0.64, hurst=trend). The absolute trend gate is the only validated edge (drawdown/vol reduction). Momentum ranks are a focus lens, not a return forecast. No crowding, no one-narrative dominance.",
+  "theses": [
+    {
+      "subject": "Tech Hardware & Semis",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Overweight based on eligibility (absolute trend gate) and high durability. The trend gate is the validated risk-control edge; staying with eligible, durable trends materially reduces drawdown. Tech Hardware & Semis has a durable uptrend (durability_bar 0.64, hurst=trend), no crowding, and leads a narrow eligible set. This is a trend-following lean, not a return forecast.",
+      "evidence": [
+        "eligible=true",
+        "durability_bar=0.64",
+        "hurst_tag='trend'",
+        "crowded=false",
+        "backtest_verdict.absolute_trend_gate='validated_risk_control'"
+      ],
+      "dissent": "Narrow leadership can reverse abruptly if macro (e.g., geopolitics escalation) triggers a regime shift. Durability may decay quickly; the trend gate controls drawdown but does not prevent losses if trend breaks.",
+      "falsifier_text": "If durability_bar drops below 0.40 or eligibility flips to false, the overweight lean is invalid."
+    },
+    {
+      "subject": "China EV & Autos",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Avoid as it fails the absolute trend gate (eligible=false), has a very low durability_bar (0.32) and thin breadth (0.125). The trend gate discipline indicates elevated drawdown risk relative to benchmark. Avoiding ineligible themes aligns with the validated risk-control edge.",
+      "evidence": [
+        "eligible=false",
+        "durability_bar=0.32",
+        "breadth=0.125",
+        "backtest_verdict.absolute_trend_gate='validated_risk_control'"
+      ],
+      "dissent": "A policy catalyst (e.g., EV subsidies) could spark a sharp mean-reversion rally; the trend gate is designed to miss such tactical reversals in exchange for drawdown protection.",
+      "falsifier_text": "If China EV & Autos becomes eligible and durability_bar rises above 0.50, the avoid lean is invalid."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

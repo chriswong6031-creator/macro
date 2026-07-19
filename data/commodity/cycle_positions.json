@@ -25,7 +25,7 @@
   },
   "copper": {
     "cycle_ref": "copper",
-    "pos": 55.8,
+    "pos": 55.7,
     "phase": "Downturn",
     "phase_v2": "Downturn",
     "overdue": true,
@@ -61,7 +61,7 @@
   },
   "platinum": {
     "cycle_ref": "pgms",
-    "pos": 0.3,
+    "pos": 0.4,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,
@@ -73,7 +73,7 @@
   },
   "palladium": {
     "cycle_ref": "pgms",
-    "pos": 0.3,
+    "pos": 0.4,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": false,

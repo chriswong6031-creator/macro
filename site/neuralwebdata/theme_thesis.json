@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-18",
-  "generated_at": "2026-07-18T03:30:13Z",
+  "as_of": "2026-07-19",
+  "generated_at": "2026-07-19T03:21:42Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -28,10 +28,10 @@
   "theses": [
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "thesis_id": "ai_semiconductors.v1",
-      "content_hash": "sha256:d409a683fba3ead8ffb776bd735c54c9f6967306fd100a621141fe56b94e8e12",
-      "prev_content_hash": "sha256:a8c70cbbde216a926a460be3fa4a75ce7b2545d32c9ae0e55c3d5ee4ebe076e0",
+      "content_hash": "sha256:e205c811b42908a3c85546ea41b42e6c17fe099ea2de83e0c5cb7cb957f84f83",
+      "prev_content_hash": "sha256:d409a683fba3ead8ffb776bd735c54c9f6967306fd100a621141fe56b94e8e12",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -95,7 +95,7 @@
           "rule_en": "If revision_breadth for ai_semiconductors turns negative (net earnings downgrades exceed upgrades), the thesis that AI demand is above-cycle durable is weakening — watch for two consecutive negative breadth prints.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.937"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.913"
         },
         {
           "id": "ai_semi_f2",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:718dc583b8a08db018379a67e0531761d0ae505112ce514e390cc3433abf6e44",
-      "prev_content_hash": "sha256:86f7fc5dde36c547e114314498c428d4968904d433692dfcdd6d8b7614c5ace8",
+      "content_hash": "sha256:c1787069a6490bcff04fe022914c509b1a6da113ddbd5b07e577cb85c41e44ba",
+      "prev_content_hash": "sha256:718dc583b8a08db018379a67e0531761d0ae505112ce514e390cc3433abf6e44",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -527,7 +527,7 @@
           "rule_en": "If revision_breadth for robotics_automation falls below 0.0, earnings upgrades are not broadening — adoption is slower than the ROI case implies.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.686"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.627"
         },
         {
           "id": "robo_f2",
@@ -554,10 +554,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-11",
+      "as_of": "2026-07-19",
       "thesis_id": "fintech_payments.v1",
-      "content_hash": "sha256:395114b59dd6b3210e323b1e42ffe0442a1d36c34dac0272a85d8a9f993e038f",
-      "prev_content_hash": "sha256:1c3657d108c5d99dede6703b6be0525c861a9b3c5ca49feceb8857485ba6bf6b",
+      "content_hash": "sha256:1c3657d108c5d99dede6703b6be0525c861a9b3c5ca49feceb8857485ba6bf6b",
+      "prev_content_hash": "sha256:395114b59dd6b3210e323b1e42ffe0442a1d36c34dac0272a85d8a9f993e038f",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -611,7 +611,7 @@
           "rule_en": "If revision_breadth for fintech_payments falls negative, earnings consensus is cutting; stablecoin disruption may be larger than the on-ramp toll revenue offset.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.412"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.298"
         },
         {
           "id": "finpay_f2",
@@ -892,10 +892,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "thesis_id": "defense_aerospace.v1",
-      "content_hash": "sha256:3cfd3d399e4590ef8c1b8a7d7c60d5edbdd45ef3c0f14cc504876456b5e18f4f",
-      "prev_content_hash": "sha256:1ec0efae882f8a2819b688753eb8ca47ab9bddfd9a7947f62e31582ade379ac8",
+      "content_hash": "sha256:ec07ada1d93e33d2c4331b2ac6ba51693ff9a5f8a98486aaacaac4a8f6247922",
+      "prev_content_hash": "sha256:3cfd3d399e4590ef8c1b8a7d7c60d5edbdd45ef3c0f14cc504876456b5e18f4f",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -953,7 +953,7 @@
           "rule_en": "If revision_breadth for defense_aerospace falls below 0.0, budget headwinds or program cancellations are spreading through earnings revisions.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.13"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.08"
         },
         {
           "id": "def_f2",
@@ -1457,10 +1457,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "thesis_id": "space_satellite.v1",
-      "content_hash": "sha256:69ac3b412e12c45d2574678fc441a5e7ab740442bd7be2ad12cd293eb5b8e310",
-      "prev_content_hash": "sha256:2d8f056ad3b38f7d4a241b64ae0094e21654acc324d28cf3fa5f48ba6023d75f",
+      "content_hash": "sha256:94acc9c8154a54d64ef1adf2754019f35e84cf908f60de18e7640ba489b4ad27",
+      "prev_content_hash": "sha256:69ac3b412e12c45d2574678fc441a5e7ab740442bd7be2ad12cd293eb5b8e310",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1514,7 +1514,7 @@
           "rule_en": "If revision_breadth for space_satellite falls below 0.0, earnings estimates are cutting — commercial ramp is not meeting expectations.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.382"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.407"
         },
         {
           "id": "sat_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-18T03:30:13Z",
-  "inputs_hash": "sha256:3294979639fcbe20a0051a8f0008900f61b1e87833cc085d6d91a26f5417f1e2",
+  "produced_at": "2026-07-19T03:21:42Z",
+  "inputs_hash": "sha256:6821f4d88c97f1481d7d08b42ab1d8466feccd6a554e8e09f34c2c1787a3613e",
   "tier": "display"
 }

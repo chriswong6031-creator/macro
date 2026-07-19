@@ -6,7 +6,7 @@
 (function(){
   "use strict";
   window.MARKET_META = {
-  "asOf": "2026-07-19",
+  "asOf": "2026-07-18",
   "today": 2026.48,
   "xDomain": [
     2000,
@@ -541,11 +541,11 @@
       }
     ],
     "now": {
-      "level": 10572.2,
-      "asOf": "2026-07-16",
+      "level": 10600.4,
+      "asOf": "2026-07-17",
       "ath": 10910.6,
       "athDate": "2026-02",
-      "pctFromATH": -3.1,
+      "pctFromATH": -2.8,
       "ytd": 6,
       "ret1y": 20.5,
       "pos": 68,
@@ -736,11 +736,11 @@
       }
     ],
     "now": {
-      "level": 643.73,
-      "asOf": "2026-07-16",
+      "level": 641.53,
+      "asOf": "2026-07-17",
       "ath": 652.77,
       "athDate": "2026-07",
-      "pctFromATH": -1.4,
+      "pctFromATH": -1.7,
       "ytd": 7.4,
       "ret1y": 13,
       "pos": 78,
@@ -891,11 +891,11 @@
       }
     ],
     "now": {
-      "level": 66835.54,
-      "asOf": "2026-07-16",
+      "level": 64141.12,
+      "asOf": "2026-07-17",
       "ath": 72366.34,
       "athDate": "2026-06",
-      "pctFromATH": -7.6,
+      "pctFromATH": -11.4,
       "ytd": 43.8,
       "ret1y": 85,
       "pos": 93,
@@ -1075,11 +1075,11 @@
       }
     ],
     "now": {
-      "level": 8840.7,
-      "asOf": "2026-07-16",
+      "level": 8796.7,
+      "asOf": "2026-07-17",
       "ath": 9198.6,
       "athDate": "2026-02",
-      "pctFromATH": -3.9,
+      "pctFromATH": -4.4,
       "ytd": 1.3,
       "ret1y": 3.1,
       "pos": 80,
@@ -1220,11 +1220,11 @@
       }
     ],
     "now": {
-      "level": 45624.98,
-      "asOf": "2026-07-16",
+      "level": 42671.27,
+      "asOf": "2026-07-17",
       "ath": 47741.51,
       "athDate": "2026-06",
-      "pctFromATH": -4.4,
+      "pctFromATH": -10.6,
       "ytd": 54.8,
       "ret1y": 98.5,
       "pos": 88,
@@ -1590,11 +1590,11 @@
       }
     ],
     "now": {
-      "level": 24072.75,
-      "asOf": "2026-07-16",
+      "level": 24334.3,
+      "asOf": "2026-07-17",
       "ath": 26328.55,
       "athDate": "2026-01",
-      "pctFromATH": -8.6,
+      "pctFromATH": -7.6,
       "ytd": -7.9,
       "ret1y": -4.4,
       "pos": 48,

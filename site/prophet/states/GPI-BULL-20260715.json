@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "GPI-BULL-20260715",
-  "asof": "2026-07-17",
+  "asof": "2026-07-18",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
   "management_confidence": 66.2,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.161,
     "dist_to_t1_r": 1.339,
     "dist_to_t2_r": 2.839,
-    "horizon_pct_used": 4.4,
+    "horizon_pct_used": 6.7,
     "p1": 0.1072,
     "p2": 0.0536,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Trigger Confirmed",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 2,
-  "tau": 0.0444
+  "days_elapsed": 3,
+  "tau": 0.0667
 }

@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "COIN-BULL-20260702",
-  "asof": "2026-07-17",
+  "asof": "2026-07-18",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 33.2,
-  "raw_confidence": 37.6,
-  "delta_vs_base": -26.8,
+  "management_confidence": 34.9,
+  "raw_confidence": 36.9,
+  "delta_vs_base": -25.1,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
     "validity": 16.7,
     "progress": 0.0,
-    "pace": 46.9,
+    "pace": 41.0,
     "retention": 50.0,
     "overlay": 47.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.266,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 33.3,
+    "horizon_pct_used": 35.6,
     "p1": -0.4892,
     "p2": -0.2446,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Phase: invalidated \u2192 pre_trigger",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 15,
-  "tau": 0.3333
+  "days_elapsed": 16,
+  "tau": 0.3556
 }

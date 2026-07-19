@@ -1,8 +1,8 @@
 {
-  "schema": "macro_snapshot.v1.1",
-  "asof": "2026-07-17",
+  "schema": "macro_snapshot.v1.2",
+  "asof": "2026-07-19",
   "oldest_component_asof": "2026-07-16",
-  "macro_context_id": "99bd6183eeb5c8b4",
+  "macro_context_id": "e63016827069d12e",
   "labels": {
     "us": {
       "us_quad": "Q1",
@@ -35,7 +35,20 @@
       "fx_risk": "risk-on",
       "real_rate_regime": "Restrictive real yields",
       "fx_liquidity_dir": "soft",
-      "fx_regime_radar": null
+      "fx_regime_radar": null,
+      "usd_valuation": "fair",
+      "usd_positioning": "neutral",
+      "fed_path_lean": "steady",
+      "fx_eurusd_action": "SHORT",
+      "fx_gbpusd_action": "FLAT",
+      "fx_usdjpy_action": "SHORT",
+      "fx_usdchf_action": "FLAT",
+      "fx_audusd_action": "SHORT",
+      "fx_usdcad_action": "FLAT",
+      "fx_usdmxn_action": "FLAT",
+      "fx_usdbrl_action": "FLAT",
+      "fx_usdcnh_action": "FLAT",
+      "fx_dxy_action": null
     },
     "bonds": {
       "bond_health_label": "healthy",
@@ -45,7 +58,16 @@
     },
     "commodity": {
       "commodity_regime": "Goldilocks",
-      "commodity_favored": "Gold, Copper"
+      "commodity_favored": "Gold, Copper",
+      "commodity_mtf_grade": "CAUTION",
+      "commodity_ladder": "COUNTERTREND BOUNCE",
+      "commodity_shock_state": "normal",
+      "commodity_confluence_state": "Neutral",
+      "commodity_breadth_bucket": "broad",
+      "gold_action": "SELL",
+      "silver_action": "SELL",
+      "copper_action": "HOLD",
+      "oil_action": "HOLD"
     },
     "china": {
       "china_quad": "Q3",
@@ -72,27 +94,27 @@
       "intl_in_quad": "Q1",
       "intl_jp_quad": "Q1",
       "intl_kr_quad": "Q2",
-      "intl_tw_quad": "Q1"
+      "intl_tw_quad": "Q3"
     }
   },
   "sources": {
     "data/regime/latest.json": "2026-07-17",
     "data/market_state/latest.json": "2026-07-17",
     "data/transmission/latest.json": "2026-07-17",
-    "data/forex/latest.json": "2026-07-17",
+    "data/forex/latest.json": "2026-07-19",
     "data/bonds/bond_health.json": "2026-07-17",
     "data/commodity/latest.json": "2026-07-17",
     "data/china_regime/latest.json": "2026-07-17",
     "data/hk_regime/latest.json": "2026-07-17",
     "data/canada_regime/latest.json": "2026-07-17",
-    "data/dispersion/regime.json": "2026-07-17",
-    "data/intl_regime/AU_history.parquet": "2026-07-16",
-    "data/intl_regime/EZ_history.parquet": "2026-07-16",
-    "data/intl_regime/GB_history.parquet": "2026-07-16",
-    "data/intl_regime/IN_history.parquet": "2026-07-16",
-    "data/intl_regime/JP_history.parquet": "2026-07-16",
+    "data/dispersion/regime.json": "2026-07-18",
+    "data/intl_regime/AU_history.parquet": "2026-07-17",
+    "data/intl_regime/EZ_history.parquet": "2026-07-17",
+    "data/intl_regime/GB_history.parquet": "2026-07-17",
+    "data/intl_regime/IN_history.parquet": "2026-07-17",
+    "data/intl_regime/JP_history.parquet": "2026-07-17",
     "data/intl_regime/KR_history.parquet": "2026-07-16",
-    "data/intl_regime/TW_history.parquet": "2026-07-16"
+    "data/intl_regime/TW_history.parquet": "2026-07-17"
   },
   "gaps": [],
   "display_only": true

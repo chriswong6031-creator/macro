@@ -67,7 +67,7 @@
       "zh": "盈亏平衡大致平稳——无可操作变动。"
     },
     "costate": {
-      "oil_chg_20d_pct": 6.8,
+      "oil_chg_20d_pct": 7.8,
       "real10y_chg_20d_bp": 14.0,
       "nom10y_chg_20d_bp": 11.0,
       "hy_oas_z": -0.84,
@@ -2031,7 +2031,7 @@
     ]
   },
   "dollar_channel": {
-    "asof": "2026-07-17",
+    "asof": "2026-07-19",
     "usd_dir": "strengthening",
     "roc_pct": null,
     "state": {

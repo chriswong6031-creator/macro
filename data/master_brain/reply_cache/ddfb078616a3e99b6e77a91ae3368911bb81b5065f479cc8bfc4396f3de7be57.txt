@@ -1,0 +1,24 @@
+## Macro-Regime Desk Note
+**2026-07-17 | US Market**
+**Role: Macro-Regime Analyst — accountable, falsifiable, never sized**
+
+### Regime Assessment: Cautious — risk-on theme exposure not well-supported
+The current macro‑regime does **not** provide a clear green light for initiating or adding to thematic risk. It supports smaller positioning, higher cash buffers, and a defensive posture. The primary reasons:
+
+1. **Fading leadership with zero breadth** – The top‑ranked theme (Memory, HBM & Storage) shows `val_state: fading`, `breadth: 0.0` (almost no constituents participating), and a `hurst_tag: mixed` (no stable trend). This is a leadership illusion – one or two names drive the score, not a durable risk‑on wave.
+2. **No one‑narrative absorption** – `one_narrative: false`, `absorption: 0.36` – the market lacks a dominant, high‑conviction story to sustain a directional move. Rotation is broad (70% of themes eligible) but shallow – a churning, treading‑water environment.
+3. **Macro backdrop: high surprise, geopolitical noise** – `unscheduled_share: 0.61` signals a news‑flow regime heavy with unanticipated events. Dominant macro themes: AI/tech (#1) but **geopolitics** a strong #2, with inflation also present. This level of unpredictability undermines trend durability.
+4. **Discipline edge is only drawdown control, not entry** – `gate_helps: true` means the absolute‑trend gate historically reduced volatility and drawdowns in this market, but does **not** forecast returns. The regime is defensive, not offensive.
+
+### Key Signals
+- **Headline theme**: Memory/HBM – `r10: -0.1269` (losing momentum), durability bar only 0.5, and a Hurst “mixed” print. It is **not** a regime‑supported leader.
+- **Broad rotation without absorption**: No one narrative is absorbing capital; the market is scattered. This often precedes sharp reversals or sideways chop.
+- **Crowding**: Several themes are crowded (Cybersecurity, Managed Care, AI Infra, etc.) – per guardrails, this is a **sizing caution**, not a fade call.
+- **Macro narrative flow**: AI/tech + geopolitics + high unscheduled share = elevated policy‑event risk. Risk‑on windows tend to close quickly in such backdrops.
+
+### Conditional Lean (falsifiable)
+> **Lean:** The current regime argues **against** fresh risk‑on theme exposure. Cash or smaller-sized positions are warranted.  
+> **Falsifiable condition:** The Memory/HBM theme recovers a `breadth > 0.4` and a `durability_bar > 0.6` within the next two weeks, OR a new durable leader emerges with breadth and trend-health – then, and only then, would the regime shift to supporting modest risk-on exposure.  
+> **Check‑by horizon:** Two weeks (2026-07-31). If no such improvement occurs, the cautious stance remains in force.
+
+*This note contains no position size, no trade recommendation, and honours all guardrails. It is an accountable, falsifiable read of the coincident regime backdrop, not a prediction.*

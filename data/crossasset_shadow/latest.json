@@ -1,0 +1,11 @@
+{
+  "asof": "2026-07-17",
+  "market": "us",
+  "pressure_pctile": 0.89,
+  "incumbent_state": "caution",
+  "shadow_state": "caution",
+  "escalated": false,
+  "display_only": true,
+  "note": "Shadow test lane only — not a live radar authority. Promotion gated on >=30 graded shadow rows + do-no-harm vs incumbent (earliest review 2026-10-17, CA-W3-R1).",
+  "built_at": "2026-07-19T02:05:07.661962+00:00"
+}

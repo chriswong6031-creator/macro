@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LRN-BULL-20260605",
-  "asof": "2026-07-17",
+  "asof": "2026-07-18",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
   "management_confidence": 36.4,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.845,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 93.3,
+    "horizon_pct_used": 95.6,
     "p1": -0.1031,
     "p2": -0.0515,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-14",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 42,
-  "tau": 0.9333
+  "days_elapsed": 43,
+  "tau": 0.9556
 }

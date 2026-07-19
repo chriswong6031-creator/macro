@@ -1,0 +1,23 @@
+**Desk Note — TREND-RIDER, Hong Kong Thematic  
+Date: 2026-07-17 | Benchmark: Hang Seng**
+
+**Prevailing Theme: Tech Hardware & Semis (科技硬件与半导体)**  
+- **Rank:** #1 (score 1.777) — moment lens only, no return forecast  
+- **Durability Bar:** 0.64 | **Hurst:** trend | **Crowding:** false | **Breadth:** 0.167  
+- **Absolute-Trend Gate:** ON; validated risk-control (lower vol, shallower drawdowns) — the one edge we have  
+
+**Why stay with it — the strongest honest case**  
+The discipline does not claim higher returns; it claims fewer catastrophic losses. Tech Hardware & Semis holds a durable trend (durability 0.64 > 0.5, Hurst “trend”) and the absolute-trend gate has historically kept drawdowns smaller than the benchmark. That edge is the reason to remain exposed — not the rank, not the score. The pattern is narrow (breadth 0.167), meaning only a handful of names are carrying the theme, but it is not crowded (z 0.06), so there is no reflexive blow‑up signal. Absorption (0.55) is moderate, and the market is *not* dominated by a single narrative — so this is a multi‑theme environment where trend‑following on the leader still makes sense, provided the trend gate stays intact.
+
+**Other eligible themes — durability snapshot**  
+- High-Dividend Blue Chips (高股息蓝筹): rank 3, durability 0.68, trend, not crowded. A separate trend‑riding option, but not the leader.  
+- Conglomerates & Exchange (综合企业与交易所): rank 2, durability 0.58, **mean-revert** — the trend gate’s risk‑control logic does not apply; sits outside our discipline.  
+- Banks: eligible but durability 0.53 with mixed Hurst — not a clean trend signal.
+
+**Guardrail‑acknowledged cautions**  
+- Low breadth means leadership is thin; the theme can fracture quickly if the few strong names turn. That is why the absolute-trend gate — not conviction — is the exit trigger.  
+- Momentum rank ≈ 0 IC: ranking is a focus lens, never a buy list.  
+- One‑narrative is false, so we are not in a reflexively reinforcing top; we are simply respecting a trend that has shown persistence.
+
+**Falsifiable conditional lean (no size, no trade)**  
+**IF** the absolute-trend signal for Tech Hardware & Semis remains intact (e.g., price stays above its trailing stop‑equivalent, durability bar above 0.5), **THEN** the theme is likely to continue exhibiting lower drawdowns than a naive Hang Seng allocation. **Check‑by horizon:** end of August 2026, or sooner if the durability bar drops below 0.4 or the trend gate flips to “off.” If the gate breaks, the disciplined response is to reduce exposure — no forecasting of the next leader, no fading.

@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-18",
+  "as_of": "2026-07-19",
   "authority": {
     "allowed_actions": [
       "display",
@@ -153,13 +153,13 @@
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 177,
-        "n_hit_gradeable": 177,
-        "n_with_falsifier": 59,
+        "n_claims": 183,
+        "n_hit_gradeable": 183,
+        "n_with_falsifier": 61,
         "source_ontology_fill": {
           "channels_fill_rate": 0.333333,
-          "n_channels": 59,
-          "n_source_id": 59,
+          "n_channels": 61,
+          "n_source_id": 61,
           "n_source_tier": 0,
           "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
           "source_id_fill_rate": 0.333333,
@@ -206,12 +206,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 856,
-          "graded_5d_share": 0.725424,
+          "graded_5d_share": 0.698206,
           "matured_21d_count": 176,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 1180,
+        "n_claims": 1226,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -235,12 +235,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 856,
-          "graded_5d_share": 0.725424,
+          "graded_5d_share": 0.698206,
           "matured_21d_count": 176,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 1180,
+        "n_claims": 1226,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -264,12 +264,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 6,
-          "graded_5d_share": 0.171429,
+          "graded_5d_share": 0.153846,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 35,
+        "n_claims": 39,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -290,7 +290,7 @@
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
-        "hit_gradeable_share": 0.969466,
+        "hit_gradeable_share": 0.966767,
         "maturity_mix": {
           "graded_5d_count": 0,
           "graded_5d_share": 0.0,
@@ -298,8 +298,8 @@
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 524,
-        "n_hit_gradeable": 508,
+        "n_claims": 662,
+        "n_hit_gradeable": 640,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
           "channels_fill_rate": 0.0,
@@ -327,13 +327,13 @@
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 300,
+        "n_claims": 303,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
           "channels_fill_rate": 0.0,
           "n_channels": 0,
-          "n_source_id": 300,
+          "n_source_id": 303,
           "n_source_tier": 0,
           "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
           "source_id_fill_rate": 1.0,
@@ -406,16 +406,16 @@
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
-        "hit_gradeable_share": 0.988155,
+        "hit_gradeable_share": 0.988162,
         "maturity_mix": {
           "graded_5d_count": 3486,
-          "graded_5d_share": 0.676893,
+          "graded_5d_share": 0.676499,
           "matured_21d_count": 868,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 5150,
-        "n_hit_gradeable": 5089,
+        "n_claims": 5153,
+        "n_hit_gradeable": 5092,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
           "channels_fill_rate": 0.0,
@@ -438,12 +438,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 3600,
-          "graded_5d_share": 0.764007,
+          "graded_5d_share": 0.717703,
           "matured_21d_count": 4,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 4712,
+        "n_claims": 5016,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -467,12 +467,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 3600,
-          "graded_5d_share": 0.764007,
+          "graded_5d_share": 0.717703,
           "matured_21d_count": 4,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 4712,
+        "n_claims": 5016,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -516,23 +516,23 @@
       }
     },
     "global": {
-      "falsifier_coverage": 0.016817,
+      "falsifier_coverage": 0.016211,
       "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure",
-      "n_claims": 19564,
+      "n_claims": 20418,
       "n_grades": 15357,
-      "n_with_falsifier": 329
+      "n_with_falsifier": 331
     }
   },
   "conflicts": [],
   "counts": {
     "edges_by_kind": {
       "governed_by": 10,
-      "member_of_thesis": 8,
+      "member_of_thesis": 9,
       "mirrored_experiment": 27,
       "rf_candidate_of_mechanism": 7
     },
     "rows_by_type": {
-      "entity": 8,
+      "entity": 9,
       "mechanism": 8,
       "species_link": 27,
       "thesis": 2
@@ -573,6 +573,15 @@
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
+      "src": "entity:US:FOXF"
+    },
+    {
+      "dst": "thesis:consumer_discretionary",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
       "src": "entity:US:GIII"
     },
     {
@@ -591,7 +600,7 @@
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:REX"
+      "src": "entity:US:TXRH"
     },
     {
       "dst": "thesis:ai_infrastructure_capex_complex",
@@ -1008,7 +1017,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-07-18T03:30:12.439142+00:00",
+  "generated_utc": "2026-07-19T03:21:41.759336+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -1313,7 +1322,7 @@
   "rows": {
     "entity:US:AVGO": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-17",
+      "funnel_as_of": "2026-07-18",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:AVGO",
@@ -1326,7 +1335,7 @@
     },
     "entity:US:CALY": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-17",
+      "funnel_as_of": "2026-07-18",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:CALY",
@@ -1339,7 +1348,7 @@
     },
     "entity:US:CUBI": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-17",
+      "funnel_as_of": "2026-07-18",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:CUBI",
@@ -1350,9 +1359,22 @@
       ],
       "ticker": "CUBI"
     },
+    "entity:US:FOXF": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-18",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:FOXF",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:consumer_discretionary"
+      ],
+      "ticker": "FOXF"
+    },
     "entity:US:GIII": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-17",
+      "funnel_as_of": "2026-07-18",
       "funnel_state": "watch_for_thesis",
       "market": "US",
       "registry_id": "entity:US:GIII",
@@ -1365,7 +1387,7 @@
     },
     "entity:US:NVDA": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-17",
+      "funnel_as_of": "2026-07-18",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:NVDA",
@@ -1376,22 +1398,22 @@
       ],
       "ticker": "NVDA"
     },
-    "entity:US:REX": {
+    "entity:US:TXRH": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-17",
+      "funnel_as_of": "2026-07-18",
       "funnel_state": "watch_for_thesis",
       "market": "US",
-      "registry_id": "entity:US:REX",
+      "registry_id": "entity:US:TXRH",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
         "thesis:consumer_discretionary"
       ],
-      "ticker": "REX"
+      "ticker": "TXRH"
     },
     "entity:US:VRT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-17",
+      "funnel_as_of": "2026-07-18",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:VRT",
@@ -1404,7 +1426,7 @@
     },
     "entity:US:WT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-17",
+      "funnel_as_of": "2026-07-18",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:WT",
@@ -3303,13 +3325,14 @@
       "members": [
         "CALY",
         "CUBI",
+        "FOXF",
         "GIII",
-        "REX",
+        "TXRH",
         "WT"
       ],
       "registry_id": "thesis:consumer_discretionary",
       "registry_type": "thesis",
-      "size": 5,
+      "size": 6,
       "source": "reflexivity_overlay.same_thesis_groups",
       "source_paths": [
         "site/factordata/reflexivity_overlay.json"
@@ -3331,7 +3354,7 @@
       "present": true
     },
     "data/neuralweb/governance.jsonl": {
-      "n": 40,
+      "n": 41,
       "present": true
     },
     "data/research/thesis_funnel_states.parquet": {
@@ -3351,7 +3374,7 @@
       "present": true
     },
     "data/trial_ledger.jsonl": {
-      "n": 1220,
+      "n": 1293,
       "present": true
     },
     "site/factordata/reflexivity_overlay.json": {
@@ -3402,6 +3425,24 @@
       "n_config_hashes": 4,
       "n_trials": 4
     },
+    "baskets_residual_rank": {
+      "first_ts": "2026-07-18T15:25:55.551893+00:00",
+      "last_ts": "2026-07-18T15:25:55.552427+00:00",
+      "n_config_hashes": 9,
+      "n_trials": 9
+    },
+    "baskets_rollover_fit": {
+      "first_ts": "2026-07-18T15:25:56.642270+00:00",
+      "last_ts": "2026-07-18T15:25:56.642533+00:00",
+      "n_config_hashes": 4,
+      "n_trials": 4
+    },
+    "baskets_voltarget_sizing": {
+      "first_ts": "2026-07-18T15:25:52.703445+00:00",
+      "last_ts": "2026-07-18T15:25:52.705336+00:00",
+      "n_config_hashes": 37,
+      "n_trials": 37
+    },
     "btc_onchain_dd_phase0": {
       "first_ts": "2026-07-02T03:11:22.375046+00:00",
       "last_ts": "2026-07-02T03:11:22.375046+00:00",
@@ -3449,6 +3490,30 @@
       "last_ts": "2026-07-03T19:37:01.751882+00:00",
       "n_config_hashes": 1,
       "n_trials": 1
+    },
+    "commodities_copper": {
+      "first_ts": "2026-07-18T17:08:59.032964+00:00",
+      "last_ts": "2026-07-18T17:08:59.033287+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "commodities_gold": {
+      "first_ts": "2026-07-18T17:08:58.847242+00:00",
+      "last_ts": "2026-07-18T17:08:58.847716+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "commodities_oil": {
+      "first_ts": "2026-07-18T17:08:59.129962+00:00",
+      "last_ts": "2026-07-18T17:08:59.130304+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "commodities_silver": {
+      "first_ts": "2026-07-18T17:08:58.946376+00:00",
+      "last_ts": "2026-07-18T17:08:58.946716+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
     },
     "commodity_carry_phase0": {
       "first_ts": "2026-07-02T03:11:22.388275+00:00",
@@ -3926,9 +3991,9 @@
     },
     "signal_factory": {
       "first_ts": "2026-06-21T15:04:20.143955+00:00",
-      "last_ts": "2026-06-21T15:04:20.144408+00:00",
-      "n_config_hashes": 5,
-      "n_trials": 5
+      "last_ts": "2026-07-18T15:01:16.919429+00:00",
+      "n_config_hashes": 7,
+      "n_trials": 7
     },
     "signal_foundry": {
       "first_ts": "2026-07-10T14:15:14.421135+00:00",
@@ -4016,9 +4081,9 @@
     },
     "vector": {
       "first_ts": "2026-07-02T03:30:48.967730+00:00",
-      "last_ts": "2026-07-02T03:43:12.815329+00:00",
-      "n_config_hashes": 5,
-      "n_trials": 5
+      "last_ts": "2026-07-18T17:09:33.805914+00:00",
+      "n_config_hashes": 6,
+      "n_trials": 6
     },
     "w2031_kev_vendor_shock": {
       "first_ts": "2026-07-06T11:32:57.883667+00:00",

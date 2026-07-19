@@ -1,9 +1,9 @@
 {
-  "built": "2026-07-18T17:09:46.833108+00:00",
-  "timing_sec": 1.67,
+  "built": "2026-07-19T02:43:44.427115+00:00",
+  "timing_sec": 1.71,
   "em_stress": {
     "state": "strained",
-    "thermometer": 48.2,
+    "thermometer": 46.9,
     "lead_lag": "coincident thermometer — not leading",
     "n_legs_available": 6,
     "n_legs_total": 6,
@@ -36,15 +36,15 @@
         "note": "2011+ history; EVZ ended 2025-03 and is not used"
       },
       "em_fx_basket": {
-        "value": -2.56,
-        "rvol_20d": 3.16,
-        "dd_pctile": 56.5,
-        "rvol_pctile": 2.3,
-        "pctile": 29.4,
+        "value": -1.72,
+        "rvol_20d": 3.04,
+        "dd_pctile": 41.1,
+        "rvol_pctile": 1.9,
+        "pctile": 21.5,
         "vel_5d_z": null,
-        "vel_20d_z": 0.214,
+        "vel_20d_z": 0.138,
         "z": null,
-        "asof": "2026-07-17",
+        "asof": "2026-07-19",
         "stale": false,
         "window_days": 504,
         "pairs_used": [
@@ -107,8 +107,8 @@
       }
     },
     "gaps": [],
-    "as_of": "2026-07-17",
-    "built": "2026-07-18T17:09:45.232380+00:00",
+    "as_of": "2026-07-19",
+    "built": "2026-07-19T02:43:42.786931+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -725,7 +725,7 @@
     },
     "berg_pattillo_receipt": "Historical early-warning-system caveat (Berg-Pattillo): best-in-class EWS models missed approximately 68% of currency/debt crises out-of-sample; approximately 60% of their 'danger' signals proved false alarms. This table is a fragility MAP — it identifies who is vulnerable, not when a crisis will occur.",
     "note": "BIS credit-to-GDP gap: only US and CN currently in store; other countries accrue as the BIS adapter extends.",
-    "built": "2026-07-18T17:09:45.302523+00:00"
+    "built": "2026-07-19T02:43:42.858763+00:00"
   },
   "spillover": {
     "total_connectedness": 81.9,
@@ -733,14 +733,14 @@
       "EWJ": 96.7,
       "EWG": 111.9,
       "EWU": 99.7,
-      "EWC": 101.3,
-      "EWA": 134.0,
+      "EWC": 101.2,
+      "EWA": 133.9,
       "EWL": 126.3,
       "EWZ": 49.7,
       "EWW": 33.7,
       "INDA": 26.8,
-      "EIDO": 74.0,
-      "EZA": 108.2,
+      "EIDO": 74.1,
+      "EZA": 108.3,
       "EWY": 83.7,
       "EEM": 71.8,
       "SPY": 29.0
@@ -764,7 +764,7 @@
     "top_transmitters": [
       {
         "ticker": "EWA",
-        "to_others_pct": 134.0
+        "to_others_pct": 133.9
       },
       {
         "ticker": "EWL",
@@ -1008,7 +1008,7 @@
       "SPY: OHLC absent — using close-return vol proxy"
     ],
     "as_of": "2026-07-17",
-    "built": "2026-07-18T17:09:45.425588+00:00",
+    "built": "2026-07-19T02:43:42.983160+00:00",
     "timing_sec": 0.12,
     "params": {
       "window": 150,
@@ -1034,13 +1034,13 @@
     }
   },
   "corr_tightening": {
-    "eem_emfx_corr_60d": -0.191,
+    "eem_emfx_corr_60d": -0.196,
     "pairwise_avg_corr": 0.57,
     "pairwise_vel_20d_z": -1.224,
     "tightening": false,
     "gaps": [],
     "as_of": "2026-07-17",
-    "built": "2026-07-18T17:09:46.342808+00:00"
+    "built": "2026-07-19T02:43:43.922603+00:00"
   },
   "two_tier": {
     "state": "contained",
@@ -1097,7 +1097,7 @@
           "caveat": "Quarter-end spikes (late Dec/Mar/Jun/Sep) are technical — not structural funding stress; verify calendar proximity."
         },
         "safety_bid_flag": {
-          "dxy_5d_chg": -0.215,
+          "dxy_5d_chg": -0.22,
           "dgs2_5d_chg": 0.0,
           "safety_bid": false,
           "hot": false,
@@ -1108,7 +1108,7 @@
     "safety_bid": false,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-07-18T17:09:46.376691+00:00"
+    "built": "2026-07-19T02:43:43.957758+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -1143,7 +1143,7 @@
         },
         "next_meeting": {
           "date": "2026-07-29",
-          "days": 11
+          "days": 10
         },
         "asof": "2026-07-16",
         "stale": false
@@ -1179,7 +1179,7 @@
         },
         "next_meeting": {
           "date": "2026-07-23",
-          "days": 5
+          "days": 4
         },
         "asof": "2026-07-17",
         "stale": false
@@ -1215,7 +1215,7 @@
         },
         "next_meeting": {
           "date": "2026-07-31",
-          "days": 13
+          "days": 12
         },
         "asof": "2026-06-01",
         "stale": false
@@ -1243,7 +1243,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-07-30",
-          "days": 12
+          "days": 11
         },
         "asof": "2026-01-01",
         "stale": true
@@ -1271,7 +1271,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-09-17",
-          "days": 61
+          "days": 60
         },
         "asof": "2026-06-01",
         "stale": false
@@ -1299,7 +1299,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-09-02",
-          "days": 46
+          "days": 45
         },
         "asof": "2026-06-01",
         "stale": false
@@ -1327,7 +1327,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-08-11",
-          "days": 24
+          "days": 23
         },
         "asof": "2026-06-01",
         "stale": false
@@ -1341,11 +1341,35 @@
       "RBA: balance-sheet series not available (honest null)"
     ],
     "as_of": "2026-07-17",
-    "built": "2026-07-18T17:09:46.786534+00:00",
+    "built": "2026-07-19T02:43:44.377549+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
-  "smile": null,
+  "smile": {
+    "beta": 0.0169,
+    "r2": 0.057,
+    "residual_20d": -0.00322,
+    "residual_20d_z": -0.236,
+    "regime": "rates-driven",
+    "regime_60d": "rates-driven",
+    "safety_bid_today": false,
+    "ols_window_days": 120,
+    "z_window_days": 252,
+    "regime_thresholds": {
+      "rates_driven": "|z| < 1",
+      "safety_driven": "z >= 1 (positive residual — DXY up more than rates explain)",
+      "mixed": "z <= -1 (negative residual — risk-appetite, DXY soft vs rates)"
+    },
+    "weights_used": {
+      "eur2y": 0.693,
+      "jpy2y": 0.164,
+      "gbp2y": 0.143
+    },
+    "weights_note": "DXY basket weights: EUR 57.6%, JPY 13.6%, GBP 11.9% (ICE benchmark). Re-weighted to available 2y series: EUR 69.3%, JPY 16.4%, GBP 14.3%. CAD/SEK/CHF excluded (no 2y in store). Actual weights after re-norm: {'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}.",
+    "gaps": [],
+    "display_only": true,
+    "built": "2026-07-19T02:05:00.070320+00:00"
+  },
   "inversion_board": {
     "n_inverted": 0,
     "n_total": 6,
@@ -1388,13 +1412,13 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-07-18T17:09:46.824895+00:00"
+    "built": "2026-07-19T02:43:44.418971+00:00"
   },
   "swap_lines_bn": 0.1,
   "top_transmitters_display": [
     {
       "ticker": "EWA",
-      "to_others_pct": 134.0,
+      "to_others_pct": 133.9,
       "name_en": "Australia",
       "name_zh": "澳大利亚",
       "flag": "🇦🇺"
@@ -1417,57 +1441,57 @@
   "emb_ief_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 220 38\" preserveAspectRatio=\"none\" width=\"100%\" height=\"38\"><polyline points=\"0,38 0.0,20.0 1.8,19.5 3.7,19.8 5.5,20.3 7.4,20.5 9.2,20.1 11.1,20.6 12.9,20.2 14.8,22.2 16.6,20.6 18.5,20.6 20.3,21.6 22.2,19.9 24.0,21.9 25.9,23.2 27.7,21.9 29.6,20.4 31.4,21.7 33.3,21.0 35.1,22.8 37.0,23.1 38.8,22.0 40.7,24.0 42.5,26.1 44.4,25.3 46.2,27.3 48.1,24.1 49.9,25.3 51.8,28.8 53.6,29.4 55.5,27.5 57.3,26.7 59.2,29.8 61.0,32.0 62.9,32.4 64.7,31.2 66.6,33.1 68.4,31.4 70.3,35.4 72.1,31.5 73.9,32.5 75.8,30.3 77.6,31.6 79.5,34.9 81.3,38.0 83.2,33.9 85.0,31.9 86.9,32.6 88.7,31.2 90.6,32.4 92.4,26.7 94.3,24.0 96.1,23.0 98.0,21.1 99.8,20.3 101.7,20.3 103.5,21.1 105.4,19.9 107.2,19.8 109.1,20.0 110.9,19.1 112.8,21.0 114.6,20.5 116.5,20.2 118.3,20.1 120.2,20.1 122.0,19.3 123.9,19.3 125.7,20.1 127.6,18.2 129.4,16.5 131.3,17.0 133.1,17.0 135.0,16.1 136.8,15.6 138.7,16.8 140.5,16.4 142.4,16.8 144.2,17.2 146.1,17.2 147.9,17.0 149.7,16.9 151.6,16.3 153.4,15.9 155.3,14.0 157.1,13.8 159.0,13.3 160.8,12.8 162.7,11.7 164.5,12.4 166.4,11.9 168.2,13.2 170.1,13.3 171.9,12.5 173.8,13.9 175.6,12.3 177.5,10.7 179.3,9.1 181.2,10.9 183.0,10.2 184.9,9.5 186.7,9.3 188.6,10.9 190.4,12.9 192.3,13.4 194.1,15.0 196.0,13.4 197.8,12.7 199.7,11.9 201.5,11.3 203.4,10.7 205.2,10.2 207.1,9.9 208.9,10.2 210.8,9.5 212.6,11.1 214.5,11.6 216.3,12.1 218.2,12.6 220.0,13.7 220,38\" fill=\"var(--info)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,20.0 1.8,19.5 3.7,19.8 5.5,20.3 7.4,20.5 9.2,20.1 11.1,20.6 12.9,20.2 14.8,22.2 16.6,20.6 18.5,20.6 20.3,21.6 22.2,19.9 24.0,21.9 25.9,23.2 27.7,21.9 29.6,20.4 31.4,21.7 33.3,21.0 35.1,22.8 37.0,23.1 38.8,22.0 40.7,24.0 42.5,26.1 44.4,25.3 46.2,27.3 48.1,24.1 49.9,25.3 51.8,28.8 53.6,29.4 55.5,27.5 57.3,26.7 59.2,29.8 61.0,32.0 62.9,32.4 64.7,31.2 66.6,33.1 68.4,31.4 70.3,35.4 72.1,31.5 73.9,32.5 75.8,30.3 77.6,31.6 79.5,34.9 81.3,38.0 83.2,33.9 85.0,31.9 86.9,32.6 88.7,31.2 90.6,32.4 92.4,26.7 94.3,24.0 96.1,23.0 98.0,21.1 99.8,20.3 101.7,20.3 103.5,21.1 105.4,19.9 107.2,19.8 109.1,20.0 110.9,19.1 112.8,21.0 114.6,20.5 116.5,20.2 118.3,20.1 120.2,20.1 122.0,19.3 123.9,19.3 125.7,20.1 127.6,18.2 129.4,16.5 131.3,17.0 133.1,17.0 135.0,16.1 136.8,15.6 138.7,16.8 140.5,16.4 142.4,16.8 144.2,17.2 146.1,17.2 147.9,17.0 149.7,16.9 151.6,16.3 153.4,15.9 155.3,14.0 157.1,13.8 159.0,13.3 160.8,12.8 162.7,11.7 164.5,12.4 166.4,11.9 168.2,13.2 170.1,13.3 171.9,12.5 173.8,13.9 175.6,12.3 177.5,10.7 179.3,9.1 181.2,10.9 183.0,10.2 184.9,9.5 186.7,9.3 188.6,10.9 190.4,12.9 192.3,13.4 194.1,15.0 196.0,13.4 197.8,12.7 199.7,11.9 201.5,11.3 203.4,10.7 205.2,10.2 207.1,9.9 208.9,10.2 210.8,9.5 212.6,11.1 214.5,11.6 216.3,12.1 218.2,12.6 220.0,13.7\" fill=\"none\" stroke=\"var(--info)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"220.0\" cy=\"13.7\" r=\"2.6\" fill=\"var(--info)\"/></svg>",
   "spillover_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 200 34\" preserveAspectRatio=\"none\" width=\"100%\" height=\"34\"><polyline points=\"0,34 0.0,9.3 3.9,8.8 7.8,8.6 11.8,8.8 15.7,8.4 19.6,8.2 23.5,8.2 27.5,8.3 31.4,9.0 35.3,8.6 39.2,8.4 43.1,8.4 47.1,8.7 51.0,8.8 54.9,9.3 58.8,8.8 62.7,11.9 66.7,11.9 70.6,11.4 74.5,11.3 78.4,16.2 82.4,34.0 86.3,30.6 90.2,27.8 94.1,25.5 98.0,22.2 102.0,19.2 105.9,19.1 109.8,20.7 113.7,23.2 117.6,21.7 121.6,20.9 125.5,20.9 129.4,15.1 133.3,19.0 137.3,19.0 141.2,20.5 145.1,19.2 149.0,21.6 152.9,22.7 156.9,19.6 160.8,17.5 164.7,17.3 168.6,19.6 172.5,19.9 176.5,18.7 180.4,19.8 184.3,20.9 188.2,23.1 192.2,23.9 196.1,20.3 200.0,20.3 200,34\" fill=\"var(--warn)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,9.3 3.9,8.8 7.8,8.6 11.8,8.8 15.7,8.4 19.6,8.2 23.5,8.2 27.5,8.3 31.4,9.0 35.3,8.6 39.2,8.4 43.1,8.4 47.1,8.7 51.0,8.8 54.9,9.3 58.8,8.8 62.7,11.9 66.7,11.9 70.6,11.4 74.5,11.3 78.4,16.2 82.4,34.0 86.3,30.6 90.2,27.8 94.1,25.5 98.0,22.2 102.0,19.2 105.9,19.1 109.8,20.7 113.7,23.2 117.6,21.7 121.6,20.9 125.5,20.9 129.4,15.1 133.3,19.0 137.3,19.0 141.2,20.5 145.1,19.2 149.0,21.6 152.9,22.7 156.9,19.6 160.8,17.5 164.7,17.3 168.6,19.6 172.5,19.9 176.5,18.7 180.4,19.8 184.3,20.9 188.2,23.1 192.2,23.9 196.1,20.3 200.0,20.3\" fill=\"none\" stroke=\"var(--warn)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"200.0\" cy=\"20.3\" r=\"2.6\" fill=\"var(--warn)\"/></svg>",
   "contagion_links": {
-    "as_of": "2026-07-18",
+    "as_of": "2026-07-19",
     "pressure": {
       "us": {
-        "pct": 0.8512,
-        "level": "moderate"
+        "pct": 0.9107,
+        "level": "high"
       },
       "cn": {
-        "pct": 0.6647,
-        "level": "low"
-      },
-      "hk": {
-        "pct": 0.881,
+        "pct": 0.7738,
         "level": "moderate"
       },
+      "hk": {
+        "pct": 0.9226,
+        "level": "high"
+      },
       "ca": {
-        "pct": 0.8274,
+        "pct": 0.881,
         "level": "moderate"
       },
       "kr": {
-        "pct": 0.8135,
-        "level": "moderate"
+        "pct": 0.9107,
+        "level": "high"
       },
       "jp": {
-        "pct": 0.8532,
-        "level": "moderate"
+        "pct": 0.9048,
+        "level": "high"
       },
       "tw": {
-        "pct": 0.9067,
+        "pct": 0.9286,
         "level": "high"
       },
       "in": {
-        "pct": 0.8135,
+        "pct": 0.8591,
         "level": "moderate"
       },
       "au": {
-        "pct": 0.881,
-        "level": "moderate"
+        "pct": 0.9246,
+        "level": "high"
       },
       "gb": {
-        "pct": 0.8194,
+        "pct": 0.8889,
         "level": "moderate"
       },
       "ez": {
-        "pct": 0.8214,
+        "pct": 0.869,
         "level": "moderate"
       }
     },
     "top_stressed": [
       "tw",
-      "hk",
-      "au"
+      "au",
+      "hk"
     ]
   }
 }

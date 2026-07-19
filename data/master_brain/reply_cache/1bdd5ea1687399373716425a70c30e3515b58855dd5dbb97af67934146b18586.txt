@@ -1,0 +1,51 @@
+{
+  "regime_context": "The TSX narrative rotation is led by Big Banks with broad, durable momentum but crowded positioning. The absolute-trend gate, the only validated risk-control edge, is functional (gate_helps true) and 10 of 16 themes are eligible, indicating wide trend integrity. Rotation margin is wide (0.802) and no handoff is confirmed; momentum ranks remain an attention lens only.",
+  "theses": [
+    {
+      "subject": "Big Banks",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "The absolute-trend gate confirms the trend, and durability/cohesion are high, supporting staying power. However, the theme is crowded and the momentum signal has no forward return edge, so this is an exposure leaning on the risk-control leg, not a return call.",
+      "evidence": [
+        "eligible: true (absolute-trend gate intact)",
+        "durability_bar: 0.74",
+        "breadth: 1.0",
+        "absolute_trend_gate backtest verdict: validated risk control"
+      ],
+      "dissent": "Crowding (z=1.59) and mixed hurst tag suggest the trend is mature and vulnerable to a shake-out; rank-IC near zero means no predictive edge.",
+      "falsifier_text": "If ZEB.TO closes below its 50-day simple moving average for two consecutive days, the trend gate would likely flip, invalidating the lean."
+    },
+    {
+      "subject": "REITs",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 40,
+      "thesis": "Despite a negative momentum rank, the absolute-trend gate is intact (eligible), with high durability (0.69) and broad breadth (0.917), and it is not crowded. This aligns with the risk-control edge, as the trend appears stable with low drawdown risk. The momentum rank is not alpha, so being in the trend may still avoid underperformance.",
+      "evidence": [
+        "eligible: true",
+        "durability_bar: 0.69",
+        "breadth: 0.917",
+        "crowded: false",
+        "absolute_trend_gate validated risk control"
+      ],
+      "dissent": "The negative score (-0.235) indicates relative underperformance; the trend could be stagnating rather than advancing. Hurst tag is mixed, not trending, so breakouts are unlikely.",
+      "falsifier_text": "If XRE.TO falls below its 20-day exponential moving average and breadth drops below 0.7, the trend gate may be violated, negating the risk-control benefit."
+    },
+    {
+      "subject": "Technology",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "The absolute-trend gate (ineligible) signals a broken or absent trend. The one validated edge is drawdown reduction by adhering to this gate; avoiding ineligible themes reduces exposure to adverse moves. Rank and durability are not actionable here.",
+      "evidence": [
+        "eligible: false (absolute-trend gate breached)",
+        "backtest_verdict.absolute_trend_gate: validated risk control"
+      ],
+      "dissent": "Durability_bar is high (0.74) and breadth 0.8, suggesting underlying cohesion; a trend re-establishment could happen quickly, causing missed gains.",
+      "falsifier_text": "If XIT.TO closes above its 200-day simple moving average and the gate flips to eligible, the avoid call is negated."
+    }
+  ],
+  "emerging_watch": "Pipelines & Midstream as a potential handoff: watch if the score margin to Big Banks narrows to <0.5 and absorption rises above 0.6, with Pipelines durability >0.7. Kill if Banks' trend gate remains intact and margin re-widens >1.0.",
+  "confidence": "low"
+}

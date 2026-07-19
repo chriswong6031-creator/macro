@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
-  "as_of": "2026-07-18",
-  "generated_at": "2026-07-18T03:30:13Z",
+  "as_of": "2026-07-19",
+  "generated_at": "2026-07-19T03:21:42Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -65,16 +65,16 @@
           "basket_id": "ai_semiconductors",
           "state": "NEGATIVE_DIVERGENCE",
           "lifecycle": "fading",
-          "divergence": -1.628,
-          "salience": 1.628,
+          "divergence": -1.252,
+          "salience": 1.252,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
           "basket_id": "ai_infra",
           "state": "NEGATIVE_DIVERGENCE",
           "lifecycle": "fading",
-          "divergence": -0.748,
-          "salience": 0.748,
+          "divergence": -0.574,
+          "salience": 0.574,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -116,10 +116,10 @@
       },
       "divergence_board": {
         "quadrant": "hidden-opportunity",
-        "divergence": -0.1176,
+        "divergence": -0.2353,
         "narrative_pct": 0.5294,
-        "money_pct": 0.6471,
-        "asof": "2026-07-12",
+        "money_pct": 0.7647,
+        "asof": "2026-07-19",
         "source": "data/foresight/divergence_log.jsonl"
       },
       "basket_ids": [
@@ -162,8 +162,8 @@
           "basket_id": "memory_storage",
           "state": "NEGATIVE_DIVERGENCE",
           "lifecycle": "fading",
-          "divergence": -4.56,
-          "salience": 4.56,
+          "divergence": -4.707,
+          "salience": 4.707,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -235,8 +235,8 @@
           "basket_id": "semicap_equipment",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.223,
-          "salience": 0.223,
+          "divergence": -0.207,
+          "salience": 0.207,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -320,16 +320,16 @@
           "basket_id": "data_center_power",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.259,
-          "salience": 1.259,
+          "divergence": 1.147,
+          "salience": 1.147,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
           "basket_id": "ai_neoclouds",
-          "state": "QUIET",
-          "lifecycle": "quiet",
-          "divergence": 0.774,
-          "salience": 0.774,
+          "state": "CONFIRMED_DOWN",
+          "lifecycle": "fading",
+          "divergence": 0.04,
+          "salience": 0.04,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -407,16 +407,16 @@
           "basket_id": "nuclear_power",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.513,
-          "salience": 1.513,
+          "divergence": 1.325,
+          "salience": 1.325,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
           "basket_id": "uranium_miners",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 4.435,
-          "salience": 4.435,
+          "divergence": 4.078,
+          "salience": 4.078,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -482,8 +482,8 @@
           "basket_id": "power_grid",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 0.812,
-          "salience": 0.812,
+          "divergence": 0.614,
+          "salience": 0.614,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -548,8 +548,8 @@
           "basket_id": "cybersecurity",
           "state": "CONFIRMED_UP",
           "lifecycle": "mature",
-          "divergence": -1.854,
-          "salience": 1.854,
+          "divergence": -1.819,
+          "salience": 1.819,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -597,7 +597,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 37.4,
+        "score": 41.3,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -621,8 +621,8 @@
           "basket_id": "defense",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.327,
-          "salience": 1.327,
+          "divergence": 1.142,
+          "salience": 1.142,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -694,8 +694,8 @@
           "basket_id": "robotics_automation",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 0.985,
-          "salience": 0.985,
+          "divergence": 0.903,
+          "salience": 0.903,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -797,8 +797,8 @@
           "basket_id": "obesity_glp1",
           "state": "NEGATIVE_DIVERGENCE",
           "lifecycle": "fading",
-          "divergence": -1.188,
-          "salience": 1.188,
+          "divergence": -1.204,
+          "salience": 1.204,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -870,8 +870,8 @@
           "basket_id": "payments_fintech",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.1,
-          "salience": 0.1,
+          "divergence": -0.198,
+          "salience": 0.198,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -943,8 +943,8 @@
           "basket_id": "space_economy",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 4.034,
-          "salience": 4.034,
+          "divergence": 3.837,
+          "salience": 3.837,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1009,8 +1009,8 @@
           "basket_id": "critical_minerals",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 4.557,
-          "salience": 4.557,
+          "divergence": 4.575,
+          "salience": 4.575,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1075,8 +1075,8 @@
           "basket_id": "reshoring",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 0.016,
-          "salience": 0.016,
+          "divergence": -0.131,
+          "salience": 0.131,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1174,7 +1174,7 @@
       "foresight": {
         "stage": "PRECIPICE (fingerprint)",
         "tier": "P",
-        "score": 57.5,
+        "score": 56.2,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1198,8 +1198,8 @@
           "basket_id": "managed_care",
           "state": "NEGATIVE_DIVERGENCE",
           "lifecycle": "fading",
-          "divergence": -4.145,
-          "salience": 4.145,
+          "divergence": -4.334,
+          "salience": 4.334,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1319,7 +1319,7 @@
     }
   ],
   "stale_legs": [
-    "divergence_log[ai_semiconductors]: stale (as_of=2026-07-12)",
+    "divergence_log[defense_aerospace]: stale (as_of=2026-07-14)",
     "divergence_log[glp1_obesity]: stale (as_of=2026-07-07)",
     "divergence_log[fintech_payments]: stale (as_of=2026-07-07)",
     "divergence_log[memory_storage]: stale (as_of=2026-07-09)"
@@ -1336,7 +1336,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-18T03:30:13Z",
-  "inputs_hash": "sha256:01aab514f3d81609699604e948ac5b53be13dcbe823092fd758a1fb85d8f143b",
+  "produced_at": "2026-07-19T03:21:42Z",
+  "inputs_hash": "sha256:c1b29b4c2e85b1a21291ea6eedf969d40f942167639a1eca49f3c8fbfb7d03f7",
   "tier": "display"
 }

@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "KKR-BULL-20260318",
-  "asof": "2026-07-17",
+  "asof": "2026-07-18",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 32.7,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.257,
     "dist_to_t1_r": 1.243,
     "dist_to_t2_r": 2.743,
-    "horizon_pct_used": 268.9,
+    "horizon_pct_used": 271.1,
     "p1": 0.171,
     "p2": 0.0855,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 121,
-  "tau": 2.6889
+  "days_elapsed": 122,
+  "tau": 2.7111
 }

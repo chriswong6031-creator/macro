@@ -1,5 +1,5 @@
 {
- "generated": "2026-07-18T03:17:44.528419+00:00",
+ "generated": "2026-07-19T03:08:55.249045+00:00",
  "source": "git-archaeology + forward snapshots (unioned, de-duped on as_of)",
  "board_dates_total": 9,
  "board_dates_range": [
@@ -30,8 +30,8 @@
   "tickers_skipped": [],
   "n_recovered_by_dead_store": 0,
   "dead_store_active": true,
-  "dead_store_tickers": 415,
-  "note": "prices resolved via live broad cache (1530 tickers) + edgar dead-name store (415 tickers); 0 board names recovered from dead store; n_skipped_no_price counts ONLY names absent from both sources (likely delisted / never cached \u2014 the residual survivor bias)"
+  "dead_store_tickers": 417,
+  "note": "prices resolved via live broad cache (1530 tickers) + edgar dead-name store (417 tickers); 0 board names recovered from dead store; n_skipped_no_price counts ONLY names absent from both sources (likely delisted / never cached \u2014 the residual survivor bias)"
  },
  "conventions": {
   "entry": "next session's close after as_of (next-bar realism, via engine.grading.fill_index)",

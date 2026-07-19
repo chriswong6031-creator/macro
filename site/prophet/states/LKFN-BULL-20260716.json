@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LKFN-BULL-20260716",
-  "asof": "2026-07-17",
+  "asof": "2026-07-18",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 67.4,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.0,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 2.2,
+    "horizon_pct_used": 4.4,
     "p1": 0.0,
     "p2": 0.0,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 1,
-  "tau": 0.0222
+  "days_elapsed": 2,
+  "tau": 0.0444
 }

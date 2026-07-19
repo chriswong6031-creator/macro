@@ -1,22 +1,22 @@
 {
   "as_of": "2026-07-17",
-  "built_at": "2026-07-18T02:59:42Z",
+  "built_at": "2026-07-19T02:38:12Z",
   "latest_pulse": {
     "date": "2026-07-17",
     "class": "quiet",
-    "market_vol_ratio": 0.899,
-    "up_share": 0.228,
+    "market_vol_ratio": 0.985,
+    "up_share": 0.23,
     "basis": "updown",
     "n_megacap_rvol2": 1,
     "megacap_rvol": {
-      "NFLX": 3.08,
-      "UNH": 1.71,
+      "NFLX": 3.09,
+      "UNH": 1.84,
+      "WMT": 1.38,
       "XOM": 1.32,
-      "AAPL": 1.21,
-      "META": 1.14,
-      "WMT": 1.11,
-      "AMD": 1.11,
-      "GOOGL": 1.08
+      "BAC": 1.32,
+      "MRK": 1.31,
+      "BRK-B": 1.26,
+      "AAPL": 1.21
     },
     "calendar": {
       "is_quarter_end": false,

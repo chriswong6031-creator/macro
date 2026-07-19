@@ -1,0 +1,43 @@
+## Crowding‑Skeptic Desk Note  
+**2026‑07‑17 | HSI Thematic Detector | Hong Kong**
+
+### Over‑Extended Theme: Tech Hardware & Semis  
+The detector’s headline allocation (25%) is **Tech Hardware & Semis**. Despite a benign crowding Z‑score (0.06) and “trend” persistence, the theme looks uncomfortably extended when assessed on **participation quality**.
+
+The red flag is **breadth** — only **16.7%** of constituents are sustaining the move (score 1.78, durability 0.64). This is a textbook thinning‑breadth rally: a narrow handful of names are dragging the theme’s momentum score to an extreme, while the rotation backdrop is already tight (only four of seventeen themes eligible, absorption 0.55, margin over the challenger a wide 1.19).
+
+#### Bear‑case for Tech Hardware
+- **Concentration fragility** — When leadership narrows this sharply, the theme becomes acutely vulnerable to a shock in the few carrying names (e.g. a single large‑cap semi profit warning, delivery miss, or US‑chip restriction headline).  
+- **Absolute‑trend gate lags** — The gate is validated for longer‑cycle drawdown control, not for gap‑downs driven by a sudden leader‑exit. Thinning breadth often precedes abrupt reversals where the trend signal turns only after a painful leg down.  
+- **Reflexivity trap** — Momentum rank is a coincident lens, not alpha. Here it may be attracting late‑arrivers, which historically marks a **cap‑size point**, not a re‑entry.
+
+**Concrete sizing caution**: This is a **size‑down** signal — cap the allocation, do not add. No fade, no short, no exit‑panic; simply reduce from a full‑allowance to a acknowledged‑risk position.
+
+---
+
+### Sharpest Bear Case on Remaining Eligible Longs  
+*(Eligible = tech hardware, conglomerates, high‑dividend blue chips, banks)*
+
+- **Conglomerates & Exchange** (score 0.58, breadth 0.80, mean‑reverting)  
+  The high breadth is reassuring, but the mean‑reversion tag (Hurst) warns that recent strength may not persist. Exchange‑driven volumes often spike on regulatory or macro one‑offs; a normalisation of turnover could deflate the theme quickly. A classic “false dawn” risk.
+
+- **High‑Dividend Blue Chips** (score 0.50, breadth 0.50, trend)  
+  Healthy durability but only average breadth. In a liquidity‑constrained or rising‑real‑rate environment, dividend payers can suffer equity‑duration pain. If earnings momentum stalls (e.g. weak property or utility earnings), the yield‑support narrative cracks fast.
+
+- **Banks** (score 0.23, breadth 0.54, mixed Hurst)  
+  Decent participation but no clear trend persistence. Margin compression, China property‑debt overhang, and regulatory pressure on net interest margins remain unresolved. The theme scores just above the cut‑off and could easily roll over without strong tailwinds.
+
+---
+
+### Falsifiable Check‑by  
+**Conditional**: “If within **two weeks** the breadth of Tech Hardware & Semis expands meaningfully above 0.35 and durability holds >0.60, the crowding‑sizing caution weakens. Conversely, if breadth stays ≤0.20 and the durability bar dips below 0.60, the fragile profile is confirmed.”  
+*Horizon: 26‑Jul‑2026*
+
+---
+
+### Context & Guardrails  
+- No instrument‑specific weighting, trade, or out‑and‑out lag prediction is given here.  
+- The detector’s only validated edge is **drawdown avoidance via the absolute‑trend gate**; crowding flags are a **down‑sizing** lens.  
+- Fading the leader (Tech Hardware) because it’s narrow would be the documented failure mode — I advocate reducing exposure, not reversing it.
+
+*This is a fallible, coincident assessment. It does not extract alpha from the detector; it translates one crowding‑texture signal into a risk‑hygiene suggestion.*

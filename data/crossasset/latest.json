@@ -1,7 +1,7 @@
 {
-  "date": "2026-07-17",
-  "regime": "mixed / no clear trend",
-  "breadth": 0.3,
+  "date": "2026-07-18",
+  "regime": "risk-on trends",
+  "breadth": 0.38,
   "favored": [
     "equity_us",
     "equity_sm",
@@ -10,16 +10,131 @@
     "dollar"
   ],
   "correlation": "concentrated",
-  "asof": "2026-07-17",
+  "asof": "2026-07-18",
   "flows": {
-    "schema": "crossasset_flows.v1",
+    "schema": "crossasset_flows.v2",
     "display_only": true,
+    "regime": "risk-on trends",
     "correlation": {
       "verdict": "concentrated",
-      "absorption_pctile": 0.88,
-      "n_markets": 6
+      "absorption_pctile": 0.89,
+      "n_markets": 6,
+      "absorption_ratio": 0.422,
+      "mean_abs_corr": 0.286,
+      "dominant_cluster": [
+        "US",
+        "Commodities",
+        "Dollar"
+      ],
+      "spark_w": [
+        0.323,
+        0.325,
+        0.344,
+        0.341,
+        0.338,
+        0.346,
+        0.347,
+        0.34,
+        0.331,
+        0.344,
+        0.374,
+        0.35,
+        0.328,
+        0.344,
+        0.354,
+        0.362,
+        0.343,
+        0.356,
+        0.366,
+        0.374,
+        0.376,
+        0.378,
+        0.376,
+        0.378,
+        0.366,
+        0.356,
+        0.418,
+        0.402,
+        0.398,
+        0.399,
+        0.383,
+        0.316,
+        0.307,
+        0.324,
+        0.308,
+        0.318,
+        0.325,
+        0.32,
+        0.372,
+        0.373,
+        0.371,
+        0.368,
+        0.365,
+        0.358,
+        0.355,
+        0.365,
+        0.364,
+        0.359,
+        0.356,
+        0.359,
+        0.356,
+        0.351,
+        0.29,
+        0.295,
+        0.331,
+        0.331,
+        0.343,
+        0.369,
+        0.36,
+        0.354,
+        0.358,
+        0.346,
+        0.329,
+        0.342,
+        0.378,
+        0.374,
+        0.383,
+        0.386,
+        0.379,
+        0.41,
+        0.407,
+        0.407,
+        0.381,
+        0.375,
+        0.372,
+        0.373,
+        0.381,
+        0.4,
+        0.356,
+        0.363,
+        0.363,
+        0.346,
+        0.348,
+        0.345,
+        0.346,
+        0.356,
+        0.36,
+        0.347,
+        0.358,
+        0.391,
+        0.391,
+        0.381,
+        0.388,
+        0.399,
+        0.412,
+        0.427,
+        0.421,
+        0.439,
+        0.446,
+        0.438,
+        0.446,
+        0.463,
+        0.445,
+        0.422
+      ],
+      "spark_asof": "2026-07-17"
     },
-    "breadth": 0.3,
+    "breadth": 0.38,
     "trend_top": [
       {
         "asset": "equity_us",
@@ -47,31 +162,40 @@
         "z": 1.0
       },
       {
-        "asset": "oil",
-        "trend": "mixed",
-        "z": 0.33
+        "asset": "equity_intl",
+        "trend": "up",
+        "z": 1.0
       }
     ],
+    "trend_summary": {
+      "n": 13,
+      "n_up": 7,
+      "n_down": 2
+    },
     "intermarket": [
       {
         "pair": "copper_gold",
         "ratio": 0.002,
-        "trend": "mid"
+        "trend": "mid",
+        "pctile": 66.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 71.558,
-        "trend": "mid"
+        "ratio": 71.607,
+        "trend": "mid",
+        "pctile": 31.0
       },
       {
         "pair": "oil_gold",
-        "ratio": 0.02,
-        "trend": "mid"
+        "ratio": 0.021,
+        "trend": "mid",
+        "pctile": 55.0
       },
       {
         "pair": "stocks_gold",
         "ratio": 0.185,
-        "trend": "mid"
+        "trend": "mid",
+        "pctile": 59.0
       }
     ],
     "carry": {
@@ -154,19 +278,75 @@
           "t": 2.973,
           "q": 0.087
         }
-      ]
+      ],
+      "stable": false,
+      "lead_asset": {
+        "name": "US",
+        "n_followers": 2
+      },
+      "n_significant": 5,
+      "n_tested": 150
     },
     "global_liquidity": {
       "asof": "2026-06-05",
       "state": "contracting",
       "accel": "steady",
-      "total_usd_tn": 17.85
+      "total_usd_tn": 17.85,
+      "impulse_13w": null
     },
     "funding_stress": {
       "asof": "2026-07-16",
       "state": "calm",
       "score": 23.0,
       "spread_bp": -1.0
+    },
+    "confirm": {
+      "verdict": "diverge",
+      "agree_pct": 50,
+      "n_blind_flags": 1,
+      "flags_top": [
+        {
+          "key": "credit",
+          "en": "High-yield credit widening from tight \u2014 credit risk-appetite turning (partly-leading via the EBP family, but often coincident with equity stress).",
+          "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u4ece\u504f\u7d27\u8d70\u9614 \u2014 \u4fe1\u7528\u98ce\u9669\u504f\u597d\u8f6c\u5411\uff08\u7ecfEBP\u5177\u90e8\u5206\u9886\u5148\u6027\uff0c\u4f46\u5e38\u4e0e\u80a1\u7968\u538b\u529b\u540c\u6b65\uff09\u3002",
+          "severity": "medium",
+          "owner": "bonds",
+          "lead": "leading",
+          "equity_blind": true
+        }
+      ],
+      "asof": "2026-07-17"
+    },
+    "dollar": {
+      "usd_dir": "strengthening",
+      "regime": "US growth premium",
+      "risk": "risk-on",
+      "corr_top": [
+        {
+          "key": "GC=F",
+          "corr": -0.75
+        },
+        {
+          "key": "HG=F",
+          "corr": -0.66
+        },
+        {
+          "key": "SPY",
+          "corr": -0.43
+        }
+      ],
+      "unstable_n": 0,
+      "fx_stress": {
+        "dominant": null,
+        "top_key": "dollar_wrecking_ball",
+        "top_val": 12.1
+      }
+    },
+    "shadow": {
+      "pressure_pctile": 0.89,
+      "incumbent_state": "caution",
+      "shadow_state": "caution",
+      "escalated": false
     },
     "note": "display-only regime read; TSMOM fails DSR (cross-asset-phase0), lead/lag=lag-1 timezone (cross-asset-leadlag-phase0) \u2014 not a strategy/hedge-ratio"
   }

@@ -1,6 +1,6 @@
 {
  "schema": "artifact_manifest/v1",
- "as_of": "2026-07-17",
+ "as_of": "2026-07-18",
  "cadence_basis": "trading_calendar",
  "note": "Per-artifact expected freshness in TRADING-calendar days. A consumer compares the artifact's as_of against `today` counting only trading days; older than expected_max_age_td \u21d2 abstain + flag (fail-closed on genuine staleness, audit #9). Benign weekend/holiday lag is NOT stale because the cadence excludes non-trading days.",
  "artifacts": [
@@ -228,7 +228,7 @@
    "consumers": [
     "bot:china_book"
    ],
-   "note": "China Standout board; CN calendar has more holidays \u2192 wider cadence"
+   "note": "Prophet China board; CN calendar has more holidays \u2192 wider cadence"
   },
   {
    "artifact": "site/factordata/canada_standouts.json",
@@ -283,7 +283,7 @@
    "consumers": [
     "bot:canada_book"
    ],
-   "note": "Canada Standout board"
+   "note": "Prophet Canada board"
   },
   {
    "artifact": "site/regime_timeline.json",

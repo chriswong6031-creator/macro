@@ -1,0 +1,20 @@
+**Macro-Regime Desk Note — Hong Kong (2026-07-17)**
+
+**Regime verdict:** Cautious. The breadth‑of‑rotation structure and the implied cash weight argue for smaller size / higher cash, not for aggressive risk‑on theme exposure. The absolute‑trend gate is active and validated for drawdown control, further reinforcing a defensive posture.
+
+**Why not risk‑on:**
+- **Rotation breadth is narrow** – only 4 of 17 themes qualify as eligible (fraction 0.24). Broad‑based participation typically accompanies durable risk‑on environments; narrow leadership often proves fragile.
+- **Headline cash weight is 25 %** – the headline theme (Tech Hardware & Semis) carries a 0.25 weight and the model simultaneously allocates 0.25 to cash. This is a direct signal from the regime that a material cash buffer is warranted, not just a marginal trim.
+- **Leader’s internal depth is thin** – Tech Hardware shows a breadth of just 0.167, meaning the advance within the theme is driven by very few names. Even though the theme is trending (Hurst “trend”), low participation increases vulnerability to sharp reversals.
+- **Challenger texture is not plainly constructive** – the second‑ranked Conglomerates theme has high breadth but a mean‑reversion Hurst tag, and the challenger gap vs. the leader is large (margin 1.19). This does not point to a broadening‑out rotation that would support a “risk‑on broadening” thesis.
+- **Macro backdrop is noisy** – AI/tech dominates headlines, but geopolitics is a strong second theme, and unscheduled/surprise news share is 61 % over the past five days. That high surprise flow can easily break fragile leadership without warning.
+
+**What the absolute‑trend gate (the validated edge) is telling us:**  
+The discipline is explicitly a drawdown‑avoidance mechanism, not a return forecast. Gate_helps = true confirms that staying‑power signals are working. In this environment, the gate is already materialised as a 25 % cash allocation and a narrow eligible‑theme set. That is the regime saying “risk is elevated, size down.”
+
+**Falsifiable conditional (check‑by horizon: ~2 weeks):**  
+- If the number of eligible themes rises above ~6–7 AND the leader’s internal breadth improves materially (say >0.4), the caution can be reassessed – that would signal a broadening, more resilient risk‑on environment.  
+- If, conversely, the leader’s trend breaks (Hurst flips to mean‑revert or downtrend) or the cash weight increases further, the regime would argue for even more cash, not a re‑entry.
+
+**Bottom line (no size, no trade):**  
+For now, the regime does **not** support swimming with the Tech Hardware theme at full risk. The message from rotation breadth, headline cash, and the macro noise is to stay smaller and keep powder dry. The leader could persist, but participation is too thin to trust.

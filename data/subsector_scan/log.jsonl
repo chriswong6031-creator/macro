@@ -52,3 +52,6 @@
 {"sub_industry":"Medical Devices","sector":"Healthcare","asof":"2026-07-18","ts":"2026-07-18T02:25:56.300412+00:00","stage":"PRECIPICE","breadth":-0.141,"n_scarcity":2}
 {"sub_industry":"Specialty Industrial Machinery","sector":"Industrials","asof":"2026-07-18","ts":"2026-07-18T02:25:56.300412+00:00","stage":"BROADENING","breadth":0.306,"n_scarcity":4}
 {"sub_industry":"Aerospace & Defense","sector":"Industrials","asof":"2026-07-18","ts":"2026-07-18T02:25:56.300412+00:00","stage":"BROADENING","breadth":0.266,"n_scarcity":4}
+{"sub_industry":"Medical Devices","sector":"Healthcare","asof":"2026-07-19","ts":"2026-07-19T02:03:51.176204+00:00","stage":"PRECIPICE","breadth":-0.141,"n_scarcity":2}
+{"sub_industry":"Specialty Industrial Machinery","sector":"Industrials","asof":"2026-07-19","ts":"2026-07-19T02:03:51.176204+00:00","stage":"BROADENING","breadth":0.368,"n_scarcity":4}
+{"sub_industry":"Aerospace & Defense","sector":"Industrials","asof":"2026-07-19","ts":"2026-07-19T02:03:51.176204+00:00","stage":"BROADENING","breadth":0.306,"n_scarcity":4}

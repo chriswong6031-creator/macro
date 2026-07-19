@@ -1,0 +1,40 @@
+**Desk Note — Canada / TSX**
+**Role:** Macro-Regime Analyst (coincident lens, not a trade call)
+**Date:** 2026-07-17
+
+### 1. Regime Snapshot
+- **Headline theme:** Big Banks (rank 1, durability 0.74, breadth 1.0, crowded, one_narrative = false)
+- **Rotation structure:** Broad (eligible themes 10/16, breadth-of-rotation fraction 0.62). No single theme dominates; absorption is low (0.36). Leadership margin is wide (0.80) but the rotation is not directional — it’s a diversification bounce, not a handoff.
+- **Discipline edge:** *gate_helps = true* — the absolute-trend gate materially reduces drawdown/volatility on this market. Rotation timing has no validated edge; momentum rank is ~focus lens (rank-IC ≈0). All other signals are coincident, not predictive.
+
+### 2. Macro Backdrop (coincident, never a trigger)
+- **Narrative concentration:** AI/tech (n=75) and geopolitics (n=49) dominate the 5-day flow. Markets chatter (23), inflation (8) present but minor. This is a risk-on/risk-off mix — transformative innovation stories competing with geopolitical tension.
+- **Surprise intensity:** Unscheduled share is elevated (0.61). Headlines are random-walk driven; risk appetite can flip aggressively on a single datapoint or geopolitical event.
+
+### 3. Risk-Appetite Assessment — Does the regime support risk-on theme exposure AT ALL?
+**Conditional “yes,” but with smaller size and a hard cash floor.**  
+
+Why not outright bullish:
+- **No one-narrative** — The market lacks a single, absorbing story that forces capital concentration. Broad rotation means many themes are moving, but leadership is diffuse. Historically, this environment favours nimble, factor-like exposure, not large thematic tilts.
+- **Leader is crowded** — Big Banks show crowded flag (z=1.59). This is a sizing caution (cap, don’t fade), not a sell signal. Reflexivity can keep the crowded theme running, but tail risk is elevated.
+- **High unscheduled macro share** — Geopolitical and AI news can reshape the risk landscape overnight. A regime that relies on drawdown control (gate_helps) pairs poorly with oversized bets in a surprise-heavy environment.
+- **Absorption is low** — The market is not efficiently digesting flows into a dominant narrative; leadership can rotate quickly. This reduces conviction in any single theme’s staying power.
+
+Why not outright defensive:
+- **Gate_helps is true** — The absolute-trend discipline has a validated edge in controlling left-tail risk on the TSX. That means trend-following, vol-aware exposure to the leading theme(s) is a risk-managed way to participate.
+- **Leader durability is adequate** — Durability bar 0.74, breadth 1.0: the Banks theme is intact and broad internally. It is not a fragile, single-stock pseudo-theme.
+- **Rotation is broad, not degenerate** — A broad eligible set (0.62) suggests the market is not broken; it’s rotating healthily across sectors. This is a typical “stock picker’s” backdrop, not a universal sell-everything signal.
+
+**Net call:** The regime permits **small, strictly gated risk-on exposure** to the leadership theme(s) — but **position size must be below baseline**, and cash must be materially higher than in a high-absorption, one-narrative regime. Use the absolute-trend gate to enforce drawdown limits; do not let any exposure run un-gated.
+
+### 4. Falsifiable Conditional Lean (check-by: July 31, 2026)
+> **IF by July 31** (i) Big Banks remains the top-ranked eligible theme with durability ≥0.65, (ii) breadth of eligible themes stays above 0.50, (iii) absorption does not fall below 0.20, and (iv) the unscheduled macro headline share does not spike above 0.75 for a rolling 5-day window, THEN a small, gated allocation to the Banks theme (using absolute-trend rules) is defensible.  
+> **IF any of these conditions break** — leader change with durability decay, breadth collapse, absorption crash, or a surge in unscheduled macro shocks — THEN reduce theme exposure aggressively and raise cash to overweight.
+
+This lean is **falsifiable** (the four conditions are observable) and **does not predict the next narrative**. It simply states the conditions under which the dominant theme’s risk-managed participation is consistent with the known edge (drawdown avoidance).  
+
+### 5. Guardrails Recap (how this note is bounded)
+- Momentum rank is not a return forecast; do not buy into the leader because it’s rank 1.
+- Crowding is not a fade call — cap the position, do not short or underweight.
+- No next-theme prediction is made; we do not guess when Banks will hand off.
+- Cash allocation is a discipline tool, not a market call; this regime justifies a higher cash weighting than a one-narrative bull run would.

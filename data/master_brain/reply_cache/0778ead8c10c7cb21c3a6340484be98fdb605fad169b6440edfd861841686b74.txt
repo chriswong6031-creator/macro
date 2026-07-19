@@ -1,0 +1,8 @@
+**Desk Note: Thematic Trend-Rider (US, 2026-07-17)**
+**Subject** – Honest, falsifiable case for staying with the leading durable theme(s)
+
+We’re still in the “Memory, HBM & Storage” (memory_storage) leadership. Rank 1, broad-based scoring advantage (2.89 vs next at 1.85), not crowded (crowding_z –0.36), and the only validated edge – the absolute-trend drawdown gate – remains the discipline’s compass. The durability bar sits at 0.50, borderline but still within the “stay” envelope; hurst is mixed and the 10-day return is mildly negative (r10 –0.1269, fading), which is exactly the kind of shake-out that the trend‑following gate is built to absorb.
+
+The one-narrative signal is false – this is not a narrow, reflexive blow-off. Breadth of rotation is 0.70, so the market is dispersing rather than concentrating into a single crowded story. That environment doesn’t demand a top-call; it demands patience with the established leader unless the absolute‑trend gate breaks.
+
+**Falsifiable conditional**: *If by the end of the next 4‑week window (≈ 14 August 2026) the Memory, HBM & Storage theme breaches its absolute‑trend threshold (price‑based gate), the discipline switches to risk‑off for this theme – and the above case evaporates. Until then, the honest carry is to stay with the leader, not to fade it.*

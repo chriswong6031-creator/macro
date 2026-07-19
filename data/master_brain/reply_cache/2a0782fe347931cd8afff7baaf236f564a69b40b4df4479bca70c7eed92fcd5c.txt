@@ -1,0 +1,5 @@
+{
+  "regime_context": "The flow lens verdict is display_only; it shows a dominant cluster of Consumer Discretionary, Real Estate, Financials, and Health Care with elevated relative strength, while VIX at 18.8 (65th pctile) and fear rebuilding with no relief snap. The lens has no validated forward edge (rank-IC ~0), so no directional signal is present.",
+  "theses": [],
+  "confidence": "low"
+}

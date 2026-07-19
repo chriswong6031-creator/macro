@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ENOV-BULL-20260706",
-  "asof": "2026-07-17",
+  "asof": "2026-07-18",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 63.4,
-  "raw_confidence": 63.2,
-  "delta_vs_base": 3.4,
+  "management_confidence": 62.7,
+  "raw_confidence": 61.9,
+  "delta_vs_base": 2.7,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
     "progress": 15.5,
-    "pace": 83.0,
+    "pace": 77.3,
     "retention": 50.0,
     "overlay": 53.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.209,
     "dist_to_t1_r": 1.291,
     "dist_to_t2_r": 2.791,
-    "horizon_pct_used": 24.4,
+    "horizon_pct_used": 26.7,
     "p1": 0.1395,
     "p2": 0.0697,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Trigger Confirmed",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 11,
-  "tau": 0.2444
+  "days_elapsed": 12,
+  "tau": 0.2667
 }

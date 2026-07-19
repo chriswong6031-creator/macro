@@ -1,12 +1,12 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-17",
+  "as_of": "2026-07-18",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
       "scored": 10,
-      "open": 30,
+      "open": 32,
       "hit_rate": 0.8,
       "dir_accuracy": 0.9,
       "conviction_monotone": null,
@@ -32,7 +32,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 324,
+      "open": 327,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -44,7 +44,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 112,
+      "open": 113,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -55,20 +55,20 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 12,
-      "open": 94,
-      "hit_rate": 0.5,
-      "dir_accuracy": 0.25,
-      "conviction_monotone": null,
+      "scored": 25,
+      "open": 98,
+      "hit_rate": 0.72,
+      "dir_accuracy": 0.32,
+      "conviction_monotone": true,
       "regimes": [],
       "health": "calibrated",
-      "health_note": "hit-rate 0.5 over 12 scored; conviction ordering holds"
+      "health_note": "hit-rate 0.72 over 25 scored; conviction ordering holds"
     },
     {
       "name": "Demand Chain",
       "slug": "demand_chain",
       "scored": 0,
-      "open": 41,
+      "open": 43,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -127,6 +127,12 @@
         "effective_n": 106
       },
       {
+        "family": "baskets_voltarget_sizing",
+        "itemized": 36,
+        "declared": 80,
+        "effective_n": 80
+      },
+      {
         "family": "cross_asset_phase0",
         "itemized": 0,
         "declared": 72,
@@ -135,8 +141,8 @@
       {
         "family": "vector",
         "itemized": 4,
-        "declared": 68,
-        "effective_n": 68
+        "declared": 71,
+        "effective_n": 71
       },
       {
         "family": "btc_onchain_dd_phase0",
@@ -159,6 +165,30 @@
       {
         "family": "coiled_ca_phase0",
         "itemized": 0,
+        "declared": 40,
+        "effective_n": 40
+      },
+      {
+        "family": "commodities_copper",
+        "itemized": 4,
+        "declared": 40,
+        "effective_n": 40
+      },
+      {
+        "family": "commodities_gold",
+        "itemized": 4,
+        "declared": 40,
+        "effective_n": 40
+      },
+      {
+        "family": "commodities_oil",
+        "itemized": 4,
+        "declared": 40,
+        "effective_n": 40
+      },
+      {
+        "family": "commodities_silver",
+        "itemized": 4,
         "declared": 40,
         "effective_n": 40
       },
@@ -325,6 +355,12 @@
         "effective_n": 12
       },
       {
+        "family": "baskets_rollover_fit",
+        "itemized": 3,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
         "family": "commodity_tsmom_phase0",
         "itemized": 0,
         "declared": 12,
@@ -413,6 +449,12 @@
         "itemized": 12,
         "declared": 0,
         "effective_n": 12
+      },
+      {
+        "family": "baskets_residual_rank",
+        "itemized": 9,
+        "declared": 0,
+        "effective_n": 9
       },
       {
         "family": "cycle_pattern_analog",
@@ -607,6 +649,12 @@
         "effective_n": 7
       },
       {
+        "family": "signal_factory",
+        "itemized": 7,
+        "declared": 0,
+        "effective_n": 7
+      },
+      {
         "family": "w2031_kev_vendor_shock",
         "itemized": 7,
         "declared": 0,
@@ -653,12 +701,6 @@
         "itemized": 6,
         "declared": 0,
         "effective_n": 6
-      },
-      {
-        "family": "signal_factory",
-        "itemized": 5,
-        "declared": 0,
-        "effective_n": 5
       },
       {
         "family": "dt_replication_64y",
@@ -793,13 +835,13 @@
         "effective_n": 1
       }
     ],
-    "total_families": 118,
-    "total_effective_n": 2825
+    "total_families": 125,
+    "total_effective_n": 3091
   },
   "summary_note": "2/6 desk loops live; 4 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position.",
   "standout_tracks": [
     {
-      "name": "US Buy Board (v1)",
+      "name": "Prophet US \u2014 board track",
       "region": "US",
       "rel_path": "site/factordata/us_board_track.json",
       "board_dates": 9,
@@ -810,7 +852,7 @@
       "health_note": "only 0 matured h21 rows \u2014 ACCRUING; floor ~25 cluster-unit rows"
     },
     {
-      "name": "CN Standout Track",
+      "name": "Prophet China \u2014 board track",
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
       "board_dates": 12,

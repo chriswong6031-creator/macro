@@ -1,0 +1,27 @@
+{
+  "summary": "China stagflation with contracting liquidity despite PBoC easing impulse; A-shares defensive rotation with deep pullbacks offering mean-reversion setups but macro headwinds. HK faces USD outflows and extreme sector extensions, diverging from mainland.",
+  "regime_read": "China A-shares are in a Q3 Stagflation quadrant (growth_score -0.143, inflation_score 0.182, low confidence 0.081). The liquidity overlay is contracting, and the cycle tag is 'mid'. The PBoC stance is officially neutral but with an easing impulse—cumulative RRR and LPR cuts have been delivered, yet the corridor classifier hasn't flipped, and system liquidity is contracting (panel: china.liquidity_overlay, policy.impulse). Pair ratios confirm a defensive rotation: cyc/def down 10.5% over 20d, smallcap/largecap down 6%, while the inflation basket is up 1.57%. Sector relative strength shows Semiconductors as rank 1 but with a recent pullback (mom_20d -4.75%, pctile 21%) and Technology at pctile 69% with negative short-term momentum, potentially extended. Deep mean-reversion candidates include Solar & Photovoltaic, Defense & Military, and Automobiles, all at 0.4%tile of their 252d distribution, fitting the short-term reversal hypothesis (panel: china.sector_rs). Hong Kong is also labelled Q3 Stagflation (growth_score -0.25, inflation 0.0) with contracting liquidity. The peg is weak-side (outflow), and the HKD is 7.8405, near the weak edge. Global risk state is Neutral, and the Fe score is 28 (Fear). Sector RS shows an extreme outlier: Exchange & Diversified at 99.6%tile, while Internet & Tech sits at 15.5%tile and Auto & EV at 0.8%tile—indicating a stark divergence driven by global/USD flows rather than domestic dynamics (panel: hk.sector_rs, hk.peg_state, hk.fear_euphoria). The US backdrop is a Goldilocks quadrant with expanding liquidity, but a strengthening USD (DXY up, restrictive real yields) is a headwind for EM and HK via the exchange rate channel (panel: forex.dollar_desk, forex.transmission).",
+  "conflicts": [
+    "PBoC cumulative easing (RRR/LPR cuts) vs liquidity overlay 'contracting' — easing impulse not transmitting into system liquidity, challenging the domestically-driven risk appetite thesis (panels: china.liquidity_overlay, policy.impulse).",
+    "Stagflation regime with weak growth and contracting liquidity vs deep-cyclical mean-reversion candidates (Solar, Defense, Auto) at 0.4%tile — bounce setups face significant macro headwinds (panels: china.quad, china.sector_rs).",
+    "HK Exchange & Diversified sector RS at 99.6%tile while Fe score is 28 (Fear) and the peg is under outflow pressure — extreme local overbought in a risk-off macro environment for HK (panels: hk.sector_rs, hk.fear_euphoria, hk.peg_state).",
+    "Offshore ETF gap (KWEB/MCHI/CQQQ) leading onshore CSI300 by +7.67% over 20d, signaling offshore optimism, yet onshore macro is stagflation with contracting liquidity — a positive gap that clashes with the domestic regime (panel: china_intel.radar.divergences[0]).",
+    "Technology sector pctile 69% (elevated) with mom_20d -10%, but its RS is not the highest rank — the mean-reversion fade signal for leaders is ambiguous as the most extended sector is not the strongest performer (panel: china.sector_rs)."
+  ],
+  "rotation_check": "The working thesis holds partially: A-shares are indeed domestically driven, with PBoC easing attempts and mean-reversion setups appearing in deep pullbacks. However, the contracting liquidity overlay suggests policy transmission is blocked, so the primary domestic driver is currently absent—this is a direct challenge. HK clearly diverges from the mainland, riding global risk appetite and USD strength as expected, with extreme sector dispersion and outflow pressure proving the global- risk link.",
+  "transmission": [
+    "PBoC easing impulse → if FR007 (1.44) feeds into interbank/corporate rates and credit impulse turns positive → brokers/property catch-up; currently stalled (panels: policy.impulse, china_intel.chains, china.pair_ratios).",
+    "Strong USD / restrictive US real rates → HKD weak-side peg pressure → capital outflows from HK → HK equities (especially H-share and tech) underperform A-shares; divergence widening (panels: hk.peg_state, forex.dollar_desk, hk.pair_ratios).",
+    "US Goldilocks expanding liquidity → global risk-on → fails to lift HK due to the peg outflow channel; instead, HK Exchange sector extremely extended as a local defensive play (panels: us_macro_backdrop, hk.sector_rs).",
+    "Offshore ETF leadership → potential domestic A-share catch-up over ~3 months if domestic liquidity conditions improve, but currently unsupported by contracting liquidity (panel: china_intel.radar.divergences[0])."
+  ],
+  "watch_items": [
+    "LPR fix on Jul 20 – a cut or hold will signal the near-term policy path; any surprise could flip PBoC stance corridor.",
+    "PBoC stance classifier flipping from 'neutral' to easing – confirmation that easing is real for domestic liquidity.",
+    "USD/CNY break above 6.80 or sharp move – would introduce a new FX headwind for A-shares.",
+    "HKD peg distance to 7.85 – a breach would signal acute outflow stress for HK.",
+    "NBS PMI on Jul 31 – if growth score improves, it would reduce the macro headwind for mean-reversion cyclicals.",
+    "Sector flow divergence for Semiconductors (negative radar signal) confirming a breakdown in the A-share leader – would support mean-reversion from recent leaders into deep laggards."
+  ],
+  "confidence": "low"
+}

@@ -1,0 +1,54 @@
+{
+  "summary": "AI/semis unwind dominates as tech de-rates within a Goldilocks macro, while bond credit caution and narrow entry breadth diverge from the risk-on surface.",
+  "regime_read": "The US macro is in a Q1 Goldilocks regime (low recession risk, loose financial conditions) but the dominant market driver is a tech-led de-rating: semis relative strength at -2.5σ, growth vs value at -2.1σ, cap-weight vs equal-weight at -1.9σ. This unwind is being driven by rising real yields (real 10y 2.35%) and a bear-steepener that favors value over growth. The cross-asset bond read, from a leading `rates_credit` tape, signals late-cycle credit stress not yet reflected in equities: the curve is late-cycle, credit is tight but widening, and the stock-bond correlation has broken down (0.56, bonds not hedging). The `cross_asset_confirm` divergence flags a medium-severity credit caution as a leading vote, while FX remains risk-on with a strengthening USD on a US growth premium. Entry-quality breadth adds a calibration check: trend breadth is broad-up (75% above 200-day) but only 38% of fresh entries clear the buy-filter, indicating narrow leadership, not broad conviction. In the policy realm, the Fed is hawkish on hold, the FOMC tone is neutral, and the market is aligned; the policy-intel thesis frames this as a credibility-banking setup, but that desk has no scored track record. Overall, a rotation-driven sell-off in the most-loved names under a still-calm macro surface.",
+  "conflicts": [
+    "The `cross_asset_confirm` diverge: bonds (late-cycle, credit widening) warn of stress that the equity Goldilocks and risk-on FX do not yet price. Credit is leading; equities are blind to it.",
+    "FX risk-on label vs USD strengthening as headwind to equities and EM; the dollar is rates-driven with restrictive real yields, which leans on the same risk assets that the risk-on signal would normally favor.",
+    "Entry quality narrow vs broad trend: 75% above 200-day but only 32% take-quality entries, warning that participation is thin even as the tape holds up."
+  ],
+  "rotation_check": "The working rotation thesis (US large-cap semis → software/growth → ex-US → crypto) is tracking in reverse: semis are leading the unwind as net liquidity shows signs of contraction globally (neural_web flows, though stale). China and HK are in stagflation with contracting liquidity, and BTC is in DISTRIBUTE with negative momentum. However, the thesis also posits that rotation would flow to software/growth next, but growth is deeply underperforming value, consistent with the rate-driven bear-steepener rather than a liquidity rotation. So the unwind sequence is on track, but it is happening within a value-favoring, real-yield-driven regime rather than a clean risk-on rotation.",
+  "transmission": [
+    "Rising real 10y + bear steepener: headwind for long-duration (XLK, QQQ, BTC, gold, TLT), tailwind for value/financials/energy.",
+    "Credit canary: HY OAS direction widening — if sustained, it is a leading signal for equity drawdowns; monitor EBP.",
+    "USD strength: rates-driven, headwind for EM, commodities, BTC, and US equities; a dollar wrecking-ball scenario (intensity 12.1) is dormant but could reawaken if US growth premium widens further.",
+    "Fed hawkish on hold: the real rate and yield curve posture keep term-premium-sensitive assets under pressure; the upcoming PCE cold print could ease that."
+  ],
+  "watch_items": [
+    "Semis RS reversal: if the -2.5σ extreme reverses, the major driver could fade.",
+    "HY OAS: a gap wider above 3% would confirm the credit warning and likely force de-risking across equities.",
+    "FOMC Jul 29 and PCE Jul 30: any hawkish surprise vs expected cold PCE could re-ignite rate fears and deepen the tech rout; a cold print could anchor rates and potentially pivot sentiment.",
+    "Entry quality breadth: an improvement above 50% take-quality would show broad participation; a decline would signal more fragility beneath the surface."
+  ],
+  "confidence": "medium",
+  "theses": [
+    {
+      "subject": "High-yield credit",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Bonds credit caution diverges from equity Goldilocks; HY OAS direction widening and EBP negative suggest early stress.",
+      "falsifier_text": "HY OAS tightens below 2.5% and EBP turns positive."
+    }
+  ],
+  "forward_watch": [
+    {
+      "date": "2026-07-29",
+      "label": "FOMC rate decision",
+      "kind": "FOMC",
+      "note": "Hawkish hold expected; market aligned; watch for any shift in tone on inflation or labor."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "GDP (BEA estimate)",
+      "kind": "GDP",
+      "note": "No pre-release forecast available; print will test the Goldilocks growth narrative."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "PCE / personal income (BEA)",
+      "kind": "PCE",
+      "note": "Projected cold (p_cold 1.0); a soft print would support on-hold, but a hot one could revive hike fears."
+    }
+  ],
+  "forward_read": "The calendar turns heavy on July 29-30 with FOMC, GDP, and PCE. The FOMC is expected to hold with a hawkish posture, aligned with the market. The PCE projection points to a cold monthly print, which could ease inflation concerns and reinforce the on-hold narrative. However, any upside surprise in inflation or a hawkish tilt in the statement could exacerbate the ongoing tech de-rating and credit caution."
+}

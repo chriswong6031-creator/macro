@@ -1,0 +1,14 @@
+**NARRATIVE-EMERGENCE SCOUT — WATCH HYPOTHESIS (Hong Kong, 2026-07-17)**
+
+**Hypothesis: High-Dividend Blue Chips (hk_dividend) may be FORMING as a credible defensive rotation candidate.**
+- **Why now:** Rank 3 among 17 themes with a positive momentum focus score (0.50) and, critically, the highest durability bar in the deck (0.68, tagged “trend”). Breadth is 0.50 – half the basket is participating, not a one‑stock false signal. Positioning is not crowded (crowding_z –0.16).  
+- **Context:** The detector’s leader (Tech Hardware, score 1.78) is dominant but has very narrow breadth (0.167); the rotation is narrow and margin large. That often precedes a fragility event in the leader, but calling a top is forbidden and unreliable. Instead, High‑Dividend offers a **watch for emergence** if a defensive rotation starts: its trend health is already well‑formed, crowds are underweight, and the absolute‑trend gate is validated for drawdown control.  
+- **Watch criteria (not a trigger):** This is a *forming* hypothesis, not a leadership handoff. It becomes actionable *only* if:  
+  – Rank improves to #2 or #1 **and** durability remains ≥ 0.60 **and** breadth expands to ≥ 0.6.  
+  – The macro narrative (currently AI/geopolitics heavy, 61% unscheduled news) does **not** coincide with a China‑specific credit or regulatory panic that blows up the dividend names.  
+
+**Kill‑criterion (falsification):**  
+- **Kill the watch immediately if:** Durability bar drops below **0.50** for two consecutive weekly prints **or** breadth collapses below **0.33**. At that point the defensive trend hypothesis is dead and no further time should be spent on it.  
+- **Also kill if:** China Tech & Internet (#5) or Conglomerates (#2) overtake it decisively in score and durability while High‑Dividend’s score turns negative, signaling money has already chosen a different rotation path.
+
+**Grading note:** This is a *conditional watch*, drawn from the detector’s scoring lens, not an edge. The detector’s only validated mechanism is drawdown control via the absolute‑trend gate; no rotation‑timing edge exists. The watch is falsifiable and will be formally discarded if the kill‑criterion is met. No size, trade, or certainty is implied.

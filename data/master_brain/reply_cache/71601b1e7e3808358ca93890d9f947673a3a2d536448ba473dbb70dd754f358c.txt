@@ -1,0 +1,52 @@
+{
+  "regime_context": "The US thematic landscape as of 2026-07-17 shows Memory, HBM & Storage as the leader by momentum rank, but with a fading valence state (r10 -0.13) and zero breadth, suggesting fragile leadership. Rotation is broad (70% of themes eligible), with no single dominant narrative. The absolute-trend gate has historically reduced drawdown risk (gate_helps=true), but cross-sectional momentum has near-zero rank-IC; it serves as a focus lens only. Cybersecurity is the main challenger but exhibits extreme crowding (z 2.22).",
+  "theses": [
+    {
+      "subject": "Financials (Equal-Weight)",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Financials shows a robust trend (hurst_tag=trend, durability_bar=0.83) with strong breadth (0.895) and no crowding (z 0.73). The absolute-trend gate, validated for drawdown control, suggests a durable risk profile. The theme is not the leader, so it avoids reflexive fading risk. This lean is a judgement that the trend structure is intact, not a return forecast.",
+      "evidence": [
+        "Eligible under absolute-trend gate",
+        "Durability_bar=0.83, hurst_tag=trend",
+        "Breadth=0.895, indicating broad participation",
+        "Crowding z-score 0.73 (not crowded)"
+      ],
+      "dissent": "The trend could reverse if macroeconomic shocks (high unscheduled news share 0.61) trigger sector rotation; Financials may be vulnerable to bond-market volatility or recession fears.",
+      "falsifier_text": "Financials (XLF) closes below its 50-day simple moving average and the theme's durability_bar falls below 0.5, signaling trend breakdown."
+    },
+    {
+      "subject": "Cybersecurity",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "Cybersecurity exhibits strong trend consistency (hurst_tag=trend, durability_bar=0.9, breadth=1.0) and ranks second, making it a focus candidate under the trend-gate discipline. However, extreme crowding (z 2.22) acts as a size-down caution only, not a fade signal per guardrails. The lean is an overweight tilting on the sustained trend structure, while acknowledging crowding may limit upside.",
+      "evidence": [
+        "Rank 2, eligible under absolute-trend gate",
+        "Durability_bar=0.9, highest among top themes",
+        "Breadth=1.0 (full participation)",
+        "Hurst_tag=trend"
+      ],
+      "dissent": "The crowding z-score of 2.22 indicates extreme positioning risk; an unwind could cause a sharp drawdown even in a trending theme, and the detector offers no basket-level downside edge for crowded themes.",
+      "falsifier_text": "CIBR ETF closes below its 50-day moving average, or Cybersecurity's durability_bar drops below 0.5 and its crowded status persists, suggesting trend exhaustion and de-risking."
+    },
+    {
+      "subject": "Crypto & Digital Assets",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Crypto & Digital Assets is ineligible under the absolute-trend gate (durability_bar=0.22), has a negative momentum score (-1.028), and zero breadth, indicating weak trend structure. The validated drawdown-control edge of the gate suggests avoiding ineligible themes to reduce tail risk. This is not a fade call but an avoidance based on risk discipline.",
+      "evidence": [
+        "Eligible=false under absolute-trend gate",
+        "Durability_bar=0.22, hurst_tag=mixed",
+        "Breadth=0.0",
+        "Score -1.028 (negative momentum)"
+      ],
+      "dissent": "A sudden positive crypto-related policy announcement or a sharp risk-on rally could reignite the theme, causing a missed opportunity; the absolute-trend gate may lag such reversals.",
+      "falsifier_text": "Crypto & Digital Assets regains eligibility (durability_bar >0.5 and trend confirmed) and its score turns positive, indicating a structural shift."
+    }
+  ],
+  "emerging_watch": "AI Infrastructure: currently ranked 4th with mixed durability (0.53) and very low breadth (0.167). If breadth expands above 0.5 and durability_bar rises above 0.6 while maintaining eligibility, it could challenge for leadership; kill-criterion: the theme becomes ineligible or drops below rank 7.",
+  "confidence": "low"
+}

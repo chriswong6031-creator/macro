@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LMT-BULL-20260626",
-  "asof": "2026-07-17",
+  "asof": "2026-07-18",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 44.6,
-  "raw_confidence": 46.4,
-  "delta_vs_base": -15.4,
+  "management_confidence": 45.2,
+  "raw_confidence": 46.0,
+  "delta_vs_base": -14.8,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
     "validity": 60.4,
     "progress": 0.0,
-    "pace": 16.2,
+    "pace": 12.8,
     "retention": 50.0,
     "overlay": 47.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.688,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 46.7,
+    "horizon_pct_used": 48.9,
     "p1": -0.2077,
     "p2": -0.1039,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Falling Behind Schedule",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 21,
-  "tau": 0.4667
+  "days_elapsed": 22,
+  "tau": 0.4889
 }

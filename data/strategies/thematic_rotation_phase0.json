@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-07-18T02:28:41.373971+00:00",
+  "generated_at": "2026-07-19T02:05:50.886639+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -164,8 +164,8 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0586,
-          "ic_t_hac": 1.308,
+          "mean_ic": 0.0588,
+          "ic_t_hac": 1.318,
           "hit": 0.52,
           "n_steps": 25
         },
@@ -192,7 +192,7 @@
           "n": 659
         },
         "mean_diff_t": -1.83,
-        "mean_diff_p": 0.0676
+        "mean_diff_p": 0.0677
       },
       "extension_drawdown": {
         "fwd_days": 63,
