@@ -1,6 +1,6 @@
 # MKT-D03 — Engagement Telemetry → Lab Learning Loop
 
-**Department:** Lab (growth_science) · **Priority: P1** · **Status: W0 buildable now; W1 depends on D02 live posting**
+**Department:** Lab (growth_science) · **Priority: P1** · **Status: W0 SHIPPED (PR #3053, 2026-07-19) — telemetry schema/join/rollup (post-deduped N-floor) + build_marketing wiring + admin Lab page; W1 capture depends on D02 live posting**
 **Charter:** `engine/marketing/departments.py` id=`growth_science` ("Growth Science & Self-Improvement", 14 chartered engines — stubs).
 
 ## Why
