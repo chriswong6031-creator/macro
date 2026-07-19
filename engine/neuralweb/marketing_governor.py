@@ -170,6 +170,15 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
         result["content_plan_path"] = str(content_plan_path)
         log.info("marketing_governor: wrote %s", content_plan_path)
 
+        # Build static short-link pages (Funnel W1a / D07)
+        try:
+            from engine.marketing.links import build_short_link_pages as _build_short_link_pages
+            _sl = _build_short_link_pages(content_plan_obj, r / "site" / "go", cfg=cfg)
+            result["short_link_pages"] = _sl["pages_written"]
+            log.info("marketing_governor: wrote %d short-link pages", _sl["pages_written"])
+        except Exception as exc:  # noqa: BLE001
+            log.warning("marketing_governor: short-link pages failed: %s", exc)
+
         # Build state
         from engine.marketing.state import build_state
         state = build_state(root=r, cfg=cfg)
