@@ -4957,7 +4957,7 @@ def main() -> int:
         policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
         flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
         shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
-        leadership_board=_leadership_board_view(),  # MLC-W1 — board NO LONGER RENDERED (removed from all pages 2026-07-15); call retained (dormant, still assembles the payload). Audit its synapse consumer edges (mag7_regime / leaderradar / earnings) before deleting.
+        leadership_board=_leadership_board_view(),  # MLC-W1 — LIVE on us_stocks.html (rendered by dashboard.html.j2 in mode=='stocks'). (Earlier "removed from all pages 2026-07-15" note was stale — the stocks-mode render was retained.) Consumes mag7_regime / leaderradar / earnings; audit those synapse edges before deleting.
         intl_cascade=_intl_cascade,          # B1a: n_alert/n_total/alerts/asof from intl forward logs (display-only)
         intl_spillover=_intl_spillover,      # B1c: two-tier spillover state from intl_risk/latest.json (display-only)
         global_leg_lag_days=_global_leg_lag_days,  # B1d: ETF parquet lag vs radar asof in business days (display-only)
