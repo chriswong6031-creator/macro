@@ -4169,14 +4169,49 @@ RENDER.marketing_outbox = async () => {
     </div>`;
   });
 
-  /* Posted / terminal history — outcomes visually separated. */
+  /* Per-item decision audit + posted/terminal history — the outcome zone. */
+  const decisionHtml = obxDecisionLog(d.decision_log || []);
   const historyHtml = obxHistoryBlock(history);
 
   v.innerHTML = header + obxSentinelCard(sentinel, cap) + commandBar + tiles
     + obxActivityStrip(activity)
-    + filterChips + acctPills + `<div id="obx-review">${sections}</div>` + historyHtml;
+    + filterChips + acctPills + `<div id="obx-review">${sections}</div>`
+    + decisionHtml + historyHtml;
   obxLoadAllMedia();
 };
+
+/* Per-item decision audit trail — who held/approved/posted which post, and when.
+   Complements the pipeline `activity` (run tallies): this is the operator's own
+   decision receipt. Every field is operator/actuator-authored → esc() all. */
+const OBX_DEC_VERB = {
+  approve:     { label: "Approved",    cls: "obx-dl-ok"   },
+  hold:        { label: "Held",        cls: "obx-dl-warn" },
+  approved:    { label: "Cleared",     cls: "obx-dl-ok"   },
+  posted:      { label: "Posted",      cls: "obx-dl-post" },
+  failed:      { label: "Failed",      cls: "obx-dl-bad"  },
+  quarantined: { label: "Quarantined", cls: "obx-dl-bad"  },
+};
+function obxDecisionLog(log) {
+  if (!log || !log.length) {
+    return `<div class="section" style="margin-top:22px">Recent decisions</div>
+      <div class="card"><div class="note muted">No decisions yet. When you approve or hold a post — or the actuator advances one — it lands here with a timestamp, so there is a plain record of every call made on the queue.</div></div>`;
+  }
+  const rows = log.map(ev => {
+    const v = OBX_DEC_VERB[ev.type] || { label: ev.type || "—", cls: "obx-dl-mut" };
+    const kindChip = ev.kind ? obxKindChip(ev.kind) : "";
+    const detail = ev.detail ? `<span class="obx-dl-detail">${esc(String(ev.detail))}</span>` : "";
+    return `<div class="obx-dl-row">
+      <span class="obx-dl-verb ${v.cls}">${esc(v.label)}</span>
+      <span class="obx-dl-acct">${esc(ev.account || "—")}</span>
+      ${kindChip}
+      ${detail}
+      <span class="obx-dl-actor">${esc(ev.actor || "—")}</span>
+      <span class="obx-dl-at">${obxStamp(ev.at)}</span>
+    </div>`;
+  }).join("");
+  return `<div class="section" style="margin-top:22px">Recent decisions <span class="cnt">last ${log.length}</span></div>
+    <div class="obx-dl">${rows}</div>`;
+}
 
 /* =========================================================================
    SENTINEL — trust-office pre-publication gate review (D08)

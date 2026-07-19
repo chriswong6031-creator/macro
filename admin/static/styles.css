@@ -2618,6 +2618,60 @@ tr.lab-cell-floor td { opacity: .72; }
 .obx-act-tl-txt { color: var(--muted); }
 .obx-act-tl-at { margin-left: auto; font-family: var(--mono); }
 
+/* Recent-decisions audit trail — per-item operator/actuator events. */
+.obx-dl {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.obx-dl-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.obx-dl-row:last-child { border-bottom: 0; }
+.obx-dl-row:nth-child(odd) { background: color-mix(in srgb, var(--card) 55%, transparent); }
+.obx-dl-verb {
+  min-width: 78px;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: .02em;
+}
+.obx-dl-ok   { color: var(--ok); }
+.obx-dl-warn { color: var(--warn); }
+.obx-dl-bad  { color: var(--bad); }
+.obx-dl-post { color: var(--accent-cyan); }
+.obx-dl-mut  { color: var(--muted); }
+.obx-dl-acct { font-weight: 600; color: var(--text); }
+.obx-dl-detail {
+  color: var(--faint);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+.obx-dl-actor {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.obx-dl-at {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+@media (max-width: 820px) {
+  .obx-dl-detail { display: none; }
+}
+
 /* Pending-count badge on desk pills */
 .obx-pill-n {
   display: inline-flex;
