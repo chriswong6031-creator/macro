@@ -1498,6 +1498,17 @@ def content_plan(
         # Fail-soft: copywriter unavailable — old template copy survives
         _copy_mode = "fallback"
 
+    # ── Funnel W1a (D07): canonical tagged link on every post ─────────────────
+    # Every clickable URL a post carries is the canonical UTM link, exactly once.
+    # Runs after the copywriter pass so utm_campaign reflects the FINAL type
+    # (signal→watchlist demotions included).
+    _links_summary: dict = {"posts_linked": 0, "urls_rewritten": 0, "note": "links module unavailable"}
+    try:
+        from engine.marketing.links import attach_links as _attach_links
+        _links_summary = _attach_links(account_rows, cfg=cfg)
+    except Exception:  # noqa: BLE001
+        pass
+
     # Distinctness check
     dist = distinctness(all_items)
 
@@ -1559,6 +1570,7 @@ def content_plan(
                     f"{_copy_signal_killed} signals killed by live gate."
                 ),
             },
+            "links": _links_summary,
         },
     }
     return artifact

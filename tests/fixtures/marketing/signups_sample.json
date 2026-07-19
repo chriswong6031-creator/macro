@@ -1,0 +1,58 @@
+[
+  {
+    "id": "sb_001",
+    "signup_at": "2026-07-15T14:02:11Z",
+    "plan": "insider_monthly",
+    "trial_to_paid": null,
+    "utm_source": "x",
+    "utm_medium": "flagship",
+    "utm_campaign": "signal",
+    "utm_content": "post-flagship-001",
+    "email": "leak@example.com"
+  },
+  {
+    "user_id": "sb_002",
+    "signup_at": "2026-07-16T09:15:00Z",
+    "plan": "pro_annual",
+    "trial_to_paid": true,
+    "utm": {
+      "utm_source": "x",
+      "utm_medium": "flagship",
+      "utm_campaign": "conf",
+      "utm_content": "post-conf-flagship-001"
+    }
+  },
+  {
+    "id": "sb_003",
+    "signup_at": "2026-07-16T11:30:00Z",
+    "plan": "insider_monthly",
+    "trial_to_paid": null,
+    "utm_source": "x",
+    "utm_medium": "flagship",
+    "utm_campaign": "signal",
+    "utm_content": "post-ghost-999"
+  },
+  {
+    "id": "sb_004",
+    "signup_at": "2026-07-17T08:00:00Z",
+    "plan": "insider_annual",
+    "trial_to_paid": null
+  },
+  {
+    "id": "sb_001",
+    "signup_at": "2026-07-15T14:02:11Z",
+    "plan": "insider_monthly",
+    "trial_to_paid": null,
+    "utm_source": "x",
+    "utm_medium": "flagship",
+    "utm_campaign": "signal",
+    "utm_content": "post-flagship-001",
+    "email": "leak@example.com"
+  },
+  {
+    "signup_at": "2026-07-18T12:00:00Z",
+    "plan": "pro_monthly",
+    "utm_source": "x",
+    "utm_content": "post-flagship-001"
+  }
+]

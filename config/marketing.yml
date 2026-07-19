@@ -7,6 +7,12 @@
 ## signal is the largest weight on every account (min 0.28).
 ## All weights ≥ 0.03.
 
+# Funnel W1a (D07): canonical UTM links — every post-text URL is tagged exactly once.
+links:
+  base_url: "https://mastermind-x.com/"
+  utm_source: "x"
+  short_links: true
+
 positioning:
   category: "Accountable AI market intelligence"
   promise: "Know what changed, why it matters, and what to watch next."

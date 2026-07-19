@@ -13,6 +13,9 @@ site.served/
 # code can't re-commit it (git add skips ignored files).
 site/CNAME
 site/_tmp/
+# short-link lane (engine/marketing/links.py, D07 W1a): orphaned atomic-write
+# temps possible only after a hard crash mid-write; pages themselves ARE committed.
+site/go/**/.tmp_*
 site/stockdata/
 site/ohlc/
 site/stockbrief/
