@@ -38,30 +38,47 @@ _FROZEN_KEYS = {
     "distinctness", "summary",
 }
 
-# Minimal Prophet plans for testing (no closes needed for basic tests)
+# Fresh signal date (within the eligibility window) so fixtures exercise the
+# signal path regardless of when the suite runs.
+from datetime import datetime, timedelta, timezone as _tz
+_FRESH = (datetime.now(_tz.utc).date() - timedelta(days=5)).isoformat()
+
+# Minimal Prophet plans for testing (no closes needed for basic tests) — all
+# LIVE, healthy, fresh, confident so they pass the eligibility gate.
 _SAMPLE_PLANS = [
     {
-        "id": "PLTR-BULL-20260610", "asset": "PLTR", "direction": "BULL",
+        "id": "PLTR-BULL", "asset": "PLTR", "direction": "BULL",
         "entry": 120.0, "invalidation": 100.0, "targets": [150.0, 180.0],
-        "trigger": 125.0, "_conviction_score": 90, "_signal_date": "2026-06-10",
+        "trigger": 125.0, "_conviction_score": 90, "_signal_date": _FRESH,
         "phase": "triggered_pre_t1", "recommended_action": "hold",
-        "what_to_do_now": [],
+        "management_confidence": 66.0, "what_to_do_now": [],
     },
     {
-        "id": "SBUX-BULL-20260615", "asset": "SBUX", "direction": "BULL",
+        "id": "SBUX-BULL", "asset": "SBUX", "direction": "BULL",
         "entry": 82.0, "invalidation": 75.0, "targets": [95.0, 110.0],
-        "trigger": 84.0, "_conviction_score": 85, "_signal_date": "2026-06-15",
+        "trigger": 84.0, "_conviction_score": 85, "_signal_date": _FRESH,
         "phase": "triggered_pre_t1", "recommended_action": "hold",
-        "what_to_do_now": [],
+        "management_confidence": 61.0, "what_to_do_now": [],
     },
     {
-        "id": "BA-BEAR-20260612", "asset": "BA", "direction": "BEAR",
+        "id": "BA-BEAR", "asset": "BA", "direction": "BEAR",
         "entry": 180.0, "invalidation": 200.0, "targets": [155.0, 130.0],
-        "trigger": 178.0, "_conviction_score": 75, "_signal_date": "2026-06-12",
+        "trigger": 178.0, "_conviction_score": 75, "_signal_date": _FRESH,
         "phase": "triggered_pre_t1", "recommended_action": "hold",
-        "what_to_do_now": [],
+        "management_confidence": 58.0, "what_to_do_now": [],
     },
 ]
+
+# A failed / invalidated plan (the QCOM class): stop breached, low confidence.
+# Must NEVER appear in a signal post or a featured chart.
+_INVALIDATED_PLAN = {
+    "id": "QCOM-BULL", "asset": "QCOM", "direction": "BULL",
+    "entry": 189.2, "invalidation": 177.09, "targets": [207.36, 230.0],
+    "trigger": 190.0, "_conviction_score": 75, "_signal_date": _FRESH,
+    "phase": "invalidated", "recommended_action": "invalidated",
+    "management_confidence": 13.5,
+    "what_to_do_now": ["Invalidation breached. Exit the full position."],
+}
 
 _SAMPLE_ACCOUNTS = [
     {"id": "flagship", "kind": "branded", "beat": "What changed", "voice": "authoritative desk",
@@ -94,6 +111,57 @@ def test_content_plan_six_accounts():
     cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
     plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None)
     assert len(plan["accounts"]) == 6
+
+
+# ---------------------------------------------------------------------------
+# Signal eligibility gate — NEVER post a failed / stale / low-confidence signal
+# ---------------------------------------------------------------------------
+
+def test_gate_rejects_invalidated_plan():
+    from engine.marketing.content_studio import is_postable_signal
+    assert is_postable_signal(_INVALIDATED_PLAN) is False
+
+
+def test_gate_accepts_healthy_fresh_plan():
+    from engine.marketing.content_studio import is_postable_signal
+    assert is_postable_signal(_SAMPLE_PLANS[0]) is True
+
+
+def test_gate_rejects_stale_signal():
+    from engine.marketing.content_studio import is_postable_signal
+    stale = dict(_SAMPLE_PLANS[0], _signal_date="2026-01-01")
+    assert is_postable_signal(stale) is False
+
+
+def test_gate_rejects_low_confidence():
+    from engine.marketing.content_studio import is_postable_signal
+    weak = dict(_SAMPLE_PLANS[0], management_confidence=20.0)
+    assert is_postable_signal(weak) is False
+
+
+def test_gate_rejects_dead_actions():
+    from engine.marketing.content_studio import is_postable_signal
+    for action in ("exit", "trim", "reduce", "close", "avoid"):
+        p = dict(_SAMPLE_PLANS[0], recommended_action=action)
+        assert is_postable_signal(p) is False, f"action {action} must be rejected"
+
+
+def test_invalidated_plan_never_appears_in_signal_posts_or_charts():
+    """Full pipeline: a QCOM-class invalidated plan must not leak anywhere."""
+    from engine.marketing.content_studio import content_plan
+    from engine.marketing.chart_render import load_closes
+    cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
+    plans = _SAMPLE_PLANS + [_INVALIDATED_PLAN]
+    loader = lambda t: load_closes(t, ROOT, n=90)  # noqa: E731
+    plan = content_plan(cfg, plans, closes_loader=loader)
+    sig_tickers = {
+        p.get("ticker")
+        for a in plan["accounts"] for p in a["queue"]
+        if p["type"] == "signal" and p.get("ticker")
+    }
+    chart_tickers = {c["ticker"] for c in plan["featured_charts"]}
+    assert "QCOM" not in sig_tickers, "invalidated signal leaked into a signal post"
+    assert "QCOM" not in chart_tickers, "invalidated signal leaked into a chart"
 
 
 def test_content_plan_non_empty_queues():
