@@ -5854,7 +5854,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% endif %}
         <div class="mxqm-wrap">
           <div class="mxqm-svg-box">
-            <svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quad map — current regime position">
+            <svg viewBox="-8 0 160 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quad map — current regime position">
               <defs>
                 <marker id="mxqmArrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                   <polygon class="mxqm-arrowhead" points="0 0, 6 3, 0 6"/>
@@ -5872,14 +5872,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {# Axis lines #}
               <line class="mxqm-axis-line" x1="75" y1="5" x2="75" y2="145"/>
               <line class="mxqm-axis-line" x1="5" y1="75" x2="145" y2="75"/>
-              {# Quad labels #}
-              <text class="mxqm-quad-label" x="40" y="22" text-anchor="middle">Stagflation</text>
-              <text class="mxqm-quad-label" x="110" y="22" text-anchor="middle">Reflation</text>
-              <text class="mxqm-quad-label" x="110" y="140" text-anchor="middle">Goldilocks</text>
-              <text class="mxqm-quad-label" x="40" y="140" text-anchor="middle">Growth-scare</text>
-              {# Axis labels #}
-              <text class="mxqm-axis-label" x="75" y="153" text-anchor="middle">growth →</text>
-              <text class="mxqm-axis-label" x="1" y="75" dominant-baseline="middle" text-anchor="start" transform="rotate(-90 4 75)">infl ↑</text>
+              {# Quad labels — bilingual (l-en/l-zh toggle works on SVG <text> too) #}
+              <text class="mxqm-quad-label l-en" x="40" y="22" text-anchor="middle">Stagflation</text>
+              <text class="mxqm-quad-label l-zh" x="40" y="22" text-anchor="middle">滞胀</text>
+              <text class="mxqm-quad-label l-en" x="110" y="22" text-anchor="middle">Reflation</text>
+              <text class="mxqm-quad-label l-zh" x="110" y="22" text-anchor="middle">再通胀</text>
+              <text class="mxqm-quad-label l-en" x="110" y="140" text-anchor="middle">Goldilocks</text>
+              <text class="mxqm-quad-label l-zh" x="110" y="140" text-anchor="middle">理想增长</text>
+              <text class="mxqm-quad-label l-en" x="40" y="140" text-anchor="middle">Growth-scare</text>
+              <text class="mxqm-quad-label l-zh" x="40" y="140" text-anchor="middle">增长恐慌</text>
+              {# Axis labels — bilingual; viewBox widened above so these are no longer clipped #}
+              <text class="mxqm-axis-label l-en" x="75" y="153" text-anchor="middle">growth →</text>
+              <text class="mxqm-axis-label l-zh" x="75" y="153" text-anchor="middle">增长 →</text>
+              <text class="mxqm-axis-label l-en" x="1" y="75" dominant-baseline="middle" text-anchor="start" transform="rotate(-90 4 75)">infl ↑</text>
+              <text class="mxqm-axis-label l-zh" x="1" y="75" dominant-baseline="middle" text-anchor="start" transform="rotate(-90 4 75)">通胀 ↑</text>
               {# Arrow toward gaining quad (if present and not degraded) #}
               {% if _show_arrow %}
               <line class="mxqm-arrow" x1="{{ _dot_x }}" y1="{{ _dot_y }}" x2="{{ _arr_ex }}" y2="{{ _arr_ey }}"/>
