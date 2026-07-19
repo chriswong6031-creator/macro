@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-19T00:29:16.559191+00:00",
+  "generated_at": "2026-07-19T09:05:59.384178+00:00",
   "as_of": "2026-07-19",
   "absent_stores": [],
   "feature_coverage": {
@@ -33,9 +33,9 @@
       },
       {
         "feature": "ivspread_5d_chg",
-        "n_nonnull": 358,
+        "n_nonnull": 359,
         "n_total": 403,
-        "share_nonnull": 0.8883
+        "share_nonnull": 0.8908
       },
       {
         "feature": "skew",
@@ -123,9 +123,9 @@
       },
       {
         "feature": "pin_risk",
-        "n_nonnull": 257,
+        "n_nonnull": 0,
         "n_total": 403,
-        "share_nonnull": 0.6377
+        "share_nonnull": 0.0
       },
       {
         "feature": "gex_confirm_verdict",
@@ -197,8 +197,8 @@
     "ticker_coverage": {
       "n_tickers": 403,
       "n_rows": 403,
-      "n_tickers_ge75pct_features": 369,
-      "n_tickers_50to74pct_features": 5,
+      "n_tickers_ge75pct_features": 368,
+      "n_tickers_50to74pct_features": 6,
       "n_tickers_lt50pct_features": 29
     }
   },
@@ -453,14 +453,14 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-18",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-07-19",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-18 03:18 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-07-19 03:09 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
@@ -473,7 +473,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-19T00:29:16.516933+00:00",
+      "generated_at": "2026-07-19T09:05:59.344997+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -483,7 +483,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-19T00:29:16.559184+00:00",
+    "generated_at_utc": "2026-07-19T09:05:59.384171+00:00",
     "as_of": "2026-07-19",
     "absent_stores": []
   }
