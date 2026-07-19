@@ -86,7 +86,7 @@ _PENALTY_DENOM = 12
 
 # tanh mapping scale: maps excess-return floats to 0-100 range
 # score = 50 + 50 * tanh(k * x); k chosen so x=5pp => ~87/100, x=-5pp => ~13/100
-FOLLOW_VERSION = "4.review-fixes.2026-07-18"  # bump on any scoring-logic change (busts builder cache)
+FOLLOW_VERSION = "5.fund-memory.2026-07-19"  # bump on any scoring-logic change (busts builder cache)
 _TANH_K = 2.0 / 5.0  # 0.4 — so tanh(2 * excess/5) at excess=5pp gives tanh(2)≈0.96
 
 # rotation IQ tanh scale: applied to the average signed sector-call excess (in pp units,

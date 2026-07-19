@@ -292,3 +292,88 @@ quarter, one cohort — an anecdote with receipts, not a base rate).
 **SM3-R5 (classification).** `Unclassified` sector fallthrough (18.4% of book value at ruling
 time) is fixed via two appended fallback sources (curated override map + theme→sector inference,
 inference-flagged). Display-tier metadata; no epistemic weight.
+
+---
+
+## 10. SM4 Amendment — UX consolidation + 4-quarter fund memory (2026-07-19, appended by Fable)
+
+**Trigger.** Operator order 2026-07-19: "you legit made 11 different sections in this page and I
+don't know which one is actually useful… be brutal and trim down the excess"; normalize fonts off
+the terminal look; cap long lists at ~20 rows with See more; make Grade-A fund names clickable;
+give the lobe "total memory over funds' performances" — full reads of the last 4 quarters of 13F
+filings consolidated into a strongest-institutions view that recommends which managers are most
+worth following.
+
+**Evidence base (2026-07-19 census).** The baked page is 24,791px (~30 screens), 15 h2 sections.
+Fault line: only 3 lenses are fresh (Wire / Insider / Activists, 07-17); EIGHT sections re-sort
+the same 2026-03-31 Q1 13F snapshot (Manager Desk, Per-fund Rotation, Follow Desk, Best Buys,
+Consensus Flow, Models, Grand Portfolio, Crowding, Initiations — different grains of one dataset).
+Models panels expose raw slugs (`n_funds/gw_breadth/d_funds_qoq`) + the composite formula at rest
+(Doctrine Law 2/3 violations) and are stamped off-clock. Activists = 357 rows, 355 undifferentiated
+microcap dashes. Follow Desk = 117 rows of which the LOW-DATA tail is all-dash filler. Forward
+ledger = zero rows until 2026-10-15. Best & Worst Buys is a fourth duplicate of the buy ranking.
+
+### SM4-R1 — Information architecture (kill/merge/demote map; display-only, no engine deletion)
+
+Engines and JSON artifacts are UNTOUCHED — display-tier accrual continues for every computed
+lane (a cut section is a display cut, never an accrual cut). New page order:
+
+| # | Section (id) | Verdict / content |
+|---|---|---|
+| 0 | `#sec-hero` compressed command deck | KEEP, compress ~520→~300px: h1 + plain thesis line + filing clock + filed/pending dot grid (signature) + ONE compact freshness chip row |
+| 1 | `#sec-follow` **HERO: Managers worth following** | Follow Desk + NEW 4Q-memory hero cards (top 5, clickable) + NEW "Quarterly report card" table (live, all funds, cap 20 + fold) + trimmed follow table (cap 20 + fold, LOW-DATA all-dash tail CUT from display; count printed). Frozen Grade-A card DEMOTED to one receipt link line |
+| 2 | `#sec-wire` What just moved | KEEP, existing 20-fold; ADD "followed fund" chip on rows whose slug is follow/watch tier (template-side join) |
+| 3 | `#sec-ideas` Best ideas board | Best Buys (cap 20 + fold) + Small/Mid asymmetric side card (6 rows) + "Biggest exits" sell-side table (cap 10, from flow) + Initiations DEMOTED to collapsed research-queue details (cap 20 + fold). Models panels CUT from display (conviction signal already inside Best Buys scoring); adds-side flow table CUT (dupe of Best Buys) |
+| 4 | `#sec-herd` Where the herd stands | Sector Rotation Consensus bars (KEEP as-is, already Tier-1-shaped) + Crowding radar top 8 (fold) + Grand Portfolio collapsed details top 10 (fold) |
+| 5 | `#sec-insider` Insider intelligence | KEEP 2×2 cards (already 8-capped) |
+| 6 | `#sec-managers` Manager desk | DEMOTE to compact: duel card + leaderboard cap 10 (fold to 51) + per-fund rotation accordions capped to top 10 by follow score (fold) + "All fund dossiers →" link to fund_index.html |
+| 7 | `#sec-activists` Activist monitor | FILTER to rows with tracked-holder overlap > 0 or roster hit, cap 20 + fold; honest count line ("Showing N of 357 — the rest are names our tracked funds don't own") with full feed behind the fold |
+| 8 | `#sec-dossier` Ticker dossier | KEEP (starts-empty search tool; verify wiring in browser) |
+| 9 | Footer strip | Forward ledger → ONE line ("Pre-registered track record starts accruing 2026-10-15") + receipt links (frozen Grade-A artifact, methodology) |
+| — | Best & Worst Buys section | CUT (4th duplicate; per-fund receipts live in fund dossiers) |
+
+Sticky rail chips: Follow · Wire · Ideas · Herd · Insider · Managers · Activists · Dossier.
+
+### SM4-R2 — 4-quarter fund memory (engine; display-tier, SM3-R1/R4 form binds)
+
+New `engine/fund_memory.py`: generalize the Grade-A methodology (decision-weighted 60-calendar-day
+excess vs SPY, `incremental_book_pct` weights, New/Add split) across the last 4 completed quarters
+× ALL tracked funds (not just grade-A), priced from the LOCAL close panel already used by
+`fund_followability` (zero network on the render path). Anchor = each quarter's common 45-day
+deadline cluster date (2025-08-14 / 2025-11-14 / 2026-02-13 / 2026-05-15 for the current window);
+all four 60d windows have settled as of 2026-07-19. Per (fund, quarter): `n_priced`,
+`dw_excess_60d`, `new_dw_excess_60d`, `add_dw_excess_60d`, `hit_60d`, cohort `rank`, `beat`
+(dw_excess_60d > 0). Consolidated per fund: `quarters_beat / quarters_scored`,
+`avg_dw_excess_60d`, `memory_rank` (order: quarters_beat desc, then avg_dw_excess_60d desc;
+floor: quarters_scored ≥ 3 to hold a rank — below-floor funds listed unranked, "not enough
+data yet" printed, never hidden). Output under `smartmoney_follow.json["memory"]` inside the
+Phase-4.5 fingerprint cache (recompute only on new filing / FOLLOW_VERSION bump — render budget
+respected). WA-R2/NEXTL-U13 untouched: descriptive attention allocator with receipts; never
+gauntlet evidence, never a promoted signal; "validated" never appears.
+
+### SM4-R3 — Typography normalization (the de-terminal ruling)
+
+The local `--numf` ("SF Mono…monospace") stack and the 9–10px uppercase-tracked-mono label idiom
+are retired from this page. Numbers: `font-family:inherit` (Inter) + `font-variant-numeric:
+tabular-nums`. Labels/th/chips/eyebrows: Inter 500–600, sentence case, 11px floor,
+letter-spacing ≤ .06em (uppercase survives ONLY on the deck eyebrow + section eyebrows).
+`.spark` braille bars keep `var(--font-mono)` (glyph alignment). Palette/tokens stay in the
+theme.css family. Signature motif: the 4-quarter record dots (● beat green / ● missed red /
+◌ hollow pending) on hero cards, report card, and follow table — data-true illustration, plus the
+kept filed/pending dot grid.
+
+### SM4-R4 — Plain-word surface (Doctrine Law 2/3 ports)
+
+Column renames (precise defs move to `?`/data-tip hovers): Rotation IQ → "Sector timing" /
+板块择时; Front-run → hover-only; Streak → "Cold quarters" / 连续落后季数; Median excess →
+"Typical edge vs market"; Sell skill → "Sell timing"; Decay 21-1260 → hover-only; Top-10 % →
+"Concentration"; raw `mchip` keys (grade_w, gw_breadth…) removed from display. Every board keeps
+the SM3-R4 honesty form (lag stamp, n, plain-word null). Fold idiom: shared `smFold` controller
+(cap 20, step 40, See more / Show all / Show fewer, bilingual) replacing per-section bespoke JS.
+
+### SM4-R5 — Clickable funds everywhere
+
+Every fund name on the page links to its dossier `fund_<slug>.html` via the existing
+`.fund-link` pattern. The Grade-A card omission (template `:1234`, plain text) is fixed;
+`_ga_r['fund']` is already the slug — no normalization needed. New memory cards/report-card rows
+link the same way.
