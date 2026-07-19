@@ -144,6 +144,12 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'Second hand-maintained knowledge base / wiki / RAG memory service parallel to canonical sources (agents required to write session knowledge into a separate database)'
+    verdict: 'FORBIDDEN — knowledge retrieval is the Macro Context Index (derived, rebuildable, canonical-sources-keep-truth); a hand-curated parallel store is the ratified program''s named degenerate form'
+    source: 'CXI-R12, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` (2026-07-18)'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Cross-organ flip-counter (conjunction-of-transitions deterioration meter) as a standalone organ'
     verdict: 'KILLED — double-counts the cascade meter''s intl leg, log-birth FP (07-07 artifact), count-conjunction class (RISK_RADAR_TUNING line 93 governs any authority path)'
     source: 'RSR-R6a, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
