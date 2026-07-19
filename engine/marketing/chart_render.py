@@ -582,6 +582,9 @@ def render_chart_v2(
     pct_from_index: int | None = None,
     show_indicators: bool = True,
     indicators: tuple[str, ...] = ("volume", "macd"),
+    warmup: int = 0,
+    volume_overlay: bool = False,
+    subpanel_h: int = 110,
     company_name: str | None = None,
     logo_datauri: str | None = None,
     logo_root: Path | str | None = None,
@@ -611,6 +614,13 @@ def render_chart_v2(
     if n < 5:
         return _empty_svg(width, height, ticker)
 
+    # ── warmup: leading bars that warm up SMA/MACD so their lines span the FULL
+    # visible window instead of starting mid-chart. These bars feed the indicator
+    # math but are never drawn; every x-geometry site below measures over the
+    # visible tail (indices [warmup, n)) via cx_bar's warmup offset. ──────────
+    warmup = max(0, min(int(warmup or 0), n - 5))
+    n_vis = n - warmup
+
     # ── Unique id suffix: derived from ticker hash (deterministic, collision-safe) ──
     uid = str(abs(hash(ticker)) % 10_000_000)
 
@@ -624,10 +634,18 @@ def render_chart_v2(
     eff_marker = max(0, min(eff_marker, n - 1))
     if eff_highlight is not None:
         eff_highlight = max(0, min(eff_highlight, n - 1))
+        # A mark that lands in the (undrawn) warmup lead-in would float off the
+        # left edge — drop it rather than draw a disc pointing at nothing.
+        if eff_highlight < warmup:
+            eff_highlight = None
     # % callout is strictly opt-in: pct_from_index=None means NO callout box.
     # (A "-3% in 2 bars" banner on a fresh bullish setup is contradictory noise —
     # callers suppress the callout when the window is too short to mean anything.)
     eff_pct_from = None if pct_from_index is None else max(0, min(pct_from_index, n - 1))
+    # An anchor buried in the undrawn warmup lead-in has no visible bar to
+    # measure from — suppress the callout rather than reference an off-screen bar.
+    if eff_pct_from is not None and eff_pct_from < warmup:
+        eff_pct_from = None
 
     # ── Layout ──────────────────────────────────────────────────────────────
     HEADER_H = 64          # header band height (taller for logo breathing room)
@@ -640,24 +658,33 @@ def render_chart_v2(
     active_panels: list[str] = []
     if show_indicators:
         for ind in indicators:
+            # volume_overlay draws volume INSIDE the price pane (paneless), the way
+            # the Terminal does — so it never claims a subpanel of its own, freeing
+            # that vertical space for a taller, legible MACD pane below.
+            if ind == "volume" and volume_overlay:
+                continue
             if ind in ("volume", "macd", "rsi"):
                 active_panels.append(ind)
-    SUBPANEL_H = 110 if active_panels else 0
+    SUBPANEL_H = max(60, int(subpanel_h)) if active_panels else 0
     n_sub = len(active_panels)
     total_sub_h = SUBPANEL_H * n_sub
 
-    PRICE_H = height - PAD_TOP - FOOTER_H - total_sub_h - 8
+    # Floor the price pane so an adversarial subpanel_h can never invert the
+    # layout (negative height flips the y-axis and paints candles into the header).
+    PRICE_H = max(80, height - PAD_TOP - FOOTER_H - total_sub_h - 8)
 
     chart_w = width - PAD_L - PAD_R
 
-    # Candle slot width — min 2px body, 1px gap between candles
-    slot_w = chart_w / n
+    # Candle slot width — min 2px body, 1px gap between candles. Measured over the
+    # VISIBLE bar count so warmup bars never squeeze the drawn candles.
+    slot_w = chart_w / n_vis
     body_frac = 0.60        # body width = 60% of slot
     body_w = max(2.0, slot_w * body_frac - 1.0)  # -1 = 1px gap
 
-    # Price range (from high/low with margin)
-    all_h = [v for v in h if v == v]
-    all_l = [v for v in l if v == v]
+    # Price range (from high/low with margin) — VISIBLE bars only, so warmup-era
+    # extremes never distort the scale of the window the user actually sees.
+    all_h = [h[i] for i in range(warmup, n) if h[i] == h[i]]
+    all_l = [l[i] for i in range(warmup, n) if l[i] == l[i]]
     price_max_raw = max(all_h) if all_h else max(c)
     price_min_raw = min(all_l) if all_l else min(c)
     price_range = price_max_raw - price_min_raw or 1.0
@@ -667,14 +694,16 @@ def render_chart_v2(
     y_range = y_max - y_min
 
     def cx_bar(i: int) -> float:
-        return PAD_L + (i + 0.5) * slot_w
+        # i is an ABSOLUTE index into the full series; the warmup lead-in is
+        # subtracted so the first visible bar sits at the left edge.
+        return PAD_L + (i - warmup + 0.5) * slot_w
 
     def py_price(price: float) -> float:
         return PAD_TOP + PRICE_H * (1.0 - (price - y_min) / y_range)
 
     # ── Candlesticks ────────────────────────────────────────────────────────
     candle_parts: list[str] = []
-    for i in range(n):
+    for i in range(warmup, n):
         op = o[i]
         hp = h[i]
         lp = l[i]
@@ -699,6 +728,32 @@ def render_chart_v2(
             f'fill="{color}" stroke="none"/>'
         )
     candles_svg = "\n  ".join(candle_parts)
+
+    # ── Embedded volume (paneless): translucent bars anchored to the bottom of
+    # the price pane, painted UNDER the candles — the Terminal / TradingView
+    # idiom. Scaled to ~20% of the price-pane height so it reads as texture, not
+    # a competing panel, and leaves the MACD pane its own full height. ─────────
+    vol_overlay_svg = ""
+    if volume_overlay and show_indicators:
+        vband_h = PRICE_H * 0.20
+        vband_bot = PAD_TOP + PRICE_H
+        v_vis = [volume[i] for i in range(warmup, n) if volume[i] > 0]
+        vmax = max(v_vis) if v_vis else 0.0
+        if vmax > 0:
+            vparts: list[str] = []
+            for i in range(warmup, n):
+                vv = volume[i]
+                if vv <= 0:
+                    continue
+                bh = (vv / vmax) * vband_h
+                bx = cx_bar(i)
+                vcolor = "#4CAF50" if c[i] >= o[i] else "#E23B3B"
+                vparts.append(
+                    f'<rect x="{bx - body_w / 2:.1f}" y="{vband_bot - bh:.1f}" '
+                    f'width="{body_w:.1f}" height="{max(0.6, bh):.1f}" '
+                    f'fill="{vcolor}" opacity="0.28" stroke="none"/>'
+                )
+            vol_overlay_svg = "\n  ".join(vparts)
 
     # ── Right price axis: 5-7 round levels ──────────────────────────────────
     axis_x = PAD_L + chart_w + 6
@@ -842,7 +897,7 @@ def render_chart_v2(
         ]:
             pts_sma: list[str] = []
             for i, sv in enumerate(sma_vals):
-                if sv is None:
+                if sv is None or i < warmup:
                     continue
                 pts_sma.append(f"{cx_bar(i):.1f},{py_price(sv):.1f}")
             if len(pts_sma) >= 2:
@@ -984,8 +1039,9 @@ def render_chart_v2(
         inner_h = SUBPANEL_H - 22
 
         if panel_name == "volume":
-            vol_max = max((v for v in volume if v > 0), default=1.0)
-            for i, vv in enumerate(volume):
+            vol_max = max((volume[i] for i in range(warmup, n) if volume[i] > 0), default=1.0)
+            for i in range(warmup, n):
+                vv = volume[i]
                 bx = cx_bar(i)
                 bar_h = (vv / vol_max) * inner_h if vol_max > 0 else 0
                 bar_y = inner_y + inner_h - bar_h
@@ -1005,7 +1061,7 @@ def render_chart_v2(
         elif panel_name == "macd":
             macd_line, sig_line, hist_vals = _macd_lines(c)
             valid = [(i, m, s, hist_vals[i]) for i, (m, s) in enumerate(zip(macd_line, sig_line))
-                     if m is not None and s is not None and hist_vals[i] is not None]
+                     if i >= warmup and m is not None and s is not None and hist_vals[i] is not None]
             if valid:
                 all_m = [m for _, m, s, _ in valid]
                 all_h2 = [abs(hv) for _, _, _, hv in valid]
@@ -1062,7 +1118,7 @@ def render_chart_v2(
 
         elif panel_name == "rsi":
             rsi_vals = _rsi(c, 14)
-            valid_rsi = [(i, rv) for i, rv in enumerate(rsi_vals) if rv is not None]
+            valid_rsi = [(i, rv) for i, rv in enumerate(rsi_vals) if rv is not None and i >= warmup]
 
             def rsi_y(v: float) -> float:
                 return inner_y + inner_h * (1.0 - v / 100.0)
@@ -1159,10 +1215,10 @@ def render_chart_v2(
     date_y_pos = PAD_TOP + PRICE_H + 6
     date_svg = ""
     if dates:
-        # Choose 4-6 evenly spaced indices
-        n_date_labels = min(6, max(4, n // 15))
+        # Choose 4-6 evenly spaced indices across the VISIBLE window only.
+        n_date_labels = min(6, max(4, n_vis // 15))
         date_indices = [
-            int(round(i * (n - 1) / (n_date_labels - 1)))
+            warmup + int(round(i * (n_vis - 1) / (n_date_labels - 1)))
             for i in range(n_date_labels)
         ]
         # Deduplicate while preserving order
@@ -1174,7 +1230,7 @@ def render_chart_v2(
             seen.add(di)
             dx = cx_bar(di)
             anchor = "middle"
-            if di == 0:
+            if di == warmup:
                 anchor = "start"
             elif di == n - 1:
                 anchor = "end"
@@ -1213,6 +1269,8 @@ def render_chart_v2(
         f'  {ghost_svg}\n'
         f'  <!-- company logo overlay -->\n'
         f'  {logo_svg}\n'
+        f'  <!-- embedded volume (paneless, under candles) -->\n'
+        f'  {vol_overlay_svg}\n'
         f'  <!-- candlesticks -->\n'
         f'  {candles_svg}\n'
         f'  <!-- SMA overlays -->\n'

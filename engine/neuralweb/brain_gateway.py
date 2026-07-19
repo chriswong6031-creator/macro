@@ -765,14 +765,20 @@ def _chart_for_chat(ticker: str, root: Path, timeframe: str = "DAILY") -> str | 
             fired_combo_signals,
         )
 
-        bars = load_ohlcv(ticker, root, n=90)
+        # Load VIS visible bars plus a WARM lead-in so SMA50/MACD are already
+        # "warm" at the first drawn bar — their lines then span the whole visible
+        # window instead of starting halfway across (the cut-off the user saw).
+        VIS, WARM = 90, 60
+        bars = load_ohlcv(ticker, root, n=VIS + WARM)
         if not bars:
             return None
 
         dates, o, h, l, c, volume = bars
         n = len(dates)
+        warmup = max(0, n - VIS)   # everything before this index is compute-only
 
-        # Overlay a SETUP mark when a confluence signal fired within this window
+        # Overlay a SETUP mark when a confluence signal fired within the VISIBLE
+        # window (a fire buried in the warmup lead-in is off-screen — skip it).
         highlight_index: int | None = None
         pct_from_index: int | None = None
         try:
@@ -785,8 +791,8 @@ def _chart_for_chat(ticker: str, root: Path, timeframe: str = "DAILY") -> str | 
                     last_fire = sig.get("last_fire", "")
                     if last_fire and last_fire in dates:
                         idx = dates.index(last_fire)
-                        # Only mark when at least 5 bars of follow-through remain
-                        if n - 1 - idx >= 5:
+                        # Visible AND ≥5 bars of follow-through remain
+                        if idx >= warmup and n - 1 - idx >= 5:
                             highlight_index = idx
                             pct_from_index = idx
                     break
@@ -799,10 +805,15 @@ def _chart_for_chat(ticker: str, root: Path, timeframe: str = "DAILY") -> str | 
             timeframe=timeframe,
             show_indicators=True,
             indicators=("volume", "macd"),
+            warmup=warmup,
+            volume_overlay=True,   # volume embedded in the price pane (Terminal idiom)
+            subpanel_h=190,        # give MACD its own tall, legible pane
             highlight_index=highlight_index,
             pct_from_index=pct_from_index,
             company_name=ticker.upper(),
             logo_root=None,
+            width=1000,
+            height=880,
             footer_cta="",
         )
         return svg
@@ -1249,7 +1260,25 @@ def _sb_get(path: str) -> list | None:
         return None
 
 
-def _ensure_thread(thread_id: str | None, user_id: str, lane: str) -> str | None:
+def _title_from(msg: str, limit: int = 60) -> str:
+    """Derive a short, human sidebar title from the first user message.
+
+    Collapses whitespace and truncates on a word boundary so the Chats list
+    reads like "What regime are we in?" instead of a blank "Untitled" row.
+    """
+    t = " ".join((msg or "").split()).strip()
+    if len(t) <= limit:
+        return t
+    cut = t[:limit].rsplit(" ", 1)[0].rstrip()
+    return (cut or t[:limit]).rstrip(",.;:—- ") + "…"
+
+
+def _ensure_thread(
+    thread_id: str | None,
+    user_id: str,
+    lane: str,
+    title: str = "",
+) -> str | None:
     """Ensure the thread exists in brain_threads. Returns the thread_id or None on failure."""
     if thread_id:
         # Verify ownership
@@ -1261,12 +1290,12 @@ def _ensure_thread(thread_id: str | None, user_id: str, lane: str) -> str | None
             return None   # missing or not owner → stateless
         return thread_id
 
-    # Create new thread
+    # Create new thread — title from the opening message so the sidebar is legible.
     new_id = str(uuid.uuid4())
     result = _sb_post("brain_threads", {
         "id": new_id,
         "user_id": user_id,
-        "title": "",
+        "title": _title_from(title),
         "lane": lane,
     })
     if result is None:
@@ -1900,7 +1929,7 @@ def chat(
 
     # Always ensure a thread row (a new thread is created when thread_id is None) so
     # streamed turns persist; degrades to stateless when the store is unavailable.
-    resolved_tid = _ensure_thread(thread_id, user_id, lane)
+    resolved_tid = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
     if resolved_tid:
         effective_thread_id = resolved_tid
         if thread_id:  # loading history from an existing thread
@@ -2100,7 +2129,7 @@ def chat_stream(
     # 4. Thread store
     effective_thread_id: str | None = None
     thread_history: list[dict] = []
-    resolved_tid = _ensure_thread(thread_id, user_id, lane)
+    resolved_tid = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
     if resolved_tid:
         effective_thread_id = resolved_tid
         if thread_id:
