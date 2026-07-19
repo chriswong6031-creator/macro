@@ -27,6 +27,8 @@ _STATE_REL    = Path("data/neuralweb/marketing_state.json")
 _CONTENT_REL  = Path("data/marketing/content_plan.json")
 _LAB_REL      = Path("data/marketing/lab_rollup.json")
 _SENTINEL_REL = Path("data/marketing/sentinel_report.json")
+_ALLIES_REL   = Path("data/marketing/allies_targets.jsonl")
+_KITS_REL     = Path("data/marketing/allies_kits")
 _CONFIG_REL   = Path("config/marketing.yml")
 
 # N-floor (docket D03 §Traps + small-N humility): a reach cell backed by fewer
@@ -49,6 +51,22 @@ _SENTINEL_ACCRUING_NOTE = (
     "sentinel_report.json not yet written — "
     "first nightly after D08 merge bakes it."
 )
+_ALLIES_ACCRUING_NOTE = (
+    "allies_targets.jsonl not yet written — "
+    "accruing after the allies engine scores its first candidates."
+)
+
+# MKT-D11: paper-only in W1 — no referral codes issued yet; the cut % is an
+# operator decision governed by MNZ pricing (#2923/#2943), not an invented margin.
+_ALLIES_REFERRAL_NOTE = (
+    "Paper-only in W1 — no codes issued; cut % is an operator decision "
+    "(MNZ #2923/#2943 pricing)."
+)
+# The gate that makes the whole page honest: nothing here reaches out.
+_ALLIES_OPERATOR_GATE = (
+    "Every transition past candidate is an operator-only action. "
+    "This page records decisions; it never contacts anyone."
+)
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +78,28 @@ def _read_json(path: Path) -> Any:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:  # noqa: BLE001
         return None
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    """Read a JSONL file into a list of dicts. Fail-soft: [] if absent/unreadable;
+    one malformed line is skipped, not fatal."""
+    try:
+        if not path.exists():
+            return []
+        out: list[dict] = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except Exception:  # noqa: BLE001
+                continue
+            if isinstance(obj, dict):
+                out.append(obj)
+        return out
+    except Exception:  # noqa: BLE001
+        return []
 
 
 def _read_yaml(path: Path) -> dict:
@@ -379,6 +419,125 @@ def _lab_cells(raw: list) -> list:
             "med_reposts": cell.get("med_reposts"),
         })
     return out
+
+
+def allies(root=None) -> dict:
+    """Allies (ecosystem) cockpit — MKT-D11 W1.
+
+    Reads the deterministically-scored target ledger
+    (data/marketing/allies_targets.jsonl, one JSON/line), folds the operator
+    status ledger (data/operator/allies_status.jsonl) over it, and returns the
+    targets sorted by score (desc) with their current status + history.
+
+    **Read-only + gated:** this panel never contacts anyone. Status past
+    ``candidate`` is an operator-only action recorded by allies_store; the panel
+    only *shows* where each target stands. Fail-soft: missing ledger → ok:True
+    with the standard accruing note and empty sections.
+    """
+    from . import allies_store  # noqa: PLC0415 — lazy to keep import graph flat
+
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        targets = _read_jsonl(repo / _ALLIES_REL)
+        if not targets:
+            return {
+                "ok": True,
+                "note": _ALLIES_ACCRUING_NOTE,
+                "as_of": None,
+                "targets": [],
+                "counts": {"total": 0, "by_kind": {}, "by_verdict": {}, "by_status": {}},
+                "referral_note": _ALLIES_REFERRAL_NOTE,
+                "operator_gate": _ALLIES_OPERATOR_GATE,
+            }
+
+        fold = allies_store.fold_status(targets)
+        kits_dir = repo / _KITS_REL
+
+        folded: list[dict] = []
+        for t in targets:
+            tid = str(t.get("target_id") or "")
+            f = fold.get(tid, {"status": allies_store.SEED_STATUS, "history": []})
+            kit_path = t.get("kit_path")
+            kit_available = False
+            if kit_path:
+                # Trust the seed's declared path but resolve it under the repo;
+                # never let a crafted path escape the repo (defence in depth —
+                # the file is engine-authored, but the panel stays paranoid).
+                try:
+                    kp = (repo / str(kit_path)).resolve()
+                    kit_available = kp.is_file() and str(kp).startswith(str(repo.resolve()))
+                except Exception:  # noqa: BLE001
+                    kit_available = False
+            elif tid:
+                kit_available = (kits_dir / f"{tid}.md").is_file()
+
+            row = dict(t)
+            row["status"] = f["status"]
+            row["status_history"] = f["history"]
+            row["kit_available"] = bool(kit_available)
+            folded.append(row)
+
+        # Sort by score desc; None scores sink to the bottom deterministically.
+        folded.sort(key=lambda r: (r.get("score") is not None, r.get("score") or 0.0), reverse=True)
+
+        # Counts (honest tallies — no derived claims).
+        by_kind: dict[str, int] = {}
+        by_verdict: dict[str, int] = {}
+        by_status: dict[str, int] = {}
+        as_of = None
+        for r in folded:
+            by_kind[r.get("kind") or "unknown"] = by_kind.get(r.get("kind") or "unknown", 0) + 1
+            v = r.get("outreach_verdict") or "unknown"
+            by_verdict[v] = by_verdict.get(v, 0) + 1
+            s = r.get("status") or allies_store.SEED_STATUS
+            by_status[s] = by_status.get(s, 0) + 1
+            seeded = r.get("seeded_utc")
+            if seeded and (as_of is None or str(seeded) > str(as_of)):
+                as_of = seeded
+
+        return {
+            "ok": True,
+            "as_of": as_of,
+            "targets": folded,
+            "counts": {
+                "total": len(folded),
+                "by_kind": by_kind,
+                "by_verdict": by_verdict,
+                "by_status": by_status,
+            },
+            "referral_note": _ALLIES_REFERRAL_NOTE,
+            "operator_gate": _ALLIES_OPERATOR_GATE,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.allies failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def allies_kit(root=None, target_id=None) -> dict:
+    """Return one target's materials-kit markdown.
+
+    target_id is sanitised to [a-z0-9-] by the *server* before it reaches here;
+    this function additionally refuses anything with a path separator or "..".
+    Fail-soft: unknown/absent kit → ok:True with markdown="" and a note.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    tid = str(target_id or "")
+    # Belt-and-braces: never trust a raw id for a filesystem read.
+    if (not tid) or ("/" in tid) or ("\\" in tid) or (".." in tid):
+        return {"ok": False, "error": "invalid target_id"}
+    try:
+        p = repo / _KITS_REL / f"{tid}.md"
+        if not p.is_file():
+            return {
+                "ok": True,
+                "target_id": tid,
+                "markdown": "",
+                "note": "No kit rendered for this target yet.",
+            }
+        return {"ok": True, "target_id": tid, "markdown": p.read_text(encoding="utf-8")}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.allies_kit failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
 
 
 def department(root=None, dept_id=None) -> dict:

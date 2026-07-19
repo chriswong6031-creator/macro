@@ -2707,3 +2707,243 @@ tr.lab-cell-floor td { opacity: .72; }
   .obx-controls { flex-wrap: wrap; }
 }
 
+/* =========================================================================
+   ALLIES (ecosystem cockpit) — MKT-D11 W1
+   The page's thesis: the machine scores + files; the human reaches out,
+   outside this system. Density + honesty over decoration; verdict colour is
+   the one place hue carries a hard decision (can I approach through here?).
+   ========================================================================= */
+
+/* --- Signature: the sealed-valve operator-only band. Always present. ----- */
+.allies-gate {
+  display: flex; align-items: center; gap: 12px;
+  margin: 2px 0 16px;
+  padding: 11px 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(90deg, rgba(255,107,107,.05), transparent 44%),
+    var(--surface);
+  position: relative; overflow: hidden;
+}
+/* left accent rail — reads as a shut valve/stop */
+.allies-gate::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--warn), var(--bad));
+}
+.allies-gate-valve {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--warn);
+  position: relative;
+  box-shadow: 0 0 0 4px rgba(255,184,77,.08);
+}
+/* the "closed" bar across the valve */
+.allies-gate-valve::after {
+  content: ""; position: absolute; inset: 0; margin: auto;
+  width: 15px; height: 2.5px; border-radius: 2px; background: var(--warn);
+  transform: rotate(-45deg);
+}
+.allies-gate-text { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.allies-gate-text b { color: var(--text); }
+.allies-gate-ref {
+  font-family: var(--mono); font-size: 10px; color: var(--faint);
+  border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; margin-left: 4px;
+}
+
+/* --- Glance strip: total + kind split + verdict split --------------------- */
+.allies-strip {
+  display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+  padding: 14px 16px; margin-bottom: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.allies-strip-total { text-align: left; padding-right: 20px; border-right: 1px solid var(--grid); }
+.allies-strip-n { font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -.02em;
+  background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.allies-strip-lab { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
+.allies-strip-block { display: flex; flex-direction: column; gap: 6px; }
+.allies-strip-title { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+.allies-strip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.allies-strip-asof { margin-left: auto; font-size: 11px; color: var(--faint); font-family: var(--mono); }
+.allies-count-chip, .allies-verdict-tally {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--muted); font-weight: 600;
+}
+.allies-kind-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.av-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.allies-verdict-tally.av-open  { color: var(--ok); }
+.allies-verdict-tally.av-cond  { color: var(--warn); }
+.allies-verdict-tally.av-proh  { color: var(--bad); }
+
+.allies-referral { font-size: 11px; margin: 0 2px 14px; }
+
+/* --- Kind filter chips ---------------------------------------------------- */
+.allies-filters { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
+.allies-filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 5px 12px; cursor: pointer; transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.allies-filter-chip:hover { color: var(--text); border-color: var(--accent); }
+.allies-filter-chip.active { color: var(--text); border-color: var(--accent); background: var(--info-bg); }
+
+/* --- The scored table ----------------------------------------------------- */
+.allies-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.allies-table thead th {
+  text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--faint); font-weight: 700; padding: 0 12px 8px; border-bottom: 1px solid var(--border);
+}
+.allies-table tbody td { padding: 11px 12px; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+.allies-row:hover td { background: rgba(255,255,255,.015); }
+.allies-row.hidden, .allies-rule-row.hidden { display: none; }
+.allies-rank { width: 34px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--faint); }
+
+.allies-name { display: inline-flex; flex-direction: column; gap: 3px; vertical-align: middle; }
+.allies-name-main { font-weight: 700; color: var(--text); font-size: 13.5px; }
+.allies-name-meta { display: inline-flex; align-items: center; gap: 7px; }
+.allies-kind {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--kc); border: 1px solid color-mix(in srgb, var(--kc) 40%, transparent);
+  background: color-mix(in srgb, var(--kc) 12%, transparent);
+  border-radius: 4px; padding: 1px 6px;
+}
+.allies-platform { font-size: 11px; color: var(--faint); font-family: var(--mono); }
+
+/* verdict chip — the traffic light */
+.allies-verdict {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+}
+.allies-verdict.av-open { color: var(--ok);   background: var(--ok-bg);   }
+.allies-verdict.av-cond { color: var(--warn); background: var(--warn-bg); }
+.allies-verdict.av-proh { color: var(--bad);  background: var(--bad-bg);  }
+.allies-verdict.av-unknown { color: var(--muted); background: var(--surface2); }
+
+/* score bar */
+.allies-score { display: flex; align-items: center; gap: 8px; min-width: 108px; }
+.allies-score-track { flex: 1; height: 6px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+.allies-score-track > i { display: block; height: 100%; border-radius: 4px; background: var(--accent-grad); }
+.allies-score-n { font-family: var(--mono); font-size: 11.5px; color: var(--muted); min-width: 28px; text-align: right; }
+
+/* per-row pipeline track */
+.allies-status-cell { min-width: 210px; }
+.allies-track { display: inline-flex; align-items: center; margin-bottom: 5px; }
+.allies-stop { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
+.allies-stop-dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--faint); background: var(--bg); box-sizing: border-box; }
+.allies-stop-lab { font-size: 8.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--faint); white-space: nowrap; }
+.allies-stop.done .allies-stop-dot { background: var(--accent); border-color: var(--accent); }
+.allies-stop.done .allies-stop-lab { color: var(--muted); }
+.allies-stop.now  .allies-stop-dot { background: var(--accent-cyan); border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(56,224,212,.16); }
+.allies-stop.now  .allies-stop-lab { color: var(--accent-cyan); font-weight: 700; }
+.allies-stop-line { width: 26px; height: 2px; background: var(--grid); margin: 0 2px 13px; border-radius: 2px; }
+.allies-stop-line.done { background: var(--accent); }
+.allies-track-retired { padding: 2px 0; }
+.allies-track-retired-lab { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--bad);
+  text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+
+/* rule + kit + record buttons */
+.allies-rule-btn {
+  margin-left: 8px; font-size: 10.5px; font-weight: 600; color: var(--muted);
+  background: transparent; border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; cursor: pointer;
+}
+.allies-rule-btn:hover { color: var(--text); border-color: var(--accent); }
+.allies-actions-cell { white-space: nowrap; text-align: right; }
+.allies-mini-btn {
+  display: inline-block; font-size: 11px; font-weight: 600; color: var(--muted);
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px;
+  cursor: pointer; margin-left: 6px; transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.allies-mini-btn:hover { color: var(--text); border-color: var(--accent); }
+.allies-mini-btn.primary { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.allies-mini-btn.primary:hover { background: var(--info-bg); }
+.allies-mini-btn.disabled { color: var(--faint); cursor: default; border-style: dashed; }
+.allies-mini-btn.disabled:hover { color: var(--faint); border-color: var(--border); }
+
+/* inline rule-citation panel */
+.allies-rule-row td { padding: 0 12px 12px !important; border-bottom: 1px solid var(--grid); }
+.allies-rule-panel {
+  background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--warn);
+  border-radius: var(--r-sm); padding: 11px 13px;
+}
+.allies-rule-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.allies-rule-ref { font-size: 12px; font-weight: 700; color: var(--text); }
+.allies-rule-note { font-size: 12px; color: var(--muted); line-height: 1.55; }
+.allies-rule-foot { display: flex; gap: 14px; align-items: center; margin-top: 8px; font-size: 11px; }
+
+/* --- Modal (kit preview + record-decision) -------------------------------- */
+.allies-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  /* Near-opaque so the busy operator table behind it never competes with the
+     dialog; blur is a progressive enhancement on top. */
+  background: rgba(6,8,12,.9); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  animation: alliesFade .16s var(--ease);
+}
+@keyframes alliesFade { from { opacity: 0; } to { opacity: 1; } }
+.allies-dialog {
+  width: 100%; max-width: 460px; max-height: 86vh; overflow: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lift); animation: alliesRise .2s var(--ease);
+}
+.allies-dialog.wide { max-width: 680px; }
+@keyframes alliesRise { from { transform: translateY(10px); opacity: .6; } to { transform: translateY(0); opacity: 1; } }
+.allies-dialog-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 16px 18px 12px; border-bottom: 1px solid var(--grid);
+}
+.allies-dialog-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.allies-dialog-sub { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.allies-x { background: transparent; border: none; color: var(--faint); font-size: 16px; cursor: pointer; line-height: 1; padding: 2px 4px; }
+.allies-x:hover { color: var(--text); }
+
+/* kit preview */
+.allies-kit-body { padding: 14px 18px 18px; }
+.allies-kit-md {
+  font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--muted);
+  white-space: pre-wrap; word-break: break-word; margin: 0;
+  background: var(--bg); border: 1px solid var(--grid); border-radius: var(--r-sm); padding: 14px;
+}
+
+/* record-decision sheet */
+.allies-record-gate {
+  margin: 14px 18px 4px; padding: 9px 12px; font-size: 12px; line-height: 1.5; color: var(--warn);
+  background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); border-radius: var(--r-sm);
+}
+.allies-steps { display: flex; flex-direction: column; gap: 9px; padding: 12px 18px 18px; }
+.allies-step-btn {
+  text-align: left; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm);
+  padding: 12px 14px; cursor: pointer; transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.allies-step-btn:hover { border-color: var(--accent); background: var(--info-bg); }
+.allies-step-btn.retire:hover { border-color: var(--bad); background: var(--bad-bg); }
+.allies-step-verb { font-size: 14px; font-weight: 700; color: var(--text); }
+.allies-step-line { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* confirm sheet */
+.allies-confirm-body { padding: 14px 18px 6px; }
+.allies-confirm-law {
+  font-size: 13px; line-height: 1.55; color: var(--text);
+  background: var(--info-bg); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: var(--r-sm); padding: 11px 13px; margin-bottom: 12px;
+}
+.allies-confirm-law b { color: var(--accent-cyan); }
+.allies-confirm-line { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-bottom: 12px; }
+.allies-note-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); margin-bottom: 5px; }
+.allies-note {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-sm);
+  color: var(--text); font: inherit; font-size: 13px; padding: 8px 10px;
+}
+.allies-note:focus { outline: none; border-color: var(--accent); }
+.allies-confirm-actions { display: flex; justify-content: flex-end; gap: 9px; padding: 6px 18px 18px; }
+
+@media (max-width: 720px) {
+  .allies-strip { gap: 16px; }
+  .allies-strip-total { border-right: none; padding-right: 0; }
+  .allies-status-cell, .allies-actions-cell { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .allies-backdrop, .allies-dialog { animation: none; }
+}
+

@@ -1,0 +1,174 @@
+# Allies W1 — community rules registry (MKT-D11)
+# PR-gated curation file (same curation law as config/narrative_sources.yml):
+# every entry was verified by a human/main-loop read of the community's PUBLIC
+# rules page on `retrieved_utc`. Additions/removals require a PR.
+#
+# LAW (D11 Traps): nothing outbound ships from this docket. This file exists so
+# the operator never acts on a community without the rule citation in hand.
+# A community absent from this file MUST NOT appear in the allies target ledger
+# (rule citation is mandatory per community target). StockTwits and all Discord
+# servers are deliberately absent for W1: their rules pages could not be
+# fetched/verified (StockTwits legal URL 404s; Discord rules are in-app only).
+#
+# verdict vocabulary:
+#   prohibited  — rules ban self-promo/tool posts outright; operator route is
+#                 paid ads or nothing. Kept in the ledger so nobody re-litigates.
+#   conditional — a sanctioned path exists (mod pre-approval, free-tool clause,
+#                 signature field, "own stuff part of the time"); operator must
+#                 follow that path personally.
+# audience_tier: coarse curated size proxy (1 small / 2 mid / 3 large).
+# topical_overlap: curated 0..1 overlap with our universe (US stocks /
+# technicals / options / macro). Display-tier ranking inputs only.
+
+communities:
+  - id: reddit_stocks
+    platform: reddit
+    name: "r/stocks"
+    rules_url: "https://old.reddit.com/r/stocks/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 2 — No spam or self-promotion"
+    verdict: prohibited
+    note: >-
+      Self-promo posts/comments and referral links are removed with ban risk;
+      the rules point promoters to Reddit's paid advertising instead.
+    audience_tier: 3
+    topical_overlap: 0.95
+
+  - id: reddit_investing
+    platform: reddit
+    name: "r/investing"
+    rules_url: "https://old.reddit.com/r/investing/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 4 — Strictly no (self-)promotion or solicitation"
+    verdict: prohibited
+    note: >-
+      Automatic permanent ban; the rule explicitly lists apps, tools, blogs and
+      referral codes. Hardest ban of the set — do not test it.
+    audience_tier: 3
+    topical_overlap: 0.85
+
+  - id: reddit_stockmarket
+    platform: reddit
+    name: "r/StockMarket"
+    rules_url: "https://old.reddit.com/r/StockMarket/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 2 — No Self Promotion"
+    verdict: prohibited
+    note: >-
+      Driving traffic to a website or app is named as self-promotion; may result
+      in a permanent ban.
+    audience_tier: 3
+    topical_overlap: 0.95
+
+  - id: reddit_options
+    platform: reddit
+    name: "r/options"
+    rules_url: "https://old.reddit.com/r/options/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 7 — No promotions, referrals, or solicitations"
+    verdict: conditional
+    note: >-
+      Promotions are removed WITHOUT pre-approval, but the rule states
+      developers may contact the mods for pre-approval before posting. The
+      sanctioned path is a modmail pre-approval request (operator-only). Also
+      note Rule 1 bans AI/LLM-authored post text entirely.
+    audience_tier: 2
+    topical_overlap: 0.80
+
+  - id: reddit_daytrading
+    platform: reddit
+    name: "r/Daytrading"
+    rules_url: "https://old.reddit.com/r/Daytrading/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 3 — No spamming, selling or promoting"
+    verdict: conditional
+    note: >-
+      Selling/promoting and affiliate links are banned, but the rule says
+      content creators are allowed to post if they follow the sub's creator
+      guidelines (linked from the rule). Operator must read those guidelines
+      before any action.
+    audience_tier: 2
+    topical_overlap: 0.70
+
+  - id: reddit_algotrading
+    platform: reddit
+    name: "r/algotrading"
+    rules_url: "https://old.reddit.com/r/algotrading/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 1 — No Promotional Activity"
+    verdict: prohibited
+    note: >-
+      Content marketing and product announcements are banned even when free or
+      educational; repeat offenders banned.
+    audience_tier: 2
+    topical_overlap: 0.75
+
+  - id: reddit_valueinvesting
+    platform: reddit
+    name: "r/ValueInvesting"
+    rules_url: "https://old.reddit.com/r/ValueInvesting/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 4 — No Commercial Advertising; Rule 5 — promoting accounts"
+    verdict: conditional
+    note: >-
+      Truly free services may be introduced once — but only if not gated behind
+      freemium tiers and not requiring an account, so our free public pages may
+      qualify while the paid product does not. Regular participants may share
+      their own on-topic work at mod discretion via modmail first.
+    audience_tier: 2
+    topical_overlap: 0.70
+
+  - id: reddit_swingtrading
+    platform: reddit
+    name: "r/swingtrading"
+    rules_url: "https://old.reddit.com/r/swingtrading/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 2 — No Spam or Self-Promotion"
+    verdict: conditional
+    note: >-
+      Self-promo requires permission from an admin first (applies to DMs too).
+      Sanctioned path: operator asks the mods before anything is shared.
+    audience_tier: 1
+    topical_overlap: 0.85
+
+  - id: reddit_wallstreetbets
+    platform: reddit
+    name: "r/wallstreetbets"
+    rules_url: "https://old.reddit.com/r/wallstreetbets/about/rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Rule 13 — No Advertisement, Self-Promotion, Fundraising"
+    verdict: prohibited
+    note: >-
+      Bans trading services, mailing lists, affiliate links and even referencing
+      sites you have a conflict of interest in — free or not.
+    audience_tier: 3
+    topical_overlap: 0.75
+
+  - id: tradingview
+    platform: tradingview
+    name: "TradingView community"
+    rules_url: "https://www.tradingview.com/house-rules/"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "House Rule 2 — content ad-free; Rule 12 — advertising procedure"
+    verdict: conditional
+    note: >-
+      All published content must be free of promotion, links and solicitation;
+      the sanctioned paths are the Premium subscriber Signature field (contacts
+      and links allowed there) and TradingView's official advertising process.
+    audience_tier: 3
+    topical_overlap: 0.90
+
+  - id: hackernews
+    platform: hackernews
+    name: "Hacker News"
+    rules_url: "https://news.ycombinator.com/newsguidelines.html"
+    retrieved_utc: "2026-07-19"
+    rule_ref: "Guidelines — self-promotion and Show HN"
+    verdict: conditional
+    note: >-
+      Posting your own work is acceptable occasionally ("part of the time") and
+      Show HN exists for tools, but promotion must not be the primary use and
+      soliciting upvotes is banned. Fits the free public tools lane (D10), not
+      subscription marketing.
+    audience_tier: 3
+    topical_overlap: 0.40

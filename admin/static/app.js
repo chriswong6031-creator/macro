@@ -153,11 +153,12 @@ const ICONS = {
   marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
   marketing_outbox:      NAV_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
+  marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -4219,6 +4220,332 @@ async function obxDecide(id, decision, btn) {
   } catch (e) {
     btns.forEach(b => { b.disabled = false; });
     if (msg) { msg.className = "obx-ctrl-msg obx-ctrl-err"; msg.textContent = (e && e.message) || "failed — try again"; }
+  }
+}
+
+/* ---- ALLIES (ecosystem cockpit) — MKT-D11 W1 ------------------------------ */
+/* The whole page is built around ONE boundary: the machine scores and files
+   candidates; the human reaches out, outside this system. Nothing here has an
+   outbound capability. Status transitions past "candidate" only RECORD an
+   operator's decision to the operator ledger. */
+
+const ALLIES_STATUS = {
+  candidate:         { label: "Candidate",  cls: "s-mut",  step: 0 },
+  operator_approved: { label: "Approved",   cls: "s-warn", step: 1 },
+  contacted:         { label: "Contacted",  cls: "s-warn", step: 2 },
+  active:            { label: "Active",      cls: "s-ok",   step: 3 },
+  retired:           { label: "Retired",     cls: "s-bad",  step: -1 },
+};
+/* The forward pipeline the operator walks, left → right. "Retired" is a side
+   exit, not a stop on the line. */
+const ALLIES_TRACK = ["candidate", "operator_approved", "contacted", "active"];
+const ALLIES_TRACK_LABEL = { candidate: "Candidate", operator_approved: "Approved", contacted: "Contacted", active: "Active" };
+/* Legal next steps, mirrored from allies_store.legal_next (client hint only —
+   the server re-validates every transition against the folded status). */
+const ALLIES_NEXT = {
+  candidate: ["operator_approved", "retired"],
+  operator_approved: ["contacted", "retired"],
+  contacted: ["active", "retired"],
+  active: ["retired"],
+  retired: [],
+};
+/* What each move MEANS to the operator, in plain words — used in the confirm
+   dialog and the action button. These are decisions being recorded, never sends. */
+const ALLIES_MOVE_COPY = {
+  operator_approved: { verb: "Approve", line: "Mark this ally worth approaching. You decide when and how to reach out — outside this system." },
+  contacted:         { verb: "Mark contacted", line: "Record that you (the operator) have made contact. This does not send anything; it logs that you did." },
+  active:            { verb: "Mark active", line: "Record that this ally is now an active partner." },
+  retired:           { verb: "Retire", line: "Shelve this ally. You can retire from any stage; it drops off the active pipeline." },
+};
+const ALLIES_KIND = {
+  fund_manager: { label: "Fund", color: "#6a8dff" },
+  newsletter:   { label: "Newsletter", color: "#38e0d4" },
+  creator:      { label: "Creator", color: "#b18cff" },
+  community:    { label: "Community", color: "#ffb84d" },
+};
+const ALLIES_VERDICT = {
+  open:        { label: "Open", cls: "av-open",  dot: "var(--ok)",  gloss: "No rule bars a receipt-backed post — the operator can approach." },
+  conditional: { label: "Conditional", cls: "av-cond", dot: "var(--warn)", gloss: "Allowed only on the platform's own terms — read the rule before approaching." },
+  prohibited:  { label: "Prohibited", cls: "av-proh", dot: "var(--bad)", gloss: "Self-promo is barred here — do not approach through this channel." },
+};
+
+function alliesKindTag(kind) {
+  const k = ALLIES_KIND[kind] || { label: kind || "—", color: "var(--faint)" };
+  return `<span class="allies-kind" style="--kc:${k.color}">${esc(k.label)}</span>`;
+}
+function alliesStatusPill(status) {
+  const s = ALLIES_STATUS[status] || ALLIES_STATUS.candidate;
+  return `<span class="statpill ${s.cls}">${esc(s.label)}</span>`;
+}
+function alliesVerdictChip(verdict) {
+  const vv = ALLIES_VERDICT[verdict] || { label: verdict || "unknown", cls: "av-unknown", dot: "var(--faint)" };
+  return `<span class="allies-verdict ${vv.cls}"><span class="av-dot" style="background:${vv.dot}"></span>${esc(vv.label)}</span>`;
+}
+/* Score bar 0..1 → width%, coloured on a cool ramp (this is a rank aid, not a
+   traffic light — verdict owns the red/amber/green semantics). */
+function alliesScoreBar(score) {
+  if (score == null) return `<div class="allies-score"><span class="allies-score-n">—</span></div>`;
+  const pct = Math.max(0, Math.min(100, score * 100));
+  return `<div class="allies-score">
+    <div class="allies-score-track"><i style="width:${pct.toFixed(0)}%"></i></div>
+    <span class="allies-score-n">${score.toFixed(2)}</span>
+  </div>`;
+}
+/* The per-row pipeline track — four stops; the current one lit, passed ones
+   filled, future ones dim. Retired collapses to a single struck marker. */
+function alliesTrack(status) {
+  if (status === "retired") {
+    return `<div class="allies-track allies-track-retired" title=""><span class="allies-track-retired-lab">retired</span></div>`;
+  }
+  const cur = (ALLIES_STATUS[status] || ALLIES_STATUS.candidate).step;
+  return `<div class="allies-track">${ALLIES_TRACK.map((st, i) => {
+    const state = i < cur ? "done" : i === cur ? "now" : "next";
+    return `<span class="allies-stop ${state}"><span class="allies-stop-dot"></span><span class="allies-stop-lab">${esc(ALLIES_TRACK_LABEL[st])}</span></span>`
+      + (i < ALLIES_TRACK.length - 1 ? `<span class="allies-stop-line ${i < cur ? "done" : ""}"></span>` : "");
+  }).join("")}</div>`;
+}
+
+/* Module-scoped cache so the row click handlers can look targets up by id
+   without re-fetching. Reset on every render. */
+let ALLIES_ROWS = [];
+
+RENDER.marketing_allies = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/allies");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Allies unavailable", (d && d.error) || "panel error"); return; }
+
+  const targets = d.targets || [];
+  ALLIES_ROWS = targets;
+  const counts = d.counts || { total: 0, by_kind: {}, by_verdict: {}, by_status: {} };
+
+  /* Signature: the sealed-valve operator-only band. Always present, never
+     dismissable — it is the page's thesis, not a notice. */
+  const gateBand = `<div class="allies-gate" role="note" aria-label="Outreach is operator-only">
+    <span class="allies-gate-valve" aria-hidden="true"></span>
+    <div class="allies-gate-text">
+      <b>Outreach is operator-only.</b> This page never contacts anyone.
+      It scores and files allies; you reach out, outside this system. <span class="allies-gate-ref">MKT-D11</span>
+    </div>
+  </div>`;
+
+  if (d.note && !targets.length) {
+    v.innerHTML = gateBand + nwEmpty("Allies — accruing", d.note);
+    return;
+  }
+
+  /* Glance strip — total + kind split + verdict split, all as plain tallies.
+     Verdict is the one place colour carries a decision (can I approach?). */
+  const kindOrder = ["fund_manager", "newsletter", "creator", "community"];
+  const kindChips = kindOrder.filter(k => counts.by_kind[k]).map(k =>
+    `<span class="allies-count-chip"><span class="allies-kind-dot" style="background:${(ALLIES_KIND[k] || {}).color || "var(--faint)"}"></span>${counts.by_kind[k]} ${esc((ALLIES_KIND[k] || {}).label || k)}</span>`
+  ).join("");
+  const vChip = (verdict) => {
+    const n = counts.by_verdict[verdict] || 0;
+    const vv = ALLIES_VERDICT[verdict];
+    return `<span class="allies-verdict-tally ${vv.cls}"><span class="av-dot" style="background:${vv.dot}"></span>${n} ${esc(vv.label.toLowerCase())}</span>`;
+  };
+  const stripHtml = `<div class="allies-strip">
+    <div class="allies-strip-total">
+      <div class="allies-strip-n">${counts.total}</div>
+      <div class="allies-strip-lab">scored allies</div>
+    </div>
+    <div class="allies-strip-block">
+      <div class="allies-strip-title">By kind</div>
+      <div class="allies-strip-row">${kindChips || '<span class="sub">—</span>'}</div>
+    </div>
+    <div class="allies-strip-block">
+      <div class="allies-strip-title">Can we approach?</div>
+      <div class="allies-strip-row">${vChip("open")}${vChip("conditional")}${vChip("prohibited")}</div>
+    </div>
+    <div class="allies-strip-asof">${d.as_of ? `scored ${esc(String(d.as_of).slice(0, 10))}` : ""}</div>
+  </div>`;
+
+  /* Referral truth (paper-only in W1). One honest footnote, not a promise. */
+  const referralHtml = `<div class="allies-referral note muted">${esc(d.referral_note || "")}</div>`;
+
+  /* Kind filter chips */
+  const filterHtml = `<div class="allies-filters" id="allies-filters">
+    <button class="allies-filter-chip active" data-kind="all" onclick="alliesFilter('all',this)">All ${counts.total}</button>
+    ${kindOrder.filter(k => counts.by_kind[k]).map(k =>
+      `<button class="allies-filter-chip" data-kind="${esc(k)}" onclick="alliesFilter('${esc(k)}',this)"><span class="allies-kind-dot" style="background:${(ALLIES_KIND[k] || {}).color}"></span>${esc((ALLIES_KIND[k] || {}).label)} ${counts.by_kind[k]}</button>`
+    ).join("")}
+  </div>`;
+
+  /* The scored table. Rank is real ordering information (score desc), so a
+     numbered rail is honest here (doctrine: numbering must encode something true). */
+  const rowsHtml = targets.map((t, i) => {
+    const tid = String(t.target_id || "");
+    const rc = t.rule_citation;
+    const hasRule = rc && typeof rc === "object";
+    const verdict = t.outreach_verdict || "unknown";
+    const nameCell = `<div class="allies-name">
+        <span class="allies-name-main">${esc(t.name || tid || "—")}</span>
+        <span class="allies-name-meta">${alliesKindTag(t.kind)}${t.platform ? `<span class="allies-platform">${esc(t.platform)}</span>` : ""}</span>
+      </div>`;
+    /* Rule-citation affordance: a "why" pill on any row that carries one
+       (communities/conditional/prohibited targets do). Expands inline. */
+    const ruleBtn = hasRule
+      ? `<button class="allies-rule-btn" onclick="alliesToggleRule('${esc(tid)}',this)" aria-expanded="false" title="">rule ▾</button>`
+      : "";
+    const ruleRow = hasRule
+      ? `<tr class="allies-rule-row hidden" id="allies-rule-${esc(tid)}"><td colspan="6">
+          <div class="allies-rule-panel">
+            <div class="allies-rule-head">${alliesVerdictChip(rc.verdict || verdict)}
+              <span class="allies-rule-ref">${esc(rc.rule_ref || "—")}</span></div>
+            ${rc.note ? `<div class="allies-rule-note">${esc(rc.note)}</div>` : ""}
+            <div class="allies-rule-foot">
+              ${/^https?:\/\//i.test(rc.rules_url || "") ? `<a href="${esc(rc.rules_url)}" target="_blank" rel="noopener noreferrer">house rules ↗</a>` : ""}
+              ${rc.retrieved_utc ? `<span class="sub">read ${esc(String(rc.retrieved_utc).slice(0, 10))}</span>` : ""}
+            </div>
+          </div></td></tr>`
+      : "";
+
+    const kitBtn = t.kit_available
+      ? `<button class="allies-mini-btn" onclick="alliesOpenKit('${esc(tid)}')" title="">kit</button>`
+      : `<span class="allies-mini-btn disabled" title="">no kit</span>`;
+    const actionBtn = `<button class="allies-mini-btn primary" onclick="alliesOpenActions('${esc(tid)}',this)" title="">record…</button>`;
+
+    return `<tr class="allies-row" data-kind="${esc(t.kind || "")}" data-tid="${esc(tid)}">
+        <td class="allies-rank">${i + 1}</td>
+        <td>${nameCell}${ruleBtn}</td>
+        <td class="allies-verdict-cell">${alliesVerdictChip(verdict)}</td>
+        <td class="allies-score-cell">${alliesScoreBar(t.score)}</td>
+        <td class="allies-status-cell">${alliesTrack(t.status)}${alliesStatusPill(t.status)}</td>
+        <td class="allies-actions-cell">${kitBtn}${actionBtn}</td>
+      </tr>${ruleRow}`;
+  }).join("");
+
+  const tableHtml = `<table class="allies-table"><thead><tr>
+      <th class="allies-rank">#</th><th>Ally</th><th>Approach?</th><th>Score</th><th>Pipeline</th><th class="allies-actions-cell">Materials · record</th>
+    </tr></thead><tbody>${rowsHtml}</tbody></table>`;
+
+  v.innerHTML = `<div class="section">Allies <span class="cnt">creators · communities · funds · newsletters</span></div>`
+    + gateBand + stripHtml + referralHtml + filterHtml + tableHtml
+    + `<div id="allies-modal-root"></div>`;
+};
+
+/* Kind filter */
+function alliesFilter(kind, btn) {
+  document.querySelectorAll("#allies-filters .allies-filter-chip").forEach(el => el.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  document.querySelectorAll(".allies-row").forEach(row => {
+    const show = kind === "all" || row.dataset.kind === kind;
+    row.classList.toggle("hidden", !show);
+    /* keep any open rule-row in lockstep with its parent */
+    const rr = document.getElementById("allies-rule-" + row.dataset.tid);
+    if (rr && !show) rr.classList.add("hidden");
+  });
+}
+
+/* Rule-citation inline expander */
+function alliesToggleRule(tid, btn) {
+  const row = document.getElementById("allies-rule-" + tid);
+  if (!row) return;
+  const open = row.classList.toggle("hidden") === false;
+  if (btn) { btn.setAttribute("aria-expanded", String(open)); btn.textContent = open ? "rule ▴" : "rule ▾"; }
+}
+
+/* ---- Allies modal plumbing (kit preview + record-decision) ---------------- */
+/* No modal framework exists in this SPA — build a tiny, self-contained one.
+   Backdrop click + Esc close; focus is trapped loosely (single dialog). */
+function alliesCloseModal() {
+  const root = $("#allies-modal-root");
+  if (root) root.innerHTML = "";
+  document.removeEventListener("keydown", _alliesEscHandler);
+}
+function _alliesEscHandler(e) { if (e.key === "Escape") alliesCloseModal(); }
+function alliesModal(innerHtml, wide) {
+  const root = $("#allies-modal-root");
+  if (!root) return;
+  root.innerHTML = `<div class="allies-backdrop" onclick="if(event.target===this)alliesCloseModal()">
+    <div class="allies-dialog${wide ? " wide" : ""}" role="dialog" aria-modal="true">${innerHtml}</div>
+  </div>`;
+  document.addEventListener("keydown", _alliesEscHandler);
+}
+function alliesFindRow(tid) { return ALLIES_ROWS.find(r => String(r.target_id) === String(tid)); }
+
+/* Kit preview — fetch the per-target one-pager markdown, render as <pre>
+   (admin tool: monospace is honest and unambiguous). */
+async function alliesOpenKit(tid) {
+  const t = alliesFindRow(tid) || {};
+  alliesModal(`<div class="allies-dialog-head">
+      <div><div class="allies-dialog-title">${esc(t.name || tid)}</div>
+        <div class="allies-dialog-sub">Materials kit — what we'd offer, with real receipts</div></div>
+      <button class="allies-x" onclick="alliesCloseModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="allies-kit-body"><div class="spin">loading kit…</div></div>`, true);
+  const d = await api("/api/marketing/allies/kit?target_id=" + encodeURIComponent(tid));
+  const body = document.querySelector(".allies-kit-body");
+  if (!body) return;
+  if (!d || !d.ok) { body.innerHTML = nwEmpty("Kit unavailable", (d && d.error) || "read error"); return; }
+  if (!d.markdown) { body.innerHTML = nwEmpty("No kit for this ally yet", d.note || ""); return; }
+  body.innerHTML = `<pre class="allies-kit-md">${esc(d.markdown)}</pre>`;
+}
+
+/* Record-decision sheet — offers ONLY the legal next steps for this target's
+   current status, each behind an explicit operator-action confirm. */
+function alliesOpenActions(tid) {
+  const t = alliesFindRow(tid) || {};
+  const status = t.status || "candidate";
+  const next = ALLIES_NEXT[status] || [];
+  const stepsHtml = next.length
+    ? next.map(to => {
+        const mv = ALLIES_MOVE_COPY[to] || { verb: to, line: "" };
+        const isRetire = to === "retired";
+        return `<button class="allies-step-btn ${isRetire ? "retire" : ""}" onclick="alliesConfirm('${esc(tid)}','${esc(to)}')">
+          <span class="allies-step-verb">${esc(mv.verb)}</span>
+          <span class="allies-step-line">${esc(mv.line)}</span>
+        </button>`;
+      }).join("")
+    : `<div class="note muted">No further steps — this ally is retired.</div>`;
+
+  alliesModal(`<div class="allies-dialog-head">
+      <div><div class="allies-dialog-title">${esc(t.name || tid)}</div>
+        <div class="allies-dialog-sub">Now: ${alliesStatusPill(status)} — record your next decision</div></div>
+      <button class="allies-x" onclick="alliesCloseModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="allies-record-gate">Recording a decision only. Nothing is sent — you act outside this system.</div>
+    <div class="allies-steps">${stepsHtml}</div>`);
+}
+
+/* Confirm step — the copy states, unmissably, that this records a decision and
+   sends nothing. An optional note (capped at 280) is stored with the row. */
+function alliesConfirm(tid, to) {
+  const t = alliesFindRow(tid) || {};
+  const status = t.status || "candidate";
+  const mv = ALLIES_MOVE_COPY[to] || { verb: to, line: "" };
+  alliesModal(`<div class="allies-dialog-head">
+      <div><div class="allies-dialog-title">${esc(mv.verb)} — ${esc(t.name || tid)}</div>
+        <div class="allies-dialog-sub">${alliesStatusPill(status)} → ${alliesStatusPill(to)}</div></div>
+      <button class="allies-x" onclick="alliesCloseModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="allies-confirm-body">
+      <div class="allies-confirm-law"><b>Operator action.</b> This records your decision to the operator ledger. Nothing is sent.</div>
+      <div class="allies-confirm-line">${esc(mv.line)}</div>
+      <label class="allies-note-label" for="allies-note">Note (optional, for the ledger)</label>
+      <textarea id="allies-note" class="allies-note" maxlength="280" rows="2" placeholder="e.g. reached out via their public contact form"></textarea>
+    </div>
+    <div class="allies-confirm-actions">
+      <button class="btn" onclick="alliesCloseModal()">Cancel</button>
+      <button class="btn primary" id="allies-confirm-go" onclick="alliesDoTransition('${esc(tid)}','${esc(to)}')">Record decision</button>
+    </div>`);
+  const ta = document.getElementById("allies-note");
+  if (ta) ta.focus();
+}
+
+async function alliesDoTransition(tid, to) {
+  const goBtn = document.getElementById("allies-confirm-go");
+  if (goBtn) { goBtn.disabled = true; goBtn.textContent = "recording…"; }
+  const note = (document.getElementById("allies-note") || {}).value || "";
+  const r = await post("/api/marketing/allies/transition", { target_id: tid, to_status: to, note });
+  if (r && r.ok) {
+    toast("Decision recorded to operator ledger — nothing sent");
+    alliesCloseModal();
+    go("marketing_allies");  /* re-fold + re-render so the pipeline advances */
+  } else {
+    toast((r && r.error) || "transition rejected", true);
+    if (goBtn) { goBtn.disabled = false; goBtn.textContent = "Record decision"; }
   }
 }
 

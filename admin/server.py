@@ -25,7 +25,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (actions, ai_cost, alerts as _alerts_mod, analytics_first_party, auth, brief, causal_lab,
+from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_first_party, auth, brief, causal_lab,
                codex_panel,
                config_store,
                content, context_lobe, experiments,
@@ -53,6 +53,19 @@ def _int_param(q: dict, key: str, default: int, lo: int, hi: int) -> int:
     except (ValueError, TypeError):
         return default
     return max(lo, min(hi, v))
+
+
+def _sanitize_target_id(raw) -> str | None:
+    """Allow ONLY [a-z0-9-] in an allies target_id (path-traversal guard).
+
+    Returns the id if it is non-empty and matches the allowlist, else None.
+    This runs before any filesystem read of a per-target kit file.
+    """
+    import re  # noqa: PLC0415
+    s = str(raw or "")
+    if s and re.fullmatch(r"[a-z0-9-]+", s):
+        return s
+    return None
 
 
 _LOOPBACK_NAMES = {"localhost", "127.0.0.1", "::1"}
@@ -455,6 +468,17 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(body)
                 return
+            # Allies (ecosystem) cockpit — MKT-D11. Read-only; the page never
+            # contacts anyone. Status is folded from the operator ledger.
+            if path == "/api/marketing/allies":
+                return self._json(marketing.allies())
+            if path == "/api/marketing/allies/kit":
+                raw = (q.get("target_id") or [""])[0]
+                # Sanitise: allow ONLY [a-z0-9-] before any filesystem read.
+                tid = _sanitize_target_id(raw)
+                if not tid:
+                    return self._json({"ok": False, "error": "invalid target_id"}, 400)
+                return self._json(marketing.allies_kit(target_id=tid))
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)
@@ -721,6 +745,40 @@ class Handler(BaseHTTPRequestHandler):
                     action=action,
                     direction_note=direction_note,
                     alert_emit_ts=alert_emit_ts,
+                )
+                return self._json({"ok": True, "row": row})
+
+            # Allies (MKT-D11): record an operator status transition. This is a
+            # decision-recording write — it NEVER contacts anyone. The transition
+            # is validated against the folded current status before it is stamped.
+            if path == "/api/marketing/allies/transition":
+                raw_id = b.get("target_id", "")
+                target_id = _sanitize_target_id(raw_id)
+                to_status = b.get("to_status", "")
+                note = b.get("note", "")
+                if not target_id:
+                    return self._json({"ok": False, "error": "invalid target_id"}, 400)
+                if to_status not in allies_store.VALID_STATUSES:
+                    return self._json({"ok": False,
+                                       "error": f"to_status must be one of {list(allies_store.VALID_STATUSES)}"}, 400)
+                # Fold to find the target's CURRENT status (server-authoritative,
+                # never trusts a client-supplied from_status).
+                panel = marketing.allies()
+                tgt = next((t for t in (panel.get("targets") or [])
+                            if str(t.get("target_id")) == target_id), None)
+                if tgt is None:
+                    return self._json({"ok": False, "error": f"unknown target_id {target_id!r}"}, 400)
+                current = tgt.get("status", allies_store.SEED_STATUS)
+                if not allies_store.is_legal(current, to_status):
+                    return self._json({"ok": False,
+                                       "error": f"illegal transition {current} -> {to_status}",
+                                       "current_status": current,
+                                       "legal_next": allies_store.legal_next(current)}, 400)
+                row = allies_store.append_transition(
+                    target_id=target_id,
+                    from_status=current,
+                    to_status=to_status,
+                    note=note,
                 )
                 return self._json({"ok": True, "row": row})
 
