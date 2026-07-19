@@ -7,8 +7,9 @@ Public API (v1 — backward-compat, kept unchanged):
 
 Public API (v2 — TrendSpider-grade terminal chart):
     load_ohlcv(ticker, root, n=90) -> tuple[dates, open, high, low, close, volume] | None
-    render_chart_v2(...)           -> str          (self-contained SVG, < 40 KB)
+    render_chart_v2(...)           -> str          (self-contained SVG, < 60 KB)
     render_earnings_card(...)      -> str          (branded earnings card SVG)
+    resolve_logo(ticker, root)     -> str | None   (whitened data URI, cached)
 
 v1 spec constraints (§2.2):
   - NO matplotlib, NO external deps beyond pandas/pyarrow for parquet reading.
@@ -23,7 +24,7 @@ v2 spec constraints (§2 anatomy + §3 decision):
   - show_indicators=True: subpanel labels (MACD/RSI/Volume) ARE shown — the win-rate
     framing is the hook; visible indicators make the chart credible and shareable.
   - Public POST BODY copy must stay clean of indicator vocabulary; SVG subpanel labels OK.
-  - No <script> tags. All text _xesc'd. < 40 KB. Deterministic.
+  - No <script> tags. All text _xesc'd. < 60 KB. Deterministic.
 """
 from __future__ import annotations
 
@@ -460,25 +461,106 @@ def _fmt_thousands(v: float) -> str:
     return f"{v:,.2f}"
 
 
-def _node_glyph(cx: float, cy: float, r: float = 9.0) -> str:
-    """Draw Mastermind node-glyph: 3 dots connected by lines — the brand lockup."""
-    # Three nodes in a triangle arrangement
-    n1x, n1y = cx - r, cy + r * 0.5
-    n2x, n2y = cx + r, cy + r * 0.5
-    n3x, n3y = cx, cy - r * 0.9
-    nr = r * 0.28
-    lines = (
-        f'<line x1="{n1x:.1f}" y1="{n1y:.1f}" x2="{n2x:.1f}" y2="{n2y:.1f}" '
-        f'stroke="#38e0d4" stroke-width="1.5" opacity="0.9"/>'
-        f'<line x1="{n1x:.1f}" y1="{n1y:.1f}" x2="{n3x:.1f}" y2="{n3y:.1f}" '
-        f'stroke="#38e0d4" stroke-width="1.5" opacity="0.9"/>'
-        f'<line x1="{n2x:.1f}" y1="{n2y:.1f}" x2="{n3x:.1f}" y2="{n3y:.1f}" '
-        f'stroke="#38e0d4" stroke-width="1.5" opacity="0.9"/>'
-        f'<circle cx="{n1x:.1f}" cy="{n1y:.1f}" r="{nr:.1f}" fill="#38e0d4"/>'
-        f'<circle cx="{n2x:.1f}" cy="{n2y:.1f}" r="{nr:.1f}" fill="#38e0d4"/>'
-        f'<circle cx="{n3x:.1f}" cy="{n3y:.1f}" r="{nr:.1f}" fill="#38e0d4"/>'
+def _favicon_logomark(cx: float, cy: float, size: float = 34.0, uid: str = "0") -> str:
+    """Render the real Mastermind favicon logomark as an inline SVG group.
+
+    Gradient tile (#5b9dff→#3b82f6→#6366f1→#7c5cff, rx proportional) + ascending
+    market-peak "M" path in white. Gradient ids are suffixed with *uid* to prevent
+    collisions when multiple charts appear on one admin page.
+
+    Args:
+        cx, cy: center of the tile.
+        size: tile side length in px (default 34).
+        uid: per-render suffix for all gradient/def ids.
+    """
+    half = size / 2.0
+    x = cx - half
+    y = cy - half
+    rx = size * (10.5 / 40.0)  # proportional to viewBox 0 0 40 40
+    sw = size * (3.3 / 40.0)   # stroke-width proportional
+
+    # The M path in the original viewBox (2 2 36 36, tile at 3,3 size 34):
+    # M13 28 L13 14.5 L20 22 L27 12.5 L27 28
+    # Scale from original 40px viewBox to our `size`.
+    scale = size / 40.0
+
+    def sp(orig: float) -> float:
+        return (orig - 2) * scale + x  # x-coords: offset by viewBox x=2 + our x
+
+    def sq(orig: float) -> float:
+        return (orig - 2) * scale + y  # y-coords
+
+    m_path = (
+        f"M{sp(13):.2f},{sq(28):.2f} "
+        f"L{sp(13):.2f},{sq(14.5):.2f} "
+        f"L{sp(20):.2f},{sq(22):.2f} "
+        f"L{sp(27):.2f},{sq(12.5):.2f} "
+        f"L{sp(27):.2f},{sq(28):.2f}"
     )
-    return lines
+    # Shadow path (offset +1.1 in y, scaled)
+    shadow_dy = 1.1 * scale
+    m_shadow = (
+        f"M{sp(13):.2f},{sq(28) + shadow_dy:.2f} "
+        f"L{sp(13):.2f},{sq(14.5) + shadow_dy:.2f} "
+        f"L{sp(20):.2f},{sq(22) + shadow_dy:.2f} "
+        f"L{sp(27):.2f},{sq(12.5) + shadow_dy:.2f} "
+        f"L{sp(27):.2f},{sq(28) + shadow_dy:.2f}"
+    )
+
+    tile_id = f"mbTile_{uid}"
+    sheen_id = f"mbSheen_{uid}"
+    glow_id = f"mbGlow_{uid}"
+    ink_id = f"mbInk_{uid}"
+
+    defs_part = (
+        f'<linearGradient id="{tile_id}" x1="0" y1="0" x2="1" y2="1" '
+        f'gradientUnits="objectBoundingBox">'
+        f'<stop offset="0" stop-color="#5b9dff"/>'
+        f'<stop offset=".42" stop-color="#3b82f6"/>'
+        f'<stop offset=".74" stop-color="#6366f1"/>'
+        f'<stop offset="1" stop-color="#7c5cff"/>'
+        f'</linearGradient>'
+        f'<linearGradient id="{sheen_id}" x1="0" y1="0" x2="0" y2="1" '
+        f'gradientUnits="objectBoundingBox">'
+        f'<stop offset="0" stop-color="#ffffff" stop-opacity=".34"/>'
+        f'<stop offset=".55" stop-color="#ffffff" stop-opacity="0"/>'
+        f'</linearGradient>'
+        f'<radialGradient id="{glow_id}" cx=".5" cy=".4" r=".65" '
+        f'gradientUnits="objectBoundingBox">'
+        f'<stop offset="0" stop-color="#ffffff" stop-opacity=".22"/>'
+        f'<stop offset="1" stop-color="#ffffff" stop-opacity="0"/>'
+        f'</radialGradient>'
+        f'<linearGradient id="{ink_id}" x1="0" y1="0" x2="0" y2="1" '
+        f'gradientUnits="objectBoundingBox">'
+        f'<stop offset="0" stop-color="#ffffff"/>'
+        f'<stop offset="1" stop-color="#dbe7ff"/>'
+        f'</linearGradient>'
+    )
+
+    group = (
+        f'<rect x="{x:.2f}" y="{y:.2f}" width="{size:.2f}" height="{size:.2f}" '
+        f'rx="{rx:.2f}" fill="url(#{tile_id})"/>'
+        f'<rect x="{x:.2f}" y="{y:.2f}" width="{size:.2f}" height="{size:.2f}" '
+        f'rx="{rx:.2f}" fill="url(#{glow_id})"/>'
+        f'<rect x="{x:.2f}" y="{y:.2f}" width="{size:.2f}" height="{size:.2f}" '
+        f'rx="{rx:.2f}" fill="url(#{sheen_id})"/>'
+        # Shadow stroke
+        f'<path d="{m_shadow}" fill="none" stroke="#15205a" stroke-opacity=".30" '
+        f'stroke-width="{sw:.2f}" stroke-linecap="round" stroke-linejoin="round"/>'
+        # Main M stroke
+        f'<path d="{m_path}" fill="none" stroke="url(#{ink_id})" '
+        f'stroke-width="{sw:.2f}" stroke-linecap="round" stroke-linejoin="round"/>'
+    )
+    return defs_part, group
+
+
+def resolve_logo(ticker: str, root: Path | str) -> str | None:
+    """Return whitened data URI for ticker logo (cached; fetch if needed). Fail-soft None."""
+    try:
+        from engine.marketing.logo_cache import white_logo_datauri
+        return white_logo_datauri(ticker, root, fetch=True)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -501,21 +583,39 @@ def render_chart_v2(
     show_indicators: bool = True,
     indicators: tuple[str, ...] = ("volume", "macd"),
     company_name: str | None = None,
+    logo_datauri: str | None = None,
+    logo_root: Path | str | None = None,
     width: int = 1000,
     height: int = 850,
 ) -> str:
     """Render a TrendSpider-grade candlestick SVG chart.
 
-    Dark-navy (#0E1420) bg, big Mastermind lockup top-left, TICKER+TIMEFRAME
-    top-right, candlesticks with wicks, right price-axis only with last-price pill,
-    optional SMA50/SMA200 overlays, % change callout box, highlight zone + SETUP pill,
-    stacked subpanels (volume / MACD / RSI), ghost watermark, footer.
+    Dark-navy (#0E1420) bg, real Mastermind favicon lockup top-left (gradient tile +
+    ascending-M path + MASTERMIND wordmark), TICKER+TIMEFRAME top-right, candlesticks
+    with wicks (min 2px body), right price-axis (5-7 round levels), last-price pill,
+    optional SMA50/SMA200 overlays, % change callout box (with duration), highlight
+    zone + SETUP pill, stacked subpanels (volume / MACD / RSI), ghost watermark,
+    company logo overlay (when logo_datauri provided or logo_root triggers auto-resolve),
+    footer with URL + copyright.
 
-    Returns self-contained SVG (<40KB). No <script>. All text _xesc'd.
+    New kwargs:
+        logo_datauri: pre-resolved whitened data URI — embedded as giant overlay in
+            upper price area (TrendSpider signature move). Overrides ghost text when set.
+        logo_root: if logo_datauri is None but logo_root is provided, calls
+            resolve_logo(ticker, logo_root) to auto-fetch + cache the logo.
+
+    Returns self-contained SVG (<60KB). No <script>. All text _xesc'd.
     """
     n = len(c)
     if n < 5:
         return _empty_svg(width, height, ticker)
+
+    # ── Unique id suffix: derived from ticker hash (deterministic, collision-safe) ──
+    uid = str(abs(hash(ticker)) % 10_000_000)
+
+    # ── Auto-resolve logo if not provided ───────────────────────────────────
+    if logo_datauri is None and logo_root is not None:
+        logo_datauri = resolve_logo(ticker, logo_root)
 
     # Clamp indices
     eff_highlight = highlight_index if highlight_index is not None else marker_index
@@ -523,15 +623,17 @@ def render_chart_v2(
     eff_marker = max(0, min(eff_marker, n - 1))
     if eff_highlight is not None:
         eff_highlight = max(0, min(eff_highlight, n - 1))
-    eff_pct_from = pct_from_index if pct_from_index is not None else eff_marker
-    eff_pct_from = max(0, min(eff_pct_from, n - 1))
+    # % callout is strictly opt-in: pct_from_index=None means NO callout box.
+    # (A "-3% in 2 bars" banner on a fresh bullish setup is contradictory noise —
+    # callers suppress the callout when the window is too short to mean anything.)
+    eff_pct_from = None if pct_from_index is None else max(0, min(pct_from_index, n - 1))
 
     # ── Layout ──────────────────────────────────────────────────────────────
-    HEADER_H = 56          # header band height
-    FOOTER_H = 24
+    HEADER_H = 64          # header band height (taller for logo breathing room)
+    FOOTER_H = 28
     PAD_L = 14             # left padding (no left axis)
     PAD_R = 72             # right axis labels
-    PAD_TOP = HEADER_H + 8
+    PAD_TOP = HEADER_H + 12  # extra padding so logo band breathes
 
     # Subpanel heights
     active_panels: list[str] = []
@@ -547,10 +649,10 @@ def render_chart_v2(
 
     chart_w = width - PAD_L - PAD_R
 
-    # Candle slot width
+    # Candle slot width — min 2px body, 1px gap between candles
     slot_w = chart_w / n
     body_frac = 0.60        # body width = 60% of slot
-    body_w = max(1.5, slot_w * body_frac)
+    body_w = max(2.0, slot_w * body_frac - 1.0)  # -1 = 1px gap
 
     # Price range (from high/low with margin)
     all_h = [v for v in h if v == v]
@@ -597,21 +699,40 @@ def render_chart_v2(
         )
     candles_svg = "\n  ".join(candle_parts)
 
-    # ── Right price axis ─────────────────────────────────────────────────────
+    # ── Right price axis: 5-7 round levels ──────────────────────────────────
     axis_x = PAD_L + chart_w + 6
-    n_ticks = 6
     axis_parts: list[str] = []
-    for ti in range(n_ticks):
-        frac = ti / (n_ticks - 1)
-        tick_price = y_max - frac * y_range
-        ty = PAD_TOP + PRICE_H * frac
+
+    def _round_axis_levels(lo: float, hi: float, target: int = 6) -> list[float]:
+        rng = hi - lo
+        if rng <= 0:
+            return [lo]
+        step_raw = rng / target
+        mag = 10 ** math.floor(math.log10(step_raw))
+        chosen_step = mag * 10  # fallback
+        for mult in (1, 2, 2.5, 5, 10):
+            step = mag * mult
+            if rng / step <= target + 1:
+                chosen_step = step
+                break
+        first = math.ceil(lo / chosen_step) * chosen_step
+        levels = []
+        v = first
+        while v <= hi + chosen_step * 0.01:
+            if lo - chosen_step * 0.01 <= v <= hi + chosen_step * 0.01:
+                levels.append(round(v, 6))
+            v += chosen_step
+        return levels or [lo, hi]
+
+    for tick_price in _round_axis_levels(y_min, y_max, target=6):
+        ty = py_price(tick_price)
         axis_parts.append(
             f'<text x="{axis_x + 2:.1f}" y="{ty + 4:.1f}" '
             f'fill="#6b7a99" font-size="10" font-family="monospace">'
             f'{_fmt_thousands(round(tick_price, 2))}</text>'
         )
 
-    # Last-price pill
+    # Last-price pill — rx=2 (rounded corners), bold
     last_close = c[-1]
     prev_close = c[-2] if n >= 2 else last_close
     pill_color = "#4CAF50" if last_close >= prev_close else "#E23B3B"
@@ -621,7 +742,7 @@ def render_chart_v2(
     pill_x = PAD_L + chart_w + 4
     axis_parts.append(
         f'<rect x="{pill_x:.1f}" y="{pill_y - 10:.1f}" '
-        f'width="{pill_w}" height="18" rx="3" fill="{pill_color}"/>'
+        f'width="{pill_w}" height="18" rx="2" fill="{pill_color}"/>'
         f'<text x="{pill_x + pill_w / 2:.1f}" y="{pill_y + 3:.1f}" '
         f'fill="#ffffff" font-size="10" font-weight="bold" '
         f'font-family="monospace" text-anchor="middle">{_xesc(pill_label)}</text>'
@@ -660,7 +781,7 @@ def render_chart_v2(
 
     # ── % Change callout box ─────────────────────────────────────────────────
     pct_callout_svg = ""
-    anchor_close = c[eff_pct_from]
+    anchor_close = c[eff_pct_from] if eff_pct_from is not None else None
     if anchor_close and anchor_close != 0:
         pct_chg = (last_close - anchor_close) / anchor_close * 100.0
         abs_chg = last_close - anchor_close
@@ -668,20 +789,33 @@ def render_chart_v2(
         sign = "+" if pct_chg >= 0 else ""
         box_color = "#4CAF50" if pct_chg >= 0 else "#E23B3B"
         line1 = f"{sign}{abs_chg:.2f} ({sign}{pct_chg:.2f}%)"
-        line2 = f"{bars_elapsed} bars"
-        box_w, box_h = 148, 38
+        # Duration wording: bars → approximate week/month label
+        if bars_elapsed <= 0:
+            dur_str = "0 bars"
+        elif bars_elapsed < 5:
+            dur_str = f"{bars_elapsed} bar{'s' if bars_elapsed != 1 else ''}"
+        elif bars_elapsed < 22:
+            weeks = bars_elapsed / 5
+            dur_str = f"{bars_elapsed} bars (~{weeks:.1f}wk)"
+        elif bars_elapsed < 65:
+            months = bars_elapsed / 21
+            dur_str = f"{bars_elapsed} bars (~{months:.1f}mo)"
+        else:
+            months = bars_elapsed / 21
+            dur_str = f"{bars_elapsed} bars (~{months:.0f}mo)"
+        box_w, box_h = 165, 42
         # Anchor box near top-right of price panel
         box_x = PAD_L + chart_w - box_w - 4
         box_y = PAD_TOP + 10
         pct_callout_svg = (
             f'<rect x="{box_x}" y="{box_y}" width="{box_w}" height="{box_h}" '
             f'rx="4" fill="{box_color}" opacity="0.92"/>'
-            f'<text x="{box_x + box_w / 2:.1f}" y="{box_y + 15:.1f}" '
+            f'<text x="{box_x + box_w / 2:.1f}" y="{box_y + 16:.1f}" '
             f'fill="#ffffff" font-size="12" font-weight="bold" '
             f'text-anchor="middle">{_xesc(line1)}</text>'
-            f'<text x="{box_x + box_w / 2:.1f}" y="{box_y + 30:.1f}" '
+            f'<text x="{box_x + box_w / 2:.1f}" y="{box_y + 32:.1f}" '
             f'fill="#ffffffcc" font-size="10" text-anchor="middle">'
-            f'{_xesc(line2)}</text>'
+            f'{_xesc(dur_str)}</text>'
         )
 
     # ── Highlight zone + SETUP pill ──────────────────────────────────────────
@@ -717,14 +851,31 @@ def render_chart_v2(
             f'text-anchor="middle">{pill_label_s}</text>'
         )
 
-    # ── Ghost watermark (company name / ticker) ──────────────────────────────
+    # ── Company logo overlay (TrendSpider signature: giant white logo) ──────
+    logo_svg = ""
+    if logo_datauri:
+        # Centered in upper third of price panel, ~34% chart width
+        logo_w = chart_w * 0.34
+        logo_x = PAD_L + (chart_w - logo_w) / 2
+        logo_y = PAD_TOP + PRICE_H * 0.08
+        logo_h = logo_w * 0.5  # reasonable aspect; SVG preserveAspectRatio handles it
+        logo_svg = (
+            f'<image href="{logo_datauri}" '
+            f'x="{logo_x:.1f}" y="{logo_y:.1f}" '
+            f'width="{logo_w:.1f}" height="{logo_h:.1f}" '
+            f'opacity="0.88" preserveAspectRatio="xMidYMid meet"/>'
+        )
+
+    # ── Ghost watermark (fallback when no logo) ──────────────────────────────
     ghost_label = company_name if company_name else ticker
     ghost_font_size = max(48, min(90, chart_w // max(1, len(ghost_label))))
     ghost_x = PAD_L + chart_w / 2
     ghost_y = PAD_TOP + PRICE_H * 0.55
+    # Ghost text is suppressed when logo is shown (logo replaces it in upper area)
+    ghost_opacity = "0.04" if not logo_datauri else "0.02"
     ghost_svg = (
         f'<text x="{ghost_x:.1f}" y="{ghost_y:.1f}" '
-        f'fill="#ffffff" fill-opacity="0.04" '
+        f'fill="#ffffff" fill-opacity="{ghost_opacity}" '
         f'font-size="{ghost_font_size}" font-weight="bold" '
         f'text-anchor="middle" dominant-baseline="middle">'
         f'{_xesc(ghost_label.upper())}</text>'
@@ -743,10 +894,11 @@ def render_chart_v2(
             f'x2="{PAD_L + chart_w}" y2="{panel_y}" '
             f'stroke="{divider_color}" stroke-width="1"/>'
         )
-        # Panel label
+        # Panel label — smaller-caps muted
         subpanel_svg_parts.append(
-            f'<text x="{PAD_L + 4}" y="{panel_y + 14}" '
-            f'fill="#6b7a99" font-size="10" font-weight="bold">'
+            f'<text x="{PAD_L + 4}" y="{panel_y + 13}" '
+            f'fill="#4a5568" font-size="9" font-weight="600" '
+            f'letter-spacing="0.08em">'
             f'{_xesc(panel_name.upper())}</text>'
         )
         inner_y = panel_y + 18
@@ -863,21 +1015,23 @@ def render_chart_v2(
 
     subpanel_svg = "\n  ".join(subpanel_svg_parts)
 
-    # ── Header: brand lockup + ticker/timeframe ──────────────────────────────
-    # Background header bar
+    # ── Header: real favicon lockup + ticker/timeframe ──────────────────────
     header_bg = (
         f'<rect x="0" y="0" width="{width}" height="{HEADER_H}" '
-        f'fill="#0A1020" opacity="0.8"/>'
+        f'fill="#0A1020" opacity="0.9"/>'
     )
-    # Node glyph + MASTERMIND wordmark (top-left)
-    glyph_cx, glyph_cy = 24, HEADER_H / 2 - 1
-    glyph_svg = _node_glyph(glyph_cx, glyph_cy, r=10)
-    wordmark_x = glyph_cx + 18
-    wordmark_y = HEADER_H / 2 + 5
+    # Real favicon logomark — gradient tile + M path, uid-suffixed to avoid collisions
+    logo_tile_size = 34.0
+    logo_cx = 8 + logo_tile_size / 2
+    logo_cy = HEADER_H / 2
+    logo_defs, logo_group = _favicon_logomark(logo_cx, logo_cy, size=logo_tile_size, uid=uid)
+    # MASTERMIND wordmark — prominent, weight 900
+    wordmark_x = logo_cx + logo_tile_size / 2 + 8
+    wordmark_y = HEADER_H / 2 + 7
     wordmark_svg = (
         f'<text x="{wordmark_x:.1f}" y="{wordmark_y:.1f}" '
-        f'fill="#ffffff" font-size="22" font-weight="bold" '
-        f'font-family="sans-serif" letter-spacing="2">'
+        f'fill="#ffffff" font-size="20" font-weight="900" '
+        f'font-family="sans-serif" letter-spacing="0.07em">'
         f'MASTERMIND</text>'
     )
     # Ticker + timeframe (top-right)
@@ -893,34 +1047,60 @@ def render_chart_v2(
         f'{_xesc(timeframe.upper())}</text>'
     )
 
-    # ── Footer ───────────────────────────────────────────────────────────────
+    # ── Footer: URL bottom-left + copyright bottom-right ────────────────────
     footer_y = height - 8
     footer_svg = (
         f'<text x="{PAD_L + 4}" y="{footer_y}" '
-        f'fill="#3a4466" font-size="10">© 2026 Mastermind</text>'
+        f'fill="#4a5568" font-size="12" font-family="sans-serif">'
+        f'mastermind-x.com</text>'
+        f'<text x="{width - PAD_R - 4}" y="{footer_y}" '
+        f'fill="#3a4466" font-size="10" text-anchor="end" '
+        f'font-family="sans-serif">© 2026 Mastermind</text>'
     )
 
-    # ── Date labels (bottom of price panel) ─────────────────────────────────
+    # ── Date labels (bottom of price panel): 4-6 evenly spaced ─────────────
     date_y_pos = PAD_TOP + PRICE_H + 6
     date_svg = ""
     if dates:
-        date_svg = (
-            f'<text x="{PAD_L}" y="{date_y_pos}" '
-            f'fill="#4a556a" font-size="9">{_xesc(dates[0])}</text>'
-            f'<text x="{PAD_L + chart_w}" y="{date_y_pos}" '
-            f'fill="#4a556a" font-size="9" text-anchor="end">'
-            f'{_xesc(dates[-1])}</text>'
-        )
+        # Choose 4-6 evenly spaced indices
+        n_date_labels = min(6, max(4, n // 15))
+        date_indices = [
+            int(round(i * (n - 1) / (n_date_labels - 1)))
+            for i in range(n_date_labels)
+        ]
+        # Deduplicate while preserving order
+        seen: set[int] = set()
+        date_parts = []
+        for di in date_indices:
+            if di in seen:
+                continue
+            seen.add(di)
+            dx = cx_bar(di)
+            anchor = "middle"
+            if di == 0:
+                anchor = "start"
+            elif di == n - 1:
+                anchor = "end"
+            date_parts.append(
+                f'<text x="{dx:.1f}" y="{date_y_pos}" '
+                f'fill="#4a556a" font-size="9" text-anchor="{anchor}">'
+                f'{_xesc(dates[di])}</text>'
+            )
+        date_svg = "\n  ".join(date_parts)
 
-    # ── Arrowhead marker def ─────────────────────────────────────────────────
-    defs_svg = (
-        '<defs>'
-        '<marker id="arrowhead" markerWidth="8" markerHeight="6" '
-        'refX="4" refY="3" orient="auto">'
-        '<polygon points="0 0, 8 3, 0 6" fill="#4CAF50"/>'
-        '</marker>'
-        '</defs>'
+    # ── Defs: arrowhead + favicon gradients ─────────────────────────────────
+    arrowhead_def = (
+        f'<marker id="arrowhead_{uid}" markerWidth="8" markerHeight="6" '
+        f'refX="4" refY="3" orient="auto">'
+        f'<polygon points="0 0, 8 3, 0 6" fill="#4CAF50"/>'
+        f'</marker>'
     )
+    # Update any arrowhead references in highlight_svg to use uid
+    highlight_svg_final = highlight_svg.replace(
+        'url(#arrowhead)', f'url(#arrowhead_{uid})'
+    )
+
+    defs_svg = f'<defs>{arrowhead_def}{logo_defs}</defs>'
 
     # ── Background rect ──────────────────────────────────────────────────────
     bg_rect = f'<rect width="{width}" height="{height}" fill="#0E1420"/>'
@@ -934,12 +1114,14 @@ def render_chart_v2(
         f'  {bg_rect}\n'
         f'  <!-- ghost watermark -->\n'
         f'  {ghost_svg}\n'
+        f'  <!-- company logo overlay -->\n'
+        f'  {logo_svg}\n'
         f'  <!-- candlesticks -->\n'
         f'  {candles_svg}\n'
         f'  <!-- SMA overlays -->\n'
         f'  {sma_svg}\n'
         f'  <!-- highlight zone -->\n'
-        f'  {highlight_svg}\n'
+        f'  {highlight_svg_final}\n'
         f'  <!-- price axis -->\n'
         f'  {axis_svg}\n'
         f'  <!-- % change callout -->\n'
@@ -948,9 +1130,9 @@ def render_chart_v2(
         f'  {date_svg}\n'
         f'  <!-- subpanels -->\n'
         f'  {subpanel_svg}\n'
-        f'  <!-- header -->\n'
+        f'  <!-- header (rendered last so it sits on top) -->\n'
         f'  {header_bg}\n'
-        f'  {glyph_svg}\n'
+        f'  {logo_group}\n'
         f'  {wordmark_svg}\n'
         f'  {ticker_svg}\n'
         f'  <!-- footer -->\n'
@@ -1009,11 +1191,16 @@ def render_earnings_card(
             return f"${v / 1e6:.2f}M"
         return f"${v:,.2f}"
 
-    # Node glyph for brand lockup
-    glyph_svg = _node_glyph(24, 28, r=10)
+    # Real favicon logomark for brand lockup
+    ec_uid = str(abs(hash(ticker + "ec")) % 10_000_000)
+    ec_logo_tile = 30.0
+    ec_logo_defs, ec_logo_group = _favicon_logomark(
+        8 + ec_logo_tile / 2, 8 + ec_logo_tile / 2, size=ec_logo_tile, uid=ec_uid
+    )
     wordmark_svg = (
-        f'<text x="44" y="33" fill="#ffffff" font-size="18" '
-        f'font-weight="bold" font-family="sans-serif" letter-spacing="1">'
+        f'<text x="{8 + ec_logo_tile + 6:.1f}" y="{8 + ec_logo_tile / 2 + 6:.1f}" '
+        f'fill="#ffffff" font-size="18" '
+        f'font-weight="900" font-family="sans-serif" letter-spacing="0.07em">'
         f'MASTERMIND</text>'
     )
 
@@ -1071,9 +1258,10 @@ def render_earnings_card(
         f'<svg viewBox="0 0 {width} {height}" '
         f'xmlns="http://www.w3.org/2000/svg" '
         f'width="{width}" height="{height}">\n'
+        f'  <defs>{ec_logo_defs}</defs>\n'
         f'  <rect width="{width}" height="{height}" fill="#0E1420"/>\n'
         f'  <!-- brand lockup -->\n'
-        f'  {glyph_svg}\n'
+        f'  {ec_logo_group}\n'
         f'  {wordmark_svg}\n'
         f'  <!-- earnings content -->\n'
         f'  {content}\n'

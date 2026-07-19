@@ -669,6 +669,208 @@ def test_render_earnings_card_no_script():
 
 
 # ---------------------------------------------------------------------------
+# v3 chart branding tests
+# ---------------------------------------------------------------------------
+
+def _make_white_png_bytes(width: int = 60, height: int = 30) -> bytes:
+    """Create a minimal white-on-transparent PNG via PIL for logo tests."""
+    try:
+        import io
+        from PIL import Image
+        img = Image.new("RGBA", (width, height), (255, 255, 255, 200))
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    except ImportError:
+        # If PIL is not available, return a known-good 1x1 transparent PNG
+        return (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\x0bIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00"
+            b"\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+
+
+def test_v3_unique_gradient_uids():
+    """Two renders of different tickers must produce non-colliding gradient ids."""
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg_a = render_chart_v2("AAPL", dates, o, h, l, c, v)
+    svg_b = render_chart_v2("MSFT", dates, o, h, l, c, v)
+    # Extract all gradient ids from each SVG
+    import re
+    ids_a = set(re.findall(r'id="(mbTile_[^"]+)"', svg_a))
+    ids_b = set(re.findall(r'id="(mbTile_[^"]+)"', svg_b))
+    assert ids_a, "AAPL chart has no mbTile_ gradient id"
+    assert ids_b, "MSFT chart has no mbTile_ gradient id"
+    # When concatenated (as in admin page), ids must not collide
+    assert ids_a.isdisjoint(ids_b), (
+        f"Gradient id collision between AAPL and MSFT charts: {ids_a & ids_b}"
+    )
+
+
+def test_v3_logo_embed_from_cached_file(tmp_path):
+    """With a synthetic cached white PNG, render includes data:image/png;base64."""
+    import base64
+    from pathlib import Path
+    from engine.marketing.chart_render import render_chart_v2
+    from engine.marketing.logo_cache import _cache_path, white_logo_datauri
+
+    # Write synthetic white PNG into the expected cache path
+    png_bytes = _make_white_png_bytes(60, 30)
+    cp = _cache_path("SYNTH", tmp_path)
+    cp.parent.mkdir(parents=True, exist_ok=True)
+    cp.write_bytes(png_bytes)
+
+    # cached_only should now return a URI
+    uri = white_logo_datauri("SYNTH", tmp_path, fetch=False)
+    assert uri is not None and uri.startswith("data:image/png;base64,"), (
+        f"Expected data URI from cache, got: {str(uri)[:80]}"
+    )
+
+    # Chart rendered with logo_datauri includes the image element
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("SYNTH", dates, o, h, l, c, v, logo_datauri=uri)
+    assert "data:image/png;base64," in svg, "Logo data URI not embedded in chart SVG"
+    assert "<image " in svg, "<image> element missing from chart SVG"
+
+
+def test_v3_logo_embed_via_logo_root(tmp_path):
+    """logo_root kwarg triggers cached_only lookup and embeds logo when cached."""
+    from engine.marketing.chart_render import render_chart_v2
+    from engine.marketing.logo_cache import _cache_path
+
+    # Pre-populate cache
+    png_bytes = _make_white_png_bytes(60, 30)
+    cp = _cache_path("RTEST", tmp_path)
+    cp.parent.mkdir(parents=True, exist_ok=True)
+    cp.write_bytes(png_bytes)
+
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("RTEST", dates, o, h, l, c, v, logo_root=tmp_path)
+    assert "data:image/png;base64," in svg, "logo_root did not trigger logo embed"
+
+
+def test_v3_fail_soft_missing_logo():
+    """Missing logo → ghost text fallback, no raise, chart still valid SVG."""
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    # No logo_datauri, no logo_root → falls back to ghost text
+    svg = render_chart_v2("NOLOGO", dates, o, h, l, c, v)
+    assert svg.strip().startswith("<svg"), "Chart must be valid SVG even without logo"
+    # Ghost watermark text present (ticker uppercased)
+    assert "NOLOGO" in svg, "Ghost watermark text missing when no logo"
+    # No <image> element for logo
+    assert "<image " not in svg, "Unexpected <image> element when no logo provided"
+
+
+def test_v3_real_favicon_logomark_present():
+    """The real favicon M-path (ascending market peak shape) is in the SVG."""
+    from engine.marketing.chart_render import render_chart_v2
+    import re
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TICK", dates, o, h, l, c, v)
+    # The favicon M-path is a polyline of 5 points rendered as <path d="M...L...L...L...L...">
+    # It derives from M13,28 L13,14.5 L20,22 L27,12.5 L27,28 scaled to tile size
+    paths = re.findall(r'd="(M[^"]+)"', svg)
+    assert paths, "No <path d=...> M-path found in SVG (favicon logomark missing)"
+    # Must have a 5-segment path (4 L commands) — the M shape
+    five_seg = [p for p in paths if p.count(" L") == 4]
+    assert five_seg, (
+        f"No 5-segment path (favicon M shape) found. Paths found: {paths[:3]}"
+    )
+
+
+def test_v3_mastermind_url_in_footer():
+    """Footer must contain 'mastermind-x.com'."""
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("SBUX", dates, o, h, l, c, v)
+    assert "mastermind-x.com" in svg, "URL 'mastermind-x.com' missing from chart footer"
+
+
+def test_v3_no_script_tag():
+    """v3 chart must not contain <script> tags."""
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TEST", dates, o, h, l, c, v, logo_datauri=None)
+    assert "<script" not in svg.lower(), "SVG must not contain <script> tags"
+
+
+def test_v3_xss_escaped():
+    """Hostile ticker is escaped; no raw injection possible."""
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    hostile = '<script>alert(1)</script>'
+    svg = render_chart_v2(hostile, dates, o, h, l, c, v)
+    assert "<script>" not in svg
+    assert "</script>" not in svg
+    assert "&lt;" in svg, "Hostile ticker not escaped"
+
+
+def test_v3_under_60kb_with_logo(tmp_path):
+    """Chart with embedded logo must stay under 60KB."""
+    import base64
+    from engine.marketing.chart_render import render_chart_v2
+
+    # Generate a moderately sized PNG (120x60 white logo)
+    png_bytes = _make_white_png_bytes(120, 60)
+    b64 = base64.b64encode(png_bytes).decode("ascii")
+    logo_uri = f"data:image/png;base64,{b64}"
+
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2(
+        "AAPL", dates, o, h, l, c, v,
+        show_indicators=True,
+        indicators=("volume", "macd", "rsi"),
+        logo_datauri=logo_uri,
+    )
+    size = len(svg.encode("utf-8"))
+    assert size < 60 * 1024, f"SVG too large with logo: {size} bytes (max 60KB)"
+
+
+def test_v3_under_60kb_without_logo():
+    """Chart without logo must stay under 60KB."""
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2(
+        "TEST", dates, o, h, l, c, v,
+        show_indicators=True,
+        indicators=("volume", "macd", "rsi"),
+    )
+    size = len(svg.encode("utf-8"))
+    assert size < 60 * 1024, f"SVG too large: {size} bytes (max 60KB)"
+
+
+def test_v3_logo_cache_cached_only_returns_none_when_absent(tmp_path):
+    """cached_only() returns None when no file cached — never fetches."""
+    from engine.marketing.logo_cache import cached_only
+    result = cached_only("NOCACHE", tmp_path)
+    assert result is None, f"Expected None for uncached ticker, got: {str(result)[:60]}"
+
+
+def test_v3_logo_cache_whiten_writes_file(tmp_path):
+    """white_logo_datauri with fetch=False but pre-cached file returns URI and no re-fetch."""
+    from engine.marketing.logo_cache import white_logo_datauri, _cache_path
+    png_bytes = _make_white_png_bytes(40, 20)
+    cp = _cache_path("WH", tmp_path)
+    cp.parent.mkdir(parents=True, exist_ok=True)
+    cp.write_bytes(png_bytes)
+
+    result = white_logo_datauri("WH", tmp_path, fetch=False)
+    assert result is not None and result.startswith("data:image/png;base64,")
+
+
+def test_v3_mastermind_brand_weight_900():
+    """MASTERMIND wordmark must use font-weight 900 (prominent brand lockup)."""
+    from engine.marketing.chart_render import render_chart_v2
+    dates, o, h, l, c, v = _synthetic_ohlcv(90)
+    svg = render_chart_v2("TST", dates, o, h, l, c, v)
+    # font-weight="900" must appear (the bold brand lockup)
+    assert 'font-weight="900"' in svg, "MASTERMIND wordmark must use font-weight 900"
+
+
+# ---------------------------------------------------------------------------
 # v2: content_plan featured charts use v2 (candlestick rects in SVG)
 # ---------------------------------------------------------------------------
 

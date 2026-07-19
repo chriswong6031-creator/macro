@@ -643,6 +643,7 @@ class TestDepartmentShape:
         expected_short = {
             "Command", "Engine Room", "Radar", "Workshop", "Studio",
             "Broadcast", "Funnel", "Allies", "Lab", "Sentinel",
+            "Beacon",  # Organic Search & Public Pages — added by the MNZ program
         }
         assert expected_short == short_names, (
             f"Short names mismatch. Got: {short_names}"

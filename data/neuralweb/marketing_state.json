@@ -26,53 +26,58 @@
       "allocations": [
         {
           "department": "distribution",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 1
         },
         {
           "department": "ecosystem",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 2
         },
         {
           "department": "growth_os",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 3
         },
         {
           "department": "growth_science",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 4
         },
         {
           "department": "intelligence",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 5
         },
         {
           "department": "lifecycle",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 6
         },
         {
           "department": "office_cmo",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 7
         },
         {
           "department": "products",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 8
         },
         {
-          "department": "studio",
-          "weight": 0.1,
+          "department": "seo_organics",
+          "weight": 0.090909,
           "rank": 9
         },
         {
-          "department": "trust_office",
-          "weight": 0.1,
+          "department": "studio",
+          "weight": 0.090909,
           "rank": 10
+        },
+        {
+          "department": "trust_office",
+          "weight": 0.090909,
+          "rank": 11
         }
       ],
       "total_envelope_usd": 0
@@ -1164,6 +1169,103 @@
         "authority_level": "G2"
       },
       "wave": 0
+    },
+    {
+      "id": "seo_organics",
+      "name": "Beacon",
+      "formal_name": "Organic Search & Public Pages",
+      "tagline": "Pulls durable organic and AI-assistant traffic through public evidence pages that earn their ranking honestly.",
+      "icon": "beacon",
+      "director_model": "opus",
+      "primary_outcome": "Durable organic search and AI-assistant referral traffic via per-ticker dossier pages, finite receipt-SEO templates, structured data, sitemap curation, and freshness/noindex policing — never thin auto-generated article volume.",
+      "non_goals": [
+        "Paid search or retargeting of any kind.",
+        "Editorial voice and chart creation (Studio owns).",
+        "Subscription conversion (Funnel owns).",
+        "Originating any market signal or score."
+      ],
+      "engines": [
+        {
+          "id": "ticker_dossier_renderer",
+          "name": "Dossier Pages",
+          "does": "Builds the public one-page dossier for each covered ticker from committed engine artifacts."
+        },
+        {
+          "id": "sitemap_builder",
+          "name": "Sitemap Builder",
+          "does": "Regenerates sitemap.xml every publish cycle so new and updated pages get crawled fast."
+        },
+        {
+          "id": "structured_data_injector",
+          "name": "Schema Injector",
+          "does": "Puts machine-readable JSON-LD on every eligible page so search and AI engines can quote us precisely."
+        },
+        {
+          "id": "freshness_noindex_guard",
+          "name": "Freshness Guard",
+          "does": "Marks any page whose evidence has gone stale as noindex and restores it when data is current again."
+        },
+        {
+          "id": "canonical_url_manager",
+          "name": "Canonical Manager",
+          "does": "Enforces one canonical URL per page family to prevent duplicate-content dilution."
+        },
+        {
+          "id": "internal_link_graph",
+          "name": "Link Graph",
+          "does": "Weaves dossiers, baskets, and sector pages into one dense crawlable graph."
+        },
+        {
+          "id": "receipt_seo_templates",
+          "name": "Receipt Templates",
+          "does": "Maintains the finite what-changed, why-moving, and compare page families, each gated on unique evidence."
+        },
+        {
+          "id": "search_demand_feedback",
+          "name": "Demand Feedback",
+          "does": "Reads search impression and click data and feeds query gaps back to Radar as opportunities."
+        },
+        {
+          "id": "crawl_error_monitor",
+          "name": "Crawl Watch",
+          "does": "Watches crawl errors and soft-404s before they compound into ranking losses."
+        },
+        {
+          "id": "page_speed_audit",
+          "name": "Speed Auditor",
+          "does": "Audits page weight and Core Web Vitals on dossier pages so they load fast enough to rank."
+        }
+      ],
+      "authority_level": "G1",
+      "lifecycle_state": "chartered",
+      "budget": {
+        "envelope_usd": 0,
+        "spent_usd": 0
+      },
+      "model_mix": {
+        "director": "opus",
+        "workers": "sonnet",
+        "extraction": "haiku"
+      },
+      "clock": {
+        "cadence": "weekly",
+        "last_review": null,
+        "next_review": "2026-07-25"
+      },
+      "retirement_test": "Retire if indexed dossier pages produce fewer than 10 qualified organic acquisition events per month for 60 consecutive days.",
+      "scorecard": {
+        "primary_metric": "qualified organic sessions driving acquisition per week",
+        "leading": [
+          "indexed_page_count",
+          "impressions_growth",
+          "stale_page_noindex_rate"
+        ],
+        "trust_health": "clean",
+        "experiment_velocity": 0,
+        "learning_quality": "seeding",
+        "authority_level": "G1"
+      },
+      "wave": 4
     }
   ],
   "authority_ladder": [
@@ -1387,7 +1489,7 @@
           "id": "seed-opp-001",
           "problem_or_desire": "Why did yields spike 20bp today and who are the winners/losers?",
           "expected_value": 0.7,
-          "score": 4.7e-05,
+          "score": 1.8e-05,
           "half_life_class": "breaking_event",
           "status": "open"
         },
@@ -1395,7 +1497,7 @@
           "id": "seed-opp-002",
           "problem_or_desire": "How exposed is my portfolio to the current rate regime?",
           "expected_value": 0.6,
-          "score": 0.473967,
+          "score": 0.473544,
           "half_life_class": "evergreen_comparison",
           "status": "open"
         },
@@ -1403,7 +1505,7 @@
           "id": "seed-opp-003",
           "problem_or_desire": "Semis sector rotation: who is leading and who is lagging?",
           "expected_value": 0.5,
-          "score": 0.283941,
+          "score": 0.280706,
           "half_life_class": "weekly_signal",
           "status": "open"
         }
@@ -1506,62 +1608,68 @@
       "allocations": [
         {
           "department": "office_cmo",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 1,
           "amount_usd": 0.0
         },
         {
           "department": "growth_os",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 2,
           "amount_usd": 0.0
         },
         {
           "department": "intelligence",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 3,
           "amount_usd": 0.0
         },
         {
           "department": "products",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 4,
           "amount_usd": 0.0
         },
         {
           "department": "studio",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 5,
           "amount_usd": 0.0
         },
         {
           "department": "distribution",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 6,
           "amount_usd": 0.0
         },
         {
           "department": "lifecycle",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 7,
           "amount_usd": 0.0
         },
         {
           "department": "ecosystem",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 8,
           "amount_usd": 0.0
         },
         {
           "department": "growth_science",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 9,
           "amount_usd": 0.0
         },
         {
           "department": "trust_office",
-          "weight": 0.1,
+          "weight": 0.090909,
           "rank": 10,
+          "amount_usd": 0.0
+        },
+        {
+          "department": "seo_organics",
+          "weight": 0.090909,
+          "rank": 11,
           "amount_usd": 0.0
         }
       ]
@@ -1632,7 +1740,7 @@
     {
       "id": "wave4",
       "title": "Owned media machine",
-      "status": "planned",
+      "status": "in_progress",
       "goal": "Make one worthy opportunity become a coherent owned distribution bundle: newsletter, flagship X desk, chart/receipt X desk, YouTube shorts, public SEO templates, structured data, newsroom."
     },
     {
@@ -1655,9 +1763,9 @@
     }
   ],
   "content": {
-    "total_posts": 133,
-    "signal_posts": 49,
-    "charts": 8,
+    "total_posts": 130,
+    "signal_posts": 46,
+    "charts": 4,
     "accounts": 6,
     "state": "present",
     "as_of": "2026-07-19"
@@ -1670,7 +1778,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-19T03:25:05Z",
-  "inputs_hash": "sha256:3d5361f98398bfb5587ec7942314e9dc0d8381520f3a15c751992339101770f7",
+  "produced_at": "2026-07-19T06:11:44Z",
+  "inputs_hash": "sha256:cbce96288beee928de8bde06878808708c27a2d0284354a337fe664977091d0c",
   "tier": "display"
 }
