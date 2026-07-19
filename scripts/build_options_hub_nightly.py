@@ -50,6 +50,12 @@ from engine.options_hub import (
 )
 from engine.levels_publish import levels_payload_from_gex, LEVELS_PREFIX
 from engine.vex_engine import compute_vex
+from engine.moves_engine import moves_payload, per_ticker_calibration
+
+try:
+    from engine.grading_stats import wilson_ci as _wilson_ci
+except Exception:  # noqa: BLE001
+    _wilson_ci = None  # moves calibration degrades to a rate without a CI
 
 log = logging.getLogger(__name__)
 
@@ -492,6 +498,63 @@ def _gex_history_relpath(root: str, gex_payload: dict) -> str | None:
 
 
 # --------------------------------------------------------------------------- #
+# Moves plane inputs (graceful-absent reads of the Track Record artifacts)
+# --------------------------------------------------------------------------- #
+
+def _load_learned_band_mult(data_root: Path) -> dict | None:
+    """The regime-aware learned band multiplier from levels/track_record.json, or None.
+
+    Absent until the levels Track Record has been built — moves then simply omits the
+    learned-multiplier note (the drawn expected-move band is independent of it).
+    """
+    p = Path(data_root) / "levels" / "track_record.json"
+    try:
+        tr = json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return None
+    lbm = tr.get("learned_band_mult")
+    return lbm if isinstance(lbm, dict) else None
+
+
+def _load_grades_board_rows_by_root(data_root: Path) -> dict[str, list[dict]]:
+    """Per-root graded-board rows from levels/grades.parquet: {root: [{band_contained,
+    band_mult, session_date}]}.
+
+    band_contained is board-level (repeated across a board's node rows), so we dedup by
+    board_id. Absent/unreadable → {} (moves calibration is then null — honest "no graded
+    history yet"). Read once in main(); only the columns moves needs are pulled.
+    """
+    p = Path(data_root) / "levels" / "grades.parquet"
+    if not p.exists():
+        return {}
+    cols = ["root", "board_id", "session_date", "band_contained", "band_mult"]
+    try:
+        df = pd.read_parquet(p, columns=cols)
+    except Exception:  # noqa: BLE001
+        try:
+            df = pd.read_parquet(p)
+        except Exception:  # noqa: BLE001
+            return {}
+    if df.empty or "root" not in df.columns:
+        return {}
+    if "board_id" in df.columns:
+        df = df.drop_duplicates(subset=["board_id"])
+    out: dict[str, list[dict]] = {}
+    for root, grp in df.groupby("root"):
+        recs = []
+        for _, r in grp.iterrows():
+            bc = r.get("band_contained")
+            bm = r.get("band_mult")
+            recs.append({
+                "band_contained": (None if pd.isna(bc) else bool(bc)),
+                "band_mult": (None if pd.isna(bm) else float(bm)),
+                "session_date": r.get("session_date"),
+            })
+        out[str(root)] = recs
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # CLI entry point
 # --------------------------------------------------------------------------- #
 
@@ -518,6 +581,10 @@ def main() -> None:
     # ── resolve paths ──────────────────────────────────────────────────────────
     from lib import config as lib_config
     data_root = lib_config.data_dir()
+
+    # Moves plane inputs — read once, graceful-absent (null calibration / no note when absent)
+    moves_learned_mult = _load_learned_band_mult(data_root)
+    moves_grades_by_root = _load_grades_board_rows_by_root(data_root)
 
     out_dir = Path(args.out) if args.out else (data_root / "live_flow_out" / "options_hub")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -682,6 +749,7 @@ def main() -> None:
             # downstream transform of gex_payload: the gex key above is unchanged
             # and this is INERT per root like everything else in this loop. Empty
             # boards (no by_strike rows) are never written.
+            levels_payload: dict | None = None
             try:
                 levels_payload = levels_payload_from_gex(gex_payload)
                 if levels_payload is not None:
@@ -714,6 +782,34 @@ def main() -> None:
                 log.warning(
                     "options_hub_builder: vex publish failed for %s — %s",
                     root, _vx_err,
+                )
+
+            # ── WP-B: moves.v1 (learned expected-move + matched calibration) ──────
+            # The move the options are pricing today (spot + ATM IV) paired with how
+            # often a band built the SAME way has actually contained the next session's
+            # range for this ticker (reconstructed grades → per_ticker_calibration).
+            # Sibling of vol/gex/vex in the options_hub plane. Written locally always;
+            # uploaded only when an expected move could be built AND the same completeness
+            # guard is satisfied (gex_publish). Calibration is null until the Track Record
+            # has graded this root — honest "no graded history yet". INERT per root.
+            try:
+                _regime = None
+                if isinstance(levels_payload, dict) and isinstance(levels_payload.get("regime"), dict):
+                    _regime = levels_payload["regime"].get("label")
+                _moves = moves_payload(
+                    root, asof, gex_payload.get("spot_ref"), vol_payload.get("atm_iv"),
+                    calibration=per_ticker_calibration(
+                        moves_grades_by_root.get(root, []), ci_fn=_wilson_ci),
+                    learned_band_mult=moves_learned_mult, regime=_regime,
+                )
+                moves_path = out_dir / "moves" / f"{root}.json"
+                _write_json(moves_path, _moves)
+                if s3 and bucket and gex_publish and _moves.get("expected_move"):
+                    _upload_r2(s3, bucket, moves_path, f"{R2_PREFIX}moves/{root}.json")
+            except Exception as _mv_err:  # noqa: BLE001
+                log.warning(
+                    "options_hub_builder: moves publish failed for %s — %s",
+                    root, _mv_err,
                 )
 
             roots_ok.append(root)
