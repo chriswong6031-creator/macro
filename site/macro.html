@@ -9307,101 +9307,97 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   
   
   
+    
+    
+    
+    
+    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    
+      
+      
+      
+    
+      
+      
+      
+    
+      
+      
+      
+    
+      
+      
+      
+    
+      
+      
+      
+    
+    
+  
   
   <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="mx5OpenDlg('dlg-fed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-fed');}">
-    <div class="mx5-card-title"><span class="l-en">Fed Probability Instrument</span><span class="l-zh">美联储概率仪</span></div>
-    <div class="mx5-fed-main-row">
-      <div class="mx5-fed-donut-wrap">
-        <svg viewBox="0 0 80 80" style="width:76px;height:76px;display:block">
-          <defs>
-            <filter id="fedDonutGlow5"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          </defs>
-          <circle cx="40" cy="40" r="30" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="8"/>
-          <circle cx="40" cy="40" r="30" fill="none" stroke="#22d97a"
-            stroke-width="8" stroke-dasharray="178.1 10.4"
-            stroke-linecap="round" transform="rotate(-90 40 40)" filter="url(#fedDonutGlow5)"/>
-        </svg>
-        <div class="mx5-fed-pct-overlay">94<small>%</small></div>
-      </div>
-      <div>
-        <div class="mx5-fed-verdict">
-          <span class="l-en">No change</span>
-          <span class="l-zh">按兵不动</span>
-        </div>
-        <div class="mx5-fed-desc">
-          <span class="l-en">Priced in &mdash; market<br>pricing favors a NO CHANGE</span>
-          <span class="l-zh">市场定价 &mdash; 倾向按兵不动</span>
-        </div>
-      </div>
-    </div>
-    <div class="mx5-fed-hist-label"><span class="l-en">Outcome Probability Distribution</span><span class="l-zh">结果概率分布</span></div>
-    <div class="mx5-fed-hist-bars">
-      
-      
-      
-      
-      <div class="mx5-fed-hist-col">
-        <div class="mx5-fed-hist-bar" style="height:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);border-radius:2px 2px 0 0;"></div>
-        <div class="mx5-fed-hist-name">
-          <span class="l-en">50+ bp</span>
-          <span class="l-zh">50+ </span>
-        </div>
-      </div>
-      
-      
-      
-      <div class="mx5-fed-hist-col">
-        <div class="mx5-fed-hist-bar" style="height:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);border-radius:2px 2px 0 0;"></div>
-        <div class="mx5-fed-hist-name">
-          <span class="l-en">25 bps</span>
-          <span class="l-zh">25 b</span>
-        </div>
-      </div>
-      
-      
-      
-      <div class="mx5-fed-hist-col">
-        <div class="mx5-fed-hist-bar" style="height:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);border-radius:2px 2px 0 0;"></div>
-        <div class="mx5-fed-hist-name">
-          <span class="l-en">50+ bp</span>
-          <span class="l-zh">50+ </span>
-        </div>
-      </div>
-      
-      
-      
-      <div class="mx5-fed-hist-col">
-        <div class="mx5-fed-hist-bar" style="height:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.15);border-radius:2px 2px 0 0;"></div>
-        <div class="mx5-fed-hist-name">
-          <span class="l-en">25 bps</span>
-          <span class="l-zh">25 b</span>
-        </div>
-      </div>
-      
-      
-      
-      <div class="mx5-fed-hist-col">
-        <div class="mx5-fed-hist-bar" style="height:47px;background:linear-gradient(180deg,rgba(34,217,122,.45) 0%,rgba(34,217,122,.18) 100%);border:1px solid rgba(34,217,122,.28);box-shadow:0 0 10px rgba(34,217,122,.18);border-radius:2px 2px 0 0;"></div>
-        <div class="mx5-fed-hist-name" style="color:var(--mx5-accent-ink);font-weight:700">
-          <span class="l-en">No cha</span>
-          <span class="l-zh">不变</span>
-        </div>
-      </div>
-      
-    </div>
+    <div class="mx5-card-title"><span class="l-en">Fed Path</span><span class="l-zh">联储路径</span></div>
     
     
-    
-    <div class="mx5-fed-policy-note">
-      <strong><span class="l-en">Policy</span><span class="l-zh">政策</span></strong> &mdash;
-      <span class="l-en">Elevated · watch repricing</span>
-      <span class="l-zh">警戒 · 留意重定价</span>
-      
-      <br><span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))">
-        <span class="l-en">Last flip 2026-07-02</span>
-        <span class="l-zh">最近翻转 2026-07-02</span>
+    <div class="plf-stance-row" style="margin-bottom:4px">
+      <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:2px"><circle cx="4" cy="4" r="4" fill="var(--warn)"/></svg>
+      <span style="font-size:12px;font-weight:600">
+        <span class="l-en">Two-sided — watch the tape</span>
+        <span class="l-zh">双向——观察市场走势</span>
       </span>
-      
+    </div>
+    
+    
+    
+    <div style="font-size:11px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.4;margin-bottom:6px">
+      <span class="l-en">Outlook is two-sided: futures price about two hikes; hawkish and easing inputs are roughly balanced (2 vs 3)</span>
+      <span class="l-zh">前景双向：期货定价约两次加息；鹰派与宽松因素大体制衡（2对3）</span>
+    </div>
+    
+    
+    
+    <div class="plf-spark-row" style="margin-bottom:6px">
+      <svg class="plf-spark-svg" viewBox="0 0 120 36" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="rcSpkGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--isle-policy)" stop-opacity=".18"/>
+            <stop offset="100%" stop-color="var(--isle-policy)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,32.0 L30,30.4 L60,21.9 L90,8.6 L120,0.0 L120,36 L0,36 Z" fill="url(#rcSpkGrad)"/>
+        <polyline points="0,32.0 30,30.4 60,21.9 90,8.6 120,0.0" fill="none" stroke="var(--isle-policy)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+    </div>
+    
+    
+    
+    <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+      <span class="l-en">Market prices ~2 hikes over the next 12m (funds 3.63% → 4.04%)</span>
+      <span class="l-zh">市场为未来12个月定价约加息2次（基金利率 3.63% → 4.04%）</span>
+    </div>
+    
+    
+    
+    <div class="mx5-fed-policy-note" style="margin-top:6px">
+      <span class="l-en">Policy: watch for repricing</span>
+      <span class="l-zh">政策：留意重定价</span>
     </div>
     
   </div>
@@ -10317,12 +10313,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="l-en">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 High-Impact Items</span><br>
-          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
+          Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">rates</span><br>
           4 high-impact signals across channels
         </span>
         <span class="l-zh">
           <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">4 条高影响信息</span><br>
-          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
+          主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">利率</span><br>
           4 条高影响信号
         </span>
         
@@ -10885,7 +10881,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Fed · Market Pricing</span><span class="l-zh">美联储 · 市场定价</span></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Fed &middot; market-implied benchmark</span><span class="l-zh">美联储 &middot; 市场隐含基准</span></div>
         <div class="mx5-dlg-fed-strip">
           
           
@@ -11355,7 +11351,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   <div class="rrx-cyc rrx-cax">
     <span class="rrx-cyc-k"><span class="l-en">Markets moving as one</span><span class="l-zh">多市场同涨同跌</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Absorption 89th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 89分位（5年）；集群：US、Commodities、Dollar</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Absorption 88th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 88分位（5年）；集群：US、Commodities、Dollar</span></span></span>
   </div>
 
   <div class="rrx-trk">
@@ -12621,8 +12617,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">初步迹象——初现火花，未经确认</span>
             </div>
             <div class="igd-asof">
-              <span class="l-en">as of 2026-07-18</span>
-              <span class="l-zh">截至 2026-07-18</span>
+              <span class="l-en">as of 2026-07-19</span>
+              <span class="l-zh">截至 2026-07-19</span>
             </div>
           </div>
         </div>
@@ -13755,375 +13751,497 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title"><span class="l-en">Fed Probability — Full Outlook</span><span class="l-zh">美联储概率 — 完整展望</span></span>
+        <span class="mx5-dlg-title"><span class="l-en">Fed Path — Forward Board</span><span class="l-zh">联储路径 — 前瞻看板</span></span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.07)">
+            <span class="l-en">Two-sided — watch the tape</span>
+            <span class="l-zh">双向——观察市场走势</span>
+          </span>
+          <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))">2026-07-17</span>
+        </div>
+        <div style="font-size:13px;color:var(--ink-2,rgba(255,255,255,.7));line-height:1.6">
+          <span class="l-en">Outlook is two-sided: futures price about two hikes; hawkish and easing inputs are roughly balanced (2 vs 3). A hotter-than-expected inflation print and a deeper equity pullback are pulling against each other.</span>
+          <span class="l-zh">前景双向：期货定价约两次加息；鹰派与宽松因素大体制衡（2对3）。 高于预期的通胀数据与股市进一步回调相互制衡。</span>
+        </div>
+      </div>
+      <div class="mx5-dlg-sep"></div>
+
+      
+      <div class="mx5-dlg-eyebrow"><span class="l-en">Pressure Gauge</span><span class="l-zh">压力表</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--down,#ef4444);margin-bottom:4px">
+            <span class="l-en">Hawkish legs (2)</span>
+            <span class="l-zh">鹰派因素 (2)</span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="rgba(255,255,255,.18)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+              <span class="l-en">12-month rate futures moved -10.8bp over 20 trading days (threshold: +15bp).</span>
+              <span class="l-zh">20个交易日内12个月利率期货变动-10.8个基点（阈值：+15bp）。</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="rgba(255,255,255,.18)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+              <span class="l-en">10y breakeven moved -1.0bp over 20 days (threshold: +8bp).</span>
+              <span class="l-zh">10年期盈亏平衡点20天变动-1.0个基点（阈值：+8bp）。</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="rgba(255,255,255,.18)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+              <span class="l-en">Oil trend: up; shock or oil-driver condition not met. (shock_state stale &gt;7d — judged on trend+cause_badge only)</span>
+              <span class="l-zh">原油趋势：up；冲击或油价驱动条件未满足。（shock_state超过7天未更新——仅依据趋势和原因标识判断）</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="var(--down,#ef4444)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-1,rgba(255,255,255,.88));line-height:1.4">
+              <span class="l-en">Nearest cpi headline (due 2026-08-12) skewed hotter (sigma=1.40).</span>
+              <span class="l-zh">近期cpi headline（预定2026-08-12）偏热（sigma=1.40）。</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="var(--down,#ef4444)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-1,rgba(255,255,255,.88));line-height:1.4">
+              <span class="l-en">Bear steepener with rising term premium — fiscal/risk-premium driven steepening, not growth-led.</span>
+              <span class="l-zh">熊市变陡叠加期限溢价上升——财政/风险溢价驱动，并非增长主导。</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="rgba(255,255,255,.18)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+              <span class="l-en">Inflation expectations anchored: &#39;anchored&#39;.</span>
+              <span class="l-zh">通胀预期稳定：&#39;锚定&#39;。</span>
+              
+            </span>
+          </div>
+          
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--up,#22d97a);margin-bottom:4px">
+            <span class="l-en">Easing offsets (3)</span>
+            <span class="l-zh">宽松因素 (3)</span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="var(--up,#22d97a)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-1,rgba(255,255,255,.88));line-height:1.4">
+              <span class="l-en">Equity radar in &#39;caution&#39; — risk-off pressure historically cools inflation and rate expectations.</span>
+              <span class="l-zh">股票雷达处于&#39;caution&#39;状态——历史上风险规避会压制通胀和加息预期。</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="rgba(255,255,255,.18)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+              <span class="l-en">No NFP cooler skew; complex growth direction not falling.</span>
+              <span class="l-zh">无NFP偏冷倾斜；商品综合增长方向未下行。</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="var(--up,#22d97a)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-1,rgba(255,255,255,.88));line-height:1.4">
+              <span class="l-en">Dollar strengthening — acts as an external tightening offset to domestic inflation pressure.</span>
+              <span class="l-zh">美元走强——作为对国内通胀压力的外部紧缩对冲。</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="rgba(255,255,255,.18)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+              <span class="l-en">HY OAS z-score: -0.84 (threshold: +1.0).</span>
+              <span class="l-zh">高收益利差z分数：-0.84（阈值：+1.0）。</span>
+              
+            </span>
+          </div>
+          
+          <div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:4px">
+            <svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;margin-top:3px">
+              <circle cx="4" cy="4" r="4" fill="rgba(255,255,255,.18)"/>
+            </svg>
+            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+              <span class="l-en">Policy easing transmission chain inactive.</span>
+              <span class="l-zh">政策宽松传导链未激活。</span>
+              
+            </span>
+          </div>
+          
+        </div>
+      </div>
+      
+      
+      
+      <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:12px">
+        <div style="height:100%;width:40%;background:linear-gradient(90deg,var(--down,#ef4444),var(--warn,#f59e0b));border-radius:3px"></div>
+      </div>
+      <div class="mx5-dlg-sep"></div>
+
+      
+      <div class="mx5-dlg-eyebrow"><span class="l-en">Rate Path — Implied vs Fed Projection</span><span class="l-zh">利率路径 — 隐含与美联储预测对比</span></div>
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
         
         
         
+      
         
-        <div style="margin-bottom:24px">
-          <div class="mx5-dlg-eyebrow"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></div>
-          <div class="mx5-dlg-sep"></div>
+        
+        
+      
+        
+        
+        
+      
+        
+        
+        
+      
+        
+        
+        
+      
+      
+      
+      <div style="overflow:hidden;border-radius:6px;background:rgba(255,255,255,.03);padding:8px;margin-bottom:8px">
+        <svg viewBox="0 0 160 76" style="width:100%;max-height:76px;display:block;overflow:visible">
           
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">94<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
-            <div>
-              <div style="font-size:14px;font-weight:700"><span class="l-en">No change</span><span class="l-zh">按兵不动</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; Fed Decision in July?</span><span class="l-zh">市场最高概率结果 &middot; Fed Decision in July?</span></div>
-            </div>
-          </div>
+          <polyline points="0,50.2 40,48.2 80,37.4 120,20.7 160,9.8" fill="none" stroke="var(--isle-policy,#818cf8)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
           
           
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
-                <span class="l-en">No change</span><span class="l-zh">按兵不动</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">94%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.1pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:94.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
+          <circle cx="160" cy="33.4" r="4" fill="none" stroke="var(--warn,#f59e0b)" stroke-width="1.5" stroke-dasharray="2 2"/>
           
           
           
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">25 bps increase</span><span class="l-zh">加息25bp</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">4%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-0.4pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:4.7%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
+          <text x="0" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-en">Now</text>
+          
+          <text x="40" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-en">M1</text>
+          
+          <text x="80" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-en">M3</text>
+          
+          <text x="120" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-en">M6</text>
+          
+          <text x="160" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-en">M12</text>
           
           
+          <text x="0" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-zh">当前</text>
           
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">25 bps decrease</span><span class="l-zh">降息25bp</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.1pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:0.4%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
+          <text x="40" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-zh">M1</text>
           
+          <text x="80" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-zh">M3</text>
           
+          <text x="120" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-zh">M6</text>
           
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">50+ bps increase</span><span class="l-zh">加息50bp以上</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-0.1pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:0.4%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
+          <text x="160" y="74" text-anchor="middle" font-size="7" fill="rgba(255,255,255,.3)" class="l-zh">M12</text>
           
+        </svg>
+      </div>
+      
+      
+      <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6;margin-bottom:4px">
+        <span class="l-en">Market prices ~2 hikes over the next 12m (funds 3.63% → 4.04%)</span>
+        <span class="l-zh">市场为未来12个月定价约加息2次（基金利率 3.63% → 4.04%）</span>
+      </div>
+      
+      <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:4px">
+        <span class="l-en">market ≈ the Fed at end-2026: market 3.87% vs Fed projection 3.8% (+7bp)</span>
+        <span class="l-zh">市场与美联储基本一致：市场 3.87% 对比联储预测 3.8% (+7bp)</span>
+      </div>
+      
+      <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));margin-bottom:4px">
+        <span class="l-en">Source: ZQ fed-funds futures</span>
+        <span class="l-zh">来源：ZQ 联邦基金期货</span>
+      </div>
+      
+      <div class="mx5-dlg-sep"></div>
+
+      
+      
+      
+      
+      <div class="mx5-dlg-eyebrow"><span class="l-en">Inflation Read</span><span class="l-zh">通胀读数</span></div>
+      <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6;margin-bottom:4px">
+        <span class="l-en">
+          Core PCE 3.41% y/y (+1.41pp above 2% target) &middot;
+          Core CPI 2.81% &middot;
+          3m annualized PCE 3.52% &middot;
+          10y breakeven 2.24% (anchored).
+        </span>
+        <span class="l-zh">
+          核心PCE 3.41% 同比（高于2%目标+1.41百分点） &middot;
+          核心CPI 2.81% &middot;
+          PCE 3月年化 3.52% &middot;
+          10年盈亏平衡 2.24%（稳定）。
+        </span>
+      </div>
+      
+      
+      
+      <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:4px">
+        <span class="l-en">Next CPI release 2026-08-12 (25d) — surprise skew: hotter (1.40σ)</span>
+        <span class="l-zh">下次CPI发布 2026-08-12（25天）— 惊喜偏向：偏热（1.40σ）</span>
+      </div>
+      
+      <div class="mx5-dlg-sep"></div>
+      
+
+      
+      
+      
+      
+      
+      <div class="mx5-dlg-eyebrow"><span class="l-en">Risk Indicators</span><span class="l-zh">风险指标</span></div>
+      <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6;margin-bottom:4px">
+        <span class="l-en">
+          Real-rate speed: 74th percentile.
+          Flags risk, not return — high percentile = fast real-rate moves, not directional signal.<br>
+          Curve: Bear steepener &middot;
+          Term premium: rising (+15bp) &middot; Kim-Wright model (FRED THREEFYTP10); ACM pending.
+        </span>
+        <span class="l-zh">
+          实际利率波速：第74百分位。
+          标记风险而非收益——高百分位表示实际利率快速波动，并非方向性信号。<br>
+          曲线形态：熊市变陡 &middot;
+          期限溢价：上升（+15bp）&middot; Kim-Wright模型（FRED THREEFYTP10）；ACM待接入。
+        </span>
+      </div>
+      <div class="mx5-dlg-sep"></div>
+      
+
+      
+      
+      
+      <div class="mx5-dlg-eyebrow"><span class="l-en">Policy Conditions</span><span class="l-zh">政策条件</span></div>
+      <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6;margin-bottom:6px">
+        <span class="l-en">Elevated — watch for repricing.</span>
+        <span class="l-zh">警戒 — 留意重定价风险。</span>
+        
+        <br><span class="l-en">Official comments: 3 in 7d / 9 in 30d.</span>
+        <span class="l-zh">官员发言：7天 3 次 / 30天 9 次。</span>
+        
+        
+        <br><span class="l-en">Chair: Kevin Warsh.</span>
+        <span class="l-zh">主席：Kevin Warsh。</span>
+        
+        
+        <br><span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))">
+          <span class="l-en">Policy intel 6d old (as of 2026-07-13).</span>
+          <span class="l-zh">政策情报6天前（截至 2026-07-13）。</span>
+        </span>
+        
+      </div>
+      
+      
+      
+      <div style="font-size:11px;background:rgba(255,255,255,.04);border-radius:6px;padding:8px;margin-bottom:8px">
+        <div style="font-weight:600;margin-bottom:3px">
+          <span class="l-en">Iran / Middle East -- ceasefire COLLAPSED (as of 7/8)</span>
+          <span class="l-zh">伊朗/中东 —— 停火已崩溃（截至7/8）</span>
+        </div>
+        <div style="color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5">
+          <span class="l-en">Intel as of 2026-07-13 (6d old) — Conditions only, no direction or probability assigned.</span>
+          <span class="l-zh">情报截至2026-07-13（6天前） — 条件性观察，不赋予方向或概率。</span>
+        </div>
+      </div>
+      
+      <div class="mx5-dlg-sep"></div>
+      
+
+      
+      
+      <div class="mx5-dlg-eyebrow"><span class="l-en">What Changes This</span><span class="l-zh">什么会改变现状</span></div>
+      
+      <div style="margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid var(--down,#ef4444)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:2px">
+          <span class="l-en">Nearest cpi headline (due 2026-08-12) skewed hotter (sigma=1.40).</span>
+          <span class="l-zh">近期cpi headline（预定2026-08-12）偏热（sigma=1.40）。</span>
+        </div>
+        
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+          <span class="l-en">If this pressure persists, upward rate repricing stays at risk; a deepening equity correction historically pulls the other way.</span>
+          <span class="l-zh">若该压力持续，利率上调风险上升；股市进一步下跌历史上会起到反向对冲作用。</span>
+        </div>
+        
+      </div>
+      
+      <div style="margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid var(--up,#22d97a)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:2px">
+          <span class="l-en">Equity radar in &#39;caution&#39; — risk-off pressure historically cools inflation and rate expectations.</span>
+          <span class="l-zh">股票雷达处于&#39;caution&#39;状态——历史上风险规避会压制通胀和加息预期。</span>
+        </div>
+        
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+          <span class="l-en">If this offset fades, the hawkish legs would have less counterweight — watch the tape for repricing.</span>
+          <span class="l-zh">若该对冲因素消退，鹰派腿将减少制衡——关注市场定价变化。</span>
+        </div>
+        
+      </div>
+      
+      <div style="margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid rgba(255,255,255,.15)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6));margin-bottom:2px">
+          <span class="l-en">Iran / Middle East -- ceasefire COLLAPSED (as of 7/8)</span>
+          <span class="l-zh">伊朗/中东 —— 停火已崩溃（截至7/8）</span>
+        </div>
+        
+        <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.4">
+          <span class="l-en">Conditions-only: oil market conditions may shift if the theater escalates or de-escalates — unsigned, no probability assigned.</span>
+          <span class="l-zh">条件性观察：若局势升级或缓和，油市条件可能变化——无定向，不赋予概率。</span>
+        </div>
+        
+      </div>
+      
+      <div class="mx5-dlg-sep"></div>
+      
+
+      
+      
+      
+      
+      <div class="mx5-dlg-eyebrow"><span class="l-en">Market-implied benchmark &mdash; what traders price, not our read</span><span class="l-zh">市场隐含基准 &mdash; 交易者定价，非本系统观点</span></div>
+      <div class="mx5-dlg-fed-strip">
+        
+        <div class="mx5-dlg-fed-item">
+          <span class="mx5-dlg-fed-desc">
+            <span class="l-en">Next Fed decision</span>
+            <span class="l-zh">下次美联储决议</span>
+          </span>
+          <span class="mx5-dlg-fed-val"><span class="num">No change 94.5%</span></span>
           
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">50+ bps decrease</span><span class="l-zh">降息50bp以上</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:0.1%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
-          
-          
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2026-07-29</span><span class="l-zh">结算日 2026-07-29</span></div>
+          <span class="mx5-dlg-fed-chg pos">
+            <span class="l-en">+0.1 pts</span>
+            <span class="l-zh">+0.1 个百分点</span>
+          </span>
           
         </div>
         
-        
-        
-        <div style="margin-bottom:24px">
-          <div class="mx5-dlg-eyebrow"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></div>
-          <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-fed-item">
+          <span class="mx5-dlg-fed-desc">
+            <span class="l-en">Fed cuts this year</span>
+            <span class="l-zh">今年降息次数</span>
+          </span>
+          <span class="mx5-dlg-fed-val"><span class="num">0 (0 bps) 84.7%</span></span>
           
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">84<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
-            <div>
-              <div style="font-size:14px;font-weight:700"><span class="l-en">0 (0 bps)</span><span class="l-zh">0 (0 bps)</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; How many Fed rate cuts in 2026?</span><span class="l-zh">市场最高概率结果 &middot; How many Fed rate cuts in 2026?</span></div>
-            </div>
-          </div>
-          
-          
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
-                <span class="l-en">0 (0 bps)</span><span class="l-zh">0 (0 bps)</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">84%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+0.6pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:84.7%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">1 (25 bps)</span><span class="l-zh">1 (25 bps)</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">11%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-1.0pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:11.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">2 (50 bps)</span><span class="l-zh">2 (50 bps)</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">2%<span style="font-size:10px;margin-left:4px;color:var(--down,#ef4444)">-0.1pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:2.1%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">3 (75 bps)</span><span class="l-zh">3 (75 bps)</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">1%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:1.1%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">12+ (300+ bps)</span><span class="l-zh">12+ (300+ bps)</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:0.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">4 (100 bps)</span><span class="l-zh">4 (100 bps)</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">0%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:0.4%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
-          
-          
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2026-12-31</span><span class="l-zh">结算日 2026-12-31</span></div>
+          <span class="mx5-dlg-fed-chg pos">
+            <span class="l-en">+0.6 pts</span>
+            <span class="l-zh">+0.6 个百分点</span>
+          </span>
           
         </div>
         
-        
-        
-        <div style="margin-bottom:24px">
-          <div class="mx5-dlg-eyebrow"><span class="l-en">US recession</span><span class="l-zh">美国衰退</span></div>
-          <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-fed-item">
+          <span class="mx5-dlg-fed-desc">
+            <span class="l-en">US recession</span>
+            <span class="l-zh">美国衰退</span>
+          </span>
+          <span class="mx5-dlg-fed-val"><span class="num">US recession by end of 2026? 15.5%</span></span>
           
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">15<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
-            <div>
-              <div style="font-size:14px;font-weight:700"><span class="l-en">US recession by end of 2026?</span><span class="l-zh">US recession by end of 2026?</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; US recession by end of 2026?</span><span class="l-zh">市场最高概率结果 &middot; US recession by end of 2026?</span></div>
-            </div>
-          </div>
-          
-          
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
-                <span class="l-en">US recession by end of 2026?</span><span class="l-zh">US recession by end of 2026?</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">15%<span style="font-size:10px;margin-left:4px;color:var(--up,#22d97a)">+6.0pp</span></span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:15.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
-          
-          
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2027-01-31</span><span class="l-zh">结算日 2027-01-31</span></div>
+          <span class="mx5-dlg-fed-chg pos">
+            <span class="l-en">+6.0 pts</span>
+            <span class="l-zh">+6.0 个百分点</span>
+          </span>
           
         </div>
         
+        <div class="mx5-dlg-fed-src"><span class="l-en">Source: Polymarket (as of 2026-07-18)</span><span class="l-zh">来源：Polymarket（截至 2026-07-18）</span></div>
         
-        
-        <div style="margin-bottom:24px">
-          <div class="mx5-dlg-eyebrow"><span class="l-en">CPI outcome market</span><span class="l-zh">CPI市场预期</span></div>
-          <div class="mx5-dlg-sep"></div>
-          
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <div style="font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--mx5-accent,#22d97a);line-height:1">44<span style="font-size:14px;font-weight:500;color:var(--ink-2,rgba(255,255,255,.6))">%</span></div>
-            <div>
-              <div style="font-size:14px;font-weight:700"><span class="l-en">2.4%</span><span class="l-zh">2.4%</span></div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">market's top-probability outcome &middot; Core CPI YoY - July 2026</span><span class="l-zh">市场最高概率结果 &middot; Core CPI YoY - July 2026</span></div>
-            </div>
-          </div>
-          
-          
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:700;color:var(--mx5-accent,#22d97a)">
-                <span class="l-en">2.4%</span><span class="l-zh">2.4%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--mx5-accent)">44%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:44.5%;background:var(--mx5-accent,#22d97a);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">2.5%</span><span class="l-zh">2.5%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">27%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:27.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">≤2.2%</span><span class="l-zh">≤2.2%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">15%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:15.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">2.6%</span><span class="l-zh">2.6%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">10%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:10.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">2.3%</span><span class="l-zh">2.3%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">5%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:5.5%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-              <span style="font-size:12px;font-weight:400;color:var(--ink-2,rgba(255,255,255,.6))">
-                <span class="l-en">2.9%</span><span class="l-zh">2.9%</span>
-              </span>
-              <span style="font-size:12px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6))">5%</span>
-            </div>
-            <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden">
-              <div style="height:100%;width:5.0%;background:rgba(255,255,255,.22);border-radius:3px;transition:width .4s"></div>
-            </div>
-          </div>
-          
-          
-          
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:4px"><span class="l-en">Source: Polymarket</span><span class="l-zh">来源: Polymarket</span></div>
-          
-          
-          <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right"><span class="l-en">Resolves 2026-08-12</span><span class="l-zh">结算日 2026-08-12</span></div>
-          
+        <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));margin-top:4px;font-style:italic">
+          <span class="l-en">What markets price — a benchmark, not our read.</span>
+          <span class="l-zh">市场定价内容——作为参考基准，不代表本系统观点。</span>
         </div>
         
+      </div>
+      
+
+      
+      
+      
+      
+      
+
+      
+      
+      <div class="mx5-dlg-sep"></div>
+      <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));line-height:1.6">
         
+        <div>&#x25b8; futures-implied path reflects risk premium not stripped — not a forecast</div>
         
+        <div>&#x25b8; All legs are display-tier context only; no scoring or authority.</div>
         
+        <div>&#x25b8; commodity/shock_state.json oil entry is 16d old (&gt;7d threshold) — H3 leg judged on trend+cause_badge only</div>
         
-        <div class="mx5-dlg-sep"></div>
-        <div style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.6">
-          <strong><span class="l-en">Policy Lever</span><span class="l-zh">政策杠杆</span></strong> &mdash;
-          <span class="l-en">Elevated — watch for repricing.</span>
-          <span class="l-zh">警戒 — 留意重定价风险。</span>
+        <div>&#x25b8; policy/intel.json is 6d old — policy row quotes as-of 2026-07-13</div>
+        
+        <div style="margin-top:4px">
+          <span class="l-en">As of 2026-07-17 &middot; display only, authority: false.</span>
+          <span class="l-zh">截至 2026-07-17 &middot; 仅供展示，无权威性。</span>
         </div>
-        
+      </div>
+      
+
+      
       </div>
     </div>
   </div>
@@ -16468,9 +16586,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-19 05:38 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-19 07:04 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-19 05:38 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-19 07:04 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

@@ -4,8 +4,6 @@
 
 
 
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -117,61 +115,18 @@ a{color:var(--blue);text-decoration:none}
   font-size:12px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0}
 .txq:hover .txq-tip,.txq:focus .txq-tip{display:block}
 
-/* ---------- pressure map ---------- */
+/* ---------- section chrome + shared chip system (used by revamp + study shelf) ---------- */
 .sec-head{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;margin:34px 0 4px}
 .sec-sub{font-size:13px;color:var(--muted);margin:0 0 14px}
 .card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px}
 .card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.pm-row{display:grid;grid-template-columns:150px 1fr 56px;align-items:center;gap:12px;padding:7px 0}
-@media(max-width:560px){.pm-row{grid-template-columns:104px 1fr 48px}}
-.pm-row .pm-name{font-size:12.5px;font-weight:600;color:var(--text)}
-.pm-track{position:relative;height:12px;background:color-mix(in srgb,var(--grid) 55%,var(--card));border-radius:6px}
-.pm-track .pm-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--faint);opacity:.55}
-.pm-fill{position:absolute;top:0;bottom:0;border-radius:6px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
-.pm-fill.neg{right:50%;background:linear-gradient(270deg,color-mix(in srgb,var(--red) 72%,transparent),var(--red));transform-origin:right}
-.pm-fill.pos{left:50%;background:linear-gradient(90deg,color-mix(in srgb,var(--green) 72%,transparent),var(--green));transform-origin:left}
-.pm-val{text-align:right;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
-.pm-val.neg{color:var(--red)}.pm-val.pos{color:var(--green)}
-.pm-axis{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:2px 0 8px}
-.pm-axis .ax-l{color:var(--red)}.pm-axis .ax-r{color:var(--green)}
 .pm-foot{font-size:12px;color:var(--faint);margin-top:10px}
-
-/* ---------- chains ---------- */
-.chain{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px 22px;margin-bottom:14px;position:relative;overflow:hidden}
-.chain.live::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--blue)}
-.chain-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
-.chain-state{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
-.chain-state.on{background:rgba(40,95,255,.12);color:var(--blue)}
-.chain-state.on i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-right:5px;animation:txBreathe 2s ease-in-out infinite}
-.order{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:11px 0;position:relative}
-.order+.order{border-top:1px dashed var(--grid)}
-.order .onum{width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--blue) 14%,var(--card));border:1px solid color-mix(in srgb,var(--blue) 35%,var(--grid));color:var(--blue);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
-.order .otext{font-size:13.5px;color:var(--text);line-height:1.5}
-.order .ocells{margin-top:7px;display:flex;flex-wrap:wrap;gap:6px}
 .achip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;font-size:11.5px;font-weight:600;background:color-mix(in srgb,var(--grid) 55%,var(--card));color:var(--text);cursor:default}
-.achip.ac-head{background:rgba(211,11,11,.09);color:var(--red)}
-.achip.ac-tail{background:rgba(26,127,67,.11);color:var(--green)}
 .lvg{margin-left:2px;font-weight:800;font-size:11px;cursor:help}
 .vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
-.chain-quiet{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:8px 22px;margin-bottom:14px}
-.cq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;font-size:13.5px;color:var(--muted)}
-.cq-row+.cq-row{border-top:1px solid var(--grid)}
-.cq-row b{color:var(--text);font-weight:600}
-.cq-tag{font-size:11px;font-weight:700;color:var(--faint);padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card));white-space:nowrap}
-
-/* ---------- scenarios ---------- */
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1fr 1fr}
 @media(max-width:900px){.cols-2{grid-template-columns:1fr}}
-.scen{border:1px solid var(--grid);background:var(--card);border-radius:16px;padding:17px 18px}
-.scen h3{margin:0 0 10px;font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
-.scen-row{display:flex;flex-wrap:wrap;gap:14px}
-.scen-col{flex:1;min-width:170px}
-.scen-col .scl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-.scen-col.head .scl{color:var(--red)}.scen-col.tail .scl{color:var(--green)}
-.smv{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0}
-.smv b{font-variant-numeric:tabular-nums}
-.smv .neg{color:var(--red)}.smv .pos{color:var(--green)}
 
 /* ---------- study shelf ---------- */
 .shelf{margin-top:34px}
@@ -260,7 +215,98 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 .bd-reflation{border-left-color:var(--blue)} .bd-quiet{border-left-color:var(--faint)}
 .site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
 
+/* ============ REVAMP — soft palette + shared panel chrome (matches the channel rail) ============ */
+:root{--drag:#c65b6e;--lift:#2f9270}
+html[data-theme="dark"]{--drag:#e58a97;--lift:#54c39a}
+.sec-head .sh-dot{width:8px;height:8px;border-radius:3px;background:var(--sh-c,var(--faint));display:inline-block;align-self:center}
+.rv-card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px;position:relative;overflow:hidden;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.rv-card::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--accent,var(--blue))}
+.rv-take{display:flex;align-items:center;gap:12px 14px;flex-wrap:wrap;margin:0 0 15px}
+.rv-take .ln{font-size:13.5px;color:var(--text);font-weight:500;line-height:1.45;flex:1;min-width:240px}
+.rv-take .ln b{color:var(--ink);font-weight:800}
+.rv-stance{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;
+  background:color-mix(in srgb,var(--accent,var(--blue)) 11%,var(--card));color:var(--accent,var(--blue));border:1px solid color-mix(in srgb,var(--accent,var(--blue)) 28%,var(--grid))}
+.rv-stance .txdot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:txBreathe 2.4s ease-in-out infinite;flex:none}
+
+/* ---------- pressure board ---------- */
+.pb-axis{display:flex;justify-content:space-between;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin:2px 0 8px;color:var(--faint)}
+.pb-axis .l{color:var(--drag)}.pb-axis .r{color:var(--lift)}
+.pb-row{display:grid;grid-template-columns:minmax(138px,1fr) 1.75fr 84px;align-items:center;gap:14px;padding:8px 0}
+.pb-row+.pb-row{border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+@media(max-width:560px){.pb-row{grid-template-columns:1fr 74px}.pb-track{display:none}}
+.pb-name{font-size:13px;font-weight:700;color:var(--ink);line-height:1.18}
+.pb-name .sub{display:block;font-size:10.5px;font-weight:500;color:var(--faint);margin-top:1px}
+.pb-track{position:relative;height:9px;background:color-mix(in srgb,var(--grid) 50%,var(--card));border-radius:999px}
+.pb-track .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.4}
+.pb-fill{position:absolute;top:0;bottom:0;border-radius:999px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
+.pb-fill.d{right:50%;background:linear-gradient(270deg,color-mix(in srgb,var(--drag) 58%,transparent),color-mix(in srgb,var(--drag) 20%,transparent));transform-origin:right}
+.pb-fill.u{left:50%;background:linear-gradient(90deg,color-mix(in srgb,var(--lift) 58%,transparent),color-mix(in srgb,var(--lift) 20%,transparent));transform-origin:left}
+.pb-str{justify-self:end;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;cursor:help;white-space:nowrap}
+.pb-str.d{color:var(--drag)}.pb-str.u{color:var(--lift)}
+.pb-str .ar{font-size:9px}
+
+/* ---------- cascade (how a shock travels) ---------- */
+.cx-wrap{display:grid;gap:14px}
+.cx-card{--accent:var(--ch-rates);overflow:visible}
+.cx-card::before{border-radius:18px 18px 0 0}
+.cx-card.c-infl{--accent:var(--ch-infl)}
+.cx-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.cx-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.cx-title{font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.15}
+.cx-live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--accent);
+  padding:3px 11px;border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.cx-live i{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:txBreathe 2s ease-in-out infinite}
+.cx-trigger{font-size:12px;color:var(--muted);margin:7px 0 2px}
+.cx-trigger b{color:var(--text);font-weight:600}
+.cx-flow{margin-top:15px}
+.cx-step{display:grid;grid-template-columns:30px 1fr;gap:14px;position:relative;padding-bottom:15px}
+.cx-step:last-child{padding-bottom:0}
+.cx-step:not(:last-child)::before{content:'';position:absolute;left:14px;top:30px;bottom:-3px;width:2px;border-radius:2px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 60%,transparent) 0%,color-mix(in srgb,var(--accent) 13%,var(--grid)) 26%,color-mix(in srgb,var(--accent) 13%,var(--grid)) 100%);
+  background-size:100% 230%;animation:cxFlow 2.5s linear infinite}
+.cx-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;z-index:1;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 32%,var(--grid))}
+.cx-phrase{font-size:14px;font-weight:700;color:var(--ink);line-height:1.35;display:flex;align-items:flex-start;gap:6px;padding-top:5px}
+.cx-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.cx-chips .achip{background:color-mix(in srgb,var(--grid) 45%,var(--card));font-weight:600}
+.cx-chips .achip.ac-head{color:var(--drag);background:color-mix(in srgb,var(--drag) 11%,var(--card))}
+.cx-chips .achip.ac-tail{color:var(--lift);background:color-mix(in srgb,var(--lift) 12%,var(--card))}
+.cx-chips .achip.ac-neut{color:var(--muted);opacity:.75}
+.cx-quiet{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:4px 20px;margin-top:14px}
+.cx-quiet .q{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;font-size:13px}
+.cx-quiet .q+.q{border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+.cx-quiet .q .nm{font-weight:600;color:var(--text)}
+.cx-quiet .q .nm .em{margin-right:9px;opacity:.8}
+.cx-quiet .q .tag{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+
+/* ---------- scenarios (if this holds for three months) ---------- */
+.sx-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.sx-grid{grid-template-columns:1fr}}
+.sx-card{--accent:var(--ch-rates)}
+.sx-card.c-infl{--accent:var(--ch-infl)}
+.sx-head{display:flex;align-items:flex-start;gap:11px}
+.sx-mark{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;
+  background:color-mix(in srgb,var(--accent) 12%,var(--card))}
+.sx-title{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.2}
+.sx-spec{font-size:11.5px;color:var(--muted);margin-top:2px}
+.sx-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:15px}
+@media(max-width:420px){.sx-cols{grid-template-columns:1fr}}
+.sx-col .cl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.sx-col.h .cl{color:var(--drag)}.sx-col.t .cl{color:var(--lift)}
+.sx-item{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:8px;padding:4px 0 5px}
+.sx-item .nm{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sx-item .v{font-variant-numeric:tabular-nums;font-weight:700;font-size:11.5px}
+.sx-item .v.d{color:var(--drag)}.sx-item .v.u{color:var(--lift)}
+.sx-bar{grid-column:1/-1;height:4px;border-radius:2px;background:color-mix(in srgb,var(--grid) 55%,var(--card));overflow:hidden;margin-top:2px}
+.sx-bar i{display:block;height:100%;border-radius:2px;animation:txGrow .7s ease both;transform-origin:left}
+.sx-bar i.d{background:color-mix(in srgb,var(--drag) 52%,transparent)}
+.sx-bar i.u{background:color-mix(in srgb,var(--lift) 52%,transparent)}
+.sx-more{font-size:11px;color:var(--faint);margin-top:6px}
+.sx-none{font-size:12px;color:var(--faint);padding:4px 0}
+
 /* ---------- motion ---------- */
+@keyframes cxFlow{from{background-position:0 -55%}to{background-position:0 165%}}
 @keyframes txFlow{to{stroke-dashoffset:0}}
 @keyframes txBreathe{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
 @keyframes txUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -268,6 +314,8 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion: reduce){
   .txflow-pulse,.txdot,.tc-chip .txdot,.chain-state.on i{animation:none}
   .tx-hero,.tx-ch,.pm-fill{animation:none}
+  .rv-card,.pb-fill,.sx-bar i,.cx-live i,.rv-stance .txdot{animation:none}
+  .cx-step:not(:last-child)::before{background:color-mix(in srgb,var(--accent) 20%,var(--grid));animation:none}
   *{transition:none!important}
 }
 </style>
@@ -795,6 +843,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 <div class="wrap">
   
 
+  
+  
+  
+  
+
   <!-- ===================== HERO ===================== -->
   <header class="tx-hero">
     <div class="tx-brand">🔀 <span class="gn"><span class="l-en">Transmission</span><span class="l-zh">传导</span></span></div>
@@ -897,201 +950,366 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   <!-- ===================== PRESSURE MAP ===================== -->
   
   
-  <div class="sec-head"><span class="l-en">Who benefits · who gets hurt</span><span class="l-zh">谁受益 · 谁承压</span></div>
-  <p class="sec-sub"><span class="l-en">The net force of today&#39;s rate and inflation state on each asset.</span><span class="l-zh">当前利率与通胀状态对各资产的净作用力。</span></p>
-  <div class="card">
-    <div class="pm-axis"><span class="ax-l"><span class="l-en">◂ pushed down</span><span class="l-zh">◂ 承压</span></span><span class="ax-r"><span class="l-en">pushed up ▸</span><span class="l-zh">推升 ▸</span></span></div>
+  
+  
+  
+  
+  
+  <div class="sec-head"><span class="sh-dot" style="--sh-c:var(--blue)"></span><span class="l-en">Who benefits · who gets hurt</span><span class="l-zh">谁受益 · 谁承压</span></div>
+  <p class="sec-sub"><span class="l-en">The combined push of today&#39;s rates and inflation on each asset we track.</span><span class="l-zh">当前利率与通胀对我们跟踪的每类资产的综合作用。</span></p>
+  <div class="rv-card" style="--accent:var(--blue)">
+    <div class="rv-take">
+      <div class="ln">
+        
+        <span class="l-en">Rates and inflation are the dominant force today — <b>11 of 18 assets</b> pushed down, only <b>2 getting a lift</b>.</span>
+        <span class="l-zh">当前利率与通胀是主导力量——<b>18 类资产中 11 类承压</b>，仅 <b>2 类受益</b>。</span>
+        
+      </div>
+      <span class="rv-stance"><span class="txdot"></span><span class="l-en">Broad pressure — watch, don&#39;t chase</span><span class="l-zh">普遍承压——观望，勿追</span></span>
+    </div>
+    <div class="pb-axis"><span class="l">◂ <span class="l-en">pushed down</span><span class="l-zh">承压</span></span><span class="r"><span class="l-en">pushed up</span><span class="l-zh">推升</span> ▸</span></div>
     
     
     
     
-    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (confirmed) · Core PCE YoY − 2% target (confirmed)">
-      <span class="pm-name"><span class="l-en">Materials (inflation beneficiary)</span><span class="l-zh">材料（通胀受益）</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:46.0%;animation-delay:0ms"></span></span>
-      <span class="pm-val neg">-0.43</span>
+    
+    
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">Materials<span class="sub">inflation beneficiary</span></span>
+        <span class="l-zh">材料<span class="sub">通胀受益</span></span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill d" style="width:48.0%;animation-delay:0ms"></span></span>
+      <span class="pb-str d" title="net force -0.43 · drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (confirmed) · Core PCE YoY − 2% target (confirmed)"><span class="ar">▼</span><span class="l-en">Strong</span><span class="l-zh">强</span></span>
     </div>
     
     
-    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (confirmed) · Core PCE YoY − 2% target (confirmed)">
-      <span class="pm-name"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:41.2%;animation-delay:60ms"></span></span>
-      <span class="pm-val neg">-0.38</span>
+    
+    
+    
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">S&amp;P 500</span>
+        <span class="l-zh">标普500</span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill d" style="width:43.0%;animation-delay:55ms"></span></span>
+      <span class="pb-str d" title="net force -0.38 · drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (confirmed) · Core PCE YoY − 2% target (confirmed)"><span class="ar">▼</span><span class="l-en">Strong</span><span class="l-zh">强</span></span>
     </div>
     
     
-    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional) · Core PCE YoY − 2% target (confirmed)">
-      <span class="pm-name"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:39.7%;animation-delay:120ms"></span></span>
-      <span class="pm-val neg">-0.37</span>
+    
+    
+    
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">Technology</span>
+        <span class="l-zh">科技</span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill d" style="width:41.4%;animation-delay:110ms"></span></span>
+      <span class="pb-str d" title="net force -0.37 · drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional) · Core PCE YoY − 2% target (confirmed)"><span class="ar">▼</span><span class="l-en">Strong</span><span class="l-zh">强</span></span>
     </div>
     
     
-    <div class="pm-row" title="drivers: Core PCE YoY − 2% target (confirmed) · Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional)">
-      <span class="pm-name"><span class="l-en">Nasdaq 100 (long-duration growth)</span><span class="l-zh">纳斯达克100（长久期成长）</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:39.0%;animation-delay:180ms"></span></span>
-      <span class="pm-val neg">-0.36</span>
+    
+    
+    
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">Nasdaq 100<span class="sub">long-duration growth</span></span>
+        <span class="l-zh">纳斯达克100<span class="sub">长久期成长</span></span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill d" style="width:40.7%;animation-delay:165ms"></span></span>
+      <span class="pb-str d" title="net force -0.36 · drivers: Core PCE YoY − 2% target (confirmed) · Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional)"><span class="ar">▼</span><span class="l-en">Strong</span><span class="l-zh">强</span></span>
     </div>
     
     
-    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional) · Core PCE YoY − 2% target (confirmed)">
-      <span class="pm-name"><span class="l-en">Financials (rate beneficiary)</span><span class="l-zh">金融（利率受益）</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:37.2%;animation-delay:240ms"></span></span>
-      <span class="pm-val neg">-0.35</span>
+    
+    
+    
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">Financials<span class="sub">rate beneficiary</span></span>
+        <span class="l-zh">金融<span class="sub">利率受益</span></span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill d" style="width:38.8%;animation-delay:220ms"></span></span>
+      <span class="pb-str d" title="net force -0.35 · drivers: Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional) · Core PCE YoY − 2% target (confirmed)"><span class="ar">▼</span><span class="l-en">Strong</span><span class="l-zh">强</span></span>
     </div>
     
     
-    <div class="pm-row" title="drivers: Core PCE YoY − 2% target (confirmed) · Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional)">
-      <span class="pm-name"><span class="l-en">Russell 2000 (small caps)</span><span class="l-zh">罗素2000（小盘）</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill neg" style="width:34.2%;animation-delay:300ms"></span></span>
-      <span class="pm-val neg">-0.32</span>
+    
+    
+    
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">Russell 2000<span class="sub">small caps</span></span>
+        <span class="l-zh">罗素2000<span class="sub">小盘</span></span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill d" style="width:35.7%;animation-delay:275ms"></span></span>
+      <span class="pb-str d" title="net force -0.32 · drivers: Core PCE YoY − 2% target (confirmed) · Real 10y — 63d change (speed) (confirmed) · us2y − funds (cut/hike pricing) (directional)"><span class="ar">▼</span><span class="l-en">Strong</span><span class="l-zh">强</span></span>
     </div>
     
     
-    <div class="pm-row" title="drivers: Expectations wedge (mkt − model) (confirmed) · 10y breakeven — 63d change (confirmed) · Nominal 10y — 63d change (directional)">
-      <span class="pm-name"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill pos" style="width:12.4%;animation-delay:360ms"></span></span>
-      <span class="pm-val pos">+0.12</span>
+    
+    
+    
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">Gold</span>
+        <span class="l-zh">黄金</span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill u" style="width:13.0%;animation-delay:330ms"></span></span>
+      <span class="pb-str u" title="net force +0.12 · drivers: Expectations wedge (mkt − model) (confirmed) · 10y breakeven — 63d change (confirmed) · Nominal 10y — 63d change (directional)"><span class="ar">▲</span><span class="l-en">Mild</span><span class="l-zh">轻微</span></span>
     </div>
     
     
-    <div class="pm-row" title="drivers: Real 10y — 63d change (speed) (confirmed) · TP-adjusted 2s10s curve (confirmed) · Nominal 10y — 63d change (directional)">
-      <span class="pm-name"><span class="l-en">Long Treasuries (20y+)</span><span class="l-zh">长期美债(20年+)</span></span>
-      <span class="pm-track"><span class="pm-mid"></span><span class="pm-fill pos" style="width:19.0%;animation-delay:420ms"></span></span>
-      <span class="pm-val pos">+0.18</span>
+    
+    
+    
+    <div class="pb-row">
+      <span class="pb-name">
+        <span class="l-en">Long Treasuries<span class="sub">20y+</span></span>
+        <span class="l-zh">长期美债<span class="sub">20年+</span></span>
+      </span>
+      <span class="pb-track"><span class="mid"></span><span class="pb-fill u" style="width:19.8%;animation-delay:385ms"></span></span>
+      <span class="pb-str u" title="net force +0.18 · drivers: Real 10y — 63d change (speed) (confirmed) · TP-adjusted 2s10s curve (confirmed) · Nominal 10y — 63d change (directional)"><span class="ar">▲</span><span class="l-en">Moderate</span><span class="l-zh">中等</span></span>
     </div>
     
-    <p class="pm-foot"><span class="l-en">Bar length = combined strength of the measured forces acting on that asset now. Hover a row for its drivers; full receipts in the study shelf below.</span><span class="l-zh">柱长＝当前作用于该资产的实测力量之和。悬停查看驱动因素，完整依据见下方深度研究区。</span></p>
+    <p class="pm-foot"><span class="l-en">Showing the strongest movers on each side. Bar length = how hard the measured forces are pushing; hover a label for the exact score and its drivers.</span><span class="l-zh">仅显示各方向最强的资产。柱长＝实测力量推动的强度；悬停标签查看精确评分与驱动因素。</span></p>
   </div>
   
 
   <!-- ===================== CHAINS ===================== -->
-  <div class="sec-head"><span class="l-en">How a shock travels</span><span class="l-zh">冲击如何传导</span></div>
-  <p class="sec-sub"><span class="l-en">First the direct hit, then the knock-on effects, in order.</span><span class="l-zh">先是直接冲击，随后按顺序层层传导。</span></p>
+  <div class="sec-head"><span class="sh-dot" style="--sh-c:var(--ch-rates)"></span><span class="l-en">How a shock travels</span><span class="l-zh">冲击如何传导</span></div>
+  <p class="sec-sub"><span class="l-en">The direct hit first, then the knock-on effects in order. Hover a step for the full mechanism.</span><span class="l-zh">先是直接冲击，再按顺序层层传导。悬停某一步查看完整机制。</span></p>
+  <div class="cx-wrap">
   
-  <div class="chain live">
-    <div class="chain-head">
-      <span><span class="l-en">Real-rate / discount-rate channel</span><span class="l-zh">实际利率／贴现率传导</span></span>
-      <span class="chain-state on"><i></i><span class="l-en">Active now</span><span class="l-zh">当前活跃</span></span>
-    </div>
-    
-    <div class="order">
-      <span class="onum">1</span>
-      <div>
-        <div class="otext"><span class="l-en">Rising real 10y yields lift the discount rate → long-duration equities, REITs and other long-duration assets de-rate first.</span><span class="l-zh">实际10年期收益率上行抬高贴现率→长久期股票、REITs等长久期资产首先承压。</span></div>
-        <div class="ocells"><span class="achip ac-head" title="measured effect -0.19 (confirmed)">Nasdaq 100 (long-duration growth)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.19 (confirmed)">Technology<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-neut" title="measured effect +0.03 (context)">Real Estate (rate-sensitive)<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-tail" title="measured effect +0.15 (confirmed)">Long Treasuries (20y+)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.31 (context)">Bitcoin (long-duration)<span class="lvg vg-context" title="weak / context only">·</span></span></div>
-      </div>
-    </div>
-    
-    <div class="order">
-      <span class="onum">2</span>
-      <div>
-        <div class="otext"><span class="l-en">Higher US real yields pull capital in → the dollar firms → gold, industrial commodities and EM are pressured.</span><span class="l-zh">美国实际收益率走高吸引资本流入→美元走强→黄金、工业商品与新兴市场受压。</span></div>
-        <div class="ocells"><span class="achip ac-neut" title="measured effect +0.01 (context)">US Dollar (DXY)<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-neut" title="measured effect -0.00 (context)">Gold<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-head" title="measured effect -0.17 (confirmed)">Copper<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.18 (confirmed)">Oil (WTI)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.08 (context)">China large-cap (EM proxy)<span class="lvg vg-context" title="weak / context only">·</span></span></div>
-      </div>
-    </div>
-    
-    <div class="order">
-      <span class="onum">3</span>
-      <div>
-        <div class="otext"><span class="l-en">A firm dollar + soft commodities → energy/materials relative headwind and EM-revenue exporters de-rate; financials are the relative beneficiary as curves steepen.</span><span class="l-zh">强美元＋商品走软→能源/材料相对承压、新兴市场营收型出口商估值下修；曲线变陡时金融为相对受益者。</span></div>
-        <div class="ocells"><span class="achip ac-head" title="measured effect -0.11 (confirmed)">Energy (inflation beneficiary)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.21 (confirmed)">Materials (inflation beneficiary)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.16 (confirmed)">Financials (rate beneficiary)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
-      </div>
-    </div>
-    
-  </div>
   
-  <div class="chain live">
-    <div class="chain-head">
-      <span><span class="l-en">Sticky-inflation / higher-for-longer channel</span><span class="l-zh">通胀粘性／更高更久传导</span></span>
-      <span class="chain-state on"><i></i><span class="l-en">Active now</span><span class="l-zh">当前活跃</span></span>
+  <div class="rv-card cx-card c-rates">
+    <div class="cx-head">
+      <span class="cx-eyebrow"><span class="l-en">Rates channel</span><span class="l-zh">利率通道</span></span>
+      <span class="cx-title"><span class="l-en">Higher real rates</span><span class="l-zh">实际利率走高</span></span>
+      <span class="cx-live"><i></i><span class="l-en">Active now</span><span class="l-zh">当前活跃</span></span>
     </div>
+    <div class="cx-trigger"><span class="l-en">Triggered by</span><span class="l-zh">触发因素：</span> <b><span class="l-en">the real 10-year yield rising fast</span><span class="l-zh">实际10年期收益率快速上行</span></b></div>
+    <div class="cx-flow">
     
-    <div class="order">
-      <span class="onum">1</span>
+    
+    <div class="cx-step">
+      <span class="cx-num">1</span>
       <div>
-        <div class="otext"><span class="l-en">Core PCE/CPI stuck above the 2% target → the market reprices the terminal rate higher (breakevens, policy path) → broad equities carry a valuation headwind.</span><span class="l-zh">核心PCE/CPI高于2%目标→市场上修终端利率（盈亏平衡、政策路径）→大盘股估值承压。</span></div>
-        <div class="ocells"><span class="achip ac-head" title="measured effect -0.10 (confirmed)">S&amp;P 500<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.16 (confirmed)">Nasdaq 100 (long-duration growth)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+        <div class="cx-phrase"><span><span class="l-en">Long-lived assets fall first</span><span class="l-zh">长久期资产首先承压</span></span><span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">Rising real 10y yields lift the discount rate → long-duration equities, REITs and other long-duration assets de-rate first.</span><span class="l-zh">实际10年期收益率上行抬高贴现率→长久期股票、REITs等长久期资产首先承压。</span></span></span></div>
+        <div class="cx-chips"><span class="achip ac-head" title="measured effect -0.19 (confirmed)">Nasdaq 100<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.19 (confirmed)">Technology<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-neut" title="measured effect +0.03 (context)">Real Estate<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-tail" title="measured effect +0.15 (confirmed)">Long Treasuries<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.31 (context)">Bitcoin<span class="lvg vg-context" title="weak / context only">·</span></span></div>
       </div>
     </div>
     
-    <div class="order">
-      <span class="onum">2</span>
+    
+    <div class="cx-step">
+      <span class="cx-num">2</span>
       <div>
-        <div class="otext"><span class="l-en">Higher-for-longer keeps real yields elevated → small caps and rate-sensitive borrowers are squeezed by financing cost.</span><span class="l-zh">更高更久使实际收益率维持高位→小盘股与利率敏感借款方被融资成本挤压。</span></div>
-        <div class="ocells"><span class="achip ac-head" title="measured effect -0.18 (confirmed)">Russell 2000 (small caps)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.11 (confirmed)">Financials (rate beneficiary)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+        <div class="cx-phrase"><span><span class="l-en">A firmer dollar squeezes commodities &amp; emerging markets</span><span class="l-zh">美元走强挤压大宗与新兴市场</span></span><span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">Higher US real yields pull capital in → the dollar firms → gold, industrial commodities and EM are pressured.</span><span class="l-zh">美国实际收益率走高吸引资本流入→美元走强→黄金、工业商品与新兴市场受压。</span></span></span></div>
+        <div class="cx-chips"><span class="achip ac-neut" title="measured effect +0.01 (context)">US Dollar<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-neut" title="measured effect -0.00 (context)">Gold<span class="lvg vg-context" title="weak / context only">·</span></span><span class="achip ac-head" title="measured effect -0.17 (confirmed)">Copper<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.18 (confirmed)">Oil<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.08 (context)">China large-cap<span class="lvg vg-context" title="weak / context only">·</span></span></div>
       </div>
     </div>
     
-    <div class="order">
-      <span class="onum">3</span>
+    
+    <div class="cx-step">
+      <span class="cx-num">3</span>
       <div>
-        <div class="otext"><span class="l-en">PPI / ECI wage pressure compresses margins → defensives (staples, health care) relatively outperform.</span><span class="l-zh">PPI／就业成本（ECI）工资压力压缩利润率→防御板块（必需消费、医疗）相对跑赢。</span></div>
-        <div class="ocells"><span class="achip ac-head" title="measured effect -0.09 (directional)">Staples (defensive)<span class="lvg vg-directional" title="full-sample only">~</span></span><span class="achip ac-head" title="measured effect -0.18 (confirmed)">Health Care (defensive)<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+        <div class="cx-phrase"><span><span class="l-en">Cyclicals lag; financials are relatively spared</span><span class="l-zh">周期股落后，金融相对抗跌</span></span><span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">A firm dollar + soft commodities → energy/materials relative headwind and EM-revenue exporters de-rate; financials are the relative beneficiary as curves steepen.</span><span class="l-zh">强美元＋商品走软→能源/材料相对承压、新兴市场营收型出口商估值下修；曲线变陡时金融为相对受益者。</span></span></span></div>
+        <div class="cx-chips"><span class="achip ac-head" title="measured effect -0.11 (confirmed)">Energy<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.21 (confirmed)">Materials<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.16 (confirmed)">Financials<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
       </div>
     </div>
     
+    </div>
   </div>
   
   
+  <div class="rv-card cx-card c-infl">
+    <div class="cx-head">
+      <span class="cx-eyebrow"><span class="l-en">Inflation channel</span><span class="l-zh">通胀通道</span></span>
+      <span class="cx-title"><span class="l-en">Sticky inflation</span><span class="l-zh">通胀粘性</span></span>
+      <span class="cx-live"><i></i><span class="l-en">Active now</span><span class="l-zh">当前活跃</span></span>
+    </div>
+    <div class="cx-trigger"><span class="l-en">Triggered by</span><span class="l-zh">触发因素：</span> <b><span class="l-en">core inflation stuck above the 2% goal</span><span class="l-zh">核心通胀高于2%目标</span></b></div>
+    <div class="cx-flow">
+    
+    
+    <div class="cx-step">
+      <span class="cx-num">1</span>
+      <div>
+        <div class="cx-phrase"><span><span class="l-en">Markets price rates higher for longer</span><span class="l-zh">市场定价利率更高更久</span></span><span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">Core PCE/CPI stuck above the 2% target → the market reprices the terminal rate higher (breakevens, policy path) → broad equities carry a valuation headwind.</span><span class="l-zh">核心PCE/CPI高于2%目标→市场上修终端利率（盈亏平衡、政策路径）→大盘股估值承压。</span></span></span></div>
+        <div class="cx-chips"><span class="achip ac-head" title="measured effect -0.10 (confirmed)">S&amp;P 500<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.16 (confirmed)">Nasdaq 100<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+      </div>
+    </div>
+    
+    
+    <div class="cx-step">
+      <span class="cx-num">2</span>
+      <div>
+        <div class="cx-phrase"><span><span class="l-en">Small caps &amp; rate-sensitive borrowers get squeezed</span><span class="l-zh">小盘与利率敏感借款方承压</span></span><span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">Higher-for-longer keeps real yields elevated → small caps and rate-sensitive borrowers are squeezed by financing cost.</span><span class="l-zh">更高更久使实际收益率维持高位→小盘股与利率敏感借款方被融资成本挤压。</span></span></span></div>
+        <div class="cx-chips"><span class="achip ac-head" title="measured effect -0.18 (confirmed)">Russell 2000<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span><span class="achip ac-head" title="measured effect -0.11 (confirmed)">Financials<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+      </div>
+    </div>
+    
+    
+    <div class="cx-step">
+      <span class="cx-num">3</span>
+      <div>
+        <div class="cx-phrase"><span><span class="l-en">Defensives hold up better</span><span class="l-zh">防御板块相对抗跌</span></span><span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">PPI / ECI wage pressure compresses margins → defensives (staples, health care) relatively outperform.</span><span class="l-zh">PPI／就业成本（ECI）工资压力压缩利润率→防御板块（必需消费、医疗）相对跑赢。</span></span></span></div>
+        <div class="cx-chips"><span class="achip ac-head" title="measured effect -0.09 (directional)">Staples<span class="lvg vg-directional" title="full-sample only">~</span></span><span class="achip ac-head" title="measured effect -0.18 (confirmed)">Health Care<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span></span></div>
+      </div>
+    </div>
+    
+    </div>
+  </div>
   
-  <div class="chain-quiet">
+  </div>
+  
+  
+  <div class="cx-quiet">
     
-    <div class="cq-row"><b><span class="l-en">Policy-easing / curve-steepening channel</span><span class="l-zh">政策宽松／曲线变陡传导</span></b><span class="cq-tag"><span class="l-en">quiet now</span><span class="l-zh">暂时静默</span></span></div>
     
-    <div class="cq-row"><b><span class="l-en">Inflation-expectations (anchoring) channel</span><span class="l-zh">通胀预期（锚定）传导</span></b><span class="cq-tag"><span class="l-en">quiet now</span><span class="l-zh">暂时静默</span></span></div>
+    <div class="q"><span class="nm"><span class="em">💧</span><span class="l-en">Rate cuts &amp; a steeper curve</span><span class="l-zh">降息与曲线变陡</span></span><span class="tag"><span class="l-en">quiet now</span><span class="l-zh">暂时静默</span></span></div>
+    
+    
+    <div class="q"><span class="nm"><span class="em">🧭</span><span class="l-en">Inflation expectations drifting</span><span class="l-zh">通胀预期漂移</span></span><span class="tag"><span class="l-en">quiet now</span><span class="l-zh">暂时静默</span></span></div>
     
   </div>
   
 
   <!-- ===================== SCENARIOS ===================== -->
-  <div class="sec-head"><span class="l-en">If this holds for three months</span><span class="l-zh">若持续三个月</span></div>
-  <p class="sec-sub"><span class="l-en">What each shock has historically meant for asset prices — illustrations, not forecasts.</span><span class="l-zh">各类冲击在历史上对资产价格的含义——仅为示意，并非预测。</span></p>
-  <div class="grid cols-2">
+  <div class="sec-head"><span class="sh-dot" style="--sh-c:var(--ch-infl)"></span><span class="l-en">If this holds for three months</span><span class="l-zh">若持续三个月</span></div>
+  <p class="sec-sub"><span class="l-en">What each shock has historically meant for prices — illustrations from past episodes, not forecasts.</span><span class="l-zh">各类冲击在历史上对价格的含义——取自过往情形的示意，并非预测。</span></p>
+  <div class="sx-grid">
   
-    <div class="scen">
-      <h3><span class="l-en">Real 10y +50bp (persists a quarter)</span><span class="l-zh">实际10年期收益率 +50基点（持续一季度）</span></h3>
-      <div class="scen-row">
-        <div class="scen-col head"><div class="scl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
-          <div class="smv"><span>Bitcoin (long-duration)</span><b class="neg">-8.4%</b></div><div class="smv"><span>Long Treasuries (20y+)</span><b class="neg">-6.0%</b></div><div class="smv"><span>Real Estate (rate-sensitive)</span><b class="neg">-5.9%</b></div><div class="smv"><span>Gold</span><b class="neg">-5.4%</b></div><div class="smv"><span>China large-cap (EM proxy)</span><b class="neg">-3.6%</b></div>
+  
+  
+    <div class="rv-card sx-card c-rates">
+      <div class="sx-head">
+        <span class="sx-mark">📈</span>
+        <div><div class="sx-title"><span class="l-en">If real rates rise further</span><span class="l-zh">若实际利率进一步走高</span></div><div class="sx-spec"><span class="l-en">real 10-year yield up ~0.5%</span><span class="l-zh">实际10年利率上行约0.5%</span></div></div>
+      </div>
+      <div class="sx-cols">
+        <div class="sx-col h"><div class="cl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
+          
+          <div class="sx-item"><span class="nm">Bitcoin</span><span class="v d">-8.4%</span><span class="sx-bar"><i class="d" style="width:100.0%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Long Treasuries</span><span class="v d">-6.0%</span><span class="sx-bar"><i class="d" style="width:71.4%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Real Estate</span><span class="v d">-5.9%</span><span class="sx-bar"><i class="d" style="width:70.2%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Gold</span><span class="v d">-5.4%</span><span class="sx-bar"><i class="d" style="width:64.3%"></i></span></div>
+          
+          <div class="sx-more">+1 <span class="l-en">more</span><span class="l-zh">项</span></div>
         </div>
-        <div class="scen-col tail"><div class="scl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
-          <div class="smv"><span>US Dollar (DXY)</span><b class="pos">+2.0%</b></div><div class="smv"><span>Energy (inflation beneficiary)</span><b class="pos">+1.1%</b></div><div class="smv"><span>Financials (rate beneficiary)</span><b class="pos">+0.9%</b></div>
+        <div class="sx-col t"><div class="cl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
+          
+          <div class="sx-item"><span class="nm">US Dollar</span><span class="v u">+2.0%</span><span class="sx-bar"><i class="u" style="width:23.8%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Energy</span><span class="v u">+1.1%</span><span class="sx-bar"><i class="u" style="width:13.1%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Financials</span><span class="v u">+0.9%</span><span class="sx-bar"><i class="u" style="width:10.7%"></i></span></div>
+          
+          
         </div>
       </div>
     </div>
   
-    <div class="scen">
-      <h3><span class="l-en">Real 10y -50bp (easing)</span><span class="l-zh">实际10年期收益率 -50基点（宽松）</span></h3>
-      <div class="scen-row">
-        <div class="scen-col head"><div class="scl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
-          <div class="smv"><span>US Dollar (DXY)</span><b class="neg">-2.0%</b></div><div class="smv"><span>Energy (inflation beneficiary)</span><b class="neg">-1.1%</b></div><div class="smv"><span>Financials (rate beneficiary)</span><b class="neg">-0.9%</b></div>
+  
+  
+    <div class="rv-card sx-card c-rates">
+      <div class="sx-head">
+        <span class="sx-mark">📉</span>
+        <div><div class="sx-title"><span class="l-en">If rates ease off</span><span class="l-zh">若利率回落</span></div><div class="sx-spec"><span class="l-en">real 10-year yield down ~0.5%</span><span class="l-zh">实际10年利率下行约0.5%</span></div></div>
+      </div>
+      <div class="sx-cols">
+        <div class="sx-col h"><div class="cl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
+          
+          <div class="sx-item"><span class="nm">US Dollar</span><span class="v d">-2.0%</span><span class="sx-bar"><i class="d" style="width:23.8%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Energy</span><span class="v d">-1.1%</span><span class="sx-bar"><i class="d" style="width:13.1%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Financials</span><span class="v d">-0.9%</span><span class="sx-bar"><i class="d" style="width:10.7%"></i></span></div>
+          
+          
         </div>
-        <div class="scen-col tail"><div class="scl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
-          <div class="smv"><span>Bitcoin (long-duration)</span><b class="pos">+8.4%</b></div><div class="smv"><span>Long Treasuries (20y+)</span><b class="pos">+6.0%</b></div><div class="smv"><span>Real Estate (rate-sensitive)</span><b class="pos">+5.9%</b></div><div class="smv"><span>Gold</span><b class="pos">+5.4%</b></div><div class="smv"><span>China large-cap (EM proxy)</span><b class="pos">+3.6%</b></div>
+        <div class="sx-col t"><div class="cl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
+          
+          <div class="sx-item"><span class="nm">Bitcoin</span><span class="v u">+8.4%</span><span class="sx-bar"><i class="u" style="width:100.0%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Long Treasuries</span><span class="v u">+6.0%</span><span class="sx-bar"><i class="u" style="width:71.4%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Real Estate</span><span class="v u">+5.9%</span><span class="sx-bar"><i class="u" style="width:70.2%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Gold</span><span class="v u">+5.4%</span><span class="sx-bar"><i class="u" style="width:64.3%"></i></span></div>
+          
+          <div class="sx-more">+1 <span class="l-en">more</span><span class="l-zh">项</span></div>
         </div>
       </div>
     </div>
   
-    <div class="scen">
-      <h3><span class="l-en">Breakeven +30bp (inflation scare)</span><span class="l-zh">盈亏平衡通胀 +30基点（通胀恐慌）</span></h3>
-      <div class="scen-row">
-        <div class="scen-col head"><div class="scl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
-          <div class="smv"><span>Long Treasuries (20y+)</span><b class="neg">-4.0%</b></div><div class="smv"><span>US Dollar (DXY)</span><b class="neg">-1.2%</b></div>
+  
+  
+    <div class="rv-card sx-card c-infl">
+      <div class="sx-head">
+        <span class="sx-mark">🔥</span>
+        <div><div class="sx-title"><span class="l-en">If an inflation scare hits</span><span class="l-zh">若通胀预期升温</span></div><div class="sx-spec"><span class="l-en">inflation expectations up ~0.3%</span><span class="l-zh">通胀预期上行约0.3%</span></div></div>
+      </div>
+      <div class="sx-cols">
+        <div class="sx-col h"><div class="cl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
+          
+          <div class="sx-item"><span class="nm">Long Treasuries</span><span class="v d">-4.0%</span><span class="sx-bar"><i class="d" style="width:22.7%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">US Dollar</span><span class="v d">-1.2%</span><span class="sx-bar"><i class="d" style="width:6.8%"></i></span></div>
+          
+          
         </div>
-        <div class="scen-col tail"><div class="scl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
-          <div class="smv"><span>Bitcoin (long-duration)</span><b class="pos">+17.6%</b></div><div class="smv"><span>Oil (WTI)</span><b class="pos">+12.6%</b></div><div class="smv"><span>Copper</span><b class="pos">+8.7%</b></div><div class="smv"><span>Energy (inflation beneficiary)</span><b class="pos">+7.3%</b></div><div class="smv"><span>Materials (inflation beneficiary)</span><b class="pos">+6.0%</b></div>
+        <div class="sx-col t"><div class="cl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
+          
+          <div class="sx-item"><span class="nm">Bitcoin</span><span class="v u">+17.6%</span><span class="sx-bar"><i class="u" style="width:100.0%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Oil</span><span class="v u">+12.6%</span><span class="sx-bar"><i class="u" style="width:71.6%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Copper</span><span class="v u">+8.7%</span><span class="sx-bar"><i class="u" style="width:49.4%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Energy</span><span class="v u">+7.3%</span><span class="sx-bar"><i class="u" style="width:41.5%"></i></span></div>
+          
+          <div class="sx-more">+1 <span class="l-en">more</span><span class="l-zh">项</span></div>
         </div>
       </div>
     </div>
   
-    <div class="scen">
-      <h3><span class="l-en">Curve bull-steepens +50bp (cuts priced)</span><span class="l-zh">收益率曲线牛市变陡 +50基点（计入降息）</span></h3>
-      <div class="scen-row">
-        <div class="scen-col head"><div class="scl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
-          <div class="smv"><span>Long Treasuries (20y+)</span><b class="neg">-5.0%</b></div><div class="smv"><span>Real Estate (rate-sensitive)</span><b class="neg">-2.2%</b></div><div class="smv"><span>Utilities (bond proxy)</span><b class="neg">-2.0%</b></div><div class="smv"><span>Gold</span><b class="neg">-1.0%</b></div>
+  
+  
+    <div class="rv-card sx-card c-rates">
+      <div class="sx-head">
+        <span class="sx-mark">📐</span>
+        <div><div class="sx-title"><span class="l-en">If cuts steepen the curve</span><span class="l-zh">若降息使曲线变陡</span></div><div class="sx-spec"><span class="l-en">yield curve steepens ~0.5%</span><span class="l-zh">收益率曲线变陡约0.5%</span></div></div>
+      </div>
+      <div class="sx-cols">
+        <div class="sx-col h"><div class="cl"><span class="l-en">Pressured</span><span class="l-zh">承压</span></div>
+          
+          <div class="sx-item"><span class="nm">Long Treasuries</span><span class="v d">-5.0%</span><span class="sx-bar"><i class="d" style="width:40.7%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Real Estate</span><span class="v d">-2.2%</span><span class="sx-bar"><i class="d" style="width:17.9%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Utilities</span><span class="v d">-2.0%</span><span class="sx-bar"><i class="d" style="width:16.3%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Gold</span><span class="v d">-1.0%</span><span class="sx-bar"><i class="d" style="width:8.1%"></i></span></div>
+          
+          
         </div>
-        <div class="scen-col tail"><div class="scl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
-          <div class="smv"><span>Bitcoin (long-duration)</span><b class="pos">+12.3%</b></div><div class="smv"><span>Oil (WTI)</span><b class="pos">+4.0%</b></div><div class="smv"><span>Copper</span><b class="pos">+3.0%</b></div><div class="smv"><span>Financials (rate beneficiary)</span><b class="pos">+2.4%</b></div><div class="smv"><span>Materials (inflation beneficiary)</span><b class="pos">+2.2%</b></div>
+        <div class="sx-col t"><div class="cl"><span class="l-en">Favoured</span><span class="l-zh">受益</span></div>
+          
+          <div class="sx-item"><span class="nm">Bitcoin</span><span class="v u">+12.3%</span><span class="sx-bar"><i class="u" style="width:100.0%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Oil</span><span class="v u">+4.0%</span><span class="sx-bar"><i class="u" style="width:32.5%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Copper</span><span class="v u">+3.0%</span><span class="sx-bar"><i class="u" style="width:24.4%"></i></span></div>
+          
+          <div class="sx-item"><span class="nm">Financials</span><span class="v u">+2.4%</span><span class="sx-bar"><i class="u" style="width:19.5%"></i></span></div>
+          
+          <div class="sx-more">+1 <span class="l-en">more</span><span class="l-zh">项</span></div>
         </div>
       </div>
     </div>
@@ -1382,7 +1600,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="note" style="margin-top:12px">
         <p>• <span class="l-en">Display-only — never scored. The repricing of rates/inflation is REACTIVE; the curve moves after the data and the Fed, it does not lead them.</span><span class="l-zh">仅供展示，从不计入评分。利率/通胀的重新定价是被动的；曲线在数据与美联储之后变动，而非领先。</span></p><p>• <span class="l-en">Rate-of-change beats level: the SPEED of a real-yield move breaks equities more than its level. Coefficients are the measured forward IC, not a promise.</span><span class="l-zh">变动速度比水平更重要：实际收益率移动的速度比其水平更能冲击股票。系数为已测得的前瞻IC，并非承诺。</span></p><p>• <span class="l-en">Scenario moves apply a historical beta to a hypothetical shock — they are regime-dependent illustrations, not predictions, and assume the shock persists one quarter.</span><span class="l-zh">情景中的涨跌幅是将历史beta应用于假设冲击——属于依赖状态的示意而非预测，且假设冲击持续一个季度。</span></p><p>• <span class="l-en">The real / nominal / breakeven 63d-change drivers are mechanically collinear (real = nominal − breakeven); do not treat them as independent confirmations.</span><span class="l-zh">实际／名义／盈亏平衡的63日变动驱动在机制上共线（实际＝名义−盈亏平衡）；不应视为相互独立的印证。</span></p>
         <p><b><span class="l-en">Data.</span><span class="l-zh">数据。</span></b> <span class="l-en">Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline &amp; core CPI, headline &amp; core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter &amp; core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests. Dollar read: broad trade-weighted dollar + the Dollar Desk on the Forex page.</span><span class="l-zh">免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。美元读数：广义贸易加权美元及外汇页的美元台。</span></p>
-        <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1927-12-30 → 2026-07-17 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-19 06:08 UTC</p>
+        <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1927-12-30 → 2026-07-17 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-19 07:35 UTC</p>
       </div>
       </div>
     </details>
