@@ -27,6 +27,117 @@ settings:
   auditor_strict: true
   north_star_window_days: 90
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Sentinel — trust_office W1 plan-level policy gate (engine/marketing/sentinel.py)
+#
+# D02 actuator LAW: read ALL caps from this block — NEVER hardcode constants
+# in the actuator. If this block is absent the sentinel falls back to in-code
+# conservative defaults, but the actuator must not have its own fallback copy.
+#
+# The ramp schedule below is binding once D08 is live. D02 reads
+# sentinel.ramp.weeks_1_2 / weeks_3_4 / week_5_plus by account age.
+# Week-1-2 numbers come from the D08 red-team appendix (X policy conservative floor).
+# ─────────────────────────────────────────────────────────────────────────────
+sentinel:
+  # Cross-account near-duplicate threshold — lowered from 0.60 to 0.50 per
+  # D08_APPENDIX_X_POLICY_REDTEAM §4: finance copy is templated so 0.60 lets
+  # genuinely similar posts pass; the policy bar is "substantially similar".
+  # Lower = more aggressive blocking; false-positive rewrites are the safe direction.
+  near_dup_jaccard: 0.50
+
+  # Base cadence caps (base = weeks_1_2 tier).
+  # W1 has no account-age wiring, so in-force defaults must assume brand-new accounts.
+  # D02 actuator RAISES caps by ramp tier (see ramp: below) — never lowers them.
+  max_posts_per_account_per_day: 2
+  max_same_cashtag_per_account_per_day: 1
+  max_replies_per_account_per_day: 0
+
+  # min_minutes_between_posts is NOT enforced at plan tier (queue slots have no
+  # timestamps). It is the contract value the D02 actuator MUST read from here
+  # and honour at post time, never post faster than this floor.
+  # Base = weeks_1_2 value (120 min); actuator relaxes to 90 at week 5+.
+  min_minutes_between_posts: 120
+
+  # Stale-receipts refusal: if the graded-receipts ledger is older than this
+  # many days, the whole plan is refused (we must not post receipts we can't back).
+  max_receipt_age_days: 7
+
+  # Link policy — new accounts posting links is a named X spam trigger;
+  # same link twice is a documented suspension trip (D08 R2). Forbidden until week 5.
+  links_allowed: false
+
+  # Media cap per account per day — fresh accounts posting all-chart content reads
+  # as a content farm (D08 R4). Ramp 1→2→3; base = weeks_1_2 value.
+  max_media_posts_per_account_per_day: 1
+
+  # Per-post cashtag breadth cap — cashtag piggybacking (many tickers in one post)
+  # is an actively-suspended financial-spam vector (D08 R3). Cap distinct $TICKER
+  # tokens in headline+body. theme_list is exempt (see sentinel.py comment).
+  max_cashtags_per_post: 3
+
+  # New-follows cap — follow churn is the fastest X suspension trigger; automated
+  # following is banned outright (D08 R7). Any follows in week 5+ must be
+  # manual-only, operator-performed. Actuator must never script follows.
+  max_new_follows_per_account_per_day: 0
+
+  # Financial-advice phrasing lexicon (word-boundary, case-insensitive).
+  # Defense-in-depth at the plan layer — some overlap with copywriter._BANNED_VOCAB
+  # is intentional (different seams).
+  lexicon_phrases:
+    - "you should buy"
+    - "you should sell"
+    - "get in now"
+    - "get in before"
+    - "guaranteed"
+    - "can't lose"
+    - "cannot lose"
+    - "sure thing"
+    - "easy money"
+    - "risk-free"
+    - "risk free"
+    - "free money"
+    - "no-brainer"
+    - "back up the truck"
+    - "load up"
+    - "all-in"
+    - "to the moon"
+    - "price target guaranteed"
+
+  # Regex patterns (case-insensitive) for financial-advice phrasing.
+  lexicon_patterns:
+    - '\b(will|going to|gonna)\s+(hit|reach|touch|double|triple|10x)\b'
+    - '\bcan''?t\s+(go|drop|fall)\b'
+
+  # Ramp schedule — full per-tier cap table (D08 §3).
+  # D02 actuator selects the right tier by account creation date (see desk_network
+  # accounts for the `created:` field to fill at account creation).
+  # Base values above = weeks_1_2 floor. D02 raises caps when the account ages.
+  ramp:
+    weeks_1_2:
+      max_posts_per_account_per_day: 2
+      min_minutes_between_posts: 120
+      links_allowed: false
+      max_media_posts_per_account_per_day: 1
+      max_same_cashtag_per_account_per_day: 1
+      max_replies_per_account_per_day: 0
+      max_new_follows_per_account_per_day: 0
+    weeks_3_4:
+      max_posts_per_account_per_day: 3
+      min_minutes_between_posts: 120
+      links_allowed: false
+      max_media_posts_per_account_per_day: 2
+      max_same_cashtag_per_account_per_day: 2
+      max_replies_per_account_per_day: 0
+      max_new_follows_per_account_per_day: 0
+    week_5_plus:
+      max_posts_per_account_per_day: 4
+      min_minutes_between_posts: 90
+      links_allowed: true   # ≤1 link post/day enforced by actuator
+      max_media_posts_per_account_per_day: 3
+      max_same_cashtag_per_account_per_day: 2
+      max_replies_per_account_per_day: 2   # Sentinel-gated
+      max_new_follows_per_account_per_day: 5   # manual-only; actuator must NOT script follows
+
 departments:
   growth_os:
     lifecycle_state: building
@@ -43,6 +154,9 @@ desk_network:
       kind: branded
       beat: "What changed and why it matters"
       voice: "authoritative desk"
+      # Per-account kill-switch: uncomment to disable this account's items in the sentinel gate.
+      # disabled: true
+      # created: YYYY-MM-DD   # fill at account creation — drives ramp tier lookup (D02)
       # Flagship: heavy on signal + macro; the authoritative read
       tilt:
         signal: 0.32

@@ -23,10 +23,11 @@ log = logging.getLogger(__name__)
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
 
-_STATE_REL   = Path("data/neuralweb/marketing_state.json")
-_CONTENT_REL = Path("data/marketing/content_plan.json")
-_LAB_REL     = Path("data/marketing/lab_rollup.json")
-_CONFIG_REL  = Path("config/marketing.yml")
+_STATE_REL    = Path("data/neuralweb/marketing_state.json")
+_CONTENT_REL  = Path("data/marketing/content_plan.json")
+_LAB_REL      = Path("data/marketing/lab_rollup.json")
+_SENTINEL_REL = Path("data/marketing/sentinel_report.json")
+_CONFIG_REL   = Path("config/marketing.yml")
 
 # N-floor (docket D03 §Traps + small-N humility): a reach cell backed by fewer
 # than this many posts is display-only — never allowed to crown a winner.
@@ -43,6 +44,10 @@ _CONTENT_ACCRUING_NOTE = (
 _LAB_WAITING_NOTE = (
     "No live posts yet — the Lab starts measuring once Broadcast goes live (W1). "
     "The hypotheses below are seeded and waiting for evidence."
+)
+_SENTINEL_ACCRUING_NOTE = (
+    "sentinel_report.json not yet written — "
+    "first nightly after D08 merge bakes it."
 )
 
 
@@ -413,6 +418,47 @@ def department(root=None, dept_id=None) -> dict:
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.department failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def sentinel(root=None) -> dict:
+    """Sentinel trust_office gate report: reads data/marketing/sentinel_report.json.
+
+    Returns the report plus a small derived summary (top reasons by frequency).
+    Fail-soft: returns ok:True with honest note when the file is absent.
+    JSON only — no HTML/design surface.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        rpt = _read_json(repo / _SENTINEL_REL)
+        if rpt is None:
+            return {
+                "ok": True,
+                "note": _SENTINEL_ACCRUING_NOTE,
+                "plan_status": None,
+                "publish_enabled": None,
+                "counts": None,
+                "top_reasons": [],
+                "quarantined": [],
+            }
+        # Derive top reasons from reasons_histogram
+        histogram = rpt.get("reasons_histogram") or {}
+        top_reasons = sorted(histogram.items(), key=lambda x: x[1], reverse=True)[:10]
+        return {
+            "ok": True,
+            "plan_status": rpt.get("plan_status"),
+            "publish_enabled": rpt.get("publish_enabled"),
+            "auditor_strict": rpt.get("auditor_strict"),
+            "as_of": rpt.get("as_of"),
+            "produced_at": rpt.get("produced_at"),
+            "counts": rpt.get("counts"),
+            "top_reasons": [{"reason": r, "count": c} for r, c in top_reasons],
+            "quarantined": rpt.get("quarantined") or [],
+            "checks": rpt.get("checks"),
+            "notes": rpt.get("notes") or [],
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.sentinel failed: %s", exc)
         return {"ok": False, "error": str(exc)}
 
 

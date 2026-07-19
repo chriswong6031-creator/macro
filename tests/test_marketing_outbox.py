@@ -824,3 +824,53 @@ def test_actuator_dry_run_counts_consistent(tmp_path):
     assert accounted == counts["items_total"], (
         f"Status counts don't add up to items_total: {counts}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 10. D08 Sentinel seam — quarantine skip + cap authority
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_emit_skips_sentinel_quarantined_and_unverified(tmp_path):
+    """Sentinel-quarantined and crash-path-unverified items never reach the outbox."""
+    from engine.marketing.outbox import emit_from_content_plan
+
+    plan = _make_plan_fixture()
+    q = plan["accounts"][0]["queue"]
+    q[0]["status"] = "quarantined"                       # sentinel quarantine
+    q[0]["sentinel_reasons"] = ["advice_lexicon:guaranteed"]
+    q[1]["sentinel_ok"] = False                          # crash path stamp
+    q[2]["sentinel_ok"] = True                           # explicit pass
+
+    result = emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    assert result["skipped_sentinel"] == 2, f"got: {result}"
+    assert result["emitted"] == 1
+
+
+def test_emit_missing_sentinel_field_passes_through(tmp_path):
+    """Pre-D08 plans carry no sentinel_ok — emission behavior unchanged."""
+    from engine.marketing.outbox import emit_from_content_plan
+
+    result = emit_from_content_plan(_make_plan_fixture(), root=tmp_path, day_prefix="D1")
+    assert result["emitted"] == 3
+    assert result["skipped_sentinel"] == 0
+
+
+def test_effective_cap_sentinel_config_is_authoritative():
+    """D08 law: the actuator reads its cap from sentinel config; outbox may only lower it."""
+    from engine.marketing.outbox import effective_cap
+
+    assert effective_cap({"sentinel": {"max_posts_per_account_per_day": 2}}) == 2
+    assert effective_cap({"sentinel": {"max_posts_per_account_per_day": 2},
+                          "outbox": {"max_posts_per_account_per_day": 1}}) == 1
+    assert effective_cap({"sentinel": {"max_posts_per_account_per_day": 2},
+                          "outbox": {"max_posts_per_account_per_day": 10}}) == 2
+
+
+def test_effective_cap_repo_config_is_weeks_1_2_tier():
+    """The shipped config must hold the actuator at the new-account tier (2/day)."""
+    import yaml
+    from engine.marketing.outbox import effective_cap
+
+    cfg_path = Path(__file__).resolve().parent.parent / "config" / "marketing.yml"
+    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+    assert effective_cap(cfg) == 2
