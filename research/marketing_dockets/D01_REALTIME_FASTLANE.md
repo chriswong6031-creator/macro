@@ -1,6 +1,6 @@
 # MKT-D01 — Real-Time Fast Lane (earnings / breaking instant publish)
 
-**Department:** Engine Room (growth_os) + Broadcast (distribution) · **Priority: P0** · **Status: W0 ready now; W1 blocked on operator host**
+**Department:** Engine Room (growth_os) + Broadcast (distribution) · **Priority: P0** · **Status: W0 SHIPPED (PR #3053, 2026-07-19) — provider seam + tick body + daemon w/ kill-switch + quarantine ledger; W1 (always-on host + paid feed key) awaits operator**
 **Architecture doc (read it):** `research/MARKETING_REALTIME_FASTLANE_ARCHITECTURE_BY_FABLE.md`
 **Operator directive (verbatim intent):** "earnings comes out usually before market opens and after market closes… immediate events… cannot be a scheduled post." Publish within **seconds-to-minutes** of the event, not on the nightly clock.
 

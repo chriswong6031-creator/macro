@@ -808,3 +808,175 @@ class TestDepartmentPanel:
                 assert isinstance(result, dict), f"{fn_name} returned non-dict: {result!r}"
             except Exception as exc:  # noqa: BLE001
                 pytest.fail(f"marketing.{fn_name}() raised on empty root: {exc}")
+
+
+# ---------------------------------------------------------------------------
+# Lab roll-up fixtures (§D03 lab_rollup.json shape, authored here — no engine dep)
+# ---------------------------------------------------------------------------
+
+# Populated: one clearly above-floor cell (n=46), several below-floor (n<20),
+# and a spread of hypothesis states so the N-floor and state-mapping are tested.
+POPULATED_LAB_ROLLUP = {
+    "schema_version": 1,
+    "produced_by": "test-fixture",
+    "tier": "display",
+    "schema": "marketing.lab_rollup/v1",
+    "as_of": "2026-07-19",
+    "n_posts": 214,
+    "n_rows": 631,
+    "n_orphans": 4,
+    "cells": [
+        {"dims": {"kind": "signal",    "account": "flagship",  "persona": "desk",    "slot": "am", "mode": "det", "cashtag_tier": "high"}, "n": 46, "med_impressions": 3120, "med_likes": 41, "med_replies": 6, "med_reposts": 9},
+        {"dims": {"kind": "chart",     "account": "flagship",  "persona": "desk",    "slot": "pm", "mode": "det", "cashtag_tier": "mid"},  "n": 29, "med_impressions": 1980, "med_likes": 22, "med_replies": 2, "med_reposts": 4},
+        {"dims": {"kind": "education", "account": "research_a", "persona": "teacher", "slot": "pm", "mode": "llm", "cashtag_tier": "none"}, "n": 24, "med_impressions": 1210, "med_likes": 18, "med_replies": 3, "med_reposts": 2},
+        {"dims": {"kind": "receipt",   "account": "flagship",  "persona": "desk",    "slot": "pm", "mode": "det", "cashtag_tier": "mid"},  "n": 14, "med_impressions": 2200, "med_likes": 27, "med_replies": 3, "med_reposts": 6},
+        {"dims": {"kind": "event",     "account": "research_a", "persona": "teacher", "slot": "am", "mode": "llm", "cashtag_tier": "mid"},  "n": 9,  "med_impressions": 890,  "med_likes": 11, "med_replies": 1, "med_reposts": 1},
+        {"dims": {"kind": "watchlist", "account": "flagship",  "persona": "desk",    "slot": "pm", "mode": "det", "cashtag_tier": "low"},  "n": 5,  "med_impressions": 640,  "med_likes": 7,  "med_replies": 0, "med_reposts": 1},
+    ],
+    "top_posts": [
+        {"post_id": "flagship-000817",   "dims": {"kind": "signal",  "account": "flagship",  "cashtag_tier": "high", "slot": "am"}, "impressions": 8420, "likes": 112, "replies": 19},
+        {"post_id": "research_a-000642", "dims": {"kind": "signal",  "account": "research_a", "cashtag_tier": "high", "slot": "am"}, "impressions": 5330, "likes": 61,  "replies": 8},
+    ],
+    "hypotheses": [
+        {"id": "H1", "title": "Multi-cashtag theme lists reach further than single-name posts", "state": "confirmed", "n_evidence": 46, "note": "Cashtag posts land ~2.6x the impressions."},
+        {"id": "H2", "title": "Instant earnings reactions beat next-morning recaps",             "state": "seeding",   "n_evidence": 9,  "note": "Too few event posts to call."},
+        {"id": "H3", "title": "The educational voice needs a cashtag to travel",                 "state": "refuted",   "n_evidence": 24, "note": "Cashtag added no measurable lift."},
+        {"id": "H4", "title": "Odd state defaults to seeding",                                    "state": "bogus",     "n_evidence": 3,  "note": "Unknown state must not read as confirmed."},
+    ],
+}
+
+# Zero-posts variant: file present, but nothing posted yet (the day-0 reality).
+# Seeded hypotheses are carried so the operator still sees the bench.
+ZERO_POSTS_LAB_ROLLUP = {
+    "schema": "marketing.lab_rollup/v1",
+    "as_of": "2026-07-19",
+    "n_posts": 0,
+    "n_rows": 0,
+    "n_orphans": 0,
+    "cells": [],
+    "top_posts": [],
+    "hypotheses": [
+        {"id": "H01", "title": "Multi-cashtag theme list outperforms single-ticker posts", "state": "seeding", "n_evidence": 0, "note": "Playbook §2."},
+        {"id": "H02", "title": "Instant earnings reaction posts capture the hot window",    "state": "seeding", "n_evidence": 0, "note": "Playbook §3."},
+    ],
+}
+
+
+def _write_lab(root, rollup):
+    d = root / "data" / "marketing"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "lab_rollup.json").write_text(
+        json.dumps(rollup, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
+
+
+@pytest.fixture()
+def populated_lab_root(tmp_path):
+    """Fixture root with a populated lab_rollup.json (n_posts > 0)."""
+    _write_lab(tmp_path, POPULATED_LAB_ROLLUP)
+    return tmp_path
+
+
+@pytest.fixture()
+def zero_posts_lab_root(tmp_path):
+    """Fixture root with lab_rollup.json present but n_posts == 0 (waiting)."""
+    _write_lab(tmp_path, ZERO_POSTS_LAB_ROLLUP)
+    return tmp_path
+
+
+class TestLabPanelPopulated:
+    def test_lab_ok_with_data(self, populated_lab_root):
+        r = marketing.lab(populated_lab_root)
+        assert r["ok"] is True
+        assert r["waiting"] is False
+        assert r["as_of"] == "2026-07-19"
+        assert r["n_posts"] == 214
+        assert r["n_orphans"] == 4
+        assert r["n_floor"] == 20
+        assert len(r["hypotheses"]) == 4
+        assert len(r["cells"]) == 6
+        assert len(r["top_posts"]) == 2
+
+    def test_lab_hypothesis_states_normalised(self, populated_lab_root):
+        r = marketing.lab(populated_lab_root)
+        by_id = {h["id"]: h for h in r["hypotheses"]}
+        assert by_id["H1"]["state"] == "confirmed"
+        assert by_id["H2"]["state"] == "seeding"
+        assert by_id["H3"]["state"] == "refuted"
+        # An unknown state must fall to the cautious seeding bucket, never confirmed.
+        assert by_id["H4"]["state"] == "seeding"
+
+    def test_lab_n_floor_tagging(self, populated_lab_root):
+        """Cells with n < 20 are tagged below_floor (kept, not dropped);
+        cells at/above 20 are not — so the page can never crown a small cell."""
+        r = marketing.lab(populated_lab_root)
+        by_n = {c["n"]: c for c in r["cells"]}
+        assert by_n[46]["below_floor"] is False
+        assert by_n[29]["below_floor"] is False
+        assert by_n[24]["below_floor"] is False
+        assert by_n[14]["below_floor"] is True
+        assert by_n[9]["below_floor"] is True
+        assert by_n[5]["below_floor"] is True
+        # No cell is dropped — small samples stay visible for honesty.
+        assert len(r["cells"]) == 6
+
+    def test_lab_floor_boundary_is_inclusive_at_20(self, tmp_path):
+        """n == 20 is exactly at the floor and must NOT be suppressed."""
+        rollup = dict(POPULATED_LAB_ROLLUP)
+        rollup = json.loads(json.dumps(rollup))  # deep copy
+        rollup["cells"] = [
+            {"dims": {"kind": "signal", "account": "flagship"}, "n": 20, "med_impressions": 1000, "med_likes": 10, "med_replies": 1, "med_reposts": 1},
+            {"dims": {"kind": "chart",  "account": "flagship"}, "n": 19, "med_impressions": 900,  "med_likes": 9,  "med_replies": 1, "med_reposts": 1},
+        ]
+        _write_lab(tmp_path, rollup)
+        r = marketing.lab(tmp_path)
+        by_n = {c["n"]: c for c in r["cells"]}
+        assert by_n[20]["below_floor"] is False
+        assert by_n[19]["below_floor"] is True
+
+    def test_lab_cells_carry_medians(self, populated_lab_root):
+        r = marketing.lab(populated_lab_root)
+        top = next(c for c in r["cells"] if c["n"] == 46)
+        assert top["med_impressions"] == 3120
+        assert top["med_likes"] == 41
+        assert top["dims"]["kind"] == "signal"
+
+
+class TestLabPanelWaiting:
+    """The empty state is a first-class design requirement, not an error page."""
+
+    def test_lab_waiting_when_file_absent(self, empty_root):
+        r = marketing.lab(empty_root)
+        _assert_fail_soft(r, "lab")
+        assert r["waiting"] is True
+        assert r.get("note")
+        assert r["n_posts"] == 0
+        assert r["cells"] == []
+        assert r["top_posts"] == []
+        # Absent file → no seeded hypotheses to show yet.
+        assert r["hypotheses"] == []
+
+    def test_lab_waiting_with_zero_posts_keeps_seeded_hypotheses(self, zero_posts_lab_root):
+        """n_posts == 0 → waiting, but seeded hypotheses ARE surfaced so the
+        operator sees what will be measured."""
+        r = marketing.lab(zero_posts_lab_root)
+        assert r["ok"] is True
+        assert r["waiting"] is True
+        assert r["n_posts"] == 0
+        assert len(r["hypotheses"]) == 2
+        assert all(h["state"] == "seeding" for h in r["hypotheses"])
+        # No reach data is invented while waiting.
+        assert r["cells"] == []
+        assert r["top_posts"] == []
+
+    def test_lab_never_invents_numbers_while_waiting(self, zero_posts_lab_root):
+        r = marketing.lab(zero_posts_lab_root)
+        assert r["n_rows"] == 0
+        assert r["n_orphans"] == 0
+
+    def test_lab_does_not_raise_on_empty_root(self, empty_root):
+        try:
+            result = marketing.lab(empty_root)
+            assert isinstance(result, dict)
+        except Exception as exc:  # noqa: BLE001
+            pytest.fail(f"marketing.lab() raised on empty root: {exc}")

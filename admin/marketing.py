@@ -25,7 +25,12 @@ _ROOT = _HERE.parent
 
 _STATE_REL   = Path("data/neuralweb/marketing_state.json")
 _CONTENT_REL = Path("data/marketing/content_plan.json")
+_LAB_REL     = Path("data/marketing/lab_rollup.json")
 _CONFIG_REL  = Path("config/marketing.yml")
+
+# N-floor (docket D03 §Traps + small-N humility): a reach cell backed by fewer
+# than this many posts is display-only — never allowed to crown a winner.
+_LAB_N_FLOOR = 20
 
 _ACCRUING_NOTE = (
     "marketing_state.json not yet written — "
@@ -34,6 +39,10 @@ _ACCRUING_NOTE = (
 _CONTENT_ACCRUING_NOTE = (
     "content_plan.json not yet written — "
     "accruing after first nightly governor run."
+)
+_LAB_WAITING_NOTE = (
+    "No live posts yet — the Lab starts measuring once Broadcast goes live (W1). "
+    "The hypotheses below are seeded and waiting for evidence."
 )
 
 
@@ -272,6 +281,99 @@ def content(root=None) -> dict:
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.content failed: %s", exc)
         return {"ok": False, "error": str(exc)}
+
+
+def lab(root=None) -> dict:
+    """Growth Science Lab panel: reads data/marketing/lab_rollup.json.
+
+    The Lab grades the zero-follower playbook hypotheses against real reach
+    data.  Until Broadcast (W1) posts live, the file is absent or n_posts=0 —
+    that is a first-class *waiting* state, not an error: we still surface the
+    seeded hypotheses so the operator sees what will be measured.
+
+    Returns {ok, waiting, note, as_of, n_posts, n_rows, n_orphans,
+             hypotheses, cells, top_posts, n_floor}.
+
+    N-floor enforcement (docket §Traps): every reach cell is tagged
+    ``below_floor`` when its post count is under _LAB_N_FLOOR, so the page can
+    never visually crown a winner under the floor.  We tag rather than drop —
+    small-sample cells stay visible, greyed and labelled.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        rollup = _read_json(repo / _LAB_REL)
+
+        # Absent file OR zero posts → honest waiting state.  Seeded hypotheses
+        # are read from the rollup when present so the operator sees the bench.
+        if rollup is None or int(rollup.get("n_posts") or 0) <= 0:
+            hyps = _lab_hypotheses((rollup or {}).get("hypotheses") or [])
+            return {
+                "ok": True,
+                "waiting": True,
+                "note": _LAB_WAITING_NOTE,
+                "as_of": (rollup or {}).get("as_of"),
+                "n_posts": int((rollup or {}).get("n_posts") or 0),
+                "n_rows": int((rollup or {}).get("n_rows") or 0),
+                "n_orphans": int((rollup or {}).get("n_orphans") or 0),
+                "hypotheses": hyps,
+                "cells": [],
+                "top_posts": [],
+                "n_floor": _LAB_N_FLOOR,
+            }
+
+        cells = _lab_cells(rollup.get("cells") or [])
+        return {
+            "ok": True,
+            "waiting": False,
+            "as_of": rollup.get("as_of"),
+            "n_posts": int(rollup.get("n_posts") or 0),
+            "n_rows": int(rollup.get("n_rows") or 0),
+            "n_orphans": int(rollup.get("n_orphans") or 0),
+            "hypotheses": _lab_hypotheses(rollup.get("hypotheses") or []),
+            "cells": cells,
+            "top_posts": rollup.get("top_posts") or [],
+            "n_floor": _LAB_N_FLOOR,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.lab failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def _lab_hypotheses(raw: list) -> list:
+    """Normalise hypothesis records, defaulting an unknown state to the cautious
+    ``seeding`` bucket (never a fake ``confirmed``)."""
+    out = []
+    for hyp_item in raw or []:
+        state = (hyp_item.get("state") or "seeding").lower()
+        if state not in ("seeding", "confirmed", "refuted"):
+            state = "seeding"
+        out.append({
+            "id": hyp_item.get("id"),
+            "title": hyp_item.get("title") or hyp_item.get("id") or "Hypothesis",
+            "state": state,
+            "n_evidence": int(hyp_item.get("n_evidence") or 0),
+            "note": hyp_item.get("note") or "",
+        })
+    return out
+
+
+def _lab_cells(raw: list) -> list:
+    """Tag each reach cell with ``below_floor`` (n < _LAB_N_FLOOR).  Cells stay
+    in the list either way — the floor suppresses the *verdict*, not the row."""
+    out = []
+    for cell in raw or []:
+        n = int(cell.get("n") or 0)
+        dims = cell.get("dims") or {}
+        out.append({
+            "dims": dims,
+            "n": n,
+            "below_floor": n < _LAB_N_FLOOR,
+            "med_impressions": cell.get("med_impressions"),
+            "med_likes": cell.get("med_likes"),
+            "med_replies": cell.get("med_replies"),
+            "med_reposts": cell.get("med_reposts"),
+        })
+    return out
 
 
 def department(root=None, dept_id=None) -> dict:

@@ -40,6 +40,27 @@ def main() -> int:
         f"state={result.get('state_path')} "
         f"lobe={result.get('lobe_path')}"
     )
+
+    # Telemetry roll-up (never-raise; runs after governor)
+    try:
+        from engine.marketing.telemetry import write_rollup
+        s = write_rollup(root=None)
+        if s.get("error"):
+            print(
+                f"marketing_telemetry: WARN (never-raise) — {s['error']}",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"marketing_telemetry: ok — "
+                f"posts={s.get('n_posts', 0)} "
+                f"rows={s.get('n_rows', 0)} "
+                f"orphans={s.get('n_orphans', 0)}"
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_marketing: telemetry write_rollup failed: %s", exc)
+        print(f"marketing_telemetry: WARN (never-raise) — {exc}", file=sys.stderr)
+
     return 0
 
 

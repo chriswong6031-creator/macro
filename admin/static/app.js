@@ -151,11 +151,12 @@ const ICONS = {
   marketing_experiments: NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/><circle cx="10.5" cy="16.5" r="1"/><circle cx="14" cy="15" r="1"/>'),
   marketing_lobes:       NAV_ICO('<rect x="3" y="3" width="5" height="5" rx="1.2"/><rect x="10" y="3" width="5" height="5" rx="1.2"/><rect x="17" y="3" width="4" height="5" rx="1.2"/><rect x="3" y="10" width="5" height="5" rx="1.2"/><rect x="10" y="10" width="5" height="5" rx="1.2"/><path d="M5.5 15v2a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2"/>'),
   marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
+  marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -3766,6 +3767,173 @@ function mktSwitchAcct(acct, btn) {
     el.style.display = (acct === "all" || el.dataset.acct === acct) ? "" : "none";
   });
 }
+
+/* ---- LAB (Growth Science) ------------------------------------------------- */
+/* Plain-word labels for the raw dimension slugs — the glance tier never shows
+   machine slugs (DESIGN_DOCTRINE Law 2). Unknown slugs prettify, never crash. */
+const LAB_DIM_LABELS = {
+  kind: {
+    signal: "Signal alert", chart: "Chart", education: "Explainer", macro: "Macro note",
+    receipt: "Report card", watchlist: "Watchlist", event: "Event reaction",
+    theme_list: "Theme list", earnings_card: "Earnings card", mover_chart: "Mover chart",
+  },
+  account: { flagship: "Flagship", research_a: "Research A", research_b: "Research B" },
+  persona: {
+    desk: "Desk", teacher: "Teacher", analyst: "Analyst",
+    "authoritative desk": "Authoritative desk", "tape reader": "Tape reader",
+  },
+  slot: {
+    am: "Morning", pm: "Afternoon", eve: "Evening",
+    "D1-AM": "Day 1 morning", "D1-PM": "Day 1 afternoon",
+    "D2-AM": "Day 2 morning", "D2-PM": "Day 2 afternoon",
+  },
+  mode: { det: "Deterministic", deterministic: "Deterministic", llm: "AI-written" },
+  cashtag_tier: {
+    high: "Heavy cashtag", mid: "Some cashtags", low: "Light cashtag",
+    none: "No cashtag", unknown: "Cashtag unrated",
+  },
+};
+/* Hypothesis state → {pill class, plain word, stance}. Seeding is amber, never
+   a fake green: a hypothesis still gathering evidence is honestly unproven. */
+const LAB_STATE = {
+  confirmed: { cls: "s-ok",   word: "Confirmed", stance: "Feed it back into the tilts." },
+  seeding:   { cls: "s-warn", word: "Seeding",   stance: "Watch — not enough evidence to call." },
+  refuted:   { cls: "s-bad",  word: "Refuted",   stance: "Drop the assumption." },
+};
+/* Prettify any slug the label maps miss (staples_x → Staples X). */
+function labPretty(dim, slug) {
+  if (slug == null || slug === "") return "—";
+  const m = (LAB_DIM_LABELS[dim] || {})[slug];
+  if (m) return m;
+  return String(slug).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+/* Evidence meter — the page signature. Fills toward the decision threshold so
+   the operator sees how far a hypothesis is from a verdict without reading N. */
+function labEvidenceMeter(n, state) {
+  const THRESH = 20;                       /* same floor the reach table honours */
+  const frac = Math.max(0, Math.min(1, (n || 0) / THRESH));
+  const cls = state === "confirmed" ? "ev-ok" : state === "refuted" ? "ev-bad" : "ev-seed";
+  const label = state === "seeding"
+    ? (n >= THRESH ? "enough to read" : `${n} of ~${THRESH} needed`)
+    : `${n} data point${n === 1 ? "" : "s"}`;
+  return `<div class="lab-ev">
+    <div class="lab-ev-track"><i class="${cls}" style="width:${(frac * 100).toFixed(0)}%"></i></div>
+    <div class="lab-ev-lab">${esc(label)}</div>
+  </div>`;
+}
+
+RENDER.marketing_lab = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/lab");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Lab unavailable", (d && d.error) || "panel error"); return; }
+
+  const hyps = d.hypotheses || [];
+  const cells = d.cells || [];
+  const topPosts = d.top_posts || [];
+  const floor = d.n_floor || 20;
+
+  /* Header strip — as_of, posts measured, a data-quality chip when orphans>0. */
+  const orphanChip = (d.n_orphans || 0) > 0
+    ? `<span class="statpill s-warn" title="telemetry rows we could not match to a known post — kept, not dropped">${d.n_orphans} unmatched row${d.n_orphans === 1 ? "" : "s"}</span>`
+    : "";
+  const headerHtml = `<div class="section">Lab
+    <span class="cnt">as_of ${esc(d.as_of || "—")}</span>
+    ${d.waiting ? `<span class="statpill s-mut">waiting for live posts</span>` : `<span class="statpill s-ok">measuring</span>`}
+    ${orphanChip}
+  </div>
+  <div class="lab-intro">The Lab grades our reach hypotheses against real post data. ${
+    d.waiting
+      ? `<b style="color:var(--warn)">Nothing to act on yet</b> — posting goes live with Broadcast (W1). Until then, these are the questions we will answer.`
+      : `Reach cells backed by fewer than ${floor} posts are shown greyed — too small to trust a winner.`
+  }</div>`;
+
+  /* Waiting banner (empty state is first-class, not an error page). */
+  const waitingHtml = d.waiting
+    ? `<div class="card lab-wait">
+        <div class="lab-wait-icon">🔬</div>
+        <div>
+          <div class="lab-wait-title">The bench is set up — samples aren't in yet</div>
+          <div class="note muted">${esc(d.note || "No live posts yet.")}</div>
+        </div>
+      </div>`
+    : "";
+
+  /* 1 · Hypothesis board — one card per hypothesis. */
+  const hypCards = hyps.map(hyp => {
+    const st = LAB_STATE[hyp.state] || LAB_STATE.seeding;
+    return `<div class="card lab-hyp" data-state="${esc(hyp.state)}">
+      <div class="lab-hyp-top">
+        <span class="statpill ${st.cls}">${st.word}</span>
+      </div>
+      <div class="lab-hyp-title">${esc(hyp.title)}</div>
+      ${labEvidenceMeter(hyp.n_evidence, hyp.state)}
+      ${hyp.note ? `<div class="lab-hyp-note">${esc(hyp.note)}</div>` : ""}
+      <div class="lab-hyp-stance">${st.stance}</div>
+    </div>`;
+  }).join("");
+  const boardHtml = `<div class="section">Hypothesis board <span class="cnt">${hyps.length} question${hyps.length === 1 ? "" : "s"}</span></div>
+    ${hyps.length ? `<div class="lab-hyp-grid">${hypCards}</div>` : nwEmpty("No hypotheses seeded", "The playbook hypotheses populate with the first roll-up.")}`;
+
+  /* 2 · Reach roll-up — cells sorted by reach, floor-suppressed rows greyed and
+     never ranked. Best above-floor cell is quietly highlighted. */
+  let reachHtml = "";
+  if (!d.waiting && cells.length) {
+    const above = cells.filter(c => !c.below_floor).slice().sort((a, b) => (b.med_impressions || 0) - (a.med_impressions || 0));
+    const below = cells.filter(c => c.below_floor);
+    const ordered = above.concat(below);
+    const bestId = above.length ? above[0] : null;
+    const rows = ordered.map(c => {
+      const dims = c.dims || {};
+      const isBest = c === bestId;
+      const label = `${labPretty("kind", dims.kind)} · ${labPretty("account", dims.account)}`;
+      const sub = [labPretty("cashtag_tier", dims.cashtag_tier), labPretty("slot", dims.slot), labPretty("mode", dims.mode)].filter(x => x !== "—").join(" · ");
+      return `<tr class="${c.below_floor ? "lab-cell-floor" : ""}${isBest ? " lab-cell-best" : ""}">
+        <td>
+          <div class="lab-cell-name">${isBest ? `<span class="lab-best-dot" title="reaches furthest, above the sample floor">★</span>` : ""}${esc(label)}</div>
+          <div class="lab-cell-dims">${esc(sub)}</div>
+        </td>
+        <td class="r">${c.below_floor
+          ? `<span class="statpill s-mut" title="fewer than ${floor} posts — too small to trust">small sample · ${c.n}</span>`
+          : `<b>${c.n}</b> <span class="sub">posts</span>`}</td>
+        <td class="r mono">${c.below_floor ? `<span class="lab-muted-num">${fmtNum(c.med_impressions)}</span>` : fmtNum(c.med_impressions)}</td>
+        <td class="r mono">${c.below_floor ? `<span class="lab-muted-num">${fmtNum(c.med_likes)}</span>` : fmtNum(c.med_likes)}</td>
+        <td class="r mono">${c.below_floor ? `<span class="lab-muted-num">${fmtNum(c.med_replies)}</span>` : fmtNum(c.med_replies)}</td>
+      </tr>`;
+    }).join("");
+    reachHtml = `<div class="section">Reach roll-up <span class="cnt">${cells.length} cell${cells.length === 1 ? "" : "s"}</span></div>
+      <div class="table-wrap"><table class="lab-reach">
+        <thead><tr><th>What we posted</th><th class="r">Posts</th><th class="r">Median reach</th><th class="r">Median likes</th><th class="r">Median replies</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div class="note muted lab-foot">Median, not average — one viral post can't crown a cell. Greyed rows are under the ${floor}-post floor and carry no verdict.</div>`;
+  }
+
+  /* 3 · Top posts. */
+  let topHtml = "";
+  if (!d.waiting && topPosts.length) {
+    const items = topPosts.map((p, i) => {
+      const dims = p.dims || {};
+      const tags = [labPretty("kind", dims.kind), labPretty("account", dims.account), labPretty("cashtag_tier", dims.cashtag_tier)].filter(x => x !== "—").join(" · ");
+      return `<div class="lab-top-row">
+        <span class="lab-top-rank">${i + 1}</span>
+        <div class="lab-top-main">
+          <div class="lab-top-dims">${esc(tags)}</div>
+          <div class="lab-top-id mono">${esc(p.post_id || "—")}</div>
+        </div>
+        <div class="lab-top-metrics">
+          <span><b>${fmtNum(p.impressions)}</b><span class="sub"> seen</span></span>
+          <span><b>${fmtNum(p.likes)}</b><span class="sub"> likes</span></span>
+          <span><b>${fmtNum(p.replies)}</b><span class="sub"> replies</span></span>
+        </div>
+      </div>`;
+    }).join("");
+    topHtml = `<div class="section">Top posts <span class="cnt">${topPosts.length}</span></div>
+      <div class="card lab-top">${items}</div>`;
+  }
+
+  v.innerHTML = headerHtml + waitingHtml + boardHtml + reachHtml + topHtml;
+};
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */
 const MAI_SETTING_FIELDS = [   /* [key, kind, label, note, min, max] — bounds mirror the bot's */
