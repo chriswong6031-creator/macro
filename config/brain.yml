@@ -83,6 +83,51 @@ token_ceilings:
 # ── Tier resolver cache TTL ───────────────────────────────────────────────────
 tier_cache_ttl_seconds: 60
 
+# ── Deep Research mode (MNZ-W6b) ─────────────────────────────────────────────
+# mode='research' forces the pro lane, raises the tool budget, and prepends a
+# structured-report directive to the system prompt.  Pro-eligibility gated:
+# requires pro quota limit > 0 AND pro quota remaining > 0 (same ledger as a
+# normal Pro turn — no new quota bucket).
+research:
+  tool_budget: 20
+  max_tokens: 8000   # token ceiling note: billed against pro lane ceiling
+
+# ── Chart-command bus allowlists (MNZ-W6b) ───────────────────────────────────
+# Client-executed tools offered ONLY when context.page == 'terminal'.
+# The server emits SSE 'command' events; it performs no filesystem/network action.
+chart_commands:
+  timeframes:
+    - 1m
+    - 5m
+    - 15m
+    - 30m
+    - 1h
+    - 4h
+    - D
+    - 3D
+    - W
+    - 1M
+  indicators:
+    - ema
+    - rsi
+    - stochrsi
+    - macd
+    - bb
+    - vwap
+    - vol
+    - supertrend
+    - ichimoku
+    - adx
+    - cvd
+    - squeeze
+  detection_kinds:
+    - trendlines
+    - fib
+    - sr
+    - mtfa
+    - clear
+    - clearAll
+
 # ── Supabase thread store table names ────────────────────────────────────────
 thread_tables:
   threads: brain_threads

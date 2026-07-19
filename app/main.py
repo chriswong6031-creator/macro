@@ -552,6 +552,7 @@ class BrainChatRequest(BaseModel):
     thread_id: str | None = Field(None, description="Optional thread id for conversation continuity")
     history: list[dict] | None = Field(None, description="Client-sent fallback history (max 12 turns; used only when thread store is absent)")
     context: dict | None = Field(None, description="Optional page/symbol context hint")
+    mode: str = Field("chat", description="'chat' (default) or 'research' (W6b Deep Research — forces pro lane, raises tool budget, structured multi-section cited report; requires pro quota)")
 
 
 _SSE_BRAIN_HEADERS = {
@@ -579,7 +580,10 @@ def brain_chat(body: BrainChatRequest, user: dict = Depends(require_user)):
     HTTP 402 when quota exhausted.
     """
     gw = _brain_module()
-    lane = body.lane if body.lane in ("fast", "pro") else "fast"
+    # mode validation: only 'chat' and 'research' are accepted
+    mode = body.mode if body.mode in ("chat", "research") else "chat"
+    # research mode forces pro lane (gateway also enforces this, but be explicit here)
+    lane = "pro" if mode == "research" else (body.lane if body.lane in ("fast", "pro") else "fast")
     user_id = user.get("id") or user.get("email") or "unknown"
 
     # History cap: max 12 turns (24 messages)
@@ -593,6 +597,7 @@ def brain_chat(body: BrainChatRequest, user: dict = Depends(require_user)):
         history=history,
         context=body.context,
         root=REPO,
+        mode=mode,
     )
 
     if result.get("quota_exhausted"):
@@ -614,7 +619,8 @@ def brain_stream(body: BrainChatRequest, user: dict = Depends(require_user)):
         {"type":"done","citations":[...],"quota":{...},"usage":{...},"filtered":false,"degraded":false,"is_context_only":true}
     """
     gw = _brain_module()
-    lane = body.lane if body.lane in ("fast", "pro") else "fast"
+    mode = body.mode if body.mode in ("chat", "research") else "chat"
+    lane = "pro" if mode == "research" else (body.lane if body.lane in ("fast", "pro") else "fast")
     user_id = user.get("id") or user.get("email") or "unknown"
     history = (body.history or [])[:24]
 
@@ -627,6 +633,7 @@ def brain_stream(body: BrainChatRequest, user: dict = Depends(require_user)):
             history=history,
             context=body.context,
             root=REPO,
+            mode=mode,
         )
 
     return StreamingResponse(_gen(), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
