@@ -46,6 +46,19 @@ body { background: var(--bg); color: var(--text);
 
 /* ── conversation column ── */
 #chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; position: relative; }
+/* Empty conversation: greeting + suggestions + composer sit together in the vertical
+   center (Perplexity-style new-chat), not a lonely column with the input marooned far below. */
+#chat-main.is-empty { justify-content: center; }
+#chat-main.is-empty #msg-list { flex: 0 1 auto; overflow: visible; padding-bottom: 4px; }
+#chat-main.is-empty #empty-state { flex: 0 1 auto; padding: 0 20px; }
+#chat-main.is-empty #composer-wrap { background: none; }
+#chat-main.is-empty #chat-footer { padding-top: 6px; }
+/* On short/narrow viewports the empty-state group is taller than the screen — don't
+   center (it clips the orb under the nav); flow from the top and let it scroll. */
+@media (max-width: 760px), (max-height: 720px) {
+  #chat-main.is-empty { justify-content: flex-start; }
+  #chat-main.is-empty #msg-list { flex: 1 1 auto; overflow-y: auto; padding-top: 22px; }
+}
 #msg-list { flex: 1; overflow-y: auto; padding: 26px 20px 8px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
 @media (min-width: 900px) { #msg-list { padding: 30px max(24px, calc((100% - 748px) / 2)) 10px; } }
 .msg { display: flex; flex-direction: column; gap: 4px; max-width: 86%; }
@@ -489,7 +502,7 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
   </div>
 
   <!-- center: messages + composer -->
-  <div id="chat-main">
+  <div id="chat-main" class="is-empty">
 
     <!-- auth gate — shown when signed out -->
     <div id="auth-gate" style="display:none">
@@ -854,6 +867,9 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
       }).catch(function () {});
   }
   function renderThreads(threads) {
+    /* A brand-new user has no threads — collapse the rail so the conversation owns the
+       space instead of sitting beside an empty column. The rail returns once threads exist. */
+    document.getElementById('thread-rail').classList.toggle('collapsed', !threads.length);
     if (!threads.length) {
       threadEmpty.style.display = '';
       return;
@@ -906,11 +922,13 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
     });
     emptyState.style.display = '';
     upgradeCard.style.display = 'none';
+    document.getElementById('chat-main').classList.add('is-empty');
     annotations = [];
     renderAnnotations();
   }
   function appendMessage(role, content, citations) {
     emptyState.style.display = 'none';
+    document.getElementById('chat-main').classList.remove('is-empty');
     var div = document.createElement('div');
     div.className = 'msg ' + role;
     var bubble = document.createElement('div');
