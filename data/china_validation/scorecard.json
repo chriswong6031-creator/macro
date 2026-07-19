@@ -1,7 +1,7 @@
 {
   "schema": "china_validation.v1",
   "is_context_only": true,
-  "generated_utc": "2026-07-18T09:47:28.432566+00:00",
+  "generated_utc": "2026-07-19T09:50:47.161865+00:00",
   "fdr_alpha": 0.1,
   "horizons": [
     5,
@@ -18,15 +18,15 @@
       "n_obs": 8,
       "by_horizon": {
         "5": {
-          "mean_ic": 0.2459,
-          "ic_ir": 1.161,
-          "t_hac": 2.894,
-          "p_hac": 0.0038,
+          "mean_ic": 0.2454,
+          "ic_ir": 1.16,
+          "t_hac": 2.888,
+          "p_hac": 0.0039,
           "hit": 0.75,
           "n": 8,
           "incremental": {
-            "surviving_frac": 0.732,
-            "ic_delta": -0.0658
+            "surviving_frac": 0.73,
+            "ic_delta": -0.0662
           }
         },
         "10": {

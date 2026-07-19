@@ -1,5 +1,5 @@
 {
   "cache_max": "2026-07-17",
-  "last_checked": "2026-07-18T09:44:50+00:00",
+  "last_checked": "2026-07-19T09:47:38+00:00",
   "_comment": "HK freshness sentinel regression baseline. Updated each nightly run with the latest cache_max (high-water mark of data/hk_breadth/_closes_cache.parquet index.max()). A decrease triggers the regression check (W0a 2026-07-08). Seeded 2026-07-08 with 2026-07-02 = the incident value (stale cache frozen at Jul-02); future nightly maxes must be >= 2026-07-02 or regression fires."
 }

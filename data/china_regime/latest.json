@@ -247,7 +247,7 @@
     "confidence": "high",
     "confidence_zh": "\u9ad8",
     "strength": 1.73,
-    "dominance_ratio": 2.02,
+    "dominance_ratio": 1.96,
     "agreement": 1.0,
     "runner_up": "china_stimulus",
     "runner_up_label": "Stimulus tape",
@@ -292,8 +292,8 @@
         "label": "Stimulus tape",
         "label_zh": "\u523a\u6fc0\u884c\u60c5",
         "family": "growth",
-        "projection": -0.86,
-        "strength": 0.86,
+        "projection": -0.88,
+        "strength": 0.88,
         "direction": "stimulus-off \u2014 CSI300, brokers, property & copper/rebar lead down"
       },
       {
@@ -355,10 +355,10 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.293,
-      "roro_raw": -0.301,
+      "roro": -0.301,
+      "roro_raw": -0.311,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 2.508,
+      "china_roro_copper_gold": 2.431,
       "china_roro_breadth": -0.414,
       "china_roro_southbound": -0.557,
       "china_roro_m1_m2": -0.813,
@@ -372,7 +372,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 2.508,
+          "value": 2.431,
           "lean": "risk-on"
         },
         {
@@ -2088,7 +2088,7 @@
           -0.103,
           -0.025,
           -0.081,
-          -0.293
+          -0.301
         ]
       },
       "recession": {
@@ -6828,7 +6828,7 @@
           48.7,
           56.7,
           50.9,
-          29.0
+          28.3
         ]
       }
     },
@@ -6836,17 +6836,17 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated recession/drawdown gauges; never feeds china_axes / china_regime / china_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 29,
+    "fe_score": 28,
     "band": "Fear",
     "band_zh": "\u6050\u60e7",
-    "roro": -0.293,
+    "roro": -0.301,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 2.508,
+        "value": 2.431,
         "pct": 99,
         "lean": "risk-on"
       },

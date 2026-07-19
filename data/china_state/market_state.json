@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
-  "as_of": "2026-07-18",
-  "generated_utc": "2026-07-18T09:56:23Z",
+  "as_of": "2026-07-19",
+  "generated_utc": "2026-07-19T10:00:02Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -89,7 +89,7 @@
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
   "policy": {
-    "as_of": "2026-07-18",
+    "as_of": "2026-07-19",
     "policy_impulse": "targeted_support",
     "transmission_channel": [
       "fiscal_or_structural",
@@ -130,15 +130,15 @@
     ],
     "staleness": {
       "per_source_days": {
-        "lpr": 26,
-        "rrr": 437,
-        "fr007": 1,
-        "communiques": 81
+        "lpr": 27,
+        "rrr": 438,
+        "fr007": 2,
+        "communiques": 82
       }
     }
   },
   "rotation": {
-    "as_of": "2026-07-18",
+    "as_of": "2026-07-19",
     "sector_phase_distribution": {
       "Bottoming": 39,
       "Topping": 7,
@@ -162,7 +162,7 @@
       "LAGGARD: Agriculture ranked #29/31 (-26.3%) — among the weakest this leg"
     ],
     "ths_heat": {
-      "as_of": "2026-07-18",
+      "as_of": "2026-07-19",
       "basket_count": 237,
       "above_200d_pct": 38.8,
       "hot_baskets": [
@@ -231,10 +231,10 @@
     ],
     "conditions": {
       "roro": {
-        "roro": -0.293,
-        "roro_raw": -0.301,
+        "roro": -0.301,
+        "roro_raw": -0.311,
         "roro_state": "neutral",
-        "china_roro_copper_gold": 2.508,
+        "china_roro_copper_gold": 2.431,
         "china_roro_breadth": -0.414,
         "china_roro_southbound": -0.557,
         "china_roro_m1_m2": -0.813,
@@ -248,7 +248,7 @@
             "key": "copper_gold",
             "name_en": "Copper / Gold",
             "name_zh": "铜／金 比",
-            "value": 2.508,
+            "value": 2.431,
             "lean": "risk-on"
           },
           {
@@ -391,7 +391,7 @@
   "external": {
     "yield_curve": {
       "as_of": "2026-07-17",
-      "staleness_days": 1,
+      "staleness_days": 2,
       "cn_10y": 1.7404,
       "cn_2y": 1.2645,
       "cn_slope_10_2": 0.4759,
@@ -399,7 +399,7 @@
     },
     "cgb_curve": {
       "as_of": "2026-07-17",
-      "staleness_days": 1,
+      "staleness_days": 2,
       "m3": 1.091,
       "y1": 1.1441,
       "y5": 1.4466,
@@ -408,11 +408,15 @@
       "slope_10y_3m": 0.6494
     },
     "usdcnh": {
-      "quote": 6.7525,
+      "quote": 6.7535,
       "chg_pct": 0.4,
-      "as_of": "Jul 17, 2026"
+      "as_of": "Jul 19, 2026"
     },
-    "dxy": null
+    "dxy": {
+      "quote": 100.75,
+      "chg": 1.2,
+      "label": "DXY"
+    }
   },
   "allocation": {
     "as_of": "2026-07-17",
@@ -459,7 +463,6 @@
   "data_gaps": [
     "participation: zt_breadth:null on 2026-07-16",
     "participation: northbound:DEAD post-2024-08-16 SLF-050",
-    "participation: snapshot_staleness:published row 2026-07-16 is 1d behind tape tail 2026-07-17; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag",
-    "external: DXY not in current forex/latest.json (no dedicated store)"
+    "participation: snapshot_staleness:published row 2026-07-16 is 1d behind tape tail 2026-07-17; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
   ]
 }
