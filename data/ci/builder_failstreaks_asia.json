@@ -1,5 +1,30 @@
 {
   "schema": "builder_failstreaks.v1",
-  "updated_utc": "2026-07-19T10:00:24Z",
-  "builders": {}
+  "updated_utc": "2026-07-20T11:20:45Z",
+  "builders": {
+    "news": {
+      "streak": 1,
+      "first_fail_utc": "2026-07-20",
+      "last_fail_utc": "2026-07-20",
+      "last_run_utc": "2026-07-20",
+      "last_rc": 137,
+      "label": "china news powerhouse (build_china_news)"
+    },
+    "sector_cycles": {
+      "streak": 1,
+      "first_fail_utc": "2026-07-20",
+      "last_fail_utc": "2026-07-20",
+      "last_run_utc": "2026-07-20",
+      "last_rc": 137,
+      "label": "china sector cycles (build_china_sector_cycles)"
+    },
+    "validation": {
+      "streak": 1,
+      "first_fail_utc": "2026-07-20",
+      "last_fail_utc": "2026-07-20",
+      "last_run_utc": "2026-07-20",
+      "last_rc": 137,
+      "label": "china validation scorecard (build_china_validation)"
+    }
+  }
 }

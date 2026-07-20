@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-07-20T10:25:55+00:00",
+  "checked_at": "2026-07-20T11:07:48+00:00",
   "expected_session": "2026-07-20",
   "stores": {
     "cache": {
-      "asof": "2026-07-17",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-07-20",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "bellwether": {
       "asof": "2026-07-20",
@@ -37,7 +37,7 @@
   "regression": {
     "ok": true,
     "prev_cache_max": "2026-07-17",
-    "curr_cache_max": "2026-07-17",
+    "curr_cache_max": "2026-07-20",
     "note": null
   },
   "verdict": "degraded",

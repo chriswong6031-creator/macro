@@ -3,30 +3,30 @@
   "authority": {
     "tier": "context_only"
   },
-  "built": "2026-07-19T10:00:01.889701+00:00",
-  "asof": "2026-07-17",
+  "built": "2026-07-20T11:20:21.436150+00:00",
+  "asof": "2026-07-20",
   "phase": "POLICY_PUT",
-  "confidence": 0.75,
+  "confidence": 0.667,
   "evidence": [
     "turnover_z20_null",
-    "qvix_z_elevated (1.98)"
+    "qvix_z_elevated (1.81)"
   ],
   "contradictions": [],
   "falsifiers": [
     {
-      "id": "POLI_PP_LUP_RECOVERING",
-      "expr": "lup5 > 1.0",
+      "id": "REPA_RP_LDN_LOW",
+      "expr": "ldn5 < 1.0",
       "horizon_d": 10
     },
     {
-      "id": "POLI_PP_TOZ_STABILISE",
-      "expr": "turnover_z20 > -1.0",
+      "id": "REPA_RP_LUP_LOW",
+      "expr": "lup5 < 2.0",
       "horizon_d": 10
     },
     {
-      "id": "POLI_PP_LDN_FADING",
-      "expr": "ldn5 < 2.0",
-      "horizon_d": 5
+      "id": "REPA_RP_TOZ_STABLE",
+      "expr": "turnover_z20 > -1.5",
+      "horizon_d": 10
     }
   ],
   "allowed_actions": [
@@ -259,6 +259,11 @@
       "note": "Ongoing assessment \u2014 accruing"
     }
   ],
-  "ledger_summary": {},
+  "ledger_summary": {
+    "total_graded": 22712,
+    "held": 8042,
+    "fired": 1955,
+    "indeterminate": 12715
+  },
   "caveat": "regime_history is a current-best-estimate non-PIT series; policy_impulse for HISTORICAL rows is per-date reconstructed from ACTUAL RRR and LPR-1Y series deltas (PBoC data) using a 90-calendar-day trailing window: a date is marked 'easing' when at least one RRR cut or LPR-1Y cut occurred in the prior 90 days (direction from series deltas only, not from event titles or communique text); dates before the first PBoC series observation are set to null (data_gap, no fabrication); the LIVE TAIL only (dates beyond the last PBoC data point) uses the live engine snapshot impulse (may include 'targeted_support' or 'market_rescue' labels not reconstructable from rate-series deltas); all outputs are context_only (CN-SYS-R1)"
 }

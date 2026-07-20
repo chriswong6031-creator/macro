@@ -29,8 +29,8 @@
   "data_gaps": [
     "zt_breadth:null on 2026-07-16",
     "northbound:DEAD post-2024-08-16 SLF-050",
-    "snapshot_staleness:published row 2026-07-16 is 1d behind tape tail 2026-07-17; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "snapshot_staleness:published row 2026-07-16 is 4d behind tape tail 2026-07-20; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
   ],
   "backfill": false,
-  "snapshot_note": "core legs null on 2026-07-17; publishing last fully-populated row (2026-07-16)"
+  "snapshot_note": "core legs null on 2026-07-20; publishing last fully-populated row (2026-07-16)"
 }

@@ -1,1 +1,1 @@
-{"schema":"hk_1d_velocity_desk.v1","as_of":"2026-07-17","rows":[],"n_rows":0,"authority":"display_only"}
+{"schema":"hk_1d_velocity_desk.v1","as_of":"2026-07-20","rows":[{"ticker":"2382.HK","name":"Sunny Optical","name_zh":"\u821c\u5b87\u5149\u5b66\u79d1\u6280","rank":1,"confluence_n":1,"chips":{"1d_pure":true,"d1_macd_xup_bars":0.0,"d1_stoch_xup_bars":3.0,"from_os":true,"beta_role":"amplifier"},"close":54.8,"sector":"Internet & Tech","edge_z":-0.34,"authority":"display_only"}],"n_rows":1,"authority":"display_only"}
