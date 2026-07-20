@@ -1,0 +1,92 @@
+name: seo-director
+# Weekly SEO audit of the rendered site (Beacon dept, engine.marketing.seo_director).
+# Runs Sunday 15:00 UTC — off the nightly (daily) and weekly batch (Saturday 14:00 UTC) lanes.
+# Manual dispatch always runs regardless of the var gate.
+on:
+  schedule:
+    - cron: "0 15 * * 0"    # Sunday 15:00 UTC — clear of nightly + Saturday batch
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Share the pipeline-batch lane with weekly/backfill; never blocks the daily pipeline.
+  group: pipeline-batch
+  cancel-in-progress: false
+
+jobs:
+  seo-audit:
+    # Gate: manual dispatch always runs; scheduled runs only when var is true.
+    # Unset var = off / dark (safe default — won't run on first deploy until operator enables).
+    if: github.event_name == 'workflow_dispatch' || vars.SEO_DIRECTOR_ENABLED == 'true'
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - run: pip install -r requirements.txt
+
+      - name: run SEO director audit
+        run: |
+          python -m engine.marketing.seo_director --root .
+          echo "seo_director: audit complete"
+
+      - name: commit data/marketing/seo artifacts
+        if: always()
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Stage ONLY the seo artifact directory — never touch other paths.
+          git add data/marketing/seo 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "no seo audit changes to commit"
+            exit 0
+          fi
+
+          git commit -m "seo-director: weekly audit $(date -u +%F)"
+
+          # Retry-rebase push loop with --autostash (mirrors codex-research.yml push mechanics).
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            # Remove any untracked files that shadow origin/main paths (stranded-data guard).
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "seo-director: pushed audit artifacts on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "seo-director: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          echo "::warning::seo-director: could not push audit artifacts after 5 attempts (non-fatal)"
+          exit 0
+
+      - name: summary
+        if: always()
+        run: |
+          if [ -f data/marketing/seo/seo_scorecard.json ]; then
+            python -c "
+import json
+sc = json.load(open('data/marketing/seo/seo_scorecard.json'))
+print('health_score:', sc.get('health_score'))
+counts = sc.get('issue_counts_by_severity', {})
+print('issues:', counts)
+deltas = sc.get('deltas_vs_prior')
+if deltas:
+    print('deltas_vs_prior:', deltas)
+" 2>/dev/null || true
+          fi
