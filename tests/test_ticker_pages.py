@@ -39,6 +39,9 @@ from scripts.build_ticker_pages import (  # noqa: E402
     _build_why_moving,
     _build_ownership,
     _build_financials,
+    _build_ladder,
+    _day_change,
+    _range52,
 )
 
 
@@ -788,13 +791,19 @@ class TestBuildPageContext:
         # Allow some failures from optional/computed fields — flag only if many
         assert len(failures) == 0, f"EN keys without ZH: {failures[:5]}"
 
-    def test_chart_svg_present(self, tmp_path):
-        """Chart SVG should be non-None for a full-candle OHLC fixture."""
+    def test_chart_ctx_is_embed(self, tmp_path):
+        """v6: chart ctx flags the Terminal embed (no SSR SVG is rendered)."""
         agg, per = self._make_agg_and_per(tmp_path)
         ctx = build_page_context("AAPL", "Apple Inc.", "Information Technology", per, agg, "2026-07-18 00:00 UTC")
         chart = ctx.get("chart") or {}
-        # SVG may be None if engine.marketing unavailable in test env — just check the key exists
-        assert "svg" in chart
+        assert chart.get("embed") is True
+        assert "svg" not in chart
+        # ladder ctx is present for a rich fixture (entry_signal levels exist)
+        assert ctx.get("ladder") is not None
+        # hero gains day-change + 52w range in v6
+        hero = ctx.get("hero") or {}
+        assert "chg" in hero
+        assert "range52" in hero
 
     def test_staleness_flag(self, tmp_path):
         """Stale blob sets stale=True when all aggregate dates are also stale."""
@@ -986,14 +995,44 @@ def _rich_ctx() -> dict:
             "arch_label_zh": "优质成长",
             "mktcap_label_en": "Large Cap",
             "mktcap_label_zh": "大盘股",
-            "price": {"close": 215.32, "chg_pct": 1.2},
+            "price": "215.32",
+            "chg": {"abs": "+$2.55", "pct": "+1.20%", "pos": True},
+            "range52": {"lo": "$164", "hi": "$220", "pos_pct": 92.5},
         },
-        "stats": [
-            {"label_en": "Market Cap", "label_zh": "市值", "value": "$3.3T", "sub_en": "", "sub_zh": ""},
-            {"label_en": "P/E Ratio", "label_zh": "市盈率", "value": "32×", "sub_en": "", "sub_zh": ""},
-            {"label_en": "Revenue TTM", "label_zh": "营收TTM", "value": "$391B", "sub_en": "", "sub_zh": ""},
-            {"label_en": "EPS TTM", "label_zh": "每股收益TTM", "value": "$6.57", "sub_en": "", "sub_zh": ""},
-        ],
+        "stats": {
+            "price": "215.32",
+            "mktcap": "$3.3T",
+            "trailing_pe": "32×",
+            "forward_pe": "28×",
+            "eps": "$6.57",
+            "beta": "1.28",
+            "beta_en": "moves with the market",
+            "beta_zh": "与大盘同步",
+            "div_yield": "0.5%",
+            "short_pct_float": "0.8% of float",
+            "volume_en": "58M/day",
+            "volume_zh": "5800万/日",
+            "hv_pctile": "48th pctile",
+            "next_earnings": "2026-07-31 (13d)",
+            "range_52w_en": "2.1% below 52-week high",
+            "range_52w_zh": "低于52周高点2.1%",
+        },
+        "ladder": {
+            "levels": [
+                {"kind": "row", "sort": 220.0, "price": "$220", "cls": "wall",
+                 "label_en": "Call wall", "label_zh": "看涨期权墙",
+                 "note_en": "rallies tend to stall here", "note_zh": "上攻常在此受阻", "dist": "+2.2%"},
+                {"kind": "row", "sort": 215.32, "price": "$215.32", "cls": "now",
+                 "label_en": "Price now", "label_zh": "当前价格",
+                 "note_en": "in a healthy trend", "note_zh": "趋势健康", "dist": ""},
+                {"kind": "band", "sort": 215.0, "price": "$210 – $215"},
+                {"kind": "row", "sort": 200.0, "price": "$200", "cls": "stop",
+                 "label_en": "Exit if broken", "label_zh": "跌破离场",
+                 "note_en": "the engine walks away", "note_zh": "引擎就此离场", "dist": "-7.1%"},
+            ],
+            "headline_en": "In buy zone",
+            "headline_zh": "处于买入区间",
+        },
         "chart": chart_obj,
         "gauges": {
             "valuation": {"pct": 62.0, "verdict_en": "Cheap vs sector", "verdict_zh": "相对行业便宜"},
@@ -1182,27 +1221,30 @@ class TestTemplateRender:
         ctx = _rich_ctx()
         html = tmpl.render(**ctx)
         expected_sections = [
-            "Key Statistics",
-            "Price Chart",
-            "Snapshot Gauges",
+            "Price chart",
+            "Trade levels",
+            "Key facts",
             "Performance",
             "Seasonality",
             "Financials",
             "Valuation",
             "Earnings",
             "Technicals",
-            "Options Positioning",
-            "Why Is It Moving",
+            "Options positioning",
+            "Why is it moving",
             "Ownership",
             "Peers",
             "Themes",
-            "Signal History",
-            "Company Profile",
-            "Factor Profile",
-            "Recent News",
+            "Signal history",
+            "Company profile",
+            "Style DNA",
+            "Recent news",
         ]
         for section in expected_sections:
             assert section in html, f"Missing section: {section}"
+        # v6 removed sections must be gone
+        for gone in ("Snapshot Gauges", "Key Statistics", "Factor Profile"):
+            assert gone not in html, f"Removed v5 section leaked back: {gone}"
 
     def test_ticker_template_section_order(self):
         """Sections must appear in the correct order in rendered output.
@@ -1213,22 +1255,23 @@ class TestTemplateRender:
         ctx = _rich_ctx()
         html = tmpl.render(**ctx)
         # Use section id anchors — these appear once in the body, in section order
-        # Yahoo-layout main-column order (v5): chart -> stats -> performance ->
-        # technicals -> earnings -> valuation -> financials -> gauges -> why ->
-        # options -> ownership -> history (rail sections excluded)
+        # v6 order: full-width chart -> main column (performance ... news) ->
+        # rail (levels/facts/seasonality/themes/peers after the main column)
         order = [
             'id="chart"',
-            'id="stats"',
             'id="performance"',
             'id="technicals"',
             'id="earnings"',
             'id="valuation"',
             'id="financials"',
-            'id="gauges"',
             'id="why"',
             'id="options"',
             'id="ownership"',
             'id="history"',
+            'id="profile"',
+            'id="news"',
+            'id="levels"',
+            'id="facts"',
         ]
         positions = [html.index(s) for s in order]
         assert positions == sorted(positions), (
@@ -1253,11 +1296,11 @@ class TestTemplateRender:
         ctx["options"] = None
         ctx["ownership"] = None
         html = tmpl.render(**ctx)
-        assert "Recent News" not in html
-        assert "Options Positioning" not in html
+        assert "Recent news" not in html
+        assert "Options positioning" not in html
         # Page still has core content
-        assert "Key Statistics" in html
-        assert "Snapshot Gauges" in html
+        assert "Key facts" in html
+        assert "Trade levels" in html
 
     def test_ticker_template_stale_banner(self):
         """Stale flag adds a noindex meta tag."""
@@ -1297,14 +1340,13 @@ class TestTemplateRender:
                            canonical_url="https://mastermind-x.com/stocks/index.html")
         assert "validated" not in html.lower()
 
-    def test_ticker_template_beta_gauge_no_svg_math(self):
-        """Beta gauge must not contain invalid Jinja cos/sin artifacts in output."""
+    def test_ticker_template_beta_in_key_facts(self):
+        """Beta renders in the Key facts rail (v6 home) with no math artifacts."""
         env = _jinja_env()
         tmpl = env.get_template("ticker.html.j2")
         ctx = _rich_ctx()
-        ctx["gauges"]["beta"] = {"beta": 1.5, "label_en": "High beta", "label_zh": "高贝塔"}
+        ctx["stats"]["beta"] = "1.5"
         html = tmpl.render(**ctx)
-        # Must contain beta value in output, not a render error token
         assert "1.5" in html
         assert "cos(" not in html
         assert "sin(" not in html
@@ -1417,27 +1459,131 @@ class TestFinancialsEmptyGuard:
         assert result is not None
 
 
-class TestTemplateChartMount:
-    """(e) Rendered rich page contains window.loadInteractiveChart and id=chart-mount."""
+class TestChartEmbed:
+    """(e) v6: the chart is a Mastermind Terminal /embed/chart iframe."""
 
-    def test_chart_mount_function_defined(self):
+    def test_embed_iframe_present_with_symbol(self):
         env = _jinja_env()
         tmpl = env.get_template("ticker.html.j2")
         ctx = _rich_ctx()
-        # Provide chart with svg so the chart section renders
-        ctx["chart"] = {"svg": "<svg><text>Chart</text></svg>", "svg_present": True, "has_candles": True}
         html = tmpl.render(**ctx)
-        assert "loadInteractiveChart" in html, "loadInteractiveChart function missing from rendered page"
-        assert 'id="chart-mount"' in html, "id=chart-mount div missing from rendered page"
+        assert 'id="chart-embed"' in html, "chart embed iframe missing"
+        assert "app.mastermind-x.com/embed/chart?symbol=AAPL" in html, "embed URL missing/incorrect"
+        assert 'id="chart-frame"' in html
+        # src is set by JS from data-embed (theme/lang aware) — never hardcoded
+        assert 'data-embed=' in html
 
-    def test_chart_button_wires_correct_function(self):
+    def test_embed_has_fallback_terminal_link(self):
         env = _jinja_env()
         tmpl = env.get_template("ticker.html.j2")
         ctx = _rich_ctx()
-        ctx["chart"] = {"svg": "<svg><text>Chart</text></svg>", "svg_present": True, "has_candles": True}
         html = tmpl.render(**ctx)
-        # The button onclick should call loadInteractiveChart
-        assert "onclick=\"loadInteractiveChart(this)\"" in html or "loadInteractiveChart" in html
+        assert "chart-fallback" in html
+        assert "app.mastermind-x.com/terminal?sym=AAPL" in html
+        assert "<noscript>" in html
+
+    def test_no_legacy_chart_machinery(self):
+        """The v5 SSR-SVG + lazy LWC loader must be fully gone."""
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        ctx = _rich_ctx()
+        html = tmpl.render(**ctx)
+        assert "loadInteractiveChart" not in html
+        assert "chart-mount" not in html
+        assert "lightweight-charts-v5.js" not in html
+
+
+class TestLadderTemplate:
+    """v6 Trade-levels ladder — collision-free vertical levels, one stop only."""
+
+    def test_ladder_renders_rows_and_band(self):
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        ctx = _rich_ctx()
+        html = tmpl.render(**ctx)
+        assert 'id="levels"' in html
+        assert "Trade levels" in html
+        assert "Call wall" in html
+        assert "Exit if broken" in html
+        assert "$210 – $215" in html  # buy-zone band
+        assert "not advice" in html   # honesty footer
+
+    def test_ladder_absent_falls_back_to_wall_tiles(self):
+        """No ladder → levels section gone; options walls surface as tiles instead."""
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        ctx = _rich_ctx()
+        ctx["ladder"] = None
+        html = tmpl.render(**ctx)
+        assert 'id="levels"' not in html
+        # options fixture has call_wall/put_wall → tiles appear when no ladder
+        assert "Call wall" in html
+        assert "Put wall" in html
+
+    def test_ladder_one_stop_only(self):
+        """The old two-stop confusion (technicals stop vs rail trail stop) must not return:
+        exactly one 'Exit if broken' row, and the Technicals module carries no levels."""
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        ctx = _rich_ctx()
+        html = tmpl.render(**ctx)
+        assert html.count("Exit if broken") == 1
+        # legacy technicals level cards must not render even though ctx still has the keys
+        assert "Buy zone</div>" not in html
+        assert "Don't chase above</div>" not in html
+
+
+class TestLadderBuilder:
+    """_build_ladder unit behavior."""
+
+    def _blob(self) -> dict:
+        return {
+            "entry_signal": {
+                "buy_zone": {"low": 210.0, "high": 215.0},
+                "chase_above": 225.0,
+                "stop": 200.0,
+                "headline": "In buy zone",
+                "headline_zh": "处于买入区间",
+            },
+        }
+
+    def test_ladder_sorted_desc_and_single_stop(self):
+        lad = _build_ladder(215.32, self._blob(),
+                            walls={"call_wall": 220.0, "put_wall": 205.0},
+                            signals={"trail_stop": 208.0}, stance_class="pos")
+        assert lad is not None
+        sorts = [i["sort"] for i in lad["levels"]]
+        assert sorts == sorted(sorts, reverse=True), "ladder must be sorted high→low"
+        stops = [i for i in lad["levels"] if i.get("cls") == "stop"]
+        assert len(stops) == 1
+        # trail_stop (208) wins over entry_signal.stop (200)
+        assert stops[0]["price"] == "$208"
+
+    def test_ladder_price_row_present_with_stance_note(self):
+        lad = _build_ladder(215.32, self._blob(), walls={}, signals={}, stance_class="warn")
+        assert lad is not None
+        now = [i for i in lad["levels"] if i.get("cls") == "now"]
+        assert len(now) == 1
+        assert now[0]["note_en"] == "stretched — be patient"
+
+    def test_ladder_none_without_levels(self):
+        assert _build_ladder(100.0, {}, walls={}, signals={}) is None
+        assert _build_ladder(None, self._blob(), walls={}, signals={}) is None
+
+    def test_ladder_junk_level_guard(self):
+        """Levels wildly away from price (bad data) are dropped."""
+        blob = {"entry_signal": {"stop": 2.0}}  # 98% below a $100 stock = junk
+        assert _build_ladder(100.0, blob, walls={}, signals={}) is None
+
+    def test_day_change_and_range52(self):
+        bars = [_make_candle_bar("2026-07-17", 210.0), _make_candle_bar("2026-07-18", 215.32)]
+        chg = _day_change(bars)
+        assert chg is not None and chg["pos"] is True
+        assert chg["pct"] == "+2.53%"
+        bars252 = [_make_candle_bar(f"2026-{(i//28)+1:02d}-{(i%28)+1:02d}", 150 + i * 0.3) for i in range(252)]
+        r52 = _range52(215.0, bars252)
+        assert r52 is not None
+        assert 0.0 <= r52["pos_pct"] <= 100.0
 
 
 class TestMainTagBalance:

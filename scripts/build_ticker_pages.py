@@ -393,6 +393,14 @@ def build_sitemap(existing_xml: str, stocks_entries: list[dict]) -> str:
 # Stance computation (v2 — prefers ladder state from stockdata blob)
 # ---------------------------------------------------------------------------
 
+def _trunc_words(s: str, limit: int) -> str:
+    """Truncate at a word boundary with an ellipsis — never mid-word."""
+    if not s or len(s) <= limit:
+        return s
+    cut = s[:limit].rsplit(" ", 1)[0].rstrip(" ,;:·—-")
+    return (cut or s[:limit]) + "…"
+
+
 def compute_stance(
     blob: dict | None,
     signals: dict | None = None,
@@ -428,7 +436,8 @@ def compute_stance(
                 inv_text_zh = _clean_str(entry.get("text_zh"))
                 stance_en_text = verdict if verdict else desc_en
                 stance_zh_text = verdict_zh if verdict_zh else desc_zh
-                return (stance_en_text, stance_zh_text, stance_key, inv_text[:120], inv_text_zh[:120])
+                return (stance_en_text, stance_zh_text, stance_key,
+                        _trunc_words(inv_text, 160), _trunc_words(inv_text_zh, 120))
 
             # Conviction band as fallback
             if band_en:
@@ -779,43 +788,6 @@ def load_per_ticker(site: Path, ticker: str) -> dict:
 # Chart rendering helper
 # ---------------------------------------------------------------------------
 
-def _render_chart(ticker: str, ohlc_bars: list, is_candle: bool, company_name: str) -> str | None:
-    """Render a 90-bar SVG chart. Returns None on any failure."""
-    try:
-        from engine.marketing.chart_render import render_chart_v2, render_signal_chart
-        bars = ohlc_bars[-90:] if len(ohlc_bars) >= 90 else ohlc_bars
-        if not bars:
-            return None
-        dates = [b[0] for b in bars]
-        if is_candle and len(bars[0]) >= 6:
-            o_arr = [float(b[1]) for b in bars]
-            h_arr = [float(b[2]) for b in bars]
-            l_arr = [float(b[3]) for b in bars]
-            c_arr = [float(b[4]) for b in bars]
-            vol_arr = [float(b[5]) for b in bars]
-            svg = render_chart_v2(
-                ticker, dates, o_arr, h_arr, l_arr, c_arr, vol_arr,
-                company_name=company_name, show_indicators=True, indicators=("volume", "macd"),
-                footer_cta="Research dossier · regenerated nightly",
-            )
-            # Strip fixed px dimensions (viewBox remains) so the SVG is fluid
-            # in ANY container — the mobile-bleed class of bug dies here.
-            return re.sub(r'(<svg[^>]*?)\s+width="\d+"\s+height="\d+"', r"\1", svg, count=1)
-        else:
-            # Fallback: line chart via render_signal_chart
-            if len(bars[0]) >= 6:
-                c_arr = [float(b[4]) for b in bars]
-            else:
-                c_arr = [float(b[1]) for b in bars]
-            return render_signal_chart(
-                ticker, dates, c_arr,
-                marker_index=len(c_arr) - 1,
-            )
-    except Exception as e:  # noqa: BLE001
-        log.debug("chart render failed for %s: %s", ticker, e)
-        return None
-
-
 # ---------------------------------------------------------------------------
 # Section builders (pure; one per context key)
 # ---------------------------------------------------------------------------
@@ -888,10 +860,35 @@ def _px(v: float) -> str:
     return f"${v:,.0f}" if v >= 100 else f"${v:,.2f}"
 
 
-def build_level_rail(price: Any, bars: list, blob: dict | None, walls: dict | None = None, signals: dict | None = None) -> dict | None:
-    """Signature hero component: the engine's working levels pinned on the
-    52-week price axis (current price, trail stop, buy zone, don't-chase,
-    call/put walls). Renders only when the axis and >=2 marks exist."""
+def _bar_close(bar: Any) -> float | None:
+    try:
+        return float(bar[4]) if len(bar) >= 6 else float(bar[1])
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
+def _day_change(bars: list) -> dict | None:
+    """Last close vs previous close → hero day-change pill."""
+    try:
+        if not bars or len(bars) < 2:
+            return None
+        last, prev = _bar_close(bars[-1]), _bar_close(bars[-2])
+        if last is None or prev is None or prev <= 0:
+            return None
+        diff = last - prev
+        pct = diff / prev * 100.0
+        sign = "+" if diff >= 0 else "-"
+        return {
+            "abs": f"{sign}${abs(diff):,.2f}",
+            "pct": f"{sign}{abs(pct):.2f}%",
+            "pos": diff >= 0,
+        }
+    except Exception:  # noqa: BLE001 — decorative, never fatal
+        return None
+
+
+def _range52(price: Any, bars: list) -> dict | None:
+    """52-week low/high + position of the current price for the hero range bar."""
     try:
         p = _lvl_float(price)
         if not p or not bars:
@@ -911,67 +908,101 @@ def build_level_rail(price: Any, bars: list, blob: dict | None, walls: dict | No
         lo, hi = min(lows + [p]), max(highs + [p])
         if hi <= lo:
             return None
-        pad = (hi - lo) * 0.03
-        lo, hi = lo - pad, hi + pad
-        span = hi - lo
+        pos = max(0.0, min(100.0, (p - lo) / (hi - lo) * 100.0))
+        return {"lo": _px(lo), "hi": _px(hi), "pos_pct": round(pos, 1)}
+    except Exception:  # noqa: BLE001
+        return None
 
-        def pct(v: float) -> float:
-            return max(0.0, min(100.0, (v - lo) / span * 100.0))
 
+# Plain-word note per ladder row kind (Tier-1 vocabulary, no jargon)
+_LADDER_NOTES = {
+    "wall_call": ("rallies tend to stall here", "上攻常在此受阻"),
+    "wall_put": ("first option support below", "下方期权支撑位"),
+    "chase": ("wait for price to come back", "等待价格回落"),
+    "buy": ("where patience gets paid", "耐心者的进场区"),
+    "stop": ("the engine walks away", "引擎就此离场"),
+}
+_LADDER_PRICE_NOTES = {
+    "pos": ("in a healthy trend", "趋势健康"),
+    "warn": ("stretched — be patient", "偏高，耐心等待"),
+    "neg": ("downtrend — stand aside", "下行，暂且观望"),
+    "neu": ("no strong signal", "暂无明确信号"),
+}
+
+
+def _build_ladder(price: Any, blob: dict | None, walls: dict | None = None,
+                  signals: dict | None = None, stance_class: str = "neu") -> dict | None:
+    """Trade-levels ladder: the engine's working levels as a vertical list
+    sorted by price (structurally collision-free — supersedes the 52-week
+    axis rail). ONE source per number: trail stop > entry stop; walls come
+    from the same gex artifact the Options section renders."""
+    try:
+        p = _lvl_float(price)
+        if not p:
+            return None
         blob = blob or {}
         es = blob.get("entry_signal") or {}
         sig = signals or {}
-        # Walls from the SAME site/gex artifact the Options section renders —
-        # the blob's own gex block can disagree (different universe/method)
         gx = walls or {}
-        ticks: list[dict] = [
-            {"pct": round(pct(p), 2), "cls": "now", "price": _px(p),
-             "label_en": "Price", "label_zh": "现价", "lane": "top"},
-        ]
-        # signals trail_stop first — it is what the hero invalidation line quotes
-        stop = _lvl_float(sig.get("trail_stop")) or _lvl_float(es.get("stop"))
-        if stop and lo < stop < hi:
-            ticks.append({"pct": round(pct(stop), 2), "cls": "stop", "price": _px(stop),
-                          "label_en": "Trail stop", "label_zh": "止损线", "lane": "top"})
+        # sanity window: ignore levels wildly away from price (junk data guard)
+        lo_ok, hi_ok = p * 0.4, p * 2.5
+
+        def _dist(v: float) -> str:
+            d = (v / p - 1.0) * 100.0
+            return f"{'+' if d >= 0 else '-'}{abs(d):.1f}%"
+
+        rows: list[dict] = []
+
+        def _row(v: float | None, cls: str, label_en: str, label_zh: str, note_key: str | None) -> None:
+            if v is None or not (lo_ok < v < hi_ok):
+                return
+            note_en, note_zh = _LADDER_NOTES.get(note_key or "", ("", ""))
+            rows.append({
+                "kind": "row", "sort": v, "price": _px(v), "cls": cls,
+                "label_en": label_en, "label_zh": label_zh,
+                "note_en": note_en, "note_zh": note_zh, "dist": _dist(v),
+            })
+
+        _row(_lvl_float(gx.get("call_wall")), "wall", "Call wall", "看涨期权墙", "wall_call")
         chase = _lvl_float(es.get("chase_above") or es.get("dont_chase_line"))
-        if chase and lo < chase < hi:
-            ticks.append({"pct": round(pct(chase), 2), "cls": "chase", "price": _px(chase),
-                          "label_en": "Don't chase", "label_zh": "勿追高", "lane": "top"})
-        for key, cls, len_, lzh in (("call_wall", "wall", "Call wall", "看涨期权墙"),
-                                    ("put_wall", "wall", "Put wall", "看跌期权墙")):
-            w = _lvl_float(gx.get(key))
-            if w and lo < w < hi:
-                ticks.append({"pct": round(pct(w), 2), "cls": cls, "price": _px(w),
-                              "label_en": len_, "label_zh": lzh, "lane": "bot"})
-        band = None
+        _row(chase, "chase", "Don't chase above", "勿追高线", "chase")
+        _row(_lvl_float(gx.get("put_wall")), "wall", "Put wall", "看跌期权墙", "wall_put")
+        # ONE stop: the trailing stop the hero invalidation line quotes wins.
+        # A stop at/above the current price is stale (already triggered) — a
+        # misleading row, so it is dropped rather than displayed.
+        stop = _lvl_float(sig.get("trail_stop")) or _lvl_float(es.get("stop"))
+        if stop is not None and stop >= p:
+            stop = None
+        _row(stop, "stop", "Exit if broken", "跌破离场", "stop")
+
+        # Buy zone: dict → band item; scalar → plain row
+        band_item = None
         bz = es.get("buy_zone")
         if isinstance(bz, dict):
             b_lo, b_hi = _lvl_float(bz.get("low")), _lvl_float(bz.get("high"))
-            if b_lo and b_hi and b_lo < b_hi and b_hi > lo and b_lo < hi:
-                band = {"lo_pct": round(pct(b_lo), 2), "hi_pct": round(pct(b_hi), 2),
-                        "label_en": "Buy zone", "label_zh": "买入区",
-                        "price": f"{_px(b_lo)}–{_px(b_hi)}"}
-        elif (bzv := _lvl_float(bz)) and lo < bzv < hi:
-            ticks.append({"pct": round(pct(bzv), 2), "cls": "buy", "price": _px(bzv),
-                          "label_en": "Buy zone", "label_zh": "买入区", "lane": "bot"})
-        if len(ticks) < 2 and not band:
+            if b_lo and b_hi and b_lo < b_hi and lo_ok < b_hi < hi_ok:
+                band_item = {"kind": "band", "sort": b_hi,
+                             "price": f"{_px(b_lo)} – {_px(b_hi)}"}
+        elif (bzv := _lvl_float(bz)) is not None:
+            _row(bzv, "buy", "Buy zone", "买入区", "buy")
+
+        if not rows and not band_item:
             return None
-        # Collision stacking: within each lane, assign each label to the first
-        # tier whose previous label sits >=8% of the axis away (up to 3 tiers).
-        for lane in ("top", "bot"):
-            lane_ticks = sorted([t for t in ticks if t["lane"] == lane], key=lambda t: t["pct"])
-            tier_last: list[float] = []
-            for t in lane_ticks:
-                for ti, last in enumerate(tier_last):
-                    if t["pct"] - last >= 8.0:
-                        tier_last[ti] = t["pct"]
-                        t["tier"] = ti
-                        break
-                else:
-                    t["tier"] = min(len(tier_last), 2)
-                    tier_last.append(t["pct"])
-        return {"lo": _px(lo), "hi": _px(hi), "ticks": ticks, "band": band}
-    except Exception:  # noqa: BLE001 — decorative hero component, never fatal
+
+        note_en, note_zh = _LADDER_PRICE_NOTES.get(stance_class, _LADDER_PRICE_NOTES["neu"])
+        rows.append({
+            "kind": "row", "sort": p, "price": _px(p), "cls": "now",
+            "label_en": "Price now", "label_zh": "当前价格",
+            "note_en": note_en, "note_zh": note_zh, "dist": "",
+        })
+        items = rows + ([band_item] if band_item else [])
+        items.sort(key=lambda r: r["sort"], reverse=True)
+        return {
+            "levels": items,
+            "headline_en": _clean_str(es.get("headline") or ""),
+            "headline_zh": _clean_str(es.get("headline_zh") or ""),
+        }
+    except Exception:  # noqa: BLE001 — decorative module, never fatal
         return None
 
 
@@ -1000,10 +1031,7 @@ def _build_hero(
     desc_en = _clean_str(profile.get("description") or "")
     words = desc_en.split()
     desc_en = " ".join(words[:40]) + ("..." if len(words) > 40 else "")
-    desc_zh = _clean_str(profile.get("description_zh") or "")
-    if desc_zh:
-        words_zh = desc_zh.split()
-        desc_zh = "".join(words_zh[:40]) + ("..." if len(words_zh) > 40 else "")
+    desc_zh = _trunc_words(_clean_str(profile.get("description_zh") or ""), 120)
 
     sector = _clean_str(profile.get("sector"))
     mktcap_tier = profile.get("mktcap_tier") or {}
@@ -1139,6 +1167,7 @@ def _build_stats(ticker: str, blob: dict | None, factor_betas: dict) -> dict | N
         "next_earnings": earnings_str,
         "short_pct_float": short_str,
         "hv_pctile": f"{hv_pctile:.0f}th pctile" if hv_pctile else "",
+        "hv_pctile_num": f"{hv_pctile:.0f}" if hv_pctile else "",
         "rsi": f"{rsi:.0f}" if rsi else "",
         "rsi_zone_en": _rsi_zone(rsi)[0],
         "rsi_zone_zh": _rsi_zone(rsi)[1],
@@ -1537,9 +1566,9 @@ def _build_technicals(ticker: str, blob: dict | None, tech_screener: dict) -> di
     pct_vs_50 = tech.get("pct_vs_50dma")
     pct_vs_200 = tech.get("pct_vs_200dma")
 
-    # price vs MA words
-    ma50_en = f"{'+' if pct_vs_50 >= 0 else ''}{pct_vs_50:.1f}% vs 50-day avg" if pct_vs_50 is not None else ""
-    ma200_en = f"{'+' if pct_vs_200 >= 0 else ''}{pct_vs_200:.1f}% vs 200-day avg" if pct_vs_200 is not None else ""
+    # price vs MA deltas — language-neutral values (the row label carries context)
+    ma50_en = f"{'+' if pct_vs_50 >= 0 else ''}{pct_vs_50:.1f}%" if pct_vs_50 is not None else ""
+    ma200_en = f"{'+' if pct_vs_200 >= 0 else ''}{pct_vs_200:.1f}%" if pct_vs_200 is not None else ""
 
     # vol squeeze
     sq_state = _clean_str(vs.get("state") or "")
@@ -1600,6 +1629,7 @@ def _build_technicals(ticker: str, blob: dict | None, tech_screener: dict) -> di
         "adx_word_en": _adx_word(adx)[0],
         "adx_word_zh": _adx_word(adx)[1],
         "hv_pctile": f"{hv_pctile:.0f}th" if hv_pctile else "",
+        "hv_pctile_num": f"{hv_pctile:.0f}" if hv_pctile else "",
         "above50": above50,
         "above200": above200,
         "ma50_en": ma50_en,
@@ -2265,12 +2295,7 @@ def build_page_context(
         except Exception as e:  # noqa: BLE001
             log.debug("seasonality failed for %s: %s", ticker, e)
 
-    # --- Chart ---
-    chart_svg: str | None = None
-    try:
-        chart_svg = _render_chart(ticker, ohlc_bars, is_candle, name)
-    except Exception as e:  # noqa: BLE001
-        log.debug("chart svg failed for %s: %s", ticker, e)
+    # --- Chart: rendered by the Terminal /embed/chart iframe (v6) — no SSR SVG.
 
     # --- Profile fields for meta ---
     profile = (blob or {}).get("profile") or {}
@@ -2285,12 +2310,14 @@ def build_page_context(
     # --- Build all sections ---
     meta = _build_meta(ticker, name, blob, stance_en, freshness, stale, generated_utc)
     hero = _build_hero(ticker, name, blob, stance_en, stance_zh, stance_key, inv_en, inv_zh, factor_betas)
-    hero["rail"] = build_level_rail(
+    hero["chg"] = _day_change(ohlc_bars)
+    hero["range52"] = _range52(((blob or {}).get("tech") or {}).get("price"), ohlc_bars)
+    ladder = _build_ladder(
         ((blob or {}).get("tech") or {}).get("price"),
-        per.get("ohlc_bars") or [],
         blob,
         walls=(per.get("gex_v1") or {}).get("summary") or {},
         signals=per.get("signals"),
+        stance_class=_STANCE_CLASS.get(stance_key, "neu"),
     )
     stats = _build_stats(ticker, blob, factor_betas)
     gauges = _build_gauges(ticker, blob, factor_betas)
@@ -2335,9 +2362,9 @@ def build_page_context(
         "meta": meta,
         "hero": hero,
         "stats": stats,
+        "ladder": ladder,
         "chart": {
-            "svg": chart_svg,
-            "svg_present": bool(chart_svg),
+            "embed": True,
             "has_candles": is_candle,
         },
         "gauges": gauges,
@@ -2590,8 +2617,7 @@ def run(
             # Dump context JSON if requested
             if dump_context:
                 try:
-                    ctx_json = {k: v for k, v in ctx.items() if k != "chart"}
-                    ctx_json["chart"] = {"has_candles": ctx.get("chart", {}).get("has_candles"), "svg_present": bool((ctx.get("chart") or {}).get("svg"))}
+                    ctx_json = dict(ctx)
                     (dump_context / f"{ticker}.json").write_text(
                         json.dumps(ctx_json, ensure_ascii=False, default=str, indent=2)
                     )
