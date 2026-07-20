@@ -1,110 +1,74 @@
 {
-  "asof": "2026-07-17",
+  "asof": "2026-07-20",
   "window_d": 5,
-  "verdict": "clear",
-  "verdict_zh": "\u660e\u786e",
+  "verdict": "mixed",
+  "verdict_zh": "\u6df7\u5408",
   "primary": "ai_semis",
   "primary_label": "AI / semis",
   "primary_label_zh": "AI/\u534a\u5bfc\u4f53",
   "direction": "AI/semis unwind \u2014 tech-led de-rating",
   "direction_zh": "AI/\u534a\u5bfc\u4f53\u56de\u5410 \u2014 \u79d1\u6280\u4e3b\u5bfc\u7684\u56de\u8c03",
   "dir_sign": -1,
-  "confidence": "high",
-  "confidence_zh": "\u9ad8",
-  "strength": 2.09,
-  "dominance_ratio": 1.55,
+  "confidence": "low",
+  "confidence_zh": "\u4f4e",
+  "strength": 0.94,
+  "dominance_ratio": 1.16,
   "agreement": 1.0,
-  "runner_up": "oil_shock",
-  "runner_up_label": "Oil shock",
-  "runner_up_label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
-  "headline": "AI / semis \u2014 AI/semis unwind \u2014 tech-led de-rating. semis RS -2.5\u03c3, growth vs value -2.1\u03c3, cap-weight vs equal-weight -1.9\u03c3.",
+  "runner_up": "crypto_liquidity",
+  "runner_up_label": "Crypto liquidity",
+  "runner_up_label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
+  "headline": "Mixed \u2014 AI / semis + Crypto liquidity jointly leading (semis RS -1.4\u03c3, growth vs value -0.7\u03c3, cap-weight vs equal-weight -0.8\u03c3); no single dominant driver.",
   "evidence": [
-    "semis RS -2.5\u03c3",
-    "growth vs value -2.1\u03c3",
-    "cap-weight vs equal-weight -1.9\u03c3"
+    "semis RS -1.4\u03c3",
+    "growth vs value -0.7\u03c3",
+    "cap-weight vs equal-weight -0.8\u03c3"
   ],
   "evidence_legs": [
     {
       "en": "semis RS",
       "zh": "\u534a\u5bfc\u4f53\u76f8\u5bf9\u5f3a\u5ea6",
-      "z": -2.5
+      "z": -1.4
     },
     {
       "en": "growth vs value",
       "zh": "\u6210\u957f\u5bf9\u4ef7\u503c",
-      "z": -2.1
+      "z": -0.7
     },
     {
       "en": "cap-weight vs equal-weight",
       "zh": "\u5e02\u503c\u52a0\u6743\u5bf9\u7b49\u6743\u91cd",
-      "z": -1.9
+      "z": -0.8
     }
   ],
   "invalidation": "Fades if semis RS reverses and the rest of the equity-leadership fingerprint stops confirming.",
   "invalidation_zh": "\u82e5\u534a\u5bfc\u4f53\u76f8\u5bf9\u5f3a\u5ea6\u53cd\u8f6c\u3001\u4e14\u80a1\u7968\u9886\u6da8\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
-  "absorption_pctile": 0.88,
+  "absorption_pctile": 0.87,
   "scores": [
     {
       "driver": "ai_semis",
       "label": "AI / semis",
       "label_zh": "AI/\u534a\u5bfc\u4f53",
       "family": "equity-leadership",
-      "projection": -2.09,
-      "strength": 2.09,
+      "projection": -0.94,
+      "strength": 0.94,
       "direction": "AI/semis unwind \u2014 tech-led de-rating"
     },
     {
-      "driver": "oil_shock",
-      "label": "Oil shock",
-      "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
-      "family": "inflation",
-      "projection": 1.35,
-      "strength": 1.35,
-      "direction": "oil spiking \u2014 energy leads, breakevens up"
-    },
-    {
-      "driver": "real_rate_shock",
-      "label": "Real-rate shock",
-      "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
-      "family": "rates",
-      "projection": 0.87,
-      "strength": 0.87,
-      "direction": "real yields rising \u2014 restrictive, gold & duration hit"
-    },
-    {
-      "driver": "china_stimulus",
-      "label": "China stimulus",
-      "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
-      "family": "china",
-      "projection": -0.82,
-      "strength": 0.82,
-      "direction": "China risk-off \u2014 A-shares/HK & copper lead down"
-    },
-    {
-      "driver": "credit_stress",
-      "label": "Credit stress",
-      "label_zh": "\u4fe1\u7528\u538b\u529b",
-      "family": "credit",
-      "projection": 0.4,
-      "strength": 0.4,
-      "direction": "credit spreads widening \u2014 stress"
-    },
-    {
-      "driver": "usd_shock",
-      "label": "USD shock",
-      "label_zh": "\u7f8e\u5143\u51b2\u51fb",
-      "family": "fx",
-      "projection": 0.14,
-      "strength": 0.14,
-      "direction": "dollar surging \u2014 squeeze, commodities & EM pressured"
+      "driver": "crypto_liquidity",
+      "label": "Crypto liquidity",
+      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
+      "family": "crypto",
+      "projection": 0.81,
+      "strength": 0.81,
+      "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
     },
     {
       "driver": "liquidity_impulse",
       "label": "Liquidity impulse",
       "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
       "family": "liquidity",
-      "projection": 0.1,
-      "strength": 0.1,
+      "projection": 0.52,
+      "strength": 0.52,
       "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
     },
     {
@@ -112,28 +76,64 @@
       "label": "Fed repricing",
       "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
       "family": "rates",
-      "projection": -0.09,
-      "strength": 0.09,
+      "projection": -0.51,
+      "strength": 0.51,
       "direction": "dovish repricing \u2014 cuts priced in, front-end down"
     },
     {
-      "driver": "crypto_liquidity",
-      "label": "Crypto liquidity",
-      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
-      "family": "crypto",
-      "projection": -0.04,
-      "strength": 0.04,
-      "direction": "crypto liquidity draining \u2014 BTC/ETH lead down"
+      "driver": "oil_shock",
+      "label": "Oil shock",
+      "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
+      "family": "inflation",
+      "projection": 0.39,
+      "strength": 0.39,
+      "direction": "oil spiking \u2014 energy leads, breakevens up"
+    },
+    {
+      "driver": "credit_stress",
+      "label": "Credit stress",
+      "label_zh": "\u4fe1\u7528\u538b\u529b",
+      "family": "credit",
+      "projection": 0.16,
+      "strength": 0.16,
+      "direction": "credit spreads widening \u2014 stress"
+    },
+    {
+      "driver": "real_rate_shock",
+      "label": "Real-rate shock",
+      "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
+      "family": "rates",
+      "projection": 0.15,
+      "strength": 0.15,
+      "direction": "real yields rising \u2014 restrictive, gold & duration hit"
+    },
+    {
+      "driver": "usd_shock",
+      "label": "USD shock",
+      "label_zh": "\u7f8e\u5143\u51b2\u51fb",
+      "family": "fx",
+      "projection": -0.13,
+      "strength": 0.13,
+      "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
+    },
+    {
+      "driver": "china_stimulus",
+      "label": "China stimulus",
+      "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
+      "family": "china",
+      "projection": 0.11,
+      "strength": 0.11,
+      "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
     }
   ],
   "note": "Deterministic cross-asset attribution \u2014 a regime READ, not a signal; never gates a score.",
   "repricing_coherence": {
-    "score": 25,
+    "score": 0,
     "state": "QUIET",
     "state_zh": "\u5e73\u9759",
     "components": {
       "driver_flip": 0,
-      "strength_extreme": 25,
+      "strength_extreme": 0,
       "absorption_spike": 0,
       "repricing_breadth": 0
     },
