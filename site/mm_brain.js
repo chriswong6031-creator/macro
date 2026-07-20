@@ -48,25 +48,40 @@
     background:radial-gradient(circle,color-mix(in srgb,#6b8cf0 34%,transparent),transparent 70%);animation:mmb-breathe 4.6s ease-in-out infinite}
   .mmb-orb svg{width:19px;height:19px;fill:#fff;opacity:.96;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
   @keyframes mmb-breathe{0%,100%{transform:scale(1);opacity:.96}50%{transform:scale(1.07);opacity:1}}
-  @media(prefers-reduced-motion:reduce){.mmb-orb,.mmb-orb::after,.mmb-tool::before{animation:none}}
+  /* Sidebar + rail resolve in a beat after the morph settles, so they arrive rather than
+     stretch out of the scaling frame. */
+  @keyframes mmb-morph-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+  #mmb-panel.max .mmb-rail{animation:mmb-morph-in .44s .14s both cubic-bezier(.22,1,.36,1)}
+  #mmb-panel.max .mmb-threads{animation:mmb-morph-in .5s .2s both cubic-bezier(.22,1,.36,1)}
+  @media(prefers-reduced-motion:reduce){.mmb-orb,.mmb-orb::after,.mmb-tool::before,
+    #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{animation:none}
+    #mmb-panel{transition:opacity .18s ease!important}}
   #mmb-launch .ll{font:650 13.5px/1 var(--mmb-font);color:var(--mmb-text)}
   #mmb-launch .lk{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px}
   #mmb-launch .lt{display:flex;flex-direction:column}
   /* scrim + panel */
-  #mmb-scrim{position:fixed;inset:0;z-index:2147483001;background:color-mix(in srgb,#05070c 52%,transparent);
-    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .22s ease}
-  #mmb-scrim.open{opacity:1;pointer-events:auto}
+  /* Backdrop deepens as you enter focus mode: a light veil behind the compact chatbox,
+     full dim behind the expanded overlay. */
+  #mmb-scrim{position:fixed;inset:0;z-index:2147483001;background:#05070c;
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);opacity:0;pointer-events:none;
+    transition:opacity .5s cubic-bezier(.22,1,.36,1),backdrop-filter .5s ease,-webkit-backdrop-filter .5s ease}
+  #mmb-scrim.open{opacity:.34;pointer-events:auto}
+  #mmb-scrim.open.max{opacity:.62;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
   #mmb-panel{position:fixed;z-index:2147483002;display:flex;flex-direction:column;overflow:hidden;font-family:var(--mmb-font);color:var(--mmb-text);
     right:18px;bottom:18px;width:min(440px,calc(100vw - 36px));height:min(720px,calc(100vh - 96px));
     border-radius:22px;border:1px solid var(--mmb-line);background:color-mix(in srgb,var(--mmb-panel) 82%,transparent);
     -webkit-backdrop-filter:blur(26px) saturate(1.15);backdrop-filter:blur(26px) saturate(1.15);
     box-shadow:0 40px 100px -30px rgba(0,0,0,.75),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent);
-    transform:translateY(16px) scale(.98);opacity:0;pointer-events:none;
-    transition:opacity .24s ease,transform .24s cubic-bezier(.2,.8,.2,1),width .28s ease,height .28s ease,right .28s ease,bottom .28s ease,top .28s ease}
-  #mmb-panel.mmb-top{right:18px;top:64px;bottom:auto;transform:translateY(-16px) scale(.98)}
+    transform:translateY(16px) scale(.98);opacity:0;pointer-events:none;transform-origin:bottom right;
+    /* CSS owns OPACITY only. TRANSFORM is driven entirely by the Web Animations API (entry
+       + the compact↔max morph) so nothing ever transitions transform in CSS — a CSS transform
+       transition would fight the WAAPI morph and freeze it at the inverted start. */
+    transition:opacity .26s ease}
+  #mmb-panel.mmb-top{right:18px;top:64px;bottom:auto;transform-origin:top right;transform:translateY(-16px) scale(.98)}
   #mmb-panel.open{transform:none;opacity:1;pointer-events:auto}
-  #mmb-panel.max{right:50%;bottom:50%;top:auto;transform:translate(50%,50%);width:min(1480px,90vw);height:min(1240px,95vh)}
-  #mmb-panel.max.open{transform:translate(50%,50%)}
+  /* Transform-free centering (inset:0 + margin:auto) so the panel's resting transform is
+     'none' in BOTH states — the FLIP invert composes cleanly against it. */
+  #mmb-panel.max{inset:0;margin:auto;width:min(1480px,90vw);height:min(1240px,95vh)}
   .mmb-body{display:flex;flex:1;min-height:0}
   .mmb-rail{width:52px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0;border-right:1px solid color-mix(in srgb,var(--mmb-line) 55%,transparent)}
   .mmb-rail .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,#5b7bf0,#8b5cf6);display:grid;place-items:center;margin-bottom:8px}
@@ -199,7 +214,7 @@
   .mmb-gate p{margin:0;color:var(--mmb-muted);font:400 13.5px/1.5 var(--mmb-font);max-width:340px}
   .mmb-signin{margin-top:6px;padding:12px 26px;border:none;border-radius:12px;cursor:pointer;color:#fff;font:700 14px/1 var(--mmb-font);
     background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));box-shadow:0 10px 28px -8px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
-  @media(max-width:560px){#mmb-panel,#mmb-panel.max,#mmb-panel.mmb-top{right:0;left:0;bottom:0;top:auto;transform:translateY(20px);width:100vw;height:88vh;border-radius:20px 20px 0 0}
+  @media(max-width:560px){#mmb-panel,#mmb-panel.max,#mmb-panel.mmb-top{right:0;left:0;bottom:0;top:auto;margin:0;transform-origin:bottom center;transform:translateY(20px);width:100vw;height:88vh;border-radius:20px 20px 0 0}
     #mmb-panel.open{transform:none} .mmb-cards,#mmb-panel.max .mmb-cards{grid-template-columns:1fr}
     /* mobile is compact-only: no large mode (the overlay isn't responsive there) */
     .mmb-icon[data-act="max"]{display:none!important}
@@ -531,10 +546,61 @@
   /* ── widget mechanics ── */
   /* Always open COMPACT (operator order): dashboard = corner chatbox, Terminal = top
      drop-down. The expand button offers the large overlay — desktop only. */
-  function open() { refreshCtx(); scrim.classList.add('open'); panel.classList.add('open'); if (ANCHOR === 'top') panel.classList.add('mmb-top'); if (launch) launch.classList.add('mmb-hide'); if (authed) { loadThreads(); loadQuotas(); } setTimeout(function () { ta.focus(); }, 260); }
-  function close() { if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; streaming = false; } scrim.classList.remove('open'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
+  function open() {
+    refreshCtx(); scrim.classList.add('open'); panel.classList.add('open');
+    if (ANCHOR === 'top') panel.classList.add('mmb-top');
+    if (launch) launch.classList.add('mmb-hide');
+    /* WAAPI entry (transform only; opacity fades via CSS) — the sole transform owner. */
+    if (!reduceMotion() && typeof panel.animate === 'function') {
+      if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} }
+      var fy = ANCHOR === 'top' ? -16 : 16;
+      panel._morph = panel.animate(
+        [{ transform: 'translateY(' + fy + 'px) scale(.98)' }, { transform: 'none' }],
+        { duration: 360, easing: MORPH_EASE, fill: 'none' }
+      );
+    }
+    if (authed) { loadThreads(); loadQuotas(); }
+    setTimeout(function () { ta.focus(); }, 260);
+  }
+  function close() { if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; streaming = false; } if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
   function toggle() { panel.classList.contains('open') ? close() : open(); }
-  function toggleMax() { if (window.innerWidth <= 560) return; /* mobile is compact-only */ var max = panel.classList.toggle('max'); panel.classList.remove('show-side'); if (max) panel.classList.remove('mmb-top'); else if (ANCHOR === 'top') panel.classList.add('mmb-top'); }
+  /* ── FLIP morph: animate the compact↔max resize with a transform ONLY (GPU compositor,
+     60fps, zero reflow). Measure First rect → apply the class (panel snaps to Last geometry)
+     → Invert with an instant transform so it still LOOKS like First → Play the transform back
+     to identity with a premium long-tail ease. ── */
+  var MORPH_EASE = 'cubic-bezier(.22,1,.36,1)';
+  function reduceMotion() { try { return matchMedia('(prefers-reduced-motion:reduce)').matches; } catch (e) { return false; } }
+  function flipMorph(mutate) {
+    // Web Animations API FLIP: mutate to the final geometry, then play a transform-only
+    // animation from an inverse (that makes it LOOK like the start) back to identity.
+    // fill:'none' auto-reverts to the CSS resting transform on finish — no transitionend
+    // to miss, no stuck inline transform; cancelable so rapid toggles never fight.
+    if (reduceMotion() || typeof panel.animate !== 'function') { mutate(); return; }
+    var first = panel.getBoundingClientRect();
+    mutate();                                   // panel jumps to its final geometry
+    var last = panel.getBoundingClientRect();
+    var dx = first.left - last.left, dy = first.top - last.top;
+    var sx = last.width ? first.width / last.width : 1;
+    var sy = last.height ? first.height / last.height : 1;
+    if (!isFinite(sx) || !isFinite(sy) || (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01)) return;
+    if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} }
+    var invert = 'translate(' + dx.toFixed(2) + 'px,' + dy.toFixed(2) + 'px) scale(' + sx.toFixed(5) + ',' + sy.toFixed(5) + ')';
+    panel._morph = panel.animate(
+      [{ transformOrigin: 'top left', transform: invert },
+       { transformOrigin: 'top left', transform: 'none' }],
+      { duration: 480, easing: MORPH_EASE, fill: 'none' }
+    );
+  }
+  function toggleMax() {
+    if (window.innerWidth <= 560) return;       // mobile is compact-only
+    flipMorph(function () {
+      var max = panel.classList.toggle('max');
+      panel.classList.remove('show-side');
+      scrim.classList.toggle('max', max);
+      if (max) panel.classList.remove('mmb-top');
+      else if (ANCHOR === 'top') panel.classList.add('mmb-top');
+    });
+  }
   function toggleSide() { panel.classList.toggle('show-side'); }
   function newChat() { threadId = null; pendingImages = []; renderThumbs(); root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
 
@@ -691,5 +757,7 @@
   boot();
   initExplain();
 
-  window.MMBrain = { open: open, close: close, toggle: toggle, explain: explain, expand: function () { panel.classList.contains('open') || open(); if (window.innerWidth > 560) panel.classList.add('max'); }, mounted: true };
+  window.MMBrain = { open: open, close: close, toggle: toggle, explain: explain,
+    expand: function () { var was = panel.classList.contains('open'); if (!was) open(); if (window.innerWidth > 560 && !panel.classList.contains('max')) setTimeout(toggleMax, was ? 0 : 80); },
+    mounted: true };
 })();
