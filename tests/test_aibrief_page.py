@@ -3,14 +3,18 @@
 The old deterministic daily brief (scripts/daily_brief.py -> brief.html, plus the
 china/hk variants) was retired and replaced by ONE static page that surfaces the
 three EXISTING AI briefs written by engine/master_brain.py
-(master_brief.json / china_brief.json / btc_brief.json) as toggle tabs, rendered
-client-side by templates/aibrief.js. The "📰 Brief" nav-link was moved out of the
-scrolling menu into a static "AI Daily Brief" button in the .nav-ctrls cluster.
+(master_brief.json / china_brief.json / btc_brief.json) as toggle tabs.
 
-These tests render the REAL template (same Jinja env as scripts/build_aibrief) and
-guard, at the source level, that no template ever re-links the deleted brief pages.
+ABX v2 (2026-07-19): the three lens brief BODIES are now SERVER-rendered by the
+shared macro templates/_aibrief_body.html.j2 (build_aibrief.py loads the JSONs into
+master_brief / china_brief / btc_brief). templates/aibrief.js was slimmed to the
+overnight-cortex panel only. These tests render the REAL template (same Jinja env
+as scripts/build_aibrief) and guard, at the source level, that no template ever
+re-links the deleted brief pages.
 """
 from __future__ import annotations
+
+import json
 
 import jinja2
 
@@ -25,18 +29,52 @@ def _env() -> jinja2.Environment:
     return env
 
 
-def _render() -> str:
-    return _env().get_template("aibrief.html.j2").render(as_of="2026-06-14 12:00 UTC")
+def _render(**briefs) -> str:
+    """Render aibrief.html.j2 with the server-side panels absent (fail-open) and any
+    passed lens briefs. Absent briefs render the honest 'not generated yet' note."""
+    panels = {
+        "ctx_strip": {"absent": True},
+        "fwd_panel": {"absent": True, "events": [], "rebal_note_en": None, "rebal_note_zh": None},
+        "record_panel": {"absent": True},
+    }
+    return _env().get_template("aibrief.html.j2").render(
+        as_of="2026-06-14 12:00 UTC", **panels, **briefs
+    )
 
 
-def test_three_brief_panels_present():
-    """One .ai-brief panel per lens, each wired to its master_brain JSON."""
+def _committed_brief(name: str) -> dict:
+    return json.loads((config.ROOT / "site" / name).read_text())
+
+
+def test_three_lens_panels_present():
+    """One .ai-brief panel per lens (server-rendered — no client fetch stubs)."""
     html = _render()
-    assert 'data-brief-src="master_brief.json"' in html
-    assert 'data-brief-src="china_brief.json"' in html
-    assert 'data-brief-src="btc_brief.json"' in html
     assert html.count("ai-brief") >= 3
-    assert html.count("data-brief-body") == 3
+    # the client-fetch attributes are GONE (bodies are server-rendered now)
+    assert "data-brief-src" not in html
+    assert "data-brief-body" not in html
+
+
+def test_committed_briefs_render_server_side():
+    """The committed (v1-shaped) briefs render into the page via the shared macro —
+    the v2 body must fail open on v1 payloads (no tldr → summary lead, no crash)."""
+    html = _render(
+        master_brief=_committed_brief("master_brief.json"),
+        china_brief=_committed_brief("china_brief.json"),
+        btc_brief=_committed_brief("btc_brief.json"),
+    )
+    # server-rendered macro body present (namespace .aib2-*), badge is house law
+    assert '"aib2"' in html or 'class="aib2"' in html
+    assert "not a signal source" in html
+    # v1 payloads have no tldr → the summary lead-card fallback renders, no stance pill
+    assert "aib2-lead" in html
+
+
+def test_absent_brief_shows_honest_note():
+    """No brief for a lens → an honest 'not generated yet' note, never a stray body."""
+    html = _render()  # all briefs absent
+    assert "has not generated yet" in html
+    assert '"aib2"' not in html  # no empty body frame when all absent
 
 
 def test_toggle_tabs_present():
@@ -51,11 +89,20 @@ def test_toggle_tabs_present():
 
 
 def test_required_assets_loaded():
-    """The page is fully client-rendered — it needs theme.css/.js + aibrief.js."""
+    """The page needs theme.css/.js + aibrief.js (cortex panel is still client-side)."""
     html = _render()
     assert 'href="theme.css"' in html
     assert 'src="theme.js"' in html
     assert 'src="aibrief.js"' in html
+
+
+def test_per_lens_cadence_copy_no_blanket_daily_claim():
+    """SPEC §7: the page no longer claims a blanket 'each day' refresh — BTC is every
+    three days. The intro must state the split cadence honestly."""
+    html = _render()
+    assert "every three days" in html  # BTC honesty
+    # the retired blanket claim must be gone
+    assert "Regenerated automatically each day after the close" not in html
 
 
 def test_static_nav_button_present():

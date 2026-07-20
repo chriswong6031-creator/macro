@@ -208,3 +208,30 @@ def pytest_sessionfinish(session, exitstatus):
               f"see the MM_DATA_GUARD banner above the pytest summary")
     if session.exitstatus == 0:
         session.exitstatus = 1
+
+
+# --------------------------------------------------------------------------- #
+# ABX: hermetic master_brain reply cache. synthesize() is the SOLE reply-cache
+# writer (root-aware); a test that drives it without a tmp root would write the
+# REAL data/master_brain/reply_cache tree — the exact class this guard exists
+# for. DISABLE the cache for every test (get misses, put drops) rather than
+# emulate it in memory: an emulated cache makes two same-prompt stubbed calls
+# inside one test serve the first reply to the second, breaking tests that
+# stub different replies per call (producer suite). The dedicated roundtrip
+# test opts out by name to exercise the real helpers under tmp_path.
+# --------------------------------------------------------------------------- #
+@pytest.fixture(autouse=True)
+def _hermetic_master_brain_reply_cache(request, monkeypatch):
+    if request.node.name == "test_reply_cache_roundtrip_root_aware":
+        yield
+        return
+    try:
+        from engine import master_brain as _mb
+    except Exception:  # minimal-deps CI lanes may lack engine imports
+        yield
+        return
+    monkeypatch.setattr(_mb, "_mb_reply_cache_get",
+                        lambda ph, cfg, root=None: None)
+    monkeypatch.setattr(_mb, "_mb_reply_cache_put",
+                        lambda ph, text, cfg, root=None: None)
+    yield

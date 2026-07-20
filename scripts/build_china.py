@@ -1233,7 +1233,7 @@ def main() -> int:
             vm["top_setups"] = []
 
         # ── MX5: china_brief card vm key ─────────────────────────────────────
-        # Spec §6.6: dlg-aibrief needs master_brief.v1 content.  Load the
+        # Spec §6.6: dlg-aibrief needs master_brief.v2 content.  Load the
         # pre-existing site/china_brief.json produced by the AI brief pipeline.
         try:
             _brief_path = site / "china_brief.json"

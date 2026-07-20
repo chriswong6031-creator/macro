@@ -77,6 +77,27 @@ def _load_json_safe(path: Path) -> dict | list | None:
         return None
 
 
+# The three lens briefs written by engine/master_brain.py. Mirror build_site.py's
+# load order: committed site/ copy preferred, data/regime/ as the fallback. Fully
+# fail-open — a missing brief renders the template's honest "not generated yet" note.
+_BRIEF_FILES = {
+    "master_brief": "master_brief.json",
+    "china_brief": "china_brief.json",
+    "btc_brief": "btc_brief.json",
+}
+
+
+def _load_briefs(site_dir: Path, data_dir: Path) -> dict:
+    """Load the three lens briefs for server-side rendering (fail-open)."""
+    out: dict = {}
+    for ctx_key, fname in _BRIEF_FILES.items():
+        brief = _load_json_safe(site_dir / fname)
+        if brief is None:
+            brief = _load_json_safe(data_dir / "regime" / fname)
+        out[ctx_key] = brief  # may be None → template shows the absent note
+    return out
+
+
 def _gather_context_strip(data_dir: Path) -> dict:
     """Panel A: light fail-open reads for the context strip.
 
@@ -457,7 +478,10 @@ def main() -> int:
 
         as_of = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         panels = _gather_panels(data_dir)
-        html = env.get_template("aibrief.html.j2").render(as_of=as_of, **panels)
+        # ABX v2: the three lens brief bodies are now SERVER-rendered by the shared
+        # macro (templates/_aibrief_body.html.j2). aibrief.js handles only cortex.
+        briefs = _load_briefs(site, data_dir)
+        html = env.get_template("aibrief.html.j2").render(as_of=as_of, **panels, **briefs)
         write_page(site / "aibrief.html", html)
 
         for a in ASSETS:

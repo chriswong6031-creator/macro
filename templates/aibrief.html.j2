@@ -4,6 +4,7 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{% import "_aibrief_body.html.j2" as aib %}{# ABX v2 — the ONE shared AI-brief body renderer #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,14 +46,15 @@
   .brief-tab-btn.active { background:var(--link); border-color:var(--link); color:#fff; }
   .brief-tab { display:none; }
   .brief-tab.active { display:block; }
-  /* shared AI-brief body styling */
-  .ai-brief .mb-sum { font-size:15px; font-weight:600; margin:0 0 10px; }
-  .ai-brief .mb-sec { margin:10px 0; }
-  .ai-brief .mb-h { font-weight:600; color:var(--link); margin:0 0 4px; }
-  .ai-brief .mb-list { margin:4px 0 0 18px; padding:0; }
-  .ai-brief .mb-list li { margin:3px 0; }
-  .ai-brief .mb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
-  .ai-brief .mb-deg { color:var(--muted); font-size:12px; font-style:italic; margin:4px 0; }
+  /* AI-brief bodies are server-rendered by the shared macro (.aib2-*); the page's
+     .panel gives them their frame. The macro tab keeps the green brief accent; the
+     other tabs inherit the ZH-safe blue default. The literal #38c472 (== macro's
+     --isle-brief) is a FIXED hex so the brand accent never red-flips in ZH — --up
+     swaps to red under html[data-lang="zh"], so it must NOT back the accent. */
+  .panel.ai-brief[data-lens="macro"] .aib2 { --aib2-acc: #38c472; }
+  .panel.ai-brief { padding-top: 12px; }
+  /* .mb-deg retained — the cortex panel (aibrief.js) still emits it */
+  .mb-deg { color:var(--muted); font-size:12px; font-style:italic; margin:4px 0; }
   /* ── Panel A: context strip ────────────────────────────────────────────────── */
   .ctx-strip { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:flex-start; }
   .ctx-chip { display:inline-flex; align-items:center; gap:5px; background:var(--panel);
@@ -83,6 +85,7 @@
   .cortex-h { font-weight:600; color:var(--link); margin:0 0 3px; font-size:13px; }
   .cortex-list { margin:3px 0 0 16px; padding:0; font-size:13px; }
   .cortex-list li { margin:2px 0; }
+{% include "_aibrief_css.j2" %}
 </style>
 </head>
 <body>
@@ -115,8 +118,8 @@
     <span class="muted">{{ t('every market we cover, synthesised by AI — in one place', '我们覆盖的每个市场，由AI综合 — 集于一处') }}</span>
   </div>
   <p class="muted sm" style="margin:10px 0 0">{{ t(
-    'These are AI (LLM) syntheses of the dashboards — they narrate the regime, flag where signals conflict and test the working thesis, with US macro, the dollar, global liquidity and commodities as shared backdrop. RESEARCH CONTEXT ONLY: nothing here feeds a score, signal or allocation, and a brief can be wrong or overconfident — always verify against the underlying panels. Regenerated automatically each day after the close.',
-    '以下为对各看板的 AI（大模型）综合解读 — 解读周期、标注信号冲突、检验当前假设，并以美国宏观、美元、全球流动性与商品为共同背景。仅供研究参考：此处内容不参与任何评分、信号或仓位，且简报可能出错或过度自信 — 请始终对照底层面板核实。每个交易日收盘后自动更新。') }}</p>
+    'These are AI (LLM) syntheses of the dashboards — they narrate the regime, flag where signals conflict and test the working thesis, with US macro, the dollar, global liquidity and commodities as shared backdrop. RESEARCH CONTEXT ONLY: nothing here feeds a score, signal or allocation, and a brief can be wrong or overconfident — always verify against the underlying panels. The macro and China briefs refresh daily after the close; the Bitcoin brief every three days. Each tab shows its own refresh cadence.',
+    '以下为对各看板的 AI（大模型）综合解读 — 解读周期、标注信号冲突、检验当前假设，并以美国宏观、美元、全球流动性与商品为共同背景。仅供研究参考：此处内容不参与任何评分、信号或仓位，且简报可能出错或过度自信 — 请始终对照底层面板核实。宏观与中国简报每个交易日收盘后更新；比特币简报每三天更新。每个标签页会标注各自的更新节奏。') }}</p>
 </div>
 
 {# ── Panel A: Context strip (server-side, fail-open) ──────────────────────────── #}
@@ -212,26 +215,43 @@
   <button class="brief-tab-btn" data-lens="btc" role="tab" aria-selected="false">₿ {{ t('Bitcoin', '比特币') }}</button>
 </div>
 
-{# Each panel is client-fetched from its lens JSON by aibrief.js #}
-<div class="panel ai-brief brief-tab active" data-lens="macro" data-brief-src="master_brief.json">
+{# Bodies are SERVER-rendered by the shared macro (build_aibrief.py loads the three
+   lens JSONs into master_brief / china_brief / btc_brief). aibrief.js now handles
+   only the cortex panel. Absent brief → an honest "not generated yet" note. #}
+{% set _absent_en = 'This brief has not generated yet. It rebuilds on its own cadence from the dashboards — check back after the next run.' %}
+{% set _absent_zh = '该简报尚未生成。它按自身节奏由看板重新生成 — 请在下次运行后再查看。' %}
+
+<div class="panel ai-brief brief-tab active" data-lens="macro">
   <h2>🇺🇸 {{ t('Macro · cross-asset synthesis', '宏观 · 跨资产综合') }}
     {{ help('AI synthesis of the macro picture as one cross-asset read — US growth/inflation regime, the dollar, global liquidity, rates, commodities and crypto. RESEARCH CONTEXT only: it narrates the regime, flags conflicting signals and tests the liquidity-rotation thesis; it never feeds a score, signal or allocation. Can be wrong — verify against the panels.', 'AI 将宏观图景作为单一跨资产解读 — 美国增长／通胀周期、美元、全球流动性、利率、商品与加密货币。仅供研究参考：它解读周期、标注信号冲突并检验流动性轮动假设，绝不参与任何评分、信号或仓位。可能出错，请对照各面板核实。') }}
   </h2>
-  <div data-brief-body class="muted sm">{{ t('Loading the latest AI brief… it regenerates daily after the close.', '正在加载最新AI简报…每个交易日收盘后更新。') }}</div>
+  {% if master_brief is defined and master_brief and (master_brief.get('summary') or master_brief.get('tldr') or master_brief.get('regime_read') or master_brief.get('degraded_reason')) %}
+  {{ aib.aibrief_body(master_brief, 'macro', show_catalysts=True) }}
+  {% else %}
+  <p class="muted sm">{{ t(_absent_en, _absent_zh) }}</p>
+  {% endif %}
 </div>
 
-<div class="panel ai-brief brief-tab" data-lens="china" data-brief-src="china_brief.json">
+<div class="panel ai-brief brief-tab" data-lens="china">
   <h2>🇨🇳 {{ t('China & Hong Kong synthesis', '中港综合') }}
     {{ help('An AI-generated synthesis of the China & Hong-Kong dashboards, with US macro, the dollar, global liquidity and commodities as backdrop. RESEARCH CONTEXT only — it narrates the regime, flags where signals conflict and tests the policy/liquidity thesis (A-shares mean-revert, so leaders read as extended); it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying panels.', 'AI 对中港看板的综合分析，以美国宏观、美元、全球流动性与商品为背景。仅供研究参考——它解读周期、标注信号冲突并检验政策／流动性假设（A股均值回归，故强势股视为已拉伸），绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各底层面板核实。') }}
   </h2>
-  <div data-brief-body class="muted sm">{{ t('Loading the latest AI brief… it regenerates daily after the close.', '正在加载最新AI简报…每个交易日收盘后更新。') }}</div>
+  {% if china_brief is defined and china_brief and (china_brief.get('summary') or china_brief.get('tldr') or china_brief.get('regime_read') or china_brief.get('degraded_reason')) %}
+  {{ aib.aibrief_body(china_brief, 'china', show_catalysts=False) }}
+  {% else %}
+  <p class="muted sm">{{ t(_absent_en, _absent_zh) }}</p>
+  {% endif %}
 </div>
 
-<div class="panel ai-brief brief-tab" data-lens="btc" data-brief-src="btc_brief.json">
+<div class="panel ai-brief brief-tab" data-lens="btc">
   <h2>₿ {{ t('Bitcoin synthesis', '比特币综合') }}
     {{ help('An AI-generated synthesis of the Bitcoin Vector — cycle, valuation, leverage, on-chain activity and ETF flows, with US macro and global liquidity as backdrop (BTC as the long-duration tail of global liquidity). RESEARCH CONTEXT only — it never feeds a score, signal or allocation, and can be wrong or overconfident. Verify against the Bitcoin Vector panels.', 'AI 对比特币向量的综合分析 — 周期、估值、杠杆、链上活动与 ETF 资金流，以美国宏观与全球流动性为背景（比特币为全球流动性的长久期尾部）。仅供研究参考 — 绝不参与任何评分、信号或仓位，且可能出错或过度自信。请对照比特币向量面板核实。') }}
   </h2>
-  <div data-brief-body class="muted sm">{{ t('Loading the latest AI brief… it regenerates daily after the close.', '正在加载最新AI简报…每个交易日收盘后更新。') }}</div>
+  {% if btc_brief is defined and btc_brief and (btc_brief.get('summary') or btc_brief.get('tldr') or btc_brief.get('regime_read') or btc_brief.get('degraded_reason')) %}
+  {{ aib.aibrief_body(btc_brief, 'btc', show_catalysts=False) }}
+  {% else %}
+  <p class="muted sm">{{ t(_absent_en, _absent_zh) }}</p>
+  {% endif %}
 </div>
 
 {# ── Panel C: The brief's own record (server-side) ────────────────────────────── #}

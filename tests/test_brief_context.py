@@ -597,3 +597,98 @@ def test_oversized_budget_enforced(tmp_path):
     assert post_size <= _MACRO_CAP, (
         f"budget enforcement failed: {post_size} > {_MACRO_CAP} bytes"
     )
+
+
+# ---------------------------------------------------------------------------
+# ABX v2 — btc_slice tests (spec §5b)
+# ---------------------------------------------------------------------------
+
+def _make_btc_attention(asof: str = "2026-07-12") -> dict:
+    """Attention fixture with btc + non-btc items."""
+    return {
+        "as_of": asof,
+        "items": [
+            {"kind": "btc_divergence", "severity": "P1",
+             "summary_en": "Bitcoin leverage rising vs flat ETF flows"},
+            {"kind": "equity_breadth", "severity": "P2",
+             "summary_en": "Equity breadth narrowing"},
+            {"kind": "crypto_funding", "severity": "P2",
+             "summary_en": "crypto funding rates elevated"},
+            {"kind": "equity_momentum", "severity": "P3",
+             "summary_en": "Momentum rotation in equities"},
+        ],
+    }
+
+
+def test_btc_slice_budget_cap(tmp_path):
+    """btc_slice ≤ 4 096 bytes serialised."""
+    from engine.neuralweb.brief_context import btc_slice
+    nw = _make_nw_dir(tmp_path)
+    _write_full_fixture(nw)
+    _write_json(nw / "attention_deterministic.json", _make_btc_attention())
+    result = btc_slice(root=tmp_path)
+    serialised = json.dumps(result, separators=(",", ":"), default=str)
+    assert len(serialised) <= 4_096, (
+        f"btc_slice exceeded 4 096 B cap: {len(serialised)} bytes"
+    )
+
+
+def test_btc_slice_expected_blocks(tmp_path):
+    """btc_slice contains market_core, liquidity_plumbing, cross_asset_flows, cortex."""
+    from engine.neuralweb.brief_context import btc_slice
+    nw = _make_nw_dir(tmp_path)
+    _write_full_fixture(nw, degraded_memo=False)
+    result = btc_slice(root=tmp_path)
+    assert "market_core" in result
+    assert "liquidity_plumbing" in result
+    assert "cross_asset_flows" in result
+    assert "cortex" in result
+
+
+def test_btc_slice_attention_filters_crypto(tmp_path):
+    """btc_slice attention block contains only btc/bitcoin/crypto items, ≤3."""
+    from engine.neuralweb.brief_context import btc_slice
+    nw = _make_nw_dir(tmp_path)
+    _write_full_fixture(nw)
+    _write_json(nw / "attention_deterministic.json", _make_btc_attention())
+    result = btc_slice(root=tmp_path)
+    attention = result.get("attention")
+    if attention is not None and not attention.get("absent"):
+        items = attention.get("items") or []
+        assert len(items) <= 3, f"attention must cap at 3: {items}"
+        for item in items:
+            text = " ".join(filter(None, [
+                str(item.get("summary_en") or ""),
+                str(item.get("kind") or ""),
+            ]))
+            import re
+            assert re.search(r"btc|bitcoin|crypto", text, re.IGNORECASE), (
+                f"non-crypto item leaked into btc attention: {item!r}"
+            )
+
+
+def test_btc_slice_absent_artifacts(tmp_path):
+    """btc_slice over empty root returns dict with absent/degraded markers, never raises."""
+    from engine.neuralweb.brief_context import btc_slice
+    result = btc_slice(root=tmp_path)
+    assert isinstance(result, dict)
+
+
+def test_btc_slice_no_attention_when_no_crypto_items(tmp_path):
+    """btc_slice omits attention block when no items mention btc/bitcoin/crypto."""
+    from engine.neuralweb.brief_context import btc_slice
+    nw = _make_nw_dir(tmp_path)
+    _write_full_fixture(nw)
+    # Attention with only non-crypto items
+    _write_json(nw / "attention_deterministic.json", {
+        "as_of": "2026-07-12",
+        "items": [
+            {"kind": "equity_breadth", "severity": "P1",
+             "summary_en": "Equity breadth narrowing sharply"},
+        ],
+    })
+    result = btc_slice(root=tmp_path)
+    # attention block should be absent or not present
+    if "attention" in result:
+        items = (result["attention"] or {}).get("items") or []
+        assert items == [], f"non-crypto items should not appear in btc attention: {items}"

@@ -58,6 +58,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1221,6 +1222,115 @@ def _build_macro_slice(root: Path) -> dict:
 # ---------------------------------------------------------------------------
 # china_slice
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# btc_slice
+# ---------------------------------------------------------------------------
+
+# Drop order for BTC budget enforcement (lowest-priority first, spec §5b)
+_BTC_DROP_ORDER = [
+    "attention",         # first dropped
+    "contagion",
+    "cross_asset_flows",
+    "cortex",
+    "liquidity_plumbing",
+    "market_core",       # last resort
+]
+
+_BTC_CAP = 4_096
+
+
+def btc_slice(root: Path | None = None) -> dict:
+    """Return the NW context packet for the BTC brief (spec §5b).
+
+    Cap 4 096 bytes.  Never raises.  Same fail-open/absent/stale contract as
+    macro_slice.  Blocks: market_core, liquidity_plumbing, cross_asset_flows,
+    contagion (when present), attention (only btc/bitcoin/crypto items ≤3), cortex.
+    Reuses the existing _block_* composers — no duplicated bodies.
+    """
+    try:
+        from engine import config as _config
+        _root = Path(root) if root else _config.ROOT
+    except Exception:  # noqa: BLE001
+        _root = Path(root) if root else Path(__file__).parent.parent.parent
+
+    try:
+        return _build_btc_slice(_root)
+    except Exception as exc:  # noqa: BLE001
+        log.exception("brief_context.btc_slice: unexpected error: %s", exc)
+        return {
+            "absent": True,
+            "reason": f"btc_slice failed: {exc}",
+            "display_only": True,
+        }
+
+
+_BTC_KEYWORDS = re.compile(r"btc|bitcoin|crypto", re.IGNORECASE)
+
+
+def _build_btc_slice(root: Path) -> dict:
+    nw = root / "data" / "neuralweb"
+
+    ws       = _read_json(nw / "world_state.json")
+    lp_data  = _read_json(nw / "liquidity_plumbing.json")
+    memo     = _read_json(nw / "cortex" / "memo.json")
+    ad_data  = _read_json(nw / "attention_deterministic.json")
+
+    ws_asof = (ws or {}).get("produced_at") or (ws or {}).get("as_of")
+
+    result: dict[str, Any] = {}
+
+    # market_core — reuse existing composer
+    result["market_core"] = _block_market_core(ws, ws_asof)
+
+    # liquidity_plumbing — reuse existing composer
+    result["liquidity_plumbing"] = _block_liquidity_plumbing(lp_data)
+
+    # cross_asset_flows — reuse existing composer
+    result["cross_asset_flows"] = _block_cross_asset_flows(ws)
+
+    # contagion — reuse existing composer, only include when present
+    _contagion = _block_contagion(ws)
+    if _contagion is not None:
+        result["contagion"] = _contagion
+
+    # attention — only items mentioning btc/bitcoin/crypto, cap 3
+    if ad_data is not None:
+        data_asof = ad_data.get("as_of")
+        items = ad_data.get("items") or []
+        btc_items = [
+            {
+                "kind": it.get("kind"),
+                "severity": it.get("severity"),
+                "summary_en": it.get("summary_en"),
+            }
+            for it in items
+            if isinstance(it, dict) and _BTC_KEYWORDS.search(
+                " ".join(filter(None, [
+                    str(it.get("summary_en") or ""),
+                    str(it.get("kind") or ""),
+                ]))
+            )
+        ][:3]
+        if btc_items:
+            result["attention"] = {
+                "display_only": True,
+                "_tape_family": "nw_synthesis",
+                "_lead_lag": "coincident",
+                "tape_note": _NW_SYNTHESIS_TAPE_NOTE,
+                "as_of": data_asof,
+                "stale": _is_stale(data_asof, "attention_deterministic"),
+                "items": btc_items,
+                "_filter": "btc/bitcoin/crypto mentions only",
+            }
+    # cortex tail — reuse existing composer
+    result["cortex"] = _block_cortex(memo)
+
+    # Enforce budget
+    _enforce_budget(result, _BTC_CAP, _BTC_DROP_ORDER)
+
+    return result
+
 
 def china_slice(root: Path | None = None) -> dict:
     """Return the NW context packet for the China/HK brief.
