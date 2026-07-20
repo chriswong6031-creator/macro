@@ -111,6 +111,8 @@ def cap_bucket(
                     bucket = "mid"
                 elif grp == "sp600":
                     bucket = "small"
+                elif grp == "r2000":
+                    bucket = "small"  # r2000 treated as small-cap tier (mirrors sp600)
         except Exception:  # noqa: BLE001
             log.debug("cap_bucket: membership lookup failed for %s", ticker)
 

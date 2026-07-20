@@ -2909,6 +2909,10 @@ def build_page_context(
     per: dict,
     agg: dict,
     generated_utc: str,
+    *,
+    group: str = "sp500",
+    all_groups: set[str] | None = None,
+    dow30_set: set[str] | None = None,
 ) -> dict:
     """Build the full v2 context dict for one ticker. Pure — no I/O."""
     blob = per.get("blob")
@@ -3025,6 +3029,27 @@ def build_page_context(
             if h.get("title") and h.get("url")
         ] or None
 
+    # --- Index-membership chips ---
+    # Order: Dow 30 first (if applicable), then senior S&P index, then Russell 2000
+    # (only tagged when senior group is sp600 or r2000 — large/mid caps excluded even
+    # if a scrape error ever mis-includes them).
+    _all_grps = all_groups or {group}
+    _d30 = dow30_set or set()
+    index_chips: list[dict] = []
+    if ticker in _d30:
+        index_chips.append({"en": "Dow 30", "zh": "道琼斯30"})
+    if group == "sp500":
+        index_chips.append({"en": "S&P 500", "zh": "标普500"})
+    elif group == "sp400":
+        index_chips.append({"en": "S&P 400", "zh": "标普400中盘"})
+    elif group == "sp600":
+        index_chips.append({"en": "S&P 600", "zh": "标普600小盘"})
+        if "r2000" in _all_grps:
+            index_chips.append({"en": "Russell 2000", "zh": "罗素2000"})
+    elif group == "r2000":
+        index_chips.append({"en": "Russell 2000", "zh": "罗素2000"})
+    hero["index_chips"] = index_chips or None
+
     return {
         "meta": meta,
         "hero": hero,
@@ -3121,17 +3146,42 @@ def run(
             log.error("::error::failed to load templates: %s — switching to context-only mode", e)
             context_only = True
 
+    # --- Load dow30 from config (fail-soft to empty set) ---
+    dow30_set: set[str] = set()
+    try:
+        _cfg = config.load()
+        _dow30_list = (_cfg.get("leader_radar") or {}).get("dow30") or []
+        dow30_set = set(_dow30_list)
+    except Exception as _d30e:  # noqa: BLE001
+        log.warning("::warning::failed to load dow30 from config (fail-soft): %s", _d30e)
+
     # --- Load membership ---
     try:
         import pandas as pd
         df = pd.read_parquet(str(_ROOT / "data" / "universe" / "membership.parquet"))
         active = df[df["active"] == True].copy()  # noqa: E712
         active = active.dropna(subset=["ticker"])
-        # v2: sp500 + sp400 + sp600
-        universe_groups = {"sp500", "sp400", "sp600"}
+        # v3: sp500 + sp400 + sp600 + r2000
+        universe_groups = {"sp500", "sp400", "sp600", "r2000"}
         if "group" in active.columns:
             active = active[active["group"].isin(universe_groups)]
-        log.info("Loaded %d active universe members", len(active))
+
+        # Build per-ticker set of ALL groups before deduplication
+        ticker_all_groups: dict[str, set[str]] = {}
+        for _, _row in active.iterrows():
+            _t = str(_row.get("ticker") or "").strip()
+            _g = str(_row.get("group") or "").strip()
+            if _t and _g:
+                ticker_all_groups.setdefault(_t, set()).add(_g)
+
+        # Dedupe by ticker with seniority: sp500 > sp400 > sp600 > r2000
+        # Each ticker renders ONE page keeping the senior group as primary.
+        if "group" in active.columns:
+            _SENIORITY = {"sp500": 0, "sp400": 1, "sp600": 2, "r2000": 3}
+            active["_sen"] = active["group"].map(lambda g: _SENIORITY.get(str(g).lower(), 99))
+            active = active.sort_values("_sen").drop_duplicates("ticker").drop(columns=["_sen"])
+
+        log.info("Loaded %d active universe members (deduplicated)", len(active))
     except Exception as e:
         log.error("::error::failed to load membership.parquet: %s", e)
         return 1
@@ -3209,7 +3259,11 @@ def run(
                 n_skipped += 1
                 continue
 
-            ctx = build_page_context(ticker, name, sector, per, agg, generated_utc)
+            _all_groups = ticker_all_groups.get(ticker, {group})
+            ctx = build_page_context(
+                ticker, name, sector, per, agg, generated_utc,
+                group=group, all_groups=_all_groups, dow30_set=dow30_set,
+            )
 
             # ── Share card (og:image) ─────────────────────────────────────
             # Fingerprint-gated: only re-renders when ticker/name/sector/

@@ -1745,3 +1745,140 @@ class TestMainTagBalance:
         )
         # Also check that we have at least one </main>
         assert close_count >= 1, "Expected at least one </main> in output"
+
+
+# ---------------------------------------------------------------------------
+# (k) R2000 + Dow-30 universe expansion
+# ---------------------------------------------------------------------------
+
+class TestR2000UniverseExpansion:
+    """Tests for R2000 membership, Dow-30 chips, dedupe seniority, and consumer guards."""
+
+    # ---- universe_groups includes r2000 ----
+
+    def test_universe_groups_includes_r2000(self):
+        """universe_groups in run() must include 'r2000'."""
+        import scripts.build_ticker_pages as btp
+        import inspect
+        src = inspect.getsource(btp.run)
+        assert "r2000" in src, "run() source must reference 'r2000'"
+
+    # ---- index_chips via build_page_context ----
+
+    def _make_agg_and_per(self, tmp_path, ticker="AAPL"):
+        site = _make_site(tmp_path, [ticker])
+        from scripts.build_ticker_pages import load_all_aggregates, load_per_ticker
+        agg = load_all_aggregates(site)
+        per = load_per_ticker(site, ticker)
+        return agg, per
+
+    def test_sp600_plus_r2000_chips(self, tmp_path):
+        """sp600 ticker that also has r2000 membership gets chips [S&P 600, Russell 2000]."""
+        agg, per = self._make_agg_and_per(tmp_path)
+        ctx = build_page_context(
+            "KTOS", "Kratos Defense", "Industrials", per, agg, "2026-07-20 00:00 UTC",
+            group="sp600", all_groups={"sp600", "r2000"}, dow30_set=set(),
+        )
+        chips = ctx["hero"]["index_chips"]
+        assert chips is not None
+        labels_en = [c["en"] for c in chips]
+        assert labels_en == ["S&P 600", "Russell 2000"]
+        labels_zh = [c["zh"] for c in chips]
+        assert "标普600小盘" in labels_zh
+        assert "罗素2000" in labels_zh
+
+    def test_pure_r2000_chip(self, tmp_path):
+        """Pure r2000 ticker (not in sp600) gets exactly [Russell 2000]."""
+        agg, per = self._make_agg_and_per(tmp_path)
+        ctx = build_page_context(
+            "PURE", "Pure R2000 Co", "Health Care", per, agg, "2026-07-20 00:00 UTC",
+            group="r2000", all_groups={"r2000"}, dow30_set=set(),
+        )
+        chips = ctx["hero"]["index_chips"]
+        assert chips is not None
+        assert len(chips) == 1
+        assert chips[0]["en"] == "Russell 2000"
+        assert chips[0]["zh"] == "罗素2000"
+
+    def test_sp500_dow30_chips(self, tmp_path):
+        """S&P 500 + Dow 30 ticker gets chips [Dow 30, S&P 500] in that order."""
+        agg, per = self._make_agg_and_per(tmp_path)
+        ctx = build_page_context(
+            "AAPL", "Apple Inc.", "Information Technology", per, agg, "2026-07-20 00:00 UTC",
+            group="sp500", all_groups={"sp500"}, dow30_set={"AAPL"},
+        )
+        chips = ctx["hero"]["index_chips"]
+        assert chips is not None
+        labels_en = [c["en"] for c in chips]
+        assert labels_en[0] == "Dow 30", "Dow 30 must be first"
+        assert "S&P 500" in labels_en
+
+    def test_sp500_no_r2000_chip(self, tmp_path):
+        """A large-cap sp500 ticker must NOT get a Russell 2000 chip even if in all_groups."""
+        agg, per = self._make_agg_and_per(tmp_path)
+        ctx = build_page_context(
+            "AAPL", "Apple Inc.", "Information Technology", per, agg, "2026-07-20 00:00 UTC",
+            group="sp500", all_groups={"sp500", "r2000"}, dow30_set=set(),
+        )
+        chips = ctx["hero"]["index_chips"] or []
+        labels_en = [c["en"] for c in chips]
+        assert "Russell 2000" not in labels_en, "sp500 tickers must never get Russell 2000 chip"
+
+    def test_sp400_no_r2000_chip(self, tmp_path):
+        """A mid-cap sp400 ticker must NOT get a Russell 2000 chip."""
+        agg, per = self._make_agg_and_per(tmp_path)
+        ctx = build_page_context(
+            "MDT", "Medtronic", "Health Care", per, agg, "2026-07-20 00:00 UTC",
+            group="sp400", all_groups={"sp400", "r2000"}, dow30_set=set(),
+        )
+        chips = ctx["hero"]["index_chips"] or []
+        labels_en = [c["en"] for c in chips]
+        assert "Russell 2000" not in labels_en, "sp400 tickers must never get Russell 2000 chip"
+
+    # ---- Template renders index_chips ----
+
+    def test_template_renders_index_chips(self):
+        """ticker.html.j2 renders index_chips when present in hero context."""
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        ctx = _rich_ctx()
+        ctx["hero"]["index_chips"] = [
+            {"en": "S&P 600", "zh": "标普600小盘"},
+            {"en": "Russell 2000", "zh": "罗素2000"},
+        ]
+        html = tmpl.render(**ctx)
+        assert "S&amp;P 600" in html or "S&P 600" in html
+        assert "Russell 2000" in html
+
+    def test_template_omits_index_chips_when_none(self):
+        """ticker.html.j2 renders cleanly when index_chips is None (absent).
+
+        Russell 2000 will appear in the CTA band copy regardless, so we verify
+        the chip6 span is absent rather than the text itself.
+        """
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        ctx = _rich_ctx()
+        ctx["hero"]["index_chips"] = None
+        html = tmpl.render(**ctx)
+        # chip6 spans are only emitted by the index_chips loop; sector chip has no "Russell"
+        assert 'class="chip6">Russell 2000' not in html
+        assert 'class="chip6">罗素2000' not in html
+
+    def test_cta_copy_updated(self):
+        """CTA band must reference S&P 1500 and Russell 2000, not the old copy."""
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        ctx = _rich_ctx()
+        html = tmpl.render(**ctx)
+        assert "Russell 2000" in html, "CTA band must mention Russell 2000"
+        assert "2,700" in html or "2700" in html, "CTA band must mention 2700+ stocks"
+        assert "Every S&P 1500 name" not in html, "Old CTA copy must be replaced"
+
+    # ---- _INDEX_TIER has r2000 ----
+
+    def test_index_tier_has_r2000(self):
+        """engine.intel_discovery._INDEX_TIER must contain r2000 key."""
+        from engine.intel_discovery import _INDEX_TIER
+        assert "r2000" in _INDEX_TIER
+        assert _INDEX_TIER["r2000"] == 0.45

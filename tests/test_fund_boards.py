@@ -105,6 +105,22 @@ class TestCapBucket:
         m, p = _make_membership(), _make_polygon()
         assert fb.cap_bucket("aapl", m, p)["bucket"] == "large"
 
+    def test_r2000_is_small(self):
+        """r2000 group must map to bucket 'small', mirroring the sp600 arm."""
+        import pandas as pd
+        m = pd.DataFrame([
+            {"ticker": "SMLL", "group": "r2000", "sector": "Financials", "active": True},
+        ])
+        p = pd.DataFrame(
+            {"market_cap_usd": [500e6], "gics_sector": ["Financials"]},
+            index=pd.Index(["SMLL"], name="ticker"),
+        )
+        res = fb.cap_bucket("SMLL", m, p)
+        assert res["bucket"] == "small", (
+            "r2000 group must be treated as small-cap tier (mirrors sp600)"
+        )
+        assert res["market_cap_usd"] == pytest.approx(500e6)
+
 
 # ---------------------------------------------------------------------------
 # 2. Incremental-weight formula
