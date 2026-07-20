@@ -1034,20 +1034,12 @@
   .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
   .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
   .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
-  /* W2 outcomes strip — recently surfaced → outcome (pinned toggle) */
-  /* board-track-toggle — gbtn glass pill (macro sweep 2026-07); keeps its --link
-     open-state identity */
-  .board-track-toggle{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;font-weight:600;
-    padding:3px 10px;border-radius:999px;border:1px solid var(--gbtn-brd);background:var(--gbtn-bg);color:var(--muted);
-    -webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
-    box-shadow:inset 0 1px 0 var(--gbtn-sheen);
-    cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;
-    transition:border-color .2s ease,color .2s ease,background .2s ease}
-  .board-track-toggle:hover{border-color:color-mix(in srgb, var(--link) 45%, var(--gbtn-brd-hover));color:var(--link);background:var(--gbtn-bg-hover)}
-  .board-track-toggle.is-open{border-color:color-mix(in srgb, var(--link) 55%, var(--gbtn-brd));color:var(--link);background:linear-gradient(180deg, color-mix(in srgb, var(--link) 12%, var(--gbtn-bg)), var(--gbtn-bg))}
-  /* when relocated into the show-more bar, pin it to the left edge and keep the
-     "Showing X of Y" / show-more controls in their centered positions */
-  .sm-bar>.board-track-toggle{order:-1;margin-right:auto}
+  /* W2 outcomes strip — recently surfaced → outcome */
+  /* NOTE: the old .board-track-toggle glass pill + its .sm-bar relocation rules
+     were removed with the Track-record popup revamp (2026-07-20). The receipt
+     chip + dialog now live in the shared partial templates/_track_record_dlg.html.j2
+     (all styles are self-scoped `trd-`). theme.js pinBoardTrackToggle() early-
+     returns harmlessly now that #board-track-toggle no longer renders. */
   .board-outcomes{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
   .board-outcomes-hdr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:5px}
   .board-outcomes-title{font-weight:700;font-size:12px}
@@ -15260,18 +15252,33 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _pcts = _oc.get('rows', []) | map(attribute='pct_since') | list %}
         {% if _pcts | length > 0 %}{% set _tr_ns.avg = ((_pcts | sum) / (_pcts | length))|round(1) %}{% endif %}
       {% endif %}
-      {# Track record glance chip — links to depth page (Prophet W1). #}
-      <div class="board-track-glance" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span id="board-track-toggle" class="board-track-toggle" style="cursor:default">{% if _tr_ns.wr is not none and _tr_ns.avg is not none %}<span class="l-en">📊 Track record: {{ _tr_ns.wr }}% win · {{ '%+g'|format(_tr_ns.avg) }}% avg</span><span class="l-zh">📊 往绩：胜率 {{ _tr_ns.wr }}% · 平均 {{ '%+g'|format(_tr_ns.avg) }}%</span>{% else %}<span class="l-en">📊 Track record</span><span class="l-zh">📊 往绩</span>{% endif %}</span>
-        {# Compact 2-row summary #}
-        {% if _sm.get('n_running') is not none %}
-        <span class="muted" style="font-size:11px">
-          <span class="az-up">{{ _sm.get('n_running') }} {{ t('running', '上涨') }}</span>
-          · <span class="az-dn">{{ _sm.get('n_stopped') }} {{ t('stopped', '止损') }}</span>{% if _sm.get('n_flat') %} · {{ _sm.get('n_flat') }} {{ t('flat', '持平') }}{% endif %}
-        </span>
-        {% endif %}
-        <a href="us_track_record.html" style="font-size:12px;font-weight:700;color:var(--link);white-space:nowrap"><span class="l-en">Full track record →</span><span class="l-zh">完整往绩 →</span></a>
-      </div>
+      {# Track-record receipt chip + popup — shared partial (2026-07-20 revamp).
+         The stat line IS the button; clicking opens the in-page dialog. State is
+         'scored' when the desk has a win rate + avg; falls back to 'accruing'
+         otherwise. us_track_series (nullable, may be entirely absent from the
+         render context — the render tests never pass it, so guard `is defined`
+         too) feeds the button's live win-rate sparkline. #}
+      {% set _trd_state = 'scored' if (_tr_ns.wr is not none and _tr_ns.avg is not none) else 'accruing' %}
+      {% set _trd_series = us_track_series if (us_track_series is defined and us_track_series) else none %}
+      {% set trd = {
+        'market': 'us', 'state': _trd_state,
+        'stats': {
+          'win_rate_pct': _tr_ns.wr, 'avg_pct': _tr_ns.avg,
+          'n_resolved': _sm.get('n_resolved') if _sm.get('n_resolved') is not none else ((_sm.get('n_running') or 0) + (_sm.get('n_stopped') or 0) + (_sm.get('n_flat') or 0)),
+          'n_up': _sm.get('n_running'), 'n_stopped': _sm.get('n_stopped'), 'n_flat': _sm.get('n_flat'),
+          'wilson_lo_pct': _sm.get('wilson_lo_pct'), 'wilson_hi_pct': _sm.get('wilson_hi_pct'),
+          'n_onboard': _sm.get('n_onboard'),
+          'n_calls': _sm.get('n_calls') if _sm.get('n_calls') is not none else _oc.get('rows', []) | length,
+        },
+        'data_url': 'factordata/us_track_ledger.json',
+        'eyebrow_en': 'US buy board · vs S&P 500', 'eyebrow_zh': '美股买入榜 · 对比标普500',
+        'bench_en': 'S&P 500', 'bench_zh': '标普500',
+        'series': _trd_series, 'as_of': _sm.get('as_of') or _oc.get('as_of'),
+        'deep_link': 'us_track_record.html', 'up_class': 'az-up', 'dn_class': 'az-dn',
+        'note_en': 'Grading: entry = the closing price on the day a name surfaces; a win = it left the board up more than 2%. Delisted names can\'t be priced and sit outside these numbers.',
+        'note_zh': '打分：入场＝上榜当日收盘价；胜＝离榜时上涨超过 2%。退市个股无法定价，不计入以上数据。',
+      } %}
+      {% include '_track_record_dlg.html.j2' %}
       {% endif %}
       {% if top_setups %}
       <div class="topsetups">

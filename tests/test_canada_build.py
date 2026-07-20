@@ -139,8 +139,12 @@ def test_canada_stocks_template_renders():
     #    watch/laggard parity strips + why-now evidence chips + entry-window card accent ──
     assert 'class="desk-hdr"' in html                   # ONE "what this desk is / isn't" block
     assert "Not a guaranteed buy list" in html
-    assert 'class="trk"' in html and "ACCRUING" in html  # track-record centerpiece (accruing)
-    assert "2026-08-24" in html                          # honest first-stable-read date on the panel
+    # Track-record centerpiece — now the shared receipt chip + popup (2026-07-20 revamp).
+    # The old inline .trk panel + "ACCRUING" badge were re-homed into the dialog; the
+    # accruing state now rides on data-state and the chip/dialog ids.
+    assert 'class="trk"' in html and 'id="trd-btn"' in html   # chip mounts in the .trk wrapper
+    assert 'data-state="accruing"' in html                    # honest accruing state on the dialog
+    assert "2026-08-24" in html                          # honest first-read date on the accruing card
     assert 'class="watch-strip"' in html and "CLS.TO" in html   # strong-but-blocked watch strip
     assert "Weakest screen (laggards)" in html and "WSP.TO" in html  # laggard/avoid strip
     assert "ev-insider" in html                          # insider why-now chip

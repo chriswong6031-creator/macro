@@ -3004,70 +3004,36 @@
   </div>
   {% endif %}
 
-  <!-- ===================== TRACK RECORD — public forward scoreboard (§7.4) ===================== -->
+  <!-- ===================== TRACK RECORD — receipt chip + popup (shared partial, 2026-07-20) ===================== -->
   {% if mode == 'stocks' and track_record %}
   {% set TR = track_record %}
-  <div class="panel span12 trackrec" id="track-record">
-    <div class="tr-head">
-      <h2>📊 {{ t('Public scoreboard — does this board rank precede runs?', '公开记分牌 — 本看板排名是否领先上涨？') }}</h2>
-      {% if TR.status == 'scored' %}
-      <span class="tr-status st-scored">{{ t('SCORED', '已评分') }}</span>
-      {% else %}
-      <span class="tr-status st-accruing">{{ t('ACCRUING', '累积中') }}</span>
-      {% endif %}
-    </div>
-    {% if TR.status != 'scored' %}
-    {# ACCRUING — the honest, intentional pre-grade state. Every render logs the ranked
-       board with its as-of close; forward excess vs the HSI grades it at 21d / 63d. #}
-    <p class="tr-lead">{{ t('The board is being tracked in public. Scores appear once enough 21d and 63d results land.', '看板正在公开跟踪。等21日与63日结果足够后自动显示分数。') }}</p>
-    <div class="tr-timeline">
-      <div class="tr-step ts-now">
-        <div class="ts-k">{{ t('Accruing since', '开始累积') }}</div>
-        <div class="ts-v">{{ TR.first_write or '2026-07-03' }}</div>
-        <div class="ts-sub">{{ TR.n_calls }} {{ t('board calls logged', '看板结论已记录') }}{% if TR.n_graded %} · {{ TR.n_graded }} {{ t('graded', '已评分') }}{% endif %}</div>
-      </div>
-      {% if TR.first_21d_read %}
-      <div class="tr-step">
-        <div class="ts-k">{{ t('First 21-day read', '首次21日读数') }}</div>
-        <div class="ts-v">≈ {{ TR.first_21d_read }}</div>
-        <div class="ts-sub">{{ t('first single matured cross-section', '首个成熟横截面') }}</div>
-      </div>
-      {% endif %}
-      {% if TR.first_stable_read %}
-      <div class="tr-step">
-        <div class="ts-k">{{ t('Stable rank-IC read', '稳定排名IC读数') }}</div>
-        <div class="ts-v">≈ {{ TR.first_stable_read }}</div>
-        <div class="ts-sub">{{ t('≥5 matured dates (late-Aug)', '≥5个成熟日期（8月下旬）') }}</div>
-      </div>
-      {% endif %}
-    </div>
-    <p class="tr-foot">{{ t('Hit-rate shows how often calls beat the Hang Seng. Rank-IC checks whether higher ranks did better. Delisted-name losses may be missing.', '命中率显示结论跑赢恒指的频率。排名IC检查高排名是否表现更好。退市亏损可能缺失。') }}</p>
-    {% else %}
-    {# SCORED — the gate cleared. Per-horizon rank-IC + per-group hit-rates. #}
-    <p class="tr-lead">{{ t('Enough history has landed. The board is now graded in public.', '历史数据已足够。看板开始公开评分。') }}</p>
-    {% if TR.horizons %}
-    <table class="tr-tbl">
-      <thead><tr>
-        <th>{{ t('Horizon', '周期') }}</th><th>{{ t('n graded', 'n 已评分') }}</th>
-        <th>{{ t('rank-IC', '排名IC') }}</th><th>{{ t('IC dates', 'IC日期数') }}</th>
-        <th>{{ t('buy hit-rate', '买入命中率') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for h in TR.horizons %}
-        <tr>
-          <td>{{ h.h }}</td>
-          <td>{{ h.n if h.n is not none else '—' }}</td>
-          <td>{{ '%+.3f'|format(h.rank_ic) if h.rank_ic is not none else '—' }}</td>
-          <td>{{ h.n_ic_dates if h.n_ic_dates is not none else '—' }}</td>
-          <td>{% if h.hit_rate_21d is not none %}{{ (h.hit_rate_21d*100)|round|int }}%{% else %}—{% endif %}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% endif %}
-    <p class="tr-foot">{{ t('Grades update every render as calls mature. Survivorship: no dead-name store — losses on delisted names are not captured (an honest bound).', '分数随结论成熟每次渲染更新。幸存者偏差：无退市名库 —— 退市名称亏损未被捕捉（诚实边界）。') }}</p>
-    {% endif %}
-  </div>
+  {% set _hk_h21 = (TR.horizons | selectattr('h', 'equalto', '21d') | list | first) if TR.horizons else none %}
+  {% if TR.status == 'scored' and _hk_h21 and _hk_h21.hit_rate_21d is not none %}
+    {% set _hk_state = 'scored' %}
+    {% set _hk_stats = {
+      'win_rate_pct': (_hk_h21.hit_rate_21d * 100)|round|int,
+      'avg_pct': none, 'n_resolved': _hk_h21.n, 'n_up': none, 'n_stopped': none, 'n_flat': none,
+      'n_calls': TR.n_calls,
+    } %}
+  {% else %}
+    {% set _hk_state = 'accruing' %}
+    {% set _hk_stats = {
+      'n_calls': TR.n_calls, 'first_write': (TR.first_write or '2026-07-03'),
+      'first_read_est': (TR.first_21d_read or TR.first_stable_read or '2026-08-24'),
+      'n_suspended': TR.n_suspended if (TR.n_suspended is defined) else none,
+    } %}
+  {% endif %}
+  {% set trd = {
+    'market': 'hk', 'state': _hk_state, 'stats': _hk_stats,
+    'data_url': 'factordata/hk_track_ledger.json',
+    'eyebrow_en': 'Hong Kong board · vs Hang Seng', 'eyebrow_zh': '港股榜单 · 对比恒指',
+    'bench_en': 'Hang Seng', 'bench_zh': '恒生指数',
+    'series': none, 'as_of': (TR.as_of if (TR.as_of is defined) else none),
+    'deep_link': none, 'up_class': 'pos', 'dn_class': 'neg',
+    'note_en': 'Every nightly board is logged and graded against forward excess return vs the Hang Seng. No delisting archive yet — names that vanish leave the sample, so losses can be understated.',
+    'note_zh': '每晚榜单都会记录，并按相对恒指的前瞻超额收益评分。暂无退市名库——消失的个股会离开样本，因此亏损可能被低估。',
+  } %}
+  <div class="panel span12" id="track-record" style="display:flex;justify-content:center;padding:16px">{% include '_track_record_dlg.html.j2' %}</div>
   {% endif %}
 
   <!-- ===================== SMART-MONEY FLOWS DESK (southbound per-name) ===================== -->

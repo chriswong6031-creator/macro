@@ -1466,29 +1466,39 @@
       {% for s, n in sc.counts.items() %}<span class="muted">{{ s }} {{ n }}{{ '' if loop.last else ' ·' }}</span> {% endfor %}</span>
   </p>
   {% endif %}
-  {# ===== TRACK-RECORD panel (§7.4) — the desk's accountability centerpiece. Ships in
-     'accruing' state with the honest first-stable-read date printed on the panel; flips to
-     a scored hit-rate / rank-IC read once ≥5 IC-dates mature (≈ late-Aug 21d). ===== #}
+  {# ===== TRACK-RECORD — receipt chip + popup (shared partial, 2026-07-20) — the desk's
+     accountability centerpiece. Ships 'accruing' with the honest first-read date; flips to a
+     scored 21d hit-rate read once ≥5 IC-dates mature (≈ late-Aug 21d). ===== #}
   {% set trk = setups.board_track %}
   {% if trk %}
-  <div class="trk">
-    <p class="trk-h">📊 {{ t('Public scoreboard — this board, graded forward', '公开记分牌 — 本榜单前瞻评分') }}
-      {% if trk.status == 'scored' %}<span class="trk-badge scored">{{ t('SCORED', '已评分') }}</span>{% else %}<span class="trk-badge">{{ t('ACCRUING', '累积中') }}</span>{% endif %}
-    </p>
-    {% if trk.status == 'scored' %}
-    {% set h21 = (trk.by_horizon or {})['21d'] if (trk.by_horizon and '21d' in trk.by_horizon) else none %}
-    <div class="trk-body"><span class="l-en">Each nightly board is logged and graded against forward excess return vs the TSX index. Lower rank-IC (more negative) means the board order predicted outperformance.</span><span class="l-zh">每晚榜单均被记录，并按相对 TSX 指数的前瞻超额收益评分。rank-IC 越低（越负）表示榜单顺序越能预测跑赢。</span></div>
-    <div class="trk-grid">
-      <div class="trk-cell"><div class="tv">{{ trk.n_graded if trk.n_graded is not none else '—' }}</div><div class="tk">{{ t('graded calls', '已评分') }}</div></div>
-      {% if h21 and h21.rank_ic is not none %}<div class="trk-cell"><div class="tv">{{ '%+.2f'|format(h21.rank_ic) }}</div><div class="tk">{{ t('21d rank-IC', '21日 rank-IC') }}</div></div>{% endif %}
-      {% if h21 and h21.hit_rate_21d is not none %}<div class="trk-cell"><div class="tv">{{ '%.0f'|format(h21.hit_rate_21d * 100) }}%</div><div class="tk">{{ t('21d buy hit-rate', '21日买入命中率') }}</div></div>{% endif %}
-      {% if trk.n_suspended is not none %}<div class="trk-cell"><div class="tv">{{ trk.n_suspended }}</div><div class="tk">{{ t('suspended (excl.)', '已停牌（剔除）') }}</div></div>{% endif %}
-    </div>
-    {% else %}
-    <div class="trk-body"><span class="l-en">Every nightly board is logged to a forward ledger and will be graded against realized excess return — <b>no cherry-picking, no hindsight</b>. The scoreboard is building in public.</span><span class="l-zh">每晚榜单都会写入前瞻账本，并按实际超额收益评分——<b>不挑样本、不事后诸葛</b>。记分牌正在公开累积。</span></div>
-    <p class="trk-note"><span class="l-en">First stable read ≈ <b>{{ trk.first_read_est or '2026-08-24' }}</b> (needs ≥5 matured 21-day cross-sections). 63-day read ≈ Q4. Until then this panel is honestly empty.</span><span class="l-zh">首次稳定读数 ≈ <b>{{ trk.first_read_est or '2026-08-24' }}</b>（需 ≥5 个成熟的 21 日横截面）。63 日读数 ≈ 四季度。在此之前本面板如实留空。</span></p>
-    {% endif %}
-  </div>
+  {% set _ca_h21 = (trk.by_horizon or {})['21d'] if (trk.by_horizon and '21d' in trk.by_horizon) else none %}
+  {% if trk.status == 'scored' and _ca_h21 and _ca_h21.hit_rate_21d is not none %}
+    {% set _ca_state = 'scored' %}
+    {% set _ca_stats = {
+      'win_rate_pct': (_ca_h21.hit_rate_21d * 100)|round|int,
+      'avg_pct': none, 'n_resolved': trk.n_graded, 'n_up': none, 'n_stopped': none, 'n_flat': none,
+      'n_calls': trk.n_graded,
+    } %}
+  {% else %}
+    {% set _ca_state = 'accruing' %}
+    {% set _ca_stats = {
+      'n_calls': (trk.n_graded if trk.n_graded is not none else trk.n_rows if (trk.n_rows is defined) else none),
+      'first_write': (trk.first_write if (trk.first_write is defined) else none),
+      'first_read_est': (trk.first_read_est or '2026-08-24'),
+      'n_suspended': trk.n_suspended,
+    } %}
+  {% endif %}
+  {% set trd = {
+    'market': 'ca', 'state': _ca_state, 'stats': _ca_stats,
+    'data_url': 'factordata/ca_track_ledger.json',
+    'eyebrow_en': 'Canada board · vs TSX', 'eyebrow_zh': '加拿大榜单 · 对比多伦多指数',
+    'bench_en': 'TSX', 'bench_zh': '多伦多指数',
+    'series': none, 'as_of': (trk.as_of if (trk.as_of is defined) else none),
+    'deep_link': none, 'up_class': 'pos', 'dn_class': 'neg',
+    'note_en': 'Every nightly board is logged to a forward ledger and graded against realized excess return vs the TSX — no cherry-picking, no hindsight. No delisting archive yet — names that vanish leave the sample, so losses can be understated.',
+    'note_zh': '每晚榜单都会写入前瞻账本，并按相对多伦多指数的实际超额收益评分——不挑样本、不事后诸葛。暂无退市名库——消失的个股会离开样本，因此亏损可能被低估。',
+  } %}
+  <div class="trk" style="display:flex;justify-content:center">{% include '_track_record_dlg.html.j2' %}</div>
   {% endif %}
   {# hard freshness gate banner (deliverable 4): tailwind axis suppressed when the
      canada_search panel is >3 trading days staler than the board's own price date. #}

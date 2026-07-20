@@ -526,11 +526,32 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
         # attach the scorecard (it self-reports status='accruing' with first_read_est until
         # the MIN_IC_DATES gate is met ≈ 2026-08-24). This is the desk's accountability
         # centerpiece — it must render honestly-empty, never be absent.
-        setups["board_track"] = board_ledger.scorecard("CA")
+        _ca_sc = board_ledger.scorecard("CA")
+        setups["board_track"] = _ca_sc
         g = board_ledger.grade("CA")
         if g.get("available"):
             log.info("CA board ledger: grade n_calls=%s n_graded=%s n_suspended=%s",
                      g.get("n_calls"), g.get("n_graded"), g.get("n_suspended"))
+        # TRD popup — board_day ledger (track_ledger/v1). Reuses the scorecard + grade
+        # dicts JUST computed (no extra engine calls). Additive, never fatal.
+        try:
+            from engine import track_ledger as _tl
+            _ca_look = {
+                str(r.get("ticker")): {"nm": r.get("name"), "sec": r.get("sector"),
+                                       "grp": r.get("group")}
+                for r in ((setups or {}).get("buy") or []) if r.get("ticker")
+            }
+            _ca_doc = _tl.from_board_ledger_grade(
+                "CA", g, _ca_sc,
+                bench={"code": "_GSPTSE", "en": "S&P/TSX Composite", "zh": "多伦多综指"},
+                name_lookup=_ca_look, as_of=asof,
+            )
+            _ca_site = Path(config.load()["storage"]["site_dir"])
+            _tl.atomic_write(_ca_site / "factordata" / "ca_track_ledger.json", _ca_doc)
+            log.info("ca track_ledger: wrote ca_track_ledger.json (%d rows)",
+                     _ca_doc.get("meta", {}).get("n_total", 0))
+        except Exception as _cale:  # noqa: BLE001 — ledger is additive; never fatal
+            log.warning("ca track_ledger emit failed (%s) — render continues", _cale)
     except Exception as e:  # noqa: BLE001 — fail-open-LOUD (health row + log)
         health.append({"en": "Board ledger (FAILED — see build log)",
                        "zh": "榜单账本（失败 — 查看构建日志）",
