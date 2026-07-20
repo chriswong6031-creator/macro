@@ -83,11 +83,22 @@ if [ ! -f "${JAR_PATH}" ]; then
 fi
 
 # --- (c) Foreground launch, stdin held open -----------------------------------
+# stdin holder: an anonymous FIFO this wrapper holds open read-write on fd 9.
+# The terminal's console reader blocks forever (never EOF). Do NOT use a
+# `tail -f /dev/null | java` pipeline here: when java dies, the never-exiting
+# tail keeps the pipeline (and so the wrapper) alive forever, launchd sees a
+# running job, and no restart ever happens (learned 2026-07-20, first live死).
 echo "[$(stamp)] theta_terminal_keepalive: launching terminal (health was ${code})"
 echo "[$(stamp)] ---- keepalive launch ----" >> "${TERM_LOG}"
+FIFO="/tmp/theta_terminal_stdin.$$"
+rm -f "${FIFO}"
+mkfifo "${FIFO}" || { echo "[$(stamp)] theta_terminal_keepalive: mkfifo failed"; sleep "${BACKOFF_S}"; exit 1; }
+exec 9<>"${FIFO}"
+rm -f "${FIFO}"
 t0=$(date +%s)
-tail -f /dev/null | java -jar "${JAR_PATH}" --api-key "${THETA_API_KEY}" >> "${TERM_LOG}" 2>&1
+java -jar "${JAR_PATH}" --api-key "${THETA_API_KEY}" <&9 >> "${TERM_LOG}" 2>&1
 rc=$?
+exec 9>&-
 t1=$(date +%s)
 elapsed=$(( t1 - t0 ))
 echo "[$(stamp)] theta_terminal_keepalive: terminal exited rc=${rc} after ${elapsed}s"
