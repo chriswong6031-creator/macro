@@ -1034,6 +1034,26 @@ def _rich_ctx() -> dict:
             "headline_zh": "处于买入区间",
         },
         "chart": chart_obj,
+        "deep": {
+            "dialogs": [
+                {"id": "stats", "title_en": "Statistics — full detail", "title_zh": "统计数据 — 完整明细",
+                 "panels": [
+                     {"kind": "table", "title_en": "Valuation vs sector", "title_zh": "估值对比行业",
+                      "head": [["Multiple", "指标"], ["This stock", "本股"], ["Sector median", "行业中位"], ["Cheaper than", "相对便宜"]],
+                      "rows": [[{"en": "P/E (trailing)", "zh": "市盈率（静态）"}, "32.0×", "25.0×", "40%"]]},
+                     {"kind": "kv", "title_en": "Trading information", "title_zh": "交易信息",
+                      "rows": [{"k_en": "Beta vs market", "k_zh": "贝塔", "v": "1.28", "v_en": "", "v_zh": ""}]},
+                 ]},
+                {"id": "financials", "title_en": "Financials — full detail", "title_zh": "财务数据 — 完整明细",
+                 "panels": [
+                     {"kind": "table", "title_en": "Multi-year record", "title_zh": "多年财务记录",
+                      "head": [["", ""], ["2023", "2023"], ["2024", "2024"]],
+                      "rows": [[{"en": "Revenue", "zh": "营业收入"}, "$383.3B", "$391.0B"]]},
+                     {"kind": "notes", "title_en": "Accounting quality checks", "title_zh": "会计质量检查",
+                      "lines": [{"en": "Earnings quality: steady", "zh": "盈利质量：稳定", "cls": "mut"}]},
+                 ]},
+            ],
+        },
         "gauges": {
             "valuation": {"pct": 62.0, "verdict_en": "Cheap vs sector", "verdict_zh": "相对行业便宜"},
             "beta": {"beta": 1.2, "label_en": "Moderately volatile", "label_zh": "波动适中"},
@@ -1224,7 +1244,6 @@ class TestTemplateRender:
             "Price chart",
             "Trade levels",
             "Key facts",
-            "Performance",
             "Seasonality",
             "Financials",
             "Valuation",
@@ -1242,9 +1261,12 @@ class TestTemplateRender:
         ]
         for section in expected_sections:
             assert section in html, f"Missing section: {section}"
-        # v6 removed sections must be gone
+        # v6/v6b removed sections must be gone
         for gone in ("Snapshot Gauges", "Key Statistics", "Factor Profile"):
             assert gone not in html, f"Removed v5 section leaked back: {gone}"
+        # v6b: the Performance module is gone from the page flow (its table
+        # lives in the Statistics dialog); no main-column anchor remains
+        assert 'id="performance"' not in html
 
     def test_ticker_template_section_order(self):
         """Sections must appear in the correct order in rendered output.
@@ -1259,7 +1281,6 @@ class TestTemplateRender:
         # rail (levels/facts/seasonality/themes/peers after the main column)
         order = [
             'id="chart"',
-            'id="performance"',
             'id="technicals"',
             'id="earnings"',
             'id="valuation"',
@@ -1531,6 +1552,68 @@ class TestLadderTemplate:
         # legacy technicals level cards must not render even though ctx still has the keys
         assert "Buy zone</div>" not in html
         assert "Don't chase above</div>" not in html
+
+
+class TestDeepDialogs:
+    """v6b popup dashboards — dialog markup + Full-detail affordances."""
+
+    def test_dialogs_render_with_panels(self):
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        html = tmpl.render(**_rich_ctx())
+        assert 'id="dlg-stats"' in html
+        assert 'id="dlg-financials"' in html
+        assert "dsrOpenDlg" in html          # mx5 dialog system shipped
+        assert "Full detail" in html         # header affordance present
+        assert "Multi-year record" in html   # table panel content
+        assert "$383.3B" in html
+
+    def test_no_dialogs_without_deep(self):
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        ctx = _rich_ctx()
+        ctx["deep"] = None
+        html = tmpl.render(**ctx)
+        assert 'id="dlg-stats"' not in html
+        assert "Full detail" not in html
+
+    def test_dialog_deep_link_hash_handler(self):
+        env = _jinja_env()
+        tmpl = env.get_template("ticker.html.j2")
+        html = tmpl.render(**_rich_ctx())
+        assert "indexOf('dlg-')===0" in html  # #dlg- hash deep-link wired
+
+
+class TestMachineScrub:
+    """Operator order: no machine reads in Tier-1 stance copy."""
+
+    def test_nested_machine_parens(self):
+        from scripts.build_ticker_pages import _scrub_machine
+        out = _scrub_machine("price is now extended (overbought (daily RSI 72)). Don't chase.")
+        assert "RSI" not in out
+        assert "(overbought)" in out
+
+    def test_flat_machine_parens_removed(self):
+        from scripts.build_ticker_pages import _scrub_machine
+        out = _scrub_machine("stretched after the run (daily RSI 72, 98th-percentile volatility). Wait.")
+        assert "RSI" not in out and "percentile" not in out
+        assert out == "stretched after the run. Wait."
+
+    def test_shorthand_normalized(self):
+        from scripts.build_ticker_pages import _scrub_machine
+        out = _scrub_machine("a low formed ~4 day(s) ago @ 275.15 and held")
+        assert "days ago at $275.15" in out
+
+    def test_plain_parens_kept(self):
+        from scripts.build_ticker_pages import _scrub_machine
+        out = _scrub_machine("a partial entry (half size) is available")
+        assert "(half size)" in out
+
+    def test_zh_scrub(self):
+        from scripts.build_ticker_pages import _scrub_machine_zh
+        out = _scrub_machine_zh("低点于约 4 天前形成 @ 275.15，且价格已重新站上（日线RSI 72）10 日均线。")
+        assert "RSI" not in out
+        assert "价位 275.15" in out
 
 
 class TestLadderBuilder:
