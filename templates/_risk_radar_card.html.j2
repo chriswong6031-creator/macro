@@ -235,11 +235,13 @@
   {% endif %}
 
   {# Election-cycle context (US radar only; engine/election_cycle.py) — a calendar MODULATOR,
-     never an alert originator. Surfaces the midterm window + the HONEST measured odds (the
-     full stat/slice/caveat live in the tooltip so the chip can't overclaim). #}
+     never an alert originator. Lens content law (memory hover-popup-doctrine): the tip body
+     carries the plain stat + slice only (Tier-2 word budget); the machine receipt (n / p≈ /
+     the never-alarms rule) rides the data-tip-rc line that Lens renders in mono under a
+     dashed perforation. The caveat's dollar-folk-story debunk stays on Tier-3 surfaces. #}
   {% if rd.cycle and rd.cycle.show %}{% set cy = rd.cycle %}
   <div class="rrx-cyc">
-    <span class="rrx-cyc-k">{{ t(cy.label_en, cy.label_zh) }}{% if cy.in_drawdown_window %} · {{ t('Apr–Oct window','4–10月窗口') }}{% endif %}</span>{{ help(cy.stat_en ~ ' ' ~ cy.slice_en ~ ' ' ~ cy.caveat_en, cy.stat_zh ~ ' ' ~ cy.slice_zh ~ ' ' ~ cy.caveat_zh) }}
+    <span class="rrx-cyc-k">{{ t(cy.label_en, cy.label_zh) }}{% if cy.in_drawdown_window %} · {{ t('Apr–Oct window','4–10月窗口') }}{% endif %}</span><button class="lens-q" type="button" aria-label="Explain" data-lens-kind="record" data-tip-en="{{ cy.stat_en }} {{ cy.slice_en }}" data-tip-zh="{{ cy.stat_zh }} {{ cy.slice_zh }}" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · calendar adjusts sizing only — never raises an alarm" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 日历仅微调仓位，绝不单独报警">?</button>
     {% if cy.modulation and cy.modulation.risk_on_slice %}<span class="rrx-cyc-tag">▲ {{ t('early-warning sensitivity raised','已提高预警灵敏度') }}</span>{% elif cy.modulation and cy.modulation.gross_applied %}<span class="rrx-cyc-tag">{{ t('sizing trimmed','已小幅降仓') }}</span>{% endif %}
     {% if cy.trough_window_en %}<div class="rrx-cyc-sub">{{ t(cy.trough_window_en, cy.trough_window_zh) }}</div>{% endif %}
     {% if cy.sector_bias %}{% set sb = cy.sector_bias %}

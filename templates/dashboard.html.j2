@@ -11102,11 +11102,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           {% endif %}
 
-          {# Tile 3 — Calendar window (election cycle), favor/trim on hover #}
+          {# Tile 3 — Calendar window (election cycle), favor/trim on hover.
+             Lens content law (memory hover-popup-doctrine): plain-word body; machine
+             facts (n / p≈ / tickers) demoted to the data-tip-rc receipt line Lens
+             renders in mono under a dashed perforation. #}
           {% if _rk_cy %}
-          {%- set _rk_cy_tip_en %}{{ _rk_cy.stat_en if _rk_cy.stat_en is defined else '' }} {{ _rk_cy.slice_en if _rk_cy.slice_en is defined else '' }} {{ _rk_cy.caveat_en if _rk_cy.caveat_en is defined else '' }}{% if _rk_cy.sector_bias %} · Favor {% for f in _rk_cy.sector_bias.favor %}{% if not loop.first %} · {% endif %}{{ f.ticker }}{% endfor %}, trim {% for a in _rk_cy.sector_bias.avoid %}{% if not loop.first %} · {% endif %}{{ a.ticker }}{% endfor %}{% endif %}{% endset -%}
-          {%- set _rk_cy_tip_zh %}{{ _rk_cy.stat_zh if _rk_cy.stat_zh is defined else '' }} {{ _rk_cy.slice_zh if _rk_cy.slice_zh is defined else '' }} {{ _rk_cy.caveat_zh if _rk_cy.caveat_zh is defined else '' }}{% if _rk_cy.sector_bias %} · 偏好 {% for f in _rk_cy.sector_bias.favor %}{% if not loop.first %} · {% endif %}{{ f.ticker }}{% endfor %}，减持 {% for a in _rk_cy.sector_bias.avoid %}{% if not loop.first %} · {% endif %}{{ a.ticker }}{% endfor %}{% endif %}{% endset -%}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-events,#e0a030)" data-tip-en="{{ _rk_cy_tip_en|trim }}" data-tip-zh="{{ _rk_cy_tip_zh|trim }}">
+          {%- set _rk_cy_tip_en -%}Midterm years tend to sag from April to October — pullbacks have come about 1.25× as often as usual, even while the market still looks healthy. Treat it as a lean-carefully season, not a sell signal: nothing fires from the calendar alone. In past midterm second halves, defensives (health care, staples, utilities) held up best while energy and discretionary lagged.{%- endset -%}
+          {%- set _rk_cy_tip_zh -%}中期选举年的 4–10 月往往偏弱——即使大盘仍然健康，回撤出现的频率也约为平常的 1.25 倍。把它当作「谨慎一些」的季节，而非卖出信号：日历本身绝不单独触发操作。历次中期年下半年，防御板块（医疗、必需消费、公用事业）相对抗跌，能源与可选消费偏弱。{%- endset -%}
+          {%- set _rk_cy_rc_en -%}8 midterm cases · weak edge (p≈.09) · worst crashes non-midterm{% if _rk_cy.sector_bias %} · favor {% for f in _rk_cy.sector_bias.favor %}{% if not loop.first %}·{% endif %}{{ f.ticker }}{% endfor %} / trim {% for a in _rk_cy.sector_bias.avoid %}{% if not loop.first %}·{% endif %}{{ a.ticker }}{% endfor %}{% endif %}{%- endset -%}
+          {%- set _rk_cy_rc_zh -%}8 个中期年样本 · 优势较弱（p≈.09）· 史上最深回撤在非中期年{% if _rk_cy.sector_bias %} · 偏好 {% for f in _rk_cy.sector_bias.favor %}{% if not loop.first %}·{% endif %}{{ f.ticker }}{% endfor %} / 减持 {% for a in _rk_cy.sector_bias.avoid %}{% if not loop.first %}·{% endif %}{{ a.ticker }}{% endfor %}{% endif %}{%- endset -%}
+          <div class="rkc-sig" style="--rkc-c:var(--isle-events,#e0a030)" data-lens-kind="record" data-tip-en="{{ _rk_cy_tip_en|trim }}" data-tip-zh="{{ _rk_cy_tip_zh|trim }}" data-tip-rc-en="{{ _rk_cy_rc_en|trim }}" data-tip-rc-zh="{{ _rk_cy_rc_zh|trim }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('window') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Calendar','日历') }}</div>

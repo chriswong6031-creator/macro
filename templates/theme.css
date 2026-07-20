@@ -1344,22 +1344,14 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
 .rhmm-chip.q-Q2 { color:#1a1a1a; }
 @media (max-width:640px){ .rhmm-bars{ min-width:0; } }
 
-/* ---- i18n tooltip popover ([data-tip-en]/[data-tip-zh], wired in theme.js) --------
-   The replacement for bilingual title= attributes: ONE body-appended fixed-position
-   popover whose dual-span body follows the [data-lang] rules above — so only the
-   active language ever shows. Body-level + fixed → no card overflow clipping. */
+/* ---- i18n tooltip → LENS popover ([data-tip-en]/[data-tip-zh], wired in theme.js)
+   The Lens explainer card (design mockups/lens, merged #3102) replaced the old
+   .i18n-tip-pop singleton. Its component CSS is INJECTED by theme.js (#lens-style)
+   rather than living here, so vector-family pages — which load theme.js but NOT
+   theme.css and use different token names (--card/--ink vs --panel/--text) — style
+   it correctly through the --lens-* fallback chains. Only the trigger affordance
+   belongs in this file. z-index 12600 (above .row-pop 12000). */
 [data-tip-en] { cursor: help; }
-.i18n-tip-pop {
-  /* above .row-pop (12000): a chip tip opened from inside a row must not vanish
-     behind that row's own conditions card */
-  display: none; position: fixed; z-index: 12500;
-  max-width: min(320px, calc(100vw - 24px));
-  padding: 7px 10px; border-radius: 8px;
-  background: var(--panel); border: 1px solid var(--line);
-  box-shadow: 0 4px 16px rgba(0,0,0,.18);
-  font-size: 11px; font-weight: 500; line-height: 1.5; color: var(--text);
-  text-align: left; text-transform: none; letter-spacing: normal; white-space: normal;
-}
 
 /* ── W8-R1: Ripening three-zone shelf (READY / BASING / FALLING sink) ─────── */
 /* Zone accent tokens — inherit from --up/--down/--warn; re-stated for legibility. */
@@ -1484,6 +1476,6 @@ span.help.help-upgraded { font-size: 9.5px; font-weight: 700;
 /* The upgraded "?" icons (and the sibling Mag7 / Leadership / table-header icons) must
    not select-on-hold or pop the iOS callout menu on touch — a long press should do
    nothing (the popover opens on tap), not start a text selection. Scoped so content
-   rows keep normal selection; the popover body (.i18n-tip-pop) also stays selectable. */
+   rows keep normal selection; the popover body (.lens-pop) also stays selectable. */
 .help.help-upgraded, .m7p-help, .ldb-help, .st-th-tip {
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
