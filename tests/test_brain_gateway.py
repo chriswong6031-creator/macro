@@ -427,10 +427,9 @@ def test_post_filter_applied_to_brain_output(tmp_path):
                     with patch("lib.ai_costs.record_usage", return_value=True):
                         result = gw.chat("Should I buy NVDA?", "user1", lane="fast", root=root)
 
-    # Post-filter should have replaced the advice with the graceful refusal
+    # Post-filter surgically removes the personal order; the reply no longer commands a trade.
     assert result.get("filtered") is True
     assert "you should buy nvda" not in result["reply"].lower()
-    assert "buy/sell call" in result["reply"].lower()
 
 
 # ---------------------------------------------------------------------------
