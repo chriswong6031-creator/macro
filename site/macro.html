@@ -46,7 +46,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=de86232e">
 
 <style>
   * { box-sizing: border-box; }
@@ -2430,8 +2430,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -6953,7 +6953,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">2</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -6966,6 +6966,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   
                   
                   
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;finnhub_altdata&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;finnhub_altdata&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
                   
                   
                   
@@ -11349,9 +11358,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">GLD</span>
         
-        <span class="mx5-ai-ticker-pill">SPY</span>
+        <span class="mx5-ai-ticker-pill">XLF</span>
         
-        <span class="mx5-ai-ticker-pill">QQQ</span>
+        <span class="mx5-ai-ticker-pill">GS</span>
         
       </div>
       
@@ -11359,14 +11368,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          6 high-impact signals across channels
+          7 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          6 条高影响信号
+          7 条高影响信号
         </span>
         
       </div>
@@ -11442,8 +11451,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">These energy stocks are trading near oversold levels as Q2 earnings gains pace t…</span>
-              <span class="l-zh">These energy stocks are trading near oversold levels as Q2 e…</span>
+              <span class="l-en">Lumentum upgraded to Overweight by Barclays; Allegro, Penguin receive downgrades</span>
+              <span class="l-zh">Lumentum upgraded to Overweight by Barclays; Allegro, Pengui…</span>
             </div>
             <div class="mx5-alert-detail">
               <span>Seeking Alpha - Market Currents</span> · 
@@ -11459,8 +11468,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 1 of 2 in feed</span>
+          <span class="l-zh">显示 1 / 2 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -12470,7 +12479,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   
   
   <div class="rrx-cyc">
-    <span class="rrx-cyc-k"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span> · <span class="l-en">Apr–Oct window</span><span class="l-zh">4–10月窗口</span></span><button class="lens-q" type="button" aria-label="Explain" data-lens-kind="record" data-tip-en="Midterm-year drops between April and October have run deeper than usual — though the pattern is loose, and the worst crashes on record came in other years. The one measured edge: while the market still looks healthy (S&amp;P above its 200-day average), pullbacks have come about 1.25× as often in this window — an early heads-up for position size, never a trigger." data-tip-zh="中期选举年 4–10 月的回撤历来比平常更深——但规律并不严格，史上最深的下跌都发生在其他年份。 唯一可量化的优势：当大盘仍健康（标普高于 200 日均线）时，该窗口出现回撤的频率约为平常的 1.25 倍——仅作提前提醒、用于仓位，绝非买卖触发。" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · calendar adjusts sizing only — never raises an alarm" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 日历仅微调仓位，绝不单独报警">?</button>
+    <span class="rrx-cyc-k"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span> · <span class="l-en">Apr–Oct window</span><span class="l-zh">4–10月窗口</span></span><button class="lens-q" type="button" aria-label="Explain" data-lens-kind="record" data-tip-en="Midterm Apr–Oct drawdowns averaged −15% vs −10% otherwise (n=8, suggestive not significant, p≈0.09; the worst years on record are non-midterm). Edge is narrow: while the tape is still healthy (S&amp;P above its 200-day), this window has flagged ≥5% pullbacks at ~1.25× the base rate — early warning, sized not triggered." data-tip-zh="中期选举年 4–10 月最大回撤平均约 −15%（其余年份约 −10%；n=8，仅具提示性、未达显著，p≈0.09；史上最深回撤多发生在非中期年）。 优势有限：当大盘仍健康（标普高于 200 日线）时，该窗口的 ≥5% 回撤概率约为常态的 1.25 倍——用于提前预警与降低仓位，而非触发买卖。" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · calendar adjusts sizing only — never raises an alarm" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 日历仅微调仓位，绝不单独报警">?</button>
     <span class="rrx-cyc-tag">▲ <span class="l-en">early-warning sensitivity raised</span><span class="l-zh">已提高预警灵敏度</span></span>
     <div class="rrx-cyc-sub"><span class="l-en">historically bottoms ~Aug–Oct 2026</span><span class="l-zh">历史上约在 2026 年 8–10 月见底</span></div>
     
@@ -12499,7 +12508,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   <div class="rrx-cyc rrx-cax">
     <span class="rrx-cyc-k"><span class="l-en">Markets moving as one</span><span class="l-zh">多市场同涨同跌</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Absorption 88th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 88分位（5年）；集群：US、Commodities、Dollar</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Absorption 89th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 89分位（5年）；集群：US、Commodities、Dollar</span></span></span>
   </div>
 
   <div class="rrx-trk">
@@ -12721,7 +12730,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <div class="rlx-viz" style="--rlx-c:var(--isle-markets,#4d8ef5)">
                 <div class="rlx-bar-row" style="grid-template-columns:70px 1fr">
                   <span class="rlx-bar-lbl"><span class="l-en">vs 5-year<br>range</span><span class="l-zh">相对5年<br>区间</span></span>
-                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:88%"></span></span>
+                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:89%"></span></span>
                 </div>
                 <div class="rlx-viz-cap"><span class="l-en">Further right = markets moving more tightly together than usual.</span><span class="l-zh">越靠右，代表市场比平常联动得更紧。</span></div>
               </div>
@@ -12739,8 +12748,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
               
               <div class="lens-receipt">
-                <span class="l-en">88th pctile co-movement · 5-year window · display context, not a trigger</span>
-                <span class="l-zh">联动度 88 分位 · 5 年区间 · 展示背景，非触发</span>
+                <span class="l-en">89th pctile co-movement · 5-year window · display context, not a trigger</span>
+                <span class="l-zh">联动度 89 分位 · 5 年区间 · 展示背景，非触发</span>
               </div>
             </span>
           </div>
@@ -14014,8 +14023,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">初步迹象——初现火花，未经确认</span>
             </div>
             <div class="igd-asof">
-              <span class="l-en">as of 2026-07-20</span>
-              <span class="l-zh">截至 2026-07-20</span>
+              <span class="l-en">as of 2026-07-19</span>
+              <span class="l-zh">截至 2026-07-19</span>
             </div>
           </div>
         </div>
@@ -14086,7 +14095,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </span>
             </span>
           </div>
-          <div class="igd-chip lit fresh" data-tip-en="20d log-RS slope=0.0189 (positive); turned positive 3bd ago" data-tip-zh="20日对数RS斜率=0.0189（正向）；3日前转正">
+          <div class="igd-chip lit fresh" data-tip-en="20d log-RS slope=0.0189 (positive); turned positive 2bd ago" data-tip-zh="20日对数RS斜率=0.0189（正向）；2日前转正">
             <span class="igd-chip-dot"></span>
             <span class="igd-chip-body">
               <span class="igd-chip-lbl">
@@ -14895,6 +14904,25 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
         
         
         
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;finnhub_altdata&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;finnhub_altdata&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+        </div>
+        
         
         
         
@@ -14905,11 +14933,11 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           
           <details class="nb-item" open>
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">These energy stocks are trading near oversold levels as Q2 earnings gains pace this week</span><span class="l-zh">These energy stocks are trading near oversold levels as Q2 earnings gains pace this week</span></span>
+              <span class="nb-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+              <span class="nb-htitle"><span class="l-en">Lumentum upgraded to Overweight by Barclays; Allegro, Penguin receive downgrades</span><span class="l-zh">Lumentum upgraded to Overweight by Barclays; Allegro, Penguin receive downgrades</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4615204-these-energy-stocks-are-trading-near-oversold-levels-as-q2-earnings-gains-pace-this-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4615241-lumentum-upgraded-to-overweight-by-barclays-allegro-penguin-receive-downgrades?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -14921,17 +14949,6 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://www.cnbc.com/2026/07/14/were-raising-our-price-target-on-goldman-sachs-after-a-blowout-quarter.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nb-htitle"><span class="l-en">Magnolia Oil &amp; Gas to buy WildFire Energy in $4B deal, raises dividend</span><span class="l-zh">Magnolia Oil &amp; Gas to buy WildFire Energy in $4B deal, raises dividend</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4615200-magnolia-oil-gas-to-buy-wildfire-energy-in-4b-deal-raises-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -14972,17 +14989,6 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">If history is a guide, there’s still another week before earnings will start to move the stock market</span><span class="l-zh">If history is a guide, there’s still another week before earnings will start to move the stock market</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.marketwatch.com/story/if-history-is-a-guide-theres-still-another-week-before-earnings-will-start-to-move-the-stock-market-52baccad?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
               <span class="nb-htitle"><span class="l-en">Netflix stock falls as earnings forecast disappoints, company says it will give fewer engagement updates</span><span class="l-zh">Netflix股价下跌，因盈利预测不及预期，公司表示将减少参与度更新</span></span>
             </summary>
             <div class="nb-body">
@@ -15004,11 +15010,33 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">&#39;Earnings need to be strong&#39;: Wall Street assesses next catalyst for AI trade</span><span class="l-zh">&#39;Earnings need to be strong&#39;: Wall Street assesses next catalyst for AI trade</span></span>
+              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nb-htitle"><span class="l-en">Global X Bitcoin Covered Call ETF declares $0.069 dividend</span><span class="l-zh">Global X Bitcoin Covered Call ETF declares $0.069 dividend</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://finance.yahoo.com/markets/article/earnings-need-to-be-strong-wall-street-assesses-next-catalyst-for-ai-trade-120841127.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4615289-global-x-bitcoin-covered-call-etf-declares-0_069-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
+              <span class="nb-htitle"><span class="l-en">Global X Ethereum Covered Call ETF declares $0.1142 dividend</span><span class="l-zh">Global X Ethereum Covered Call ETF declares $0.1142 dividend</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4615288-global-x-ethereum-covered-call-etf-declares-0_1142-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="nb-htitle"><span class="l-en">Federal Reserve Board&#39;s annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span><span class="l-zh">美联储年度银行压力测试确认大型银行具备承受严重衰退的能力，可继续向家庭和企业放贷</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260624a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -18589,9 +18617,9 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-20 11:28 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-20 13:02 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-20 11:28 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-20 13:02 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -18682,14 +18710,14 @@ window.__CHART_SWAP__ = {
            "HY OAS %":"高收益债利差 %","% S&P500 > 50DMA":"标普500 高于50日均线 %"}
 };
 </script>
-<script src="theme.js"></script>
-<script src="chart_i18n.js"></script>
-<script src="timemachine.js"></script>
-<script src="tablesort.js"></script>
-<script src="charts.js"></script>
+<script src="theme.js?v=e63903ba" defer></script>
+<script src="chart_i18n.js?v=23272c48" defer></script>
+<script src="timemachine.js?v=92798ed7" defer></script>
+<script src="tablesort.js?v=484d9333" defer></script>
+<script src="charts.js?v=5372d2a2" defer></script>
 
-<script src="risk_state_live.js"></script>
-<script src="heatmap.js"></script>
+<script src="risk_state_live.js?v=9b45203f" defer></script>
+<script src="heatmap.js?v=c640f58d" defer></script>
 <script>
 /* Keep .help tooltips on-screen: flip below the icon when it's near the top of
    the viewport, and clamp horizontally near the left/right edges. Hover-only,

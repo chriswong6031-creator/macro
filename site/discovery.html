@@ -21,7 +21,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Top Picks — holistic conviction + entry timing</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=de86232e">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
@@ -393,8 +393,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -4197,7 +4197,7 @@
 
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: engine/top_picks.py — an alpha-led conviction blend (engine/residual_alpha.py + engine/equity_factors.py + Form-4 insider) over the S&amp;P 1500, validated point-in-time in reports/top-picks-phase0.md. The stretch / exhaustion axis, valuation-vs-own-history chip and cohort banner (engine/extension.py) are DISPLAY-ONLY risk reads — never in the rank: a point-in-time downside test (reports/top-picks-freshness-phase0.md) found no extension screen reduces drawdown, but the parabolic (&gt;2σ own-history) tail is a genuine bubble-pullback hazard, so it is flagged per-name. Ranks recompute daily with prices/filings. A modest, decayed, crowded edge — a research lens with risk context, not a buy list. See LIMITATIONS.md.</span><span class="l-zh">来源：engine/top_picks.py — 覆盖标普 1500 的以阿尔法为主的信念混合（engine/residual_alpha.py + engine/equity_factors.py + Form-4 内部人），已在 reports/top-picks-phase0.md 做点对点验证。拉伸/过热维度、相对自身估值标签与群体横幅（engine/extension.py）均为仅展示的风险读数，不计入排名：点对点下行测试（reports/top-picks-freshness-phase0.md）发现任何拉伸筛选都无法降低回撤，但抛物（相对自身历史&gt;2σ）尾部确为真实的泡沫回撤风险，故逐股标注。排名随价格/申报每日重算。温和、已衰减、拥挤的边际信号 — 带风险背景的研究视角，而非买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-20 11:59 UTC</p>
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-20 13:34 UTC</p>
 </div>
 
 <script>
@@ -4220,6 +4220,6 @@
    }); });
 })();
 </script>
-<script src="theme.js"></script>
+<script src="theme.js?v=e63903ba" defer></script>
 </body>
 </html>

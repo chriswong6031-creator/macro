@@ -26,8 +26,8 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
-
+<link rel="stylesheet" href="theme.css?v=de86232e">
+<link rel="stylesheet" href="illus.css?v=a2237d45">
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -1646,8 +1646,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search A-shares"
@@ -5568,9 +5568,9 @@
           
             
             
-            <span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)" data-tip-en="Microstructure: limit state=sealed_up. Context only — CN-SYS-R3." data-tip-zh="市场结构：涨跌停状态=sealed_up。仅供参考 — CN-SYS-R3。"><span class="l-en">sealed_up</span><span class="l-zh">封涨停</span></span>
             
-            <span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--down) 13%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)" data-tip-en="Chase veto: locked at limit-up (T+1 fillability blocked)" data-tip-zh="追涨否决：近期涨幅过大（追高风险）— CN-SYS-R3"><span class="l-en">chase ⚑</span><span class="l-zh">追涨 ⚑</span></span>
+            
+            <span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--down) 13%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)" data-tip-en="Chase veto: +18% 5-session run (extension risk)" data-tip-zh="追涨否决：近期涨幅过大（追高风险）— CN-SYS-R3"><span class="l-en">chase ⚑</span><span class="l-zh">追涨 ⚑</span></span>
           
           
           
@@ -9428,7 +9428,7 @@
           
             
             
-            
+            <span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)" data-tip-en="Microstructure: limit state=touched_up_failed. Context only — CN-SYS-R3." data-tip-zh="市场结构：涨跌停状态=touched_up_failed。仅供参考 — CN-SYS-R3。"><span class="l-en">touched_up_failed</span><span class="l-zh">触涨停未封</span></span>
             
             
           
@@ -10512,7 +10512,7 @@
             
             
             
-            
+            <span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--down) 13%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)" data-tip-en="Chase veto: +23% 5-session run (extension risk)" data-tip-zh="追涨否决：近期涨幅过大（追高风险）— CN-SYS-R3"><span class="l-en">chase ⚑</span><span class="l-zh">追涨 ⚑</span></span>
           
           
           
@@ -17614,7 +17614,7 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-20 11:58 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-20 13:33 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
@@ -17624,12 +17624,13 @@ window.__CHART_SWAP__ = {
   labels: {}
 };
 </script>
-<script src="theme.js"></script>
-<script src="china_risk_state_live.js"></script>
-<script src="chart_i18n.js"></script>
-<script src="mtf.js"></script>
-<script src="tablesort.js"></script>
-<script src="stocktable.js"></script>
+<script src="theme.js?v=e63903ba" defer></script>
+<script src="china_risk_state_live.js?v=fc5d9933" defer></script>
+<script defer src="illus.js?v=8e0a3779"></script>
+<script src="chart_i18n.js?v=23272c48" defer></script>
+<script src="mtf.js?v=b62aea2f" defer></script>
+<script src="tablesort.js?v=484d9333" defer></script>
+<script src="stocktable.js?v=5b3b37ae" defer></script>
 <script>
 /* W8-E: StockTable init — standout board table view (CN market).
    Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent. */

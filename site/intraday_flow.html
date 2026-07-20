@@ -13,7 +13,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Intraday Flow · 盘中资金流</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=de86232e">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
@@ -432,8 +432,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -622,7 +622,7 @@
 
 <!-- data_base.js sets window.DATA_BASE → routes the live options-flow fetch to the
      public R2 data plane (present on 171 site pages; v1 omitted it, so R2 flow never loaded). -->
-<script src="data_base.js"></script>
+<script src="data_base.js?v=47c13324" defer></script>
 <!-- Inline JS — data loads, polling, table render -->
 <script>
 (function(){
@@ -1286,7 +1286,7 @@ else startPolling();
 
 })();
 </script>
-<script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
+<script src="theme.js?v=e63903ba" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Methodology — factor lab, baskets & seasonality</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=de86232e">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
@@ -312,8 +312,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -439,7 +439,7 @@
         <li>σ uses overlapping windows (autocorrelated); the IC sample is small (n≈60); baskets are hindsight-curated.</li>
         <li>Everything here is <b>read-only analytics for informational purposes only — not investment advice</b>, provided as-is with no guarantee of accuracy, timeliness or completeness.</li>
       </ul>
-      <footer><span class="l-en">Free public data only; no paid feeds. Generated</span><span class="l-zh">仅使用免费公开数据。生成于</span> 2026-07-20 12:27 UTC.</footer>
+      <footer><span class="l-en">Free public data only; no paid feeds. Generated</span><span class="l-zh">仅使用免费公开数据。生成于</span> 2026-07-20 14:10 UTC.</footer>
     </main>
   </div>
 
@@ -448,6 +448,6 @@
       function spy(){ var y=window.scrollY+90, act=0; hs.forEach((h,i)=>{ if(h&&h.offsetTop<=y) act=i; }); ls.forEach((a,i)=>a.classList.toggle('active',i===act)); }
       window.addEventListener('scroll',spy,{passive:true}); spy(); })();
   </script>
-  <script src="theme.js"></script>
+  <script src="theme.js?v=e63903ba" defer></script>
 </body>
 </html>

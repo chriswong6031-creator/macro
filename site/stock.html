@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stock analyzer — cycle & momentum</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=de86232e">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
@@ -1066,8 +1066,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -1315,11 +1315,11 @@
     <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0"><span class="l-en">How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.</span><span class="l-zh">如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。</span></p>
   </div>
 
-<script src="lightweight-charts-v5.js"></script>
-<script src="chart.js"></script>
-<script src="stockview.js"></script>
-<script src="stockbrief.js"></script>
-<script src="aidesk_lean.js"></script>
+<script src="lightweight-charts-v5.js?v=c0992580" defer></script>
+<script src="chart.js?v=f8f558cb" defer></script>
+<script src="stockview.js?v=5afd0b0f" defer></script>
+<script src="stockbrief.js?v=21ee51bf" defer></script>
+<script src="aidesk_lean.js?v=16019c35" defer></script>
 <script>
 (function () {
   var cal = null;  // calibration table data (the nav search bar drives navigation now)
@@ -3589,8 +3589,8 @@
   fromHash();
 })();
 </script>
-<script src="mtf.js"></script>
-<script src="theme.js"></script>
+<script src="mtf.js?v=b62aea2f" defer></script>
+<script src="theme.js?v=e63903ba" defer></script>
 <style>
 /* Anticipation panel — scoped DIRECTION/RISK card styling (mirrors anticipation.html) */
 #panel_anticipation .ap-badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.04em;}
@@ -3727,7 +3727,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-07-20 11:28 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-07-20 13:02 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>

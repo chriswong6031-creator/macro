@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hong Kong Narrative Rotation — where to allocate across themes</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=de86232e">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
@@ -390,8 +390,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -1248,7 +1248,7 @@ fetch('hkbasketdata/baskets.json',{cache:'no-cache'})
 
 
 <footer>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-20 11:59 UTC<br>
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-20 13:34 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 <script>
@@ -1358,7 +1358,7 @@ function renderAllocStanceChips(){
 (function(){ function go(){ renderEntries(); renderRiskTime(); renderRotAlerts(); try{ renderAllocStanceChips(); }catch(e){} }
   if(document.readyState!=='loading') go(); else document.addEventListener('DOMContentLoaded',go); })();
 </script>
-<script src="ai_desk_thematic.js"></script>
-<script src="theme.js"></script>
+<script src="ai_desk_thematic.js?v=cd8237e0" defer></script>
+<script src="theme.js?v=e63903ba" defer></script>
 </body>
 </html>

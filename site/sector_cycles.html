@@ -8,9 +8,9 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Sector Cycle Intelligence — Mastermind</title>
 <meta name="description" content="Every US sector ETF on one cycle clock — real price (rebased / log) with a cycle-position toggle, auto-detected peaks & troughs, the phase each sector sits in (topping · expanding · rolling over · bottoming), and the story behind each move.">
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css?v=de86232e">
 <link rel="stylesheet" href="cycle.css?v=4">
-<link rel="stylesheet" href="sector_cycles.css">
+<link rel="stylesheet" href="sector_cycles.css?v=53d45064">
 </head>
 <body>
 
@@ -290,8 +290,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -387,11 +387,11 @@
   <div class="cyc-cards" id="sc-cards"></div>
 </div>
 
-<script src="sector_cycles_data.js"></script>
+<script src="sector_cycles_data.js?v=3549e2e3" defer></script>
 <script src="mm_charts.js?v=4"></script>
 <script>window.SC_EXTRA_DATA=['sector_cycles_narr_data.js','sector_cycles_dna_data.js'];</script>
-<script src="sector_cycles.js"></script>
+<script src="sector_cycles.js?v=bee7c0ec" defer></script>
 <script>try{document.getElementById('sc-asof').textContent=(window.SECTOR_CYCLES&&window.SECTOR_CYCLES.meta||{}).asOf||'';}catch(e){}</script>
-<script src="theme.js"></script>
+<script src="theme.js?v=e63903ba" defer></script>
 </body>
 </html>

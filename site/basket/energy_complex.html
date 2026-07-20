@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>US Energy Complex — Theme detail</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../theme.css?v=de86232e">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
@@ -444,8 +444,8 @@
     </div>
   </div>
   
-  <script src="../live_config.js"></script>
-  <script src="../live.js"></script>
+  <script src="../live_config.js?v=0add7ac4" defer></script>
+  <script src="../live.js?v=2758e158" defer></script>
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
@@ -504,7 +504,7 @@ fetch('../policy_lever.json',{cache:'no-cache'})
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-20 12:07 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-20 13:43 UTC</span>.
 </footer>
 
 <script>
@@ -1286,6 +1286,6 @@ fetch('../basketdata/turn_watch.json',{cache:'no-cache'})
   .then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){_tw=d;tryInject();}).catch(function(){});
 })();
 </script>
-<script src="../theme.js"></script>
+<script src="../theme.js?v=e63903ba" defer></script>
 </body>
 </html>
