@@ -132,6 +132,29 @@ def build_universe(root: Path | None = None) -> dict[str, dict]:
         except Exception as e:  # noqa: BLE001 — fail-open
             log.warning("stage_analysis: membership.parquet unreadable (%s)", e)
 
+    # --- name/sector fallback for names outside SP1500 (Russell, baskets, intl) ---
+    # The committed EquityDesk overview yardstick carries a clean company name
+    # (name_ui) and a GICS sector (same taxonomy as membership.parquet) for the
+    # whole universe. Reference facts only — never their computed stage/scores.
+    # setdefault: membership's canonical GICS labels win where present.
+    ov_path = dr / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    if ov_path.exists():
+        try:
+            import pandas as pd
+            ov = pd.read_parquet(ov_path, columns=["ticker", "name_ui", "gics_sector"])
+            for _, r in ov.iterrows():
+                tk = str(r.get("ticker") or "").strip().upper()
+                if not tk:
+                    continue
+                nm = r.get("name_ui")
+                sec = r.get("gics_sector")
+                if pd.notna(nm) and str(nm).strip():
+                    name_by.setdefault(tk, str(nm).strip())
+                if pd.notna(sec) and str(sec).strip() and str(sec).strip().lower() != "nan":
+                    sector_by.setdefault(tk, str(sec).strip())
+        except Exception as e:  # noqa: BLE001 — fail-open; names simply fall back to ticker
+            log.warning("stage_analysis: overview name/sector fallback unreadable (%s)", e)
+
     def _add(tk: str, source: str) -> None:
         tk = tk.strip().upper()
         if not tk:
@@ -369,20 +392,35 @@ def _tone_word(sentiment: float | None) -> str | None:
 
 
 def _load_earnings_scores(dr: Path) -> dict[str, dict]:
-    """Latest earnings-call score row per ticker from
-    data/earnings_calls/scores.parquet. Fail-open -> {}.
+    """Latest earnings-call score row per ticker.
 
-    Returns {TICKER: {sentiment, performance, tone_word, tags, quarter}}.
+    Merges two stores, live winning per ticker:
+      1. committed cold-start SEED — data/stage_analysis/backfill/earnings_seed.parquet
+         (the EquityDesk W5 backfill, present on every render/nightly so the earnings
+         desk is populated from day one, before the Qwen worker has produced anything).
+      2. live R2-fetched store — data/earnings_calls/scores.parquet (the Windows-PC Qwen
+         worker's fresh calls, pulled by scripts/fetch_earnings_scores; absent until the
+         worker runs). A live row for a ticker overrides its seed row.
+
+    Fail-open per file -> {}. Returns {TICKER: {present, sentiment, performance,
+    tone_word, tags, quarter, summary}}.
     """
+    seed = _parse_earnings_parquet(dr / "stage_analysis" / "backfill" / "earnings_seed.parquet")
+    live = _parse_earnings_parquet(dr / "earnings_calls" / "scores.parquet")
+    seed.update(live)  # live (fresh worker output) overlays the backfill seed per ticker
+    return seed
+
+
+def _parse_earnings_parquet(p: Path) -> dict[str, dict]:
+    """Parse one earnings-scores parquet into {TICKER: card}. Fail-open -> {}."""
     import pandas as pd
 
-    p = dr / "earnings_calls" / "scores.parquet"
     if not p.exists():
         return {}
     try:
         df = pd.read_parquet(p)
     except Exception as e:  # noqa: BLE001
-        log.warning("stage_analysis: earnings scores unreadable (%s)", e)
+        log.warning("stage_analysis: earnings scores unreadable (%s) at %s", e, p.name)
         return {}
     if df is None or df.empty or "ticker" not in df.columns:
         return {}
@@ -598,10 +636,17 @@ def _weather(pct_stage2: float, pct_stage4: float) -> str:
 
 
 def _sector_rollup(recs: list[dict]) -> list[dict]:
-    """Per-sector Stage-2 share + trend (up/flat/down by relative Stage2 vs Stage4)."""
+    """Per-sector Stage-2 share + trend (up/flat/down by relative Stage2 vs Stage4).
+
+    Names whose sector is unknown (long-tail micro-caps outside our name sources)
+    are excluded from the tiles — they still count in the market-weather totals,
+    but an 'Unknown' pseudo-sector tile is machine junk at rest (design doctrine).
+    """
     by_sec: dict[str, dict] = {}
     for r in recs:
-        sec = r.get("sector") or "Unknown"
+        sec = (r.get("sector") or "").strip()
+        if not sec or sec == "Unknown":
+            continue
         d = by_sec.setdefault(sec, {"n": 0, "s2": 0, "s4": 0})
         d["n"] += 1
         if r.get("stage") == 2:

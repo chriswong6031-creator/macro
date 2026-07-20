@@ -342,6 +342,40 @@ def test_earnings_join_present(env):
     assert by_tk["COST"]["earnings"]["tags"] == ["miss_and_cut"]
 
 
+def test_earnings_seed_fallback_and_live_overlay(tmp_path):
+    """Committed backfill seed populates earnings on every render; the live
+    (R2-fetched) scores.parquet overlays per ticker when the Qwen worker runs."""
+    dr = tmp_path
+    seed_dir = dr / "stage_analysis" / "backfill"
+    seed_dir.mkdir(parents=True)
+    pd.DataFrame([
+        {"ticker": "AAA", "quarter": "Q1", "sentiment": 0.5, "performance": 7.0,
+         "tone_word": "confident", "tags": json.dumps([]), "summary": "Seed outlook AAA."},
+        {"ticker": "BBB", "quarter": "Q1", "sentiment": -0.4, "performance": 3.0,
+         "tone_word": "downbeat", "tags": json.dumps([]), "summary": "Seed outlook BBB."},
+    ]).to_parquet(seed_dir / "earnings_seed.parquet")
+
+    # Seed only -> both present, prose intact, no dict-blob leak.
+    m = sa._load_earnings_scores(dr)
+    assert m["AAA"]["present"] and m["AAA"]["summary"] == "Seed outlook AAA."
+    assert m["BBB"]["tone_word"] == "downbeat"
+    assert not m["AAA"]["summary"].startswith("{")
+
+    # Live worker store overlays AAA with a fresher call and adds CCC.
+    ec = dr / "earnings_calls"
+    ec.mkdir(parents=True)
+    pd.DataFrame([
+        {"ticker": "AAA", "quarter": "Q2", "sentiment": 0.9, "performance": 9.0,
+         "tone_word": "confident", "tags": json.dumps([]), "summary": "Fresh call AAA."},
+        {"ticker": "CCC", "quarter": "Q2", "sentiment": 0.2, "performance": 6.0,
+         "tone_word": "steady", "tags": json.dumps([]), "summary": "Fresh call CCC."},
+    ]).to_parquet(ec / "scores.parquet")
+    m2 = sa._load_earnings_scores(dr)
+    assert m2["AAA"]["summary"] == "Fresh call AAA." and m2["AAA"]["quarter"] == "Q2"
+    assert m2["BBB"]["summary"] == "Seed outlook BBB."  # seed retained where no live row
+    assert m2["CCC"]["present"] is True                 # live-only ticker added
+
+
 # ---------------------------------------------------------------------------
 # 9. Fail-open: SPY absent -> no crash, market block still present.
 # ---------------------------------------------------------------------------

@@ -513,9 +513,51 @@ html[data-lang="zh"] [data-tip-en]:hover::after{content:attr(data-tip-zh)}
 
 
 
+
+
+
+
+
 <div class="glass arc-hero">
   <div class="arc-eyebrow"><span class="l-en">The market on one cycle</span><span class="l-zh">大盘所在周期位置</span></div>
-  <div class="warmup" style="margin:8px 0 0"><b><span class="l-en">First classification runs tonight</span><span class="l-zh">首次阶段归类将于今晚运行</span></b><span class="l-en">The stage arc fills in after the first nightly pass over the universe.</span><span class="l-zh">首次夜间全市场归类后，阶段弧将显示。</span></div>
+
+  
+  
+  <p class="arc-stance w-adv"><span class="l-en">Most stocks are advancing</span><span class="l-zh">多数股票处于上升期</span></p>
+  <p class="arc-line"><span class="l-en">Good weather for fresh breakouts — the board below is where to look.</span><span class="l-zh">有利于新突破的环境 — 请看下方看板。</span></p>
+  
+
+  
+  <div class="arc-canvas">
+    <svg id="arc-svg" viewBox="0 0 1000 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+    <div class="arc-labels">
+      <div class="arc-seg s1" style="left:12%"><span class="an">1</span><span class="al"><span class="l-en">Base</span><span class="l-zh">筑底</span></span><span class="ac">152</span></div>
+      <div class="arc-seg s2" style="left:37%"><span class="an">2</span><span class="al"><span class="l-en">Advance</span><span class="l-zh">上升</span></span><span class="ac">1609</span></div>
+      <div class="arc-seg s3" style="left:62%"><span class="an">3</span><span class="al"><span class="l-en">Top</span><span class="l-zh">见顶</span></span><span class="ac">143</span></div>
+      <div class="arc-seg s4" style="left:87%"><span class="an">4</span><span class="al"><span class="l-en">Decline</span><span class="l-zh">下跌</span></span><span class="ac">806</span></div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:4px">
+    
+    <span class="spy-tag">
+      <span class="l-en">S&amp;P 500 itself:</span><span class="l-zh">标普500本身：</span>
+      
+      <b><span class="l-en">Stage 2 · Advancing</span><span class="l-zh">阶段2 · 上升期</span>
+      </b>
+      <span class="faint">· 12<span class="l-en">w</span><span class="l-zh">周</span></span>
+    </span>
+    
+    
+    <span class="mut" style="font-size:12.5px"><span class="l-en">of which</span><span class="l-zh">其中</span> <b style="color:var(--s2)">449</b> <span class="l-en">are fresh (10 weeks or less in Stage 2)</span><span class="l-zh">为新进（进入上升期不超过10周）</span></span>
+    
+    <span class="help" style="margin-left:auto">?<span class="tip">
+      <span class="l-en"><b>How stages are set</b><br>Each stock is placed by its weekly close vs its 30-week average line, and whether that line is rising or falling. Stage 1 base → Stage 2 advance (above a rising line) → Stage 3 top (line flattening) → Stage 4 decline (below a falling line). Fresh = 10 weeks or less into Stage 2. Context only — a stage is a description, never a buy or sell instruction.</span>
+      <span class="l-zh"><b>阶段如何判定</b><br>每只股票依据其周收盘价相对30周均线的位置，以及该均线上行还是下行来归入某一阶段。阶段1筑底 → 阶段2上升（站上上行均线）→ 阶段3见顶（均线走平）→ 阶段4下跌（跌破下行均线）。新进＝进入上升期不超过10周。仅供参考 — 阶段只是描述，绝非买卖指令。</span>
+    </span></span>
+  </div>
+
+  <div class="sec-foot" style="margin-top:12px"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-20 · 2710 <span class="l-en">stocks classified</span><span class="l-zh">只股票已归类</span> · 357 <span class="l-en">too young to stage</span><span class="l-zh">上市过短暂不归类</span></div>
 </div>
 
 
@@ -533,7 +575,2745 @@ html[data-lang="zh"] [data-tip-en]:hover::after{content:attr(data-tip-zh)}
 </div>
 
 
-<div class="warmup"><b><span class="l-en">No fresh breakouts to show yet</span><span class="l-zh">暂无新突破可显示</span></b><span class="l-en">Fresh Stage 2 names appear here after the first nightly classification.</span><span class="l-zh">首次夜间归类后，此处将显示新进上升期的股票。</span></div>
+<div class="facets" id="stage-facets">
+  <span class="facet on" data-f="all"><span class="l-en">All fresh</span><span class="l-zh">全部新进</span></span>
+  <span class="facet" data-f="breakout"><span class="l-en">Fresh breakout</span><span class="l-zh">新突破</span></span>
+  <span class="facet" data-f="tier"><span class="l-en">Extra confirmation</span><span class="l-zh">额外确认</span></span>
+  <span class="facet" data-f="pos"><span class="l-en">Positive earnings tone</span><span class="l-zh">财报语气积极</span></span>
+</div>
+<div class="board">
+  <div class="brow head">
+    <span></span>
+    <span><span class="l-en">Stock</span><span class="l-zh">股票</span></span>
+    <span><span class="l-en">In stage</span><span class="l-zh">进入时长</span></span>
+    <span class="b-plain"><span class="l-en">Vs its 30-week line</span><span class="l-zh">相对30周线</span></span>
+    <span class="chips"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+    <span><span class="l-en">So what</span><span class="l-zh">如何应对</span></span>
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="23.5" cy="9.6" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">HYLN</div><div class="co"></div>
+    </div>
+    <div class="b-wk">10<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+16%)</span><span class="l-zh">明显在上方（+16%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all tier pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="23.5" cy="9.6" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">PM</div><div class="co">Philip Morris International · <span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></div>
+    </div>
+    <div class="b-wk">10<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+12%)</span><span class="l-zh">明显在上方（+12%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      <span class="chip tier" data-tip-en="Confluence tier T2 — this name also lights up on the independent T1–T4 confirmation cascade. A separate read, not part of the stage call." data-tip-zh="汇聚层级 T2 — 该标的在独立的 T1–T4 确认体系中同样触发。属独立读数，不参与阶段判定。">T2</span>
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all tier">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">LKFN</div><div class="co">Lakeland Financial · <span class="l-en">Financials</span><span class="l-zh">金融</span></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Above it (+6%)</span><span class="l-zh">在上方（+6%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      <span class="chip tier" data-tip-en="Confluence tier T2 — this name also lights up on the independent T1–T4 confirmation cascade. A separate read, not part of the stage call." data-tip-zh="汇聚层级 T2 — 该标的在独立的 T1–T4 确认体系中同样触发。属独立读数，不参与阶段判定。">T2</span>
+      <span class="chip rs-dn" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▽ <span class="l-en">lags</span><span class="l-zh">落后</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.8" cy="10.0" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">SILA</div><div class="co"></div>
+    </div>
+    <div class="b-wk">9<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+18%)</span><span class="l-zh">明显在上方（+18%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q4). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q4）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">KEEL</div><div class="co"></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+17%)</span><span class="l-zh">明显在上方（+17%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">ZURA</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Above it (+2%)</span><span class="l-zh">在上方（+2%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.0× normal volume</span><span class="l-zh">成交量为均量2.0倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Recaptured line</span><span class="l-zh">重回均线</span></span>
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">NWL</div><div class="co">Newell Brands · <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+23%)</span><span class="l-zh">明显在上方（+23%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.8× normal volume</span><span class="l-zh">成交量为均量1.8倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-neu" data-tip-en="Latest earnings call read as 'confident' (Q4). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q4）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">WYFI</div><div class="co"></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+18%)</span><span class="l-zh">明显在上方（+18%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.3× normal volume</span><span class="l-zh">成交量为均量2.3倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="23.5" cy="9.6" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">CBT</div><div class="co">Cabot Corp · <span class="l-en">Materials</span><span class="l-zh">原材料</span></div>
+    </div>
+    <div class="b-wk">10<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+16%)</span><span class="l-zh">明显在上方（+16%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-neu" data-tip-en="Latest earnings call read as 'steady' (Q2). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「稳健」（Q2）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">steady</span><span class="l-zh">稳健</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">GIC</div><div class="co"></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+10%)</span><span class="l-zh">明显在上方（+10%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.5× normal volume</span><span class="l-zh">成交量为均量1.5倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.9" cy="11.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">NODK</div><div class="co"></div>
+    </div>
+    <div class="b-wk">6<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+15%)</span><span class="l-zh">明显在上方（+15%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.8" cy="10.0" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">AAL</div><div class="co">American Airlines Group · <span class="l-en">Industrials</span><span class="l-zh">工业</span></div>
+    </div>
+    <div class="b-wk">9<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+9%)</span><span class="l-zh">明显在上方（+9%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.9× normal volume</span><span class="l-zh">成交量为均量1.9倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">EDIT</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+17%)</span><span class="l-zh">明显在上方（+17%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="18.9" cy="12.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">KRRO</div><div class="co">Korro Bio, Inc. · <span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></div>
+    </div>
+    <div class="b-wk">3<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Above it (+4%)</span><span class="l-zh">在上方（+4%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-dn" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▽ <span class="l-en">lags</span><span class="l-zh">落后</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">AIRJ</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Above it (+1%)</span><span class="l-zh">在上方（+1%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.5× normal volume</span><span class="l-zh">成交量为均量1.5倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-dn" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▽ <span class="l-en">lags</span><span class="l-zh">落后</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.9" cy="11.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">BSVN</div><div class="co"></div>
+    </div>
+    <div class="b-wk">6<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+17%)</span><span class="l-zh">明显在上方（+17%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.1× normal volume</span><span class="l-zh">成交量为均量2.1倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all tier">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">FOXF</div><div class="co">Fox Factory · <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Above it (+7%)</span><span class="l-zh">在上方（+7%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Recaptured line</span><span class="l-zh">重回均线</span></span>
+      
+      <span class="chip tier" data-tip-en="Confluence tier T2 — this name also lights up on the independent T1–T4 confirmation cascade. A separate read, not part of the stage call." data-tip-zh="汇聚层级 T2 — 该标的在独立的 T1–T4 确认体系中同样触发。属独立读数，不参与阶段判定。">T2</span>
+      <span class="chip rs-dn" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▽ <span class="l-en">lags</span><span class="l-zh">落后</span></span>
+      <span class="chip tone-neu" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">TRNS</div><div class="co"></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+15%)</span><span class="l-zh">明显在上方（+15%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">BLZE</div><div class="co">Backblaze, Inc. · <span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+103%)</span><span class="l-zh">明显在上方（+103%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 3.1× normal volume</span><span class="l-zh">成交量为均量3.1倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">EML</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+22%)</span><span class="l-zh">明显在上方（+22%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.8× normal volume</span><span class="l-zh">成交量为均量2.8倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="23.5" cy="9.6" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">ONL</div><div class="co"></div>
+    </div>
+    <div class="b-wk">10<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Above it (+5%)</span><span class="l-zh">在上方（+5%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.8× normal volume</span><span class="l-zh">成交量为均量1.8倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-dn" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▽ <span class="l-en">lags</span><span class="l-zh">落后</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">OUST</div><div class="co">Ouster, Inc. · <span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+29%)</span><span class="l-zh">明显在上方（+29%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.7× normal volume</span><span class="l-zh">成交量为均量1.7倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">PGEN</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+14%)</span><span class="l-zh">明显在上方（+14%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">WHG</div><div class="co"></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+16%)</span><span class="l-zh">明显在上方（+16%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.4× normal volume</span><span class="l-zh">成交量为均量2.4倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">BV</div><div class="co">BrightView Holdings, Inc. · <span class="l-en">Industrials</span><span class="l-zh">工业</span></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+12%)</span><span class="l-zh">明显在上方（+12%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q2). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q2）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="21.6" cy="10.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">DDD</div><div class="co"></div>
+    </div>
+    <div class="b-wk">7<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+9%)</span><span class="l-zh">明显在上方（+9%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.8" cy="10.0" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">GBCI</div><div class="co">Glacier Bancorp · <span class="l-en">Financials</span><span class="l-zh">金融</span></div>
+    </div>
+    <div class="b-wk">9<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+12%)</span><span class="l-zh">明显在上方（+12%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">VOR</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+21%)</span><span class="l-zh">明显在上方（+21%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.7× normal volume</span><span class="l-zh">成交量为均量1.7倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-dn" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▽ <span class="l-en">lags</span><span class="l-zh">落后</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.8" cy="10.0" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">EFSI</div><div class="co"></div>
+    </div>
+    <div class="b-wk">9<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+11%)</span><span class="l-zh">明显在上方（+11%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 3.5× normal volume</span><span class="l-zh">成交量为均量3.5倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="21.6" cy="10.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">FRD</div><div class="co"></div>
+    </div>
+    <div class="b-wk">7<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+50%)</span><span class="l-zh">明显在上方（+50%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.5× normal volume</span><span class="l-zh">成交量为均量2.5倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">HNGE</div><div class="co"></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+68%)</span><span class="l-zh">明显在上方（+68%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="21.6" cy="10.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">LPRO</div><div class="co">Open Lending Corporation · <span class="l-en">Financials</span><span class="l-zh">金融</span></div>
+    </div>
+    <div class="b-wk">7<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+63%)</span><span class="l-zh">明显在上方（+63%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.0× normal volume</span><span class="l-zh">成交量为均量2.0倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q4). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q4）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.9" cy="11.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">TMHC</div><div class="co">Taylor Morrison · <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></div>
+    </div>
+    <div class="b-wk">6<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+13%)</span><span class="l-zh">明显在上方（+13%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-neu" data-tip-en="Latest earnings call read as 'steady' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「稳健」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">steady</span><span class="l-zh">稳健</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">ADV</div><div class="co"></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+35%)</span><span class="l-zh">明显在上方（+35%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.3× normal volume</span><span class="l-zh">成交量为均量2.3倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.9" cy="11.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">COOK</div><div class="co"></div>
+    </div>
+    <div class="b-wk">6<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+45%)</span><span class="l-zh">明显在上方（+45%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.7× normal volume</span><span class="l-zh">成交量为均量2.7倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="18.9" cy="12.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">MSEX</div><div class="co">Middlesex Water Company · <span class="l-en">Utilities</span><span class="l-zh">公用事业</span></div>
+    </div>
+    <div class="b-wk">3<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+9%)</span><span class="l-zh">明显在上方（+9%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">NGNE</div><div class="co">Neurogene Inc. · <span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+51%)</span><span class="l-zh">明显在上方（+51%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.8× normal volume</span><span class="l-zh">成交量为均量1.8倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="23.5" cy="9.6" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">OPBK</div><div class="co"></div>
+    </div>
+    <div class="b-wk">10<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Above it (+7%)</span><span class="l-zh">在上方（+7%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">OSUR</div><div class="co">OraSure Technologies, Inc. · <span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+19%)</span><span class="l-zh">明显在上方（+19%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">WMK</div><div class="co"></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+9%)</span><span class="l-zh">明显在上方（+9%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">AMLX</div><div class="co"></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+19%)</span><span class="l-zh">明显在上方（+19%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.9" cy="11.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">ANET</div><div class="co">Arista Networks · <span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></div>
+    </div>
+    <div class="b-wk">6<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+15%)</span><span class="l-zh">明显在上方（+15%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">AOMR</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+9%)</span><span class="l-zh">明显在上方（+9%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="21.6" cy="10.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">CHCO</div><div class="co">City Holding Company · <span class="l-en">Financials</span><span class="l-zh">金融</span></div>
+    </div>
+    <div class="b-wk">7<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+10%)</span><span class="l-zh">明显在上方（+10%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">FRBA</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+10%)</span><span class="l-zh">明显在上方（+10%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">LYTS</div><div class="co">LSI Industries Inc. · <span class="l-en">Industrials</span><span class="l-zh">工业</span></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+9%)</span><span class="l-zh">明显在上方（+9%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q3). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q3）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="19.6" cy="12.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">PRTH</div><div class="co"></div>
+    </div>
+    <div class="b-wk">4<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+16%)</span><span class="l-zh">明显在上方（+16%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-dn" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▽ <span class="l-en">lags</span><span class="l-zh">落后</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.2" cy="10.3" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">SFBS</div><div class="co">ServisFirst Bancshares, Inc. · <span class="l-en">Financials</span><span class="l-zh">金融</span></div>
+    </div>
+    <div class="b-wk">8<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+10%)</span><span class="l-zh">明显在上方（+10%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="17.6" cy="13.9" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">SMHI</div><div class="co"></div>
+    </div>
+    <div class="b-wk">1<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+10%)</span><span class="l-zh">明显在上方（+10%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.8" cy="10.0" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">SYBT</div><div class="co"></div>
+    </div>
+    <div class="b-wk">9<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+16%)</span><span class="l-zh">明显在上方（+16%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="23.5" cy="9.6" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">TBRG</div><div class="co"></div>
+    </div>
+    <div class="b-wk">10<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+20%)</span><span class="l-zh">明显在上方（+20%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="21.6" cy="10.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">URI</div><div class="co">United Rentals · <span class="l-en">Industrials</span><span class="l-zh">工业</span></div>
+    </div>
+    <div class="b-wk">7<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+15%)</span><span class="l-zh">明显在上方（+15%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="17.6" cy="13.9" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">AHR</div><div class="co">American Healthcare REIT · <span class="l-en">Real Estate</span><span class="l-zh">房地产</span></div>
+    </div>
+    <div class="b-wk">1<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+9%)</span><span class="l-zh">明显在上方（+9%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.6× normal volume</span><span class="l-zh">成交量为均量1.6倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="18.9" cy="12.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">ARL</div><div class="co"></div>
+    </div>
+    <div class="b-wk">3<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Just below (-1%)</span><span class="l-zh">略在下方（-1%）</span>
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 3.8× normal volume</span><span class="l-zh">成交量为均量3.8倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-dn" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▽ <span class="l-en">lags</span><span class="l-zh">落后</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="17.6" cy="13.9" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">BMRC</div><div class="co"></div>
+    </div>
+    <div class="b-wk">1<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+11%)</span><span class="l-zh">明显在上方（+11%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.8× normal volume</span><span class="l-zh">成交量为均量1.8倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all pos">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="17.6" cy="13.9" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">DLO</div><div class="co">DLocal Limited · <span class="l-en">Financials</span><span class="l-zh">金融</span></div>
+    </div>
+    <div class="b-wk">1<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+12%)</span><span class="l-zh">明显在上方（+12%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.7× normal volume</span><span class="l-zh">成交量为均量1.7倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-pos" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">DTIL</div><div class="co"></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+32%)</span><span class="l-zh">明显在上方（+32%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 2.1× normal volume</span><span class="l-zh">成交量为均量2.1倍</span></span>
+    </div>
+    <div class="chips">
+      
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance watch" data-tip-en="In an advance but no fresh event this week. Watch — don't chase an extended move." data-tip-zh="处于上升期但本周无新事件。观察 — 勿追已延伸的走势。"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察 — 勿追高</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="22.8" cy="10.0" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">FSBW</div><div class="co"></div>
+    </div>
+    <div class="b-wk">9<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Above it (+8%)</span><span class="l-zh">在上方（+8%）</span>
+        
+      
+      <br><span class="mut" style="font-size:11px"><span class="l-en">on 1.7× normal volume</span><span class="l-zh">成交量为均量1.7倍</span></span>
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.9" cy="11.2" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">FTDR</div><div class="co">Frontdoor, Inc. · <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></div>
+    </div>
+    <div class="b-wk">6<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+20%)</span><span class="l-zh">明显在上方（+20%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-neu" data-tip-en="Latest earnings call read as 'confident' (Q1). Read by a language model — shown for context only, kept out of the ranking until it earns its place on a shadow ledger." data-tip-zh="最新财报电话会读作「信心十足」（Q1）。由语言模型判读 — 仅作背景展示，在通过影子台账验证前不计入排序。">🎙 <span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+      
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="brow row" data-fac="all">
+    
+    
+    <svg class="mac" viewBox="0 0 60 40" aria-hidden="true">
+      <path d="M4 34 C 14 34 18 8 30 8 C 42 8 46 34 56 34" fill="none" stroke="var(--line2,var(--line,#27324e))" stroke-width="2.5" stroke-linecap="round"/>
+      
+      
+      <circle cx="20.2" cy="11.7" r="4" fill="var(--s2)"/>
+    </svg>
+    <div class="b-name">
+      <div class="tk">GENC</div><div class="co"></div>
+    </div>
+    <div class="b-wk">5<small><span class="l-en">weeks</span><span class="l-zh">周</span></small></div>
+    <div class="b-plain">
+      
+        <span class="l-en">Well above it (+9%)</span><span class="l-zh">明显在上方（+9%）</span>
+        
+      
+      
+    </div>
+    <div class="chips">
+      <span class="chip evt"><span class="l-en">Resumed</span><span class="l-zh">回踩后回升</span></span>
+      
+      <span class="chip rs-up" data-tip-en="Relative strength vs the S&P 500. Shown for context only — a relative-strength screen added no measured edge in testing, so it never gates this board." data-tip-zh="相对标普500的强弱。仅作背景展示 — 相对强度筛选在测试中未带来可测边际，故绝不作为本看板的筛选门槛。">▲ <span class="l-en">leads</span><span class="l-zh">领先</span></span>
+      <span class="chip tone-none" data-tip-en="No earnings call analyzed for this name yet — analysis begins with the next report." data-tip-zh="尚未分析该标的的财报电话会 — 将从下一份财报开始分析。"><span class="l-en">No call yet</span><span class="l-zh">暂无财报分析</span></span>
+      
+    </div>
+    
+    
+      <span class="stance ready" data-tip-en="An early Stage 2 event with room to develop. Get ready — build a plan, watch for the next confirmation." data-tip-zh="早期阶段2事件，尚有发展空间。做好准备 — 制定计划，等待下一次确认。"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span>
+    
+  </div>
+  
+</div>
+<div class="sec-foot"><span class="l-en">A ranking aid, not a trade signal · relative strength &amp; earnings tone are context, not gates · not buy signals</span><span class="l-zh">仅为排序参考，非交易信号 · 相对强度与财报语气为背景，非门槛 · 非买入信号</span></div>
 
 
 
@@ -564,7 +3344,196 @@ html[data-lang="zh"] [data-tip-en]:hover::after{content:attr(data-tip-zh)}
 
 
 
-<div class="warmup"><b><span class="l-en">No call analyzed yet</span><span class="l-zh">尚无财报分析</span></b><span class="l-en">Analysis begins with the next round of earnings reports — call tone will appear here alongside the freshest names.</span><span class="l-zh">分析将从下一轮财报开始 — 财报语气将在此与最新个股并列显示。</span></div>
+<div class="ed-grid">
+  
+  
+  
+  
+  
+  
+  <div class="ed-card">
+    <span class="tk">PM</span>
+    <span class="ed-tone pos"><span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+    <span class="faint" style="font-size:10.5px;margin-left:6px">Q1</span>
+    
+    
+    
+    
+    
+    
+    <div class="ed-hi"><span class="mut"><span class="l-en">Call analyzed — no standout call-outs</span><span class="l-zh">已分析 — 无突出要点</span></span></div>
+    
+    
+    
+    <div class="ed-summ"
+      data-tip-en="Call summary (language-model read — context only, not a fact about the company): Reconfirmed currency-neutral outlook (5-7% organic revenue growth) and raised reported adjusted EPS forecast to $8.36-$8.51, reflecting a larger currency tailwind."
+      data-tip-zh="财报电话会议摘要（英文）（语言模型判读 — 仅供参考，非关于公司的事实）: Reconfirmed currency-neutral outlook (5-7% organic revenue growth) and raised reported adjusted EPS forecast to $8.36-$8.51, reflecting a larger currency tailwind.">
+      <span class="ed-summ-label"><span class="l-en">Summary</span><span class="l-zh">摘要</span></span>
+      <span class="ed-summ-body">Reconfirmed currency-neutral outlook (5-7% organic revenue growth) and raised reported adjusted EPS forecast to $8.36-$8.51, reflecting a larger currency tailwind.</span>
+    </div>
+    
+    <div class="ed-tags">
+      
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  <div class="ed-card">
+    <span class="tk">SILA</span>
+    <span class="ed-tone pos"><span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+    <span class="faint" style="font-size:10.5px;margin-left:6px">Q4</span>
+    
+    
+    
+    
+    
+    
+    <div class="ed-hi"><span class="mut"><span class="l-en">Call analyzed — no standout call-outs</span><span class="l-zh">已分析 — 无突出要点</span></span></div>
+    
+    
+    
+    <div class="ed-summ"
+      data-tip-en="Call summary (language-model read — context only, not a fact about the company): Company sees itself in a prime position to execute strategy using its balance sheet strength. Outlook is for continued careful capital allocation, with expected 2026 acquisition volume similar to 2025 (~$150M). The company is also focused on higher-yielding internal redevelopm…"
+      data-tip-zh="财报电话会议摘要（英文）（语言模型判读 — 仅供参考，非关于公司的事实）: Company sees itself in a prime position to execute strategy using its balance sheet strength. Outlook is for continued careful capital allocation, with expected 2026 acquisition volume similar to 2025 (~$150M). The company is also focused on higher-yielding internal redevelopm…">
+      <span class="ed-summ-label"><span class="l-en">Summary</span><span class="l-zh">摘要</span></span>
+      <span class="ed-summ-body">Company sees itself in a prime position to execute strategy using its balance sheet strength. Outlook is for continued careful capital allocation, with expected 2026 acquisition volume similar to 2025 (~$150M). The company is also focused on higher-yielding internal redevelopm…</span>
+    </div>
+    
+    <div class="ed-tags">
+      
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  <div class="ed-card">
+    <span class="tk">NWL</span>
+    <span class="ed-tone neu"><span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+    <span class="faint" style="font-size:10.5px;margin-left:6px">Q4</span>
+    
+    
+    
+    
+    
+    
+    <div class="ed-hi"><span class="mut"><span class="l-en">Call analyzed — no standout call-outs</span><span class="l-zh">已分析 — 无突出要点</span></span></div>
+    
+    
+    
+    <div class="ed-summ"
+      data-tip-en="Call summary (language-model read — context only, not a fact about the company): Expect flat to down 2% core sales in 2026; EPS of $0.54 to $0.60; focus on innovation, distribution gains and tariff mitigation"
+      data-tip-zh="财报电话会议摘要（英文）（语言模型判读 — 仅供参考，非关于公司的事实）: Expect flat to down 2% core sales in 2026; EPS of $0.54 to $0.60; focus on innovation, distribution gains and tariff mitigation">
+      <span class="ed-summ-label"><span class="l-en">Summary</span><span class="l-zh">摘要</span></span>
+      <span class="ed-summ-body">Expect flat to down 2% core sales in 2026; EPS of $0.54 to $0.60; focus on innovation, distribution gains and tariff mitigation</span>
+    </div>
+    
+    <div class="ed-tags">
+      
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  <div class="ed-card">
+    <span class="tk">CBT</span>
+    <span class="ed-tone neu"><span class="l-en">steady</span><span class="l-zh">稳健</span></span>
+    <span class="faint" style="font-size:10.5px;margin-left:6px">Q2</span>
+    
+    
+    
+    
+    
+    
+    <div class="ed-hi"><span class="mut"><span class="l-en">Call analyzed — no standout call-outs</span><span class="l-zh">已分析 — 无突出要点</span></span></div>
+    
+    
+    
+    <div class="ed-summ"
+      data-tip-en="Call summary (language-model read — context only, not a fact about the company): Company reaffirmed full-year adjusted EPS guidance of $6.00 to $6.50. The range reflects uncertainty around customer demand due to geopolitical factors; sustained demand would lead to the high end, while softening would lead to the low end."
+      data-tip-zh="财报电话会议摘要（英文）（语言模型判读 — 仅供参考，非关于公司的事实）: Company reaffirmed full-year adjusted EPS guidance of $6.00 to $6.50. The range reflects uncertainty around customer demand due to geopolitical factors; sustained demand would lead to the high end, while softening would lead to the low end.">
+      <span class="ed-summ-label"><span class="l-en">Summary</span><span class="l-zh">摘要</span></span>
+      <span class="ed-summ-body">Company reaffirmed full-year adjusted EPS guidance of $6.00 to $6.50. The range reflects uncertainty around customer demand due to geopolitical factors; sustained demand would lead to the high end, while softening would lead to the low end.</span>
+    </div>
+    
+    <div class="ed-tags">
+      
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  <div class="ed-card">
+    <span class="tk">AAL</span>
+    <span class="ed-tone pos"><span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+    <span class="faint" style="font-size:10.5px;margin-left:6px">Q1</span>
+    
+    
+    
+    
+    
+    
+    <div class="ed-hi"><span class="mut"><span class="l-en">Call analyzed — no standout call-outs</span><span class="l-zh">已分析 — 无突出要点</span></span></div>
+    
+    
+    
+    <div class="ed-summ"
+      data-tip-en="Call summary (language-model read — context only, not a fact about the company): For Q2, AAL expects an adj. EPS between -$0.20 and +$0.20 and revenue growth of 13.5% to 16.5% YoY. For the full year, the company updated its outlook to a midpoint adj. EPS of $0.35, despite a $4B headwind from higher fuel costs."
+      data-tip-zh="财报电话会议摘要（英文）（语言模型判读 — 仅供参考，非关于公司的事实）: For Q2, AAL expects an adj. EPS between -$0.20 and +$0.20 and revenue growth of 13.5% to 16.5% YoY. For the full year, the company updated its outlook to a midpoint adj. EPS of $0.35, despite a $4B headwind from higher fuel costs.">
+      <span class="ed-summ-label"><span class="l-en">Summary</span><span class="l-zh">摘要</span></span>
+      <span class="ed-summ-body">For Q2, AAL expects an adj. EPS between -$0.20 and +$0.20 and revenue growth of 13.5% to 16.5% YoY. For the full year, the company updated its outlook to a midpoint adj. EPS of $0.35, despite a $4B headwind from higher fuel costs.</span>
+    </div>
+    
+    <div class="ed-tags">
+      
+    </div>
+  </div>
+  
+  
+  
+  
+  
+  
+  <div class="ed-card">
+    <span class="tk">FOXF</span>
+    <span class="ed-tone neu"><span class="l-en">confident</span><span class="l-zh">信心十足</span></span>
+    <span class="faint" style="font-size:10.5px;margin-left:6px">Q1</span>
+    
+    
+    
+    
+    
+    
+    <div class="ed-hi"><span class="mut"><span class="l-en">Call analyzed — no standout call-outs</span><span class="l-zh">已分析 — 无突出要点</span></span></div>
+    
+    
+    
+    <div class="ed-summ"
+      data-tip-en="Call summary (language-model read — context only, not a fact about the company): Reaffirmed full year guidance for sales of $1.328B to $1.416B and adjusted EBITDA of $174M to $203M. Q2 is guided to sales of $343M-$365M and adjusted EBITDA of $32M-$40M."
+      data-tip-zh="财报电话会议摘要（英文）（语言模型判读 — 仅供参考，非关于公司的事实）: Reaffirmed full year guidance for sales of $1.328B to $1.416B and adjusted EBITDA of $174M to $203M. Q2 is guided to sales of $343M-$365M and adjusted EBITDA of $32M-$40M.">
+      <span class="ed-summ-label"><span class="l-en">Summary</span><span class="l-zh">摘要</span></span>
+      <span class="ed-summ-body">Reaffirmed full year guidance for sales of $1.328B to $1.416B and adjusted EBITDA of $174M to $203M. Q2 is guided to sales of $343M-$365M and adjusted EBITDA of $32M-$40M.</span>
+    </div>
+    
+    <div class="ed-tags">
+      
+    </div>
+  </div>
+  
+</div>
+<div class="sec-foot"><span class="l-en">Read by a language model · context only, never a signal · other fresh names have no call analyzed yet</span><span class="l-zh">由语言模型判读 · 仅为背景，绝非信号 · 其余新进个股尚未分析财报</span></div>
 
 
 
@@ -580,23 +3549,209 @@ html[data-lang="zh"] [data-tip-en]:hover::after{content:attr(data-tip-zh)}
   </div>
 </div>
 
-<div class="warmup"><b><span class="l-en">Sector weather warming up</span><span class="l-zh">行业天气预热中</span></b><span class="l-en">Sector-level stage shares appear after the first nightly classification.</span><span class="l-zh">首次夜间归类后，行业层面的阶段占比将显示。</span></div>
+<div class="sw-grid">
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
+      <span class="tr up">↑</span>
+    </div>
+    <div class="sw-bar"><i style="width:77%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">77%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 103 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
+      <span class="tr up">↑</span>
+    </div>
+    <div class="sw-bar"><i style="width:75%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">75%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 112 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
+      <span class="tr up">↑</span>
+    </div>
+    <div class="sw-bar"><i style="width:67%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">67%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 57 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Financials</span><span class="l-zh">金融</span></span>
+      <span class="tr up">↑</span>
+    </div>
+    <div class="sw-bar"><i style="width:62%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">62%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 298 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Industrials</span><span class="l-zh">工业</span></span>
+      <span class="tr up">↑</span>
+    </div>
+    <div class="sw-bar"><i style="width:62%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">62%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 285 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+      <span class="tr up">↑</span>
+    </div>
+    <div class="sw-bar"><i style="width:61%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">61%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 88 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></span>
+      <span class="tr flat">→</span>
+    </div>
+    <div class="sw-bar"><i style="width:56%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">56%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 265 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
+      <span class="tr flat">→</span>
+    </div>
+    <div class="sw-bar"><i style="width:52%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">52%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 346 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></span>
+      <span class="tr flat">→</span>
+    </div>
+    <div class="sw-bar"><i style="width:51%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">51%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 223 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
+      <span class="tr flat">→</span>
+    </div>
+    <div class="sw-bar"><i style="width:46%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">46%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 83 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+  
+  
+  
+  <div class="sw">
+    <div class="sn"><span><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></span>
+      <span class="tr down">↓</span>
+    </div>
+    <div class="sw-bar"><i style="width:39%"></i></div>
+    <div class="sp"><b style="color:var(--tx)">39%</b> <span class="l-en">advancing</span><span class="l-zh">处于上升期</span> · 77 <span class="l-en">stocks</span><span class="l-zh">只</span></div>
+  </div>
+  
+</div>
 
 
 
+
+<div class="sec-head s3" style="margin-top:24px">
+  <span class="sec-num">3</span>
+  <div class="sec-tx">
+    <h2><span class="l-en">Losing their advance</span><span class="l-zh">上升动能减弱</span></h2>
+    <div class="se"><span class="l-en">Recently rolled from an advance into a top — protect gains if you hold these</span><span class="l-zh">近期从上升转入见顶 — 若持有请保护利润</span></div>
+  </div>
+</div>
+<div class="board">
+  
+  <div class="brow" style="grid-template-columns:1.6fr 90px 1fr">
+    <div class="b-name"><span class="tk">PFE</span> <span class="co">Pfizer</span></div>
+    <div class="b-wk" style="color:var(--s3)">3<small><span class="l-en">weeks topping</span><span class="l-zh">周见顶</span></small></div>
+    <span class="stance ready" data-tip-en="Momentum has flattened — the 30-week line is no longer rising. Not necessarily a decline yet, but the easy advance is over."><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>
+  </div>
+  
+  <div class="brow" style="grid-template-columns:1.6fr 90px 1fr">
+    <div class="b-name"><span class="tk">MWA</span> <span class="co">Mueller Water Products</span></div>
+    <div class="b-wk" style="color:var(--s3)">8<small><span class="l-en">weeks topping</span><span class="l-zh">周见顶</span></small></div>
+    <span class="stance ready" data-tip-en="Momentum has flattened — the 30-week line is no longer rising. Not necessarily a decline yet, but the easy advance is over."><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>
+  </div>
+  
+  <div class="brow" style="grid-template-columns:1.6fr 90px 1fr">
+    <div class="b-name"><span class="tk">AFRI</span> <span class="co">AFRI</span></div>
+    <div class="b-wk" style="color:var(--s3)">3<small><span class="l-en">weeks topping</span><span class="l-zh">周见顶</span></small></div>
+    <span class="stance ready" data-tip-en="Momentum has flattened — the 30-week line is no longer rising. Not necessarily a decline yet, but the easy advance is over."><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>
+  </div>
+  
+  <div class="brow" style="grid-template-columns:1.6fr 90px 1fr">
+    <div class="b-name"><span class="tk">AUPH</span> <span class="co">Aurinia Pharmaceuticals Inc.</span></div>
+    <div class="b-wk" style="color:var(--s3)">2<small><span class="l-en">weeks topping</span><span class="l-zh">周见顶</span></small></div>
+    <span class="stance ready" data-tip-en="Momentum has flattened — the 30-week line is no longer rising. Not necessarily a decline yet, but the easy advance is over."><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>
+  </div>
+  
+  <div class="brow" style="grid-template-columns:1.6fr 90px 1fr">
+    <div class="b-name"><span class="tk">CNR</span> <span class="co">Core Natural Resources, Inc.</span></div>
+    <div class="b-wk" style="color:var(--s3)">11<small><span class="l-en">weeks topping</span><span class="l-zh">周见顶</span></small></div>
+    <span class="stance ready" data-tip-en="Momentum has flattened — the 30-week line is no longer rising. Not necessarily a decline yet, but the easy advance is over."><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>
+  </div>
+  
+  <div class="brow" style="grid-template-columns:1.6fr 90px 1fr">
+    <div class="b-name"><span class="tk">COGT</span> <span class="co">Cogent Biosciences, Inc.</span></div>
+    <div class="b-wk" style="color:var(--s3)">2<small><span class="l-en">weeks topping</span><span class="l-zh">周见顶</span></small></div>
+    <span class="stance ready" data-tip-en="Momentum has flattened — the 30-week line is no longer rising. Not necessarily a decline yet, but the easy advance is over."><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>
+  </div>
+  
+  <div class="brow" style="grid-template-columns:1.6fr 90px 1fr">
+    <div class="b-name"><span class="tk">HAS</span> <span class="co">Hasbro</span></div>
+    <div class="b-wk" style="color:var(--s3)">2<small><span class="l-en">weeks topping</span><span class="l-zh">周见顶</span></small></div>
+    <span class="stance ready" data-tip-en="Momentum has flattened — the 30-week line is no longer rising. Not necessarily a decline yet, but the easy advance is over."><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>
+  </div>
+  
+  <div class="brow" style="grid-template-columns:1.6fr 90px 1fr">
+    <div class="b-name"><span class="tk">HNVR</span> <span class="co">HNVR</span></div>
+    <div class="b-wk" style="color:var(--s3)">2<small><span class="l-en">weeks topping</span><span class="l-zh">周见顶</span></small></div>
+    <span class="stance ready" data-tip-en="Momentum has flattened — the 30-week line is no longer rising. Not necessarily a decline yet, but the easy advance is over."><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>
+  </div>
+  
+</div>
 
 
 
 <div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line,#1d2740);font-size:11.5px;color:var(--faint,#5b6b83)">
   <span class="l-en">Stage classification is a description of where a stock sits on its cycle — context for your own work, never a buy or sell signal or a sizing input. Earnings-call tone is a language model's read, shown alongside but kept out of the ranking. Relative strength and industry strength are context; neither gates the board.</span>
   <span class="l-zh">阶段归类描述一只股票在其周期中的位置 — 供自研参考，绝非买卖信号或仓位依据。财报语气为语言模型判读，并列展示但不计入排序。相对强度与行业强度均为背景；两者都不作为看板门槛。</span>
-  
+   · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-20
 </div>
 
 </div>
 
 
 
+<script>var SGA_ROSTER={"A": [4, 16], "AAL": [2, 9], "AAMI": [2, 64], "AAOI": [2, 41], "AAP": [2, 8], "AAPL": [2, 41], "AARD": [4, 19], "AAT": [2, 11], "ABAT": [4, 12], "ABBV": [2, 3], "ABCB": [2, 51], "ABEO": [2, 8], "ABG": [4, 23], "ABM": [2, 3], "ABNB": [2, 13], "ABOS": [2, 42], "ABR": [4, 35], "ABSI": [2, 14], "ABT": [4, 30], "ABUS": [2, 1], "ABX": [2, 29], "ACA": [2, 41], "ACAD": [4, 6], "ACCO": [2, 8], "ACDC": [2, 17], "ACEL": [2, 12], "ACGL": [2, 1], "ACH": [2, 3], "ACHC": [2, 18], "ACHR": [4, 32], "ACHV": [2, 40], "ACIC": [4, 1], "ACIW": [2, 2], "ACLS": [2, 49], "ACMR": [2, 73], "ACN": [4, 68], "ACNB": [2, 50], "ACNT": [3, 3], "ACR": [4, 6], "ACRE": [4, 1], "ACRS": [2, 39], "ACT": [2, 58], "ACTG": [2, 24], "ACTU": [4, 35], "ACU": [2, 15], "ACVA": [4, 71], "ADAM": [2, 62], "ADBE": [4, 80], "ADCT": [4, 9], "ADEA": [2, 30], "ADI": [2, 56], "ADM": [2, 53], "ADMA": [4, 41], "ADNT": [1, 7], "ADP": [4, 37], "ADPT": [2, 4], "ADSK": [4, 26], "ADTN": [2, 27], "ADUS": [4, 18], "ADV": [2, 8], "AEE": [2, 27], "AEHR": [2, 55], "AEIS": [2, 60], "AEO": [4, 3], "AEP": [2, 122], "AES": [2, 7], "AESI": [2, 17], "AEVA": [2, 9], "AEYE": [4, 28], "AFCG": [2, 7], "AFL": [2, 10], "AFRI": [3, 3], "AFRM": [2, 3], "AGEN": [4, 9], "AGIO": [2, 2], "AGL": [2, 11], "AGM": [2, 10], "AGNT": [4, 23], "AGX": [2, 181], "AGYS": [4, 24], "AHCO": [2, 34], "AHR": [2, 1], "AHRT": [2, 7], "AI": [4, 57], "AIG": [1, 14], "AII": [1, 1], "AIN": [2, 11], "AIOT": [4, 20], "AIP": [2, 42], "AIR": [2, 54], "AIRJ": [2, 4], "AIRO": [4, 24], "AIRS": [2, 3], "AISP": [4, 32], "AIT": [2, 13], "AIV": [1, 35], "AIZ": [2, 13], "AJG": [1, 1], "AKAM": [2, 35], "AKBA": [4, 34], "AKR": [2, 12], "ALAB": [2, 9], "ALB": [3, 1], "ALCO": [2, 62], "ALDX": [4, 18], "ALEC": [2, 3], "ALG": [1, 3], "ALGN": [2, 20], "ALGT": [2, 39], "ALHC": [2, 5], "ALIT": [4, 106], "ALK": [2, 5], "ALKS": [2, 15], "ALKT": [4, 71], "ALL": [2, 10], "ALLE": [4, 18], "ALLO": [2, 31], "ALM": [2, 128], "ALMS": [2, 33], "ALMU": [2, 11], "ALNT": [2, 70], "ALNY": [4, 20], "ALOY": [2, 75], "ALRM": [4, 32], "ALRS": [2, 53], "ALT": [4, 16], "ALTG": [2, 6], "ALTI": [4, 8], "ALTO": [2, 36], "ALX": [2, 26], "ALXO": [2, 43], "AMAL": [2, 31], "AMAT": [2, 42], "AMBA": [4, 20], "AMBP": [2, 61], "AMBQ": [2, 12], "AMC": [1, 2], "AMCR": [2, 1], "AMCX": [2, 10], "AMD": [2, 53], "AME": [2, 38], "AMGN": [2, 36], "AMLX": [2, 5], "AMN": [2, 11], "AMP": [1, 10], "AMPH": [4, 18], "AMPL": [4, 29], "AMPX": [2, 85], "AMPY": [4, 5], "AMR": [4, 1], "AMRC": [4, 13], "AMRX": [2, 49], "AMSC": [2, 4], "AMSF": [4, 59], "AMT": [1, 8], "AMTB": [2, 32], "AMTX": [3, 7], "AMZN": [2, 2], "ANAB": [2, 54], "ANDE": [2, 38], "ANET": [2, 6], "ANF": [1, 15], "ANGI": [4, 33], "ANGO": [3, 15], "ANIK": [2, 20], "ANIP": [1, 3], "ANNX": [2, 41], "ANRO": [2, 43], "ANTX": [2, 20], "AOMR": [2, 4], "AON": [1, 3], "AORT": [4, 17], "AOS": [4, 16], "AOSL": [2, 13], "AOUT": [2, 11], "AP": [2, 33], "APA": [2, 44], "APAM": [4, 19], "APD": [2, 13], "APEI": [2, 137], "APGE": [2, 42], "APH": [2, 5], "APLD": [2, 59], "APLE": [2, 12], "APO": [4, 2], "APOG": [2, 5], "APP": [4, 16], "APPN": [4, 23], "APPS": [2, 6], "APTV": [4, 16], "AQST": [4, 15], "ARAI": [4, 28], "ARAY": [4, 69], "ARCB": [2, 33], "ARCT": [1, 3], "ARDT": [2, 2], "ARDX": [4, 2], "ARE": [2, 3], "AREC": [4, 12], "AREN": [4, 31], "ARES": [4, 24], "ARHS": [4, 19], "ARI": [2, 62], "ARKO": [2, 39], "ARL": [2, 3], "ARLO": [4, 28], "ARM": [2, 14], "ARMP": [4, 1], "AROC": [2, 27], "AROW": [2, 47], "ARQ": [4, 31], "ARQT": [4, 6], "ARR": [2, 37], "ARRY": [4, 2], "ARTV": [2, 38], "ARVN": [4, 7], "ARWR": [2, 45], "ARX": [4, 2], "ASAN": [4, 55], "ASB": [2, 12], "ASC": [2, 44], "ASH": [2, 13], "ASIC": [2, 11], "ASIX": [2, 17], "ASLE": [4, 1], "ASMB": [4, 7], "ASML": [2, 44], "ASO": [3, 2], "ASPI": [4, 23], "ASPN": [2, 5], "ASTE": [2, 71], "ASTH": [2, 12], "ASTS": [2, 59], "ASUR": [3, 3], "ASYS": [2, 46], "ATAI": [2, 3], "ATEC": [4, 18], "ATEN": [2, 21], "ATEX": [2, 23], "ATKR": [2, 14], "ATLC": [2, 12], "ATLN": [4, 13], "ATLO": [2, 54], "ATMU": [3, 5], "ATNI": [2, 34], "ATO": [3, 8], "ATOM": [2, 19], "ATRC": [4, 19], "ATRO": [2, 71], "ATYR": [4, 42], "AUB": [2, 13], "AUPH": [3, 2], "AURA": [2, 14], "AVA": [2, 27], "AVAH": [1, 1], "AVAV": [4, 20], "AVB": [2, 5], "AVBC": [2, 17], "AVBH": [2, 49], "AVBP": [2, 21], "AVD": [4, 17], "AVGO": [2, 14], "AVIR": [2, 37], "AVNS": [2, 24], "AVNT": [2, 13], "AVNW": [1, 1], "AVO": [1, 3], "AVPT": [4, 36], "AVR": [2, 30], "AVTX": [1, 2], "AVXL": [4, 37], "AVY": [4, 7], "AWK": [1, 5], "AWR": [2, 13], "AX": [2, 6], "AXGN": [2, 38], "AXON": [4, 33], "AXP": [4, 9], "AXSM": [2, 37], "AXTI": [2, 47], "AZN": [3, 3], "AZO": [4, 19], "AZTA": [4, 21], "AZZ": [2, 53], "BA": [2, 11], "BAC": [2, 4], "BALL": [2, 23], "BALY": [4, 9], "BANC": [2, 45], "BAND": [2, 18], "BANF": [1, 8], "BANR": [2, 9], "BARK": [4, 20], "BATRA": [2, 14], "BATRK": [2, 13], "BAX": [2, 4], "BBAI": [4, 23], "BBBY": [4, 1], "BBCP": [2, 12], "BBIO": [3, 3], "BBNX": [4, 20], "BBSI": [2, 1], "BBT": [2, 31], "BBUC": [4, 2], "BBW": [4, 19], "BBY": [2, 2], "BCAL": [2, 46], "BCAX": [2, 40], "BCBP": [2, 14], "BCC": [1, 12], "BCML": [2, 11], "BCO": [4, 9], "BCPC": [2, 24], "BCRX": [2, 17], "BDC": [1, 5], "BDN": [2, 1], "BDTX": [4, 23], "BDX": [3, 15], "BE": [2, 50], "BEAM": [2, 39], "BEEP": [4, 40], "BELFA": [2, 51], "BELFB": [2, 56], "BEN": [2, 13], "BETR": [4, 11], "BF-B": [4, 2], "BFC": [2, 100], "BFH": [2, 44], "BFLY": [2, 34], "BFS": [2, 14], "BFST": [2, 36], "BG": [2, 48], "BGC": [2, 13], "BGS": [4, 1], "BH": [2, 3], "BHB": [2, 14], "BHE": [2, 38], "BHR": [4, 6], "BHRB": [2, 12], "BHVN": [2, 4], "BIIB": [2, 38], "BIOA": [2, 43], "BIPC": [4, 10], "BJ": [1, 16], "BJRI": [2, 14], "BKD": [2, 61], "BKE": [4, 7], "BKH": [2, 39], "BKKT": [4, 16], "BKNG": [4, 25], "BKR": [2, 43], "BKSY": [2, 20], "BKTI": [2, 102], "BKU": [2, 41], "BKV": [4, 3], "BL": [4, 25], "BLBD": [2, 12], "BLD": [1, 2], "BLDR": [4, 22], "BLFS": [2, 3], "BLK": [1, 6], "BLKB": [4, 26], "BLMN": [2, 8], "BLND": [4, 37], "BLX": [2, 192], "BLZE": [2, 5], "BMBL": [4, 33], "BMI": [4, 35], "BMRC": [2, 1], "BMY": [2, 32], "BNAI": [2, 26], "BNED": [2, 15], "BNL": [2, 50], "BNTC": [1, 2], "BNY": [2, 139], "BOC": [2, 4], "BOH": [2, 29], "BOOM": [1, 5], "BOOT": [4, 10], "BORR": [2, 42], "BOW": [2, 3], "BOX": [4, 30], "BPOP": [2, 61], "BPRN": [2, 14], "BR": [4, 28], "BRBR": [4, 59], "BRBS": [4, 7], "BRCB": [4, 11], "BRCC": [3, 3], "BRK-B": [1, 12], "BRO": [4, 48], "BRSL": [4, 20], "BRSP": [3, 2], "BRT": [2, 4], "BRZE": [4, 25], "BSET": [2, 3], "BSRR": [2, 37], "BSVN": [2, 6], "BSX": [4, 31], "BTBT": [4, 29], "BTDR": [2, 4], "BTMD": [4, 79], "BTSG": [2, 96], "BTU": [4, 10], "BULL": [4, 37], "BUR": [4, 44], "BURL": [2, 44], "BUSE": [2, 39], "BV": [2, 4], "BVFL": [2, 37], "BVS": [2, 31], "BW": [2, 46], "BWB": [2, 54], "BWFG": [2, 63], "BWIN": [1, 1], "BWMN": [4, 19], "BWXT": [3, 8], "BX": [4, 23], "BXC": [1, 3], "BXMT": [4, 1], "BXP": [1, 2], "BY": [2, 37], "BYD": [2, 5], "BYND": [4, 107], "BYRN": [4, 33], "BZAI": [4, 27], "BZH": [2, 6], "C": [2, 135], "CABA": [2, 41], "CABO": [4, 76], "CAC": [2, 35], "CADL": [2, 13], "CAG": [4, 17], "CAH": [2, 89], "CAKE": [2, 12], "CAL": [3, 1], "CALM": [1, 2], "CALX": [4, 19], "CALY": [2, 53], "CAMP": [4, 1], "CAMT": [2, 43], "CAPR": [2, 32], "CARE": [2, 48], "CARG": [4, 9], "CARL": [4, 18], "CARR": [2, 11], "CARS": [4, 7], "CASH": [2, 24], "CASS": [2, 22], "CASY": [2, 156], "CAT": [2, 52], "CATX": [3, 10], "CATY": [2, 13], "CB": [2, 31], "CBAN": [2, 36], "CBFV": [2, 50], "CBIO": [2, 15], "CBL": [2, 48], "CBLL": [3, 1], "CBNA": [2, 52], "CBNK": [2, 9], "CBOE": [3, 3], "CBRE": [4, 19], "CBRL": [2, 6], "CBT": [2, 10], "CBU": [2, 12], "CBZ": [4, 56], "CC": [2, 28], "CCB": [4, 22], "CCBG": [2, 13], "CCCC": [2, 12], "CCEP": [2, 21], "CCI": [4, 2], "CCJ": [2, 59], "CCL": [3, 1], "CCNE": [2, 40], "CCO": [2, 42], "CCOI": [4, 68], "CCRN": [2, 7], "CCS": [2, 3], "CCSI": [2, 10], "CD": [4, 16], "CDE": [1, 7], "CDNA": [2, 23], "CDNS": [2, 8], "CDP": [2, 44], "CDRE": [4, 12], "CDW": [4, 33], "CDXS": [2, 7], "CDZI": [4, 10], "CECO": [2, 51], "CEG": [4, 23], "CELC": [3, 3], "CENT": [2, 13], "CENTA": [2, 12], "CENX": [2, 51], "CERS": [2, 38], "CERT": [4, 36], "CEVA": [2, 11], "CF": [2, 20], "CFBK": [2, 30], "CFFI": [2, 37], "CFFN": [2, 50], "CFG": [2, 52], "CFR": [2, 27], "CGEM": [2, 35], "CGNX": [2, 49], "CGON": [2, 44], "CHCI": [2, 14], "CHCO": [2, 7], "CHCT": [2, 27], "CHD": [2, 12], "CHEF": [2, 12], "CHMG": [2, 50], "CHPT": [4, 196], "CHRS": [3, 8], "CHRW": [2, 49], "CHTR": [4, 50], "CI": [2, 6], "CIA": [2, 2], "CIEN": [2, 49], "CIFR": [2, 50], "CIM": [2, 12], "CINF": [2, 4], "CIVB": [2, 23], "CIX": [2, 8], "CL": [2, 12], "CLAR": [4, 19], "CLB": [4, 6], "CLBK": [2, 36], "CLDT": [2, 23], "CLDX": [2, 43], "CLFD": [2, 9], "CLMB": [4, 19], "CLMT": [2, 44], "CLNE": [4, 15], "CLOV": [2, 8], "CLPR": [4, 20], "CLPT": [2, 3], "CLSK": [2, 5], "CLVT": [4, 33], "CLW": [4, 50], "CLX": [4, 17], "CLYM": [2, 46], "CMC": [3, 1], "CMCL": [4, 16], "CMCO": [4, 6], "CMCSA": [4, 9], "CMDB": [2, 30], "CME": [4, 4], "CMG": [1, 5], "CMI": [2, 49], "CMP": [2, 27], "CMPR": [2, 43], "CMPX": [4, 10], "CMRC": [4, 66], "CMRE": [3, 3], "CMS": [2, 2], "CMT": [2, 52], "CMTG": [4, 24], "CMTV": [2, 89], "CNC": [2, 23], "CNDT": [4, 70], "CNK": [2, 6], "CNMD": [4, 73], "CNNE": [4, 33], "CNO": [2, 36], "CNOB": [2, 38], "CNP": [2, 27], "CNR": [3, 11], "CNS": [2, 10], "CNTB": [4, 3], "CNTN": [3, 7], "CNTX": [4, 3], "CNX": [4, 4], "CNXC": [4, 38], "CNXN": [2, 11], "COCO": [2, 43], "CODI": [2, 14], "COF": [4, 19], "COFS": [2, 11], "COGT": [3, 2], "COHR": [2, 44], "COHU": [2, 41], "COIN": [4, 27], "COLB": [2, 38], "COLL": [4, 6], "COMP": [2, 2], "CON": [2, 11], "COO": [4, 10], "COOK": [2, 6], "COP": [2, 30], "COR": [4, 10], "CORZ": [2, 45], "COSO": [2, 29], "COST": [2, 13], "COTY": [4, 108], "COUR": [4, 31], "CPAY": [2, 11], "CPF": [2, 46], "CPK": [1, 1], "CPRI": [4, 10], "CPRT": [4, 57], "CPRX": [2, 23], "CPS": [4, 3], "CPSS": [2, 12], "CPT": [2, 7], "CRAI": [4, 21], "CRBP": [4, 13], "CRBU": [1, 1], "CRC": [2, 25], "CRCL": [4, 25], "CRCT": [4, 29], "CRD-A": [1, 13], "CRDF": [4, 50], "CRDO": [2, 11], "CRGY": [2, 23], "CRH": [4, 2], "CRI": [2, 27], "CRK": [4, 11], "CRL": [2, 4], "CRM": [4, 27], "CRMD": [4, 28], "CRML": [1, 1], "CRMT": [4, 47], "CRNC": [4, 1], "CRNX": [2, 1], "CRSP": [1, 4], "CRSR": [2, 7], "CRTO": [4, 69], "CRVL": [4, 56], "CRVS": [2, 46], "CRWD": [2, 9], "CRWV": [2, 4], "CSCO": [2, 95], "CSGP": [4, 37], "CSIQ": [4, 6], "CSPI": [4, 22], "CSR": [4, 3], "CSTL": [4, 8], "CSTM": [2, 57], "CSV": [4, 5], "CSW": [3, 3], "CSX": [2, 42], "CTAS": [1, 1], "CTBI": [2, 49], "CTEV": [4, 26], "CTGO": [4, 7], "CTKB": [4, 6], "CTMX": [4, 5], "CTNM": [2, 45], "CTO": [2, 31], "CTOS": [2, 51], "CTRE": [2, 54], "CTRI": [2, 43], "CTRN": [2, 82], "CTS": [2, 36], "CTSH": [4, 21], "CTVA": [2, 20], "CUBI": [2, 13], "CURB": [2, 27], "CURI": [4, 30], "CURV": [2, 7], "CV": [3, 2], "CVBF": [2, 12], "CVCO": [1, 5], "CVEO": [2, 32], "CVGI": [2, 19], "CVI": [4, 5], "CVLG": [2, 27], "CVLT": [2, 3], "CVNA": [4, 2], "CVRX": [4, 11], "CVS": [2, 12], "CVSA": [2, 6], "CVX": [2, 36], "CW": [2, 62], "CWBC": [2, 49], "CWCO": [4, 10], "CWH": [4, 34], "CWK": [4, 18], "CWST": [1, 9], "CWT": [2, 3], "CXDO": [2, 11], "CXM": [4, 31], "CXT": [4, 28], "CXW": [2, 10], "CYH": [1, 2], "CYRX": [2, 11], "CYTK": [2, 42], "CZFS": [2, 14], "CZNC": [2, 35], "CZR": [2, 12], "CZWI": [2, 45], "D": [2, 52], "DAKT": [1, 10], "DAL": [2, 40], "DAN": [2, 77], "DASH": [4, 25], "DAVE": [2, 12], "DBD": [2, 59], "DBI": [3, 1], "DBRG": [2, 45], "DC": [4, 1], "DCGO": [4, 70], "DCH": [4, 3], "DCO": [2, 60], "DCOM": [2, 34], "DCTH": [2, 7], "DD": [2, 38], "DDD": [2, 7], "DDOG": [2, 10], "DE": [2, 23], "DEA": [2, 11], "DEC": [1, 1], "DECK": [2, 8], "DEI": [2, 3], "DELL": [2, 18], "DERM": [4, 16], "DFH": [4, 37], "DFIN": [4, 32], "DFTX": [2, 52], "DG": [3, 3], "DGICA": [4, 14], "DGII": [2, 61], "DGX": [2, 24], "DH": [4, 31], "DHC": [2, 58], "DHI": [3, 2], "DHR": [4, 12], "DHT": [2, 60], "DIBS": [4, 3], "DIN": [2, 40], "DINO": [2, 54], "DIOD": [2, 40], "DIS": [4, 24], "DJCO": [2, 44], "DJT": [4, 60], "DK": [2, 59], "DKNG": [4, 27], "DKS": [2, 5], "DLO": [2, 1], "DLR": [2, 19], "DLTR": [3, 1], "DLX": [2, 43], "DMAC": [4, 12], "DMC": [4, 6], "DMRA": [2, 1], "DMRC": [4, 1], "DNA": [2, 3], "DNLI": [2, 38], "DNN": [2, 50], "DNOW": [1, 5], "DNTH": [2, 45], "DNUT": [4, 7], "DOC": [2, 8], "DOCN": [2, 37], "DOCU": [4, 55], "DOLE": [3, 4], "DOMO": [4, 29], "DORM": [2, 1], "DOUG": [4, 19], "DOV": [2, 36], "DOW": [2, 23], "DPZ": [4, 42], "DRH": [2, 37], "DRI": [2, 11], "DRS": [2, 8], "DRUG": [4, 2], "DRVN": [1, 2], "DSGN": [2, 46], "DSGR": [1, 7], "DSP": [2, 16], "DTE": [2, 6], "DTIL": [2, 5], "DUK": [2, 3], "DUOL": [4, 37], "DUOT": [2, 12], "DV": [1, 4], "DVA": [2, 20], "DVN": [2, 36], "DX": [3, 5], "DXC": [4, 19], "DXCM": [2, 7], "DXPE": [2, 89], "DY": [2, 59], "DYN": [2, 1], "EA": [3, 10], "EAF": [4, 22], "EAT": [2, 12], "EBAY": [2, 13], "EBC": [2, 41], "EBF": [2, 26], "EBMT": [2, 31], "EBS": [4, 9], "ECBK": [2, 13], "ECHO": [2, 54], "ECL": [2, 2], "ECPG": [2, 41], "ECVT": [2, 54], "ED": [2, 24], "EDIT": [2, 4], "EE": [2, 26], "EEX": [2, 6], "EFC": [2, 11], "EFOR": [4, 22], "EFSC": [2, 10], "EFSI": [2, 9], "EFX": [4, 35], "EG": [2, 4], "EGAN": [4, 12], "EGBN": [2, 31], "EGHT": [4, 3], "EGY": [2, 38], "EHTH": [4, 25], "EIG": [2, 8], "EIX": [2, 36], "EL": [4, 16], "ELA": [2, 44], "ELDN": [2, 16], "ELE": [3, 9], "ELMD": [2, 11], "ELME": [4, 21], "ELTX": [4, 3], "ELV": [2, 11], "ELVN": [2, 26], "EMBC": [4, 19], "EME": [2, 53], "EML": [2, 4], "EMR": [2, 13], "ENOV": [4, 73], "ENR": [2, 3], "ENS": [2, 46], "ENSG": [4, 6], "ENTA": [3, 4], "ENTG": [2, 37], "ENVA": [2, 44], "ENVX": [4, 26], "EOG": [2, 20], "EOLS": [1, 7], "EOSE": [4, 17], "EP": [4, 62], "EPAC": [4, 18], "EPC": [2, 5], "EPM": [3, 6], "EPRT": [3, 8], "EPSN": [2, 16], "EQBK": [2, 38], "EQIX": [2, 23], "EQR": [2, 9], "EQT": [4, 4], "ERAS": [2, 43], "ERIE": [4, 70], "ERII": [4, 19], "ES": [2, 3], "ESCA": [2, 23], "ESE": [2, 102], "ESNT": [1, 12], "ESOA": [2, 22], "ESP": [2, 93], "ESPR": [3, 3], "ESQ": [2, 104], "ESRT": [4, 32], "ESS": [2, 8], "ESTA": [2, 40], "ETD": [4, 2], "ETHA": [4, 23], "ETN": [2, 15], "ETON": [2, 23], "ETR": [2, 123], "EU": [4, 20], "EVC": [2, 48], "EVCM": [1, 14], "EVER": [4, 24], "EVEX": [4, 28], "EVGO": [4, 31], "EVH": [2, 3], "EVI": [4, 21], "EVLV": [4, 22], "EVRG": [2, 115], "EVTC": [1, 1], "EW": [2, 2], "EWBC": [2, 13], "EWTX": [2, 36], "EXC": [2, 2], "EXE": [4, 9], "EXFY": [2, 1], "EXPD": [2, 37], "EXPE": [1, 2], "EXPO": [4, 10], "EXR": [2, 6], "EXTR": [2, 10], "EYE": [4, 12], "EYPT": [4, 1], "F": [2, 10], "FA": [2, 8], "FANG": [2, 35], "FAST": [2, 7], "FATE": [2, 22], "FBIN": [1, 2], "FBIZ": [2, 38], "FBK": [3, 17], "FBLA": [2, 43], "FBNC": [2, 13], "FBP": [2, 12], "FBRT": [4, 20], "FBRX": [2, 42], "FBYD": [4, 1], "FC": [2, 13], "FCAP": [2, 114], "FCBC": [2, 21], "FCCO": [2, 50], "FCEL": [2, 42], "FCF": [2, 13], "FCFS": [2, 65], "FCNCA": [2, 12], "FCPT": [2, 11], "FCX": [2, 53], "FDBC": [2, 11], "FDMT": [2, 1], "FDS": [4, 57], "FDX": [2, 37], "FE": [2, 2], "FEIM": [2, 103], "FELE": [2, 5], "FENC": [2, 7], "FER": [3, 1], "FERG": [1, 4], "FET": [2, 58], "FF": [2, 20], "FFAI": [4, 29], "FFBC": [2, 34], "FFIN": [2, 6], "FFIV": [2, 9], "FG": [4, 4], "FGBI": [2, 15], "FHN": [2, 13], "FHTX": [2, 1], "FI": [4, 61], "FIBK": [2, 44], "FICO": [4, 19], "FIGS": [3, 1], "FINW": [4, 18], "FIP": [1, 4], "FIS": [4, 48], "FISI": [2, 39], "FITB": [2, 14], "FIVE": [2, 60], "FIVN": [2, 5], "FIX": [2, 61], "FIZZ": [3, 2], "FLD": [4, 73], "FLEX": [2, 62], "FLG": [2, 14], "FLGT": [4, 18], "FLNC": [4, 1], "FLNG": [2, 58], "FLO": [4, 87], "FLOC": [2, 28], "FLR": [2, 5], "FLWS": [2, 7], "FLXS": [2, 12], "FLY": [2, 11], "FLYW": [2, 11], "FLYX": [4, 19], "FMAO": [2, 12], "FMBH": [2, 15], "FMC": [4, 41], "FMNB": [2, 8], "FN": [2, 55], "FNKO": [2, 20], "FNLC": [2, 37], "FNRN": [2, 53], "FNWD": [4, 3], "FOA": [2, 1], "FOR": [2, 7], "FORM": [2, 40], "FORR": [2, 2], "FOSL": [2, 49], "FOUR": [4, 50], "FOX": [4, 4], "FOXA": [4, 4], "FOXF": [2, 4], "FPI": [3, 2], "FRAF": [2, 97], "FRBA": [2, 4], "FRD": [2, 7], "FRME": [2, 11], "FROG": [2, 10], "FRPH": [2, 1], "FRSH": [4, 55], "FRST": [2, 38], "FRT": [2, 38], "FSBC": [2, 48], "FSBW": [2, 9], "FSLR": [4, 2], "FSLY": [2, 42], "FSP": [4, 57], "FSS": [2, 3], "FSTR": [2, 42], "FSUN": [3, 1], "FTDR": [2, 6], "FTK": [2, 109], "FTLF": [4, 16], "FTNT": [2, 11], "FTRE": [2, 11], "FTV": [2, 24], "FUBO": [4, 30], "FUL": [3, 1], "FULC": [4, 11], "FULT": [2, 34], "FUN": [2, 6], "FUNC": [2, 11], "FUTU": [4, 19], "FVCB": [2, 49], "FVR": [2, 38], "FWDI": [4, 23], "FWRD": [4, 20], "FWRG": [4, 22], "FXNC": [2, 37], "GABC": [2, 13], "GAIA": [4, 32], "GALT": [4, 20], "GAMB": [4, 53], "GATX": [2, 43], "GBCI": [2, 9], "GBFH": [4, 33], "GBTG": [2, 8], "GBX": [2, 23], "GCBC": [2, 10], "GCMG": [2, 4], "GCO": [2, 11], "GCT": [4, 3], "GD": [2, 3], "GDC": [4, 16], "GDDY": [4, 55], "GDOT": [3, 1], "GDYN": [4, 61], "GE": [2, 5], "GEF": [2, 15], "GEHC": [4, 12], "GEMI": [4, 11], "GEN": [1, 5], "GENC": [2, 5], "GENI": [4, 24], "GEO": [2, 9], "GERN": [2, 2], "GETY": [4, 33], "GEV": [2, 87], "GEVO": [4, 11], "GFF": [2, 12], "GGG": [4, 9], "GH": [2, 109], "GHC": [2, 9], "GHM": [2, 62], "GIC": [2, 5], "GIII": [2, 14], "GILD": [2, 40], "GIS": [4, 73], "GKOS": [2, 33], "GL": [2, 12], "GLIBA": [4, 11], "GLIBK": [4, 11], "GLNG": [2, 22], "GLOB": [4, 72], "GLRE": [2, 21], "GLSI": [2, 30], "GLUE": [2, 41], "GLW": [2, 58], "GLXY": [2, 4], "GM": [3, 1], "GNE": [1, 4], "GNK": [2, 51], "GNL": [2, 59], "GNRC": [2, 15], "GNW": [2, 3], "GO": [4, 35], "GOGO": [4, 33], "GOLD": [2, 37], "GOLF": [2, 53], "GOOD": [2, 11], "GOOG": [2, 46], "GOOGL": [2, 46], "GORO": [2, 71], "GOSS": [4, 20], "GPC": [1, 1], "GPCR": [2, 41], "GPGI": [4, 16], "GPI": [4, 30], "GPN": [4, 23], "GPOR": [4, 7], "GPRE": [2, 46], "GPRO": [4, 20], "GRAL": [4, 10], "GRBK": [2, 5], "GRC": [2, 50], "GRDN": [2, 48], "GRMN": [2, 6], "GRND": [2, 2], "GRNT": [4, 3], "GRPN": [2, 3], "GS": [2, 62], "GSAT": [2, 45], "GSBC": [2, 14], "GSHD": [4, 56], "GSIT": [2, 43], "GSM": [4, 10], "GT": [4, 46], "GTLB": [4, 33], "GTLS": [3, 16], "GTM": [4, 25], "GTN": [4, 8], "GTX": [2, 65], "GTY": [2, 25], "GVA": [2, 50], "GWRS": [4, 34], "GWW": [2, 23], "GYRE": [4, 9], "H": [2, 14], "HAE": [3, 3], "HAFC": [2, 49], "HAIN": [4, 80], "HAL": [2, 37], "HAPN": [2, 4], "HAS": [3, 2], "HASI": [2, 44], "HBAN": [2, 6], "HBB": [2, 25], "HBCP": [2, 54], "HBNC": [2, 14], "HBT": [2, 54], "HCA": [4, 7], "HCAT": [4, 75], "HCC": [3, 1], "HCI": [1, 3], "HCKT": [4, 58], "HCSG": [2, 64], "HD": [1, 3], "HDSN": [4, 25], "HE": [2, 37], "HEI": [2, 5], "HELE": [2, 9], "HFFG": [4, 38], "HFWA": [2, 34], "HG": [2, 61], "HGV": [2, 11], "HIFS": [2, 3], "HIG": [3, 6], "HII": [4, 2], "HIMS": [4, 32], "HIPO": [4, 18], "HIW": [2, 4], "HL": [3, 2], "HLF": [3, 2], "HLIO": [2, 48], "HLIT": [2, 11], "HLLY": [4, 8], "HLMN": [4, 18], "HLT": [2, 41], "HLX": [2, 25], "HMN": [2, 6], "HNGE": [2, 8], "HNI": [1, 1], "HNRG": [4, 14], "HNST": [2, 6], "HNVR": [3, 2], "HOG": [2, 3], "HOMB": [1, 11], "HON": [2, 23], "HOOD": [4, 22], "HOPE": [2, 38], "HOV": [2, 3], "HP": [2, 37], "HPE": [2, 14], "HPK": [2, 7], "HPP": [2, 3], "HPQ": [1, 5], "HQI": [2, 13], "HQY": [4, 29], "HRI": [2, 5], "HRL": [2, 5], "HRMY": [3, 5], "HROW": [1, 5], "HRTG": [4, 7], "HRTX": [4, 48], "HSHP": [2, 54], "HSIC": [2, 34], "HST": [2, 44], "HSTM": [2, 3], "HSY": [3, 11], "HTB": [2, 52], "HTFL": [1, 4], "HTH": [2, 50], "HTLD": [2, 29], "HTO": [2, 23], "HTZ": [4, 6], "HUBB": [2, 44], "HUBG": [2, 13], "HUBS": [4, 57], "HUM": [2, 7], "HUMA": [4, 83], "HUN": [2, 26], "HURA": [2, 4], "HURN": [4, 15], "HUT": [2, 45], "HVT": [2, 6], "HWBK": [2, 40], "HWC": [2, 13], "HWKN": [2, 6], "HWM": [2, 191], "HY": [2, 6], "HYLN": [2, 10], "HYMC": [2, 71], "HYPR": [2, 9], "HZO": [2, 13], "IART": [2, 7], "IBCP": [2, 35], "IBEX": [4, 15], "IBIT": [4, 32], "IBKR": [2, 133], "IBM": [4, 13], "IBOC": [2, 11], "IBP": [4, 8], "IBRX": [2, 26], "IBTA": [2, 15], "ICE": [4, 5], "ICFI": [4, 20], "ICHR": [2, 29], "ICUI": [3, 16], "IDCC": [4, 10], "IDN": [4, 6], "IDR": [4, 2], "IDT": [2, 8], "IDXX": [4, 17], "IDYA": [1, 3], "IE": [4, 9], "IESC": [2, 53], "IEX": [2, 26], "IFF": [2, 21], "IHRT": [3, 4], "III": [4, 17], "IIIN": [1, 1], "IIIV": [4, 24], "IIPR": [2, 11], "IKT": [2, 13], "ILPT": [2, 12], "IMAX": [2, 105], "IMKTA": [2, 45], "IMMR": [1, 6], "IMMX": [2, 63], "IMNM": [2, 42], "IMRX": [4, 15], "IMVT": [2, 37], "IMXI": [4, 2], "INBK": [2, 10], "INBX": [2, 54], "INCY": [2, 2], "INDB": [2, 47], "INDI": [3, 1], "INDV": [2, 63], "INFU": [2, 2], "INGN": [4, 25], "INMB": [4, 52], "INN": [2, 8], "INNV": [2, 45], "INOD": [2, 8], "INR": [4, 2], "INSE": [4, 1], "INSG": [4, 7], "INSM": [4, 8], "INSP": [4, 69], "INSW": [2, 54], "INTA": [4, 56], "INTC": [2, 49], "INTT": [2, 39], "INTU": [4, 29], "INV": [3, 1], "INVA": [2, 23], "INVH": [2, 7], "INVX": [2, 38], "IONQ": [3, 1], "IOSP": [2, 8], "IOVA": [2, 30], "IP": [1, 4], "IPAR": [2, 5], "IPI": [2, 20], "IPSC": [2, 31], "IQV": [4, 19], "IR": [1, 4], "IRD": [2, 45], "IRDM": [2, 17], "IREN": [3, 1], "IRM": [2, 21], "IRMD": [3, 1], "IRON": [4, 9], "IRT": [1, 11], "IRTC": [4, 19], "IRWD": [2, 38], "ISBA": [4, 2], "ISPR": [4, 18], "ISRG": [4, 8], "ISSC": [2, 62], "ISTR": [2, 49], "IT": [4, 69], "ITGR": [2, 7], "ITIC": [2, 1], "ITRI": [4, 33], "ITW": [2, 5], "IVR": [2, 37], "IVT": [2, 27], "IVVD": [4, 9], "IVZ": [2, 52], "J": [4, 19], "JACK": [4, 21], "JAKK": [2, 21], "JANX": [4, 33], "JBGS": [4, 22], "JBHT": [2, 38], "JBI": [4, 33], "JBIO": [2, 30], "JBL": [2, 86], "JBLU": [2, 11], "JBSS": [2, 34], "JBTM": [4, 1], "JCAP": [4, 6], "JCI": [2, 121], "JELD": [4, 107], "JILL": [2, 2], "JJSF": [4, 79], "JKHY": [4, 7], "JMSB": [2, 11], "JNJ": [2, 53], "JOBY": [4, 22], "JOE": [3, 1], "JOUT": [2, 49], "JPM": [2, 3], "JRVR": [4, 9], "JXN": [2, 47], "JYNT": [2, 7], "KAI": [2, 11], "KALU": [2, 53], "KBH": [4, 17], "KDP": [2, 11], "KE": [4, 16], "KEEL": [2, 8], "KELYA": [2, 6], "KEY": [2, 51], "KEYS": [2, 40], "KFRC": [2, 12], "KFY": [2, 6], "KG": [4, 33], "KGEI": [2, 9], "KGS": [2, 31], "KHC": [1, 7], "KIDS": [2, 7], "KIM": [2, 22], "KINS": [2, 14], "KKR": [4, 24], "KLAC": [2, 59], "KLC": [2, 2], "KLIC": [2, 40], "KLTR": [4, 54], "KMB": [2, 2], "KMI": [2, 24], "KMPR": [4, 57], "KMT": [2, 38], "KMTS": [4, 12], "KN": [2, 47], "KNF": [2, 13], "KNSA": [2, 60], "KNSL": [4, 38], "KNTK": [2, 21], "KO": [2, 24], "KOD": [2, 48], "KODK": [2, 37], "KOP": [2, 20], "KOPN": [2, 14], "KORE": [2, 40], "KOS": [2, 19], "KPTI": [2, 31], "KR": [4, 4], "KREF": [4, 24], "KRG": [2, 38], "KRMD": [4, 5], "KRMN": [4, 9], "KRNY": [2, 39], "KRO": [2, 13], "KROS": [4, 18], "KRRO": [2, 3], "KRT": [2, 17], "KRUS": [1, 5], "KRYS": [2, 38], "KSS": [1, 5], "KTB": [2, 4], "KTOS": [4, 13], "KULR": [2, 5], "KURA": [1, 1], "KVHI": [2, 38], "KVUE": [2, 10], "KVYO": [4, 32], "KWR": [2, 9], "KWY": [4, 26], "KYMR": [2, 46], "KYTX": [2, 46], "L": [2, 3], "LAB": [4, 21], "LAC": [4, 9], "LADR": [1, 11], "LAKE": [4, 69], "LAND": [3, 6], "LARK": [2, 12], "LASR": [2, 60], "LAUR": [2, 120], "LAW": [4, 20], "LBRT": [2, 38], "LBRX": [2, 11], "LCID": [4, 38], "LCII": [4, 4], "LCNB": [2, 13], "LCTX": [4, 10], "LCUT": [2, 16], "LDI": [4, 17], "LDOS": [4, 16], "LE": [4, 15], "LEE": [2, 21], "LEG": [2, 14], "LEGH": [2, 6], "LEN": [4, 19], "LENZ": [4, 31], "LEU": [4, 14], "LFCR": [4, 18], "LFMD": [2, 3], "LFST": [2, 31], "LFT": [4, 52], "LFVN": [2, 4], "LGIH": [2, 6], "LGN": [2, 11], "LGND": [2, 52], "LH": [2, 1], "LHX": [3, 1], "LI": [4, 40], "LIF": [4, 23], "LII": [2, 5], "LILA": [2, 3], "LILAK": [2, 3], "LIN": [2, 15], "LINC": [2, 28], "LIND": [2, 49], "LION": [2, 32], "LITE": [2, 53], "LIVN": [2, 47], "LKFN": [2, 5], "LLY": [2, 37], "LMAT": [2, 23], "LMB": [1, 4], "LMND": [4, 6], "LMNR": [1, 2], "LMT": [2, 28], "LNG": [2, 18], "LNN": [3, 2], "LNSR": [4, 39], "LNT": [2, 52], "LNTH": [2, 19], "LNZA": [4, 10], "LOB": [2, 10], "LOCO": [2, 19], "LODE": [2, 8], "LOVE": [2, 8], "LOW": [4, 9], "LPA": [2, 2], "LPG": [2, 54], "LPRO": [2, 7], "LPTH": [2, 47], "LQDA": [2, 77], "LQDT": [2, 31], "LRCX": [2, 59], "LRMR": [1, 4], "LRN": [2, 5], "LTBR": [4, 19], "LTC": [2, 26], "LTH": [2, 10], "LTRX": [2, 46], "LUCD": [1, 3], "LULU": [4, 58], "LUMN": [4, 3], "LUNG": [4, 15], "LUNR": [2, 39], "LUV": [2, 37], "LVS": [4, 7], "LVWR": [4, 27], "LWAY": [2, 4], "LWLG": [2, 49], "LXEO": [4, 10], "LXFR": [2, 11], "LXP": [2, 47], "LXRX": [2, 53], "LXU": [2, 42], "LYB": [2, 20], "LYEL": [4, 6], "LYTS": [2, 8], "LYV": [2, 8], "LZ": [4, 23], "LZB": [3, 1], "LZM": [3, 2], "MA": [4, 21], "MAA": [2, 4], "MAC": [2, 39], "MAGN": [3, 2], "MAMA": [2, 51], "MAN": [2, 5], "MAR": [2, 39], "MARA": [2, 3], "MAS": [2, 7], "MASS": [2, 5], "MATV": [4, 17], "MATW": [2, 15], "MATX": [2, 33], "MAX": [1, 1], "MAZE": [4, 9], "MBC": [4, 19], "MBI": [4, 17], "MBIN": [2, 31], "MBUU": [4, 1], "MBWM": [2, 36], "MBX": [2, 47], "MC": [3, 2], "MCB": [2, 65], "MCBS": [2, 13], "MCD": [4, 9], "MCFT": [2, 11], "MCHB": [2, 57], "MCHP": [2, 14], "MCK": [4, 7], "MCO": [1, 2], "MCRI": [2, 11], "MCS": [2, 19], "MCY": [2, 50], "MD": [2, 48], "MDB": [4, 1], "MDGL": [3, 4], "MDLZ": [2, 7], "MDT": [4, 15], "MDV": [2, 13], "MDWD": [4, 10], "MDXG": [4, 25], "MEC": [2, 38], "MED": [1, 6], "MEI": [2, 11], "MELI": [4, 33], "MET": [2, 7], "META": [4, 26], "METC": [4, 21], "MFA": [2, 35], "MFIN": [1, 10], "MG": [2, 36], "MGEE": [1, 3], "MGM": [2, 12], "MGNI": [2, 4], "MGNX": [2, 27], "MGPI": [4, 92], "MGRC": [2, 5], "MGTX": [2, 14], "MGY": [2, 23], "MH": [4, 6], "MHK": [1, 4], "MHO": [2, 5], "MIAX": [4, 4], "MIR": [4, 17], "MIRM": [2, 62], "MITK": [2, 24], "MITT": [3, 3], "MKC": [4, 18], "MKSI": [2, 43], "MKTW": [2, 13], "MLAB": [2, 21], "MLKN": [2, 4], "MLM": [1, 4], "MLP": [2, 6], "MLR": [2, 20], "MLYS": [4, 14], "MMI": [2, 3], "MMM": [1, 3], "MMS": [4, 18], "MMSI": [4, 57], "MNKD": [4, 18], "MNPR": [2, 1], "MNRO": [4, 3], "MNSB": [2, 13], "MNST": [2, 71], "MNTK": [4, 35], "MNTN": [4, 27], "MO": [2, 13], "MOD": [2, 47], "MOG-A": [2, 44], "MOH": [2, 7], "MOS": [4, 33], "MOV": [2, 43], "MP": [4, 2], "MPAA": [2, 2], "MPB": [2, 44], "MPC": [2, 24], "MPTI": [2, 29], "MPWR": [2, 56], "MQ": [4, 29], "MRAM": [2, 45], "MRBK": [2, 40], "MRCY": [2, 11], "MRDN": [2, 4], "MRK": [2, 36], "MRNA": [2, 31], "MRTN": [2, 20], "MRVI": [2, 39], "MRVL": [2, 39], "MRX": [2, 23], "MS": [2, 55], "MSBI": [2, 33], "MSCI": [2, 9], "MSEX": [2, 3], "MSFT": [4, 24], "MSGE": [2, 54], "MSI": [2, 3], "MSM": [2, 13], "MSTR": [4, 37], "MTB": [2, 42], "MTD": [4, 10], "MTH": [2, 4], "MTRN": [2, 49], "MTRX": [2, 4], "MTUS": [2, 12], "MTW": [2, 39], "MTX": [2, 33], "MU": [2, 56], "MUR": [2, 42], "MUX": [3, 2], "MVBF": [2, 5], "MVIS": [4, 37], "MVST": [4, 29], "MWA": [3, 8], "MXCT": [4, 73], "MXL": [2, 42], "MYE": [2, 59], "MYFW": [2, 54], "MYGN": [4, 19], "MYO": [2, 6], "MYPS": [1, 1], "MYRG": [2, 64], "MZTI": [4, 23], "NABL": [4, 29], "NAGE": [4, 33], "NAT": [2, 54], "NATH": [2, 3], "NATL": [2, 48], "NATR": [3, 3], "NAUT": [4, 1], "NAVI": [4, 25], "NB": [4, 12], "NBBK": [3, 1], "NBHC": [2, 13], "NBIS": [2, 57], "NBN": [2, 15], "NBR": [2, 38], "NBTB": [2, 12], "NC": [3, 2], "NCLH": [1, 4], "NCMI": [4, 69], "NCNO": [4, 27], "NDAQ": [4, 2], "NDSN": [2, 44], "NE": [2, 43], "NECB": [2, 24], "NEE": [2, 49], "NEM": [3, 1], "NEO": [2, 4], "NEOG": [2, 34], "NEON": [4, 43], "NERV": [2, 45], "NESR": [2, 43], "NET": [2, 5], "NEWT": [2, 12], "NEXN": [2, 6], "NEXT": [2, 11], "NFBK": [2, 24], "NFE": [4, 117], "NFLX": [4, 32], "NG": [4, 9], "NGNE": [2, 5], "NGS": [2, 42], "NGVC": [2, 3], "NGVT": [2, 50], "NHC": [2, 47], "NHI": [3, 10], "NI": [2, 117], "NIC": [2, 27], "NIO": [4, 6], "NJR": [2, 27], "NKE": [4, 24], "NKSH": [2, 48], "NKTR": [2, 3], "NKTX": [2, 14], "NL": [2, 10], "NLOP": [2, 16], "NMAX": [1, 3], "NMIH": [2, 1], "NMRA": [4, 8], "NMRK": [4, 18], "NN": [2, 20], "NNE": [4, 24], "NNI": [3, 9], "NNOX": [4, 73], "NOC": [4, 1], "NODK": [2, 6], "NOG": [4, 3], "NOVT": [2, 13], "NOW": [4, 33], "NPB": [2, 6], "NPCE": [3, 1], "NPK": [2, 83], "NPKI": [2, 61], "NPO": [2, 61], "NPWR": [4, 24], "NRC": [2, 18], "NRDS": [4, 10], "NRDY": [4, 51], "NREF": [2, 11], "NRG": [4, 10], "NRGV": [4, 1], "NRIM": [2, 13], "NRIX": [2, 36], "NSC": [2, 13], "NSIT": [2, 5], "NSP": [2, 4], "NSSC": [4, 8], "NTAP": [2, 8], "NTB": [2, 64], "NTCT": [2, 44], "NTGR": [4, 31], "NTLA": [2, 5], "NTRS": [2, 62], "NTST": [2, 58], "NUAI": [2, 4], "NUE": [2, 39], "NUS": [4, 19], "NUTX": [2, 12], "NUVB": [4, 5], "NUVL": [2, 40], "NVAX": [2, 8], "NVCR": [2, 11], "NVCT": [2, 25], "NVDA": [2, 13], "NVEC": [2, 19], "NVGS": [2, 42], "NVMI": [2, 58], "NVO": [1, 4], "NVR": [4, 19], "NVT": [2, 51], "NVTS": [2, 60], "NWBI": [2, 15], "NWE": [2, 48], "NWFL": [2, 39], "NWL": [2, 5], "NWN": [2, 49], "NWPX": [2, 44], "NWS": [1, 10], "NWSA": [1, 9], "NX": [2, 13], "NXDR": [2, 7], "NXDT": [2, 28], "NXE": [2, 46], "NXPI": [2, 11], "NXRT": [1, 2], "NXT": [2, 70], "NXXT": [4, 53], "O": [2, 29], "OABI": [2, 9], "OBIO": [4, 2], "OBK": [2, 35], "OBT": [2, 37], "OC": [2, 5], "OCFC": [3, 3], "OCGN": [1, 4], "OCUL": [4, 22], "ODC": [2, 22], "ODD": [4, 34], "ODFL": [2, 26], "OEC": [2, 9], "OFG": [2, 10], "OFIX": [4, 17], "OFLX": [2, 5], "OGS": [3, 7], "OI": [4, 18], "OII": [2, 42], "OIS": [2, 44], "OKE": [2, 22], "OKLO": [4, 20], "OKTA": [2, 7], "OKUR": [2, 34], "OLLI": [4, 25], "OLMA": [4, 4], "OLP": [2, 12], "OLPX": [2, 15], "OM": [2, 1], "OMC": [3, 1], "OMCL": [2, 12], "OMDA": [2, 2], "OMER": [3, 2], "ON": [2, 40], "ONB": [2, 12], "ONDS": [4, 1], "ONEW": [1, 1], "ONIT": [4, 6], "ONL": [2, 10], "ONT": [4, 17], "ONTO": [2, 38], "OOMA": [2, 20], "OPAL": [4, 10], "OPBK": [2, 10], "OPCH": [4, 12], "OPEN": [4, 15], "OPFI": [4, 31], "OPK": [2, 4], "OPLN": [2, 12], "OPRT": [2, 4], "OPRX": [4, 25], "OPTU": [4, 48], "OPTX": [2, 30], "ORA": [3, 1], "ORC": [2, 1], "ORCL": [4, 25], "ORGO": [4, 22], "ORIC": [1, 1], "ORKA": [2, 46], "ORLY": [4, 19], "ORMP": [2, 36], "ORN": [2, 42], "ORRF": [2, 43], "OSBC": [2, 38], "OSCR": [2, 9], "OSG": [4, 25], "OSIS": [4, 8], "OSPN": [2, 6], "OSS": [2, 59], "OSUR": [2, 8], "OSW": [2, 14], "OTIS": [4, 16], "OTTR": [2, 35], "OUST": [2, 8], "OUT": [2, 44], "OVBC": [2, 87], "OVID": [2, 47], "OVLY": [2, 47], "OXM": [3, 2], "OXY": [2, 22], "PAA": [2, 33], "PACB": [4, 9], "PACK": [2, 9], "PACS": [2, 39], "PAGS": [4, 4], "PAHC": [4, 7], "PAL": [4, 8], "PALI": [3, 7], "PAMT": [2, 7], "PANL": [3, 2], "PANW": [2, 8], "PAR": [4, 57], "PARR": [2, 60], "PATH": [4, 14], "PATK": [4, 9], "PAX": [4, 18], "PAY": [4, 31], "PAYO": [2, 4], "PAYS": [2, 13], "PAYX": [4, 44], "PBF": [2, 44], "PBFS": [2, 52], "PBH": [4, 50], "PBI": [2, 13], "PBYI": [2, 69], "PCAR": [2, 35], "PCB": [2, 15], "PCG": [2, 4], "PCOR": [4, 24], "PCRX": [1, 10], "PCT": [4, 2], "PCVX": [2, 35], "PCYO": [4, 1], "PD": [4, 33], "PDD": [4, 21], "PDEX": [2, 16], "PDFS": [2, 41], "PDLB": [2, 64], "PDM": [2, 5], "PDYN": [1, 5], "PEB": [2, 37], "PEBK": [2, 46], "PEBO": [2, 35], "PECO": [2, 24], "PED": [2, 19], "PEG": [1, 52], "PENG": [2, 11], "PENN": [2, 7], "PEP": [3, 8], "PESI": [2, 1], "PFBC": [2, 11], "PFE": [3, 3], "PFG": [2, 37], "PFIS": [2, 24], "PFS": [2, 47], "PFSI": [4, 19], "PG": [1, 11], "PGC": [2, 28], "PGEN": [2, 4], "PGNY": [2, 9], "PGR": [1, 6], "PGY": [4, 23], "PH": [2, 52], "PHAT": [4, 9], "PHIN": [2, 49], "PHM": [2, 3], "PHR": [4, 43], "PI": [4, 20], "PII": [2, 11], "PINE": [2, 34], "PIPR": [4, 3], "PJT": [4, 22], "PK": [2, 11], "PKBK": [2, 50], "PKE": [2, 53], "PKG": [2, 9], "PKOH": [2, 34], "PL": [2, 88], "PLAB": [2, 43], "PLAY": [4, 44], "PLBC": [2, 28], "PLBY": [4, 5], "PLD": [2, 39], "PLGO": [2, 46], "PLMR": [1, 3], "PLOW": [2, 60], "PLPC": [2, 77], "PLSE": [2, 23], "PLTK": [4, 6], "PLTR": [4, 21], "PLUG": [2, 43], "PLUS": [4, 3], "PLX": [2, 4], "PLXS": [2, 42], "PM": [2, 10], "PMI": [4, 13], "PMT": [4, 7], "PMTS": [2, 13], "PNBK": [4, 20], "PNC": [2, 15], "PNR": [4, 20], "PNRG": [3, 1], "PNTG": [2, 24], "PNW": [2, 24], "PODD": [4, 29], "POOL": [4, 68], "POR": [2, 38], "POWI": [2, 17], "POWL": [2, 46], "POWW": [2, 29], "PPG": [2, 11], "PPIH": [4, 1], "PPL": [3, 10], "PPTA": [4, 2], "PR": [2, 36], "PRAA": [2, 4], "PRAX": [2, 40], "PRCH": [2, 3], "PRCT": [4, 70], "PRDO": [2, 4], "PRG": [2, 10], "PRGO": [4, 44], "PRGS": [4, 65], "PRIM": [4, 7], "PRK": [2, 12], "PRKS": [2, 5], "PRLB": [2, 49], "PRLD": [2, 45], "PRM": [2, 55], "PRME": [4, 14], "PROK": [4, 22], "PROP": [4, 91], "PRSU": [2, 13], "PRTA": [4, 6], "PRTH": [2, 4], "PRU": [1, 12], "PRVA": [2, 2], "PSA": [2, 12], "PSFE": [1, 2], "PSIX": [4, 20], "PSKY": [4, 24], "PSMT": [2, 64], "PSNL": [2, 6], "PSTL": [2, 57], "PSX": [2, 52], "PTC": [4, 24], "PTCT": [3, 6], "PTEN": [2, 30], "PTGX": [2, 58], "PTLO": [4, 48], "PTON": [4, 30], "PUBM": [2, 13], "PUMP": [2, 37], "PVLA": [2, 101], "PWP": [4, 7], "PWR": [2, 61], "PYPL": [4, 32], "PZZA": [4, 28], "QBTS": [4, 15], "QCOM": [2, 10], "QCRH": [2, 37], "QDEL": [4, 22], "QLYS": [4, 25], "QNST": [2, 1], "QSI": [4, 31], "QTRX": [4, 16], "QTWO": [4, 57], "QUAD": [2, 39], "QUBT": [4, 28], "QUIK": [2, 39], "RAIL": [1, 4], "RAMP": [2, 11], "RAPP": [2, 45], "RARE": [4, 29], "RBB": [2, 46], "RBBN": [4, 45], "RBCAA": [2, 11], "RBKB": [2, 23], "RBLX": [4, 25], "RBRK": [1, 5], "RC": [4, 129], "RCAT": [1, 7], "RCEL": [2, 6], "RCKT": [2, 2], "RCKY": [2, 52], "RCL": [2, 5], "RCMT": [2, 12], "RCUS": [2, 42], "RDN": [2, 2], "RDNT": [4, 16], "RDNW": [2, 41], "RDVT": [2, 3], "RDW": [2, 15], "RDZN": [4, 2], "REAL": [4, 8], "REAX": [4, 42], "REFI": [4, 1], "REG": [2, 24], "REGN": [4, 5], "REI": [2, 28], "RELL": [2, 36], "RELY": [2, 12], "RENT": [4, 9], "REPL": [2, 4], "REPX": [2, 23], "RES": [2, 35], "REX": [2, 55], "REZI": [1, 3], "RF": [2, 12], "RFIL": [2, 57], "RGCO": [2, 12], "RGNX": [4, 10], "RGP": [3, 4], "RGR": [2, 5], "RGTI": [4, 15], "RH": [1, 3], "RHHBY": [2, 37], "RHLD": [4, 5], "RHP": [2, 12], "RICK": [2, 5], "RIG": [2, 40], "RIGL": [4, 7], "RILY": [2, 50], "RIOT": [2, 11], "RIVN": [2, 41], "RJET": [4, 6], "RJF": [1, 5], "RKLB": [2, 100], "RL": [2, 93], "RLAY": [2, 43], "RLGT": [2, 31], "RLJ": [2, 13], "RLMD": [2, 51], "RM": [2, 3], "RMAX": [2, 9], "RMBI": [2, 11], "RMBS": [2, 75], "RMD": [4, 19], "RMNI": [2, 4], "RMR": [2, 12], "RNAC": [2, 4], "RNGR": [2, 36], "RNST": [2, 12], "ROAD": [3, 1], "ROCK": [4, 32], "ROG": [2, 40], "ROK": [2, 61], "ROL": [4, 8], "ROOT": [4, 45], "ROP": [4, 45], "ROST": [2, 43], "RPAY": [2, 2], "RPC": [4, 22], "RPD": [4, 75], "RPT": [1, 10], "RR": [4, 15], "RRBI": [2, 53], "RRR": [2, 5], "RSG": [1, 7], "RSI": [2, 12], "RSVR": [2, 20], "RTX": [2, 3], "RUM": [4, 1], "RUN": [4, 17], "RUSHA": [2, 31], "RVLV": [4, 7], "RVSB": [2, 16], "RVTY": [2, 7], "RWT": [3, 9], "RXO": [2, 12], "RXRX": [4, 28], "RXST": [4, 18], "RXT": [2, 11], "RYAM": [2, 41], "RYTM": [1, 3], "RYZ": [2, 13], "RZLT": [4, 28], "RZLV": [4, 22], "S": [2, 1], "SABR": [2, 3], "SABS": [3, 4], "SAFE": [2, 6], "SAFT": [3, 7], "SAFX": [4, 47], "SAH": [2, 9], "SAM": [4, 9], "SAMG": [4, 19], "SANA": [4, 11], "SANM": [2, 124], "SATL": [2, 17], "SATS": [2, 49], "SB": [2, 53], "SBAC": [3, 4], "SBC": [4, 13], "SBCF": [2, 2], "SBET": [4, 30], "SBFG": [2, 11], "SBGI": [4, 4], "SBH": [4, 14], "SBRA": [2, 1], "SBSI": [2, 14], "SBUX": [2, 21], "SCHL": [2, 50], "SCHW": [3, 20], "SCL": [2, 13], "SCSC": [2, 7], "SD": [3, 3], "SDGR": [4, 37], "SDRL": [2, 42], "SEAT": [4, 134], "SEG": [2, 5], "SEI": [2, 43], "SEM": [2, 20], "SENEA": [2, 134], "SENS": [4, 1], "SEPN": [2, 43], "SERV": [4, 22], "SES": [4, 14], "SEVN": [1, 5], "SEZL": [2, 10], "SFBC": [1, 4], "SFBS": [2, 8], "SFIX": [4, 21], "SFL": [2, 22], "SFNC": [2, 12], "SFST": [2, 50], "SG": [2, 8], "SGC": [2, 11], "SGHC": [2, 8], "SGHT": [4, 6], "SGML": [2, 33], "SGMT": [2, 1], "SGRY": [1, 2], "SHAK": [4, 10], "SHBI": [2, 47], "SHEN": [2, 19], "SHIM": [2, 45], "SHLS": [2, 7], "SHO": [2, 11], "SHOE": [4, 2], "SHOO": [3, 1], "SHOP": [4, 19], "SHW": [1, 3], "SI": [2, 10], "SIBN": [4, 23], "SIDU": [2, 29], "SIEB": [4, 34], "SIG": [1, 1], "SIGA": [4, 20], "SIGI": [2, 10], "SILA": [2, 9], "SION": [3, 5], "SITC": [4, 18], "SITM": [2, 44], "SJM": [2, 5], "SKIL": [4, 51], "SKIN": [4, 30], "SKT": [2, 37], "SKWD": [2, 4], "SKY": [1, 5], "SKYH": [2, 1], "SKYT": [2, 46], "SKYW": [4, 22], "SKYX": [4, 8], "SLAB": [2, 24], "SLB": [2, 34], "SLDB": [2, 17], "SLDE": [2, 17], "SLDP": [4, 19], "SLG": [2, 4], "SLND": [4, 28], "SLNH": [4, 13], "SLP": [1, 5], "SLQT": [4, 57], "SLS": [2, 64], "SLSN": [4, 32], "SLVM": [4, 7], "SM": [2, 17], "SMA": [2, 2], "SMBC": [2, 36], "SMBK": [2, 52], "SMC": [2, 26], "SMCI": [4, 32], "SMHI": [2, 1], "SMID": [4, 20], "SMP": [2, 4], "SMPL": [4, 57], "SMR": [4, 31], "SMRT": [4, 11], "SMTC": [2, 43], "SMTI": [2, 2], "SNA": [2, 36], "SND": [2, 36], "SNDA": [2, 50], "SNDK": [2, 41], "SNDX": [2, 46], "SNEX": [2, 30], "SNFCA": [2, 16], "SNOW": [2, 2], "SNPS": [3, 1], "SNWV": [4, 24], "SO": [2, 4], "SOC": [3, 1], "SOFI": [4, 20], "SOLV": [3, 5], "SONO": [4, 15], "SONY": [4, 22], "SOUN": [4, 23], "SPB": [2, 28], "SPCE": [4, 3], "SPFI": [2, 51], "SPG": [2, 42], "SPGI": [4, 23], "SPHR": [2, 44], "SPIR": [2, 17], "SPNT": [2, 22], "SPOK": [4, 35], "SPRB": [4, 120], "SPRY": [4, 1], "SPSC": [4, 75], "SPT": [4, 74], "SPWR": [4, 21], "SPXC": [2, 14], "SR": [1, 2], "SRBK": [2, 98], "SRCE": [2, 36], "SRE": [3, 9], "SRI": [2, 7], "SRPT": [4, 9], "SRRK": [2, 35], "SRTA": [2, 9], "SRZN": [2, 44], "SSB": [2, 7], "SSP": [4, 2], "SSRM": [2, 93], "SSTI": [2, 3], "SSTK": [4, 20], "STAA": [2, 9], "STBA": [2, 36], "STC": [4, 6], "STE": [4, 17], "STEL": [2, 48], "STEP": [4, 20], "STGW": [2, 16], "STIM": [4, 43], "STLD": [2, 42], "STM": [2, 21], "STNE": [4, 16], "STNG": [2, 45], "STOK": [3, 2], "STRA": [3, 16], "STRL": [2, 62], "STRO": [2, 30], "STRS": [2, 43], "STRT": [3, 1], "STRW": [2, 36], "STRZ": [2, 14], "STT": [2, 61], "STTK": [2, 45], "STX": [2, 59], "STXS": [4, 21], "STZ": [3, 2], "SUNS": [4, 18], "SUPN": [1, 4], "SVC": [1, 2], "SVCO": [2, 17], "SVRA": [3, 2], "SVV": [2, 4], "SW": [2, 6], "SWBI": [2, 31], "SWIM": [4, 19], "SWK": [2, 11], "SWKS": [3, 2], "SWX": [2, 52], "SXC": [2, 7], "SXI": [2, 47], "SXT": [2, 11], "SYBT": [2, 9], "SYF": [4, 1], "SYK": [4, 19], "SYM": [4, 10], "SYNA": [2, 13], "SYRE": [2, 39], "SYY": [2, 4], "T": [4, 4], "TALK": [2, 38], "TALO": [2, 42], "TAP": [4, 18], "TARA": [4, 6], "TARS": [4, 9], "TATT": [2, 5], "TAYD": [2, 51], "TBBK": [1, 1], "TBCH": [4, 24], "TBI": [2, 8], "TBLA": [2, 12], "TBPH": [4, 3], "TBRG": [2, 10], "TCBI": [2, 51], "TCBK": [2, 44], "TCI": [1, 2], "TCMD": [2, 39], "TCX": [4, 20], "TDAY": [2, 39], "TDC": [2, 36], "TDG": [1, 4], "TDOC": [2, 3], "TDS": [4, 1], "TDUP": [4, 28], "TDW": [2, 46], "TDY": [2, 28], "TE": [2, 43], "TEAD": [2, 5], "TEAM": [4, 57], "TECH": [2, 2], "TECX": [2, 20], "TEL": [4, 9], "TEM": [4, 22], "TENB": [2, 3], "TENX": [2, 41], "TER": [2, 43], "TEX": [2, 51], "TFC": [2, 13], "TFIN": [2, 13], "TG": [3, 3], "TGLS": [4, 40], "TGT": [2, 28], "TGTX": [2, 11], "TH": [2, 16], "THFF": [2, 101], "THRM": [1, 5], "THRY": [4, 70], "TIC": [4, 23], "TILE": [2, 8], "TIPT": [1, 9], "TITN": [2, 12], "TJX": [3, 1], "TK": [2, 60], "TKNO": [2, 4], "TKO": [3, 2], "TLN": [2, 2], "TLS": [4, 17], "TLSI": [4, 10], "TMCI": [2, 2], "TMDX": [4, 15], "TMHC": [2, 6], "TMO": [4, 10], "TMP": [2, 37], "TMUS": [4, 42], "TNC": [2, 9], "TNDM": [4, 4], "TNET": [4, 108], "TNGX": [2, 56], "TNK": [2, 56], "TNXP": [4, 32], "TOI": [2, 8], "TOL": [2, 5], "TOST": [4, 32], "TOWN": [2, 11], "TOYO": [2, 51], "TPB": [4, 6], "TPC": [2, 61], "TPL": [2, 23], "TPR": [2, 89], "TR": [3, 10], "TRAK": [4, 55], "TRC": [2, 17], "TRDA": [4, 6], "TREE": [4, 20], "TRGP": [2, 33], "TRI": [4, 42], "TRIP": [4, 24], "TRMB": [4, 24], "TRMK": [2, 51], "TRN": [2, 33], "TRNO": [2, 36], "TRNS": [2, 8], "TRON": [4, 27], "TROW": [2, 6], "TROX": [2, 24], "TRS": [2, 9], "TRST": [2, 50], "TRTX": [1, 12], "TRUP": [4, 33], "TRV": [2, 52], "TRVI": [2, 84], "TSBK": [2, 50], "TSCO": [4, 21], "TSHA": [2, 52], "TSLA": [4, 4], "TSN": [3, 2], "TSSI": [2, 4], "TT": [2, 14], "TTAM": [2, 12], "TTAN": [4, 36], "TTD": [4, 72], "TTEC": [4, 36], "TTGT": [4, 8], "TTI": [2, 44], "TTMI": [2, 63], "TTWO": [1, 3], "TUSK": [2, 13], "TVGN": [4, 49], "TVRD": [4, 37], "TVTX": [2, 43], "TWI": [4, 2], "TWIN": [2, 45], "TWO": [2, 28], "TWST": [2, 29], "TXG": [2, 42], "TXN": [2, 14], "TXNM": [3, 6], "TXT": [2, 45], "TYGO": [2, 56], "TYL": [4, 45], "TYRA": [2, 42], "TZOO": [2, 6], "U": [4, 19], "UA": [2, 22], "UAA": [2, 21], "UAL": [2, 7], "UAMY": [1, 5], "UBER": [4, 25], "UBSI": [2, 42], "UCB": [2, 12], "UCTT": [2, 39], "UDR": [2, 8], "UE": [2, 12], "UEC": [4, 3], "UFCS": [2, 48], "UFPI": [1, 3], "UFPT": [2, 11], "UHS": [4, 13], "UHT": [2, 22], "UIS": [2, 6], "ULCC": [2, 9], "ULH": [4, 1], "ULTA": [4, 6], "UMAC": [2, 43], "UMBF": [2, 11], "UMH": [3, 3], "UNB": [2, 3], "UNCY": [3, 1], "UNF": [2, 27], "UNFI": [2, 41], "UNH": [2, 10], "UNIT": [2, 19], "UNP": [2, 23], "UNTY": [2, 12], "UP": [4, 33], "UPB": [4, 20], "UPBD": [2, 4], "UPS": [2, 31], "UPST": [4, 27], "UPWK": [4, 17], "URBN": [3, 2], "URG": [3, 1], "URGN": [2, 13], "URI": [2, 7], "UROY": [4, 10], "USAR": [2, 7], "USAU": [4, 1], "USB": [2, 44], "USCB": [2, 34], "USGO": [4, 9], "USLM": [4, 10], "USNA": [2, 1], "USPH": [4, 17], "UTI": [2, 19], "UTL": [2, 20], "UTMD": [2, 43], "UTZ": [4, 42], "UUUU": [1, 5], "UVE": [2, 88], "UVSP": [2, 36], "UVV": [1, 24], "V": [1, 6], "VABK": [2, 12], "VAC": [2, 11], "VAL": [2, 45], "VALU": [1, 3], "VATE": [2, 15], "VC": [2, 7], "VCEL": [2, 3], "VCTR": [2, 12], "VCYT": [2, 9], "VECO": [2, 43], "VEEV": [4, 30], "VEL": [4, 7], "VELO": [2, 30], "VENU": [4, 28], "VERA": [3, 1], "VERI": [4, 16], "VERX": [4, 60], "VGAS": [4, 68], "VGZ": [3, 1], "VHI": [2, 4], "VIA": [4, 11], "VIAV": [2, 41], "VICI": [1, 5], "VICR": [2, 38], "VIK": [2, 82], "VIR": [2, 32], "VIRC": [4, 79], "VISN": [2, 58], "VITL": [4, 27], "VKTX": [1, 1], "VLGEA": [2, 21], "VLO": [2, 54], "VLTO": [4, 22], "VLY": [2, 50], "VMC": [1, 6], "VMD": [2, 30], "VNDA": [3, 1], "VOR": [2, 4], "VOXR": [3, 1], "VOYG": [2, 9], "VPG": [2, 60], "VRDN": [4, 12], "VREX": [4, 10], "VRM": [4, 37], "VRNS": [2, 3], "VRRM": [4, 31], "VRSK": [4, 45], "VRSN": [2, 9], "VRT": [2, 44], "VRTS": [1, 1], "VRTX": [2, 4], "VSAT": [2, 58], "VSEC": [2, 5], "VSH": [2, 32], "VST": [4, 26], "VSTM": [4, 19], "VSTS": [2, 29], "VSXY": [2, 41], "VTEX": [1, 3], "VTOL": [2, 50], "VTR": [2, 38], "VTRS": [2, 40], "VTS": [4, 27], "VUZI": [3, 1], "VVX": [2, 49], "VYGR": [4, 13], "VYX": [4, 29], "VZ": [2, 23], "WAB": [2, 40], "WABC": [2, 24], "WAFD": [2, 13], "WAL": [1, 10], "WALD": [4, 67], "WASH": [2, 34], "WAT": [3, 18], "WATT": [2, 18], "WAY": [4, 33], "WBD": [3, 1], "WBS": [2, 45], "WBTN": [4, 18], "WCC": [2, 52], "WD": [4, 34], "WDAY": [4, 33], "WDC": [2, 57], "WDFC": [2, 12], "WEAV": [1, 1], "WEC": [2, 3], "WELL": [2, 169], "WEN": [4, 78], "WERN": [2, 14], "WEST": [2, 12], "WEYS": [2, 36], "WFC": [1, 4], "WGO": [4, 9], "WGS": [4, 19], "WH": [2, 11], "WHD": [2, 34], "WHG": [2, 5], "WHWK": [2, 38], "WINA": [1, 4], "WK": [4, 21], "WKC": [2, 10], "WLDN": [4, 4], "WLFC": [2, 27], "WLY": [2, 11], "WM": [2, 4], "WMB": [2, 25], "WMK": [2, 8], "WMT": [3, 1], "WNC": [2, 5], "WNEB": [2, 52], "WOOF": [4, 23], "WOR": [3, 2], "WRB": [1, 2], "WRBY": [2, 9], "WRLD": [2, 7], "WS": [3, 1], "WSBC": [2, 36], "WSBF": [2, 49], "WSFS": [2, 37], "WSM": [2, 6], "WSO": [2, 12], "WSR": [2, 32], "WST": [2, 13], "WT": [2, 53], "WTBA": [2, 37], "WTFC": [2, 13], "WTI": [2, 24], "WTS": [2, 61], "WTTR": [2, 39], "WTW": [4, 19], "WU": [4, 6], "WULF": [2, 48], "WVE": [4, 8], "WWW": [3, 1], "WY": [2, 6], "WYFI": [2, 5], "WYNN": [4, 17], "XEL": [2, 1], "XENE": [2, 40], "XERS": [2, 2], "XFOR": [2, 30], "XHR": [2, 42], "XMAX": [2, 58], "XMTR": [2, 10], "XNCR": [4, 9], "XOM": [2, 37], "XOMA": [2, 10], "XPEL": [3, 2], "XPER": [2, 11], "XPEV": [4, 17], "XPOF": [1, 4], "XPRO": [2, 40], "XRAY": [2, 1], "XRN": [2, 11], "XRX": [2, 5], "XYL": [4, 19], "XYZ": [2, 4], "YELP": [4, 55], "YEXT": [4, 25], "YORW": [4, 6], "YOU": [2, 54], "YUM": [2, 3], "ZBH": [1, 3], "ZBIO": [4, 11], "ZBRA": [1, 3], "ZD": [2, 18], "ZENA": [4, 25], "ZETA": [2, 7], "ZGN": [2, 42], "ZIP": [4, 151], "ZNTL": [2, 28], "ZS": [4, 29], "ZSQR": [4, 17], "ZTS": [4, 74], "ZUMZ": [4, 5], "ZURA": [2, 4], "ZVIA": [4, 28], "ZVRA": [2, 7], "ZWS": [3, 1], "ZYME": [4, 1]};</script>
+
+
+<script>var SGA_COUNTS={"new_today": 0, "stage1": 152, "stage2": 1609, "stage2_fresh": 449, "stage3": 143, "stage4": 806, "too_young": 357, "total": 2710};</script>
 
 
 <script>
