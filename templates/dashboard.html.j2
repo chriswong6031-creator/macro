@@ -4750,10 +4750,46 @@ body.page-macro .igd-footer{
 .mx5-dlg-cal-card.hot{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04);}
 [data-theme="light"] .mx5-dlg-cal-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
 [data-theme="light"] .mx5-dlg-cal-card.hot{background:rgba(245,158,11,.04);}
-/* Cal cards with Release Radar coverage for their date — clickable (class added by RR JS) */
-.mx5-dlg-cal-card.rr-linked{cursor:pointer;transition:border-color .15s,box-shadow .15s;}
-.mx5-dlg-cal-card.rr-linked:hover{border-color:color-mix(in srgb,var(--info,#60a5fa) 45%,transparent);box-shadow:0 2px 12px color-mix(in srgb,var(--info,#60a5fa) 8%,transparent);}
-.mx5-dlg-cal-rr{margin-top:8px;font-size:10px;font-weight:700;color:var(--info,#60a5fa);display:flex;align-items:center;gap:3px;}
+/* ── Calendar card = Release Radar selector (rr-inline, 2026-07) ──────────────
+   Every card is a selector for the inline panel below. Covered dates carry a
+   subtle radar dot; the selected card holds an --info accent ring. FOMC cards
+   route to the Fed Path board instead of selecting (chip affordance). */
+.mx5-dlg-cal-card.rr-select{cursor:pointer;transition:border-color .16s ease,box-shadow .22s ease,background .16s ease;}
+.mx5-dlg-cal-card.rr-select:hover{border-color:color-mix(in srgb,var(--info,#60a5fa) 40%,transparent);box-shadow:0 2px 12px color-mix(in srgb,var(--info,#60a5fa) 8%,transparent);}
+.mx5-dlg-cal-card.rr-select:focus-visible{outline:2px solid var(--info,#60a5fa);outline-offset:2px;}
+/* active (selected) card — accent ring + faint info tint, coherent with .gbtn glass */
+.mx5-dlg-cal-card.rr-active{
+  border-color:color-mix(in srgb,var(--info,#60a5fa) 58%,transparent);
+  background:color-mix(in srgb,var(--info,#60a5fa) 8%,rgba(255,255,255,.04));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--info,#60a5fa) 40%,transparent),0 6px 18px -10px color-mix(in srgb,var(--info,#60a5fa) 60%,transparent);
+}
+[data-theme="light"] .mx5-dlg-cal-card.rr-active{background:color-mix(in srgb,var(--info,#60a5fa) 9%,rgba(0,0,0,.03));}
+/* covered-date indicator — small radar dot chip (replaces the old "Release Radar ▸" text link) */
+.mx5-dlg-cal-radar{display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+  font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--info,#60a5fa);}
+.mx5-dlg-cal-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  background:var(--info,#60a5fa);position:relative;}
+.mx5-dlg-cal-dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;
+  border:1px solid color-mix(in srgb,var(--info,#60a5fa) 55%,transparent);
+  animation:rrDotPulse 2.4s ease-in-out infinite;}
+@keyframes rrDotPulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.5);opacity:0}}
+.mx5-dlg-cal-card.rr-active .mx5-dlg-cal-dot::after{animation:none;opacity:.9;transform:scale(1.15);}
+/* Fed Path affordance chip — routes to dlg-fed (FOMC cards only) */
+.mx5-dlg-cal-fed{display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+  padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:700;letter-spacing:.02em;
+  color:color-mix(in srgb,var(--link,#22d97a) 88%,var(--text));
+  background:color-mix(in srgb,var(--link,#22d97a) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--link,#22d97a) 32%,transparent);
+  transition:background .16s ease,border-color .16s ease,transform .14s ease;}
+.mx5-dlg-cal-card.rr-fed{cursor:pointer;transition:border-color .16s ease,box-shadow .22s ease;}
+.mx5-dlg-cal-card.rr-fed:hover{border-color:color-mix(in srgb,var(--link,#22d97a) 40%,transparent);}
+.mx5-dlg-cal-card.rr-fed:hover .mx5-dlg-cal-fed{background:color-mix(in srgb,var(--link,#22d97a) 20%,transparent);border-color:color-mix(in srgb,var(--link,#22d97a) 50%,transparent);transform:translateX(1px);}
+.mx5-dlg-cal-card.rr-fed:focus-visible{outline:2px solid var(--link,#22d97a);outline-offset:2px;}
+@media (prefers-reduced-motion: reduce){
+  .mx5-dlg-cal-dot::after{animation:none;opacity:.6;}
+  .mx5-dlg-cal-card.rr-select,.mx5-dlg-cal-card.rr-fed,.mx5-dlg-cal-fed{transition:none;}
+  .mx5-dlg-cal-card.rr-fed:hover .mx5-dlg-cal-fed{transform:none;}
+}
 .mx5-dlg-cal-date{font-size:11px;font-weight:700;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:5px;}
 [data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.42);}
 .mx5-dlg-cal-title{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3;}
@@ -4789,25 +4825,37 @@ body.page-macro .igd-footer{
 .mx5-dlg-fed-src{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
 [data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.35);}
 
-/* RR link chip (EVENTS dialog — open release-radar from inside dialog) */
-/* mx5-dlg-rr-link — gbtn glass recipe (macro sweep 2026-07); onclick contract kept */
-.mx5-dlg-rr-link{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:12px 16px;
-  background:var(--gbtn-bg);border-radius:12px;
-  border:1px solid var(--gbtn-brd);
-  -webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
-  box-shadow:inset 0 1px 0 var(--gbtn-sheen);
-  cursor:pointer;color:var(--ink-2,rgba(255,255,255,.6));
-  font-size:12px;font-weight:600;font-family:inherit;
-  transition:border-color .2s ease,color .2s ease,background .2s ease,transform .16s ease,box-shadow .25s ease;
-  text-decoration:none;
-}
-.mx5-dlg-rr-link:hover{border-color:color-mix(in srgb, var(--link) 45%, var(--gbtn-brd-hover));color:var(--text);background:var(--gbtn-bg-hover);transform:translateY(-1px);
-  box-shadow:inset 0 1px 0 var(--gbtn-sheen),0 8px 20px -10px color-mix(in srgb, var(--link) 40%, transparent);}
-.mx5-dlg-rr-link:active{transform:translateY(0) scale(.99);box-shadow:inset 0 1px 0 var(--gbtn-sheen);}
-[data-theme="light"] .mx5-dlg-rr-link{color:rgba(0,0,0,.55);}
-@media (prefers-reduced-motion: reduce){ .mx5-dlg-rr-link,.mx5-dlg-rr-link:hover,.mx5-dlg-rr-link:active{transform:none;} }
+/* ── Inline Release Radar panel (#rr-inline, EVENTS dialog) ───────────────────
+   Replaces the retired per-date popup + its open button. Shows the selected
+   calendar date's model prints on the same surface; reuses the RR card renderer
+   + #rr-modal for depth. Header carries the selected date + a covered radar dot;
+   body cross-fades on date swap; one display-only footer. */
+#rr-inline{margin-top:4px;}
+.rr-inline-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.rr-inline-date{display:inline-flex;align-items:center;gap:7px;
+  font-size:14px;font-weight:800;letter-spacing:-.01em;color:var(--ink-1,rgba(255,255,255,.94));
+  font-variant-numeric:tabular-nums;}
+.rr-inline-date .mx5-dlg-cal-dot{width:8px;height:8px;}
+.rr-inline-sub{font-size:11.5px;color:var(--ink-3,rgba(255,255,255,.42));}
+[data-theme="light"] .rr-inline-sub{color:rgba(0,0,0,.42);}
+/* body: cross-fade on swap (JS toggles .rr-inline-swap for one frame) */
+.rr-inline-body{transition:opacity .22s ease;}
+.rr-inline-body.rr-inline-swap{opacity:0;}
+.rr-inline-body .rr-grid{display:flex;flex-wrap:wrap;gap:12px;}
+/* honest empty state (no coverage / auctions / FOMC-adjacent) */
+.rr-inline-empty{padding:14px 16px;border-radius:12px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+  display:flex;flex-direction:column;gap:6px;}
+[data-theme="light"] .rr-inline-empty{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
+.rr-inline-empty-line{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72));}
+[data-theme="light"] .rr-inline-empty-line{color:rgba(0,0,0,.62);}
+.rr-inline-empty-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));}
+[data-theme="light"] .rr-inline-empty-meta{color:rgba(0,0,0,.42);}
+/* single display-only footer for the inline panel (Law 4: one footnote) */
+.rr-inline-foot{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);
+  font-size:10px;line-height:1.5;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .rr-inline-foot{border-top-color:rgba(0,0,0,.06);color:rgba(0,0,0,.38);}
+@media (prefers-reduced-motion: reduce){ .rr-inline-body{transition:none;} }
 
 /* Heatmap wrap inside dialog — chromeless spacer (1.2 de-chrome) */
 .mx5-dlg-heatmap-wrap{
@@ -7533,24 +7581,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   /* health indicator on sub-line */
   .rr-health-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
     background:var(--warn);margin-right:4px;vertical-align:middle}
-  /* ---- Date popup (radar-for-date, opened from EVENTS dialog calendar cards) ----
-     Layered between the mx5 dialog (z 200) and the RR detail modal (z 9900) so the
-     dialog stays open behind it and the detail modal still opens on top. */
-  .rr-date-overlay{display:none;position:fixed;inset:0;
-    background:var(--modal-backdrop,color-mix(in srgb,var(--bg,#000) 72%,transparent));
-    z-index:9880;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px}
-  .rr-date-overlay.open{display:flex}
-  .rr-date-pop{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
-    width:100%;max-width:560px;position:relative;padding:16px 18px 14px;
-    box-shadow:0 8px 32px color-mix(in srgb,var(--text) 16%,transparent)}
-  .rr-date-title{font-size:15px;font-weight:700;margin:0 36px 2px 0}
-  .rr-date-sub{font-size:11.5px;color:var(--muted);margin-bottom:12px}
-  .rr-date-close{position:absolute;top:6px;right:8px;background:none;border:none;
-    font-size:20px;cursor:pointer;color:var(--muted);line-height:1;border-radius:4px;
-    min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
-  .rr-date-close:hover{color:var(--text);background:var(--panel)}
-  .rr-date-pop .rr-grid{display:flex;flex-wrap:wrap;gap:12px}
-  .rr-date-note{font-size:10px;color:var(--muted);margin-top:12px;padding-top:8px;border-top:1px solid var(--line)}
+  /* (rr-date-overlay retired 2026-07 — the per-date popup folded into the inline
+     #rr-inline panel in dlg-events; the RR detail modal below is reached directly
+     from the inline cards. See .rr-inline-* in the dialog CSS block.) */
   /* ---- Tab strip (sticky) ---- */
   .rr-tab-strip{display:flex;gap:0;border-bottom:1px solid var(--line);
     position:sticky;top:0;background:var(--panel2);z-index:2;overflow-x:auto;
@@ -7762,22 +7795,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       </div>
     </div>
   </div>
-  <!-- Date popup: Release Radar for one calendar date (opened from dlg-events cards) -->
-  <div class="rr-date-overlay" id="rr-date-overlay" role="dialog" aria-modal="true" aria-labelledby="rr-date-title-el">
-    <div class="rr-date-pop" id="rr-date-pop" tabindex="-1">
-      <button class="rr-date-close" id="rr-date-close" type="button" aria-label="Close">&#215;</button>
-      <div class="rr-date-title" id="rr-date-title-el"></div>
-      <div class="rr-date-sub">
-        <span class="l-en">What our model expects for this date&rsquo;s prints — tap a card for details.</span>
-        <span class="l-zh">模型对当日数据的预测 — 点击卡片查看详情。</span>
-      </div>
-      <div id="rr-date-body"></div>
-      <div class="rr-date-note">
-        <span class="l-en">display-only — not a signal · benchmarks, not investment advice · scored forward in public</span>
-        <span class="l-zh">仅展示 — 非信号 · 基准对比，非投资建议 · 正向评分公开记录</span>
-      </div>
-    </div>
-  </div>
+  <!-- (per-date radar popup retired 2026-07 — folded into the inline panel inside
+       dlg-events; the RR detail modal above opens directly from the inline cards.) -->
   <script>
   (function(){
     'use strict';
@@ -7787,13 +7806,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     var RR_MODAL_CLOSE = document.getElementById('rr-modal-close');
     var RR_TAB_STRIP = document.getElementById('rr-tab-strip');
     var RR_TITLE_BLOCK = document.getElementById('rr-modal-title-block');
-    var RR_DATE_OVERLAY = document.getElementById('rr-date-overlay');
-    var RR_DATE_BODY = document.getElementById('rr-date-body');
-    var RR_DATE_TITLE = document.getElementById('rr-date-title-el');
-    var RR_DATE_CLOSE = document.getElementById('rr-date-close');
+    /* Inline Release Radar panel inside dlg-events (replaces the retired
+       rr-date-overlay). Resolved LAZILY — this script block sits ABOVE the
+       dlg-events markup in the document, so the elements don't exist when the IIFE
+       first runs; they do by the time the async fetch resolves. */
+    function _rrInlineBody(){ return document.getElementById('rr-inline-body'); }
+    function _rrInlineDateEl(){ return document.getElementById('rr-inline-date'); }
+    var _rrInlineDate = null;           /* currently-selected date string */
     /* INT-03: focus management — track invoker for restore on close */
     var _rrModalInvoker = null;
-    var _rrDateInvoker = null;
 
     /* ---- base helpers ---- */
     function esc(s){ return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -9166,87 +9187,191 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     if (RR_MODAL_CLOSE) RR_MODAL_CLOSE.addEventListener('click', closeModal);
     if (RR_OVERLAY) RR_OVERLAY.addEventListener('click', function(e){ if (e.target === RR_OVERLAY) closeModal(); });
 
-    /* ---- Date popup: radar-for-date, launched from dlg-events calendar cards ----
-       Opens ON TOP of the events dialog (which stays open behind it); the RR detail
-       modal opens on top of this popup in turn. Click-outside / Esc / × close only
-       the topmost layer. Page scroll stays pinned by html.mx5-dlg-lock throughout. */
+    /* ---- Inline Release Radar panel (folds the retired rr-date-overlay into
+       dlg-events). The THIS WEEK calendar cards are the selector; #rr-inline shows
+       the selected date's model prints on the same surface. A print card still
+       opens the 5-tab #rr-modal for depth. */
     var RR_MOS_EN = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     function _itemsForDate(dateStr){
       return (_rrItems || []).filter(function(it){ return it.release_date === dateStr; });
     }
-    function openDatePopup(dateStr){
-      if (!RR_DATE_OVERLAY || !RR_DATE_BODY) return;
-      var items = _itemsForDate(dateStr);
-      if (!items.length) return;
-      var mo = parseInt(dateStr.slice(5,7),10), dy = parseInt(dateStr.slice(8,10),10);
-      if (RR_DATE_TITLE) RR_DATE_TITLE.innerHTML =
-        '<span class="l-en">Release Radar — '+esc(RR_MOS_EN[mo]||'')+' '+dy+'</span>'
-        +'<span class="l-zh">数据发布雷达 — '+mo+'月'+dy+'日</span>';
-      RR_DATE_BODY.innerHTML = '<div class="rr-grid">'+items.map(renderCard).join('')+'</div>';
-      RR_DATE_BODY.querySelectorAll('.rr-card').forEach(function(el, idx){
-        el.setAttribute('role','button');
-        el.setAttribute('tabindex','0');
-        function go(){ if (items[idx]) openModal(items[idx]); }
-        el.addEventListener('click', go);
-        el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+    /* an item carries a real modelled point (not benchmark-only, not no-data retail).
+       Module-scoped so both renderRadar's see-more logic and the inline default
+       selector share one definition. */
+    function _hasModelledPoint(it){
+      var proj = it.projection || {};
+      return proj.mode !== 'benchmark_only' && proj.point !== null && proj.point !== undefined
+             && (it.release||'').toLowerCase() !== 'retail';
+    }
+    /* nearest upcoming date whose prints carry a real modelled point; else the
+       nearest covered date; else null. Mirrors renderRadar's default-visible guard. */
+    function _defaultCoveredDate(){
+      var dates = [];
+      (_rrItems||[]).forEach(function(it){
+        if (it.release_date && dates.indexOf(it.release_date) === -1) dates.push(it.release_date);
       });
-      RR_DATE_OVERLAY.classList.add('open');
-      RR_DATE_OVERLAY.setAttribute('data-lang', document.documentElement.getAttribute('data-lang') || 'en');
-      _rrDateInvoker = document.activeElement || null;
-      var pop = document.getElementById('rr-date-pop');
-      if (pop) pop.focus();
+      dates.sort();
+      for (var i=0;i<dates.length;i++){
+        if (_itemsForDate(dates[i]).some(_hasModelledPoint)) return dates[i];
+      }
+      return dates[0] || null;
     }
-    function closeDatePopup(){
-      if (!RR_DATE_OVERLAY) return;
-      RR_DATE_OVERLAY.classList.remove('open');
-      try{ if(_rrDateInvoker && _rrDateInvoker.focus) _rrDateInvoker.focus(); }catch(e){}
-      _rrDateInvoker = null;
+    /* honest empty-state body for a calendar date with no model coverage. Pulls the
+       event's own time/impact off the card DOM — no fake coverage, no dead card. */
+    function _inlineEmptyHTML(card){
+      var timeEl = card ? card.querySelector('.mx5-dlg-cal-time') : null;
+      var badgeEl = card ? card.querySelector('.mx5-dlg-cal-badge') : null;
+      var timeTxt = timeEl ? timeEl.textContent.trim() : '';
+      var impactHTML = badgeEl ? badgeEl.outerHTML : '';
+      var metaBits = '';
+      if (timeTxt) metaBits += '<span>'+esc(timeTxt)+'</span>';
+      if (impactHTML) metaBits += impactHTML;
+      return '<div class="rr-inline-empty">'
+        +'<div class="rr-inline-empty-line">'
+        +'<span class="l-en">No model projections for this event — event risk only.</span>'
+        +'<span class="l-zh">该事件无模型预测 — 仅为事件风险提示。</span>'
+        +'</div>'
+        +(metaBits ? '<div class="rr-inline-empty-meta">'+metaBits+'</div>' : '')
+        +'</div>';
     }
-    if (RR_DATE_CLOSE) RR_DATE_CLOSE.addEventListener('click', closeDatePopup);
-    if (RR_DATE_OVERLAY) RR_DATE_OVERLAY.addEventListener('click', function(e){ if (e.target === RR_DATE_OVERLAY) closeDatePopup(); });
-    /* Tab trap within the date popup (mirrors the detail modal's INT-03 trap) */
-    if (RR_DATE_OVERLAY) RR_DATE_OVERLAY.addEventListener('keydown', function(e){
-      if(e.key !== 'Tab') return;
-      var pop = document.getElementById('rr-date-pop'); if(!pop) return;
-      var focusable = Array.prototype.slice.call(pop.querySelectorAll(
-        'button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])'
-      )).filter(function(el){ return el.offsetParent !== null; });
-      if(!focusable.length) return;
-      var first = focusable[0], last = focusable[focusable.length-1];
-      if(e.shiftKey){ if(document.activeElement===first){ e.preventDefault(); last.focus(); } }
-      else { if(document.activeElement===last){ e.preventDefault(); first.focus(); } }
-    });
+    function _setInlineHeader(dateStr, covered){
+      var el = _rrInlineDateEl();
+      if (!el) return;
+      if (!dateStr){ el.innerHTML =
+        '<span class="l-en">Upcoming prints</span><span class="l-zh">即将公布</span>'; return; }
+      var mo = parseInt(dateStr.slice(5,7),10), dy = parseInt(dateStr.slice(8,10),10);
+      var sub = document.getElementById('rr-inline-sub');
+      if (sub) sub.innerHTML = covered
+        ? '<span class="l-en">our projection vs benchmarks</span><span class="l-zh">本方预测 vs 基准</span>'
+        : '<span class="l-en">event risk only</span><span class="l-zh">仅为事件风险提示</span>';
+      var dot = covered ? '<span class="mx5-dlg-cal-dot" aria-hidden="true"></span>' : '';
+      el.innerHTML = dot
+        +'<span class="l-en">'+esc(RR_MOS_EN[mo]||'')+' '+dy+'</span>'
+        +'<span class="l-zh">'+mo+'月'+dy+'日</span>';
+    }
+    /* Select a calendar date into the inline panel. Covered → print cards (reuse
+       renderCard + openModal); non-covered → honest empty state. Short cross-fade,
+       reduced-motion-guarded. Focus is restored to the source card, never a popup. */
+    function selectInlineDate(dateStr, sourceCard, immediate){
+      var body = _rrInlineBody();
+      if (!body) return;
+      _rrInlineDate = dateStr;
+      /* active ring: move it to the source card */
+      document.querySelectorAll('#dlg-events .mx5-dlg-cal-card.rr-active').forEach(function(c){
+        c.classList.remove('rr-active'); c.removeAttribute('aria-pressed');
+      });
+      if (sourceCard){ sourceCard.classList.add('rr-active'); sourceCard.setAttribute('aria-pressed','true'); }
+      var items = _itemsForDate(dateStr);
+      var covered = items.length > 0;
+      var bodyHTML;
+      if (covered){
+        bodyHTML = '<div class="rr-grid">'+items.map(renderCard).join('')+'</div>';
+      } else {
+        bodyHTML = _inlineEmptyHTML(sourceCard);
+      }
+      var swap = !immediate && !_prefReducedRR();
+      var paint = function(){
+        body.innerHTML = bodyHTML;
+        _setInlineHeader(dateStr, covered);
+        if (covered){
+          body.querySelectorAll('.rr-card').forEach(function(el, idx){
+            el.setAttribute('role','button');
+            el.setAttribute('tabindex','0');
+            el.setAttribute('aria-haspopup','dialog');
+            /* focus the card before opening so openModal captures it as the invoker —
+               on close, focus returns to this inline card (not a dead popup). */
+            function go(){ if (items[idx]){ try{ el.focus(); }catch(e){} openModal(items[idx]); } }
+            el.addEventListener('click', go);
+            el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+          });
+        }
+        /* reveal: rAF for a smooth fade, plus a setTimeout fallback so the panel is
+           never left invisible if rAF stalls (e.g. background tab / preview). */
+        if (swap){
+          var reveal = function(){ body.classList.remove('rr-inline-swap'); };
+          if (typeof requestAnimationFrame === 'function') requestAnimationFrame(reveal);
+          setTimeout(reveal, 40);
+        }
+      };
+      if (swap){
+        body.classList.add('rr-inline-swap');
+        setTimeout(paint, 130);
+      } else {
+        paint();
+      }
+    }
+    function _prefReducedRR(){
+      try{ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+      catch(e){ return false; }
+    }
 
-    /* Annotate dlg-events calendar cards whose date has radar coverage: clickable +
-       "Release Radar ▸" tag. Cards with no coverage (FOMC, OpEx…) stay inert. */
+    /* Wire every dlg-events calendar card as a radar selector. FOMC cards route to
+       the Fed Path board instead (chip affordance); covered dates get a radar dot;
+       all others select and show the honest empty state. Auto-selects the default
+       covered date on first wire so the panel is never empty on open. */
     function wireCalendarCards(){
       var cards = document.querySelectorAll('#dlg-events .mx5-dlg-cal-card[data-cal-date]');
+      var firstSelect = null;
       cards.forEach(function(card){
         if (card._rrWired) return;
-        var dateStr = card.getAttribute('data-cal-date');
-        if (!_itemsForDate(dateStr).length) return;
         card._rrWired = true;
-        card.classList.add('rr-linked');
+        var dateStr = card.getAttribute('data-cal-date');
+        var calType = (card.getAttribute('data-cal-type') || '').toUpperCase();
+        /* FOMC (policy rate decision) → Fed Path Forward Board, not inline radar. */
+        if (calType === 'FOMC'){
+          card.classList.add('rr-fed');
+          card.setAttribute('role','button');
+          card.setAttribute('tabindex','0');
+          card.setAttribute('aria-haspopup','dialog');
+          var fedChip = document.createElement('div');
+          fedChip.className = 'mx5-dlg-cal-fed';
+          fedChip.innerHTML = '<span class="l-en">Fed Path &#8594;</span><span class="l-zh">联储路径 &#8594;</span>';
+          card.appendChild(fedChip);
+          var goFed = function(){ if (window.mx5OpenDlg) window.mx5OpenDlg('dlg-fed'); };
+          card.addEventListener('click', goFed);
+          card.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); goFed(); } });
+          return;
+        }
+        /* selectable card */
+        card.classList.add('rr-select');
         card.setAttribute('role','button');
         card.setAttribute('tabindex','0');
-        card.setAttribute('aria-haspopup','dialog');
-        var tag = document.createElement('div');
-        tag.className = 'mx5-dlg-cal-rr';
-        tag.innerHTML = '<span class="l-en">Release Radar &#9656;</span><span class="l-zh">数据发布雷达 &#9656;</span>';
-        card.appendChild(tag);
-        card.addEventListener('click', function(){ openDatePopup(dateStr); });
+        var hasCoverage = _itemsForDate(dateStr).length > 0;
+        if (hasCoverage){
+          var dot = document.createElement('div');
+          dot.className = 'mx5-dlg-cal-radar';
+          dot.innerHTML = '<span class="mx5-dlg-cal-dot" aria-hidden="true"></span>'
+            +'<span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span>';
+          card.appendChild(dot);
+          if (!firstSelect) firstSelect = card;
+        }
+        card.addEventListener('click', function(){ selectInlineDate(dateStr, card); });
         card.addEventListener('keydown', function(e){
-          if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openDatePopup(dateStr); }
+          if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectInlineDate(dateStr, card); }
         });
       });
+      /* default selection: nearest covered date's own card if visible, else the
+         first covered calendar card, else the earliest calendar card. */
+      if (!_rrInlineDate){
+        var def = _defaultCoveredDate();
+        var defCard = def ? document.querySelector('#dlg-events .mx5-dlg-cal-card[data-cal-date="'+def+'"].rr-select') : null;
+        if (!defCard) defCard = firstSelect;
+        if (!defCard) defCard = document.querySelector('#dlg-events .mx5-dlg-cal-card.rr-select');
+        if (defCard){
+          selectInlineDate(defCard.getAttribute('data-cal-date'), defCard, true);
+        } else if (def && _rrInlineBody()){
+          /* radar has data but no calendar card matches (rare) — show default date's cards */
+          selectInlineDate(def, null, true);
+        }
+      }
     }
 
-    /* INT-01: stop propagation so the mx2 Escape handler doesn't also fire when modal closes.
-       Layer order: detail modal closes first, then the date popup (dialog handled upstream). */
+    /* INT-01: stop propagation so the mx2 Escape handler doesn't also fire when the
+       RR detail modal closes. The inline panel lives inside dlg-events, so the
+       dialog's own Escape handling covers it — only the detail modal needs a guard. */
     document.addEventListener('keydown', function(e){
       if (e.key !== 'Escape') return;
       if (RR_OVERLAY && RR_OVERLAY.classList.contains('open')){ e.stopImmediatePropagation(); closeModal(); return; }
-      if (RR_DATE_OVERLAY && RR_DATE_OVERLAY.classList.contains('open')){ e.stopImmediatePropagation(); closeDatePopup(); }
     });
 
     /* sync modal lang when language is toggled */
@@ -9254,7 +9379,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       new MutationObserver(function(){
         var lang = document.documentElement.getAttribute('data-lang') || 'en';
         RR_OVERLAY.setAttribute('data-lang', lang);
-        if (RR_DATE_OVERLAY) RR_DATE_OVERLAY.setAttribute('data-lang', lang);
       }).observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
     }
 
@@ -9265,6 +9389,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           +'<span class="l-en">Release Radar data not yet available — nightly producer accruing.</span>'
           +'<span class="l-zh">数据发布雷达暂无数据，夜间生产任务积累中。</span>'
           +'</div>';
+        /* Degraded path: no radar data. Calendar cards stay selectable (all show the
+           honest empty state); the inline panel shows a graceful no-data line rather
+           than a blank hole. _rrItems stays [] so no card gets a coverage dot. */
+        _rrItems = [];
+        var _ib = _rrInlineBody();
+        if (_ib){
+          _ib.innerHTML = '<div class="rr-inline-empty">'
+            +'<div class="rr-inline-empty-line">'
+            +'<span class="l-en">Model projections aren&rsquo;t available right now. Pick a calendar event above for its time and impact.</span>'
+            +'<span class="l-zh">暂无模型预测。请点击上方日历事件查看其时间与影响。</span>'
+            +'</div></div>';
+        }
+        wireCalendarCards();
         return;
       }
       _rrItems = Array.isArray(d.upcoming) ? d.upcoming : [];
@@ -9282,12 +9419,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       dates.sort();
       /* Default-visible = items sharing the EARLIEST upcoming date */
       var visibleDate = dates[0] || null;
-      /* Guard: if none of those have a modelled point, also show next date that does */
-      function _hasModelledPoint(it){
-        var proj = it.projection || {};
-        return proj.mode !== 'benchmark_only' && proj.point !== null && proj.point !== undefined
-               && (it.release||'').toLowerCase() !== 'retail';
-      }
+      /* Guard: if none of those have a modelled point, also show next date that does
+         (_hasModelledPoint is module-scoped — shared with the inline default selector). */
       if (visibleDate){
         var firstHasModel = _rrItems.some(function(it){
           return it.release_date === visibleDate && _hasModelledPoint(it);
@@ -9385,7 +9518,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       if (RR_TR_BODY) {
         RR_TR_BODY.innerHTML = scoreboardBlock(lastScored);
       }
-      /* link dlg-events calendar cards to their date's radar popup */
+      /* wire dlg-events calendar cards as the inline radar selector + auto-select default */
       wireCalendarCards();
     }
 
@@ -9415,9 +9548,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       .catch(function(){ return null; })
       .then(renderRadar);
 
-    /* Expose opener for dlg-events "Open Release Radar" button — opens first item's detail modal */
+    /* Deep-link hook: jump the inline Release Radar panel to its default covered date
+       (the "Open Release Radar" button was retired — the panel is always visible in
+       dlg-events). Kept as the stable RR-script tail symbol. */
     window.mmOpenFirstRR = function(){
-      if (_rrItems && _rrItems.length) openModal(_rrItems[0]);
+      var def = _defaultCoveredDate();
+      if (!def) return;
+      var card = document.querySelector('#dlg-events .mx5-dlg-cal-card[data-cal-date="'+def+'"].rr-select');
+      selectInlineDate(def, card, true);
     };
   })();
   </script>
@@ -10517,7 +10655,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% for c in macro_catalysts[:8] %}
           {% set _bdg = 'high' if c.impact == 'high' else ('med' if c.impact == 'med' else 'low') %}
           {% set _lbl_zh = c.get('label_zh') or c.label %}
-          <div class="mx5-dlg-cal-card{{ ' hot' if c.impact == 'high' }}" data-cal-date="{{ c.date }}">
+          <div class="mx5-dlg-cal-card{{ ' hot' if c.impact == 'high' }}" data-cal-date="{{ c.date }}" data-cal-type="{{ c.type if c.type is defined else '' }}">
             <div class="mx5-dlg-cal-date">{{ _mos2[c.date[5:7]|int] }} {{ c.date[8:10]|int }}</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">{{ c.label }}</span>
@@ -10627,18 +10765,34 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% endif %}
         {% endif %}
 
-        {# — Release Radar link — #}
+        {# — Inline Release Radar panel: the calendar cards above are its selector — #}
+        {% if macro_catalysts %}
         <div class="mx5-dlg-sep"></div>
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Data Release Radar</span><span class="l-zh">数据发布雷达</span></div>
-        <div style="margin-bottom:16px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
-          <span class="l-en">Calendar cards above marked &ldquo;Release Radar&rdquo; open that date&rsquo;s projections directly — or browse every upcoming print below.</span>
-          <span class="l-zh">上方带「数据发布雷达」标记的日历卡片可直接查看当日预测 — 也可在下方浏览全部即将发布的数据。</span>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span></div>
+        <div style="margin:-4px 0 14px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
+          <span class="l-en">What our model expects for the print you pick above. Tap a card for the full read.</span>
+          <span class="l-zh">上方选中日期，模型对该日数据的预测如下。点击卡片查看完整解读。</span>
         </div>
-        <button class="mx5-dlg-rr-link" type="button" onclick="mx5CloseDlg(); if(window.mmOpenFirstRR) window.mmOpenFirstRR();" aria-label="Open Release Radar">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-          <span class="l-en">Open Release Radar</span>
-          <span class="l-zh">打开数据发布雷达</span>
-        </button>
+        <div id="rr-inline">
+          <div class="rr-inline-head">
+            <span class="rr-inline-date" id="rr-inline-date"></span>
+            <span class="rr-inline-sub" id="rr-inline-sub">
+              <span class="l-en">our projection vs benchmarks</span>
+              <span class="l-zh">本方预测 vs 基准</span>
+            </span>
+          </div>
+          <div class="rr-inline-body" id="rr-inline-body">
+            <div class="rr-placeholder">
+              <span class="l-en">Loading release projections…</span>
+              <span class="l-zh">加载发布预测中…</span>
+            </div>
+          </div>
+          <div class="rr-inline-foot">
+            <span class="l-en">display-only — not a signal · benchmarks, not investment advice · scored forward in public</span>
+            <span class="l-zh">仅展示 — 非信号 · 基准对比，非投资建议 · 正向评分公开记录</span>
+          </div>
+        </div>
+        {% endif %}
 
         {% if not macro_catalysts and not (prediction_markets and prediction_markets.events) %}
         <p style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));margin-top:16px"><span class="l-en">No events data available.</span><span class="l-zh">暂无事件数据。</span></p>
@@ -13201,11 +13355,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     /* Escape handler: dialog > scorecard popover > release radar modal guards */
     document.addEventListener('keydown', function(e){
       if(e.key !== 'Escape') return;
-      /* INT-01: guard release-radar modal/overlay open states */
+      /* INT-01: guard release-radar modal/overlay open states. The RR detail modal
+         opens on top of dlg-events (from the inline panel); its own Escape handler
+         closes it first, so we must not also close the dialog underneath. */
       var overlay = document.getElementById('rr-modal-overlay');
       if(overlay && overlay.classList.contains('open')) return;
-      var dateOverlay = document.getElementById('rr-date-overlay');
-      if(dateOverlay && dateOverlay.classList.contains('open')) return;
       var trOverlay = document.querySelector('.rr-tr-overlay');
       if(trOverlay && trOverlay.classList.contains('is-open')) return;
       if(_dlgActive){ e.stopImmediatePropagation(); window.mx5CloseDlg(); return; }
