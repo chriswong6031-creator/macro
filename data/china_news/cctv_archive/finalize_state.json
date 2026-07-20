@@ -1,8 +1,8 @@
 {
   "state": "SCRAPING",
-  "last_check_utc": "2026-07-19T09:05:58.646544+00:00",
+  "last_check_utc": "2026-07-20T09:36:56.462797+00:00",
   "stall_alert_sent": false,
   "last_coverage_pct": 0.0,
   "last_covered": 0,
-  "last_total": 3820
+  "last_total": 3821
 }

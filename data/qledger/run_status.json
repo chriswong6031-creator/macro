@@ -1,21 +1,24 @@
 {
-  "generated_at": "2026-07-20T02:47:22.385350+00:00",
-  "as_of": "2026-07-19",
-  "n_open": 21470,
-  "n_graded_today": 0,
-  "n_blocked_by_coverage": 25855,
+  "generated_at": "2026-07-20T09:36:56.443232+00:00",
+  "as_of": "2026-07-20",
+  "n_open": 22395,
+  "n_graded_today": 672,
+  "n_blocked_by_coverage": 27016,
   "n_ungradeable": 0,
   "n_already_graded": 15357,
   "dry_run": false,
   "w6_readiness": {
     "n_families_ready": 0,
-    "n_families_approaching": 0,
+    "n_families_approaching": 2,
     "families_ready": [],
-    "families_approaching": [],
-    "grader_quiet_days": 2
+    "families_approaching": [
+      "cn_importance_v0@5d",
+      "cn_importance_v0_pit@5d"
+    ],
+    "grader_quiet_days": 0
   },
   "regime_stamp_backfill": {
-    "n_claims": 21470,
+    "n_claims": 22395,
     "n_backfilled": 0,
     "n_unstamped": 5773,
     "n_precoverage": 3633
