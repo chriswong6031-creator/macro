@@ -352,7 +352,7 @@ def test_advice_filter_buy_should():
     answer = "Based on the signals, you should buy NVDA now. The radar shows a strong divergence."
     filtered, was_filtered = ab._post_filter_advice(answer, ["signal_id_123"])
     assert was_filtered is True
-    assert "cannot provide investment advice" in filtered
+    assert "buy/sell call" in filtered
     assert "signal_id_123" in filtered
 
 
@@ -401,7 +401,7 @@ def test_advice_filter_mocked_answer_nvda_buy():
     assert was_filtered is True
     # The refusal should contain the citations
     assert "us_board:2026-06-17:NVDA:buy:5" in filtered
-    assert "cannot provide investment advice" in filtered
+    assert "buy/sell call" in filtered
     # The original advice text must not appear
     assert "you should buy" not in filtered.lower()
 
@@ -1577,18 +1577,18 @@ def test_advice_filter_covers_options_path():
     answer_en = "Given the dealer positioning into opex, you should buy the straddle."
     filtered, was_filtered = ab._post_filter_advice(answer_en, [])
     assert was_filtered, "English buy-advice must be filtered on options path"
-    assert "cannot provide investment advice" in filtered
+    assert "buy/sell call" in filtered
 
     # Chinese directional verbs
     answer_zh = "根据期权流数据，建议买入跨式组合。"
     filtered_zh, was_filtered_zh = ab._post_filter_advice(answer_zh, [])
     assert was_filtered_zh, "Chinese 买入 must be filtered (kill-list #6)"
-    assert "cannot provide investment advice" in filtered_zh
+    assert "买卖指令" in filtered_zh
 
     answer_zh2 = "GEX 显示挤压风险，应平仓。"
     filtered_zh2, was_filtered_zh2 = ab._post_filter_advice(answer_zh2, [])
     assert was_filtered_zh2, "Chinese 平仓 must be filtered (kill-list #6)"
-    assert "cannot provide investment advice" in filtered_zh2
+    assert "买卖指令" in filtered_zh2
 
 
 # ---------------------------------------------------------------------------
@@ -1995,3 +1995,15 @@ def test_til_tools_refused_for_write_shaped_names(tmp_path):
 if __name__ == "__main__":
     import pytest
     pytest.main([__file__, "-v"])
+
+
+def test_advice_refusal_is_language_aware():
+    """A Chinese answer that trips the advice filter must be refused IN CHINESE, never
+    replaced with an English refusal (multilingual robustness)."""
+    import engine.neuralweb.ask_brain as _ab
+    zh_ans, zh_flag = _ab._post_filter_advice("根据信号，建议加仓AAPL。", ["s1"])
+    assert zh_flag is True
+    assert any("一" <= c <= "鿿" for c in zh_ans), "Chinese answer got an English refusal"
+    assert "买卖指令" in zh_ans and "来源" in zh_ans
+    en_ans, en_flag = _ab._post_filter_advice("You should buy NVDA now.", ["s1"])
+    assert en_flag is True and "buy/sell call" in en_ans and "Sources" in en_ans
