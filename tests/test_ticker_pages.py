@@ -522,18 +522,23 @@ def _make_site(tmp_path: Path, tickers: list[str] | None = None) -> Path:
     return site
 
 
-def _make_membership(tmp_path: Path, tickers: list[str]) -> Path:
-    """Write membership.parquet."""
+def _make_membership(tmp_path: Path, tickers: list[str], rows: list[dict] | None = None) -> Path:
+    """Write membership.parquet. `rows` overrides the default all-sp500 shape
+    with explicit (ticker, group) records — used by the r2000 seam tests."""
     try:
         import pandas as pd
     except ImportError:
         pytest.skip("pandas not available")
 
     data_dir = tmp_path / "data" / "universe"
-    data_dir.mkdir(parents=True)
+    data_dir.mkdir(parents=True, exist_ok=True)
+    recs = rows if rows is not None else [
+        {"ticker": t, "group": "sp500"} for t in tickers
+    ]
     df = pd.DataFrame([
-        {"ticker": t, "name": f"{t} Inc", "sector": "Information Technology", "group": "sp500", "active": True}
-        for t in tickers
+        {"ticker": r["ticker"], "name": f"{r['ticker']} Inc", "sector": "Information Technology",
+         "group": r["group"], "active": r.get("active", True)}
+        for r in recs
     ])
     path = data_dir / "membership.parquet"
     df.to_parquet(str(path), index=False)
@@ -1750,6 +1755,36 @@ class TestMainTagBalance:
 # ---------------------------------------------------------------------------
 # (k) R2000 + Dow-30 universe expansion
 # ---------------------------------------------------------------------------
+
+class TestR2000RunSeam:
+    """Integration seam: membership r2000 rows → run() dedupe → rendered page."""
+
+    def test_run_renders_r2000_and_dedupes_dual_membership(self, tmp_path, monkeypatch):
+        import scripts.build_ticker_pages as btp
+        tickers = ["AAPL", "RUTX"]
+        site = _make_site(tmp_path, tickers)
+        # AAPL is sp500+r2000 (dual rows); RUTX is pure r2000
+        _make_membership(tmp_path, tickers, rows=[
+            {"ticker": "AAPL", "group": "sp500"},
+            {"ticker": "AAPL", "group": "r2000"},
+            {"ticker": "RUTX", "group": "r2000"},
+        ])
+        monkeypatch.setattr(btp, "_ROOT", tmp_path)
+        out = tmp_path / "out"
+        rc = btp.run(out, site=site, only_tickers={"AAPL", "RUTX"})
+        assert rc == 0
+        aapl = (out / "AAPL.html")
+        rutx = (out / "RUTX.html")
+        assert aapl.exists(), "dual-membership ticker must render once"
+        assert rutx.exists(), "pure-r2000 ticker must render"
+        h = aapl.read_text()
+        # senior group sp500 → S&P 500 chip; no Russell chip for a large cap
+        assert 'class="chip6"' in h
+        assert "S&P 500" in h.replace("&amp;", "&")
+        assert 'chip6"><span class="l-en">Russell 2000' not in h
+        h2 = rutx.read_text()
+        assert 'chip6"><span class="l-en">Russell 2000' in h2 or "Russell 2000" in h2
+
 
 class TestR2000UniverseExpansion:
     """Tests for R2000 membership, Dow-30 chips, dedupe seniority, and consumer guards."""
