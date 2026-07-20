@@ -2,8 +2,8 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-07-20",
-  "generated_utc": "2026-07-20T08:40:33+00:00",
-  "freshness": "stale",
+  "generated_utc": "2026-07-20T10:25:59+00:00",
+  "freshness": "degraded",
   "entities": [
     {
       "slug": "alibaba",
@@ -88,13 +88,13 @@
       "ticker": "1024.HK",
       "name_en": "Kuaishou",
       "name_zh": "\u5feb\u624b",
-      "attention_shock_z": 1.611,
+      "attention_shock_z": null,
       "tone_pctile": null,
-      "narrative_state": "quiet",
-      "young": false,
-      "n_obs": 86,
-      "as_of_date": "2026-07-17",
-      "no_data_reason": null
+      "narrative_state": null,
+      "young": true,
+      "n_obs": 0,
+      "as_of_date": null,
+      "no_data_reason": "young series: 0 < 20 obs"
     },
     {
       "slug": "smic",

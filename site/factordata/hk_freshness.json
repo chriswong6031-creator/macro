@@ -1,31 +1,31 @@
 {
-  "checked_at": "2026-07-20T08:40:29+00:00",
-  "expected_session": "2026-07-17",
+  "checked_at": "2026-07-20T10:25:55+00:00",
+  "expected_session": "2026-07-20",
   "stores": {
     "cache": {
       "asof": "2026-07-17",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     },
     "bellwether": {
-      "asof": "2026-07-17",
+      "asof": "2026-07-20",
       "lag_days": 0,
       "state": "fresh"
     },
     "standouts": {
       "asof": "2026-07-17",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     },
     "regime": {
       "asof": "2026-07-17",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "stale"
     },
     "southbound": {
       "asof": "2026-07-17",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     }
   },
   "coherence": {
@@ -40,6 +40,9 @@
     "curr_cache_max": "2026-07-17",
     "note": null
   },
-  "verdict": "ok",
-  "banner_message": null
+  "verdict": "degraded",
+  "banner_message": {
+    "en": "HK data degraded \u2014 regime 3d behind (last 2026-07-17)",
+    "zh": "\u6e2f\u80a1\u6570\u636e\u964d\u7ea7 \u2014 regime \u843d\u540e 3d\uff08\u6700\u540e 2026-07-17\uff09"
+  }
 }
