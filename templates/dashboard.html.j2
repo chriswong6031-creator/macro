@@ -2532,8 +2532,18 @@ body.page-macro .mxqm-eyebrow-chip{margin-left:auto;font-size:9.5px;font-weight:
 body.page-macro #mx5FlipCtxPop .mxfs-badge{display:none}
 body.page-macro .mxqm-glance{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.78));margin:2px 0 10px}
 body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b);font-weight:700}
-body.page-macro .mxqm-wrap{margin:0 0 10px}
-body.page-macro .mxqm-svg-box{width:100%;max-width:340px;margin:0 auto}
+/* Goldilocks trim (2026-07-20): ONE quiet compressed line (grip + weakest support)
+   replacing the deleted flip-strip section; + one-line footer. */
+body.page-macro .mxqm-hold{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px;
+  font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.68))}
+body.page-macro .mxqm-hold-txt b{color:var(--ink-1,rgba(255,255,255,.92));font-weight:650}
+body.page-macro .mxqm-hold .help{flex:0 0 auto}
+[data-theme="light"] body.page-macro .mxqm-hold{color:rgba(0,0,0,.62)}
+body.page-macro .mxqm-foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
+  font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.42))}
+[data-theme="light"] body.page-macro .mxqm-foot{color:rgba(0,0,0,.42)}
+body.page-macro .mxqm-wrap{margin:0 0 8px}
+body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
 /* Quad fill classes — fixed hex (SVG presentation fills don't read var()); match
    theme.css dark defaults. Active tile lifts brighter. */
@@ -2603,26 +2613,15 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
   opacity:0;visibility:hidden;transform:translateY(-4px);
   transition:opacity .18s ease .05s,transform .18s ease .05s,visibility 0s linear .3s;
   pointer-events:none;
-  /* belt-and-braces: cap height so a tall pop scrolls inside itself rather than
-     bleeding under the section below (the JS lift on #regime-radar is the primary fix) */
-  max-height:min(64vh,540px);overflow-y:auto;overscroll-behavior:contain;
+  /* Goldilocks trim (2026-07-20): the pop now fits without scrolling (flip-strip section
+     deleted, weakest+grip compressed to one line), so the scroll cap + bottom fade are
+     removed per Fable's "a hover popup must never scroll" ruling. */
   background:var(--mx5-pop-bg,rgba(16,21,30,.97));
   border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
   border-radius:14px;
   box-shadow:0 18px 48px rgba(0,0,0,.5);
-  padding:12px 14px 18px;
+  padding:12px 14px 14px;
   backdrop-filter:blur(20px);
-}
-/* Wave E — bottom fade-out hint so a scroll-clipped row reads as "there's more below".
-   Applied to an inner wrapper via a pseudo so it doesn't fade the border/backdrop. */
-body.page-macro.mx4-grid .mx5-flipctx-pop::after{
-  content:"";position:sticky;bottom:0;left:0;right:0;display:block;
-  height:20px;margin:-20px -14px -18px;pointer-events:none;
-  background:linear-gradient(to bottom,transparent,var(--mx5-pop-bg,rgba(16,21,30,.97)));
-  border-radius:0 0 14px 14px;
-}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop::after{
-  background:linear-gradient(to bottom,transparent,#fff);
 }
 [data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop{
   background:#fff;
@@ -5601,6 +5600,59 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(n+6){transition-delay:.40s;}
 }
 
+/* ── rlx-* : rich-lens popover anatomy (Tier-2 rework 2026-07-20) ────────────
+   Illustrated hover cards for the six dlg-risk signal tiles (+ any heavy tip).
+   Content lives in a hidden .lens-src child of the tile; the site LENS engine
+   (theme.js #3102) clones it into a body-appended glass .lens-pop and manages
+   chrome / clamping / bottom-sheet at ≤640px / reduced-motion. These classes
+   style the CLONE, so they are global (not #dlg-risk-scoped) and lean on the
+   --lens-* token chain the engine sets, so light mode + vector pages inherit.
+   Anatomy (Fable direction): .lens-hd (engine) → optional rlx-viz mini-illustration
+   → rlx-rows label:value glance rows → optional rlx-chips ticker row → .lens-receipt
+   (engine) honest compressed receipt. Budget ≤ ~45 visible words + receipt. */
+.rlx-viz{margin:2px 16px 4px;padding:10px 12px;border-radius:11px;
+  background:color-mix(in srgb,var(--lens-text,#d7dce3) 4%,transparent);
+  border:1px solid color-mix(in srgb,var(--lens-text,#d7dce3) 9%,transparent);}
+.rlx-viz-cap{font:600 10px/1.4 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);margin-top:8px;}
+/* comparison bars — two labelled horizontal bars (deeper vs shallower, cohort vs cohort) */
+.rlx-bars{display:flex;flex-direction:column;gap:8px;}
+.rlx-bar-row{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:9px;min-width:0;}
+.rlx-bar-lbl{font:600 9.5px/1.2 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);
+  overflow-wrap:anywhere;}
+.rlx-bar-track{position:relative;height:9px;border-radius:5px;
+  background:color-mix(in srgb,var(--lens-mut,#8b93a1) 20%,transparent);overflow:hidden;}
+.rlx-bar-fill{position:absolute;inset:0 auto 0 0;border-radius:5px;
+  width:var(--rlx-w,50%);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--rlx-c,var(--lens-accent,#5b9bf0)) 55%,transparent),var(--rlx-c,var(--lens-accent,#5b9bf0)));}
+.rlx-bar-fill.muted{background:color-mix(in srgb,var(--lens-mut,#8b93a1) 45%,transparent);}
+/* progress-to-maturity bar (single track + marker) */
+.rlx-prog{position:relative;height:10px;border-radius:6px;
+  background:color-mix(in srgb,var(--lens-mut,#8b93a1) 20%,transparent);overflow:hidden;}
+.rlx-prog-fill{position:absolute;inset:0 auto 0 0;width:var(--rlx-w,50%);border-radius:6px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--rlx-c,var(--lens-accent,#5b9bf0)) 50%,transparent),var(--rlx-c,var(--lens-accent,#5b9bf0)));}
+/* label:value glance rows */
+.rlx-rows{margin:6px 16px 10px;display:flex;flex-direction:column;gap:8px;}
+.rlx-row{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.rlx-k{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.11em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--lens-mut,#8b93a1) 82%,transparent);}
+.rlx-v{font:450 12px/1.5 var(--font-ui,Inter,sans-serif);color:color-mix(in srgb,var(--lens-text,#d7dce3) 90%,var(--lens-mut,#8b93a1));}
+.rlx-v b{font-weight:650;color:var(--lens-text,#d7dce3);}
+/* ticker chip row — Favor (green-tint) · Trim (red-tint) */
+.rlx-chips{margin:0 16px 12px;display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center;}
+.rlx-chips-lbl{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.1em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--lens-mut,#8b93a1) 80%,transparent);margin-right:1px;}
+.rlx-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-mono,ui-monospace,Menlo,monospace);
+  letter-spacing:.02em;padding:3px 7px;border-radius:6px;white-space:nowrap;}
+.rlx-chip.up{color:var(--ok,var(--up,#3da564));background:color-mix(in srgb,var(--ok,var(--up,#3da564)) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--ok,var(--up,#3da564)) 30%,transparent);}
+.rlx-chip.dn{color:var(--down,#ef4444);background:color-mix(in srgb,var(--down,#ef4444) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
+@media(prefers-reduced-motion:no-preference){
+  .lens-pop.open .rlx-bar-fill,.lens-pop.open .rlx-prog-fill{transform:scaleX(0);transform-origin:0 50%;
+    animation:rlxGrow .6s cubic-bezier(.22,.9,.26,1.02) .1s both;}
+}
+@keyframes rlxGrow{to{transform:scaleX(1);}}
+
 /* — 3. US Leaders chart block (mono tickers, animated gradient bars, count chip) — */
 .rkc-ldr-head{display:flex;align-items:center;gap:9px;margin:2px 0 10px;}
 .rkc-ldr-state{flex:1;min-width:0;font:600 13px/1.4 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
@@ -6712,8 +6764,51 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
         </div>
         {% endif %}{# /_qm_hard #}
-        {# Existing text rows below — unmodified #}
-        {{ regime_flip_strip(latest) }}
+        {# ── Goldilocks trim (Fable ruling 2026-07-20): a hover popup must never scroll.
+           The old "WHAT COULD CHANGE THE REGIME CALL" section (regime_flip_strip) + its
+           Drift row are DELETED here (the lead line + animated quad-map arrow already
+           carry drift twice). Weakest-support + grip COMPRESS into ONE quiet line, built
+           from the same flip_condition / confidence fields, null-safe. The mechanics
+           receipt (grip fraction, drift sessions) lives in one plain ? tip on this line.
+           regime_flip_strip stays defined — still called by the ledger hero (~L6485). #}
+        {%- set _gk_fc = latest.get('flip_condition') or {} %}
+        {%- set _gk_qv = latest.get('quad_vector') or {} %}
+        {%- set _gk_tm = (_gk_qv.get('transition_momentum') or {}) if not _gk_qv.get('degraded') else {} %}
+        {%- set _gk_conf = latest.get('confidence') %}
+        {#- weakest-support leg → plain name (compact mirror of regime_flip_strip's _fs_short) -#}
+        {%- set _gk_short = {
+          'copper_gold':['copper vs gold','铜对黄金'],'xly_xlp':['the shopper-confidence read','消费信心读数'],
+          'us2y_direction':['the 2-year yield','2年期收益率'],'iwm_spy':['small caps','小盘股'],
+          'cyclical_defensive':['cyclical vs defensive sectors','周期性板块'],'breadth_direction':['market breadth','市场广度'],
+          'payrolls_trend':['payrolls','非农就业'],'indpro_trend':['industrial production','工业生产'],
+          'breakeven_10y_direction':['10-yr inflation expectations','10年期通胀预期'],
+          'breakeven_5y5y_direction':['long-run inflation expectations','长期通胀预期'],
+          'energy_rs':['the energy sector','能源板块'],'oil_trend':['oil','原油'],
+          'inflation_beta_basket':['the inflation-winners basket','通胀受益篮子'],
+          'tips_nominal_momentum':['the TIPS spread','TIPS 利差'] } %}
+        {%- set _gk_comp = _gk_fc.get('component') %}
+        {%- set _gk_cname = _gk_short.get(_gk_comp, [(_gk_comp | replace('_',' ')), (_gk_comp | replace('_',' '))]) if _gk_comp else none %}
+        {#- grip word from confidence (matches regime_flip_strip mapping) -#}
+        {%- set _gk_has_conf = (_gk_conf is not none and _gk_conf is number) %}
+        {%- set _gk_grip_en = ('held loosely' if _gk_conf < 0.33 else ('held reasonably firm' if _gk_conf < 0.66 else 'held firmly')) if _gk_has_conf else none %}
+        {%- set _gk_grip_zh = ('把握较松' if _gk_conf < 0.33 else ('把握尚可' if _gk_conf < 0.66 else '把握较稳')) if _gk_has_conf else none %}
+        {#- build the ? receipt tip (plain, short) from grip fraction + drift session count -#}
+        {%- set _gk_rc_bits_en = [] %}
+        {%- set _gk_rc_bits_zh = [] %}
+        {%- if _gk_has_conf %}{%- set _ = _gk_rc_bits_en.append('conviction ' ~ (_gk_conf | round(2)) ~ ' / 1') %}{%- set _ = _gk_rc_bits_zh.append('把握 ' ~ (_gk_conf | round(2)) ~ ' / 1') %}{%- endif %}
+        {%- if _gk_fc.get('margin') is not none %}{%- set _ = _gk_rc_bits_en.append('cushion ' ~ (_gk_fc.margin | round(2))) %}{%- set _ = _gk_rc_bits_zh.append('缓冲 ' ~ (_gk_fc.margin | round(2))) %}{%- endif %}
+        {%- if _gk_tm.get('window_sessions') %}{%- set _ = _gk_rc_bits_en.append('drift measured over ' ~ _gk_tm.window_sessions ~ ' sessions') %}{%- set _ = _gk_rc_bits_zh.append('漂移基于近 ' ~ _gk_tm.window_sessions ~ ' 个交易日') %}{%- endif %}
+        {% if _gk_grip_en or _gk_cname %}
+        <div class="mxqm-hold">
+          <span class="mxqm-hold-txt">
+            <span class="l-en">{% if _gk_grip_en %}{{ _gk_grip_en|capitalize }}{% endif %}{% if _gk_grip_en and _gk_cname %} — {% endif %}{% if _gk_cname %}weakest support is <b>{{ _gk_cname[0] }}</b>{% endif %}.</span>
+            <span class="l-zh">{% if _gk_grip_zh %}{{ _gk_grip_zh }}{% endif %}{% if _gk_grip_zh and _gk_cname %} — {% endif %}{% if _gk_cname %}最弱支撑为<b>{{ _gk_cname[1] }}</b>{% endif %}。</span>
+          </span>
+          {% if _gk_rc_bits_en %}{{ help(_gk_rc_bits_en|join(' · '), _gk_rc_bits_zh|join(' · ')) }}{% endif %}
+        </div>
+        {% endif %}
+        {# Footer — one line, kept (Fable ruling). #}
+        <div class="mxqm-foot"><span class="l-en">About the regime label — not the 0–100 risk score.</span><span class="l-zh">指周期标签——并非 0–100 风险评分。</span></div>
       </div>
       </div>{# /mx5-flipctx-anchor #}
 
@@ -11067,9 +11162,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {#- correct English ordinal suffix (fixes the engine's "72th" leak inside this tip) -#}
           {%- set _l0ord = 'th' if (11 <= (_l0p % 100) <= 13) else {1:'st',2:'nd',3:'rd'}.get(_l0p % 10, 'th') -%}
           {%- set _l1ord = ('th' if (11 <= (_l1p % 100) <= 13) else {1:'st',2:'nd',3:'rd'}.get(_l1p % 10, 'th')) if _l1p is not none else '' -%}
-          {%- set _rk_lead_tip_en = 'Leading leg sits at the ' ~ _l0p ~ _l0ord ~ ' percentile' ~ ((', a second at the ' ~ _l1p ~ _l1ord) if _l1p is not none else '') ~ ' — measured against a 5-year window. Higher = more stretched.' -%}
-          {%- set _rk_lead_tip_zh = '领先因素处于 ' ~ _l0p ~ ' 分位' ~ ((('，另一因素处于 ' ~ _l1p ~ ' 分位')) if _l1p is not none else '') ~ '——基于近5年区间衡量。越高越极端。' -%}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-risk,#e05c5c)" data-tip-en="{{ _rk_lead_tip_en }}" data-tip-zh="{{ _rk_lead_tip_zh }}">
+          {#- Plain fallback (trigger hook + JS-off): single fact, kept short. Rich .lens-src
+             below carries the two-leg percentile position bars (built from _l0p/_l1p). -#}
+          {%- set _rk_lead_tip_en = 'Leading leg at the ' ~ _l0p ~ _l0ord ~ ' percentile of its 5-year range — higher = more stretched.' -%}
+          {%- set _rk_lead_tip_zh = '领先因素处于其 5 年区间的 ' ~ _l0p ~ ' 分位——越高越极端。' -%}
+          <div class="rkc-sig" style="--rkc-c:var(--isle-risk,#e05c5c)" data-lens-kind="caution" data-tip-en="{{ _rk_lead_tip_en }}" data-tip-zh="{{ _rk_lead_tip_zh }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('leading') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Leading','领先信号') }}</div>
@@ -11077,6 +11174,41 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <div class="rkc-sig-state">{{ rrc.rr_leg(_l0.leg) }} <span class="l-en">— {{ _rk_mag(_l0.pctile,'en') }}</span><span class="l-zh">— {{ _rk_mag(_l0.pctile,'zh') }}</span></div>
             </div>
             <span class="rkc-sig-tip">?</span>
+            {# — rich LENS payload: percentile position bars (built from firing-leg pctiles) — #}
+            <span class="lens-src" data-lens-kind="caution" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill">{{ rkc_sig_glyph('leading') }}</span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">LEADING PRESSURE</span><span class="l-zh">领先压力</span></span>
+                  <span class="lens-title"><span class="l-en">How stretched, vs 5 years</span><span class="l-zh">相对5年区间的极端度</span></span>
+                </span>
+              </div>
+              <div class="rlx-viz" style="--rlx-c:var(--isle-risk,#e05c5c)">
+                <div class="rlx-bars">
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl">{{ rrc.rr_leg(_l0.leg) }}</span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:{{ _l0p }}%"></span></span>
+                  </div>
+                  {% if _l1p is not none %}
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl">{{ rrc.rr_leg(_rk_lead.firing_legs[1].leg) }}</span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill muted" style="--rlx-w:{{ _l1p }}%"></span></span>
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="rlx-viz-cap"><span class="l-en">Bars sit further right the more stretched a leg is vs its own 5-year range.</span><span class="l-zh">越靠右，代表该因素相对其自身 5 年区间越极端。</span></div>
+              </div>
+              <div class="rlx-rows">
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">What it is</span><span class="l-zh">这是什么</span></span>
+                  <span class="rlx-v"><span class="l-en">The risk read that&rsquo;s furthest out right now — the one carrying the caution.</span><span class="l-zh">当前最极端的一条风险读数——警惕主要来自它。</span></span>
+                </div>
+              </div>
+              <div class="lens-receipt">
+                <span class="l-en">{{ _l0p }}th pctile{% if _l1p is not none %} · second at {{ _l1p }}th{% endif %} · 5-year window · display context</span>
+                <span class="l-zh">{{ _l0p }} 分位{% if _l1p is not none %} · 次高 {{ _l1p }} 分位{% endif %} · 5 年区间 · 展示背景</span>
+              </div>
+            </span>{# end .lens-src #}
           </div>
           {% endif %}
 
@@ -11094,16 +11226,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           {% endif %}
 
-          {# Tile 3 — Calendar window (election cycle), favor/trim on hover.
-             Lens content law (memory hover-popup-doctrine): plain-word body; machine
-             facts (n / p≈ / tickers) demoted to the data-tip-rc receipt line Lens
-             renders in mono under a dashed perforation. #}
+          {# Tile 3 — Calendar window (election cycle). Rich LENS popover (Tier-2 rework
+             2026-07-20): built from election_cycle.py fields (label / in_drawdown_window /
+             sector_bias.favor+avoid), NOT re-typed prose. The mini-visual encodes the
+             engine-asserted DIRECTION (midterm Apr–Oct pullbacks run deeper) as a
+             qualitative two-bar compare — the 32.5%/26.0% magnitudes are NOT VM-exported
+             (comment-only), so no axis numbers are fabricated (VM gap, reported). The
+             "~1.25× as often" figure is the engine's own slice sentence, kept verbatim in
+             the receipt. Plain data-tip-en on the tile is the trigger hook + JS-off fallback;
+             the .lens-src child wins (theme.js contentFor prefers it). #}
           {% if _rk_cy %}
-          {%- set _rk_cy_tip_en -%}Midterm years tend to sag from April to October — pullbacks have come about 1.25× as often as usual, even while the market still looks healthy. Treat it as a lean-carefully season, not a sell signal: nothing fires from the calendar alone. In past midterm second halves, defensives (health care, staples, utilities) held up best while energy and discretionary lagged.{%- endset -%}
-          {%- set _rk_cy_tip_zh -%}中期选举年的 4–10 月往往偏弱——即使大盘仍然健康，回撤出现的频率也约为平常的 1.25 倍。把它当作「谨慎一些」的季节，而非卖出信号：日历本身绝不单独触发操作。历次中期年下半年，防御板块（医疗、必需消费、公用事业）相对抗跌，能源与可选消费偏弱。{%- endset -%}
-          {%- set _rk_cy_rc_en -%}8 midterm cases · weak edge (p≈.09) · worst crashes non-midterm{% if _rk_cy.sector_bias %} · favor {% for f in _rk_cy.sector_bias.favor %}{% if not loop.first %}·{% endif %}{{ f.ticker }}{% endfor %} / trim {% for a in _rk_cy.sector_bias.avoid %}{% if not loop.first %}·{% endif %}{{ a.ticker }}{% endfor %}{% endif %}{%- endset -%}
-          {%- set _rk_cy_rc_zh -%}8 个中期年样本 · 优势较弱（p≈.09）· 史上最深回撤在非中期年{% if _rk_cy.sector_bias %} · 偏好 {% for f in _rk_cy.sector_bias.favor %}{% if not loop.first %}·{% endif %}{{ f.ticker }}{% endfor %} / 减持 {% for a in _rk_cy.sector_bias.avoid %}{% if not loop.first %}·{% endif %}{{ a.ticker }}{% endfor %}{% endif %}{%- endset -%}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-events,#e0a030)" data-lens-kind="record" data-tip-en="{{ _rk_cy_tip_en|trim }}" data-tip-zh="{{ _rk_cy_tip_zh|trim }}" data-tip-rc-en="{{ _rk_cy_rc_en|trim }}" data-tip-rc-zh="{{ _rk_cy_rc_zh|trim }}">
+          {%- set _rk_cy_fallback_en -%}Midterm Apr–Oct tends to run weaker — a lean-carefully season, not a sell signal. Nothing fires from the calendar alone.{%- endset -%}
+          {%- set _rk_cy_fallback_zh -%}中期选举年 4–10 月往往偏弱——是「谨慎一些」的季节，而非卖出信号。日历本身绝不单独触发操作。{%- endset -%}
+          <div class="rkc-sig" style="--rkc-c:var(--isle-events,#e0a030)" data-lens-kind="record" data-tip-en="{{ _rk_cy_fallback_en|trim }}" data-tip-zh="{{ _rk_cy_fallback_zh|trim }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('window') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Calendar','日历') }}</div>
@@ -11114,6 +11249,52 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
             </div>
             <span class="rkc-sig-tip">?</span>
+            {# — rich LENS payload, cloned by theme.js on hover/focus/tap — #}
+            <span class="lens-src" data-lens-kind="record" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill">{{ rkc_sig_glyph('window') }}</span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">SEASONAL WINDOW</span><span class="l-zh">季节窗口</span></span>
+                  <span class="lens-title"><span class="l-en">{{ _rk_cy.label_en if _rk_cy.label_en is defined else 'Midterm calendar' }}</span><span class="l-zh">{{ _rk_cy.label_zh if (_rk_cy.label_zh is defined and _rk_cy.label_zh) else '中期选举日历' }}</span></span>
+                </span>
+              </div>
+              {# mini-illustration — two qualitative bars: midterm Apr–Oct deeper vs other years. #}
+              <div class="rlx-viz" style="--rlx-c:var(--isle-events,#e0a030)">
+                <div class="rlx-bars">
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">Midterm<br>Apr–Oct</span><span class="l-zh">中期年<br>4–10月</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:82%"></span></span>
+                  </div>
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">Other<br>years</span><span class="l-zh">其他<br>年份</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill muted" style="--rlx-w:58%"></span></span>
+                  </div>
+                </div>
+                <div class="rlx-viz-cap"><span class="l-en">Pullbacks in this window have run deeper — even while the tape looks healthy.</span><span class="l-zh">该窗口的回撤历来更深——即便大盘看起来仍健康。</span></div>
+              </div>
+              <div class="rlx-rows">
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">Right now</span><span class="l-zh">当前</span></span>
+                  <span class="rlx-v"><span class="l-en">A <b>lean-carefully</b> season — not a sell signal. Nothing fires from the calendar alone.</span><span class="l-zh"><b>谨慎一些</b>的季节——并非卖出信号。日历本身绝不单独触发操作。</span></span>
+                </div>
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">What it does</span><span class="l-zh">作用</span></span>
+                  <span class="rlx-v"><span class="l-en">Nudges position sizing <b>smaller</b> and early alerts <b>sooner</b> — never raises the loud banner.</span><span class="l-zh">将仓位<b>略调小</b>、早期预警<b>略提前</b>——绝不拉响响亮警报。</span></span>
+                </div>
+              </div>
+              {% if _rk_cy.sector_bias %}
+              <div class="rlx-chips">
+                <span class="rlx-chips-lbl"><span class="l-en">Favor</span><span class="l-zh">偏好</span></span>
+                {% for f in _rk_cy.sector_bias.favor %}<span class="rlx-chip up">{{ f.ticker }}</span>{% endfor %}
+                <span class="rlx-chips-lbl" style="margin-left:4px"><span class="l-en">Trim</span><span class="l-zh">减持</span></span>
+                {% for a in _rk_cy.sector_bias.avoid %}<span class="rlx-chip dn">{{ a.ticker }}</span>{% endfor %}
+              </div>
+              {% endif %}
+              <div class="lens-receipt">
+                <span class="l-en">8 past midterms · suggestive, not significant · ~1.25× as often · deepest drops were in other years</span>
+                <span class="l-zh">8 个中期年样本 · 提示性、不显著 · 约 1.25 倍频率 · 史上最深回撤都在其他年份</span>
+              </div>
+            </span>{# end .lens-src #}
           </div>
           {% endif %}
 
@@ -11123,9 +11304,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {%- set _rk_cg_en = 'High' if _rk_cg_lv == 'high' else ('Building' if _rk_cg_lv == 'moderate' else 'Low') -%}
           {%- set _rk_cg_zh = '高' if _rk_cg_lv == 'high' else ('升温' if _rk_cg_lv == 'moderate' else '低') -%}
           {%- set _rk_cg_col = 'var(--down,#ef4444)' if _rk_cg_lv == 'high' else ('var(--warn,#f59e0b)' if _rk_cg_lv == 'moderate' else 'var(--up,#22c55e)') -%}
-          {%- set _rk_cg_tip_en %}{% if _rk_cg.line_en is defined and _rk_cg.line_en %}{{ _rk_cg.line_en }}{% endif %}{% if _rk_cg.top_exporters is defined and _rk_cg.top_exporters %} · Main sources: {% for e in _rk_cg.top_exporters[:3] %}{% if not loop.first %}, {% endif %}{{ e.name_en if e.name_en is defined else e.market }}{% if e.dd21 is defined and e.dd21 is not none %} ({{ (e.dd21*100)|round|int }}% off high){% endif %}{% endfor %}{% endif %}{% endset -%}
-          {%- set _rk_cg_tip_zh %}{% if _rk_cg.line_zh is defined and _rk_cg.line_zh %}{{ _rk_cg.line_zh }}{% elif _rk_cg.line_en is defined and _rk_cg.line_en %}{{ _rk_cg.line_en }}{% endif %}{% if _rk_cg.top_exporters is defined and _rk_cg.top_exporters %} · 主要来源：{% for e in _rk_cg.top_exporters[:3] %}{% if not loop.first %}、{% endif %}{{ e.name_zh if (e.name_zh is defined and e.name_zh) else (e.name_en if e.name_en is defined else e.market) }}{% if e.dd21 is defined and e.dd21 is not none %}（距高{{ (e.dd21*100)|round|int }}%）{% endif %}{% endfor %}{% endif %}{% endset -%}
-          <div class="rkc-sig" style="--rkc-c:{{ _rk_cg_col }}" data-tip-en="{{ _rk_cg_tip_en|trim }}" data-tip-zh="{{ _rk_cg_tip_zh|trim }}">
+          {%- set _rk_cg_kind = 'caution' if _rk_cg_lv == 'high' else ('caution' if _rk_cg_lv == 'moderate' else 'record') -%}
+          {%- set _rk_cg_top = (_rk_cg.top_exporters[:3] if (_rk_cg.top_exporters is defined and _rk_cg.top_exporters) else []) -%}
+          {#- plain fallback (trigger hook + JS-off): engine line verbatim, short. -#}
+          {%- set _rk_cg_fallback_en %}{% if _rk_cg.line_en is defined and _rk_cg.line_en %}{{ _rk_cg.line_en }}{% else %}Stress from overseas markets, gauged by how far big exporters have fallen.{% endif %}{% endset -%}
+          {%- set _rk_cg_fallback_zh %}{% if _rk_cg.line_zh is defined and _rk_cg.line_zh %}{{ _rk_cg.line_zh }}{% elif _rk_cg.line_en is defined and _rk_cg.line_en %}{{ _rk_cg.line_en }}{% else %}来自海外市场的压力，以主要出口市场的下跌幅度衡量。{% endif %}{% endset -%}
+          <div class="rkc-sig" style="--rkc-c:{{ _rk_cg_col }}" data-lens-kind="{{ _rk_cg_kind }}" data-tip-en="{{ _rk_cg_fallback_en|trim }}" data-tip-zh="{{ _rk_cg_fallback_zh|trim }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('overseas') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Overseas','境外') }}</div>
@@ -11135,6 +11319,46 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
             </div>
             <span class="rkc-sig-tip">?</span>
+            {# — rich LENS payload: exporter drawdown bars (built from top_exporters[].dd21) — #}
+            <span class="lens-src" data-lens-kind="{{ _rk_cg_kind }}" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill" style="color:{{ _rk_cg_col }}">{{ rkc_sig_glyph('overseas') }}</span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">OVERSEAS PRESSURE</span><span class="l-zh">境外压力</span></span>
+                  <span class="lens-title"><span class="l-en">Stress carried in from abroad — {{ _rk_cg_en|lower }}</span><span class="l-zh">来自海外的压力——{{ _rk_cg_zh }}</span></span>
+                </span>
+              </div>
+              {% if _rk_cg_top %}
+              <div class="rlx-viz" style="--rlx-c:{{ _rk_cg_col }}">
+                <div class="rlx-bars">
+                  {% for e in _rk_cg_top %}
+                  {%- set _edd = (e.dd21*100)|round|int if (e.dd21 is defined and e.dd21 is not none) else 0 -%}
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">{{ e.name_en if e.name_en is defined else e.market }}</span><span class="l-zh">{{ e.name_zh if (e.name_zh is defined and e.name_zh) else (e.name_en if e.name_en is defined else e.market) }}</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill{{ ' muted' if not loop.first }}" style="--rlx-w:{{ [8,[100,(_edd*3)]|min]|max }}%"></span></span>
+                  </div>
+                  {% endfor %}
+                </div>
+                <div class="rlx-viz-cap"><span class="l-en">How far each big exporter has fallen from its recent high.</span><span class="l-zh">各主要出口市场距近期高点的回撤幅度。</span></div>
+              </div>
+              {% endif %}
+              <div class="rlx-rows">
+                {% if _rk_cg.line_en is defined and _rk_cg.line_en %}
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">Right now</span><span class="l-zh">当前</span></span>
+                  <span class="rlx-v"><span class="l-en">{{ _rk_cg.line_en }}</span><span class="l-zh">{{ _rk_cg.line_zh if (_rk_cg.line_zh is defined and _rk_cg.line_zh) else _rk_cg.line_en }}</span></span>
+                </div>
+                {% endif %}
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">Why it matters</span><span class="l-zh">为何重要</span></span>
+                  <span class="rlx-v"><span class="l-en">Overseas selling can wash back into US names — a heads-up, not a trigger.</span><span class="l-zh">海外抛售可能回流至美股——仅为提示，非触发。</span></span>
+                </div>
+              </div>
+              <div class="lens-receipt">
+                <span class="l-en">Pressure: {{ _rk_cg_en|lower }}{% if _rk_cg_top %} · {% for e in _rk_cg_top %}{% if not loop.first %} · {% endif %}{{ e.market if e.market is defined else (e.name_en if e.name_en is defined else '') }}{% if e.dd21 is defined and e.dd21 is not none %} {{ (e.dd21*100)|round|int }}%{% endif %}{% endfor %}{% endif %} · display context</span>
+                <span class="l-zh">压力：{{ _rk_cg_zh }}{% if _rk_cg_top %} · {% for e in _rk_cg_top %}{% if not loop.first %} · {% endif %}{{ e.market if e.market is defined else (e.name_en if e.name_en is defined else '') }}{% if e.dd21 is defined and e.dd21 is not none %} {{ (e.dd21*100)|round|int }}%{% endif %}{% endfor %}{% endif %} · 展示背景</span>
+              </div>
+            </span>{# end .lens-src #}
           </div>
           {% endif %}
 
@@ -11142,9 +11366,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% if _rk_cx and _rk_cx_v in ['concentrated','converging'] %}
           {%- set _rk_cx_en = 'Moving as one' if _rk_cx_v == 'concentrated' else 'Syncing up' -%}
           {%- set _rk_cx_zh = '同涨同跌' if _rk_cx_v == 'concentrated' else '联动升温' -%}
-          {%- set _rk_cx_tip_en %}When markets move together, one shock hits everything at once — diversification helps less.{% if _rk_cx.absorption_pctile is defined and _rk_cx.absorption_pctile is not none %} Co-movement at the {{ (_rk_cx.absorption_pctile*100)|round|int }}th percentile (5y).{% endif %}{% if _rk_cx.dominant_cluster is defined and _rk_cx.dominant_cluster %} Cluster: {{ _rk_cx.dominant_cluster|join(', ') }}.{% endif %}{% endset -%}
-          {%- set _rk_cx_tip_zh %}市场同步波动时，单一冲击会同时打击各类资产——分散配置作用下降。{% if _rk_cx.absorption_pctile is defined and _rk_cx.absorption_pctile is not none %} 联动度处于 {{ (_rk_cx.absorption_pctile*100)|round|int }} 分位（5年）。{% endif %}{% if _rk_cx.dominant_cluster is defined and _rk_cx.dominant_cluster %} 集群：{{ _rk_cx.dominant_cluster|join('、') }}。{% endif %}{% endset -%}
-          <div class="rkc-sig" style="--rkc-c:var(--isle-markets,#4d8ef5)" data-tip-en="{{ _rk_cx_tip_en|trim }}" data-tip-zh="{{ _rk_cx_tip_zh|trim }}">
+          {%- set _rk_cx_ap = ((_rk_cx.absorption_pctile*100)|round|int) if (_rk_cx.absorption_pctile is defined and _rk_cx.absorption_pctile is not none) else none -%}
+          {#- plain fallback (trigger hook + JS-off): the plain-word core, short. -#}
+          {%- set _rk_cx_fallback_en -%}Markets are moving together — one shock hits everything at once, so spreading bets helps less.{%- endset -%}
+          {%- set _rk_cx_fallback_zh -%}各市场正同步波动——单一冲击会同时打击各类资产，分散配置的作用下降。{%- endset -%}
+          <div class="rkc-sig" style="--rkc-c:var(--isle-markets,#4d8ef5)" data-lens-kind="caution" data-tip-en="{{ _rk_cx_fallback_en|trim }}" data-tip-zh="{{ _rk_cx_fallback_zh|trim }}">
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('corr') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Correlation','相关性') }}</div>
@@ -11153,6 +11379,41 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
             </div>
             <span class="rkc-sig-tip">?</span>
+            {# — rich LENS payload: co-movement position bar (built from absorption_pctile) — #}
+            <span class="lens-src" data-lens-kind="caution" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill" style="color:var(--isle-markets,#4d8ef5)">{{ rkc_sig_glyph('corr') }}</span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">CO-MOVEMENT</span><span class="l-zh">联动度</span></span>
+                  <span class="lens-title"><span class="l-en">{{ _rk_cx_en }} — right now</span><span class="l-zh">{{ _rk_cx_zh }}——当前</span></span>
+                </span>
+              </div>
+              {% if _rk_cx_ap is not none %}
+              <div class="rlx-viz" style="--rlx-c:var(--isle-markets,#4d8ef5)">
+                <div class="rlx-bar-row" style="grid-template-columns:70px 1fr">
+                  <span class="rlx-bar-lbl"><span class="l-en">vs 5-year<br>range</span><span class="l-zh">相对5年<br>区间</span></span>
+                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:{{ _rk_cx_ap }}%"></span></span>
+                </div>
+                <div class="rlx-viz-cap"><span class="l-en">Further right = markets moving more tightly together than usual.</span><span class="l-zh">越靠右，代表市场比平常联动得更紧。</span></div>
+              </div>
+              {% endif %}
+              <div class="rlx-rows">
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">What it means</span><span class="l-zh">含义</span></span>
+                  <span class="rlx-v"><span class="l-en">When everything moves as one, <b>diversification protects less</b> — size risk to the whole book, not the name.</span><span class="l-zh">当资产同涨同跌时，<b>分散配置的保护更弱</b>——应按整体组合而非单一持仓来控风险。</span></span>
+                </div>
+              </div>
+              {% if _rk_cx.dominant_cluster is defined and _rk_cx.dominant_cluster %}
+              <div class="rlx-chips">
+                <span class="rlx-chips-lbl"><span class="l-en">Tightest cluster</span><span class="l-zh">最紧集群</span></span>
+                {% for c in _rk_cx.dominant_cluster[:4] %}<span class="rlx-chip dn">{{ c }}</span>{% endfor %}
+              </div>
+              {% endif %}
+              <div class="lens-receipt">
+                <span class="l-en">{% if _rk_cx_ap is not none %}{{ _rk_cx_ap }}th pctile co-movement · 5-year window · {% endif %}display context, not a trigger</span>
+                <span class="l-zh">{% if _rk_cx_ap is not none %}联动度 {{ _rk_cx_ap }} 分位 · 5 年区间 · {% endif %}展示背景，非触发</span>
+              </div>
+            </span>{# end .lens-src #}
           </div>
           {% endif %}
 
@@ -11165,8 +11426,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             {%- set _rk_tp = _rk_al.get('tp', 0) if _rk_al.get is defined else 0 -%}
             {%- set _rk_n = _rk_al.get('n', 0) if _rk_al.get is defined else 0 -%}
           {%- endif -%}
+          {%- set _rk_hit_pct = ([4,[100,((_rk_tp/_rk_n*100)|round|int)]|min]|max) if (_rk_hit is not none and _rk_n) else 0 -%}
           <div class="rkc-sig" style="--rkc-c:var(--isle-news,#7a8494)"
-            {% if _rk_hit is not none %}data-tip-en="Over the past year, on {{ _rk_tp }} of {{ _rk_n }} elevated-alert days a ≥5% drop followed within a month. Daily readings — consecutive days overlap." data-tip-zh="过去一年，{{ _rk_n }} 个警报日中有 {{ _rk_tp }} 天在一个月内出现 ≥5% 下跌。按日读数，连续日期相互重叠。"{% endif %}>
+            {% if _rk_hit is not none %}data-lens-kind="record" data-tip-en="Over the past year, {{ _rk_tp }} of {{ _rk_n }} elevated-alert days were followed by a ≥5% drop within a month." data-tip-zh="过去一年，{{ _rk_n }} 个警报日中有 {{ _rk_tp }} 天在一个月内出现 ≥5% 下跌。"{% endif %}>
             <span class="rkc-sig-ico">{{ rkc_sig_glyph('audit') }}</span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl">{{ t('Track record','历史记录') }}</div>
@@ -11181,6 +11443,32 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
             </div>
             {% if _rk_hit is not none %}<span class="rkc-sig-tip">?</span>{% endif %}
+            {% if _rk_hit is not none %}
+            {# — rich LENS payload: hit-rate progress bar (built from tp / n) — #}
+            <span class="lens-src" data-lens-kind="record" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill" style="color:var(--isle-news,#7a8494)">{{ rkc_sig_glyph('audit') }}</span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">SELF-AUDIT</span><span class="l-zh">自我复盘</span></span>
+                  <span class="lens-title"><span class="l-en">How past alerts played out</span><span class="l-zh">历史警报的兑现情况</span></span>
+                </span>
+              </div>
+              <div class="rlx-viz" style="--rlx-c:var(--isle-news,#7a8494)">
+                <div class="rlx-prog"><span class="rlx-prog-fill" style="--rlx-w:{{ _rk_hit_pct }}%"></span></div>
+                <div class="rlx-viz-cap"><span class="l-en"><b>{{ _rk_tp }}</b> of <b>{{ _rk_n }}</b> elevated-alert days were followed by a &ge;5% drop within a month.</span><span class="l-zh"><b>{{ _rk_n }}</b> 个警报日中有 <b>{{ _rk_tp }}</b> 天在一个月内出现 &ge;5% 下跌。</span></div>
+              </div>
+              <div class="rlx-rows">
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">How to read it</span><span class="l-zh">如何解读</span></span>
+                  <span class="rlx-v"><span class="l-en">Our own honesty check — kept in the open, whether it flatters the read or not.</span><span class="l-zh">我们自己的诚实核对——无论结果好坏都如实公开。</span></span>
+                </div>
+              </div>
+              <div class="lens-receipt">
+                <span class="l-en">{{ _rk_tp }} / {{ _rk_n }} alert days · past year · daily readings overlap · accrual display</span>
+                <span class="l-zh">{{ _rk_tp }} / {{ _rk_n }} 警报日 · 过去一年 · 按日读数相互重叠 · 积累展示</span>
+              </div>
+            </span>{# end .lens-src #}
+            {% endif %}
           </div>
 
         </div>
