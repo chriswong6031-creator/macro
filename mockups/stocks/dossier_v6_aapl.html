@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AAPL — Apple Inc. · Mastermind dossier v6 mockup</title>
+<style>
+/* ══ dossier v6 — mockup ══════════════════════════════════════════════════
+   House tokens copied from site/theme.css (dark). Real build reads theme.css.
+   Stance system: --stance is set per page from the engine verdict
+   (up→--up, warn→--warn, down→--down, neutral→--muted). AAPL today = warn. */
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("../../site/fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("../../site/fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("../../site/fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("../../site/fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("../../site/fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("../../site/fonts/Inter-900.woff2") format("woff2");}
+:root{
+  --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3; --muted:#8b93a1; --line:#2a2f3a;
+  --up:#45b873; --down:#e06464; --warn:#e0a030; --link:#7aa7e0; --info:#5b9bf0;
+  --font-ui:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --stance:var(--warn); /* ← engine verdict tint: AAPL = Extended/don't-chase */
+  --glass-bg:color-mix(in srgb,var(--panel) 86%,transparent);
+  --glass-brd:color-mix(in srgb,var(--text) 14%,transparent);
+  --glass-shadow:0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55);
+  --hair:color-mix(in srgb,var(--line) 60%,transparent);
+  --radius:18px;
+  --gbtn-bg:color-mix(in srgb,var(--panel2) 52%,transparent);
+  --gbtn-bg-hover:color-mix(in srgb,var(--pan2,#1e222a) 76%,transparent);
+  --gbtn-brd:color-mix(in srgb,var(--text) 12%,transparent);
+  --gbtn-brd-hover:color-mix(in srgb,var(--text) 24%,transparent);
+  --gbtn-sheen:rgba(255,255,255,.09);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;background:var(--bg);color:var(--text);font:400 13.5px/1.55 var(--font-ui);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+a{color:inherit;text-decoration:none;}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.pos{color:var(--up);}.neg{color:var(--down);}.wrn{color:var(--warn);}.mut{color:var(--muted);}
+
+/* ── aurora: stance-tinted room light ── */
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.aurora::before{content:"";position:absolute;width:1100px;height:780px;top:-260px;left:-180px;border-radius:50%;
+  filter:blur(110px);background:radial-gradient(ellipse,color-mix(in srgb,var(--stance) 10%,transparent) 0%,transparent 68%);}
+.aurora::after{content:"";position:absolute;width:820px;height:640px;bottom:-160px;right:-140px;border-radius:50%;
+  filter:blur(110px);background:radial-gradient(ellipse,color-mix(in srgb,var(--info) 7%,transparent) 0%,transparent 70%);}
+
+/* ── fake site nav (real page includes _site_nav) ── */
+.site-nav{position:relative;z-index:5;display:flex;align-items:center;gap:22px;height:52px;
+  padding:0 28px;border-bottom:1px solid var(--hair);
+  background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(16px);}
+.brand{font-weight:800;letter-spacing:.14em;font-size:13px;}
+.brand i{color:var(--link);font-style:normal;}
+.site-nav a.nl{font-size:12.5px;color:var(--muted);}
+.site-nav a.nl:hover{color:var(--text);}
+
+/* ── sticky jump strip (appears after hero) ── */
+.strip{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;gap:14px;height:48px;
+  padding:0 22px;background:color-mix(in srgb,var(--bg) 86%,transparent);
+  backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
+  border-bottom:1px solid var(--hair);transform:translateY(-100%);transition:transform .3s cubic-bezier(.22,.9,.26,1.02);}
+.strip.vis{transform:translateY(0);}
+.strip .stk{font-size:14.5px;font-weight:800;letter-spacing:.01em;}
+.strip .stp{font-size:13.5px;font-weight:650;}
+.strip .schip{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+  color:var(--stance);background:color-mix(in srgb,var(--stance) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--stance) 30%,transparent);white-space:nowrap;}
+.strip nav{display:flex;gap:2px;margin-left:8px;overflow-x:auto;scrollbar-width:none;flex:1;}
+.strip nav::-webkit-scrollbar{display:none;}
+.strip nav a{font-size:12px;color:var(--muted);padding:5px 10px;border-radius:8px;white-space:nowrap;}
+.strip nav a:hover{color:var(--text);background:var(--gbtn-bg);}
+.strip nav a.on{color:var(--text);background:color-mix(in srgb,var(--link) 14%,transparent);}
+@media(max-width:760px){.strip nav{display:none;}.strip .sname{display:none;}}
+
+/* ── glass buttons (house .gbtn, theme.css) ── */
+.gbtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:7px 14px;border-radius:10px;border:1px solid var(--gbtn-brd);background:var(--gbtn-bg);
+  -webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
+  color:color-mix(in srgb,var(--text) 90%,transparent);font:600 12.5px/1 var(--font-ui);letter-spacing:.01em;
+  box-shadow:inset 0 1px 0 var(--gbtn-sheen),0 1px 2px rgba(3,7,18,.18);cursor:pointer;white-space:nowrap;
+  transition:background .2s ease,border-color .2s ease,color .2s ease,transform .16s ease,box-shadow .25s ease;}
+.gbtn:hover{background:var(--gbtn-bg-hover);border-color:var(--gbtn-brd-hover);color:var(--text);
+  transform:translateY(-1px);box-shadow:inset 0 1px 0 var(--gbtn-sheen),0 8px 20px -10px rgba(3,7,18,.55);}
+.gbtn:active{transform:translateY(0) scale(.985);}
+.gbtn::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.13) 50%,transparent 60%);
+  transform:translateX(-140%) skewX(-8deg);}
+.gbtn:hover::after{transform:translateX(140%) skewX(-8deg);transition:transform .55s ease;}
+.gbtn-cta{background:linear-gradient(135deg,color-mix(in srgb,var(--link) 32%,var(--panel2)),color-mix(in srgb,var(--info) 22%,var(--panel2)));
+  border-color:color-mix(in srgb,var(--link) 45%,transparent);color:var(--text);}
+.gbtn-sm{padding:5px 10px;font-size:11.5px;border-radius:8px;}
+
+/* ── layout ── */
+.wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:0 26px 60px;}
+@media(max-width:640px){.wrap{padding:0 14px 44px;}}
+.crumb{font-size:11.5px;font-weight:550;color:var(--muted);padding:18px 2px 0;letter-spacing:.02em;}
+.crumb a:hover{color:var(--link);}
+.crumb b{color:var(--text);font-weight:600;}
+
+/* ── module chrome ── */
+.mod{background:var(--glass-bg);border:1px solid var(--glass-brd);border-radius:var(--radius);
+  box-shadow:var(--glass-shadow);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
+  padding:20px 24px 22px;min-width:0;}
+@media(max-width:640px){.mod{padding:16px 15px 17px;border-radius:15px;}}
+.mod-hd{display:flex;align-items:baseline;gap:10px;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--hair);}
+.mod-hd h2{display:flex;align-items:center;gap:10px;margin:0;font-size:15.5px;font-weight:650;letter-spacing:-.01em;}
+.mod-hd h2::before{content:"";width:3px;height:15px;border-radius:2px;background:linear-gradient(180deg,var(--link),color-mix(in srgb,var(--link) 30%,transparent));}
+.mod-hd .hint{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:500;white-space:nowrap;}
+.mod-ft{margin-top:14px;padding-top:10px;border-top:1px solid var(--hair);font-size:11.5px;color:var(--muted);}
+
+/* reveal-on-scroll (html.js gates it; reduced-motion opts out) */
+html.js .rv{opacity:0;transform:translateY(16px);}
+html.js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transform .55s cubic-bezier(.22,.9,.26,1.02);transition-delay:var(--d,0ms);}
+@media(prefers-reduced-motion:reduce){html.js .rv{opacity:1;transform:none;transition:none;}}
+
+/* ── hero ── */
+.hero{position:relative;margin-top:14px;padding:26px 30px 0;overflow:hidden;}
+.hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--stance),color-mix(in srgb,var(--stance) 12%,transparent));}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 48px;align-items:start;}
+@media(max-width:860px){.hero-grid{grid-template-columns:1fr;gap:12px;}}
+.eyebrow{font-size:10.5px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.hero h1{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 16px;margin:6px 0 0;
+  font-size:clamp(38px,4.8vw,54px);font-weight:900;letter-spacing:-.04em;line-height:.95;}
+.hero h1 .co{font-size:15px;font-weight:550;letter-spacing:0;color:var(--muted);}
+.hero-desc{margin:12px 0 0;max-width:66ch;font-size:13px;line-height:1.6;color:var(--muted);}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0;}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;
+  border-radius:999px;background:var(--gbtn-bg);border:1px solid var(--gbtn-brd);color:var(--muted);}
+.px-block{text-align:right;min-width:230px;}
+@media(max-width:860px){.px-block{text-align:left;}}
+.px-big{font-size:clamp(32px,3.6vw,44px);font-weight:750;letter-spacing:-.025em;line-height:1;}
+.px-chg{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13.5px;font-weight:650;}
+.px-chg .pill{padding:2px 9px;border-radius:8px;background:color-mix(in srgb,var(--up) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--up) 30%,transparent);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--up);display:inline-block;animation:lp 3s ease-in-out infinite;}
+@keyframes lp{0%,100%{opacity:1;}50%{opacity:.25;}}
+.wk52{margin-top:16px;}
+.wk52 .lbls{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-bottom:5px;}
+.wk52 .track{position:relative;height:4px;border-radius:3px;background:var(--line);}
+.wk52 .fill{position:absolute;inset:0 auto 0 0;border-radius:3px;width:99.1%;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--link) 40%,transparent),var(--link));}
+.wk52 .dotp{position:absolute;top:50%;left:99.1%;transform:translate(-50%,-50%);
+  width:10px;height:10px;border-radius:50%;background:var(--text);box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 35%,transparent);}
+.stance-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:22px -30px 0;padding:13px 30px;
+  border-top:1px solid var(--hair);background:color-mix(in srgb,var(--stance) 5%,transparent);}
+.stance-big{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:750;padding:6px 14px;border-radius:10px;
+  color:var(--stance);background:color-mix(in srgb,var(--stance) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--stance) 32%,transparent);}
+.stance-line{flex:1;min-width:260px;font-size:12.5px;color:var(--muted);line-height:1.5;}
+.stance-line b{color:var(--text);font-weight:600;}
+.asof{font-size:11px;color:var(--muted);white-space:nowrap;}
+@media(max-width:640px){.hero{padding:20px 18px 0;}.stance-row{margin:18px -18px 0;padding:12px 18px;}}
+
+/* hero load-in */
+@media(prefers-reduced-motion:no-preference){
+  .hi{opacity:0;transform:translateY(12px);animation:hin .6s cubic-bezier(.22,.9,.26,1.02) forwards;}
+  .hi2{animation-delay:.08s;}.hi3{animation-delay:.16s;}.hi4{animation-delay:.24s;}
+  @keyframes hin{to{opacity:1;transform:none;}}
+}
+
+/* ── chart module (full content width) ── */
+.chart-mod{margin-top:20px;padding:0;overflow:hidden;}
+.chart-mod .mod-hd{padding:16px 24px 12px;margin:0;border-bottom:1px solid var(--hair);}
+.rngs{display:flex;gap:3px;margin-left:auto;}
+.rngs button{font:600 11.5px/1 var(--font-ui);color:var(--muted);background:transparent;border:0;
+  padding:6px 10px;border-radius:8px;cursor:pointer;transition:background .15s,color .15s;}
+.rngs button:hover{color:var(--text);background:var(--gbtn-bg);}
+.rngs button.on{color:var(--text);background:color-mix(in srgb,var(--link) 16%,transparent);}
+@media(max-width:760px){.rngs button{padding:5px 7px;}}
+.chart-body{position:relative;background:color-mix(in srgb,#0b0d11 55%,transparent);}
+.chart-body svg{display:block;width:100%;height:auto;}
+.chart-ft{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 24px 14px;border-top:1px solid var(--hair);}
+.lgd{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);}
+.lgd i{width:14px;height:3px;border-radius:2px;display:inline-block;}
+.powered{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:650;color:var(--muted);}
+.powered:hover{color:var(--link);}
+.powered .bolt{width:16px;height:16px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--link),var(--info));color:#0f1115;font-size:10px;font-weight:900;}
+@media(max-width:640px){.chart-mod .mod-hd{padding:13px 15px 10px;flex-wrap:wrap;}.chart-ft{padding:9px 15px 12px;}}
+
+/* ── two-column zone: main + rail (rail starts UNDER the chart) ── */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 322px;gap:20px;margin-top:20px;align-items:start;}
+@media(max-width:980px){.cols{grid-template-columns:1fr;}}
+.main-col,.rail-col{display:flex;flex-direction:column;gap:20px;min-width:0;}
+
+/* ── ladder (signature — replaces the broken 52-week rail) ── */
+.ladder{display:flex;flex-direction:column;}
+.lrow{position:relative;display:grid;grid-template-columns:84px 18px minmax(0,1fr) auto;gap:0 10px;align-items:center;
+  padding:9px 6px;border-radius:12px;transition:background .18s;}
+.lrow:hover{background:color-mix(in srgb,var(--panel2) 55%,transparent);}
+.lrow .lpx{font-size:13.5px;font-weight:700;text-align:right;}
+.lrow .lnode{position:relative;display:flex;align-items:center;justify-content:center;height:100%;}
+.lrow .lnode::before{content:"";position:absolute;top:-10px;bottom:-10px;width:2px;background:var(--hair);}
+.lrow:first-child .lnode::before{top:50%;}
+.lrow:last-child .lnode::before{bottom:50%;}
+.ldot{position:relative;z-index:1;width:9px;height:9px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 3px var(--panel);}
+.ldot.wall{background:transparent;border:2px solid var(--muted);width:8px;height:8px;}
+.ldot.warn{background:var(--warn);}
+.ldot.buy{background:var(--up);}
+.ldot.stop{background:var(--down);}
+.lrow .lk{font-size:12.5px;font-weight:600;line-height:1.25;}
+.lrow .lk small{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:1px;}
+.lrow .ld{font-size:11.5px;font-weight:650;color:var(--muted);}
+.lrow.now{background:color-mix(in srgb,var(--stance) 8%,var(--panel2));
+  border:1px solid color-mix(in srgb,var(--stance) 26%,transparent);box-shadow:0 8px 22px -12px rgba(3,7,18,.8);
+  margin:3px -2px;padding:11px 8px;}
+.lrow.now .lpx{font-size:15px;color:var(--text);}
+.lrow.now .ldot{background:var(--stance);box-shadow:0 0 0 3px var(--panel),0 0 10px color-mix(in srgb,var(--stance) 60%,transparent);}
+.lband{position:relative;margin:2px 0 2px 96px;padding:7px 12px;border-radius:10px;
+  background:color-mix(in srgb,var(--up) 8%,transparent);border:1px dashed color-mix(in srgb,var(--up) 35%,transparent);
+  font-size:11.5px;color:var(--up);font-weight:600;}
+
+/* ── key-value rail cards ── */
+.kv{display:flex;flex-direction:column;}
+.kv .r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;border-bottom:1px solid var(--hair);font-size:12.5px;}
+.kv .r:last-child{border-bottom:0;}
+.kv .k{color:var(--muted);}
+.kv .v{font-weight:650;}
+
+/* ── performance meters ── */
+.perf .pr{display:grid;grid-template-columns:86px minmax(0,1fr) 64px 92px;gap:12px;align-items:center;padding:7px 0;font-size:12.5px;}
+.perf .pr .pk{color:var(--muted);}
+.perf .bar{position:relative;height:6px;border-radius:4px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:hidden;}
+.perf .bar i{position:absolute;inset:0 auto 0 0;border-radius:4px;background:linear-gradient(90deg,color-mix(in srgb,var(--up) 55%,transparent),var(--up));}
+.perf .bar i.neg{background:linear-gradient(90deg,color-mix(in srgb,var(--down) 55%,transparent),var(--down));}
+.perf .pv{font-weight:700;text-align:right;}
+.perf .spy{font-size:11px;color:var(--muted);text-align:right;white-space:nowrap;}
+@media(max-width:560px){.perf .pr{grid-template-columns:74px minmax(0,1fr) 60px;} .perf .spy{display:none;}}
+
+/* ── technicals ── */
+.consensus{margin-bottom:16px;}
+.consensus .cl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;}
+.cmeter{position:relative;height:8px;border-radius:5px;overflow:visible;
+  background:linear-gradient(90deg,var(--down),color-mix(in srgb,var(--down) 40%,var(--panel2)),var(--panel2),color-mix(in srgb,var(--up) 40%,var(--panel2)),var(--up));opacity:.95;}
+.cmeter .nd{position:absolute;top:50%;transform:translate(-50%,-50%);width:3px;height:18px;border-radius:2px;background:var(--text);box-shadow:0 0 0 1.5px var(--bg);}
+.trow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--hair);font-size:12.5px;}
+.trow:last-child{border-bottom:0;}
+.trow .tk{color:var(--muted);flex:0 0 128px;}
+.trow .tv{font-weight:650;}
+.minitrack{position:relative;flex:1;max-width:150px;height:5px;border-radius:3px;background:var(--line);}
+.minitrack .zone{position:absolute;top:0;bottom:0;left:30%;right:30%;background:color-mix(in srgb,var(--muted) 22%,transparent);border-radius:3px;}
+.minitrack .mk{position:absolute;top:50%;transform:translate(-50%,-50%);width:2.5px;height:13px;border-radius:2px;background:var(--warn);}
+.okx{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;}
+.okx.y{color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent);}
+.okx.n{color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent);}
+.okx.w{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);}
+
+/* ── earnings ── */
+.earn-top{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:center;}
+@media(max-width:560px){.earn-top{grid-template-columns:1fr;}}
+.cring{position:relative;width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(var(--link) calc(var(--p)*1%),color-mix(in srgb,var(--line) 60%,transparent) 0);}
+.cring::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--panel);}
+.cring .cd{position:relative;text-align:center;line-height:1.05;}
+.cring .cd b{font-size:24px;font-weight:800;}
+.cring .cd span{display:block;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-top:2px;}
+.sbars{display:flex;align-items:flex-end;gap:10px;height:74px;margin-top:6px;}
+.sbar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.sbar i{width:100%;max-width:44px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--up),color-mix(in srgb,var(--up) 45%,transparent));}
+.sbar i.m{background:linear-gradient(180deg,var(--down),color-mix(in srgb,var(--down) 45%,transparent));}
+.sbar b{font-size:10.5px;font-weight:700;}
+.sbar span{font-size:9.5px;color:var(--muted);}
+
+/* ── valuation ── */
+.vt{width:100%;border-collapse:collapse;font-size:12.5px;}
+.vt th{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:2px 8px 8px;border-bottom:1px solid var(--hair);}
+.vt td{padding:8px;border-bottom:1px solid var(--hair);}
+.vt tr:last-child td{border-bottom:0;}
+.vt td:nth-child(2){font-weight:700;}
+.vt td:nth-child(n+2){text-align:right;}
+.cheapbar{display:inline-flex;align-items:center;gap:8px;}
+.cheapbar .cb{width:74px;height:5px;border-radius:3px;background:var(--line);overflow:hidden;}
+.cheapbar .cb i{display:block;height:100%;border-radius:3px;}
+
+/* ── financials ── */
+.fin3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:640px){.fin3{grid-template-columns:1fr;}}
+.fcard{background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hair);border-radius:13px;padding:13px 14px;}
+.fcard .ft{font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.fcard .fbars{display:flex;align-items:flex-end;gap:5px;height:58px;margin-top:10px;}
+.fcard .fb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.fcard .fb i{width:100%;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,var(--link),color-mix(in srgb,var(--link) 35%,transparent));}
+.fcard .fb span{font-size:9px;color:var(--muted);}
+.fcard .fcagr{margin-top:9px;font-size:11px;color:var(--muted);}
+.fcard .fcagr b{color:var(--text);}
+.mrow{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px;}
+.mrow .mk{color:var(--muted);flex:0 0 128px;}
+.mrow .mtr{flex:1;height:5px;border-radius:3px;background:var(--line);overflow:hidden;}
+.mrow .mtr i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,color-mix(in srgb,var(--link) 50%,transparent),var(--link));}
+.mrow .mv{width:52px;text-align:right;font-weight:650;font-size:12px;}
+.hchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.pio{display:inline-flex;align-items:center;gap:2.5px;padding:5px 10px;border-radius:9px;background:var(--gbtn-bg);border:1px solid var(--gbtn-brd);}
+.pio b{font-size:11px;margin-right:5px;}
+.pio i{width:9px;height:5px;border-radius:1.5px;background:var(--line);}
+.pio i.on{background:var(--up);}
+
+/* ── why moving ── */
+.why .wr{display:flex;gap:12px;align-items:flex-start;padding:8px 10px;border-radius:11px;font-size:12.5px;margin:2px -10px;}
+.why .wr.active{background:color-mix(in srgb,var(--up) 6%,transparent);}
+.why .wd{width:8px;height:8px;border-radius:50%;background:var(--line);flex-shrink:0;margin-top:5px;}
+.why .wr.active .wd{background:var(--up);box-shadow:0 0 8px color-mix(in srgb,var(--up) 55%,transparent);}
+.why .wc{flex:0 0 88px;color:var(--muted);font-size:11.5px;padding-top:1px;}
+.why .wl{flex:1;line-height:1.5;}
+
+/* ── options tiles ── */
+.otiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:560px){.otiles{grid-template-columns:repeat(2,1fr);}}
+.otile{background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hair);border-radius:12px;padding:11px 13px;}
+.otile .ok{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.otile .ov{font-size:16.5px;font-weight:720;margin-top:4px;}
+.otile .ob{position:relative;height:4px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden;}
+.otile .ob i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 50%,transparent),var(--warn));border-radius:3px;}
+
+/* ── holders ── */
+.ht{width:100%;border-collapse:collapse;font-size:12.5px;}
+.ht th{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:2px 8px 8px;border-bottom:1px solid var(--hair);}
+.ht td{padding:8px;border-bottom:1px solid var(--hair);}
+.ht tr:last-child td{border-bottom:0;}
+.gchip{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;font-size:11px;font-weight:800;}
+.gchip.A{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);}
+.gchip.B{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn);}
+
+/* ── signal timeline ── */
+.tl{position:relative;padding-left:20px;}
+.tl::before{content:"";position:absolute;left:5px;top:8px;bottom:8px;width:2px;background:var(--hair);}
+.tev{position:relative;padding:7px 0 7px 6px;}
+.tev::before{content:"";position:absolute;left:-19px;top:13px;width:8px;height:8px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 3px var(--panel);}
+.tev.up::before{background:var(--up);}
+.tev.dn::before{background:var(--down);}
+.tev.wn::before{background:var(--warn);}
+.tev .td{font-size:11px;color:var(--muted);font-weight:600;}
+.tev .th{font-size:12.5px;font-weight:600;margin-top:1px;}
+.tev .tx{font-size:11.5px;color:var(--muted);margin-top:1px;line-height:1.45;}
+.pinned{background:color-mix(in srgb,var(--warn) 7%,transparent);border:1px solid color-mix(in srgb,var(--warn) 26%,transparent);
+  border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;}
+.pinned b{display:block;font-weight:700;}
+.pinned span{color:var(--muted);font-size:11.5px;}
+
+/* ── profile / dna ── */
+.dna .dr{display:flex;align-items:center;gap:12px;padding:6px 0;font-size:12.5px;}
+.dna .dk{flex:0 0 118px;color:var(--muted);}
+.dna .dtr{position:relative;flex:1;height:6px;border-radius:4px;background:var(--line);}
+.dna .dtr::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1.5px;background:color-mix(in srgb,var(--muted) 45%,transparent);}
+.dna .dtr i{position:absolute;top:0;bottom:0;border-radius:4px;}
+.dna .dtr i.p{left:50%;background:linear-gradient(90deg,color-mix(in srgb,var(--up) 45%,transparent),var(--up));}
+.dna .dtr i.n{right:50%;background:linear-gradient(270deg,color-mix(in srgb,var(--down) 45%,transparent),var(--down));}
+.dna .dw{flex:0 0 92px;text-align:right;font-size:11.5px;font-weight:650;}
+.watch li{margin:5px 0;font-size:12.5px;color:var(--muted);line-height:1.5;}
+.watch{list-style:none;padding:0;margin:8px 0 0;}
+.watch li::before{content:"⚠";margin-right:8px;font-size:11px;color:var(--warn);}
+
+/* ── seasonality ── */
+.seas{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;}
+.seas .sc{aspect-ratio:1.25/1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  background:var(--panel2);font-size:11px;font-weight:700;}
+.seas .sc span{font-size:9px;font-weight:600;color:var(--muted);}
+.seas .sc.cur{outline:2px solid var(--link);outline-offset:1px;}
+
+/* ── news / themes / peers ── */
+.nrow{padding:9px 0;border-bottom:1px solid var(--hair);font-size:12.5px;line-height:1.45;}
+.nrow:last-child{border-bottom:0;}
+.nrow a{font-weight:550;}
+.nrow a:hover{color:var(--link);}
+.nrow .nm{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
+.throw{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--hair);font-size:12.5px;}
+.throw:last-child{border-bottom:0;}
+.throw a{font-weight:650;color:var(--link);}
+.throw .tm{flex:1;color:var(--muted);font-size:11.5px;}
+.peers{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+.pcard{background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hair);border-radius:12px;padding:10px 12px;
+  transition:transform .16s,border-color .16s,background .16s;}
+.pcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--link) 40%,var(--hair));background:color-mix(in srgb,var(--panel2) 80%,transparent);}
+.pcard b{font-size:13.5px;font-weight:750;color:var(--link);}
+.pcard span{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pcard small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px;}
+
+/* ── rail CTA ── */
+.railcta{background:linear-gradient(150deg,color-mix(in srgb,var(--link) 14%,var(--panel)),color-mix(in srgb,var(--info) 7%,var(--panel)));
+  border:1px solid color-mix(in srgb,var(--link) 30%,transparent);}
+.railcta h3{margin:0 0 6px;font-size:14.5px;font-weight:750;}
+.railcta p{margin:0 0 14px;font-size:12px;color:var(--muted);line-height:1.55;}
+
+/* ── bottom CTA band ── */
+.cta-band{margin-top:26px;padding:30px 34px;display:flex;align-items:center;gap:26px;flex-wrap:wrap;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--link) 12%,var(--panel)) 0%,var(--glass-bg) 60%);
+  border:1px solid color-mix(in srgb,var(--link) 26%,var(--glass-brd));}
+.cta-band .cc{flex:1;min-width:250px;}
+.cta-band h2{margin:0 0 6px;font-size:19px;font-weight:800;letter-spacing:-.02em;}
+.cta-band p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.55;}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--hair);color:var(--muted);font-size:11.5px;line-height:1.7;}
+.foot a{color:var(--link);}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"></div>
+
+<!-- house nav placeholder -->
+<div class="site-nav"><span class="brand">MASTERMIND<i>·X</i></span>
+  <a class="nl" href="#">Macro</a><a class="nl" href="#">Stocks</a><a class="nl" href="#">Baskets</a><a class="nl" href="#">Terminal</a>
+</div>
+
+<!-- sticky jump strip -->
+<div class="strip" id="strip">
+  <span class="stk">AAPL</span><span class="sname mut" style="font-size:12px;">Apple Inc.</span>
+  <span class="stp num">$333.74</span>
+  <span class="schip">Don't chase</span>
+  <nav id="jumps">
+    <a href="#chart" class="on">Chart</a><a href="#levels">Levels</a><a href="#performance">Performance</a>
+    <a href="#technicals">Technicals</a><a href="#earnings">Earnings</a><a href="#valuation">Valuation</a>
+    <a href="#financials">Financials</a><a href="#options">Options</a><a href="#holders">Holders</a><a href="#news">News</a>
+  </nav>
+  <a class="gbtn gbtn-sm" href="#">Terminal ↗</a>
+</div>
+
+<div class="wrap">
+  <p class="crumb"><a href="#">Stocks</a> <span class="mut">/</span> <a href="#">Technology</a> <span class="mut">/</span> <b>AAPL</b></p>
+
+  <!-- ═ HERO ═ -->
+  <header class="mod hero" id="top">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow hi">Apple Inc. · Technology · S&amp;P 500</div>
+        <h1 class="hi hi2">AAPL <span class="co">NASDAQ · USD</span></h1>
+        <p class="hero-desc hi hi3">Consumer electronics, software and services — iPhone, Mac, and a services franchise spanning the App Store, iCloud and Apple Pay.</p>
+        <div class="chips hi hi3">
+          <span class="chip">Mega cap · $4.91T</span><span class="chip">Quality compounder</span><span class="chip">Technology</span>
+        </div>
+      </div>
+      <div class="px-block hi hi2">
+        <div class="px-big num">$333.74</div>
+        <div class="px-chg pos"><span class="pill num">+$0.48 · +0.14%</span><span class="live-dot"></span></div>
+        <div class="wk52">
+          <div class="lbls"><span>52w low <b class="num" style="color:var(--text)">$200.70</b></span><span>high <b class="num" style="color:var(--text)">$334.99</b></span></div>
+          <div class="track"><div class="fill"></div><div class="dotp"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="stance-row hi hi4">
+      <span class="stance-big">⚠ Extended — don't chase</span>
+      <span class="stance-line"><b>The entry already happened.</b> Price is stretched after the run (daily RSI 72, 98th-percentile volatility). Wait for a pullback toward the buy zone rather than buying strength.</span>
+      <span class="asof">Engine read · 2026-07-20</span>
+    </div>
+  </header>
+
+  <!-- ═ CHART — full content width; Terminal iframe in production ═ -->
+  <section class="mod chart-mod rv" id="chart">
+    <div class="mod-hd">
+      <h2>Price chart</h2>
+      <div class="rngs">
+        <button>1M</button><button>3M</button><button>6M</button><button class="on">1Y</button><button>2Y</button><button>5Y</button><button>Max</button>
+      </div>
+      <a class="gbtn gbtn-sm" href="#" style="margin-left:12px;">Open in Terminal ↗</a>
+    </div>
+    <div class="chart-body">
+      <svg viewBox="0 0 1120 468" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" font-family="Inter,-apple-system,sans-serif"><line x1="14" y1="343.6" x2="1052" y2="343.6" stroke="#2a2f3a" stroke-opacity="0.5" stroke-width="1"/><text x="1060" y="347.6" fill="#8b93a1" font-size="12.5">240</text><line x1="14" y1="277.2" x2="1052" y2="277.2" stroke="#2a2f3a" stroke-opacity="0.5" stroke-width="1"/><text x="1060" y="281.2" fill="#8b93a1" font-size="12.5">260</text><line x1="14" y1="210.8" x2="1052" y2="210.8" stroke="#2a2f3a" stroke-opacity="0.5" stroke-width="1"/><text x="1060" y="214.8" fill="#8b93a1" font-size="12.5">280</text><line x1="14" y1="144.4" x2="1052" y2="144.4" stroke="#2a2f3a" stroke-opacity="0.5" stroke-width="1"/><text x="1060" y="148.4" fill="#8b93a1" font-size="12.5">300</text><line x1="14" y1="78.0" x2="1052" y2="78.0" stroke="#2a2f3a" stroke-opacity="0.5" stroke-width="1"/><text x="1060" y="82.0" fill="#8b93a1" font-size="12.5">320</text><rect x="14.0" y="436.6" width="4.3" height="9.4" fill="#e06464" opacity="0.28" rx="1"/><rect x="20.9" y="434.8" width="4.3" height="11.2" fill="#45b873" opacity="0.28" rx="1"/><rect x="27.9" y="431.8" width="4.3" height="14.2" fill="#e06464" opacity="0.28" rx="1"/><rect x="34.8" y="435.4" width="4.3" height="10.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="41.7" y="431.8" width="4.3" height="14.2" fill="#e06464" opacity="0.28" rx="1"/><rect x="48.6" y="431.4" width="4.3" height="14.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="55.6" y="405.1" width="4.3" height="40.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="62.5" y="435.7" width="4.3" height="10.3" fill="#e06464" opacity="0.28" rx="1"/><rect x="69.4" y="437.6" width="4.3" height="8.4" fill="#45b873" opacity="0.28" rx="1"/><rect x="76.3" y="440.9" width="4.3" height="5.1" fill="#45b873" opacity="0.28" rx="1"/><rect x="83.3" y="439.9" width="4.3" height="6.1" fill="#e06464" opacity="0.28" rx="1"/><rect x="90.2" y="439.3" width="4.3" height="6.7" fill="#45b873" opacity="0.28" rx="1"/><rect x="97.1" y="439.7" width="4.3" height="6.3" fill="#e06464" opacity="0.28" rx="1"/><rect x="104.0" y="438.3" width="4.3" height="7.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="111.0" y="435.3" width="4.3" height="10.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="117.9" y="433.1" width="4.3" height="12.9" fill="#e06464" opacity="0.28" rx="1"/><rect x="124.8" y="431.2" width="4.3" height="14.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="131.7" y="432.3" width="4.3" height="13.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="138.7" y="431.7" width="4.3" height="14.3" fill="#e06464" opacity="0.28" rx="1"/><rect x="145.6" y="434.7" width="4.3" height="11.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="152.5" y="433.2" width="4.3" height="12.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="159.4" y="433.1" width="4.3" height="12.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="166.4" y="434.7" width="4.3" height="11.3" fill="#e06464" opacity="0.28" rx="1"/><rect x="173.3" y="434.9" width="4.3" height="11.1" fill="#e06464" opacity="0.28" rx="1"/><rect x="180.2" y="425.6" width="4.3" height="20.4" fill="#e06464" opacity="0.28" rx="1"/><rect x="187.2" y="423.3" width="4.3" height="22.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="194.1" y="430.6" width="4.3" height="15.4" fill="#45b873" opacity="0.28" rx="1"/><rect x="201.0" y="434.8" width="4.3" height="11.2" fill="#45b873" opacity="0.28" rx="1"/><rect x="207.9" y="434.2" width="4.3" height="11.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="214.9" y="430.2" width="4.3" height="15.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="221.8" y="432.0" width="4.3" height="14.0" fill="#45b873" opacity="0.28" rx="1"/><rect x="228.7" y="434.3" width="4.3" height="11.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="235.6" y="427.0" width="4.3" height="19.0" fill="#45b873" opacity="0.28" rx="1"/><rect x="242.6" y="419.9" width="4.3" height="26.1" fill="#45b873" opacity="0.28" rx="1"/><rect x="249.5" y="425.1" width="4.3" height="20.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="256.4" y="427.8" width="4.3" height="18.2" fill="#e06464" opacity="0.28" rx="1"/><rect x="263.3" y="420.4" width="4.3" height="25.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="270.3" y="431.0" width="4.3" height="15.0" fill="#e06464" opacity="0.28" rx="1"/><rect x="277.2" y="431.7" width="4.3" height="14.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="284.1" y="433.4" width="4.3" height="12.6" fill="#e06464" opacity="0.28" rx="1"/><rect x="291.0" y="436.3" width="4.3" height="9.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="298.0" y="431.3" width="4.3" height="14.7" fill="#45b873" opacity="0.28" rx="1"/><rect x="304.9" y="423.1" width="4.3" height="22.9" fill="#e06464" opacity="0.28" rx="1"/><rect x="311.8" y="430.1" width="4.3" height="15.9" fill="#e06464" opacity="0.28" rx="1"/><rect x="318.8" y="429.5" width="4.3" height="16.5" fill="#45b873" opacity="0.28" rx="1"/><rect x="325.7" y="436.3" width="4.3" height="9.7" fill="#45b873" opacity="0.28" rx="1"/><rect x="332.6" y="437.3" width="4.3" height="8.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="339.5" y="434.1" width="4.3" height="11.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="346.5" y="435.5" width="4.3" height="10.5" fill="#45b873" opacity="0.28" rx="1"/><rect x="353.4" y="432.7" width="4.3" height="13.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="360.3" y="436.5" width="4.3" height="9.5" fill="#45b873" opacity="0.28" rx="1"/><rect x="367.2" y="436.9" width="4.3" height="9.1" fill="#e06464" opacity="0.28" rx="1"/><rect x="374.2" y="425.5" width="4.3" height="20.5" fill="#e06464" opacity="0.28" rx="1"/><rect x="381.1" y="434.2" width="4.3" height="11.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="388.0" y="435.1" width="4.3" height="10.9" fill="#e06464" opacity="0.28" rx="1"/><rect x="394.9" y="434.7" width="4.3" height="11.3" fill="#e06464" opacity="0.28" rx="1"/><rect x="401.9" y="432.0" width="4.3" height="14.0" fill="#e06464" opacity="0.28" rx="1"/><rect x="408.8" y="434.4" width="4.3" height="11.6" fill="#e06464" opacity="0.28" rx="1"/><rect x="415.7" y="435.2" width="4.3" height="10.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="422.6" y="437.4" width="4.3" height="8.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="429.6" y="438.6" width="4.3" height="7.4" fill="#e06464" opacity="0.28" rx="1"/><rect x="436.5" y="434.5" width="4.3" height="11.5" fill="#e06464" opacity="0.28" rx="1"/><rect x="443.4" y="435.6" width="4.3" height="10.4" fill="#e06464" opacity="0.28" rx="1"/><rect x="450.3" y="436.9" width="4.3" height="9.1" fill="#45b873" opacity="0.28" rx="1"/><rect x="457.3" y="436.9" width="4.3" height="9.1" fill="#45b873" opacity="0.28" rx="1"/><rect x="464.2" y="435.9" width="4.3" height="10.1" fill="#e06464" opacity="0.28" rx="1"/><rect x="471.1" y="436.1" width="4.3" height="9.9" fill="#e06464" opacity="0.28" rx="1"/><rect x="478.1" y="421.0" width="4.3" height="25.0" fill="#e06464" opacity="0.28" rx="1"/><rect x="485.0" y="434.5" width="4.3" height="11.5" fill="#45b873" opacity="0.28" rx="1"/><rect x="491.9" y="433.2" width="4.3" height="12.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="498.8" y="438.0" width="4.3" height="8.0" fill="#45b873" opacity="0.28" rx="1"/><rect x="505.8" y="434.2" width="4.3" height="11.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="512.7" y="432.5" width="4.3" height="13.5" fill="#e06464" opacity="0.28" rx="1"/><rect x="519.6" y="434.8" width="4.3" height="11.2" fill="#e06464" opacity="0.28" rx="1"/><rect x="526.5" y="432.0" width="4.3" height="14.0" fill="#45b873" opacity="0.28" rx="1"/><rect x="533.5" y="434.7" width="4.3" height="11.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="540.4" y="437.2" width="4.3" height="8.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="547.3" y="437.7" width="4.3" height="8.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="554.2" y="428.4" width="4.3" height="17.6" fill="#e06464" opacity="0.28" rx="1"/><rect x="561.2" y="434.4" width="4.3" height="11.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="568.1" y="438.1" width="4.3" height="7.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="575.0" y="437.2" width="4.3" height="8.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="581.9" y="435.8" width="4.3" height="10.2" fill="#e06464" opacity="0.28" rx="1"/><rect x="588.9" y="432.3" width="4.3" height="13.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="595.8" y="431.9" width="4.3" height="14.1" fill="#45b873" opacity="0.28" rx="1"/><rect x="602.7" y="433.8" width="4.3" height="12.2" fill="#e06464" opacity="0.28" rx="1"/><rect x="609.7" y="428.6" width="4.3" height="17.4" fill="#45b873" opacity="0.28" rx="1"/><rect x="616.6" y="435.7" width="4.3" height="10.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="623.5" y="431.8" width="4.3" height="14.2" fill="#e06464" opacity="0.28" rx="1"/><rect x="630.4" y="433.8" width="4.3" height="12.2" fill="#45b873" opacity="0.28" rx="1"/><rect x="637.4" y="436.6" width="4.3" height="9.4" fill="#45b873" opacity="0.28" rx="1"/><rect x="644.3" y="435.2" width="4.3" height="10.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="651.2" y="434.3" width="4.3" height="11.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="658.1" y="434.7" width="4.3" height="11.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="665.1" y="437.5" width="4.3" height="8.5" fill="#e06464" opacity="0.28" rx="1"/><rect x="672.0" y="420.0" width="4.3" height="26.0" fill="#45b873" opacity="0.28" rx="1"/><rect x="678.9" y="423.4" width="4.3" height="22.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="685.8" y="432.8" width="4.3" height="13.2" fill="#e06464" opacity="0.28" rx="1"/><rect x="692.8" y="432.1" width="4.3" height="13.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="699.7" y="429.5" width="4.3" height="16.5" fill="#45b873" opacity="0.28" rx="1"/><rect x="706.6" y="433.2" width="4.3" height="12.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="713.5" y="431.1" width="4.3" height="14.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="720.5" y="434.1" width="4.3" height="11.9" fill="#e06464" opacity="0.28" rx="1"/><rect x="727.4" y="433.1" width="4.3" height="12.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="734.3" y="431.1" width="4.3" height="14.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="741.2" y="436.0" width="4.3" height="10.0" fill="#e06464" opacity="0.28" rx="1"/><rect x="748.2" y="430.5" width="4.3" height="15.5" fill="#45b873" opacity="0.28" rx="1"/><rect x="755.1" y="436.3" width="4.3" height="9.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="762.0" y="434.1" width="4.3" height="11.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="769.0" y="435.2" width="4.3" height="10.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="775.9" y="433.9" width="4.3" height="12.1" fill="#45b873" opacity="0.28" rx="1"/><rect x="782.8" y="433.7" width="4.3" height="12.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="789.7" y="432.4" width="4.3" height="13.6" fill="#e06464" opacity="0.28" rx="1"/><rect x="796.7" y="431.7" width="4.3" height="14.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="803.6" y="432.4" width="4.3" height="13.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="810.5" y="426.2" width="4.3" height="19.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="817.4" y="432.2" width="4.3" height="13.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="824.4" y="433.4" width="4.3" height="12.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="831.3" y="431.6" width="4.3" height="14.4" fill="#e06464" opacity="0.28" rx="1"/><rect x="838.2" y="433.3" width="4.3" height="12.7" fill="#45b873" opacity="0.28" rx="1"/><rect x="845.1" y="427.5" width="4.3" height="18.5" fill="#e06464" opacity="0.28" rx="1"/><rect x="852.1" y="424.0" width="4.3" height="22.0" fill="#e06464" opacity="0.28" rx="1"/><rect x="859.0" y="426.2" width="4.3" height="19.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="865.9" y="431.1" width="4.3" height="14.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="872.8" y="434.0" width="4.3" height="12.0" fill="#45b873" opacity="0.28" rx="1"/><rect x="879.8" y="435.0" width="4.3" height="11.0" fill="#e06464" opacity="0.28" rx="1"/><rect x="886.7" y="433.1" width="4.3" height="12.9" fill="#45b873" opacity="0.28" rx="1"/><rect x="893.6" y="434.7" width="4.3" height="11.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="900.6" y="433.9" width="4.3" height="12.1" fill="#e06464" opacity="0.28" rx="1"/><rect x="907.5" y="421.7" width="4.3" height="24.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="914.4" y="433.3" width="4.3" height="12.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="921.3" y="431.3" width="4.3" height="14.7" fill="#e06464" opacity="0.28" rx="1"/><rect x="928.3" y="431.0" width="4.3" height="15.0" fill="#e06464" opacity="0.28" rx="1"/><rect x="935.2" y="415.7" width="4.3" height="30.3" fill="#e06464" opacity="0.28" rx="1"/><rect x="942.1" y="372.0" width="4.3" height="74.0" fill="#45b873" opacity="0.28" rx="1"/><rect x="949.0" y="427.2" width="4.3" height="18.8" fill="#e06464" opacity="0.28" rx="1"/><rect x="956.0" y="427.6" width="4.3" height="18.4" fill="#45b873" opacity="0.28" rx="1"/><rect x="962.9" y="431.8" width="4.3" height="14.2" fill="#45b873" opacity="0.28" rx="1"/><rect x="969.8" y="424.7" width="4.3" height="21.3" fill="#45b873" opacity="0.28" rx="1"/><rect x="976.7" y="430.9" width="4.3" height="15.1" fill="#45b873" opacity="0.28" rx="1"/><rect x="983.7" y="434.0" width="4.3" height="12.0" fill="#e06464" opacity="0.28" rx="1"/><rect x="990.6" y="434.3" width="4.3" height="11.7" fill="#45b873" opacity="0.28" rx="1"/><rect x="997.5" y="432.4" width="4.3" height="13.6" fill="#45b873" opacity="0.28" rx="1"/><rect x="1004.4" y="436.4" width="4.3" height="9.6" fill="#e06464" opacity="0.28" rx="1"/><rect x="1011.4" y="433.8" width="4.3" height="12.2" fill="#45b873" opacity="0.28" rx="1"/><rect x="1018.3" y="435.7" width="4.3" height="10.3" fill="#e06464" opacity="0.28" rx="1"/><rect x="1025.2" y="428.8" width="4.3" height="17.2" fill="#45b873" opacity="0.28" rx="1"/><rect x="1032.1" y="428.2" width="4.3" height="17.8" fill="#45b873" opacity="0.28" rx="1"/><rect x="1039.1" y="428.1" width="4.3" height="17.9" fill="#45b873" opacity="0.28" rx="1"/><line x1="16.1" y1="213.9" x2="16.1" y2="233.1" stroke="#e06464" stroke-width="1.1"/><rect x="14.0" y="216.6" width="4.3" height="2.5" fill="#e06464" rx="1"/><line x1="23.1" y1="215.1" x2="23.1" y2="223.1" stroke="#45b873" stroke-width="1.1"/><rect x="20.9" y="218.2" width="4.3" height="1.4" fill="#45b873" rx="1"/><line x1="30.0" y1="212.0" x2="30.0" y2="236.3" stroke="#e06464" stroke-width="1.1"/><rect x="27.9" y="218.2" width="4.3" height="13.8" fill="#e06464" rx="1"/><line x1="36.9" y1="227.5" x2="36.9" y2="239.8" stroke="#45b873" stroke-width="1.1"/><rect x="34.8" y="230.4" width="4.3" height="1.7" fill="#45b873" rx="1"/><line x1="43.9" y1="225.3" x2="43.9" y2="240.2" stroke="#e06464" stroke-width="1.1"/><rect x="41.7" y="230.4" width="4.3" height="9.2" fill="#e06464" rx="1"/><line x1="50.8" y1="233.7" x2="50.8" y2="255.8" stroke="#45b873" stroke-width="1.1"/><rect x="48.6" y="238.4" width="4.3" height="1.4" fill="#45b873" rx="1"/><line x1="57.7" y1="230.4" x2="57.7" y2="246.0" stroke="#45b873" stroke-width="1.1"/><rect x="55.6" y="233.5" width="4.3" height="4.9" fill="#45b873" rx="1"/><line x1="64.6" y1="232.8" x2="64.6" y2="244.0" stroke="#e06464" stroke-width="1.1"/><rect x="62.5" y="233.5" width="4.3" height="8.9" fill="#e06464" rx="1"/><line x1="71.6" y1="237.4" x2="71.6" y2="247.1" stroke="#45b873" stroke-width="1.1"/><rect x="69.4" y="237.9" width="4.3" height="4.6" fill="#45b873" rx="1"/><line x1="78.5" y1="227.7" x2="78.5" y2="238.4" stroke="#45b873" stroke-width="1.1"/><rect x="76.3" y="233.1" width="4.3" height="4.8" fill="#45b873" rx="1"/><line x1="85.4" y1="227.9" x2="85.4" y2="236.2" stroke="#e06464" stroke-width="1.1"/><rect x="83.3" y="233.1" width="4.3" height="1.4" fill="#e06464" rx="1"/><line x1="92.3" y1="231.2" x2="92.3" y2="237.9" stroke="#45b873" stroke-width="1.1"/><rect x="90.2" y="233.2" width="4.3" height="1.4" fill="#45b873" rx="1"/><line x1="99.3" y1="232.2" x2="99.3" y2="238.1" stroke="#e06464" stroke-width="1.1"/><rect x="97.1" y="233.2" width="4.3" height="2.3" fill="#e06464" rx="1"/><line x1="106.2" y1="233.5" x2="106.2" y2="239.9" stroke="#e06464" stroke-width="1.1"/><rect x="104.0" y="235.5" width="4.3" height="4.0" fill="#e06464" rx="1"/><line x1="113.1" y1="219.7" x2="113.1" y2="249.0" stroke="#e06464" stroke-width="1.1"/><rect x="111.0" y="239.5" width="4.3" height="2.8" fill="#e06464" rx="1"/><line x1="120.0" y1="240.7" x2="120.0" y2="258.5" stroke="#e06464" stroke-width="1.1"/><rect x="117.9" y="242.3" width="4.3" height="12.4" fill="#e06464" rx="1"/><line x1="127.0" y1="253.8" x2="127.0" y2="271.8" stroke="#e06464" stroke-width="1.1"/><rect x="124.8" y="254.8" width="4.3" height="16.2" fill="#e06464" rx="1"/><line x1="133.9" y1="266.6" x2="133.9" y2="279.5" stroke="#e06464" stroke-width="1.1"/><rect x="131.7" y="271.0" width="4.3" height="6.7" fill="#e06464" rx="1"/><line x1="140.8" y1="281.2" x2="140.8" y2="293.1" stroke="#e06464" stroke-width="1.1"/><rect x="138.7" y="277.7" width="4.3" height="4.3" fill="#e06464" rx="1"/><line x1="147.7" y1="278.1" x2="147.7" y2="291.4" stroke="#45b873" stroke-width="1.1"/><rect x="145.6" y="280.9" width="4.3" height="1.4" fill="#45b873" rx="1"/><line x1="154.7" y1="274.5" x2="154.7" y2="289.4" stroke="#45b873" stroke-width="1.1"/><rect x="152.5" y="278.0" width="4.3" height="2.9" fill="#45b873" rx="1"/><line x1="161.6" y1="272.8" x2="161.6" y2="284.2" stroke="#45b873" stroke-width="1.1"/><rect x="159.4" y="275.3" width="4.3" height="2.7" fill="#45b873" rx="1"/><line x1="168.5" y1="272.8" x2="168.5" y2="289.7" stroke="#e06464" stroke-width="1.1"/><rect x="166.4" y="275.3" width="4.3" height="3.6" fill="#e06464" rx="1"/><line x1="175.4" y1="275.4" x2="175.4" y2="288.6" stroke="#e06464" stroke-width="1.1"/><rect x="173.3" y="279.0" width="4.3" height="5.8" fill="#e06464" rx="1"/><line x1="182.4" y1="282.5" x2="182.4" y2="295.6" stroke="#e06464" stroke-width="1.1"/><rect x="180.2" y="284.8" width="4.3" height="8.9" fill="#e06464" rx="1"/><line x1="189.3" y1="296.1" x2="189.3" y2="333.8" stroke="#e06464" stroke-width="1.1"/><rect x="187.2" y="293.6" width="4.3" height="29.3" fill="#e06464" rx="1"/><line x1="196.2" y1="306.8" x2="196.2" y2="327.9" stroke="#45b873" stroke-width="1.1"/><rect x="194.1" y="319.8" width="4.3" height="3.1" fill="#45b873" rx="1"/><line x1="203.2" y1="308.7" x2="203.2" y2="318.1" stroke="#45b873" stroke-width="1.1"/><rect x="201.0" y="317.4" width="4.3" height="2.3" fill="#45b873" rx="1"/><line x1="210.1" y1="313.9" x2="210.1" y2="329.6" stroke="#e06464" stroke-width="1.1"/><rect x="207.9" y="317.4" width="4.3" height="1.4" fill="#e06464" rx="1"/><line x1="217.0" y1="290.2" x2="217.0" y2="312.6" stroke="#45b873" stroke-width="1.1"/><rect x="214.9" y="294.0" width="4.3" height="24.4" fill="#45b873" rx="1"/><line x1="223.9" y1="272.4" x2="223.9" y2="284.8" stroke="#45b873" stroke-width="1.1"/><rect x="221.8" y="284.6" width="4.3" height="9.5" fill="#45b873" rx="1"/><line x1="230.9" y1="282.6" x2="230.9" y2="297.0" stroke="#e06464" stroke-width="1.1"/><rect x="228.7" y="284.6" width="4.3" height="6.1" fill="#e06464" rx="1"/><line x1="237.8" y1="280.0" x2="237.8" y2="297.4" stroke="#45b873" stroke-width="1.1"/><rect x="235.6" y="284.5" width="4.3" height="6.1" fill="#45b873" rx="1"/><line x1="244.7" y1="272.5" x2="244.7" y2="304.7" stroke="#45b873" stroke-width="1.1"/><rect x="242.6" y="280.5" width="4.3" height="4.0" fill="#45b873" rx="1"/><line x1="251.6" y1="244.1" x2="251.6" y2="281.4" stroke="#45b873" stroke-width="1.1"/><rect x="249.5" y="245.6" width="4.3" height="34.9" fill="#45b873" rx="1"/><line x1="258.6" y1="239.5" x2="258.6" y2="253.6" stroke="#e06464" stroke-width="1.1"/><rect x="256.4" y="245.6" width="4.3" height="1.8" fill="#e06464" rx="1"/><line x1="265.5" y1="216.0" x2="265.5" y2="238.1" stroke="#45b873" stroke-width="1.1"/><rect x="263.3" y="224.2" width="4.3" height="23.2" fill="#45b873" rx="1"/><line x1="272.4" y1="214.2" x2="272.4" y2="235.0" stroke="#e06464" stroke-width="1.1"/><rect x="270.3" y="224.2" width="4.3" height="1.9" fill="#e06464" rx="1"/><line x1="279.3" y1="209.5" x2="279.3" y2="222.7" stroke="#45b873" stroke-width="1.1"/><rect x="277.2" y="218.8" width="4.3" height="7.3" fill="#45b873" rx="1"/><line x1="286.3" y1="217.6" x2="286.3" y2="239.2" stroke="#e06464" stroke-width="1.1"/><rect x="284.1" y="218.8" width="4.3" height="10.7" fill="#e06464" rx="1"/><line x1="293.2" y1="227.0" x2="293.2" y2="235.1" stroke="#e06464" stroke-width="1.1"/><rect x="291.0" y="229.5" width="4.3" height="3.1" fill="#e06464" rx="1"/><line x1="300.1" y1="211.1" x2="300.1" y2="230.1" stroke="#45b873" stroke-width="1.1"/><rect x="298.0" y="226.6" width="4.3" height="6.0" fill="#45b873" rx="1"/><line x1="307.0" y1="225.9" x2="307.0" y2="277.4" stroke="#e06464" stroke-width="1.1"/><rect x="304.9" y="226.6" width="4.3" height="45.7" fill="#e06464" rx="1"/><line x1="314.0" y1="270.6" x2="314.0" y2="293.1" stroke="#e06464" stroke-width="1.1"/><rect x="311.8" y="272.3" width="4.3" height="19.7" fill="#e06464" rx="1"/><line x1="320.9" y1="257.2" x2="320.9" y2="292.8" stroke="#45b873" stroke-width="1.1"/><rect x="318.8" y="265.1" width="4.3" height="26.9" fill="#45b873" rx="1"/><line x1="327.8" y1="255.4" x2="327.8" y2="269.9" stroke="#45b873" stroke-width="1.1"/><rect x="325.7" y="263.6" width="4.3" height="1.6" fill="#45b873" rx="1"/><line x1="334.8" y1="263.2" x2="334.8" y2="277.9" stroke="#e06464" stroke-width="1.1"/><rect x="332.6" y="263.6" width="4.3" height="12.5" fill="#e06464" rx="1"/><line x1="341.7" y1="262.3" x2="341.7" y2="284.1" stroke="#45b873" stroke-width="1.1"/><rect x="339.5" y="262.8" width="4.3" height="13.3" fill="#45b873" rx="1"/><line x1="348.6" y1="246.7" x2="348.6" y2="266.8" stroke="#45b873" stroke-width="1.1"/><rect x="346.5" y="257.5" width="4.3" height="5.3" fill="#45b873" rx="1"/><line x1="355.5" y1="228.6" x2="355.5" y2="252.4" stroke="#45b873" stroke-width="1.1"/><rect x="353.4" y="237.7" width="4.3" height="19.8" fill="#45b873" rx="1"/><line x1="362.5" y1="228.5" x2="362.5" y2="241.4" stroke="#45b873" stroke-width="1.1"/><rect x="360.3" y="230.8" width="4.3" height="6.9" fill="#45b873" rx="1"/><line x1="369.4" y1="224.6" x2="369.4" y2="242.2" stroke="#e06464" stroke-width="1.1"/><rect x="367.2" y="230.8" width="4.3" height="4.2" fill="#e06464" rx="1"/><line x1="376.3" y1="235.5" x2="376.3" y2="268.4" stroke="#e06464" stroke-width="1.1"/><rect x="374.2" y="235.1" width="4.3" height="29.1" fill="#e06464" rx="1"/><line x1="383.2" y1="256.4" x2="383.2" y2="277.4" stroke="#45b873" stroke-width="1.1"/><rect x="381.1" y="262.4" width="4.3" height="1.8" fill="#45b873" rx="1"/><line x1="390.2" y1="259.6" x2="390.2" y2="277.6" stroke="#e06464" stroke-width="1.1"/><rect x="388.0" y="262.4" width="4.3" height="3.2" fill="#e06464" rx="1"/><line x1="397.1" y1="257.6" x2="397.1" y2="273.3" stroke="#e06464" stroke-width="1.1"/><rect x="394.9" y="265.6" width="4.3" height="4.1" fill="#e06464" rx="1"/><line x1="404.0" y1="272.8" x2="404.0" y2="287.1" stroke="#e06464" stroke-width="1.1"/><rect x="401.9" y="269.7" width="4.3" height="7.4" fill="#e06464" rx="1"/><line x1="410.9" y1="282.1" x2="410.9" y2="296.7" stroke="#e06464" stroke-width="1.1"/><rect x="408.8" y="277.1" width="4.3" height="9.4" fill="#e06464" rx="1"/><line x1="417.9" y1="274.2" x2="417.9" y2="299.0" stroke="#45b873" stroke-width="1.1"/><rect x="415.7" y="278.4" width="4.3" height="8.0" fill="#45b873" rx="1"/><line x1="424.8" y1="269.8" x2="424.8" y2="288.1" stroke="#45b873" stroke-width="1.1"/><rect x="422.6" y="275.3" width="4.3" height="3.2" fill="#45b873" rx="1"/><line x1="431.7" y1="271.0" x2="431.7" y2="279.5" stroke="#e06464" stroke-width="1.1"/><rect x="429.6" y="275.3" width="4.3" height="1.4" fill="#e06464" rx="1"/><line x1="438.6" y1="281.5" x2="438.6" y2="297.3" stroke="#e06464" stroke-width="1.1"/><rect x="436.5" y="275.3" width="4.3" height="16.8" fill="#e06464" rx="1"/><line x1="445.6" y1="290.2" x2="445.6" y2="312.8" stroke="#e06464" stroke-width="1.1"/><rect x="443.4" y="292.1" width="4.3" height="18.7" fill="#e06464" rx="1"/><line x1="452.5" y1="298.3" x2="452.5" y2="311.6" stroke="#45b873" stroke-width="1.1"/><rect x="450.3" y="301.8" width="4.3" height="9.0" fill="#45b873" rx="1"/><line x1="459.4" y1="294.2" x2="459.4" y2="304.0" stroke="#45b873" stroke-width="1.1"/><rect x="457.3" y="297.2" width="4.3" height="4.7" fill="#45b873" rx="1"/><line x1="466.3" y1="294.8" x2="466.3" y2="314.5" stroke="#e06464" stroke-width="1.1"/><rect x="464.2" y="297.2" width="4.3" height="14.2" fill="#e06464" rx="1"/><line x1="473.3" y1="305.1" x2="473.3" y2="320.2" stroke="#e06464" stroke-width="1.1"/><rect x="471.1" y="311.4" width="4.3" height="3.3" fill="#e06464" rx="1"/><line x1="480.2" y1="313.8" x2="480.2" y2="324.5" stroke="#e06464" stroke-width="1.1"/><rect x="478.1" y="314.6" width="4.3" height="3.2" fill="#e06464" rx="1"/><line x1="487.1" y1="295.9" x2="487.1" y2="310.3" stroke="#45b873" stroke-width="1.1"/><rect x="485.0" y="306.3" width="4.3" height="11.6" fill="#45b873" rx="1"/><line x1="494.1" y1="295.2" x2="494.1" y2="312.7" stroke="#45b873" stroke-width="1.1"/><rect x="491.9" y="305.8" width="4.3" height="1.4" fill="#45b873" rx="1"/><line x1="501.0" y1="294.6" x2="501.0" y2="305.9" stroke="#45b873" stroke-width="1.1"/><rect x="498.8" y="302.5" width="4.3" height="3.3" fill="#45b873" rx="1"/><line x1="507.9" y1="288.0" x2="507.9" y2="308.6" stroke="#45b873" stroke-width="1.1"/><rect x="505.8" y="301.6" width="4.3" height="1.4" fill="#45b873" rx="1"/><line x1="514.8" y1="293.0" x2="514.8" y2="317.6" stroke="#e06464" stroke-width="1.1"/><rect x="512.7" y="301.6" width="4.3" height="13.6" fill="#e06464" rx="1"/><line x1="521.8" y1="308.3" x2="521.8" y2="326.1" stroke="#e06464" stroke-width="1.1"/><rect x="519.6" y="315.2" width="4.3" height="7.2" fill="#e06464" rx="1"/><line x1="528.7" y1="293.0" x2="528.7" y2="320.8" stroke="#45b873" stroke-width="1.1"/><rect x="526.5" y="298.6" width="4.3" height="23.8" fill="#45b873" rx="1"/><line x1="535.6" y1="290.7" x2="535.6" y2="300.1" stroke="#45b873" stroke-width="1.1"/><rect x="533.5" y="292.5" width="4.3" height="6.1" fill="#45b873" rx="1"/><line x1="542.5" y1="290.9" x2="542.5" y2="309.0" stroke="#45b873" stroke-width="1.1"/><rect x="540.4" y="291.6" width="4.3" height="1.4" fill="#45b873" rx="1"/><line x1="549.5" y1="270.9" x2="549.5" y2="289.8" stroke="#45b873" stroke-width="1.1"/><rect x="547.3" y="281.8" width="4.3" height="9.8" fill="#45b873" rx="1"/><line x1="556.4" y1="290.6" x2="556.4" y2="325.5" stroke="#e06464" stroke-width="1.1"/><rect x="554.2" y="281.8" width="4.3" height="17.8" fill="#e06464" rx="1"/><line x1="563.3" y1="278.8" x2="563.3" y2="289.5" stroke="#45b873" stroke-width="1.1"/><rect x="561.2" y="281.7" width="4.3" height="17.9" fill="#45b873" rx="1"/><line x1="570.2" y1="274.3" x2="570.2" y2="291.1" stroke="#45b873" stroke-width="1.1"/><rect x="568.1" y="276.4" width="4.3" height="5.3" fill="#45b873" rx="1"/><line x1="577.2" y1="270.8" x2="577.2" y2="281.3" stroke="#e06464" stroke-width="1.1"/><rect x="575.0" y="276.4" width="4.3" height="1.4" fill="#e06464" rx="1"/><line x1="584.1" y1="277.4" x2="584.1" y2="289.1" stroke="#e06464" stroke-width="1.1"/><rect x="581.9" y="276.4" width="4.3" height="4.2" fill="#e06464" rx="1"/><line x1="591.0" y1="271.6" x2="591.0" y2="287.3" stroke="#e06464" stroke-width="1.1"/><rect x="588.9" y="280.7" width="4.3" height="1.4" fill="#e06464" rx="1"/><line x1="597.9" y1="256.3" x2="597.9" y2="285.3" stroke="#45b873" stroke-width="1.1"/><rect x="595.8" y="256.7" width="4.3" height="25.2" fill="#45b873" rx="1"/><line x1="604.9" y1="254.3" x2="604.9" y2="273.8" stroke="#e06464" stroke-width="1.1"/><rect x="602.7" y="256.7" width="4.3" height="10.1" fill="#e06464" rx="1"/><line x1="611.8" y1="237.2" x2="611.8" y2="255.7" stroke="#45b873" stroke-width="1.1"/><rect x="609.7" y="244.1" width="4.3" height="22.7" fill="#45b873" rx="1"/><line x1="618.7" y1="230.6" x2="618.7" y2="243.9" stroke="#45b873" stroke-width="1.1"/><rect x="616.6" y="234.7" width="4.3" height="9.4" fill="#45b873" rx="1"/><line x1="625.7" y1="235.6" x2="625.7" y2="260.1" stroke="#e06464" stroke-width="1.1"/><rect x="623.5" y="234.7" width="4.3" height="22.8" fill="#e06464" rx="1"/><line x1="632.6" y1="232.4" x2="632.6" y2="255.2" stroke="#45b873" stroke-width="1.1"/><rect x="630.4" y="234.3" width="4.3" height="23.2" fill="#45b873" rx="1"/><line x1="639.5" y1="225.7" x2="639.5" y2="239.4" stroke="#45b873" stroke-width="1.1"/><rect x="637.4" y="233.5" width="4.3" height="1.4" fill="#45b873" rx="1"/><line x1="646.4" y1="234.7" x2="646.4" y2="246.0" stroke="#e06464" stroke-width="1.1"/><rect x="644.3" y="233.5" width="4.3" height="7.9" fill="#e06464" rx="1"/><line x1="653.4" y1="250.3" x2="653.4" y2="261.2" stroke="#e06464" stroke-width="1.1"/><rect x="651.2" y="241.3" width="4.3" height="11.4" fill="#e06464" rx="1"/><line x1="660.3" y1="234.1" x2="660.3" y2="249.3" stroke="#45b873" stroke-width="1.1"/><rect x="658.1" y="242.5" width="4.3" height="10.3" fill="#45b873" rx="1"/><line x1="667.2" y1="241.4" x2="667.2" y2="254.7" stroke="#e06464" stroke-width="1.1"/><rect x="665.1" y="242.5" width="4.3" height="1.8" fill="#e06464" rx="1"/><line x1="674.1" y1="224.9" x2="674.1" y2="251.0" stroke="#45b873" stroke-width="1.1"/><rect x="672.0" y="240.4" width="4.3" height="3.9" fill="#45b873" rx="1"/><line x1="681.1" y1="187.7" x2="681.1" y2="217.1" stroke="#45b873" stroke-width="1.1"/><rect x="678.9" y="211.2" width="4.3" height="29.2" fill="#45b873" rx="1"/><line x1="688.0" y1="209.6" x2="688.0" y2="228.7" stroke="#e06464" stroke-width="1.1"/><rect x="685.8" y="211.2" width="4.3" height="11.0" fill="#e06464" rx="1"/><line x1="694.9" y1="196.5" x2="694.9" y2="223.3" stroke="#45b873" stroke-width="1.1"/><rect x="692.8" y="197.8" width="4.3" height="24.4" fill="#45b873" rx="1"/><line x1="701.8" y1="185.0" x2="701.8" y2="208.1" stroke="#45b873" stroke-width="1.1"/><rect x="699.7" y="186.8" width="4.3" height="11.0" fill="#45b873" rx="1"/><line x1="708.8" y1="171.4" x2="708.8" y2="192.5" stroke="#e06464" stroke-width="1.1"/><rect x="706.6" y="186.8" width="4.3" height="1.4" fill="#e06464" rx="1"/><line x1="715.7" y1="162.7" x2="715.7" y2="178.5" stroke="#45b873" stroke-width="1.1"/><rect x="713.5" y="167.5" width="4.3" height="19.5" fill="#45b873" rx="1"/><line x1="722.6" y1="164.7" x2="722.6" y2="176.8" stroke="#e06464" stroke-width="1.1"/><rect x="720.5" y="167.5" width="4.3" height="1.4" fill="#e06464" rx="1"/><line x1="729.5" y1="160.1" x2="729.5" y2="169.1" stroke="#45b873" stroke-width="1.1"/><rect x="727.4" y="161.7" width="4.3" height="7.0" fill="#45b873" rx="1"/><line x1="736.5" y1="141.4" x2="736.5" y2="166.0" stroke="#45b873" stroke-width="1.1"/><rect x="734.3" y="148.2" width="4.3" height="13.5" fill="#45b873" rx="1"/><line x1="743.4" y1="142.9" x2="743.4" y2="159.7" stroke="#e06464" stroke-width="1.1"/><rect x="741.2" y="148.2" width="4.3" height="2.2" fill="#e06464" rx="1"/><line x1="750.3" y1="133.8" x2="750.3" y2="156.0" stroke="#45b873" stroke-width="1.1"/><rect x="748.2" y="143.6" width="4.3" height="6.7" fill="#45b873" rx="1"/><line x1="757.2" y1="142.2" x2="757.2" y2="161.3" stroke="#e06464" stroke-width="1.1"/><rect x="755.1" y="143.6" width="4.3" height="7.9" fill="#e06464" rx="1"/><line x1="764.2" y1="142.7" x2="764.2" y2="156.5" stroke="#45b873" stroke-width="1.1"/><rect x="762.0" y="147.8" width="4.3" height="3.8" fill="#45b873" rx="1"/><line x1="771.1" y1="135.1" x2="771.1" y2="150.8" stroke="#45b873" stroke-width="1.1"/><rect x="769.0" y="136.9" width="4.3" height="10.9" fill="#45b873" rx="1"/><line x1="778.0" y1="126.0" x2="778.0" y2="143.1" stroke="#45b873" stroke-width="1.1"/><rect x="775.9" y="127.8" width="4.3" height="9.1" fill="#45b873" rx="1"/><line x1="785.0" y1="106.6" x2="785.0" y2="125.0" stroke="#45b873" stroke-width="1.1"/><rect x="782.8" y="115.1" width="4.3" height="12.7" fill="#45b873" rx="1"/><line x1="791.9" y1="105.2" x2="791.9" y2="118.9" stroke="#e06464" stroke-width="1.1"/><rect x="789.7" y="115.1" width="4.3" height="1.6" fill="#e06464" rx="1"/><line x1="798.8" y1="100.4" x2="798.8" y2="116.8" stroke="#45b873" stroke-width="1.1"/><rect x="796.7" y="108.4" width="4.3" height="8.4" fill="#45b873" rx="1"/><line x1="805.7" y1="101.9" x2="805.7" y2="112.6" stroke="#45b873" stroke-width="1.1"/><rect x="803.6" y="102.9" width="4.3" height="5.5" fill="#45b873" rx="1"/><line x1="812.7" y1="94.6" x2="812.7" y2="112.8" stroke="#e06464" stroke-width="1.1"/><rect x="810.5" y="102.9" width="4.3" height="1.5" fill="#e06464" rx="1"/><line x1="819.6" y1="108.1" x2="819.6" y2="127.7" stroke="#e06464" stroke-width="1.1"/><rect x="817.4" y="104.4" width="4.3" height="19.1" fill="#e06464" rx="1"/><line x1="826.5" y1="93.1" x2="826.5" y2="122.2" stroke="#45b873" stroke-width="1.1"/><rect x="824.4" y="93.9" width="4.3" height="29.5" fill="#45b873" rx="1"/><line x1="833.4" y1="88.2" x2="833.4" y2="115.0" stroke="#e06464" stroke-width="1.1"/><rect x="831.3" y="93.9" width="4.3" height="16.4" fill="#e06464" rx="1"/><line x1="840.4" y1="99.4" x2="840.4" y2="112.4" stroke="#45b873" stroke-width="1.1"/><rect x="838.2" y="107.1" width="4.3" height="3.2" fill="#45b873" rx="1"/><line x1="847.3" y1="94.0" x2="847.3" y2="120.7" stroke="#e06464" stroke-width="1.1"/><rect x="845.1" y="107.1" width="4.3" height="12.9" fill="#e06464" rx="1"/><line x1="854.2" y1="86.6" x2="854.2" y2="140.5" stroke="#e06464" stroke-width="1.1"/><rect x="852.1" y="120.0" width="4.3" height="19.3" fill="#e06464" rx="1"/><line x1="861.1" y1="141.9" x2="861.1" y2="185.0" stroke="#e06464" stroke-width="1.1"/><rect x="859.0" y="139.3" width="4.3" height="36.5" fill="#e06464" rx="1"/><line x1="868.1" y1="161.8" x2="868.1" y2="186.3" stroke="#45b873" stroke-width="1.1"/><rect x="865.9" y="172.4" width="4.3" height="3.4" fill="#45b873" rx="1"/><line x1="875.0" y1="154.4" x2="875.0" y2="179.0" stroke="#45b873" stroke-width="1.1"/><rect x="872.8" y="158.9" width="4.3" height="13.4" fill="#45b873" rx="1"/><line x1="881.9" y1="153.9" x2="881.9" y2="178.9" stroke="#e06464" stroke-width="1.1"/><rect x="879.8" y="158.9" width="4.3" height="14.9" fill="#e06464" rx="1"/><line x1="888.8" y1="151.8" x2="888.8" y2="172.0" stroke="#45b873" stroke-width="1.1"/><rect x="886.7" y="156.3" width="4.3" height="17.6" fill="#45b873" rx="1"/><line x1="895.8" y1="142.8" x2="895.8" y2="164.4" stroke="#45b873" stroke-width="1.1"/><rect x="893.6" y="146.9" width="4.3" height="9.4" fill="#45b873" rx="1"/><line x1="902.7" y1="137.5" x2="902.7" y2="163.1" stroke="#e06464" stroke-width="1.1"/><rect x="900.6" y="146.9" width="4.3" height="10.9" fill="#e06464" rx="1"/><line x1="909.6" y1="142.5" x2="909.6" y2="158.9" stroke="#45b873" stroke-width="1.1"/><rect x="907.5" y="151.0" width="4.3" height="6.8" fill="#45b873" rx="1"/><line x1="916.5" y1="136.4" x2="916.5" y2="155.2" stroke="#e06464" stroke-width="1.1"/><rect x="914.4" y="151.0" width="4.3" height="3.3" fill="#e06464" rx="1"/><line x1="923.5" y1="139.0" x2="923.5" y2="163.7" stroke="#e06464" stroke-width="1.1"/><rect x="921.3" y="154.3" width="4.3" height="9.0" fill="#e06464" rx="1"/><line x1="930.4" y1="145.4" x2="930.4" y2="167.8" stroke="#e06464" stroke-width="1.1"/><rect x="928.3" y="163.3" width="4.3" height="4.1" fill="#e06464" rx="1"/><line x1="937.3" y1="181.6" x2="937.3" y2="231.6" stroke="#e06464" stroke-width="1.1"/><rect x="935.2" y="167.4" width="4.3" height="59.5" fill="#e06464" rx="1"/><line x1="944.3" y1="191.1" x2="944.3" y2="230.0" stroke="#45b873" stroke-width="1.1"/><rect x="942.1" y="198.3" width="4.3" height="28.7" fill="#45b873" rx="1"/><line x1="951.2" y1="183.0" x2="951.2" y2="211.3" stroke="#e06464" stroke-width="1.1"/><rect x="949.0" y="198.3" width="4.3" height="6.8" fill="#e06464" rx="1"/><line x1="958.1" y1="177.8" x2="958.1" y2="208.5" stroke="#45b873" stroke-width="1.1"/><rect x="956.0" y="179.7" width="4.3" height="25.3" fill="#45b873" rx="1"/><line x1="965.0" y1="155.7" x2="965.0" y2="180.3" stroke="#45b873" stroke-width="1.1"/><rect x="962.9" y="163.1" width="4.3" height="16.7" fill="#45b873" rx="1"/><line x1="972.0" y1="113.1" x2="972.0" y2="165.4" stroke="#45b873" stroke-width="1.1"/><rect x="969.8" y="115.8" width="4.3" height="47.3" fill="#45b873" rx="1"/><line x1="978.9" y1="97.3" x2="978.9" y2="121.2" stroke="#45b873" stroke-width="1.1"/><rect x="976.7" y="102.4" width="4.3" height="13.4" fill="#45b873" rx="1"/><line x1="985.8" y1="93.0" x2="985.8" y2="110.7" stroke="#e06464" stroke-width="1.1"/><rect x="983.7" y="102.4" width="4.3" height="6.6" fill="#e06464" rx="1"/><line x1="992.7" y1="95.2" x2="992.7" y2="121.0" stroke="#45b873" stroke-width="1.1"/><rect x="990.6" y="99.9" width="4.3" height="9.1" fill="#45b873" rx="1"/><line x1="999.7" y1="89.5" x2="999.7" y2="117.3" stroke="#45b873" stroke-width="1.1"/><rect x="997.5" y="90.5" width="4.3" height="9.4" fill="#45b873" rx="1"/><line x1="1006.6" y1="88.3" x2="1006.6" y2="104.0" stroke="#e06464" stroke-width="1.1"/><rect x="1004.4" y="90.5" width="4.3" height="3.0" fill="#e06464" rx="1"/><line x1="1013.5" y1="66.5" x2="1013.5" y2="92.0" stroke="#45b873" stroke-width="1.1"/><rect x="1011.4" y="86.9" width="4.3" height="6.6" fill="#45b873" rx="1"/><line x1="1020.4" y1="90.6" x2="1020.4" y2="104.9" stroke="#e06464" stroke-width="1.1"/><rect x="1018.3" y="86.9" width="4.3" height="8.1" fill="#e06464" rx="1"/><line x1="1027.4" y1="49.0" x2="1027.4" y2="86.9" stroke="#45b873" stroke-width="1.1"/><rect x="1025.2" y="53.1" width="4.3" height="42.0" fill="#45b873" rx="1"/><line x1="1034.3" y1="29.3" x2="1034.3" y2="55.5" stroke="#45b873" stroke-width="1.1"/><rect x="1032.1" y="34.0" width="4.3" height="19.1" fill="#45b873" rx="1"/><line x1="1041.2" y1="28.2" x2="1041.2" y2="48.1" stroke="#45b873" stroke-width="1.1"/><rect x="1039.1" y="32.4" width="4.3" height="1.6" fill="#45b873" rx="1"/><polyline points="16.1,254.6 23.1,253.2 30.0,252.1 36.9,250.9 43.9,249.9 50.8,249.0 57.7,247.6 64.6,245.9 71.6,244.3 78.5,242.5 85.4,240.9 92.3,239.1 99.3,237.8 106.2,237.1 113.1,236.5 120.0,235.9 127.0,235.7 133.9,235.9 140.8,236.5 147.7,237.1 154.7,237.7 161.6,238.4 168.5,239.1 175.4,239.8 182.4,240.7 189.3,242.3 196.2,243.7 203.2,245.0 210.1,246.5 217.0,247.8 223.9,248.8 230.9,249.9 237.8,250.8 244.7,251.3 251.6,251.2 258.6,251.1 265.5,250.4 272.4,250.1 279.3,250.0 286.3,250.1 293.2,250.4 300.1,250.6 307.0,252.0 314.0,254.0 320.9,255.3 327.8,256.4 334.8,257.6 341.7,258.4 348.6,259.1 355.5,259.6 362.5,259.8 369.4,260.1 376.3,260.8 383.2,261.4 390.2,261.9 397.1,262.6 404.0,263.4 410.9,264.3 417.9,265.1 424.8,266.0 431.7,266.8 438.6,268.0 445.6,269.5 452.5,270.7 459.4,271.8 466.3,272.9 473.3,273.8 480.2,274.6 487.1,275.1 494.1,275.6 501.0,276.1 507.9,276.6 514.8,277.3 521.8,278.1 528.7,278.2 535.6,277.6 542.5,277.0 549.5,276.3 556.4,275.9 563.3,275.7 570.2,275.5 577.2,275.2 584.1,275.1 591.0,275.2 597.9,275.4 604.9,275.8 611.8,276.2 618.7,276.4 625.7,277.1 632.6,277.2 639.5,277.2 646.4,277.5 653.4,277.1 660.3,276.2 667.2,275.7 674.1,275.3 681.1,274.0 688.0,273.2 694.9,272.0 701.8,271.0 708.8,270.1 715.7,268.7 722.6,266.8 729.5,264.8 736.5,262.5 743.4,260.1 750.3,257.4 757.2,254.7 764.2,252.1 771.1,249.3 778.0,246.4 785.0,242.8 791.9,239.0 798.8,235.1 805.7,231.2 812.7,227.1 819.6,223.2 826.5,218.8 833.4,214.8 840.4,210.9 847.3,207.2 854.2,204.0 861.1,201.2 868.1,198.2 875.0,195.4 881.9,193.0 888.8,190.3 895.8,187.6 902.7,184.8 909.6,182.2 916.5,179.7 923.5,177.5 930.4,175.2 937.3,174.1 944.3,172.9 951.2,171.7 958.1,170.4 965.0,169.0 972.0,166.1 978.9,163.5 985.8,161.0 992.7,158.2 999.7,154.9 1006.6,152.0 1013.5,148.8 1020.4,145.9 1027.4,142.7 1034.3,139.0 1041.2,135.7" fill="none" stroke="#7aa7e0" stroke-width="1.8" opacity="0.85"/><line x1="14" y1="32.4" x2="1052" y2="32.4" stroke="#e0a030" stroke-width="1" stroke-dasharray="3 4" opacity="0.9"/><rect x="1054" y="21.4" width="60" height="21" rx="6" fill="#e0a030"/><text x="1084" y="36.4" fill="#0f1115" font-size="12.5" font-weight="700" text-anchor="middle">333.74</text><text x="111.0" y="460" fill="#8b93a1" font-size="11.5">Jan</text><text x="249.5" y="460" fill="#8b93a1" font-size="11.5">Feb</text><text x="381.1" y="460" fill="#8b93a1" font-size="11.5">Mar</text><text x="533.5" y="460" fill="#8b93a1" font-size="11.5">Apr</text><text x="678.9" y="460" fill="#8b93a1" font-size="11.5">May</text><text x="817.4" y="460" fill="#8b93a1" font-size="11.5">Jun</text><text x="962.9" y="460" fill="#8b93a1" font-size="11.5">Jul</text></svg>
+    </div>
+    <div class="chart-ft">
+      <span class="lgd"><i style="background:var(--up);"></i>Up day</span>
+      <span class="lgd"><i style="background:var(--down);"></i>Down day</span>
+      <span class="lgd"><i style="background:var(--link);"></i>50-day average</span>
+      <a class="powered" href="#"><span class="bolt">M</span>Mastermind Terminal — live &amp; interactive ↗</a>
+    </div>
+  </section>
+
+  <!-- ═ MAIN + RAIL (rail begins under the chart) ═ -->
+  <div class="cols">
+    <div class="main-col">
+
+      <!-- Performance -->
+      <section class="mod rv perf" id="performance">
+        <div class="mod-hd"><h2>Performance</h2><span class="hint">total return vs S&amp;P 500</span></div>
+        <div class="pr"><span class="pk">1 week</span><div class="bar"><i style="width:5%;"></i></div><span class="pv pos num">+5.8%</span><span class="spy">index +1.2% · ahead</span></div>
+        <div class="pr"><span class="pk">1 month</span><div class="bar"><i style="width:10%;"></i></div><span class="pv pos num">+12.8%</span><span class="spy">index +3.1% · ahead</span></div>
+        <div class="pr"><span class="pk">3 months</span><div class="bar"><i style="width:18%;"></i></div><span class="pv pos num">+23.6%</span><span class="spy">index +8.9% · ahead</span></div>
+        <div class="pr"><span class="pk">6 months</span><div class="bar"><i style="width:23%;"></i></div><span class="pv pos num">+30.8%</span><span class="spy">index +11.4% · ahead</span></div>
+        <div class="pr"><span class="pk">Year to date</span><div class="bar"><i style="width:17%;"></i></div><span class="pv pos num">+23.4%</span><span class="spy">index +9.8% · ahead</span></div>
+        <div class="pr"><span class="pk">1 year</span><div class="bar"><i style="width:44%;"></i></div><span class="pv pos num">+59.5%</span><span class="spy">index +14.2% · ahead</span></div>
+        <div class="pr"><span class="pk">3 years</span><div class="bar"><i style="width:56%;"></i></div><span class="pv pos num">+74.7%</span><span class="spy">index +38.5% · ahead</span></div>
+        <div class="pr"><span class="pk">5 years</span><div class="bar"><i style="width:100%;"></i></div><span class="pv pos num">+133.9%</span><span class="spy">index +92.1% · ahead</span></div>
+      </section>
+
+      <!-- Technicals -->
+      <section class="mod rv" id="technicals">
+        <div class="mod-hd"><h2>Technicals</h2><span class="hint">daily bars · 2026-07-20</span></div>
+        <div class="consensus">
+          <div class="cl"><span>Strong sell</span><span>Neutral</span><span>Strong buy</span></div>
+          <div class="cmeter"><div class="nd" style="left:71%;"></div></div>
+          <div style="margin-top:8px;font-size:12.5px;"><b>Leaning bullish</b> <span class="mut">— trend is up on both timeframes, but stretched short-term readings argue for patience.</span></div>
+        </div>
+        <div class="trow"><span class="tk">Momentum (RSI 14)</span><span class="tv num">72</span><div class="minitrack"><div class="zone"></div><div class="mk" style="left:72%;"></div></div><span class="okx w">Overbought</span></div>
+        <div class="trow"><span class="tk">vs 50-day average</span><span class="tv pos num">+6.2% above</span><span class="okx y">Uptrend intact</span></div>
+        <div class="trow"><span class="tk">vs 200-day average</span><span class="tv pos num">+24.1% above</span><span class="okx y">Long trend up</span></div>
+        <div class="trow"><span class="tk">Trend strength (ADX)</span><span class="tv num">31</span><span class="mut" style="font-size:11.5px;">strong, established trend</span></div>
+        <div class="trow"><span class="tk">Volatility</span><span class="tv num">98th percentile</span><span class="okx w">Hotter than usual</span></div>
+        <div class="mod-ft">Signals feed the stance above — one read per number, refreshed nightly.</div>
+      </section>
+
+      <!-- Earnings -->
+      <section class="mod rv" id="earnings">
+        <div class="mod-hd"><h2>Earnings</h2><span class="hint">next report Jul 30, 2026</span></div>
+        <div class="earn-top">
+          <div class="cring" style="--p:88;"><div class="cd"><b>11</b><span>days to go</span></div></div>
+          <div>
+            <p style="margin:0;font-size:12.5px;line-height:1.6;"><b>Four straight beats.</b> <span class="mut">Last quarter EPS came in 4.1% above consensus; revisions into the print have drifted higher. Expected move around the report: ±4.3%.</span></p>
+            <div class="sbars">
+              <div class="sbar"><i style="height:34px;"></i><b class="pos">+2.8%</b><span>Q3'25</span></div>
+              <div class="sbar"><i style="height:40px;"></i><b class="pos">+3.4%</b><span>Q4'25</span></div>
+              <div class="sbar"><i style="height:28px;"></i><b class="pos">+2.1%</b><span>Q1'26</span></div>
+              <div class="sbar"><i style="height:48px;"></i><b class="pos">+4.1%</b><span>Q2'26</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Valuation -->
+      <section class="mod rv" id="valuation">
+        <div class="mod-hd"><h2>Valuation</h2><span class="hint"><span class="okx w" style="font-size:10.5px;">Rich vs sector</span></span></div>
+        <table class="vt">
+          <thead><tr><th>Multiple</th><th>AAPL</th><th>Sector median</th><th>Cheaper than</th></tr></thead>
+          <tbody>
+            <tr><td class="mut">P/E (trailing)</td><td class="num">43.8×</td><td class="mut num">31.2×</td><td><span class="cheapbar"><span class="cb"><i style="width:22%;background:var(--down);"></i></span><span class="mut num">22%</span></span></td></tr>
+            <tr><td class="mut">P/E (forward)</td><td class="num">34.6×</td><td class="mut num">27.8×</td><td><span class="cheapbar"><span class="cb"><i style="width:31%;background:var(--warn);"></i></span><span class="mut num">31%</span></span></td></tr>
+            <tr><td class="mut">EV / EBITDA</td><td class="num">32.4×</td><td class="mut num">24.9×</td><td><span class="cheapbar"><span class="cb"><i style="width:26%;background:var(--down);"></i></span><span class="mut num">26%</span></span></td></tr>
+            <tr><td class="mut">Price / Sales</td><td class="num">11.2×</td><td class="mut num">7.4×</td><td><span class="cheapbar"><span class="cb"><i style="width:24%;background:var(--down);"></i></span><span class="mut num">24%</span></span></td></tr>
+          </tbody>
+        </table>
+        <div class="mod-ft">"Cheaper than" = share of sector peers trading richer on that multiple. You pay up for AAPL on every measure.</div>
+      </section>
+
+      <!-- Financials -->
+      <section class="mod rv" id="financials">
+        <div class="mod-hd"><h2>Financials</h2><span class="hint">fiscal years · $B</span></div>
+        <div class="fin3">
+          <div class="fcard"><div class="ft">Revenue</div>
+            <div class="fbars"><div class="fb"><i style="height:38px;"></i><span>'21</span></div><div class="fb"><i style="height:41px;"></i><span>'22</span></div><div class="fb"><i style="height:40px;"></i><span>'23</span></div><div class="fb"><i style="height:44px;"></i><span>'24</span></div><div class="fb"><i style="height:50px;"></i><span>'25</span></div></div>
+            <div class="fcagr">5-yr growth <b>+6.8%/yr</b></div></div>
+          <div class="fcard"><div class="ft">Earnings per share</div>
+            <div class="fbars"><div class="fb"><i style="height:30px;"></i><span>'21</span></div><div class="fb"><i style="height:34px;"></i><span>'22</span></div><div class="fb"><i style="height:33px;"></i><span>'23</span></div><div class="fb"><i style="height:40px;"></i><span>'24</span></div><div class="fb"><i style="height:50px;"></i><span>'25</span></div></div>
+            <div class="fcagr">5-yr growth <b>+10.4%/yr</b></div></div>
+          <div class="fcard"><div class="ft">Free cash flow</div>
+            <div class="fbars"><div class="fb"><i style="height:40px;"></i><span>'21</span></div><div class="fb"><i style="height:44px;"></i><span>'22</span></div><div class="fb"><i style="height:42px;"></i><span>'23</span></div><div class="fb"><i style="height:46px;"></i><span>'24</span></div><div class="fb"><i style="height:52px;"></i><span>'25</span></div></div>
+            <div class="fcagr">FCF margin <b>26.4%</b></div></div>
+        </div>
+        <div style="margin-top:16px;">
+          <div class="mrow"><span class="mk">Gross margin</span><div class="mtr"><i style="width:46%;"></i></div><span class="mv num">46.2%</span></div>
+          <div class="mrow"><span class="mk">Operating margin</span><div class="mtr"><i style="width:32%;"></i></div><span class="mv num">31.8%</span></div>
+          <div class="mrow"><span class="mk">Net margin</span><div class="mtr"><i style="width:26%;"></i></div><span class="mv num">25.9%</span></div>
+        </div>
+        <div class="hchips">
+          <span class="pio"><b>Balance-sheet quality 7/9</b><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>
+          <span class="okx y">Bankruptcy risk: safe zone</span>
+          <span class="okx y">Return on equity 148%</span>
+        </div>
+      </section>
+
+      <!-- Why moving -->
+      <section class="mod rv why" id="why">
+        <div class="mod-hd"><h2>Why is it moving</h2><span class="hint">6 checks · nightly</span></div>
+        <div class="wr active"><div class="wd"></div><span class="wc">Momentum</span><span class="wl"><b>Breakout continuation</b> — price cleared the June high on rising volume; funds chasing the move add fuel.</span></div>
+        <div class="wr active"><div class="wd"></div><span class="wc">Options</span><span class="wl"><b>Dealer positioning amplifies rallies</b> — heavy call buying near $350 forces dealers to buy stock as it rises.</span></div>
+        <div class="wr"><div class="wd"></div><span class="wc">News</span><span class="wl">No major headlines in the last week.</span></div>
+        <div class="wr"><div class="wd"></div><span class="wc">Earnings</span><span class="wl">Quiet period ahead of the Jul 30 report.</span></div>
+        <div class="wr"><div class="wd"></div><span class="wc">Sector</span><span class="wl">Technology in line with the market this week.</span></div>
+        <div class="wr"><div class="wd"></div><span class="wc">Macro</span><span class="wl">No macro catalyst attributable.</span></div>
+      </section>
+
+      <!-- Options -->
+      <section class="mod rv" id="options">
+        <div class="mod-hd"><h2>Options positioning</h2><span class="hint">as of last close</span></div>
+        <p style="margin:0 0 14px;font-size:12.5px;line-height:1.6;"><b>Options market is paying up for protection and upside alike.</b> <span class="mut">Implied volatility sits in its 93rd percentile — big moves are priced in around earnings.</span></p>
+        <div class="otiles">
+          <div class="otile"><div class="ok">Expected daily move</div><div class="ov num">±1.9%</div></div>
+          <div class="otile"><div class="ok">Expected weekly move</div><div class="ov num">±4.3%</div></div>
+          <div class="otile"><div class="ok">IV rank</div><div class="ov num">93%</div><div class="ob"><i style="width:93%;"></i></div></div>
+          <div class="otile"><div class="ok">Put/Call ratio</div><div class="ov num">0.81</div></div>
+          <div class="otile"><div class="ok">Max pain</div><div class="ov num">$325</div></div>
+          <div class="otile"><div class="ok">Skew</div><div class="ov">Fear-tilted</div></div>
+        </div>
+        <div class="mod-ft">Call wall $350 and put wall $315 are plotted on the ladder →</div>
+      </section>
+
+      <!-- Ownership -->
+      <section class="mod rv" id="holders">
+        <div class="mod-hd"><h2>Ownership &amp; smart money</h2><span class="hint">13F · Q1 2026</span></div>
+        <p style="margin:0 0 12px;font-size:12.5px;"><span class="okx y">Insiders: quiet</span> <span class="mut" style="margin-left:8px;">No notable insider buys or sells in 90 days. Institutional base broad and stable.</span></p>
+        <table class="ht">
+          <thead><tr><th>Fund</th><th>Grade</th><th>Latest move</th><th style="text-align:right;">% of book</th></tr></thead>
+          <tbody>
+            <tr><td>Berkshire Hathaway</td><td><span class="gchip A">A</span></td><td class="mut">Holding</td><td class="num" style="text-align:right;">38.2%</td></tr>
+            <tr><td>Fisher Asset Management</td><td><span class="gchip A">A</span></td><td class="pos">Adding</td><td class="num" style="text-align:right;">4.9%</td></tr>
+            <tr><td>Bridgewater Associates</td><td><span class="gchip B">B</span></td><td class="neg">Trimming</td><td class="num" style="text-align:right;">1.2%</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Signal history -->
+      <section class="mod rv" id="signals">
+        <div class="mod-hd"><h2>Signal history</h2><span class="hint">last 90 days</span></div>
+        <div class="pinned"><b>⚠ Missed entry — low formed Apr 21 at $271</b><span>The engine's buy window filled in April. Chasing here is the mistake the stance is warning about.</span></div>
+        <div class="tl">
+          <div class="tev wn"><div class="td">Jul 18</div><div class="th">Overbought flag raised</div><div class="tx">Daily RSI crossed 70 with volatility in the 98th percentile.</div></div>
+          <div class="tev up"><div class="td">Jun 27</div><div class="th">Breakout confirmed</div><div class="tx">Cleared the June range high on above-average volume.</div></div>
+          <div class="tev up"><div class="td">May 12</div><div class="th">Uptrend re-established</div><div class="tx">Price reclaimed the 50-day average; trend model flipped up.</div></div>
+          <div class="tev up"><div class="td">Apr 21</div><div class="th">Buy window opened</div><div class="tx">Bottoming signal fired at $271 after the spring washout.</div></div>
+        </div>
+      </section>
+
+      <!-- Profile -->
+      <section class="mod rv" id="profile">
+        <div class="mod-hd"><h2>Company profile</h2></div>
+        <p style="margin:0;font-size:13px;line-height:1.65;">Apple Inc. is an American multinational technology company headquartered in Cupertino, California — consumer electronics, software and online services. iPhone remains the demand engine; Services is the margin engine.</p>
+        <div style="margin-top:14px;" class="dna">
+          <div style="font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Style DNA — how it trades vs the market</div>
+          <div class="dr"><span class="dk">Momentum</span><div class="dtr"><i class="p" style="width:38%;"></i></div><span class="dw pos">High</span></div>
+          <div class="dr"><span class="dk">Value</span><div class="dtr"><i class="n" style="width:32%;"></i></div><span class="dw neg">Expensive</span></div>
+          <div class="dr"><span class="dk">Quality</span><div class="dtr"><i class="p" style="width:44%;"></i></div><span class="dw pos">Very high</span></div>
+          <div class="dr"><span class="dk">Volatility</span><div class="dtr"><i class="n" style="width:12%;"></i></div><span class="dw mut">Below market</span></div>
+        </div>
+        <div style="margin-top:14px;">
+          <div style="font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Watch items — what could change the story</div>
+          <ul class="watch">
+            <li>Services growth decelerating below 10% would crack the margin thesis.</li>
+            <li>China demand — a second straight quarter of unit declines.</li>
+            <li>App Store regulatory rulings in the EU and US.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- News -->
+      <section class="mod rv" id="news">
+        <div class="mod-hd"><h2>Recent news</h2></div>
+        <div class="nrow"><a href="#">Apple supplier checks point to strong iPhone 18 build plans</a><span class="nm">Bloomberg · Jul 19</span></div>
+        <div class="nrow"><a href="#">Services revenue seen topping $110B run-rate this quarter</a><span class="nm">Reuters · Jul 17</span></div>
+        <div class="nrow"><a href="#">Berkshire keeps Apple stake unchanged in latest filing</a><span class="nm">WSJ · Jul 15</span></div>
+      </section>
+    </div>
+
+    <!-- ═ RAIL — starts under the chart ═ -->
+    <aside class="rail-col">
+
+      <!-- Trade levels ladder (signature) -->
+      <section class="mod rv" id="levels" style="--d:60ms;">
+        <div class="mod-hd"><h2>Trade levels</h2><span class="hint">engine · nightly</span></div>
+        <div class="ladder">
+          <div class="lrow"><span class="lpx num mut">$350</span><span class="lnode"><span class="ldot wall"></span></span><span class="lk">Call wall<small>rallies tend to stall here</small></span><span class="ld num">+4.9%</span></div>
+          <div class="lrow now"><span class="lpx num">$333.74</span><span class="lnode"><span class="ldot"></span></span><span class="lk">Price now<small>overbought — be patient</small></span><span class="ld"><span class="live-dot"></span></span></div>
+          <div class="lband">Buy zone $306 – $320 — where patience gets paid</div>
+          <div class="lrow"><span class="lpx num neg">$315</span><span class="lnode"><span class="ldot wall"></span></span><span class="lk">Put wall<small>first support below</small></span><span class="ld num">−5.6%</span></div>
+          <div class="lrow"><span class="lpx num neg">$298.40</span><span class="lnode"><span class="ldot stop"></span></span><span class="lk">Exit if broken<small>the engine walks away</small></span><span class="ld num">−10.6%</span></div>
+        </div>
+        <div class="mod-ft">Reference levels from the nightly engine — research context, not advice.</div>
+      </section>
+
+      <!-- Key facts -->
+      <section class="mod rv" style="--d:120ms;">
+        <div class="mod-hd"><h2>Key facts</h2></div>
+        <div class="kv">
+          <div class="r"><span class="k">Market cap</span><span class="v num">$4.91T</span></div>
+          <div class="r"><span class="k">P/E · forward P/E</span><span class="v num">43.8× · 34.6×</span></div>
+          <div class="r"><span class="k">EPS (trailing)</span><span class="v num">$7.62</span></div>
+          <div class="r"><span class="k">Beta vs market</span><span class="v num">0.84 — calmer</span></div>
+          <div class="r"><span class="k">Dividend yield</span><span class="v num">0.32%</span></div>
+          <div class="r"><span class="k">Short interest</span><span class="v num">1.0% of float</span></div>
+          <div class="r"><span class="k">Avg volume</span><span class="v num">58.4M/day</span></div>
+          <div class="r"><span class="k">Next earnings</span><span class="v num">Jul 30 · 11d</span></div>
+        </div>
+      </section>
+
+      <!-- Seasonality -->
+      <section class="mod rv" style="--d:160ms;">
+        <div class="mod-hd"><h2>Seasonality</h2><span class="hint">10 yrs</span></div>
+        <p style="margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.5;"><b style="color:var(--text)">July is historically strong</b> — up 8 of the last 10 years. August cools off.</p>
+        <div class="seas">
+          <div class="sc" style="background:color-mix(in srgb,var(--up) 24%,var(--panel2));">60<span>J</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--up) 12%,var(--panel2));">55<span>F</span></div>
+          <div class="sc" style="background:var(--panel2);">50<span>M</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--up) 30%,var(--panel2));">65<span>A</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--up) 24%,var(--panel2));">60<span>M</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--down) 18%,var(--panel2));">40<span>J</span></div>
+          <div class="sc cur" style="background:color-mix(in srgb,var(--up) 52%,var(--panel2));">80<span>J</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--down) 24%,var(--panel2));">35<span>A</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--down) 12%,var(--panel2));">45<span>S</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--up) 30%,var(--panel2));">65<span>O</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--up) 38%,var(--panel2));">70<span>N</span></div>
+          <div class="sc" style="background:color-mix(in srgb,var(--up) 12%,var(--panel2));">55<span>D</span></div>
+        </div>
+      </section>
+
+      <!-- Themes -->
+      <section class="mod rv" style="--d:200ms;">
+        <div class="mod-hd"><h2>Themes &amp; baskets</h2></div>
+        <div class="throw"><a href="#">Big Seven</a><span class="tm">US mega-cap complex</span><span class="okx y" style="font-size:10px;">In favour</span></div>
+        <div class="throw"><a href="#">Consumer AI</a><span class="tm">on-device AI cycle</span><span class="okx w" style="font-size:10px;">Crowded</span></div>
+        <div class="throw"><a href="#">Buyback machines</a><span class="tm">capital-return leaders</span><span class="okx y" style="font-size:10px;">Steady</span></div>
+      </section>
+
+      <!-- Peers -->
+      <section class="mod rv" style="--d:240ms;">
+        <div class="mod-hd"><h2>Peers</h2><span class="hint">by size</span></div>
+        <div class="peers">
+          <a class="pcard" href="#"><b>MSFT</b><span>Microsoft</span><small>$4.2T</small></a>
+          <a class="pcard" href="#"><b>NVDA</b><span>NVIDIA</span><small>$5.1T</small></a>
+          <a class="pcard" href="#"><b>GOOGL</b><span>Alphabet</span><small>$2.6T</small></a>
+          <a class="pcard" href="#"><b>AMZN</b><span>Amazon</span><small>$2.4T</small></a>
+        </div>
+      </section>
+
+      <!-- Rail CTA -->
+      <section class="mod railcta rv" style="--d:280ms;">
+        <h3>This page, live</h3>
+        <p>The Terminal runs these signals intraday — live chart, options flow, and alerts for AAPL.</p>
+        <a class="gbtn gbtn-cta" href="#" style="width:100%;">Open AAPL in Terminal ↗</a>
+      </section>
+    </aside>
+  </div>
+
+  <!-- ═ CTA band ═ -->
+  <section class="mod cta-band rv">
+    <div class="cc">
+      <h2>Every S&amp;P 1500 name, read nightly.</h2>
+      <p>Signals, options positioning, smart-money moves and factor DNA — the same engine that wrote this page covers 1,500 stocks.</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a class="gbtn gbtn-cta" href="#" style="padding:10px 20px;font-size:13.5px;">Browse all stocks</a>
+      <a class="gbtn" href="#" style="padding:10px 20px;font-size:13.5px;">Open Terminal</a>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Research context only — not investment advice. Past patterns do not guarantee future results.</p>
+    <p>Data through 2026-07-20 · regenerated nightly · <a href="#">All coverage</a> · <a href="#">Terminal</a></p>
+  </footer>
+</div>
+
+<script>
+document.documentElement.classList.add('js');
+// reveal on scroll
+var io = new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{rootMargin:'0px 0px -8% 0px',threshold:.06});
+document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
+// sticky strip after hero + scroll-spy
+var hero = document.getElementById('top'), strip = document.getElementById('strip');
+var hio = new IntersectionObserver(function(es){strip.classList.toggle('vis', !es[0].isIntersecting);},{rootMargin:'-56px 0px 0px 0px'});
+hio.observe(hero);
+var ids = ['chart','levels','performance','technicals','earnings','valuation','financials','options','holders','news'];
+var links = {}; document.querySelectorAll('#jumps a').forEach(function(a){links[a.getAttribute('href').slice(1)] = a;});
+var sio = new IntersectionObserver(function(es){
+  es.forEach(function(e){ if(e.isIntersecting){ Object.values(links).forEach(function(a){a.classList.remove('on');});
+    var l = links[e.target.id]; if(l) l.classList.add('on'); } });
+},{rootMargin:'-30% 0px -60% 0px'});
+ids.forEach(function(i){var el=document.getElementById(i); if(el) sio.observe(el);});
+</script>
+</body>
+</html>

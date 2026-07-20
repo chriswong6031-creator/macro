@@ -8,6 +8,13 @@
       "port": 8123
     },
     {
+      "name": "repo-root",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-c", "import os,http.server,socketserver;socketserver.TCPServer(('',int(os.environ.get('PORT') or 8899)),http.server.SimpleHTTPRequestHandler).serve_forever()"],
+      "port": 8899,
+      "autoPort": true
+    },
+    {
       "name": "macro-site",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-c", "import os,functools,http.server,socketserver;h=functools.partial(http.server.SimpleHTTPRequestHandler,directory='site');socketserver.TCPServer(('',int(os.environ.get('PORT') or 8847)),h).serve_forever()"],
