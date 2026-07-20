@@ -178,8 +178,11 @@
     -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 14px 40px -18px rgba(0,0,0,.6);overflow:hidden}
   .mmb-ctx{display:none;align-items:center;gap:7px;padding:9px 12px 0}
   .mmb-ctx.on{display:flex}
-  .mmb-ctx .chip{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 var(--mmb-font);color:color-mix(in srgb,var(--mmb-info) 88%,#fff);
-    background:color-mix(in srgb,var(--mmb-info) 12%,transparent);border:1px solid color-mix(in srgb,var(--mmb-info) 26%,transparent);border-radius:999px;padding:4px 10px}
+  .mmb-ctx .chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font:600 11.5px/1 var(--mmb-font);
+    color:color-mix(in srgb,var(--mmb-info) 92%,#fff);background:color-mix(in srgb,var(--mmb-info) 13%,transparent);
+    border:1px solid color-mix(in srgb,var(--mmb-info) 30%,transparent);border-radius:999px;padding:4px 11px 4px 8px}
+  .mmb-ctx .chip .cx{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;opacity:.9;animation:mmb-breathe 4.6s ease-in-out infinite}
+  .mmb-ctx .chip b{font:700 11.5px/1 var(--mmb-font);letter-spacing:.03em;color:var(--mmb-text)}
   .mmb-thumbs{display:none;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
   .mmb-thumbs.on{display:flex}
   .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:#0b0e14;flex:none}
@@ -710,7 +713,7 @@
     var s = ''; try { s = (CFG.symbol && CFG.symbol()) || window.MDXActiveSymbol || window.MMBrainSymbol || window.ACTIVE_SYMBOL || ''; } catch (e) {}
     var m = /[?&]symbol=([A-Za-z0-9.\-]+)/i.exec(location.search); if (!s && m) s = m[1];
     ctxSymbol = (s || '').toString().toUpperCase().slice(0, 10);
-    if (ctxSymbol) { ctxEl.className = 'mmb-ctx on'; ctxEl.innerHTML = '<span class="chip">' + ic('<path d="M3 12h4l3 8 4-16 3 8h4"/>') + esc(L('Context: ', '上下文：') + ctxSymbol) + '</span>'; }
+    if (ctxSymbol) { ctxEl.className = 'mmb-ctx on'; ctxEl.innerHTML = '<span class="chip" title="Active symbol"><svg class="cx" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/></svg><b>' + esc(ctxSymbol) + '</b></span>'; }
     else ctxEl.className = 'mmb-ctx';
   }
   refreshCtx(); renderEmpty();
