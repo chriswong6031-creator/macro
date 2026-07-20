@@ -47,6 +47,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
 from lib import config
+from lib.pages import write_page  # noqa: E402
 from engine.flow_cohorts import build_cohorts
 
 log = logging.getLogger(__name__)
@@ -594,7 +595,7 @@ def _write_noindex_stub(site_dir: Path) -> None:
 <meta charset="utf-8"><meta name="robots" content="noindex">
 <title>Flow Desk (disabled)</title></head>
 <body><p>Flow Desk is currently disabled.</p></body></html>"""
-    (site_dir / "flow_desk.html").write_text(stub)
+    write_page(site_dir / "flow_desk.html", stub)
     log.info("flow_desk: kill-switch active — wrote noindex stub")
 
 

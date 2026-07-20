@@ -38,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
 from lib import config
+from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ def _write_noindex_stub(site_root: Path) -> None:
         '<title>Flow Leaders (disabled)</title></head>'
         '<body><p>Flow Leaders is currently disabled.</p></body></html>'
     )
-    (site_root / "flow_leaders.html").write_text(stub)
+    write_page(site_root / "flow_leaders.html", stub)
     log.info("build_flow_leaders: kill-switch active — wrote noindex stub")
 
 
