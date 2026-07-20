@@ -19,6 +19,13 @@
 
 {% block title %}Fund Directory — 13F Ownership Context{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "Fund Directory: 13F Ownership — Mastermind" %}
+{% set seo_desc = "Browse tracked funds — 13F holdings, conviction shifts and four-quarter memory for each manager Mastermind follows." %}
+{% set seo_path = "fund_index.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
 .fx { --numf:"SF Mono",ui-monospace,"DejaVu Sans Mono",monospace; max-width:1220px; margin:0 auto; }
 .fx .num { font-family:var(--numf); font-variant-numeric:tabular-nums; }

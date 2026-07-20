@@ -17,6 +17,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Bitcoin Vector — {{ as_of }}</title>
+{% set seo_title = "Bitcoin Vector — Mastermind" %}{% set seo_desc = "Bitcoin's regime on one page — trend, cycle and market context with a plain-word stance. Updated daily." %}{% set seo_path = "vector.html" %}
+{% include "_seo_head.html.j2" %}
 {% include '_plotly_head.html.j2' %}
 {% include "_interfonts.html.j2" %}
 <style>

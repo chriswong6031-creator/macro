@@ -140,6 +140,13 @@
 
 {% block title %}News Intelligence Boards — Market &amp; Macro Deltas{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "News Intelligence — Mastermind" %}
+{% set seo_desc = "Market-moving news distilled into deltas — what changed, which assets care, and how narratives are shifting through the day." %}
+{% set seo_path = "news.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   body { padding-bottom:52px; }
   @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1240px)/2)); padding-right:max(18px,calc((100vw - 1240px)/2)); } }

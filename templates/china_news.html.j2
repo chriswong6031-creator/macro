@@ -20,6 +20,13 @@
 
 {% block title %}China News Feed - Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "China News Feed — Mastermind" %}
+{% set seo_desc = "China market news distilled — what moved, why it matters and which groups care, through each session." %}
+{% set seo_path = "china_news.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   body { padding-bottom:52px; }
   @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }

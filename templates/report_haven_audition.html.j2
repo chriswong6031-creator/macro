@@ -5,7 +5,7 @@
 
 {% block art_kicker %}{{ t('Research Report · US Equities · Companion to <a href="report_second_act.html">The Second Act</a> &amp; <a href="report_relapse_jul8.html">The Relapse</a>', '研究报告 · 美股 · <a href="report_second_act.html">《第二幕》</a>与<a href="report_relapse_jul8.html">《复燃》</a>姊妹篇') }}{% endblock %}
 
-{% block head_extra %}
+{% block head_extra %}{{ super() }}
 <style>
 {% raw %}
   /* ===== The Haven Audition — stat band, ev chips, figures, lamp matrix, verdict cards ===== */

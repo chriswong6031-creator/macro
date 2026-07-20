@@ -10,7 +10,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Global Market Cycles — Mastermind</title>
-<meta name="description" content="Eleven national equity-market cycles on one clock — the US, UK, Europe, Japan, China, Hong Kong, Taiwan, India, Canada, South Korea and Australia overlaid on real web-sourced data: observed history, valuations, and where each market sits in its bull/bear lifespan.">
+{% set seo_title = "Global Market Cycles — Mastermind" %}{% set seo_desc = "Where each major market sits in its cycle — trend, breadth and regime reads for the US, China, Hong Kong, Canada, Europe and Japan, updated through the latest close." %}{% set seo_path = "markets.html" %}
+{% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="markets.css?v=4">

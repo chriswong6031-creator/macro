@@ -12,7 +12,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>China Sector Cycle Intelligence — Mastermind</title>
-<meta name="description" content="Every China A-share sector (Shenwan L1) and curated thematic basket on one cycle clock — real price (rebased / log) with a cycle-position toggle, auto-detected peaks & troughs, the phase each sits in (topping · expanding · rolling over · bottoming), a honest next-turn projection, the washout↔euphoria signature, and evidence-gated conditional odds for the GS-style sectors.">
+{% set seo_title = "China Sector Cycles — Mastermind" %}{% set seo_desc = "Every China A-share sector placed on its cycle clock — early, late, and rotating leadership, updated after each Asia close." %}{% set seo_path = "sector_cycles_china.html" %}
+{% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css">

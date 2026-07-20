@@ -21,6 +21,14 @@
 
 {% block title %}{{ (bf or {}).get('name') or (lb_row or {}).get('name') or 'Fund' }} — Fund Dossier — 13F Ownership Context{% endblock %}
 
+{%- set _fund_name = (bf or {}).get('name') or (lb_row or {}).get('name') or slug or 'Fund' -%}
+{%- block head_extra %}
+{% set seo_title = _fund_name ~ " 13F Holdings & Moves — Mastermind" %}
+{% set seo_desc = _fund_name ~ "'s latest 13F — top holdings, new stakes, exits and conviction shifts, with four-quarter memory. Updated each filing cycle." %}
+{% set seo_path = "fund_" ~ (slug or 'fund') ~ ".html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
 /* ---- core tokens (mirrors the desk page so the visual language matches) ---- */
 .fd { --numf:"SF Mono",ui-monospace,"DejaVu Sans Mono",monospace; max-width:1220px; margin:0 auto; }

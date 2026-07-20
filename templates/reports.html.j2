@@ -5,6 +5,13 @@
 
 {% block title %}Research Reports — Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "Research Reports — Mastermind" %}
+{% set seo_desc = "Long-form Mastermind research — macro turning points, policy shocks and market narratives, with receipts and follow-ups." %}
+{% set seo_path = "reports.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .rep-hero { max-width:1060px; margin:18px auto 0; }
   .rep-hero .eyebrow { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }

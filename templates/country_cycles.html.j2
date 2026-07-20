@@ -13,7 +13,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Country Cycle Intelligence — Mastermind</title>
-<meta name="description" content="Every country and region on one cycle clock — each line a USD-listed country ETF (iShares MSCI single-country family + regional blocs), rebased &amp; log so all share an axis. Auto-detected peaks &amp; troughs, the phase each market sits in (topping · expanding · rolling over · bottoming), a next-turn projection, and relative strength vs the US (SPY).">
+{% set seo_title = "Country Cycles — Mastermind" %}{% set seo_desc = "Country stock markets ranked by cycle position — who is basing, who is trending, who is topping — across major world markets, updated weekly." %}{% set seo_path = "country_cycles.html" %}
+{% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css">

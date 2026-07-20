@@ -8,6 +8,13 @@
 
 {% block title %}China Intelligence — Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "China Intelligence — Mastermind" %}
+{% set seo_desc = "The China desk brief — policy, flows, sectors and narratives in one nightly intelligence read." %}
+{% set seo_path = "china_intel.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   /* ── layout ── */
   .ci-wrap { max-width:1060px; margin:0 auto; padding:0 0 60px; }

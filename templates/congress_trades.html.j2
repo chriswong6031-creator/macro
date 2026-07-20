@@ -32,6 +32,13 @@
 
 {% block title %}Congressional Trades — Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "Congressional Trading Tracker — Mastermind" %}
+{% set seo_desc = "Recent stock trades by members of Congress with entry-timing context and member track records, updated as new filings land." %}
+{% set seo_path = "congress_trades.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .cg-hero { margin:26px auto 10px; max-width:1060px; }
   .cg-hero h1 { font-size:26px; margin:6px 0 4px; }

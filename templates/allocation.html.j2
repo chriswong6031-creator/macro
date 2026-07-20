@@ -9,6 +9,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ d.market_en }} Narrative Rotation — where to allocate across themes</title>
+{%- if (d.region or 'us') == 'china' %}
+{% set seo_title = "China Theme Allocation — Mastermind" %}{% set seo_desc = "Where money is rotating across China A-share themes — narrative strength and entry timing to guide allocation, after each Asia close." %}{% set seo_path = "allocation_china.html" %}
+{%- elif (d.region or 'us') == 'hk' %}
+{% set seo_title = "Hong Kong Theme Allocation — Mastermind" %}{% set seo_desc = "Where money is rotating across Hong Kong themes — narrative strength and entry timing to guide allocation, after each Asia close." %}{% set seo_path = "allocation_hk.html" %}
+{%- elif (d.region or 'us') == 'canada' %}
+{% set seo_title = "Canada Theme Allocation — Mastermind" %}{% set seo_desc = "Where money is rotating across Canadian themes — narrative strength and entry timing to guide allocation. Updated nightly." %}{% set seo_path = "allocation_canada.html" %}
+{%- else %}
+{% set seo_title = "US Theme Allocation — Mastermind" %}{% set seo_desc = "Where money is rotating across US themes — narrative strength, crowding and entry timing to guide allocation. Updated nightly." %}{% set seo_path = "allocation.html" %}
+{%- endif %}
+{% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>

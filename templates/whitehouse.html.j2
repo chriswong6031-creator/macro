@@ -5,6 +5,13 @@
 
 {% block title %}White House Watch{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "White House Watch — Mastermind" %}
+{% set seo_desc = "Policy moves from the White House read for markets — executive actions, trade policy and what reprices." %}
+{% set seo_path = "whitehouse.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .wh-hero { max-width:1060px; margin:16px auto 0; background:var(--panel); border:1px solid var(--line);
              border-radius:16px; padding:24px 28px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }

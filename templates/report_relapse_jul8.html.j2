@@ -5,7 +5,7 @@
 
 {% block art_kicker %}{{ t('Tactical Positioning · Multi-Asset · Companion to <a href="report_second_act.html">The Second Act</a>', '战术配置 · 多资产 · <a href="report_second_act.html">《第二幕》</a>姊妹篇') }}{% endblock %}
 
-{% block head_extra %}
+{% block head_extra %}{{ super() }}
 <style>
 {% raw %}
   /* ===== The Relapse — stat band, evidence chips, odds ledger, buy-list cards, figures ===== */

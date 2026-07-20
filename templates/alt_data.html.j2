@@ -22,6 +22,13 @@
 
 {% block title %}Alternative Data — Signal Intelligence{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "Alternative Data Desk — Mastermind" %}
+{% set seo_desc = "Alternative-data signals — hiring, web and activity reads — turned into market context. Updated nightly." %}
+{% set seo_path = "alt_data.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .sid { --num: "SF Mono", ui-monospace, "DejaVu Sans Mono", monospace; max-width:1180px; margin:0 auto; }
   .sid-eyebrow { font:600 12px/1 var(--num); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }

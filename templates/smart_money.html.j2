@@ -2,6 +2,13 @@
 {# <title> is RCDATA — t()'s bilingual spans render as literal text there; plain EN like every other tab title #}
 {% block title %}Ownership Intelligence Desk — 13F Smart-Money Context{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "13F Smart Money Desk — Mastermind" %}
+{% set seo_desc = "What top funds actually did last quarter — new stakes, exits and conviction shifts with four-quarter fund memory, from 13F filings." %}
+{% set seo_path = "smart_money.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
 /* ---- core tokens (SM4-R3: --numf retired; Inter inherits; spark keeps mono) ---- */
 .sm { --mono:var(--font-mono,"SF Mono",ui-monospace,monospace); max-width:1220px; margin:0 auto; }

@@ -19,6 +19,13 @@
 {%- if band in ('RAISING','BROAD-RAISE') -%}hot{%- elif band == 'CUTTING' -%}cool{%- else -%}mute{%- endif -%}
 {%- endmacro %}
 
+{%- block head_extra %}
+{% set seo_title = "Thematic Foresight Desk — Mastermind" %}
+{% set seo_desc = "Early thematic signals ranked before they become consensus stories. Updated nightly." %}
+{% set seo_path = "foresight.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .fx-wrap { max-width:1060px; margin:0 auto; }
   .fx-hero { margin:22px 0 6px; }

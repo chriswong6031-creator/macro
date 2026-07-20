@@ -8,6 +8,13 @@
 
 {% block title %}Divergence Radar — Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "China Divergence Radar — Mastermind" %}
+{% set seo_desc = "Real activity vs price across China's market — where the tape and the data disagree, updated after each Asia close." %}
+{% set seo_path = "china_radar.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .rd-hero { max-width:1060px; margin:18px auto 0; }
   .rd-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }

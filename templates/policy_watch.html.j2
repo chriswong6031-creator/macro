@@ -34,6 +34,13 @@
 
 {% block title %}Fed & Policy Watch — Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "Fed & Policy Watch — Mastermind" %}
+{% set seo_desc = "The Fed's path, real-time policy expectations and what would change them — read from market prices, updated daily." %}
+{% set seo_path = "policy_watch.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   /* callouts (this page extends report_base, not article_base) */
   .callout { border-radius:12px; padding:14px 17px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:14px; line-height:1.6; }
