@@ -150,6 +150,12 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'Wiring repo-internals retrieval into ANY public-facing surface (public/subscriber Brain chat, public API, or site endpoint serving `context_search`, the site-semantics glossary, engine source, or research docs)'
+    verdict: 'FORBIDDEN — public-audience answers come only from what the site ships (Tier-2 receipts, on-page help) or a separately curated public FAQ; CXI retrieval is operator/agent-audience only. Source-visibility acceptance (repo public for mirror + live-quotes) does NOT extend to serving internals through product surfaces'
+    source: 'CXI-R23, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` Amendment 2 (2026-07-20, operator ruling)'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Cross-organ flip-counter (conjunction-of-transitions deterioration meter) as a standalone organ'
     verdict: 'KILLED — double-counts the cascade meter''s intl leg, log-birth FP (07-07 artifact), count-conjunction class (RISK_RADAR_TUNING line 93 governs any authority path)'
     source: 'RSR-R6a, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
