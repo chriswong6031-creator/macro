@@ -654,3 +654,65 @@ def test_no_translated_text_in_title_attributes():
         assert not bad, (
             f"{name}: translated text found in title= attributes: {bad[:3]}"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. _pct_hist helper
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPctHist:
+    """Unit tests for the _pct_hist sparkline helper."""
+
+    def test_empty_series_returns_empty_list(self):
+        """An empty series produces []."""
+        result = fgmod._pct_hist(pd.Series(dtype=float))
+        assert result == []
+
+    def test_single_element_returns_empty_list(self):
+        """A one-element series is too short to compute a percentile — returns []."""
+        result = fgmod._pct_hist(pd.Series([42.0]))
+        assert result == []
+
+    def test_100_point_series_returns_at_most_60_values(self):
+        """A 100-point series returns at most n=60 values (the tail)."""
+        s = pd.Series(np.linspace(1, 100, 100))
+        result = fgmod._pct_hist(s)
+        assert isinstance(result, list)
+        assert len(result) == 60
+
+    def test_values_are_0_to_100_floats(self):
+        """All returned values are in [0, 100] and are floats (no NaN)."""
+        s = pd.Series(np.random.default_rng(0).uniform(0, 100, 200))
+        result = fgmod._pct_hist(s)
+        assert len(result) > 0
+        for v in result:
+            assert isinstance(v, float), f"expected float, got {type(v)}: {v}"
+            assert 0.0 <= v <= 100.0, f"value out of range: {v}"
+            assert not np.isnan(v), "NaN in pct_hist"
+
+    def test_monotone_ascending_series_yields_rising_pct_hist(self):
+        """For a strictly ascending series, each point's history percentile is 100
+        (the last observation is always the historical maximum).  The sparkline
+        should be a flat line at 100 once the tail starts."""
+        s = pd.Series(np.arange(1, 101, dtype=float))   # 1, 2, ..., 100
+        result = fgmod._pct_hist(s, n=10)
+        # Every tail point is the maximum so far → percentile = 100.0
+        assert all(v == 100.0 for v in result), f"expected all 100.0, got {result}"
+
+    def test_shorter_series_returns_fewer_than_n_values(self):
+        """A 5-point series with n=60 returns at most 4 values (len(s)-1 since we
+        need at least 2 to compute a rank — first point ranks vs itself only)."""
+        s = pd.Series([10.0, 20.0, 15.0, 25.0, 18.0])
+        result = fgmod._pct_hist(s, n=60)
+        # All 5 points fit in the tail; each ranks within history up to that point
+        assert 1 <= len(result) <= 5
+        for v in result:
+            assert 0.0 <= v <= 100.0
+
+    def test_rounded_to_1dp(self):
+        """Values are rounded to 1 decimal place."""
+        s = pd.Series(np.linspace(0, 1, 100))
+        result = fgmod._pct_hist(s)
+        for v in result:
+            # 1 dp: v * 10 should be an integer (within float tolerance)
+            assert abs(round(v * 10) - v * 10) < 1e-9, f"not 1dp: {v}"

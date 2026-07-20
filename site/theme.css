@@ -30,6 +30,11 @@
     "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
     Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  /* --num : numeric-face alias. Referenced ~30× on the macro dashboard for its
+     data numerals; body.page-macro overrides it to a mono terminal face on its
+     own scope. This :root default keeps the token valid everywhere else (a bare
+     `font-family:var(--num)` is otherwise an invalid decl on non-macro pages). */
+  --num: var(--font-ui);
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
   --muted: #8b93a1; --line: #2a2f3a;
   --q1: #2e9e4f; --q2: #d4a017; --q3: #d04545; --q4: #3f78d8;
@@ -62,6 +67,25 @@
   --glass-blur: saturate(180%) blur(22px);
   --glass-shadow: 0 24px 64px -22px rgba(3,7,18,.74), 0 10px 26px -12px rgba(3,7,18,.55),
     inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent);
+  /* ── gbtn: house glass-button token set (macro sweep 2026-07) ──────────────
+     The default button surface for the whole site — a frosted pill that reads as
+     one family with the glass popovers above. Fill/border derive from --panel2 /
+     --text via color-mix so dark, light and the zh swap all resolve at paint. */
+  --gbtn-bg:        color-mix(in srgb, var(--panel2) 52%, transparent);
+  --gbtn-bg-hover:  color-mix(in srgb, var(--panel2) 76%, transparent);
+  --gbtn-brd:       color-mix(in srgb, var(--text) 12%, transparent);
+  --gbtn-brd-hover: color-mix(in srgb, var(--text) 24%, transparent);
+  --gbtn-sheen:     rgba(255,255,255,.09);
+}
+html[data-theme="light"] {
+  /* light glass buttons: white reads thin when too transparent, so lift the fill
+     and soften the top sheen (the dark theme's bright inset reads as a hard line
+     on a white pill). */
+  --gbtn-bg:        color-mix(in srgb, var(--panel2) 78%, var(--panel));
+  --gbtn-bg-hover:  color-mix(in srgb, var(--panel2) 96%, var(--panel));
+  --gbtn-brd:       color-mix(in srgb, #1c2430 11%, transparent);
+  --gbtn-brd-hover: color-mix(in srgb, #1c2430 22%, transparent);
+  --gbtn-sheen:     rgba(255,255,255,.7);
 }
 html[data-theme="light"] {
   /* Light palette tuned to match the Bitcoin Vector dashboard: airy #F7F8FA
@@ -200,19 +224,26 @@ html body .prob .pc { font-size: 18px; font-weight: 700; }
    transitions, a subtle lift + accent glow on hover, a pressed state, and a
    crisp keyboard focus ring. The accent is always --link (per theme); the
    red/green up-down semantics are never touched. */
+/* .navbtn / .theme-btn — adopt the gbtn glass recipe in place (nav keeps its
+   --link text identity; theme-btn reads quiet until hover). Frosted fill + inset
+   sheen so both sit in the same family as the gbtn system and the glass menus. */
 .navbtn, .theme-btn { transition: transform .16s ease, border-color .16s ease,
-  color .16s ease, background .16s ease, box-shadow .18s ease; cursor: pointer; }
-.navbtn { background: var(--panel2); border: 1px solid var(--line); color: var(--link);
+  color .16s ease, background .16s ease, box-shadow .25s ease; cursor: pointer;
+  -webkit-backdrop-filter:blur(12px) saturate(140%); backdrop-filter:blur(12px) saturate(140%);
+  box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 1px 2px rgba(3,7,18,.18); }
+.navbtn { background: var(--gbtn-bg); border: 1px solid var(--gbtn-brd); color: var(--link);
   padding: 5px 14px; border-radius: 8px; font-size: 13px; }
-.navbtn:hover { border-color: var(--link); transform: translateY(-1px);
-  box-shadow: 0 5px 15px -5px color-mix(in srgb, var(--link) 50%, transparent); }
-.navbtn:active { transform: translateY(0); box-shadow: none; }
-.theme-btn { background: var(--panel2); border: 1px solid var(--line);
+.navbtn:hover { border-color: color-mix(in srgb, var(--link) 40%, var(--gbtn-brd-hover)); transform: translateY(-1px);
+  background: var(--gbtn-bg-hover);
+  box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 8px 20px -10px color-mix(in srgb, var(--link) 45%, transparent); }
+.navbtn:active { transform: translateY(0) scale(.985); box-shadow: inset 0 1px 0 var(--gbtn-sheen); }
+.theme-btn { background: var(--gbtn-bg); border: 1px solid var(--gbtn-brd);
   color: var(--muted); padding: 5px 11px; border-radius: 8px; font-size: 13px;
   line-height: 1; }
-.theme-btn:hover { color: var(--text); border-color: var(--link); transform: translateY(-1px);
-  box-shadow: 0 5px 15px -5px color-mix(in srgb, var(--link) 42%, transparent); }
-.theme-btn:active { transform: translateY(0); box-shadow: none; }
+.theme-btn:hover { color: var(--text); border-color: var(--gbtn-brd-hover); transform: translateY(-1px);
+  background: var(--gbtn-bg-hover);
+  box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 8px 20px -10px rgba(3,7,18,.45); }
+.theme-btn:active { transform: translateY(0) scale(.985); box-shadow: inset 0 1px 0 var(--gbtn-sheen); }
 
 /* common page-local pill / action buttons — layer the same hover feel site-wide
    (additive: only transition + a hover accent border + soft glow), so each keeps
@@ -248,6 +279,53 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   .ai-brief-link, .nav-link, .nav-dd-menu a, a.actitem, a.idx-alloc, .nbcard,
   a.scard):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px; }
+
+/* ── gbtn: house glass button system (macro sweep 2026-07) ────────────────────
+   The codebase-wide default button. A frosted pill with a hairline border, an
+   inset top sheen, a hover lift and a single diagonal sheen sweep — one family
+   with the glass popovers. Variants: -pill (fully round) -sm/-lg (size)
+   -quiet (chrome-less until hover) -icon (32px circle) -cta (breathing link halo)
+   -warn / -up (semantic tint from the status tokens). Reduced-motion strips the
+   sweep, the lift and the breathing. Tokens live in :root beside the glass set. */
+.gbtn{ position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  padding:7px 14px; border-radius:10px; border:1px solid var(--gbtn-brd);
+  background:var(--gbtn-bg);
+  -webkit-backdrop-filter:blur(12px) saturate(140%); backdrop-filter:blur(12px) saturate(140%);
+  color:color-mix(in srgb, var(--text) 90%, transparent);
+  font:600 12.5px/1 var(--font-ui); letter-spacing:.01em;
+  box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 1px 2px rgba(3,7,18,.18);
+  cursor:pointer; text-decoration:none; user-select:none; white-space:nowrap;
+  transition: background .2s ease, border-color .2s ease, color .2s ease, transform .16s ease, box-shadow .25s ease; }
+.gbtn:hover{ background:var(--gbtn-bg-hover); border-color:var(--gbtn-brd-hover); color:var(--text);
+  transform:translateY(-1px); box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 8px 20px -10px rgba(3,7,18,.55); }
+.gbtn:active{ transform:translateY(0) scale(.985); }
+.gbtn:focus-visible{ outline:2px solid var(--link); outline-offset:2px; }
+.gbtn::after{ content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg, transparent 40%, rgba(255,255,255,.13) 50%, transparent 60%);
+  transform:translateX(-140%) skewX(-8deg); }
+.gbtn:hover::after{ transform:translateX(140%) skewX(-8deg); transition:transform .55s ease; }
+.gbtn-pill{ border-radius:999px; }
+.gbtn-sm{ padding:5px 10px; font-size:11.5px; border-radius:8px; }
+.gbtn-lg{ padding:10px 18px; font-size:13.5px; border-radius:12px; }
+.gbtn-quiet{ border-color:transparent; background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; }
+.gbtn-quiet:hover{ background:var(--gbtn-bg); border-color:var(--gbtn-brd); }
+.gbtn-icon{ width:32px; height:32px; padding:0; border-radius:999px; }
+.gbtn-cta{ border-color:color-mix(in srgb, var(--link) 45%, var(--gbtn-brd));
+  background:linear-gradient(180deg, color-mix(in srgb, var(--link) 14%, var(--gbtn-bg)), var(--gbtn-bg));
+  color:var(--text); animation:gbtnBreath 3.4s ease-in-out infinite; }
+.gbtn-cta:hover{ border-color:var(--link); box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 8px 24px -10px color-mix(in srgb, var(--link) 55%, transparent); }
+.gbtn-warn{ border-color:color-mix(in srgb, var(--warn) 45%, var(--gbtn-brd)); background:linear-gradient(180deg, color-mix(in srgb, var(--warn) 12%, var(--gbtn-bg)), var(--gbtn-bg)); }
+.gbtn-up{ border-color:color-mix(in srgb, var(--up) 45%, var(--gbtn-brd)); background:linear-gradient(180deg, color-mix(in srgb, var(--up) 12%, var(--gbtn-bg)), var(--gbtn-bg)); }
+@keyframes gbtnBreath{ 0%,100%{ box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
+  50%{ box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 0 18px -4px color-mix(in srgb, var(--link) 38%, transparent); } }
+@media (prefers-reduced-motion: reduce){
+  .gbtn::after{ display:none; } .gbtn, .gbtn:hover, .gbtn:active{ transform:none; } .gbtn-cta{ animation:none; } }
+
+/* ── typography utilities (macro sweep 2026-07) ──────────────────────────────
+   .tnum locks tabular figures so columns of numerals never jitter; .eyebrow is
+   the house section-label treatment (spaced uppercase Inter). Both theme-safe. */
+.tnum{ font-variant-numeric:tabular-nums; }
+.eyebrow{ font:600 10.5px/1 var(--font-ui); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
 
 /* ---- tinted semantic badges -------------------------------------------------
    Any element with one of these classes is tinted from its --c base color. */
@@ -598,35 +676,48 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
 .site-nav .nav-ctrls { grid-column: 2; grid-row: 2; justify-self: end; align-self: center;
   display: flex; align-items: center; gap: 10px; }
 
-/* static AI Daily Brief entry — pinned in the nav-ctrls cluster beside the theme +
-   language toggles, so it never scrolls with the main menu. Styled as a refined
-   pill: a soft top-lit gradient, a hairline border and a faint resting shadow give
-   it depth so it reads as a real button rather than a flat chip. */
-.nav-ctrls .ai-brief-link { display: inline-flex; align-items: center; gap: 6px;
+/* Mastermind + Terminal nav pills — rebuilt on the gbtn glass recipe (macro sweep
+   2026-07). Both are frosted glass pills with an inset sheen and a diagonal sheen
+   sweep on hover, so they read as one family with the rest of the button system.
+   Mastermind (base) carries the -cta breathing link halo — the single "enter the
+   brain" signature in the nav; Terminal keeps its link-tinted "outbound door"
+   identity, no breathing (one breathing element only). Class names unchanged so
+   every page's nav upgrades at once. */
+.nav-ctrls .ai-brief-link { position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 6px;
   white-space: nowrap; flex: none; padding: 6px 13px; border-radius: 999px;
-  background: linear-gradient(180deg, var(--panel), var(--panel2));
-  border: 1px solid var(--line); color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--link) 45%, var(--gbtn-brd));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 14%, var(--gbtn-bg)), var(--gbtn-bg));
+  -webkit-backdrop-filter: blur(12px) saturate(140%); backdrop-filter: blur(12px) saturate(140%);
+  color: var(--text);
   font-size: 12.5px; font-weight: 600; letter-spacing: .1px; line-height: 1; cursor: pointer;
-  box-shadow: 0 1px 2px rgba(16,24,40,.05), inset 0 1px 0 rgba(255,255,255,.05);
-  transition: background .2s, border-color .2s, color .2s, transform .16s ease, box-shadow .18s ease; }
-/* Shared hover for BOTH pills (Mastermind + Terminal): fill with the link accent +
-   white text, lift and glow. Mastermind used to only outline its border on hover;
-   it now uses the Terminal pill's nicer fill animation so the two feel identical. */
-.nav-ctrls .ai-brief-link:hover { background: var(--link); border-color: var(--link); color: #fff;
-  transform: translateY(-1px); box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--link) 50%, transparent); }
-.nav-ctrls .ai-brief-link:active { transform: translateY(0); box-shadow: none; }
-.nav-ctrls .ai-brief-link.active { background: var(--link); border-color: var(--link); color: #fff; }
-/* Terminal entry — the live Mastermind Terminal (app.mastermind-x.com), pinned
-   beside the Mastermind button. Link-accented border/text + a faint link-tinted
-   fill AT REST mark it as the one outbound door to the live app; the brighter
-   fill-on-hover is the shared rule above. */
+  box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 1px 2px rgba(3,7,18,.18);
+  animation: gbtnBreath 3.4s ease-in-out infinite;
+  transition: background .2s, border-color .2s, color .2s, transform .16s ease, box-shadow .25s ease; }
+.nav-ctrls .ai-brief-link::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.13) 50%, transparent 60%);
+  transform: translateX(-140%) skewX(-8deg); }
+.nav-ctrls .ai-brief-link:hover::after { transform: translateX(140%) skewX(-8deg); transition: transform .55s ease; }
+.nav-ctrls .ai-brief-link:hover { border-color: var(--link); color: var(--text); transform: translateY(-1px);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 22%, var(--gbtn-bg)), var(--gbtn-bg));
+  box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 8px 24px -10px color-mix(in srgb, var(--link) 55%, transparent); }
+.nav-ctrls .ai-brief-link:active { transform: translateY(0) scale(.985); box-shadow: inset 0 1px 0 var(--gbtn-sheen); }
+.nav-ctrls .ai-brief-link.active { border-color: var(--link);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 26%, var(--gbtn-bg)), var(--gbtn-bg)); }
+/* Terminal entry — the live Mastermind Terminal (app.mastermind-x.com). Link-tinted
+   glass fill + --link text mark it as the one outbound door to the live app. It
+   overrides the base's breathing (steady) and re-tints its resting fill. */
 .nav-ctrls .ai-brief-link.terminal-link {
-  border-color: color-mix(in srgb, var(--link) 55%, var(--line)); color: var(--link);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 12%, var(--panel)), color-mix(in srgb, var(--link) 7%, var(--panel2))); }
-/* Terminal's at-rest border/background tie the shared :hover rule on specificity, so
-   spell its hover out in full (higher specificity) to guarantee the solid link fill +
-   white text win over the resting tint. */
-.nav-ctrls .ai-brief-link.terminal-link:hover { background: var(--link); border-color: var(--link); color: #fff; }
+  border-color: color-mix(in srgb, var(--link) 55%, var(--gbtn-brd)); color: var(--link);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 12%, var(--gbtn-bg)), color-mix(in srgb, var(--link) 6%, var(--gbtn-bg)));
+  animation: none; }
+.nav-ctrls .ai-brief-link.terminal-link:hover { color: #fff; border-color: var(--link);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 88%, transparent), var(--link));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 8px 24px -10px color-mix(in srgb, var(--link) 60%, transparent); }
+@media (prefers-reduced-motion: reduce){
+  .nav-ctrls .ai-brief-link { animation: none; transform: none; }
+  .nav-ctrls .ai-brief-link:hover { transform: none; }
+  .nav-ctrls .ai-brief-link::after { display: none; } }
 
 /* AI Daily Brief entry card — the single in-page doorway to the cross-asset LLM
    synthesis page (aibrief.html). Replaces the old inline AI Master Brief panel on the
