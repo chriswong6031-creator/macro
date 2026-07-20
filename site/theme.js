@@ -241,7 +241,13 @@
   function mmTerminalOn() { return window.MM_TERMINAL !== false; }
   // from=macro lets the Terminal show its prominent "back to Dashboard" button reliably even when the
   // referrer is stripped (the Terminal also falls back to document.referrer when this param is absent).
-  function terminalUrl(t) { return MM_TERMINAL_BASE + '?sym=' + encodeURIComponent(t) + '&from=macro'; }
+  // ret=<full current dashboard URL, incl. hash> lets the Terminal's "← Dashboard" button return the user
+  // to the EXACT page they came from: the macro→terminal hop is cross-origin, so document.referrer is
+  // stripped to the bare origin and the precise path/anchor is otherwise unrecoverable Terminal-side.
+  function terminalUrl(t) {
+    return MM_TERMINAL_BASE + '?sym=' + encodeURIComponent(t) + '&from=macro'
+      + '&ret=' + encodeURIComponent(location.href);
+  }
   // Public handle so modules that navigate programmatically (stocktable.js row clicks —
   // window.location, not an <a>, so the capture-phase intercept below never sees them)
   // route through the SAME rewrite; the URL scheme + kill-switch live in one place.
