@@ -764,16 +764,17 @@ def outbox(root=None) -> dict:
     try:
         from engine.marketing import outbox as _ob  # noqa: PLC0415
 
-        # Config for effective_cap
+        # Config for effective_cap + the Sentinel contract echo
         cfg = _read_yaml(repo / _CONFIG_REL)
-        cap = _ob.effective_cap(cfg)
+        sentinel = _ob.sentinel_contract(cfg)
+        cap = sentinel["effective_cap"]
 
-        # Read raw data (all fail-soft → [] on absence)
-        ob_root = repo  # outbox_dir resolves against repo root
-        items = _ob.read_items(ob_root)
-        statuses = _ob.current_statuses(ob_root)
-        decisions = _ob.latest_decisions(ob_root)
-        ledger = _ob.read_ledger(ob_root)
+        # One-pass fold of items + ledger + decisions (fail-soft → empty)
+        state = _ob.fold_state(repo)
+        items = [state["items"][i] for i in state["order"]]
+        statuses = state["status"]
+        decisions = state["decisions"]
+        activity = list(reversed(_ob.read_activity(repo, n=8)))
 
         # Empty state
         if not items:
@@ -782,17 +783,13 @@ def outbox(root=None) -> dict:
                 "note": _OUTBOX_EMPTY_NOTE,
                 "as_of": None,
                 "cap": cap,
+                "sentinel": sentinel,
                 "summary": _zero_counts() | {"total": 0},
                 "accounts": [],
                 "history": [],
+                "activity": activity,
+                "decision_log": [],
             }
-
-        # Build last-ledger-row per item_id for last_transition_at and receipt
-        _last_ledger: dict[str, dict] = {}
-        for row in ledger:
-            item_id = row.get("id")
-            if item_id:
-                _last_ledger[item_id] = row
 
         # Compute effective status per item (folded status + held overlay)
         def _effective_status(item_id: str, folded: str, decision: str | None) -> str:
@@ -810,7 +807,7 @@ def outbox(root=None) -> dict:
             dec_val = dec_row.get("decision") if dec_row else None
             decided_at = dec_row.get("at") if dec_row else None
             eff = _effective_status(item_id, folded, dec_val)
-            last_row = _last_ledger.get(item_id)
+            last_row = state["last"].get(item_id)
             last_transition_at = last_row.get("at") if last_row else None
             receipt = last_row.get("receipt") if last_row else None
             enriched.append({
@@ -828,6 +825,7 @@ def outbox(root=None) -> dict:
                 "decided_at": decided_at,
                 "created_at": item.get("created_at"),
                 "last_transition_at": last_transition_at,
+                "attempts": state["attempts"].get(item_id, 0),
                 "receipt": receipt,
                 "_effective": eff,
                 "_account": item.get("account", ""),
@@ -894,18 +892,67 @@ def outbox(root=None) -> dict:
             for e in terminal[:50]
         ]
 
+        # Per-item decision log — the operator's audit trail (holds/approvals +
+        # actuator transitions), which the pipeline `activity` (run tallies) does
+        # not surface. Derived from the rows fold_state already read; no extra IO
+        # beyond the two cheap reads below.
+        id_meta = {e["id"]: (e["_account"], e.get("kind") or "") for e in enriched}
+        decision_log = _build_decision_log(
+            _ob.read_decisions(repo), _ob.read_ledger(repo), id_meta, limit=12)
+
         return {
             "ok": True,
             "as_of": max_as_of,
             "cap": cap,
+            "sentinel": sentinel,
             "summary": summary,
             "accounts": accounts_out,
             "history": history_out,
+            "activity": activity,
+            "decision_log": decision_log,
         }
 
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.outbox failed: %s", exc)
         return {"ok": False, "error": str(exc)}
+
+
+def _build_decision_log(all_decisions: list, ledger: list, id_meta: dict,
+                        limit: int = 12) -> list:
+    """Merge decision + ledger rows into one newest-first per-item audit trail.
+
+    Complements the pipeline `activity` feed (run tallies): this answers "what
+    has been decided/done to each post, and by whom". Each event:
+    {type, id, account, kind, at, actor, detail}. `type` is "approve"/"hold"
+    (operator decisions) or "posted"/"failed"/"approved"/"quarantined"
+    (actuator transitions). Rows for ids absent from id_meta still appear with
+    account/kind = "" — the audit trail never silently drops an event.
+    Fail-soft: never raises; malformed rows are skipped.
+    """
+    events: list[dict] = []
+    for row in all_decisions or []:
+        item_id = row.get("id")
+        if not item_id:
+            continue
+        acct, kind = id_meta.get(item_id, ("", ""))
+        events.append({
+            "type": row.get("decision") or "decision",
+            "id": item_id, "account": acct, "kind": kind,
+            "at": row.get("at"), "actor": row.get("actor"), "detail": row.get("note"),
+        })
+    for row in ledger or []:
+        item_id = row.get("id")
+        if not item_id:
+            continue
+        acct, kind = id_meta.get(item_id, ("", ""))
+        events.append({
+            "type": row.get("to") or "transition",
+            "id": item_id, "account": acct, "kind": kind,
+            "at": row.get("at"), "actor": row.get("actor"), "detail": row.get("note"),
+        })
+    # Newest first; rows with no timestamp sort last (empty string).
+    events.sort(key=lambda e: (e.get("at") or ""), reverse=True)
+    return events[:limit]
 
 
 def decide_outbox(item_id: str, decision: str, note: str | None = None, root=None) -> bool:
@@ -921,3 +968,25 @@ def decide_outbox(item_id: str, decision: str, note: str | None = None, root=Non
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.decide_outbox failed: %s", exc)
         return False
+
+
+def decide_outbox_batch(item_ids: list, decision: str, note: str | None = None,
+                        root=None) -> dict:
+    """Record one decision for many items (bulk approve/hold from the admin).
+
+    Returns {"decided": n, "results": {id: bool}}. Order preserved; each id is
+    validated independently so one unknown id never blocks the rest.
+    Never raises.
+    """
+    results: dict[str, bool] = {}
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+        repo = Path(root) if root is not None else _ROOT
+        for item_id in item_ids:
+            if not isinstance(item_id, str) or not item_id:
+                continue
+            results[item_id] = _ob.record_decision(
+                item_id, decision, actor="admin", root=repo, note=note)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.decide_outbox_batch failed: %s", exc)
+    return {"decided": sum(1 for v in results.values() if v), "results": results}

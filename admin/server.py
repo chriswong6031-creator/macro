@@ -688,12 +688,23 @@ class Handler(BaseHTTPRequestHandler):
 
             if path == "/api/marketing/outbox/decide":
                 item_id = b.get("id")
+                item_ids = b.get("ids")
                 decision = b.get("decision")
                 note = b.get("note") or None
-                if not item_id:
-                    return self._json({"ok": False, "error": "id required"}, 400)
                 if decision not in ("approve", "hold"):
                     return self._json({"ok": False, "error": "decision must be 'approve' or 'hold'"}, 400)
+                # Batch form: {"ids": [...]} — bulk approve/hold from the admin.
+                if item_ids is not None:
+                    if (not isinstance(item_ids, list) or not item_ids
+                            or not all(isinstance(i, str) for i in item_ids)):
+                        return self._json({"ok": False, "error": "ids must be a non-empty list of strings"}, 400)
+                    if len(item_ids) > 200:
+                        return self._json({"ok": False, "error": "at most 200 ids per request"}, 400)
+                    res = marketing.decide_outbox_batch(item_ids, decision, note=note)
+                    return self._json({"ok": True, "decision": decision, **res})
+                # Single form: {"id": "..."} (original contract, kept verbatim)
+                if not item_id:
+                    return self._json({"ok": False, "error": "id required"}, 400)
                 ok = marketing.decide_outbox(item_id, decision, note=note)
                 if not ok:
                     return self._json({"ok": False, "error": "unknown item id or write failed"}, 400)

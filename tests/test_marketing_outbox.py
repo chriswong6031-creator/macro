@@ -39,6 +39,11 @@ ROOT = _worktree_root()
 _FIXED_NOW = datetime(2026, 7, 19, 12, 0, 0, tzinfo=timezone.utc)
 _AS_OF = "2026-07-19"
 
+# Emit fixtures carry 3 clean D1 items per account; the Sentinel default cap is
+# 2/day (weeks_1_2 floor), so tests that want all 3 through raise the sentinel
+# cap EXPLICITLY — the authority stays with the sentinel: block, never outbox.
+_EMIT_CFG = {"sentinel": {"max_posts_per_account_per_day": 8}}
+
 
 def _make_minimal_item(
     tmp_path: Path,
@@ -251,7 +256,7 @@ def test_cap_8_items_ok_9th_rejected(tmp_path):
             as_of=_AS_OF,
             provenance="content_studio", now=_FIXED_NOW,
         )
-        results.append(enqueue(item, root=tmp_path))
+        results.append(enqueue(item, root=tmp_path, max_per_account_day=8))
 
     queued = [r for r in results if r == "queued"]
     cap_exceeded = [r for r in results if r == "cap_exceeded"]
@@ -260,19 +265,30 @@ def test_cap_8_items_ok_9th_rejected(tmp_path):
     assert results[8] == "cap_exceeded", "9th item must be cap_exceeded"
 
 
-def test_effective_cap_config_can_lower(tmp_path):
+def test_effective_cap_outbox_can_lower_below_sentinel(tmp_path):
     from engine.marketing.outbox import effective_cap
-    assert effective_cap({"outbox": {"max_posts_per_account_per_day": 3}}) == 3
+    assert effective_cap({"sentinel": {"max_posts_per_account_per_day": 4},
+                          "outbox": {"max_posts_per_account_per_day": 3}}) == 3
 
 
-def test_effective_cap_config_cannot_raise_above_8(tmp_path):
+def test_effective_cap_outbox_cannot_raise_above_sentinel_default(tmp_path):
+    """With no sentinel config, the Sentinel in-code floor (weeks_1_2 = 2) rules."""
     from engine.marketing.outbox import effective_cap
-    assert effective_cap({"outbox": {"max_posts_per_account_per_day": 20}}) == 8
+    assert effective_cap({"outbox": {"max_posts_per_account_per_day": 20}}) == 2
 
 
-def test_effective_cap_default_is_8():
+def test_effective_cap_default_is_sentinel_floor():
+    """No config at all → Sentinel's weeks_1_2 in-code default (2), NOT an
+    outbox-owned constant (config/marketing.yml sentinel: LAW)."""
     from engine.marketing.outbox import effective_cap
-    assert effective_cap({}) == 8
+    assert effective_cap({}) == 2
+
+
+def test_effective_cap_follows_sentinel_ramp():
+    """When Sentinel raises the cap (week-5+ ramp), the outbox follows — there
+    is no independent outbox ceiling."""
+    from engine.marketing.outbox import effective_cap
+    assert effective_cap({"sentinel": {"max_posts_per_account_per_day": 12}}) == 12
 
 
 def test_cap_9th_item_not_written_to_file(tmp_path):
@@ -285,7 +301,7 @@ def test_cap_9th_item_not_written_to_file(tmp_path):
             as_of=_AS_OF,
             provenance="content_studio", now=_FIXED_NOW,
         )
-        enqueue(item, root=tmp_path)
+        enqueue(item, root=tmp_path, max_per_account_day=8)
 
     items_file = tmp_path / "data" / "marketing" / "outbox" / "items.jsonl"
     lines = [l for l in items_file.read_text().splitlines() if l.strip()]
@@ -610,7 +626,7 @@ def test_emit_counts(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan
 
     plan = _make_plan_fixture()
-    result = emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    result = emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     assert result["emitted"] == 3, f"Expected 3 emitted, got: {result}"
     assert result["skipped_gate"] == 1, f"Expected 1 skipped_gate, got: {result}"
@@ -630,7 +646,7 @@ def test_emit_media_written(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan
 
     plan = _make_plan_fixture()
-    result = emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    result = emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     assert result["media_written"] == 1
 
@@ -647,7 +663,7 @@ def test_emit_media_path_repo_relative(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan, read_items
 
     plan = _make_plan_fixture()
-    emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     items = read_items(root=tmp_path)
     chart_items = [i for i in items if i.get("source", {}).get("chart_id") == "chart-001"]
@@ -666,8 +682,8 @@ def test_emit_rerun_gives_skipped_dupe(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan
 
     plan = _make_plan_fixture()
-    r1 = emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
-    r2 = emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    r1 = emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+    r2 = emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     assert r1["emitted"] == 3
     assert r2["emitted"] == 0
@@ -679,7 +695,7 @@ def test_emit_by_account(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan
 
     plan = _make_plan_fixture()
-    result = emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    result = emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     assert "flagship" in result["by_account"]
     assert result["by_account"]["flagship"] == 3
@@ -690,7 +706,7 @@ def test_emit_media_not_rewritten_if_exists(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan
 
     plan = _make_plan_fixture()
-    emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     # Overwrite with known content
     svg_path = tmp_path / "data" / "marketing" / "outbox" / "media" / _AS_OF / "chart-001.svg"
@@ -713,7 +729,7 @@ def test_emit_media_not_rewritten_if_exists(tmp_path):
             "status": "drafted",
         }
     ]}]
-    emit_from_content_plan(plan2, root=tmp_path, day_prefix="D1")
+    emit_from_content_plan(plan2, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     # File must retain the overwritten content (not rewritten)
     assert svg_path.read_text(encoding="utf-8") == "EXISTING_CONTENT"
@@ -743,7 +759,7 @@ def test_actuator_dry_run_exits_0_and_writes_report(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan, record_decision, read_items
 
     plan = _make_plan_fixture()
-    emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     items = read_items(root=tmp_path)
     assert items, "No items seeded"
@@ -771,7 +787,7 @@ def test_actuator_dry_run_exits_0_and_writes_report(tmp_path):
     assert report_path.exists(), "dryrun_report.json not written"
 
     report = json.loads(report_path.read_text())
-    assert report["schema"] == "marketing.outbox.dryrun/v1"
+    assert report["schema"] == "marketing.outbox.dryrun/v2"
     assert report["dry_run"] is True
     assert "kill_switch" in report
     assert "MARKETING_PUBLISH_ENABLED" in report["kill_switch"]
@@ -804,7 +820,7 @@ def test_actuator_dry_run_counts_consistent(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan
 
     plan = _make_plan_fixture()
-    emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
 
     subprocess.run(
         [sys.executable, "scripts/marketing_actuator.py", "--dry-run", "--root", str(tmp_path)],
@@ -818,8 +834,8 @@ def test_actuator_dry_run_counts_consistent(tmp_path):
 
     assert counts["items_total"] == 3  # 3 D1 items emitted
     accounted = (
-        counts["queued"] + counts["approved"] + counts["posted"] +
-        counts["failed"] + counts["quarantined"]
+        counts["queued"] + counts["held"] + counts["approved"] +
+        counts["posted"] + counts["failed"] + counts["quarantined"]
     )
     assert accounted == counts["items_total"], (
         f"Status counts don't add up to items_total: {counts}"
@@ -841,7 +857,7 @@ def test_emit_skips_sentinel_quarantined_and_unverified(tmp_path):
     q[1]["sentinel_ok"] = False                          # crash path stamp
     q[2]["sentinel_ok"] = True                           # explicit pass
 
-    result = emit_from_content_plan(plan, root=tmp_path, day_prefix="D1")
+    result = emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
     assert result["skipped_sentinel"] == 2, f"got: {result}"
     assert result["emitted"] == 1
 
@@ -850,7 +866,7 @@ def test_emit_missing_sentinel_field_passes_through(tmp_path):
     """Pre-D08 plans carry no sentinel_ok — emission behavior unchanged."""
     from engine.marketing.outbox import emit_from_content_plan
 
-    result = emit_from_content_plan(_make_plan_fixture(), root=tmp_path, day_prefix="D1")
+    result = emit_from_content_plan(_make_plan_fixture(), root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
     assert result["emitted"] == 3
     assert result["skipped_sentinel"] == 0
 
@@ -874,3 +890,230 @@ def test_effective_cap_repo_config_is_weeks_1_2_tier():
     cfg_path = Path(__file__).resolve().parent.parent / "config" / "marketing.yml"
     cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
     assert effective_cap(cfg) == 2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11. fold_state — single-pass rich fold
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_fold_state_basic(tmp_path):
+    from engine.marketing.outbox import (
+        enqueue, fold_state, record_decision, transition,
+    )
+
+    a = _make_minimal_item(tmp_path, text="Fold test post A.")
+    b = _make_minimal_item(tmp_path, text="Fold test post B.")
+    enqueue(a, root=tmp_path)
+    enqueue(b, root=tmp_path)
+    record_decision(a["id"], "hold", actor="op", root=tmp_path)
+    transition(b["id"], "approved", actor="actuator", root=tmp_path)
+
+    st = fold_state(tmp_path)
+    assert st["order"] == [a["id"], b["id"]]
+    assert st["status"][a["id"]] == "queued"
+    assert st["status"][b["id"]] == "approved"
+    assert st["held"] == {a["id"]}
+    assert st["decisions"][a["id"]]["decision"] == "hold"
+    assert st["last"][b["id"]]["to"] == "approved"
+    assert st["attempts"] == {}
+
+
+def test_fold_state_attempts_counts_failures(tmp_path):
+    from engine.marketing.outbox import enqueue, fold_state, transition
+
+    item = _make_minimal_item(tmp_path, text="Attempts counting post.")
+    enqueue(item, root=tmp_path)
+    transition(item["id"], "approved", actor="t", root=tmp_path)
+    transition(item["id"], "failed", actor="t", root=tmp_path)
+    transition(item["id"], "approved", actor="t", root=tmp_path)
+    transition(item["id"], "failed", actor="t", root=tmp_path)
+
+    st = fold_state(tmp_path)
+    assert st["attempts"][item["id"]] == 2
+    assert st["status"][item["id"]] == "failed"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. apply_decisions — batch approval application + governed retry
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_apply_decisions_approves_queued(tmp_path):
+    from engine.marketing.outbox import (
+        apply_decisions, current_statuses, enqueue, record_decision,
+    )
+
+    a = _make_minimal_item(tmp_path, text="Apply approve post.")
+    b = _make_minimal_item(tmp_path, text="Apply hold post.")
+    enqueue(a, root=tmp_path)
+    enqueue(b, root=tmp_path)
+    record_decision(a["id"], "approve", actor="op", root=tmp_path)
+    record_decision(b["id"], "hold", actor="op", root=tmp_path)
+
+    out = apply_decisions(tmp_path)
+    assert out["approved"] == [a["id"]]
+    assert out["rearmed"] == [] and out["quarantined"] == []
+    st = current_statuses(tmp_path)
+    assert st[a["id"]] == "approved"
+    assert st[b["id"]] == "queued"  # hold never transitions
+
+
+def test_apply_decisions_idempotent(tmp_path):
+    from engine.marketing.outbox import apply_decisions, enqueue, record_decision, read_ledger
+
+    item = _make_minimal_item(tmp_path, text="Idempotent apply post.")
+    enqueue(item, root=tmp_path)
+    record_decision(item["id"], "approve", actor="op", root=tmp_path)
+    apply_decisions(tmp_path)
+    n_rows = len(read_ledger(tmp_path))
+    out2 = apply_decisions(tmp_path)
+    assert out2 == {"approved": [], "rearmed": [], "quarantined": []}
+    assert len(read_ledger(tmp_path)) == n_rows  # no duplicate rows
+
+
+def test_apply_decisions_stale_approve_never_rearms_failed(tmp_path):
+    """An approve recorded BEFORE the failure must not re-arm the item —
+    a failure always needs a fresh human look (no silent retry-spam)."""
+    from engine.marketing.outbox import (
+        apply_decisions, current_statuses, enqueue, record_decision, transition,
+    )
+
+    item = _make_minimal_item(tmp_path, text="Stale approval post.")
+    enqueue(item, root=tmp_path)
+    record_decision(item["id"], "approve", actor="op", root=tmp_path)
+    apply_decisions(tmp_path)                                   # queued → approved
+    transition(item["id"], "failed", actor="t", root=tmp_path)  # post attempt failed
+
+    out = apply_decisions(tmp_path)  # decision predates the failure
+    assert out["rearmed"] == [] and out["quarantined"] == []
+    assert current_statuses(tmp_path)[item["id"]] == "failed"
+
+
+def test_apply_decisions_fresh_approve_rearms_failed(tmp_path):
+    import time as _time
+    from engine.marketing.outbox import (
+        apply_decisions, current_statuses, enqueue, record_decision, transition,
+    )
+
+    item = _make_minimal_item(tmp_path, text="Fresh re-arm post.")
+    enqueue(item, root=tmp_path)
+    record_decision(item["id"], "approve", actor="op", root=tmp_path)
+    apply_decisions(tmp_path)
+    transition(item["id"], "failed", actor="t", root=tmp_path)
+    _time.sleep(1.1)  # decision timestamps are second-granular ISO strings
+    record_decision(item["id"], "approve", actor="op", root=tmp_path)
+
+    out = apply_decisions(tmp_path)
+    assert out["rearmed"] == [item["id"]]
+    assert current_statuses(tmp_path)[item["id"]] == "approved"
+
+
+def test_apply_decisions_quarantines_at_max_attempts(tmp_path):
+    """Docket W1 §7: after MAX_POST_ATTEMPTS failures a fresh approval
+    quarantines instead of re-arming — never retry-spam."""
+    import time as _time
+    from engine.marketing.outbox import (
+        MAX_POST_ATTEMPTS, apply_decisions, current_statuses, enqueue,
+        record_decision, transition,
+    )
+
+    item = _make_minimal_item(tmp_path, text="Max attempts post.")
+    enqueue(item, root=tmp_path)
+    record_decision(item["id"], "approve", actor="op", root=tmp_path)
+    apply_decisions(tmp_path)
+    for _ in range(MAX_POST_ATTEMPTS - 1):
+        transition(item["id"], "failed", actor="t", root=tmp_path)
+        transition(item["id"], "approved", actor="t", root=tmp_path)
+    transition(item["id"], "failed", actor="t", root=tmp_path)  # attempt #MAX fails
+
+    _time.sleep(1.1)
+    record_decision(item["id"], "approve", actor="op", root=tmp_path)
+    out = apply_decisions(tmp_path)
+    assert out["quarantined"] == [item["id"]]
+    assert current_statuses(tmp_path)[item["id"]] == "quarantined"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 13. Activity log + sentinel contract
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_emit_appends_activity_row(tmp_path):
+    from engine.marketing.outbox import emit_from_content_plan, read_activity
+
+    emit_from_content_plan(_make_plan_fixture(), root=tmp_path, cfg=_EMIT_CFG,
+                           day_prefix="D1")
+    rows = read_activity(tmp_path)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["lane"] == "emit"
+    assert row["emitted"] == 3
+    assert row["skipped_gate"] == 1
+    assert row["by_account"] == {"flagship": 3}
+
+
+def test_actuator_appends_activity_row(tmp_path):
+    from engine.marketing.outbox import emit_from_content_plan, read_activity
+
+    emit_from_content_plan(_make_plan_fixture(), root=tmp_path, cfg=_EMIT_CFG,
+                           day_prefix="D1")
+    subprocess.run(
+        [sys.executable, "scripts/marketing_actuator.py", "--dry-run", "--root", str(tmp_path)],
+        cwd=str(ROOT), capture_output=True,
+    )
+    lanes = [r["lane"] for r in read_activity(tmp_path)]
+    assert lanes == ["emit", "actuator_dry_run"]
+
+
+def test_emit_default_cap_is_sentinel_floor(tmp_path):
+    """With no cfg, emit enforces the Sentinel weeks_1_2 floor (2/day/account)
+    at enqueue time — defense-in-depth even when the plan was never gated."""
+    from engine.marketing.outbox import emit_from_content_plan
+
+    result = emit_from_content_plan(_make_plan_fixture(), root=tmp_path,
+                                    day_prefix="D1")
+    assert result["emitted"] == 2
+    assert result["skipped_cap"] == 1
+
+
+def test_sentinel_contract_resolves_config_and_defaults():
+    from engine.marketing.outbox import sentinel_contract
+
+    c = sentinel_contract({})
+    assert c["source"] == "sentinel_defaults"
+    assert c["effective_cap"] == 2
+    assert c["min_minutes_between_posts"] == 120
+    assert c["links_allowed"] is False
+
+    c2 = sentinel_contract({"sentinel": {"max_posts_per_account_per_day": 4,
+                                         "links_allowed": True}})
+    assert c2["source"] == "config"
+    assert c2["effective_cap"] == 4
+    assert c2["links_allowed"] is True
+    assert c2["min_minutes_between_posts"] == 120  # default fills the gap
+
+
+def test_actuator_report_carries_sentinel_contract(tmp_path):
+    from engine.marketing.outbox import emit_from_content_plan
+
+    emit_from_content_plan(_make_plan_fixture(), root=tmp_path, cfg=_EMIT_CFG,
+                           day_prefix="D1")
+    subprocess.run(
+        [sys.executable, "scripts/marketing_actuator.py", "--dry-run", "--root", str(tmp_path)],
+        cwd=str(ROOT), capture_output=True,
+    )
+    report = json.loads(
+        (tmp_path / "data" / "marketing" / "outbox" / "dryrun_report.json").read_text())
+    assert "sentinel" in report
+    assert report["sentinel"]["min_minutes_between_posts"] >= 90
+    assert "applied_decisions" in report
+    assert report["kill_switch"]["publish_enabled"] is False
+
+
+def test_sentinel_contract_string_false_stays_false():
+    """A quoted "false" in YAML must not silently enable links (D08 R2) —
+    string bools parse strictly, mirroring sentinel.publish_enabled."""
+    from engine.marketing.outbox import sentinel_contract
+
+    c = sentinel_contract({"sentinel": {"links_allowed": "false"}})
+    assert c["links_allowed"] is False
+    c2 = sentinel_contract({"sentinel": {"links_allowed": "true"}})
+    assert c2["links_allowed"] is True
