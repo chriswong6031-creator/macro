@@ -12,9 +12,9 @@ Health score 0-100, weighted:
   perf             5%  page weight >2.5MB flags
 
 Canonical host: https://www.mastermind-x.com/
-NOTE: The live site currently uses https://mastermind-x.com/ (no www) in
-sitemap.xml, robots.txt, and page canonical tags.  The spec's "www" host is
-the target canonical; issues are flagged accordingly so operators can migrate.
+NOTE: Since #3140 the committed sitemap.xml/robots.txt use the www host; page
+canonicals in rendered site/*.html heal as the nightly re-renders them. Any
+remaining apex reads are real findings, not an expected steady state.
 Both host constants are imported from lib.seo (single source of truth).
 
 Page families (by filename):
