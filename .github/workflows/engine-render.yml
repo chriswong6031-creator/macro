@@ -486,6 +486,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "css externalize skipped (additive)"
           python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
       - name: commit rendered site (site/ ONLY — never data/, so every ledger stays pristine)
         if: always()
