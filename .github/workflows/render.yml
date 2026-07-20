@@ -488,7 +488,9 @@ jobs:
           exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
         if: ${{ !cancelled() }}
-        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"; python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
+        run: |
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
       - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
         if: always()
         run: |
