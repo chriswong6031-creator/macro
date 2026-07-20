@@ -32,12 +32,12 @@
       "asset": "CL=F",
       "arming": {
         "stoch_k": 98.04,
-        "stoch_d": 98.69,
+        "stoch_d": 98.04,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.2034,
+        "flatness": 0.1864,
         "armed": false,
         "params": {
           "stoch_k_period": 14,

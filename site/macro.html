@@ -5378,10 +5378,46 @@ body.page-macro .igd-footer{
 .mx5-dlg-cal-card.hot{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04);}
 [data-theme="light"] .mx5-dlg-cal-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
 [data-theme="light"] .mx5-dlg-cal-card.hot{background:rgba(245,158,11,.04);}
-/* Cal cards with Release Radar coverage for their date — clickable (class added by RR JS) */
-.mx5-dlg-cal-card.rr-linked{cursor:pointer;transition:border-color .15s,box-shadow .15s;}
-.mx5-dlg-cal-card.rr-linked:hover{border-color:color-mix(in srgb,var(--info,#60a5fa) 45%,transparent);box-shadow:0 2px 12px color-mix(in srgb,var(--info,#60a5fa) 8%,transparent);}
-.mx5-dlg-cal-rr{margin-top:8px;font-size:10px;font-weight:700;color:var(--info,#60a5fa);display:flex;align-items:center;gap:3px;}
+/* ── Calendar card = Release Radar selector (rr-inline, 2026-07) ──────────────
+   Every card is a selector for the inline panel below. Covered dates carry a
+   subtle radar dot; the selected card holds an --info accent ring. FOMC cards
+   route to the Fed Path board instead of selecting (chip affordance). */
+.mx5-dlg-cal-card.rr-select{cursor:pointer;transition:border-color .16s ease,box-shadow .22s ease,background .16s ease;}
+.mx5-dlg-cal-card.rr-select:hover{border-color:color-mix(in srgb,var(--info,#60a5fa) 40%,transparent);box-shadow:0 2px 12px color-mix(in srgb,var(--info,#60a5fa) 8%,transparent);}
+.mx5-dlg-cal-card.rr-select:focus-visible{outline:2px solid var(--info,#60a5fa);outline-offset:2px;}
+/* active (selected) card — accent ring + faint info tint, coherent with .gbtn glass */
+.mx5-dlg-cal-card.rr-active{
+  border-color:color-mix(in srgb,var(--info,#60a5fa) 58%,transparent);
+  background:color-mix(in srgb,var(--info,#60a5fa) 8%,rgba(255,255,255,.04));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--info,#60a5fa) 40%,transparent),0 6px 18px -10px color-mix(in srgb,var(--info,#60a5fa) 60%,transparent);
+}
+[data-theme="light"] .mx5-dlg-cal-card.rr-active{background:color-mix(in srgb,var(--info,#60a5fa) 9%,rgba(0,0,0,.03));}
+/* covered-date indicator — small radar dot chip (replaces the old "Release Radar ▸" text link) */
+.mx5-dlg-cal-radar{display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+  font-size:10px;font-weight:700;letter-spacing:.02em;color:var(--info,#60a5fa);}
+.mx5-dlg-cal-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  background:var(--info,#60a5fa);position:relative;}
+.mx5-dlg-cal-dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;
+  border:1px solid color-mix(in srgb,var(--info,#60a5fa) 55%,transparent);
+  animation:rrDotPulse 2.4s ease-in-out infinite;}
+@keyframes rrDotPulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.5);opacity:0}}
+.mx5-dlg-cal-card.rr-active .mx5-dlg-cal-dot::after{animation:none;opacity:.9;transform:scale(1.15);}
+/* Fed Path affordance chip — routes to dlg-fed (FOMC cards only) */
+.mx5-dlg-cal-fed{display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+  padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:700;letter-spacing:.02em;
+  color:color-mix(in srgb,var(--link,#22d97a) 88%,var(--text));
+  background:color-mix(in srgb,var(--link,#22d97a) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--link,#22d97a) 32%,transparent);
+  transition:background .16s ease,border-color .16s ease,transform .14s ease;}
+.mx5-dlg-cal-card.rr-fed{cursor:pointer;transition:border-color .16s ease,box-shadow .22s ease;}
+.mx5-dlg-cal-card.rr-fed:hover{border-color:color-mix(in srgb,var(--link,#22d97a) 40%,transparent);}
+.mx5-dlg-cal-card.rr-fed:hover .mx5-dlg-cal-fed{background:color-mix(in srgb,var(--link,#22d97a) 20%,transparent);border-color:color-mix(in srgb,var(--link,#22d97a) 50%,transparent);transform:translateX(1px);}
+.mx5-dlg-cal-card.rr-fed:focus-visible{outline:2px solid var(--link,#22d97a);outline-offset:2px;}
+@media (prefers-reduced-motion: reduce){
+  .mx5-dlg-cal-dot::after{animation:none;opacity:.6;}
+  .mx5-dlg-cal-card.rr-select,.mx5-dlg-cal-card.rr-fed,.mx5-dlg-cal-fed{transition:none;}
+  .mx5-dlg-cal-card.rr-fed:hover .mx5-dlg-cal-fed{transform:none;}
+}
 .mx5-dlg-cal-date{font-size:11px;font-weight:700;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:5px;}
 [data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.42);}
 .mx5-dlg-cal-title{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3;}
@@ -5417,25 +5453,37 @@ body.page-macro .igd-footer{
 .mx5-dlg-fed-src{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
 [data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.35);}
 
-/* RR link chip (EVENTS dialog — open release-radar from inside dialog) */
-/* mx5-dlg-rr-link — gbtn glass recipe (macro sweep 2026-07); onclick contract kept */
-.mx5-dlg-rr-link{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:12px 16px;
-  background:var(--gbtn-bg);border-radius:12px;
-  border:1px solid var(--gbtn-brd);
-  -webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
-  box-shadow:inset 0 1px 0 var(--gbtn-sheen);
-  cursor:pointer;color:var(--ink-2,rgba(255,255,255,.6));
-  font-size:12px;font-weight:600;font-family:inherit;
-  transition:border-color .2s ease,color .2s ease,background .2s ease,transform .16s ease,box-shadow .25s ease;
-  text-decoration:none;
-}
-.mx5-dlg-rr-link:hover{border-color:color-mix(in srgb, var(--link) 45%, var(--gbtn-brd-hover));color:var(--text);background:var(--gbtn-bg-hover);transform:translateY(-1px);
-  box-shadow:inset 0 1px 0 var(--gbtn-sheen),0 8px 20px -10px color-mix(in srgb, var(--link) 40%, transparent);}
-.mx5-dlg-rr-link:active{transform:translateY(0) scale(.99);box-shadow:inset 0 1px 0 var(--gbtn-sheen);}
-[data-theme="light"] .mx5-dlg-rr-link{color:rgba(0,0,0,.55);}
-@media (prefers-reduced-motion: reduce){ .mx5-dlg-rr-link,.mx5-dlg-rr-link:hover,.mx5-dlg-rr-link:active{transform:none;} }
+/* ── Inline Release Radar panel (#rr-inline, EVENTS dialog) ───────────────────
+   Replaces the retired per-date popup + its open button. Shows the selected
+   calendar date's model prints on the same surface; reuses the RR card renderer
+   + #rr-modal for depth. Header carries the selected date + a covered radar dot;
+   body cross-fades on date swap; one display-only footer. */
+#rr-inline{margin-top:4px;}
+.rr-inline-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.rr-inline-date{display:inline-flex;align-items:center;gap:7px;
+  font-size:14px;font-weight:800;letter-spacing:-.01em;color:var(--ink-1,rgba(255,255,255,.94));
+  font-variant-numeric:tabular-nums;}
+.rr-inline-date .mx5-dlg-cal-dot{width:8px;height:8px;}
+.rr-inline-sub{font-size:11.5px;color:var(--ink-3,rgba(255,255,255,.42));}
+[data-theme="light"] .rr-inline-sub{color:rgba(0,0,0,.42);}
+/* body: cross-fade on swap (JS toggles .rr-inline-swap for one frame) */
+.rr-inline-body{transition:opacity .22s ease;}
+.rr-inline-body.rr-inline-swap{opacity:0;}
+.rr-inline-body .rr-grid{display:flex;flex-wrap:wrap;gap:12px;}
+/* honest empty state (no coverage / auctions / FOMC-adjacent) */
+.rr-inline-empty{padding:14px 16px;border-radius:12px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+  display:flex;flex-direction:column;gap:6px;}
+[data-theme="light"] .rr-inline-empty{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
+.rr-inline-empty-line{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72));}
+[data-theme="light"] .rr-inline-empty-line{color:rgba(0,0,0,.62);}
+.rr-inline-empty-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));}
+[data-theme="light"] .rr-inline-empty-meta{color:rgba(0,0,0,.42);}
+/* single display-only footer for the inline panel (Law 4: one footnote) */
+.rr-inline-foot{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);
+  font-size:10px;line-height:1.5;color:var(--ink-3,rgba(255,255,255,.36));}
+[data-theme="light"] .rr-inline-foot{border-top-color:rgba(0,0,0,.06);color:rgba(0,0,0,.38);}
+@media (prefers-reduced-motion: reduce){ .rr-inline-body{transition:none;} }
 
 /* Heatmap wrap inside dialog — chromeless spacer (1.2 de-chrome) */
 .mx5-dlg-heatmap-wrap{
@@ -8293,24 +8341,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   /* health indicator on sub-line */
   .rr-health-dot{display:inline-block;width:6px;height:6px;border-radius:50%;
     background:var(--warn);margin-right:4px;vertical-align:middle}
-  /* ---- Date popup (radar-for-date, opened from EVENTS dialog calendar cards) ----
-     Layered between the mx5 dialog (z 200) and the RR detail modal (z 9900) so the
-     dialog stays open behind it and the detail modal still opens on top. */
-  .rr-date-overlay{display:none;position:fixed;inset:0;
-    background:var(--modal-backdrop,color-mix(in srgb,var(--bg,#000) 72%,transparent));
-    z-index:9880;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px}
-  .rr-date-overlay.open{display:flex}
-  .rr-date-pop{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
-    width:100%;max-width:560px;position:relative;padding:16px 18px 14px;
-    box-shadow:0 8px 32px color-mix(in srgb,var(--text) 16%,transparent)}
-  .rr-date-title{font-size:15px;font-weight:700;margin:0 36px 2px 0}
-  .rr-date-sub{font-size:11.5px;color:var(--muted);margin-bottom:12px}
-  .rr-date-close{position:absolute;top:6px;right:8px;background:none;border:none;
-    font-size:20px;cursor:pointer;color:var(--muted);line-height:1;border-radius:4px;
-    min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
-  .rr-date-close:hover{color:var(--text);background:var(--panel)}
-  .rr-date-pop .rr-grid{display:flex;flex-wrap:wrap;gap:12px}
-  .rr-date-note{font-size:10px;color:var(--muted);margin-top:12px;padding-top:8px;border-top:1px solid var(--line)}
+  /* (rr-date-overlay retired 2026-07 — the per-date popup folded into the inline
+     #rr-inline panel in dlg-events; the RR detail modal below is reached directly
+     from the inline cards. See .rr-inline-* in the dialog CSS block.) */
   /* ---- Tab strip (sticky) ---- */
   .rr-tab-strip{display:flex;gap:0;border-bottom:1px solid var(--line);
     position:sticky;top:0;background:var(--panel2);z-index:2;overflow-x:auto;
@@ -8521,22 +8554,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       </div>
     </div>
   </div>
-  <!-- Date popup: Release Radar for one calendar date (opened from dlg-events cards) -->
-  <div class="rr-date-overlay" id="rr-date-overlay" role="dialog" aria-modal="true" aria-labelledby="rr-date-title-el">
-    <div class="rr-date-pop" id="rr-date-pop" tabindex="-1">
-      <button class="rr-date-close" id="rr-date-close" type="button" aria-label="Close">&#215;</button>
-      <div class="rr-date-title" id="rr-date-title-el"></div>
-      <div class="rr-date-sub">
-        <span class="l-en">What our model expects for this date&rsquo;s prints — tap a card for details.</span>
-        <span class="l-zh">模型对当日数据的预测 — 点击卡片查看详情。</span>
-      </div>
-      <div id="rr-date-body"></div>
-      <div class="rr-date-note">
-        <span class="l-en">display-only — not a signal · benchmarks, not investment advice · scored forward in public</span>
-        <span class="l-zh">仅展示 — 非信号 · 基准对比，非投资建议 · 正向评分公开记录</span>
-      </div>
-    </div>
-  </div>
+  <!-- (per-date radar popup retired 2026-07 — folded into the inline panel inside
+       dlg-events; the RR detail modal above opens directly from the inline cards.) -->
   <script>
   (function(){
     'use strict';
@@ -8546,13 +8565,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     var RR_MODAL_CLOSE = document.getElementById('rr-modal-close');
     var RR_TAB_STRIP = document.getElementById('rr-tab-strip');
     var RR_TITLE_BLOCK = document.getElementById('rr-modal-title-block');
-    var RR_DATE_OVERLAY = document.getElementById('rr-date-overlay');
-    var RR_DATE_BODY = document.getElementById('rr-date-body');
-    var RR_DATE_TITLE = document.getElementById('rr-date-title-el');
-    var RR_DATE_CLOSE = document.getElementById('rr-date-close');
+    /* Inline Release Radar panel inside dlg-events (replaces the retired
+       rr-date-overlay). Resolved LAZILY — this script block sits ABOVE the
+       dlg-events markup in the document, so the elements don't exist when the IIFE
+       first runs; they do by the time the async fetch resolves. */
+    function _rrInlineBody(){ return document.getElementById('rr-inline-body'); }
+    function _rrInlineDateEl(){ return document.getElementById('rr-inline-date'); }
+    var _rrInlineDate = null;           /* currently-selected date string */
     /* INT-03: focus management — track invoker for restore on close */
     var _rrModalInvoker = null;
-    var _rrDateInvoker = null;
 
     /* ---- base helpers ---- */
     function esc(s){ return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -9925,87 +9946,191 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     if (RR_MODAL_CLOSE) RR_MODAL_CLOSE.addEventListener('click', closeModal);
     if (RR_OVERLAY) RR_OVERLAY.addEventListener('click', function(e){ if (e.target === RR_OVERLAY) closeModal(); });
 
-    /* ---- Date popup: radar-for-date, launched from dlg-events calendar cards ----
-       Opens ON TOP of the events dialog (which stays open behind it); the RR detail
-       modal opens on top of this popup in turn. Click-outside / Esc / × close only
-       the topmost layer. Page scroll stays pinned by html.mx5-dlg-lock throughout. */
+    /* ---- Inline Release Radar panel (folds the retired rr-date-overlay into
+       dlg-events). The THIS WEEK calendar cards are the selector; #rr-inline shows
+       the selected date's model prints on the same surface. A print card still
+       opens the 5-tab #rr-modal for depth. */
     var RR_MOS_EN = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     function _itemsForDate(dateStr){
       return (_rrItems || []).filter(function(it){ return it.release_date === dateStr; });
     }
-    function openDatePopup(dateStr){
-      if (!RR_DATE_OVERLAY || !RR_DATE_BODY) return;
-      var items = _itemsForDate(dateStr);
-      if (!items.length) return;
-      var mo = parseInt(dateStr.slice(5,7),10), dy = parseInt(dateStr.slice(8,10),10);
-      if (RR_DATE_TITLE) RR_DATE_TITLE.innerHTML =
-        '<span class="l-en">Release Radar — '+esc(RR_MOS_EN[mo]||'')+' '+dy+'</span>'
-        +'<span class="l-zh">数据发布雷达 — '+mo+'月'+dy+'日</span>';
-      RR_DATE_BODY.innerHTML = '<div class="rr-grid">'+items.map(renderCard).join('')+'</div>';
-      RR_DATE_BODY.querySelectorAll('.rr-card').forEach(function(el, idx){
-        el.setAttribute('role','button');
-        el.setAttribute('tabindex','0');
-        function go(){ if (items[idx]) openModal(items[idx]); }
-        el.addEventListener('click', go);
-        el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+    /* an item carries a real modelled point (not benchmark-only, not no-data retail).
+       Module-scoped so both renderRadar's see-more logic and the inline default
+       selector share one definition. */
+    function _hasModelledPoint(it){
+      var proj = it.projection || {};
+      return proj.mode !== 'benchmark_only' && proj.point !== null && proj.point !== undefined
+             && (it.release||'').toLowerCase() !== 'retail';
+    }
+    /* nearest upcoming date whose prints carry a real modelled point; else the
+       nearest covered date; else null. Mirrors renderRadar's default-visible guard. */
+    function _defaultCoveredDate(){
+      var dates = [];
+      (_rrItems||[]).forEach(function(it){
+        if (it.release_date && dates.indexOf(it.release_date) === -1) dates.push(it.release_date);
       });
-      RR_DATE_OVERLAY.classList.add('open');
-      RR_DATE_OVERLAY.setAttribute('data-lang', document.documentElement.getAttribute('data-lang') || 'en');
-      _rrDateInvoker = document.activeElement || null;
-      var pop = document.getElementById('rr-date-pop');
-      if (pop) pop.focus();
+      dates.sort();
+      for (var i=0;i<dates.length;i++){
+        if (_itemsForDate(dates[i]).some(_hasModelledPoint)) return dates[i];
+      }
+      return dates[0] || null;
     }
-    function closeDatePopup(){
-      if (!RR_DATE_OVERLAY) return;
-      RR_DATE_OVERLAY.classList.remove('open');
-      try{ if(_rrDateInvoker && _rrDateInvoker.focus) _rrDateInvoker.focus(); }catch(e){}
-      _rrDateInvoker = null;
+    /* honest empty-state body for a calendar date with no model coverage. Pulls the
+       event's own time/impact off the card DOM — no fake coverage, no dead card. */
+    function _inlineEmptyHTML(card){
+      var timeEl = card ? card.querySelector('.mx5-dlg-cal-time') : null;
+      var badgeEl = card ? card.querySelector('.mx5-dlg-cal-badge') : null;
+      var timeTxt = timeEl ? timeEl.textContent.trim() : '';
+      var impactHTML = badgeEl ? badgeEl.outerHTML : '';
+      var metaBits = '';
+      if (timeTxt) metaBits += '<span>'+esc(timeTxt)+'</span>';
+      if (impactHTML) metaBits += impactHTML;
+      return '<div class="rr-inline-empty">'
+        +'<div class="rr-inline-empty-line">'
+        +'<span class="l-en">No model projections for this event — event risk only.</span>'
+        +'<span class="l-zh">该事件无模型预测 — 仅为事件风险提示。</span>'
+        +'</div>'
+        +(metaBits ? '<div class="rr-inline-empty-meta">'+metaBits+'</div>' : '')
+        +'</div>';
     }
-    if (RR_DATE_CLOSE) RR_DATE_CLOSE.addEventListener('click', closeDatePopup);
-    if (RR_DATE_OVERLAY) RR_DATE_OVERLAY.addEventListener('click', function(e){ if (e.target === RR_DATE_OVERLAY) closeDatePopup(); });
-    /* Tab trap within the date popup (mirrors the detail modal's INT-03 trap) */
-    if (RR_DATE_OVERLAY) RR_DATE_OVERLAY.addEventListener('keydown', function(e){
-      if(e.key !== 'Tab') return;
-      var pop = document.getElementById('rr-date-pop'); if(!pop) return;
-      var focusable = Array.prototype.slice.call(pop.querySelectorAll(
-        'button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])'
-      )).filter(function(el){ return el.offsetParent !== null; });
-      if(!focusable.length) return;
-      var first = focusable[0], last = focusable[focusable.length-1];
-      if(e.shiftKey){ if(document.activeElement===first){ e.preventDefault(); last.focus(); } }
-      else { if(document.activeElement===last){ e.preventDefault(); first.focus(); } }
-    });
+    function _setInlineHeader(dateStr, covered){
+      var el = _rrInlineDateEl();
+      if (!el) return;
+      if (!dateStr){ el.innerHTML =
+        '<span class="l-en">Upcoming prints</span><span class="l-zh">即将公布</span>'; return; }
+      var mo = parseInt(dateStr.slice(5,7),10), dy = parseInt(dateStr.slice(8,10),10);
+      var sub = document.getElementById('rr-inline-sub');
+      if (sub) sub.innerHTML = covered
+        ? '<span class="l-en">our projection vs benchmarks</span><span class="l-zh">本方预测 vs 基准</span>'
+        : '<span class="l-en">event risk only</span><span class="l-zh">仅为事件风险提示</span>';
+      var dot = covered ? '<span class="mx5-dlg-cal-dot" aria-hidden="true"></span>' : '';
+      el.innerHTML = dot
+        +'<span class="l-en">'+esc(RR_MOS_EN[mo]||'')+' '+dy+'</span>'
+        +'<span class="l-zh">'+mo+'月'+dy+'日</span>';
+    }
+    /* Select a calendar date into the inline panel. Covered → print cards (reuse
+       renderCard + openModal); non-covered → honest empty state. Short cross-fade,
+       reduced-motion-guarded. Focus is restored to the source card, never a popup. */
+    function selectInlineDate(dateStr, sourceCard, immediate){
+      var body = _rrInlineBody();
+      if (!body) return;
+      _rrInlineDate = dateStr;
+      /* active ring: move it to the source card */
+      document.querySelectorAll('#dlg-events .mx5-dlg-cal-card.rr-active').forEach(function(c){
+        c.classList.remove('rr-active'); c.removeAttribute('aria-pressed');
+      });
+      if (sourceCard){ sourceCard.classList.add('rr-active'); sourceCard.setAttribute('aria-pressed','true'); }
+      var items = _itemsForDate(dateStr);
+      var covered = items.length > 0;
+      var bodyHTML;
+      if (covered){
+        bodyHTML = '<div class="rr-grid">'+items.map(renderCard).join('')+'</div>';
+      } else {
+        bodyHTML = _inlineEmptyHTML(sourceCard);
+      }
+      var swap = !immediate && !_prefReducedRR();
+      var paint = function(){
+        body.innerHTML = bodyHTML;
+        _setInlineHeader(dateStr, covered);
+        if (covered){
+          body.querySelectorAll('.rr-card').forEach(function(el, idx){
+            el.setAttribute('role','button');
+            el.setAttribute('tabindex','0');
+            el.setAttribute('aria-haspopup','dialog');
+            /* focus the card before opening so openModal captures it as the invoker —
+               on close, focus returns to this inline card (not a dead popup). */
+            function go(){ if (items[idx]){ try{ el.focus(); }catch(e){} openModal(items[idx]); } }
+            el.addEventListener('click', go);
+            el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+          });
+        }
+        /* reveal: rAF for a smooth fade, plus a setTimeout fallback so the panel is
+           never left invisible if rAF stalls (e.g. background tab / preview). */
+        if (swap){
+          var reveal = function(){ body.classList.remove('rr-inline-swap'); };
+          if (typeof requestAnimationFrame === 'function') requestAnimationFrame(reveal);
+          setTimeout(reveal, 40);
+        }
+      };
+      if (swap){
+        body.classList.add('rr-inline-swap');
+        setTimeout(paint, 130);
+      } else {
+        paint();
+      }
+    }
+    function _prefReducedRR(){
+      try{ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+      catch(e){ return false; }
+    }
 
-    /* Annotate dlg-events calendar cards whose date has radar coverage: clickable +
-       "Release Radar ▸" tag. Cards with no coverage (FOMC, OpEx…) stay inert. */
+    /* Wire every dlg-events calendar card as a radar selector. FOMC cards route to
+       the Fed Path board instead (chip affordance); covered dates get a radar dot;
+       all others select and show the honest empty state. Auto-selects the default
+       covered date on first wire so the panel is never empty on open. */
     function wireCalendarCards(){
       var cards = document.querySelectorAll('#dlg-events .mx5-dlg-cal-card[data-cal-date]');
+      var firstSelect = null;
       cards.forEach(function(card){
         if (card._rrWired) return;
-        var dateStr = card.getAttribute('data-cal-date');
-        if (!_itemsForDate(dateStr).length) return;
         card._rrWired = true;
-        card.classList.add('rr-linked');
+        var dateStr = card.getAttribute('data-cal-date');
+        var calType = (card.getAttribute('data-cal-type') || '').toUpperCase();
+        /* FOMC (policy rate decision) → Fed Path Forward Board, not inline radar. */
+        if (calType === 'FOMC'){
+          card.classList.add('rr-fed');
+          card.setAttribute('role','button');
+          card.setAttribute('tabindex','0');
+          card.setAttribute('aria-haspopup','dialog');
+          var fedChip = document.createElement('div');
+          fedChip.className = 'mx5-dlg-cal-fed';
+          fedChip.innerHTML = '<span class="l-en">Fed Path &#8594;</span><span class="l-zh">联储路径 &#8594;</span>';
+          card.appendChild(fedChip);
+          var goFed = function(){ if (window.mx5OpenDlg) window.mx5OpenDlg('dlg-fed'); };
+          card.addEventListener('click', goFed);
+          card.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); goFed(); } });
+          return;
+        }
+        /* selectable card */
+        card.classList.add('rr-select');
         card.setAttribute('role','button');
         card.setAttribute('tabindex','0');
-        card.setAttribute('aria-haspopup','dialog');
-        var tag = document.createElement('div');
-        tag.className = 'mx5-dlg-cal-rr';
-        tag.innerHTML = '<span class="l-en">Release Radar &#9656;</span><span class="l-zh">数据发布雷达 &#9656;</span>';
-        card.appendChild(tag);
-        card.addEventListener('click', function(){ openDatePopup(dateStr); });
+        var hasCoverage = _itemsForDate(dateStr).length > 0;
+        if (hasCoverage){
+          var dot = document.createElement('div');
+          dot.className = 'mx5-dlg-cal-radar';
+          dot.innerHTML = '<span class="mx5-dlg-cal-dot" aria-hidden="true"></span>'
+            +'<span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span>';
+          card.appendChild(dot);
+          if (!firstSelect) firstSelect = card;
+        }
+        card.addEventListener('click', function(){ selectInlineDate(dateStr, card); });
         card.addEventListener('keydown', function(e){
-          if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openDatePopup(dateStr); }
+          if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectInlineDate(dateStr, card); }
         });
       });
+      /* default selection: nearest covered date's own card if visible, else the
+         first covered calendar card, else the earliest calendar card. */
+      if (!_rrInlineDate){
+        var def = _defaultCoveredDate();
+        var defCard = def ? document.querySelector('#dlg-events .mx5-dlg-cal-card[data-cal-date="'+def+'"].rr-select') : null;
+        if (!defCard) defCard = firstSelect;
+        if (!defCard) defCard = document.querySelector('#dlg-events .mx5-dlg-cal-card.rr-select');
+        if (defCard){
+          selectInlineDate(defCard.getAttribute('data-cal-date'), defCard, true);
+        } else if (def && _rrInlineBody()){
+          /* radar has data but no calendar card matches (rare) — show default date's cards */
+          selectInlineDate(def, null, true);
+        }
+      }
     }
 
-    /* INT-01: stop propagation so the mx2 Escape handler doesn't also fire when modal closes.
-       Layer order: detail modal closes first, then the date popup (dialog handled upstream). */
+    /* INT-01: stop propagation so the mx2 Escape handler doesn't also fire when the
+       RR detail modal closes. The inline panel lives inside dlg-events, so the
+       dialog's own Escape handling covers it — only the detail modal needs a guard. */
     document.addEventListener('keydown', function(e){
       if (e.key !== 'Escape') return;
       if (RR_OVERLAY && RR_OVERLAY.classList.contains('open')){ e.stopImmediatePropagation(); closeModal(); return; }
-      if (RR_DATE_OVERLAY && RR_DATE_OVERLAY.classList.contains('open')){ e.stopImmediatePropagation(); closeDatePopup(); }
     });
 
     /* sync modal lang when language is toggled */
@@ -10013,7 +10138,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       new MutationObserver(function(){
         var lang = document.documentElement.getAttribute('data-lang') || 'en';
         RR_OVERLAY.setAttribute('data-lang', lang);
-        if (RR_DATE_OVERLAY) RR_DATE_OVERLAY.setAttribute('data-lang', lang);
       }).observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
     }
 
@@ -10024,6 +10148,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           +'<span class="l-en">Release Radar data not yet available — nightly producer accruing.</span>'
           +'<span class="l-zh">数据发布雷达暂无数据，夜间生产任务积累中。</span>'
           +'</div>';
+        /* Degraded path: no radar data. Calendar cards stay selectable (all show the
+           honest empty state); the inline panel shows a graceful no-data line rather
+           than a blank hole. _rrItems stays [] so no card gets a coverage dot. */
+        _rrItems = [];
+        var _ib = _rrInlineBody();
+        if (_ib){
+          _ib.innerHTML = '<div class="rr-inline-empty">'
+            +'<div class="rr-inline-empty-line">'
+            +'<span class="l-en">Model projections aren&rsquo;t available right now. Pick a calendar event above for its time and impact.</span>'
+            +'<span class="l-zh">暂无模型预测。请点击上方日历事件查看其时间与影响。</span>'
+            +'</div></div>';
+        }
+        wireCalendarCards();
         return;
       }
       _rrItems = Array.isArray(d.upcoming) ? d.upcoming : [];
@@ -10041,12 +10178,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       dates.sort();
       /* Default-visible = items sharing the EARLIEST upcoming date */
       var visibleDate = dates[0] || null;
-      /* Guard: if none of those have a modelled point, also show next date that does */
-      function _hasModelledPoint(it){
-        var proj = it.projection || {};
-        return proj.mode !== 'benchmark_only' && proj.point !== null && proj.point !== undefined
-               && (it.release||'').toLowerCase() !== 'retail';
-      }
+      /* Guard: if none of those have a modelled point, also show next date that does
+         (_hasModelledPoint is module-scoped — shared with the inline default selector). */
       if (visibleDate){
         var firstHasModel = _rrItems.some(function(it){
           return it.release_date === visibleDate && _hasModelledPoint(it);
@@ -10144,7 +10277,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       if (RR_TR_BODY) {
         RR_TR_BODY.innerHTML = scoreboardBlock(lastScored);
       }
-      /* link dlg-events calendar cards to their date's radar popup */
+      /* wire dlg-events calendar cards as the inline radar selector + auto-select default */
       wireCalendarCards();
     }
 
@@ -10174,9 +10307,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       .catch(function(){ return null; })
       .then(renderRadar);
 
-    /* Expose opener for dlg-events "Open Release Radar" button — opens first item's detail modal */
+    /* Deep-link hook: jump the inline Release Radar panel to its default covered date
+       (the "Open Release Radar" button was retired — the panel is always visible in
+       dlg-events). Kept as the stable RR-script tail symbol. */
     window.mmOpenFirstRR = function(){
-      if (_rrItems && _rrItems.length) openModal(_rrItems[0]);
+      var def = _defaultCoveredDate();
+      if (!def) return;
+      var card = document.querySelector('#dlg-events .mx5-dlg-cal-card[data-cal-date="'+def+'"].rr-select');
+      selectInlineDate(def, card, true);
     };
   })();
   </script>
@@ -11219,9 +11357,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">USO</span>
         
-        <span class="mx5-ai-ticker-pill">GLD</span>
+        <span class="mx5-ai-ticker-pill">XHB</span>
         
-        <span class="mx5-ai-ticker-pill">GS</span>
+        <span class="mx5-ai-ticker-pill">GLD</span>
         
       </div>
       
@@ -11679,7 +11817,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-22">
+          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-22" data-cal-type="AUCTION">
             <div class="mx5-dlg-cal-date">Jul 22</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">20-Year Bond auction (reopening)</span>
@@ -11700,7 +11838,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-23">
+          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-23" data-cal-type="CLAIMS">
             <div class="mx5-dlg-cal-date">Jul 23</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">Initial jobless claims</span>
@@ -11721,7 +11859,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-23">
+          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-23" data-cal-type="AUCTION">
             <div class="mx5-dlg-cal-date">Jul 23</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">10-Year Note auction</span>
@@ -11742,7 +11880,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-27">
+          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-27" data-cal-type="AUCTION">
             <div class="mx5-dlg-cal-date">Jul 27</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">2-Year Note auction</span>
@@ -11763,7 +11901,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-27">
+          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-27" data-cal-type="AUCTION">
             <div class="mx5-dlg-cal-date">Jul 27</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">5-Year Note auction</span>
@@ -11784,7 +11922,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-28">
+          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-28" data-cal-type="AUCTION">
             <div class="mx5-dlg-cal-date">Jul 28</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">7-Year Note auction</span>
@@ -11805,7 +11943,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-29">
+          <div class="mx5-dlg-cal-card" data-cal-date="2026-07-29" data-cal-type="AUCTION">
             <div class="mx5-dlg-cal-date">Jul 29</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">2-Year Note auction</span>
@@ -11826,7 +11964,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
           
           
-          <div class="mx5-dlg-cal-card hot" data-cal-date="2026-07-29">
+          <div class="mx5-dlg-cal-card hot" data-cal-date="2026-07-29" data-cal-type="FOMC">
             <div class="mx5-dlg-cal-date">Jul 29</div>
             <div class="mx5-dlg-cal-title">
               <span class="l-en">FOMC rate decision</span>
@@ -11874,67 +12012,53 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         
-        
-        
-        
-        
   <div class="mx5-dlg-eyebrow"><span class="l-en">Market-implied benchmark &mdash; what traders price, not our read</span><span class="l-zh">市场隐含基准 &mdash; 交易者定价，非本系统观点</span></div>
   <div class="fbm-bench">
     
     
     <div class="fbm-bench-row">
-      <div class="fbm-bench-odds">94<small>%</small></div>
+      <div class="fbm-bench-odds">93<small>%</small></div>
       <div class="fbm-bench-body">
         <div class="fbm-bench-outcome"><span class="l-en">No change</span><span class="l-zh">按兵不动</span></div>
         <div class="fbm-bench-label"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></div>
       </div>
       
-      <div class="fbm-bench-arrow pos"
-           data-tip-en="Odds moved +0.1 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 +0.1 个百分点。">
-        ▲ +0.1
+      <div class="fbm-bench-arrow neg"
+           data-tip-en="Odds moved -1.4 points since the last update."
+           data-tip-zh="自上次更新以来概率变动 -1.4 个百分点。">
+        ▼ -1.4
       </div>
       
     </div>
     
     
     <div class="fbm-bench-row">
-      <div class="fbm-bench-odds">85<small>%</small></div>
+      <div class="fbm-bench-odds">84<small>%</small></div>
       <div class="fbm-bench-body">
         <div class="fbm-bench-outcome"><span class="l-en">0 (0 bps)</span><span class="l-zh">0 (0 bps)</span></div>
         <div class="fbm-bench-label"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></div>
       </div>
       
-      <div class="fbm-bench-arrow pos"
-           data-tip-en="Odds moved +0.6 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 +0.6 个百分点。">
-        ▲ +0.6
+      <div class="fbm-bench-arrow neg"
+           data-tip-en="Odds moved -0.1 points since the last update."
+           data-tip-zh="自上次更新以来概率变动 -0.1 个百分点。">
+        ▼ -0.1
       </div>
       
     </div>
     
     
     <div class="fbm-bench-row">
-      <div class="fbm-bench-odds">16<small>%</small></div>
+      <div class="fbm-bench-odds">14<small>%</small></div>
       <div class="fbm-bench-body">
         <div class="fbm-bench-outcome"><span class="l-en">US recession by end of 2026?</span><span class="l-zh">US recession by end of 2026?</span></div>
         <div class="fbm-bench-label"><span class="l-en">US recession</span><span class="l-zh">美国衰退</span></div>
       </div>
       
-      <div class="fbm-bench-arrow pos"
-           data-tip-en="Odds moved +6.0 points since the last update."
-           data-tip-zh="自上次更新以来概率变动 +6.0 个百分点。">
-        ▲ +6.0
-      </div>
-      
-    </div>
-    
-    
-    <div class="fbm-bench-row">
-      <div class="fbm-bench-odds">44<small>%</small></div>
-      <div class="fbm-bench-body">
-        <div class="fbm-bench-outcome"><span class="l-en">2.4%</span><span class="l-zh">2.4%</span></div>
-        <div class="fbm-bench-label"><span class="l-en">CPI outcome market</span><span class="l-zh">CPI市场预期</span></div>
+      <div class="fbm-bench-arrow neg"
+           data-tip-en="Odds moved -1.0 points since the last update."
+           data-tip-zh="自上次更新以来概率变动 -1.0 个百分点。">
+        ▼ -1.0
       </div>
       
     </div>
@@ -11946,17 +12070,33 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
 
         
+        
         <div class="mx5-dlg-sep"></div>
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Data Release Radar</span><span class="l-zh">数据发布雷达</span></div>
-        <div style="margin-bottom:16px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
-          <span class="l-en">Calendar cards above marked &ldquo;Release Radar&rdquo; open that date&rsquo;s projections directly — or browse every upcoming print below.</span>
-          <span class="l-zh">上方带「数据发布雷达」标记的日历卡片可直接查看当日预测 — 也可在下方浏览全部即将发布的数据。</span>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span></div>
+        <div style="margin:-4px 0 14px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
+          <span class="l-en">What our model expects for the print you pick above. Tap a card for the full read.</span>
+          <span class="l-zh">上方选中日期，模型对该日数据的预测如下。点击卡片查看完整解读。</span>
         </div>
-        <button class="mx5-dlg-rr-link" type="button" onclick="mx5CloseDlg(); if(window.mmOpenFirstRR) window.mmOpenFirstRR();" aria-label="Open Release Radar">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-          <span class="l-en">Open Release Radar</span>
-          <span class="l-zh">打开数据发布雷达</span>
-        </button>
+        <div id="rr-inline">
+          <div class="rr-inline-head">
+            <span class="rr-inline-date" id="rr-inline-date"></span>
+            <span class="rr-inline-sub" id="rr-inline-sub">
+              <span class="l-en">our projection vs benchmarks</span>
+              <span class="l-zh">本方预测 vs 基准</span>
+            </span>
+          </div>
+          <div class="rr-inline-body" id="rr-inline-body">
+            <div class="rr-placeholder">
+              <span class="l-en">Loading release projections…</span>
+              <span class="l-zh">加载发布预测中…</span>
+            </div>
+          </div>
+          <div class="rr-inline-foot">
+            <span class="l-en">display-only — not a signal · benchmarks, not investment advice · scored forward in public</span>
+            <span class="l-zh">仅展示 — 非信号 · 基准对比，非投资建议 · 正向评分公开记录</span>
+          </div>
+        </div>
+        
 
         
 
@@ -12367,7 +12507,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   <div class="rrx-cyc rrx-cax">
     <span class="rrx-cyc-k"><span class="l-en">Markets moving as one</span><span class="l-zh">多市场同涨同跌</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Absorption 88th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 88分位（5年）；集群：US、Commodities、Dollar</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Absorption 89th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 89分位（5年）；集群：US、Commodities、Dollar</span></span></span>
   </div>
 
   <div class="rrx-trk">
@@ -12440,7 +12580,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
 
           
-          <div class="rkc-sig" style="--rkc-c:var(--isle-markets,#4d8ef5)" data-tip-en="When markets move together, one shock hits everything at once — diversification helps less. Co-movement at the 88th percentile (5y). Cluster: US, Commodities, Dollar." data-tip-zh="市场同步波动时，单一冲击会同时打击各类资产——分散配置作用下降。 联动度处于 88 分位（5年）。 集群：US、Commodities、Dollar。">
+          <div class="rkc-sig" style="--rkc-c:var(--isle-markets,#4d8ef5)" data-tip-en="When markets move together, one shock hits everything at once — diversification helps less. Co-movement at the 89th percentile (5y). Cluster: US, Commodities, Dollar." data-tip-zh="市场同步波动时，单一冲击会同时打击各类资产——分散配置作用下降。 联动度处于 89 分位（5年）。 集群：US、Commodities、Dollar。">
             <span class="rkc-sig-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="7" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M7.8 8.6l2.6 7.2M16.2 8.6l-2.6 7.2M8.4 7h7.2"/></svg></span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl"><span class="l-en">Correlation</span><span class="l-zh">相关性</span></div>
@@ -12691,13 +12831,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   
                   <div class="row-pop-cell">
                     <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
-                    <span class="row-pop-val" style="color:var(--down)">-7.0%</span>
+                    <span class="row-pop-val" style="color:var(--down)">-8.6%</span>
                   </div>
                   
                   
                   <div class="row-pop-cell">
                     <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
-                    <span class="row-pop-val" style="color:var(--down)">-10.6%</span>
+                    <span class="row-pop-val" style="color:var(--down)">-11.1%</span>
                   </div>
                   
                 </div>
@@ -12864,13 +13004,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   
                   <div class="row-pop-cell">
                     <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
-                    <span class="row-pop-val" style="color:var(--down)">-24.7%</span>
+                    <span class="row-pop-val" style="color:var(--down)">-27.8%</span>
                   </div>
                   
                   
                   <div class="row-pop-cell">
                     <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
-                    <span class="row-pop-val" style="color:var(--down)">-25.2%</span>
+                    <span class="row-pop-val" style="color:var(--down)">-28.3%</span>
                   </div>
                   
                 </div>
@@ -13066,13 +13206,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   
                   <div class="row-pop-cell">
                     <span class="row-pop-lbl"><span class="l-en">20d</span><span class="l-zh">20日</span></span>
-                    <span class="row-pop-val" style="color:var(--down)">-0.4%</span>
+                    <span class="row-pop-val" style="color:var(--down)">-0.2%</span>
                   </div>
                   
                   
                   <div class="row-pop-cell">
                     <span class="row-pop-lbl"><span class="l-en">off-high</span><span class="l-zh">距高</span></span>
-                    <span class="row-pop-val" style="color:var(--down)">-4.4%</span>
+                    <span class="row-pop-val" style="color:var(--down)">-4.3%</span>
                   </div>
                   
                 </div>
@@ -13733,8 +13873,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">初步迹象——初现火花，未经确认</span>
             </div>
             <div class="igd-asof">
-              <span class="l-en">as of 2026-07-20</span>
-              <span class="l-zh">截至 2026-07-20</span>
+              <span class="l-en">as of 2026-07-18</span>
+              <span class="l-zh">截至 2026-07-18</span>
             </div>
           </div>
         </div>
@@ -13805,7 +13945,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </span>
             </span>
           </div>
-          <div class="igd-chip lit fresh" data-tip-en="20d log-RS slope=0.0189 (positive); turned positive 3bd ago" data-tip-zh="20日对数RS斜率=0.0189（正向）；3日前转正">
+          <div class="igd-chip lit fresh" data-tip-en="20d log-RS slope=0.0189 (positive); turned positive 2bd ago" data-tip-zh="20日对数RS斜率=0.0189（正向）；2日前转正">
             <span class="igd-chip-dot"></span>
             <span class="igd-chip-body">
               <span class="igd-chip-lbl">
@@ -15366,6 +15506,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,14.16 5.42,15.54 10.85,13.44 16.27,13.11 21.69,14.61 27.12,14.7 32.54,12.24 37.97,11.7 43.39,12.66 48.81,10.89 54.24,7.86 59.66,8.7 65.08,7.26 70.51,7.05 75.93,7.41 81.36,6.63 86.78,5.67 92.2,7.56 97.63,7.8 103.05,10.14 108.47,7.98 113.9,7.77 119.32,7.32 124.75,6.45 130.17,6.63 135.59,6.0 141.02,5.79 146.44,5.52 151.86,5.46 157.29,6.57 162.71,6.18 168.14,11.61 173.56,11.22 178.98,12.06 184.41,16.44 189.83,12.09 195.25,10.92 200.68,7.29 206.1,8.58 211.53,11.82 216.95,9.51 222.37,10.44 227.8,14.22 233.22,14.58 238.64,14.28 244.07,16.53 249.49,12.24 254.92,10.5 260.34,11.04 265.76,11.58 271.19,9.63 276.61,10.95 282.03,11.88 287.46,9.96 292.88,9.15 298.31,11.16 303.73,10.44 309.15,9.66 314.58,11.19 320.0,13.77 "/>
+</svg>
+</div>
+            </div>
+            
             <div class="row-pop-ft">
               <span class="l-en">Reading: 5.12 · 64/100 in its own history</span>
               <span class="l-zh">读数：5.12 · 历史百分位 64/100</span>
@@ -15417,6 +15567,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </div>
             
             
+            
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,17.01 5.42,19.5 10.85,21.93 16.27,24.78 21.69,27.9 27.12,27.9 32.54,20.25 37.97,23.88 43.39,26.94 48.81,23.04 54.24,23.16 59.66,24.9 65.08,25.95 70.51,27.12 75.93,27.45 81.36,27.24 86.78,25.41 92.2,28.71 97.63,21.9 103.05,27.06 108.47,16.32 113.9,20.13 119.32,3.0 124.75,17.28 130.17,23.04 135.59,24.69 141.02,24.72 146.44,23.31 151.86,25.11 157.29,25.11 162.71,22.32 168.14,23.16 173.56,25.68 178.98,17.76 184.41,25.8 189.83,23.04 195.25,19.17 200.68,19.2 206.1,19.2 211.53,27.36 216.95,27.0 222.37,25.83 227.8,23.88 233.22,21.18 238.64,23.25 244.07,15.51 249.49,21.09 254.92,23.88 260.34,14.37 265.76,3.0 271.19,16.98 276.61,3.0 282.03,19.47 287.46,15.54 292.88,15.3 298.31,16.02 303.73,20.22 309.15,19.47 314.58,12.54 320.0,18.24 "/>
+</svg>
+</div>
+            </div>
             
             <div class="row-pop-ft">
               <span class="l-en">Reading: 0.892 · 49/100 in its own history</span>
@@ -15470,6 +15630,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,14.97 5.42,14.85 10.85,19.83 16.27,21.39 21.69,22.53 27.12,26.16 32.54,19.29 37.97,23.43 43.39,27.21 48.81,23.43 54.24,19.62 59.66,23.49 65.08,25.08 70.51,26.01 75.93,24.96 81.36,27.3 86.78,24.36 92.2,28.05 97.63,22.74 103.05,25.29 108.47,19.5 113.9,17.34 119.32,11.82 124.75,12.87 130.17,14.55 135.59,15.81 141.02,19.17 146.44,21.42 151.86,20.85 157.29,23.07 162.71,16.62 168.14,17.58 173.56,21.45 178.98,14.76 184.41,19.35 189.83,15.54 195.25,8.76 200.68,9.66 206.1,9.99 211.53,20.88 216.95,20.01 222.37,19.05 227.8,17.43 233.22,13.92 238.64,11.94 244.07,9.48 249.49,11.91 254.92,15.24 260.34,13.5 265.76,9.24 271.19,12.24 276.61,11.79 282.03,20.82 287.46,18.24 292.88,13.83 298.31,13.8 303.73,17.58 309.15,17.82 314.58,12.0 320.0,19.14 "/>
+</svg>
+</div>
+            </div>
+            
             <div class="row-pop-ft">
               <span class="l-en">Reading: -2.8 · 46/100 in its own history</span>
               <span class="l-zh">读数：-2.8 · 历史百分位 46/100</span>
@@ -15521,6 +15691,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </div>
             
             
+            
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,4.77 5.42,4.86 10.85,4.59 16.27,4.68 21.69,4.23 27.12,4.29 32.54,4.23 37.97,4.2 43.39,4.38 48.81,4.53 54.24,4.38 59.66,4.62 65.08,4.62 70.51,4.23 75.93,4.47 81.36,4.71 86.78,5.01 92.2,4.47 97.63,4.32 103.05,4.14 108.47,4.14 113.9,4.08 119.32,4.02 124.75,4.08 130.17,4.08 135.59,4.17 141.02,4.08 146.44,4.02 151.86,4.23 157.29,4.17 162.71,4.26 168.14,4.23 173.56,4.35 178.98,4.53 184.41,4.35 189.83,4.02 195.25,3.69 200.68,4.02 206.1,3.54 211.53,3.69 216.95,3.69 222.37,3.63 227.8,4.05 233.22,4.32 238.64,4.41 244.07,4.83 249.49,4.56 254.92,4.26 260.34,4.2 265.76,4.26 271.19,4.23 276.61,4.11 282.03,3.78 287.46,3.96 292.88,3.96 298.31,3.93 303.73,3.93 309.15,4.14 314.58,4.08 320.0,4.08 "/>
+</svg>
+</div>
+            </div>
             
             <div class="row-pop-ft">
               <span class="l-en">Reading: 2.71 · 96/100 in its own history</span>
@@ -15574,6 +15754,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,5.7 5.42,5.55 10.85,4.32 16.27,3.63 21.69,3.42 27.12,4.08 32.54,3.96 37.97,3.84 43.39,3.93 48.81,3.87 54.24,4.62 59.66,5.07 65.08,4.92 70.51,4.86 75.93,5.04 81.36,5.37 86.78,5.58 92.2,5.73 97.63,5.52 103.05,5.7 108.47,6.54 113.9,6.51 119.32,7.5 124.75,8.16 130.17,7.59 135.59,8.64 141.02,10.26 146.44,9.69 151.86,9.78 157.29,11.16 162.71,12.3 168.14,18.03 173.56,16.86 178.98,21.03 184.41,24.81 189.83,25.47 195.25,25.23 200.68,22.38 206.1,24.75 211.53,26.64 216.95,25.62 222.37,24.6 227.8,26.85 233.22,28.56 238.64,28.17 244.07,28.8 249.49,27.51 254.92,25.08 260.34,24.6 265.76,24.3 271.19,22.71 276.61,16.26 282.03,18.42 287.46,14.37 292.88,10.26 298.31,11.73 303.73,13.05 309.15,16.89 314.58,15.27 320.0,15.15 "/>
+</svg>
+</div>
+            </div>
+            
             <div class="row-pop-ft">
               <span class="l-en">Reading: 2.31 · 59/100 in its own history</span>
               <span class="l-zh">读数：2.31 · 历史百分位 59/100</span>
@@ -15625,6 +15815,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </div>
             
             
+            
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,19.83 5.42,18.72 10.85,18.36 16.27,19.95 21.69,16.68 27.12,16.89 32.54,19.11 37.97,17.58 43.39,17.61 48.81,17.07 54.24,17.25 59.66,19.26 65.08,18.66 70.51,18.45 75.93,17.37 81.36,19.32 86.78,18.36 92.2,18.78 97.63,17.7 103.05,16.41 108.47,16.29 113.9,15.99 119.32,16.92 124.75,15.33 130.17,14.1 135.59,13.23 141.02,14.79 146.44,14.16 151.86,14.79 157.29,13.38 162.71,23.97 168.14,20.16 173.56,21.63 178.98,24.84 184.41,20.94 189.83,18.12 195.25,15.12 200.68,15.63 206.1,19.35 211.53,15.6 216.95,16.47 222.37,17.43 227.8,21.06 233.22,19.71 238.64,20.1 244.07,19.32 249.49,18.06 254.92,15.72 260.34,15.99 265.76,15.0 271.19,13.74 276.61,14.97 282.03,16.68 287.46,14.28 292.88,12.66 298.31,17.22 303.73,15.84 309.15,13.95 314.58,16.35 320.0,19.98 "/>
+</svg>
+</div>
+            </div>
             
             <div class="row-pop-ft">
               <span class="l-en">Reading: 18.8 · 43/100 in its own history</span>
@@ -15678,6 +15878,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,3.75 5.42,3.27 10.85,3.3 16.27,4.77 21.69,4.14 27.12,4.5 32.54,5.16 37.97,3.84 43.39,7.59 48.81,10.17 54.24,11.22 59.66,15.99 65.08,17.61 70.51,18.0 75.93,16.29 81.36,22.83 86.78,14.67 92.2,13.2 97.63,13.08 103.05,9.78 108.47,11.28 113.9,13.26 119.32,15.69 124.75,9.87 130.17,14.31 135.59,12.42 141.02,10.65 146.44,12.66 151.86,13.62 157.29,12.36 162.71,29.58 168.14,21.45 173.56,25.56 178.98,29.61 184.41,26.31 189.83,15.99 195.25,12.6 200.68,12.48 206.1,22.98 211.53,17.73 216.95,19.65 222.37,21.96 227.8,26.88 233.22,26.61 238.64,28.14 244.07,28.05 249.49,24.87 254.92,21.93 260.34,21.42 265.76,22.11 271.19,5.1 276.61,9.12 282.03,8.76 287.46,4.8 292.88,6.63 298.31,17.04 303.73,20.43 309.15,16.02 314.58,12.24 320.0,26.7 "/>
+</svg>
+</div>
+            </div>
+            
             <div class="row-pop-ft">
               <span class="l-en">Reading: 2.37 · 21/100 in its own history</span>
               <span class="l-zh">读数：2.37 · 历史百分位 21/100</span>
@@ -15729,6 +15939,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </div>
             
             
+            
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,16.62 5.42,19.38 10.85,17.01 16.27,18.18 21.69,14.76 27.12,12.96 32.54,13.47 37.97,16.5 43.39,8.91 48.81,7.95 54.24,13.23 59.66,8.04 65.08,9.6 70.51,8.64 75.93,8.52 81.36,12.63 86.78,11.13 92.2,9.3 97.63,7.2 103.05,12.3 108.47,10.59 113.9,11.13 119.32,8.7 124.75,8.43 130.17,7.89 135.59,11.16 141.02,8.37 146.44,6.75 151.86,6.48 157.29,6.99 162.71,5.31 168.14,5.64 173.56,4.71 178.98,28.65 184.41,20.04 189.83,22.95 195.25,27.36 200.68,19.65 206.1,12.21 211.53,8.28 216.95,8.79 222.37,17.55 227.8,8.49 233.22,14.28 238.64,22.08 244.07,20.67 249.49,22.56 254.92,20.64 260.34,19.08 265.76,12.75 271.19,12.75 276.61,10.05 282.03,7.35 287.46,10.08 292.88,13.2 298.31,7.98 303.73,5.34 309.15,7.32 314.58,11.64 320.0,20.55 "/>
+</svg>
+</div>
+            </div>
             
             <div class="row-pop-ft">
               <span class="l-en">Reading: 0.914 · 42/100 in its own history</span>
@@ -15782,6 +16002,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,30.15 5.42,29.82 10.85,29.64 16.27,29.85 21.69,29.34 27.12,30.45 32.54,30.81 37.97,30.3 43.39,30.42 48.81,29.49 54.24,28.44 59.66,28.65 65.08,29.37 70.51,30.0 75.93,29.76 81.36,30.36 86.78,29.7 92.2,31.26 97.63,29.4 103.05,28.44 108.47,27.33 113.9,28.98 119.32,29.07 124.75,29.61 130.17,29.43 135.59,29.79 141.02,30.99 146.44,30.6 151.86,30.78 157.29,28.92 162.71,30.51 168.14,32.22 173.56,31.14 178.98,30.45 184.41,30.75 189.83,30.72 195.25,30.63 200.68,31.02 206.1,30.63 211.53,30.63 216.95,31.47 222.37,30.39 227.8,30.75 233.22,31.2 238.64,29.85 244.07,29.67 249.49,31.02 254.92,31.89 260.34,32.49 265.76,31.95 271.19,31.2 276.61,31.23 282.03,31.92 287.46,31.05 292.88,30.96 298.31,31.23 303.73,31.14 309.15,31.74 314.58,31.23 320.0,31.53 "/>
+</svg>
+</div>
+            </div>
+            
             <div class="row-pop-ft">
               <span class="l-en">Reading: 147.3 · 5/100 in its own history</span>
               <span class="l-zh">读数：147.3 · 历史百分位 5/100</span>
@@ -15834,6 +16064,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             
             
             
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,8.19 5.42,12.36 10.85,11.49 16.27,5.82 21.69,12.48 27.12,4.23 32.54,9.57 37.97,11.01 43.39,12.66 48.81,14.73 54.24,5.16 59.66,9.81 65.08,4.56 70.51,6.39 75.93,12.57 81.36,9.66 86.78,10.53 92.2,9.63 97.63,13.08 103.05,10.65 108.47,10.5 113.9,7.47 119.32,4.05 124.75,7.65 130.17,8.67 135.59,9.45 141.02,7.65 146.44,4.5 151.86,4.98 157.29,4.08 162.71,5.67 168.14,6.51 173.56,4.77 178.98,5.37 184.41,8.49 189.83,6.75 195.25,10.74 200.68,13.53 206.1,11.97 211.53,16.35 216.95,14.01 222.37,20.28 227.8,22.65 233.22,19.41 238.64,19.47 244.07,18.87 249.49,13.83 254.92,6.0 260.34,6.21 265.76,5.1 271.19,15.03 276.61,12.48 282.03,4.56 287.46,9.51 292.88,14.1 298.31,6.69 303.73,4.5 309.15,11.01 314.58,11.94 320.0,5.55 "/>
+</svg>
+</div>
+            </div>
+            
             <div class="row-pop-ft">
               <span class="l-en">Reading: 95.6 · 91/100 in its own history</span>
               <span class="l-zh">读数：95.6 · 历史百分位 91/100</span>
@@ -15885,6 +16125,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </div>
             
             
+            
+            <div class="sg-pop-spark">
+              <div class="sg-pop-spark-lbl"><span class="l-en">Recent range</span><span class="l-zh">近期区间</span></div>
+              <div class="sg-spark">
+<svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
+<line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,20.73 5.42,5.61 10.85,12.99 16.27,25.8 21.69,12.24 27.12,18.57 32.54,27.63 37.97,21.63 43.39,27.99 48.81,27.18 54.24,24.57 59.66,25.74 65.08,21.54 70.51,15.87 75.93,23.82 81.36,28.95 86.78,23.52 92.2,9.15 97.63,16.5 103.05,6.66 108.47,18.0 113.9,20.43 119.32,20.73 124.75,27.0 130.17,18.0 135.59,17.04 141.02,30.51 146.44,17.7 151.86,23.4 157.29,26.52 162.71,7.05 168.14,23.94 173.56,15.78 178.98,29.19 184.41,18.54 189.83,21.42 195.25,25.23 200.68,32.49 206.1,32.49 211.53,32.52 216.95,32.52 222.37,31.56 227.8,32.52 233.22,11.31 238.64,19.35 244.07,15.54 249.49,14.46 254.92,16.47 260.34,18.0 265.76,12.72 271.19,15.93 276.61,30.54 282.03,30.15 287.46,27.39 292.88,30.63 298.31,27.54 303.73,28.77 309.15,30.72 314.58,29.64 320.0,27.45 "/>
+</svg>
+</div>
+            </div>
             
             <div class="row-pop-ft">
               <span class="l-en">Reading: -17.8 · 19/100 in its own history</span>
@@ -16525,11 +16775,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     /* Escape handler: dialog > scorecard popover > release radar modal guards */
     document.addEventListener('keydown', function(e){
       if(e.key !== 'Escape') return;
-      /* INT-01: guard release-radar modal/overlay open states */
+      /* INT-01: guard release-radar modal/overlay open states. The RR detail modal
+         opens on top of dlg-events (from the inline panel); its own Escape handler
+         closes it first, so we must not also close the dialog underneath. */
       var overlay = document.getElementById('rr-modal-overlay');
       if(overlay && overlay.classList.contains('open')) return;
-      var dateOverlay = document.getElementById('rr-date-overlay');
-      if(dateOverlay && dateOverlay.classList.contains('open')) return;
       var trOverlay = document.querySelector('.rr-tr-overlay');
       if(trOverlay && trOverlay.classList.contains('is-open')) return;
       if(_dlgActive){ e.stopImmediatePropagation(); window.mx5CloseDlg(); return; }
@@ -16665,7 +16915,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <summary><span class="l-en">Data health</span><span class="l-zh">数据健康度</span>
       <span class="help">?<span class="tip"><span class="l-en">Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today&#39;s fetch broke (yesterday&#39;s data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.</span><span class="l-zh">本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。</span></span></span>
       
-      <span class="fold-stat">7 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 165 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
+      <span class="fold-stat">8 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 166 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
       <span class="fold-caret">▾</span>
     </summary>
     <table>
@@ -16676,7 +16926,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-19</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -16685,7 +16935,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>21</td><td>2026-07-17</td>
+        <td>26</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -16694,7 +16944,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -16712,7 +16962,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3</td><td>2026-07-18</td>
+        <td>5</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -16739,7 +16989,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>6270</td><td>2026-07-18</td>
+        <td>351</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -16766,7 +17016,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>11</td><td>2026-07-18</td>
+        <td>11</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -16775,7 +17025,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17027,7 +17277,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17036,7 +17286,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17045,7 +17295,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>31</td><td>2026-07-18</td>
+        <td>35</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17054,7 +17304,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17063,7 +17313,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>70</td><td>2026-07-17</td>
+        <td>76</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17072,7 +17322,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17090,7 +17340,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5175</td><td>2026-07-18</td>
+        <td>5179</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17099,7 +17349,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>6</td><td>2026-07-18</td>
+        <td>6</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17108,7 +17358,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17117,7 +17367,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-19</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17126,7 +17376,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-19</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17135,7 +17385,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-19</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17143,7 +17393,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <td class="l">eia</td>
         
         
-        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td class="l"><span class="pill pill-stale"><span class="l-en">stale</span><span class="l-zh">过期</span></span></td>
         <td>25459</td><td>2026-07-10</td>
         <td class="l muted"></td>
       </tr>
@@ -17153,7 +17403,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17171,7 +17421,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3086</td><td>2026-07-18</td>
+        <td>3088</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17189,7 +17439,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17207,7 +17457,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17225,7 +17475,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17261,7 +17511,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>673815</td><td>2028-01-01</td>
+        <td>673817</td><td>2028-01-01</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17279,7 +17529,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5781</td><td>2026-07-18</td>
+        <td>5781</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17324,8 +17574,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
+      </tr>
+      
+      <tr>
+        <td class="l">google_trends</td>
+        
+        
+        <td class="l"><span class="pill pill-blocked"><span class="l-en">blocked</span><span class="l-zh">已屏蔽</span></span></td>
+        <td>0</td><td>—</td>
+        <td class="l muted">pytrends not installed — Google Trends lane skipped</td>
       </tr>
       
       <tr>
@@ -17531,7 +17790,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17540,7 +17799,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17549,7 +17808,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17576,7 +17835,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>17365</td><td>2026-07-18</td>
+        <td>11618</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17584,9 +17843,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <td class="l">intl_universe</td>
         
         
-        <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
-        <td>0</td><td>—</td>
-        <td class="l muted">RuntimeError: intl_universe: no closes downloaded</td>
+        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td>1</td><td>2026-07-20</td>
+        <td class="l muted"></td>
       </tr>
       
       <tr>
@@ -17612,7 +17871,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17639,7 +17898,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>33</td><td>2026-07-18</td>
+        <td>33</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17657,7 +17916,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1271</td><td>2026-07-17</td>
+        <td>1269</td><td>2026-07-17</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17666,7 +17925,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17684,7 +17943,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1393</td><td>2026-07-18</td>
+        <td>1393</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17693,7 +17952,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17702,7 +17961,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17720,7 +17979,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>161107</td><td>—</td>
+        <td>159188</td><td>—</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17729,7 +17988,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17738,7 +17997,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17747,7 +18006,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17756,7 +18015,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17765,7 +18024,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17774,7 +18033,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17783,7 +18042,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17792,7 +18051,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17810,7 +18069,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17819,7 +18078,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17828,7 +18087,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17837,7 +18096,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17846,7 +18105,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17855,7 +18114,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17864,7 +18123,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17873,7 +18132,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17882,7 +18141,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17891,7 +18150,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17909,7 +18168,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17927,7 +18186,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-19</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17936,7 +18195,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17945,7 +18204,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>63</td><td>2026-07-17</td>
+        <td>64</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -17972,7 +18231,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -18017,7 +18276,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -18035,7 +18294,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -18044,7 +18303,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-19</td>
+        <td>1</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
@@ -18089,7 +18348,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-18</td>
+        <td>1</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -18097,7 +18356,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <td class="l">tsa</td>
         
         
-        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td class="l"><span class="pill pill-stale"><span class="l-en">stale</span><span class="l-zh">过期</span></span></td>
         <td>2754</td><td>2026-07-16</td>
         <td class="l muted"></td>
       </tr>
@@ -18107,7 +18366,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>30342</td><td>2026-07-17</td>
+        <td>30344</td><td>2026-07-19</td>
         <td class="l muted"></td>
       </tr>
       
@@ -18125,7 +18384,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>145636</td><td>2026-07-17</td>
+        <td>144433</td><td>2026-07-18</td>
         <td class="l muted"></td>
       </tr>
       
@@ -18134,7 +18393,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>4035</td><td>2026-07-17</td>
+        <td>4036</td><td>2026-07-18</td>
         <td class="l muted"></td>
       </tr>
       
@@ -18152,15 +18411,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>174060</td><td>2026-07-19</td>
+        <td>43208</td><td>2026-07-20</td>
         <td class="l muted"></td>
       </tr>
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-20 01:53 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-20 03:34 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-20 01:53 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-20 03:34 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
