@@ -21,6 +21,12 @@ Pins (network-free — the download layer is stubbed):
 5. the regional index/ETF planes (china/hk/canada/intl close+volume stores +
    the intl_etf OHLCV substrate): same discard / re-pull-max / drop-on-failure
    contract on their incremental windows.
+6. collectors/sector_holdings.StockPriceAdapter (data/stocks — the US
+   deep-history store; measured 2026-07-19: 30/231 names off basis, worst the
+   SPGI 5.7% spin-off factor): same discard / re-pull-max / drop-on-failure
+   contract, plus the shallow-stub depth heal (a throttled seed pull's ~40-row
+   file has 100% volume coverage, so the volume-share check alone would call it
+   healthy forever) and overwrite_overlap=True (auto_adjust=True plane).
 
 Run: .venv/bin/python -m pytest tests/test_upsert_basis_guard.py -q
 """
@@ -41,6 +47,7 @@ from collectors import china_prices as china_mod  # noqa: E402
 from collectors import hk_prices as hk_mod  # noqa: E402
 from collectors import intl_etf as etf_mod  # noqa: E402
 from collectors import intl_prices as intl_mod  # noqa: E402
+from collectors import sector_holdings as sh  # noqa: E402
 from collectors import yahoo as yahoo_mod  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -431,6 +438,104 @@ def test_intl_etf_failed_repull_drops_the_ticker(data_dir, monkeypatch):
     frames = a.fetch(full_history=False)
     assert "EWJ" not in frames, "a shifted window must never reach the store"
     assert set(frames) == set(ETF_UNIV) - {"EWJ"}  # 3/4 clears int(0.8*4)=3 — gate holds
+
+
+# ---------------------------------------------------------------------------
+# 6. collectors/sector_holdings.StockPriceAdapter — the US deep-history store
+# ---------------------------------------------------------------------------
+
+SPINOFF = 1.057  # the measured SPGI spin-off factor (action 2026-07-01)
+
+
+def _stocks_resp(stored: pd.DataFrame, tail: int | None = None, factor: float = 1.0,
+                 n_max: int = 420) -> pd.DataFrame:
+    """A raw yfinance-shaped response (Close/High/Low/Volume) for one ticker."""
+    if tail is not None:
+        base = stored.tail(tail)
+        close = base["close"].to_numpy() / factor
+        idx = base.index
+    else:
+        idx = pd.bdate_range(end="2026-06-30", periods=n_max)
+        close = np.linspace(100.0, 150.0, n_max) / factor
+    return pd.DataFrame({"Close": close, "High": close, "Low": close,
+                         "Volume": 1e6}, index=idx)
+
+
+def _make_stocks_adapter(monkeypatch, tickers: list[str], responder, calls: list):
+    a = sh.StockPriceAdapter()
+    monkeypatch.setattr(sh, "top10_union", lambda: list(tickers))
+
+    def fake_download(batch, period):
+        calls.append((period, list(batch)))
+        return responder(batch, period)
+
+    monkeypatch.setattr(a, "_download", fake_download)
+    return a
+
+
+def test_stocks_shifted_name_repulls_max_and_clean_name_keeps_window(data_dir, monkeypatch):
+    spgi = _seed("stocks", "SPGI", cols=("close", "high", "low"))
+    aapl = _seed("stocks", "AAPL", cols=("close", "high", "low"))
+    calls: list = []
+
+    def responder(batch, period):
+        if period == "max":
+            return _yf_multi({"SPGI": _stocks_resp(spgi, factor=SPINOFF)})
+        return _yf_multi({
+            "SPGI": _stocks_resp(spgi, tail=20, factor=SPINOFF),  # re-based window
+            "AAPL": _stocks_resp(aapl, tail=20),                  # clean window
+        })
+
+    a = _make_stocks_adapter(monkeypatch, ["SPGI", "AAPL"], responder, calls)
+    frames = a.fetch(full_history=False)
+
+    assert [c[0] for c in calls] == ["1mo", "max"]
+    assert calls[1][1] == ["SPGI"], "only the shifted name is re-pulled"
+    assert len(frames["SPGI"]) == 420, "the max re-pull replaces the 1mo window wholesale"
+    assert len(frames["AAPL"]) == 20, "a clean name keeps its cheap window"
+    assert {"close", "high", "low", "volume"} <= set(frames["SPGI"].columns)
+
+
+def test_stocks_failed_repull_drops_the_name_instead_of_splicing(data_dir, monkeypatch):
+    seeds = {t: _seed("stocks", t, cols=("close", "high", "low"))
+             for t in ["SPGI", "AAPL", "MSFT", "NVDA"]}
+    calls: list = []
+
+    def responder(batch, period):
+        if period == "max":
+            raise RuntimeError("yahoo down")
+        return _yf_multi({
+            t: _stocks_resp(df, tail=20, factor=SPINOFF if t == "SPGI" else 1.0)
+            for t, df in seeds.items()
+        })
+
+    a = _make_stocks_adapter(monkeypatch, list(seeds), responder, calls)
+    frames = a.fetch(full_history=False)
+
+    assert "SPGI" not in frames, "a shifted window must never reach the store"
+    assert set(frames) == {"AAPL", "MSFT", "NVDA"}  # 3/4 clears the 0.7 floor
+
+
+def test_stocks_shallow_stub_gets_full_backfill(data_dir, monkeypatch):
+    """The CBRE/ISRG/KMI/MLM class (2026-05): a throttled seed pull left a ~42-row
+    stub with 100% volume coverage, which the volume-share heal calls healthy
+    forever. The depth check must route it back to period='max'."""
+    stub = _seed("stocks", "ISRG", n=42, cols=("close", "high", "low"))
+    calls: list = []
+
+    def responder(batch, period):
+        return _yf_multi({"ISRG": _stocks_resp(stub, n_max=420)})
+
+    a = _make_stocks_adapter(monkeypatch, ["ISRG"], responder, calls)
+    frames = a.fetch(full_history=False)
+
+    assert [c[0] for c in calls] == ["max"], "shallow stub goes straight to full history"
+    assert len(frames["ISRG"]) == 420
+
+
+def test_stocks_adapter_declares_overwrite_overlap():
+    """auto_adjust=True plane: the refresh window must own its span seam-free."""
+    assert sh.StockPriceAdapter.overwrite_overlap is True
 
 
 if __name__ == "__main__":
