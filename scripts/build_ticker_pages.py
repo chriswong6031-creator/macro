@@ -401,6 +401,67 @@ def _trunc_words(s: str, limit: int) -> str:
     return (cut or s[:limit]) + "…"
 
 
+# Machine-read tokens that must not surface in Tier-1 stance copy (operator
+# order 2026-07-20: "remove machine text" — e.g. "(daily RSI 72, 98th-percentile
+# volatility)"). The engine strings live in the blob; the page sanitizes.
+_MACHINE_TOKEN_RE = re.compile(
+    r"RSI|MACD|ADX|stoch|percentil|pctile|z[-= ]?score|\bn=|σ|volatility|BBWP|ATR",
+    re.IGNORECASE,
+)
+
+
+def _scrub_machine(s: str) -> str:
+    """Strip machine parentheticals + engineering shorthand from EN stance copy.
+
+    "extended (overbought (daily RSI 72))"      -> "extended (overbought)"
+    "a low formed ~4 day(s) ago @ 275.15"       -> "a low formed ~4 days ago at $275.15"
+    """
+    if not s:
+        return s
+    s = s.replace("day(s)", "days").replace("week(s)", "weeks").replace("month(s)", "months")
+    # innermost-first: nested machine parens dissolve one layer per pass
+    for _ in range(4):
+        out = re.sub(
+            r"\(([^()]*)\)",
+            lambda m: "" if _MACHINE_TOKEN_RE.search(m.group(1)) else f"({m.group(1)})",
+            s,
+        )
+        if out == s:
+            break
+        s = out
+    s = re.sub(r"@ ?(\d)", r"at $\1", s)
+    s = re.sub(r"\(\s*\)", "", s)               # emptied shells
+    s = re.sub(r"\(\s+", "(", s)
+    s = re.sub(r"\s+\)", ")", s)
+    s = re.sub(r"\s{2,}", " ", s)
+    s = re.sub(r"\s+([,.;:])", r"\1", s)
+    return s.strip()
+
+
+def _scrub_machine_zh(s: str) -> str:
+    """ZH twin of _scrub_machine (full-width parens; '@' → '价位')."""
+    if not s:
+        return s
+    for _ in range(4):
+        out = re.sub(
+            r"（([^（）]*)）",
+            lambda m: "" if _MACHINE_TOKEN_RE.search(m.group(1)) else f"（{m.group(1)}）",
+            s,
+        )
+        out = re.sub(
+            r"\(([^()]*)\)",
+            lambda m: "" if _MACHINE_TOKEN_RE.search(m.group(1)) else f"({m.group(1)})",
+            out,
+        )
+        if out == s:
+            break
+        s = out
+    s = re.sub(r"\s*@ ?(\d)", r"，价位\1", s)
+    s = re.sub(r"（\s*）|\(\s*\)", "", s)
+    s = re.sub(r"\s{2,}", " ", s)
+    return s.strip()
+
+
 def compute_stance(
     blob: dict | None,
     signals: dict | None = None,
@@ -787,6 +848,604 @@ def load_per_ticker(site: Path, ticker: str) -> dict:
 # ---------------------------------------------------------------------------
 # Chart rendering helper
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Deep dialogs (Wave 2 — popup dashboards; Tier-2/3 depth behind one click)
+# ---------------------------------------------------------------------------
+
+def _fmt_bn(v: Any) -> str:
+    """Humanize a raw USD amount (blob raw values are absolute dollars)."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return ""
+    a = abs(f)
+    if a >= 1e12: s = f"${f/1e12:.2f}T"
+    elif a >= 1e9: s = f"${f/1e9:.1f}B"
+    elif a >= 1e6: s = f"${f/1e6:.0f}M"
+    else: s = f"${f:,.0f}"
+    return s
+
+
+def _fmt_pct(v: Any, dp: int = 1, sign: bool = False) -> str:
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return ""
+    return f"{'+' if sign and f > 0 else ''}{f:.{dp}f}%"
+
+
+def _kv(rows: list) -> dict:
+    return {"kind": "kv", "rows": [r for r in rows if r and r.get("v") not in (None, "", "None")]}
+
+
+def _panel_alive(p: dict) -> bool:
+    if p.get("kind") == "kv":
+        return bool(p.get("rows"))
+    if p.get("kind") == "table":
+        return bool(p.get("rows"))
+    if p.get("kind") == "cards":
+        return bool(p.get("cards"))
+    if p.get("kind") == "notes":
+        return bool(p.get("lines"))
+    return False
+
+
+def _mk_dialog(did: str, ten: str, tzh: str, panels: list) -> dict | None:
+    panels = [p for p in panels if p and _panel_alive(p)]
+    if not panels:
+        return None
+    for p in panels:
+        p.setdefault("title_en", ""); p.setdefault("title_zh", "")
+    return {"id": did, "title_en": ten, "title_zh": tzh, "panels": panels}
+
+
+def _deep_stats(blob: dict, performance: list | None, stats: dict | None) -> dict | None:
+    val = blob.get("valuation") or {}
+    alpha = blob.get("alpha") or {}
+    tech = blob.get("tech") or {}
+    panels: list = []
+
+    # Valuation vs sector — {v, med, cheap} triplets + yield-style singles
+    vrows = []
+    for key, en, zh in (("trailing_pe", "P/E (trailing)", "市盈率（静态）"),
+                        ("forward_pe", "P/E (forward)", "市盈率（预测）"),
+                        ("price_to_book", "Price / Book", "市净率"),
+                        ("price_to_sales", "Price / Sales", "市销率"),
+                        ("ev_to_ebitda", "EV / EBITDA", "EV/EBITDA"),
+                        ("earnings_yield", "Earnings yield", "盈利收益率"),
+                        ("fcf_proxy_yield", "Free-cash-flow yield", "自由现金流收益率"),
+                        ("shareholder_yield", "Shareholder yield", "股东综合回报率")):
+        rec = val.get(key)
+        if rec is None:
+            continue
+        if isinstance(rec, dict):
+            v, med, cheap = rec.get("v"), rec.get("med"), rec.get("cheap")
+            if v is None:
+                continue
+            unit = "%" if "yield" in key else "×"
+            vrows.append([{"en": en, "zh": zh}, f"{float(v):.1f}{unit}",
+                          f"{float(med):.1f}{unit}" if med is not None else "—",
+                          _fmt_pct(cheap, 0) if cheap is not None else "—"])
+        else:
+            try:
+                unit = "%" if "yield" in key else "×"
+                vrows.append([{"en": en, "zh": zh}, f"{float(rec):.1f}{unit}", "—", "—"])
+            except (TypeError, ValueError):
+                continue
+    if vrows:
+        panels.append({"kind": "table", "title_en": "Valuation vs sector", "title_zh": "估值对比行业",
+                       "head": [["Multiple", "指标"], ["This stock", "本股"], ["Sector median", "行业中位"], ["Cheaper than", "相对便宜"]],
+                       "rows": vrows})
+
+    # Relative strength (alpha block) — plain-word framing
+    rs_rows = []
+    for key, en, zh in (("rs", "vs market, 1 month", "相对大盘（1个月）"),
+                        ("rs3m", "vs market, 3 months", "相对大盘（3个月）"),
+                        ("rs6m", "vs market, 6 months", "相对大盘（6个月）"),
+                        ("rs12m", "vs market, 12 months", "相对大盘（12个月）")):
+        v = alpha.get(key)
+        if v is None:
+            continue
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            continue
+        word_en = "stronger than most" if f >= 70 else ("weaker than most" if f <= 30 else "middle of the pack")
+        word_zh = "强于多数" if f >= 70 else ("弱于多数" if f <= 30 else "居中")
+        rs_rows.append({"k_en": en, "k_zh": zh, "v": f"{f:.0f}/100 — ", "v_en": word_en, "v_zh": word_zh,
+                        "cls": "pos" if f >= 70 else ("neg" if f <= 30 else "")})
+    if alpha.get("sector_rank") is not None and alpha.get("sector_n"):
+        rs_rows.append({"k_en": "Rank in sector", "k_zh": "行业内排名",
+                        "v": f"#{int(alpha['sector_rank'])} / {int(alpha['sector_n'])}", "v_en": "", "v_zh": ""})
+    if rs_rows:
+        panels.append({"kind": "kv", "title_en": "Relative strength", "title_zh": "相对强度",
+                       "rows": rs_rows,
+                       "foot_en": "0–100 percentile of total return vs all covered stocks.",
+                       "foot_zh": "总回报在全部覆盖股票中的百分位（0–100）。"})
+
+    # Price history — the old Performance table's home
+    if performance:
+        prows = []
+        for row in performance:
+            prows.append([{"en": row.get('label_en', ''), "zh": row.get('label_zh', '')},
+                          row.get("ticker_ret") or "—", row.get("spy_ret") or "—"])
+        panels.append({"kind": "table", "title_en": "Price history", "title_zh": "价格历史",
+                       "head": [["Period", "周期"], ["This stock", "本股"], ["S&P 500", "标普500"]],
+                       "rows": prows})
+
+    trows = []
+    if stats:
+        for key, en, zh in (("beta", "Beta vs market", "贝塔"),
+                            ("hv_pctile", "Volatility rank", "波动率分位"),
+                            ("short_pct_float", "Short interest", "空头占比"),
+                            ("mktcap", "Market cap", "市值"),
+                            ("eps", "EPS (trailing)", "每股收益"),
+                            ("div_yield", "Dividend yield", "股息率")):
+            v = stats.get(key)
+            if v:
+                trows.append({"k_en": en, "k_zh": zh, "v": str(v), "v_en": "", "v_zh": ""})
+    off_hi = tech.get("off_52w_high_pct")
+    if off_hi is not None:
+        trows.append({"k_en": "Off 52-week high", "k_zh": "距52周高点", "v": _fmt_pct(-abs(float(off_hi)), 1, sign=True), "v_en": "", "v_zh": ""})
+    rv = tech.get("rel_volume")
+    if rv is not None:
+        trows.append({"k_en": "Volume vs normal", "k_zh": "成交量相对平常", "v": f"{float(rv):.1f}×", "v_en": "", "v_zh": ""})
+    if trows:
+        panels.append({"kind": "kv", "title_en": "Trading information", "title_zh": "交易信息", "rows": trows})
+
+    return _mk_dialog("stats", "Statistics — full detail", "统计数据 — 完整明细", panels)
+
+
+def _deep_financials(blob: dict) -> dict | None:
+    fin = blob.get("financials") or {}
+    my = fin.get("multiyear") or {}
+    raw = fin.get("raw") or {}
+    aq = blob.get("accounting_quality") or {}
+    panels: list = []
+
+    years = my.get("years") or []
+    if years:
+        head = [["", ""]] + [[str(y), str(y)] for y in years]
+        rows = []
+        def _series(key, label_en, label_zh, fmt):
+            arr = my.get(key)
+            if not arr:
+                return
+            cells = [{"en": label_en, "zh": label_zh}]
+            for i in range(len(years)):
+                v = arr[i] if i < len(arr) else None
+                try:
+                    cells.append(fmt(v) if v is not None else "—")
+                except (TypeError, ValueError):
+                    cells.append("—")
+            rows.append(cells)
+        _series("revenue", "Revenue", "营业收入", _fmt_bn)
+        _series("eps", "EPS", "每股收益", lambda v: f"${float(v):.2f}")
+        _series("fcf", "Free cash flow", "自由现金流", _fmt_bn)
+        _series("gross_margin", "Gross margin", "毛利率", lambda v: _fmt_pct(v))
+        _series("net_margin", "Net margin", "净利率", lambda v: _fmt_pct(v))
+        _series("fcf_margin", "FCF margin", "自由现金流利润率", lambda v: _fmt_pct(v))
+        if rows:
+            panels.append({"kind": "table", "title_en": "Multi-year record", "title_zh": "多年财务记录",
+                           "head": head, "rows": rows})
+
+    snap = []
+    for key, en, zh in (("revenue", "Revenue (FY)", "营业收入（财年）"), ("gross_profit", "Gross profit", "毛利润"),
+                        ("ni", "Net income", "净利润"), ("cfo", "Operating cash flow", "经营现金流"),
+                        ("assets", "Total assets", "总资产"), ("equity", "Shareholder equity", "股东权益"),
+                        ("debt_lt", "Long-term debt", "长期负债"), ("dividends", "Dividends paid", "股息支出"),
+                        ("repurchases", "Buybacks", "股票回购")):
+        v = raw.get(key)
+        if v is not None:
+            snap.append({"k_en": en, "k_zh": zh, "v": _fmt_bn(v), "v_en": "", "v_zh": ""})
+    shares = raw.get("shares")
+    if shares:
+        snap.append({"k_en": "Shares outstanding", "k_zh": "总股本", "v": f"{float(shares)/1e9:.2f}B", "v_en": "", "v_zh": ""})
+    if snap:
+        panels.append({"kind": "kv", "title_en": "Latest fiscal year", "title_zh": "最近财年", "rows": snap})
+
+    qual = []
+    for key, en, zh, fmt in (("roe", "Return on equity", "股本回报率", _fmt_pct),
+                             ("roa", "Return on assets", "资产回报率", _fmt_pct),
+                             ("debt_to_assets", "Debt / assets", "负债/资产", _fmt_pct),
+                             ("rev_growth", "Revenue growth", "营收增速", lambda v: _fmt_pct(v, 1, sign=True)),
+                             ("ni_growth", "Profit growth", "利润增速", lambda v: _fmt_pct(v, 1, sign=True)),
+                             ("asset_growth", "Asset growth", "资产增速", lambda v: _fmt_pct(v, 1, sign=True))):
+        v = fin.get(key)
+        if v is not None:
+            qual.append({"k_en": en, "k_zh": zh, "v": fmt(v), "v_en": "", "v_zh": ""})
+    if qual:
+        panels.append({"kind": "kv", "title_en": "Returns & growth", "title_zh": "回报与增长", "rows": qual})
+
+    reads = aq.get("reads") or []
+    lines = []
+    for r in reads[:6]:
+        if not isinstance(r, dict):
+            continue
+        lab, det = _clean_str(r.get("label")), _clean_str(r.get("detail"))
+        lab_zh = _clean_str(r.get("label_zh") or lab)
+        det_zh = _clean_str(r.get("detail_zh") or det)
+        state = _clean_str(r.get("state"))
+        if lab:
+            lines.append({"en": f"{lab}: {det}" if det else lab,
+                          "zh": f"{lab_zh}：{det_zh}" if det_zh else lab_zh,
+                          "cls": "wrn" if state == "caution" else ("pos" if state == "good" else "mut")})
+    if lines:
+        panels.append({"kind": "notes", "title_en": "Accounting quality checks", "title_zh": "会计质量检查", "lines": lines})
+
+    return _mk_dialog("financials", "Financials — full detail", "财务数据 — 完整明细", panels)
+
+
+_MTF_LABELS = {"D": ("Daily", "日线"), "3D": ("3-day", "3日线"), "W": ("Weekly", "周线"), "M": ("Monthly", "月线")}
+
+
+def _deep_technicals(blob: dict, tech_screener_row: dict | None) -> dict | None:
+    tech = blob.get("tech") or {}
+    vs = blob.get("vol_squeeze") or {}
+    mtf = blob.get("mtf") or {}
+    panels: list = []
+
+    ind = []
+    def _tr(v, en, zh, fmt=lambda x: f"{float(x):.1f}", cls=""):
+        if v is None:
+            return
+        try:
+            ind.append({"k_en": en, "k_zh": zh, "v": fmt(v), "v_en": "", "v_zh": "", "cls": cls})
+        except (TypeError, ValueError):
+            pass
+    _tr(tech.get("rsi14"), "RSI (14-day)", "RSI（14日）", lambda x: f"{float(x):.0f}")
+    _tr(tech.get("rsi2"), "RSI (2-day)", "RSI（2日）", lambda x: f"{float(x):.0f}")
+    _tr(tech.get("adx14"), "Trend strength (ADX)", "趋势强度（ADX）", lambda x: f"{float(x):.0f}")
+    _tr(tech.get("atr_pct"), "Average daily range", "平均日波幅", lambda x: _fmt_pct(x))
+    _tr(tech.get("pct_vs_20dma"), "vs 20-day average", "相对20日均线", lambda x: _fmt_pct(x, 1, sign=True))
+    _tr(tech.get("pct_vs_50dma"), "vs 50-day average", "相对50日均线", lambda x: _fmt_pct(x, 1, sign=True))
+    _tr(tech.get("pct_vs_200dma"), "vs 200-day average", "相对200日均线", lambda x: _fmt_pct(x, 1, sign=True))
+    if tech.get("golden") is not None:
+        ind.append({"k_en": "Golden cross (50>200)", "k_zh": "金叉（50>200）",
+                    "v": "", "v_en": "in effect" if tech.get("golden") else "not in effect",
+                    "v_zh": "生效中" if tech.get("golden") else "未生效",
+                    "cls": "pos" if tech.get("golden") else "mut"})
+    if tech.get("macd_pos") is not None:
+        ind.append({"k_en": "MACD", "k_zh": "MACD", "v": "",
+                    "v_en": "above signal" if tech.get("macd_pos") else "below signal",
+                    "v_zh": "位于信号线上方" if tech.get("macd_pos") else "位于信号线下方",
+                    "cls": "pos" if tech.get("macd_pos") else "neg"})
+    if ind:
+        panels.append({"kind": "kv", "title_en": "Indicator readings", "title_zh": "指标读数", "rows": ind})
+
+    # Multi-timeframe alignment — verdict word per TF from macd_pos + stoch/rsi
+    mrows = []
+    for tf in ("D", "3D", "W", "M"):
+        rec = mtf.get(tf)
+        if not isinstance(rec, dict):
+            continue
+        macd_ok = rec.get("macd_pos")
+        if macd_ok is None:
+            continue
+        en, zh = _MTF_LABELS[tf]
+        word_en = "momentum up" if macd_ok else "momentum down"
+        word_zh = "动能向上" if macd_ok else "动能向下"
+        extra = []
+        if rec.get("macd_cross_up"): extra.append(("fresh upturn", "刚刚转强"))
+        elif rec.get("macd_approaching_up"): extra.append(("turning up soon", "接近转强"))
+        elif rec.get("macd_cross_dn"): extra.append(("fresh downturn", "刚刚转弱"))
+        if extra:
+            word_en += f" — {extra[0][0]}"
+            word_zh += f"——{extra[0][1]}"
+        mrows.append({"k_en": en, "k_zh": zh, "v": "", "v_en": word_en, "v_zh": word_zh,
+                      "cls": "pos" if macd_ok else "neg"})
+    if mrows:
+        panels.append({"kind": "kv", "title_en": "Timeframe alignment", "title_zh": "多周期共振",
+                       "rows": mrows,
+                       "foot_en": "When daily through monthly point the same way, moves carry further.",
+                       "foot_zh": "当日线到月线方向一致时，行情往往更有延续性。"})
+
+    sq = []
+    state = _clean_str(vs.get("state"))
+    if state:
+        word_en = {"COMPRESSION": "coiling — range compressed", "EXPANSION": "expanding — range opening up"}.get(state, state.title())
+        word_zh = {"COMPRESSION": "压缩中 — 波幅收窄", "EXPANSION": "扩张中 — 波幅放大"}.get(state, state)
+        sq.append({"k_en": "Range state", "k_zh": "波幅状态", "v": "", "v_en": word_en, "v_zh": word_zh})
+    if vs.get("days_compressed"):
+        sq.append({"k_en": "Days compressed", "k_zh": "已压缩天数", "v": str(int(vs["days_compressed"])), "v_en": "", "v_zh": ""})
+    if vs.get("bbwp") is not None:
+        sq.append({"k_en": "Range width percentile", "k_zh": "波幅宽度分位", "v": f"{float(vs['bbwp']):.0f}/100", "v_en": "", "v_zh": ""})
+    if sq:
+        panels.append({"kind": "kv", "title_en": "Volatility regime", "title_zh": "波动状态", "rows": sq})
+
+    sigs = (tech_screener_row or {}).get("signals") or []
+    srows = []
+    for s in sigs:
+        name = _clean_str(s.get("display_en"))
+        if not name:
+            continue
+        active = s.get("state") == 1 or s.get("state") == "1"
+        age = s.get("age_days")
+        srows.append([name,
+                      {"en": "● active", "zh": "● 活跃"} if active else {"en": "quiet", "zh": "静默"},
+                      f"{age}d" if age not in (None, "") else "—"])
+    if srows:
+        panels.append({"kind": "table", "title_en": "All tracked signals", "title_zh": "全部跟踪信号",
+                       "head": [["Signal", "信号"], ["State", "状态"], ["Age", "距今"]],
+                       "rows": srows})
+
+    return _mk_dialog("technicals", "Technicals — full detail", "技术面 — 完整明细", panels)
+
+
+def _deep_earnings(blob: dict) -> dict | None:
+    earn = blob.get("earnings") or {}
+    rev = blob.get("revisions") or {}
+    an = blob.get("analyst") or {}
+    tech = blob.get("tech") or {}
+    panels: list = []
+
+    sur = earn.get("surprises") or []
+    srows = []
+    for s in sur:
+        try:
+            sp = float(s.get("surprise_pct") or 0)
+        except (TypeError, ValueError):
+            sp = 0.0
+        srows.append([_clean_str(s.get("qtr")), f"${float(s.get('eps') or 0):.2f}",
+                      f"${float(s.get('consensus') or 0):.2f}",
+                      f"{'+' if sp > 0 else ''}{sp:.1f}%"])
+    if srows:
+        panels.append({"kind": "table", "title_en": "Surprise history", "title_zh": "超预期历史",
+                       "head": [["Quarter", "季度"], ["Reported", "实际"], ["Expected", "预期"], ["Surprise", "超预期"]],
+                       "rows": srows})
+
+    rrows = []
+    try:
+        if rev.get("n_analysts"):
+            rrows.append({"k_en": "Analysts covering", "k_zh": "覆盖分析师", "v": f"{int(float(rev['n_analysts']))}", "v_en": "", "v_zh": ""})
+    except (TypeError, ValueError):
+        pass
+    if isinstance(rev.get("breadth"), (int, float)):
+        b = float(rev["breadth"])
+        word_en = "mostly raising" if b > 0.6 else ("mostly cutting" if b < 0.4 else "mixed")
+        word_zh = "多数上调" if b > 0.6 else ("多数下调" if b < 0.4 else "分歧")
+        rrows.append({"k_en": "Estimate direction", "k_zh": "预期调整方向", "v": "", "v_en": word_en, "v_zh": word_zh,
+                      "cls": "pos" if b > 0.6 else ("neg" if b < 0.4 else "")})
+    if isinstance(rev.get("est_chg_90d"), (int, float)):
+        rrows.append({"k_en": "Estimate change, 90 days", "k_zh": "预期变化（90天）",
+                      "v": _fmt_pct(rev["est_chg_90d"], 1, sign=True), "v_en": "", "v_zh": ""})
+    if isinstance(rev.get("net_up_30d"), (int, float)):
+        rrows.append({"k_en": "Net upgrades, 30 days", "k_zh": "净上调（30天）",
+                      "v": f"{float(rev['net_up_30d']):+.0f}", "v_en": "", "v_zh": ""})
+    if rrows:
+        panels.append({"kind": "kv", "title_en": "Estimate revisions", "title_zh": "预期修正", "rows": rrows})
+
+    arows = []
+    tgt = an.get("target")
+    price = tech.get("price")
+    if tgt and price:
+        try:
+            up = (float(tgt) / float(price) - 1) * 100
+            arows.append({"k_en": "Average price target", "k_zh": "平均目标价",
+                          "v": f"${float(tgt):,.0f} ({'+' if up >= 0 else ''}{up:.0f}%)", "v_en": "", "v_zh": "",
+                          "cls": "pos" if up > 0 else "neg"})
+        except (TypeError, ValueError):
+            pass
+    if an.get("rating"):
+        arows.append({"k_en": "Street rating", "k_zh": "华尔街评级", "v": _clean_str(an.get("rating")), "v_en": "", "v_zh": ""})
+    if an.get("forward_pe"):
+        arows.append({"k_en": "Forward P/E", "k_zh": "预测市盈率", "v": f"{float(an['forward_pe']):.1f}×", "v_en": "", "v_zh": ""})
+    if an.get("profit_margin") is not None:
+        arows.append({"k_en": "Profit margin", "k_zh": "净利率", "v": _fmt_pct(an["profit_margin"]), "v_en": "", "v_zh": ""})
+    if arows:
+        panels.append({"kind": "kv", "title_en": "Analyst view", "title_zh": "分析师观点", "rows": arows})
+
+    return _mk_dialog("earnings", "Earnings — full detail", "财务业绩 — 完整明细", panels)
+
+
+def _deep_options(blob: dict, gex_v1: dict | None) -> dict | None:
+    gx = blob.get("gex") or {}
+    v1 = (gex_v1 or {}).get("summary") or {}
+    ivs = blob.get("iv_spread") or {}
+    panels: list = []
+
+    def g(key):
+        return gx.get(key) if gx.get(key) is not None else v1.get(key)
+
+    lv = []
+    for key, en, zh in (("call_wall", "Call wall", "看涨期权墙"), ("put_wall", "Put wall", "看跌期权墙"),
+                        ("gamma_flip", "Gamma flip", "伽玛翻转位"), ("magnet_up", "Upside magnet", "上方磁吸位"),
+                        ("magnet_down", "Downside magnet", "下方磁吸位")):
+        v = g(key)
+        if v is not None:
+            try:
+                lv.append({"k_en": en, "k_zh": zh, "v": f"${float(v):,.0f}", "v_en": "", "v_zh": ""})
+            except (TypeError, ValueError):
+                pass
+    ng = g("net_gex_bn")
+    if ng is not None:
+        try:
+            f = float(ng)
+            lv.append({"k_en": "Net dealer gamma", "k_zh": "做市商净伽玛", "v": f"{'+' if f >= 0 else '-'}${abs(f):.1f}B", "v_en": "", "v_zh": "",
+                       "cls": "pos" if f > 0 else "neg"})
+        except (TypeError, ValueError):
+            pass
+    if g("dist_to_flip_pct") is not None:
+        lv.append({"k_en": "Distance to flip", "k_zh": "距翻转位", "v": _fmt_pct(g("dist_to_flip_pct"), 1, sign=True), "v_en": "", "v_zh": ""})
+    if lv:
+        panels.append({"kind": "kv", "title_en": "Dealer positioning map", "title_zh": "做市商持仓地图", "rows": lv,
+                       "foot_en": "Walls and magnets are strikes with heavy open interest — price often slows or gravitates there.",
+                       "foot_zh": "期权墙与磁吸位是未平仓集中的行权价 — 价格常在附近减速或被吸引。"})
+
+    vol = []
+    if g("iv30") is not None:
+        vol.append({"k_en": "Implied volatility (30d)", "k_zh": "隐含波动率（30天）", "v": _fmt_pct(g("iv30"), 0), "v_en": "", "v_zh": ""})
+    ivr = (v1.get("iv_rank") or {}).get("rank_pct") if isinstance(v1.get("iv_rank"), dict) else None
+    if ivr is not None:
+        vol.append({"k_en": "IV rank (1 year)", "k_zh": "IV历史分位", "v": f"{float(ivr):.0f}/100", "v_en": "", "v_zh": ""})
+    if gx.get("rr_25d") is not None:
+        try:
+            rr = float(gx["rr_25d"])
+            vol.append({"k_en": "25-delta risk reversal", "k_zh": "25-delta风险逆转", "v": f"{rr:+.1f}%", "v_en": "", "v_zh": "",
+                        "cls": "neg" if rr < 0 else "pos"})
+        except (TypeError, ValueError):
+            pass
+    if ivs.get("ivspread") is not None:
+        try:
+            vol.append({"k_en": "Call-put IV spread", "k_zh": "看涨-看跌IV价差", "v": f"{float(ivs['ivspread']):+.1f}pp", "v_en": "", "v_zh": ""})
+        except (TypeError, ValueError):
+            pass
+    if vol:
+        panels.append({"kind": "kv", "title_en": "Volatility pricing", "title_zh": "波动率定价", "rows": vol})
+
+    return _mk_dialog("options", "Options — full detail", "期权持仓 — 完整明细", panels)
+
+
+def _deep_ownership(blob: dict) -> dict | None:
+    sm = blob.get("smart_money") or {}
+    pos = blob.get("positioning") or {}
+    ins = pos.get("insider") or {}
+    sh = pos.get("short") or {}
+    flows = blob.get("fund_flows") or []
+    panels: list = []
+
+    hrows = []
+    for h in (sm.get("holders") or [])[:15]:
+        if not isinstance(h, dict):
+            continue
+        act = _clean_str(h.get("action"))
+        act_en = {"new": "New position", "add": "Adding", "trim": "Trimming", "exit": "Exited", "hold": "Holding"}.get(act, act.title() if act else "—")
+        act_zh = {"new": "新建仓", "add": "增持", "trim": "减持", "exit": "清仓", "hold": "持有"}.get(act, act or "—")
+        pctb = h.get("pct_portfolio")
+        hrows.append([_clean_str(h.get("fund_name") or h.get("fund")),
+                      _clean_str(h.get("fund_grade")) or "—",
+                      {"en": act_en, "zh": act_zh},
+                      _fmt_pct(pctb, 1) if pctb is not None else "—",
+                      _fmt_bn(h.get("value_usd")) or "—"])
+    if hrows:
+        panels.append({"kind": "table", "title_en": "Tracked funds holding it", "title_zh": "跟踪基金持仓",
+                       "head": [["Fund", "基金"], ["Grade", "评级"], ["Latest move", "最新动作"], ["% of book", "组合占比"], ["Position", "市值"]],
+                       "rows": hrows})
+
+    conc = []
+    if sm.get("n_holders") is not None:
+        conc.append({"k_en": "Tracked funds in the name", "k_zh": "持有该股的跟踪基金", "v": str(int(sm["n_holders"])), "v_en": "", "v_zh": ""})
+    nb, ns = sm.get("n_buying"), sm.get("n_selling")
+    if nb is not None and ns is not None:
+        cls = "pos" if nb > ns else ("neg" if ns > nb else "")
+        conc.append({"k_en": "Buying vs selling", "k_zh": "买入vs卖出", "v": f"{int(nb)} : {int(ns)}", "v_en": "", "v_zh": "", "cls": cls})
+    if sm.get("trend"):
+        tr = _clean_str(sm.get("trend"))
+        tr_en = {"accumulating": "accumulating", "distributing": "distributing", "stable": "stable"}.get(tr, tr)
+        tr_zh = {"accumulating": "持续增持", "distributing": "持续减持", "stable": "稳定"}.get(tr, tr)
+        conc.append({"k_en": "Quarterly trend", "k_zh": "季度趋势", "v": "", "v_en": tr_en, "v_zh": tr_zh})
+    if conc:
+        panels.append({"kind": "kv", "title_en": "Fund positioning", "title_zh": "基金持仓概览", "rows": conc})
+
+    other = []
+    if ins.get("net_usd_mn") is not None:
+        try:
+            f = float(ins["net_usd_mn"])
+            sign = "-" if f < 0 else "+"
+            other.append({"k_en": "Insider net buying (6 months)", "k_zh": "内部人净买入（6个月）",
+                          "v": f"{sign}${abs(f):,.1f}M", "v_en": "", "v_zh": "", "cls": "pos" if f > 0 else ("neg" if f < 0 else "")})
+        except (TypeError, ValueError):
+            pass
+    if ins.get("n_buyers") is not None and ins.get("n_sellers") is not None:
+        other.append({"k_en": "Insider buyers vs sellers", "k_zh": "内部人买家vs卖家",
+                      "v": f"{int(ins['n_buyers'])} : {int(ins['n_sellers'])}", "v_en": "", "v_zh": ""})
+    if sh.get("pct_float") is not None:
+        other.append({"k_en": "Short interest", "k_zh": "空头占流通盘", "v": _fmt_pct(sh["pct_float"], 1), "v_en": "", "v_zh": ""})
+    if sh.get("days_to_cover") is not None:
+        other.append({"k_en": "Days to cover", "k_zh": "回补天数", "v": f"{float(sh['days_to_cover']):.1f}", "v_en": "", "v_zh": ""})
+    if sh.get("si_change_pct") is not None:
+        other.append({"k_en": "Short interest change", "k_zh": "空头变化", "v": _fmt_pct(sh["si_change_pct"], 1, sign=True), "v_en": "", "v_zh": ""})
+    if other:
+        panels.append({"kind": "kv", "title_en": "Insiders & shorts", "title_zh": "内部人与空头", "rows": other})
+
+    frows = []
+    for f in flows[:8]:
+        if not isinstance(f, dict):
+            continue
+        d = _clean_str(f.get("direction"))
+        _DIR = {"in": ("flowing in", "流入"), "out": ("flowing out", "流出"),
+                "buy": ("buying", "买入"), "sell": ("selling", "卖出"),
+                "accumulating": ("accumulating", "持续增持"), "adding": ("adding", "加仓"),
+                "trimming": ("trimming", "减持"), "exiting": ("exiting", "清仓"),
+                "new": ("new position", "新建仓"), "hold": ("holding", "持有")}
+        if d not in _DIR:
+            continue  # unknown engine vocab: omit rather than leak EN into ZH
+        d_en, d_zh = _DIR[d]
+        frows.append({"k_en": _clean_str(f.get("fund_name") or f.get("fund")), "k_zh": _clean_str(f.get("fund_name") or f.get("fund")),
+                      "v": "", "v_en": d_en, "v_zh": d_zh, "cls": "pos" if d in ("in", "buy", "accumulating", "adding", "new") else ("neg" if d in ("out", "sell", "trimming", "exiting") else "")})
+    if frows:
+        panels.append({"kind": "kv", "title_en": "Recent fund flows", "title_zh": "近期基金流向", "rows": frows})
+
+    return _mk_dialog("ownership", "Ownership — full detail", "持仓 — 完整明细", panels)
+
+
+def _deep_seasonality(monthly: list | None, season_this: str, season_this_zh: str) -> dict | None:
+    if not monthly:
+        return None
+    panels: list = []
+    mrows = []
+    best = None
+    worst = None
+    for mi, m in enumerate(monthly):
+        wr = m.get("win_rate")
+        med = m.get("median_pct")
+        n = m.get("n") or 0
+        if wr is None:
+            continue
+        if best is None or wr > best[1]:
+            best = (m["month"], wr)
+        if worst is None or wr < worst[1]:
+            worst = (m["month"], wr)
+        mrows.append([{"en": m["month"], "zh": f"{mi + 1}月"}, f"{wr:.0f}%",
+                      f"{'+' if (med or 0) > 0 else ''}{med:.1f}%" if med is not None else "—",
+                      str(int(n))])
+    if mrows:
+        panels.append({"kind": "table", "title_en": "Month by month", "title_zh": "逐月统计",
+                       "head": [["Month", "月份"], ["Closed higher", "收涨占比"], ["Median move", "中位涨跌"], ["Years", "年数"]],
+                       "rows": mrows,
+                       "foot_en": "History is a tendency, not a promise — small samples wobble.",
+                       "foot_zh": "历史规律只是倾向而非保证 — 样本少时波动大。"})
+    cards = []
+    if best:
+        cards.append({"k_en": "Strongest month", "k_zh": "最强月份", "v": f"{best[0]} · {best[1]:.0f}%", "cls": "pos"})
+    if worst:
+        cards.append({"k_en": "Weakest month", "k_zh": "最弱月份", "v": f"{worst[0]} · {worst[1]:.0f}%", "cls": "neg"})
+    if cards:
+        panels.insert(0, {"kind": "cards", "title_en": "", "title_zh": "", "cards": cards})
+    if season_this:
+        panels.append({"kind": "notes", "title_en": "", "title_zh": "",
+                       "lines": [{"en": season_this, "zh": season_this_zh or season_this, "cls": "mut"}]})
+    return _mk_dialog("seasonality", "Seasonality — full detail", "季节性 — 完整明细", panels)
+
+
+def _build_deep(blob: dict | None, per: dict, agg: dict, ticker: str,
+                performance: list | None, stats: dict | None,
+                monthly: list | None, season_this: str, season_this_zh: str) -> dict | None:
+    """Assemble the popup-dashboard dialogs (list — never a dict the template
+    would trip over via Jinja attribute lookup)."""
+    if not blob:
+        return None
+    ts_row = (agg.get("tech_screener") or {}).get(ticker)
+
+    def _soft(fn, *args):
+        try:
+            return fn(*args)
+        except Exception as e:  # noqa: BLE001 — a broken dialog costs the dialog, never the page
+            log.debug("deep dialog %s failed for %s: %s", getattr(fn, "__name__", "?"), ticker, e)
+            return None
+
+    dialogs = [d for d in (
+        _soft(_deep_stats, blob, performance, stats),
+        _soft(_deep_financials, blob),
+        _soft(_deep_technicals, blob, ts_row),
+        _soft(_deep_earnings, blob),
+        _soft(_deep_options, blob, per.get("gex_v1")),
+        _soft(_deep_ownership, blob),
+        _soft(_deep_seasonality, monthly, season_this, season_this_zh),
+    ) if d]
+    return {"dialogs": dialogs} if dialogs else None
+
 
 # ---------------------------------------------------------------------------
 # Section builders (pure; one per context key)
@@ -2268,6 +2927,8 @@ def build_page_context(
 
     # --- Stance ---
     stance_en, stance_zh, stance_key, inv_en, inv_zh = compute_stance(blob, signals, intel)
+    # Tier-1 copy carries no machine reads (operator order 2026-07-20)
+    inv_en, inv_zh = _scrub_machine(inv_en), _scrub_machine_zh(inv_zh)
 
     # --- Freshness ---
     freshness_dates = [
@@ -2341,6 +3002,12 @@ def build_page_context(
     profile_extras = _build_profile_extras(blob)
     brief_section = _build_brief(brief)
     factors_section = _build_factors_section(blob)
+    try:
+        deep = _build_deep(blob, per, agg, ticker, performance, stats,
+                           monthly_data, season_this, season_this_zh)
+    except Exception as e:  # noqa: BLE001 — a broken dialog must cost the dialog, not the page
+        log.debug("deep dialogs failed for %s: %s", ticker, e)
+        deep = None
 
     # News section (raw for template)
     news_section: list | None = None
@@ -2383,6 +3050,7 @@ def build_page_context(
         "profile_extras": profile_extras,
         "brief": brief_section,
         "factors": factors_section,
+        "deep": deep,
         "news": news_section,
         "placeholders": {
             "analyst_targets": True,

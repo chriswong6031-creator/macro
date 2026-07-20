@@ -193,15 +193,6 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .kv6 .k6{color:var(--muted);}
 .kv6 .v6{font-weight:650;text-align:right;}
 
-/* performance */
-.perf .pr{display:grid;grid-template-columns:86px minmax(0,1fr) 64px 96px;gap:12px;align-items:center;padding:7px 0;font-size:12.5px;}
-.perf .pk{color:var(--muted);}
-.perf .bar{position:relative;height:6px;border-radius:4px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:hidden;}
-.perf .bar i{position:absolute;top:0;bottom:0;left:0;border-radius:4px;background:linear-gradient(90deg,color-mix(in srgb,var(--up) 55%,transparent),var(--up));}
-.perf .bar i.nb{background:linear-gradient(90deg,color-mix(in srgb,var(--down) 55%,transparent),var(--down));}
-.perf .pv{font-weight:700;text-align:right;}
-.perf .spy{font-size:11px;color:var(--muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
 /* technicals */
 .trow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--hair);font-size:12.5px;flex-wrap:wrap;}
 .trow:last-child{border-bottom:0;}
@@ -367,8 +358,69 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .site-footer6 a{color:var(--link);}
 .site-footer6 a:hover{text-decoration:underline;}
 
+
+/* ── popup dashboards (dsr-dlg — macro.html mx5 mechanics) ── */
+html.dsr-dlg-lock{overflow:hidden;}
+html.dsr-dlg-lock .strip{visibility:hidden;}
+html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
+.dsr-dlg{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center;}
+.dsr-dlg.open{display:flex;}
+.dsr-dlg-backdrop{position:absolute;inset:0;background:rgba(3,6,10,.58);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.dsr-dlg-panel{position:relative;z-index:1;max-width:880px;width:calc(100% - 48px);max-height:84vh;
+  background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--glass-brd);border-radius:var(--v6-radius);
+  backdrop-filter:blur(28px) saturate(1.4);-webkit-backdrop-filter:blur(28px) saturate(1.4);
+  box-shadow:0 40px 120px rgba(0,0,0,.72),0 2px 0 rgba(255,255,255,.06) inset;overflow-y:auto;display:flex;flex-direction:column;}
+.dsr-dlg-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 22px 13px;position:sticky;top:0;z-index:2;
+  background:color-mix(in srgb,var(--panel) 96%,transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--hair);}
+.dsr-dlg-title{font-size:15px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;}
+.dsr-dlg-title::before{content:"";width:3px;height:15px;border-radius:2px;background:linear-gradient(180deg,var(--stance),color-mix(in srgb,var(--stance) 25%,transparent));}
+.dsr-dlg-close{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;
+  background:var(--gbtn-bg);border:1px solid var(--gbtn-brd);cursor:pointer;color:var(--muted);font-size:17px;line-height:1;font-family:inherit;flex-shrink:0;transition:background .15s,color .15s;}
+.dsr-dlg-close:hover{background:var(--gbtn-bg-hover);color:var(--text);}
+.dsr-dlg-body{padding:18px 22px 24px;flex:1;overflow-y:auto;overflow-x:hidden;}
+.dpanel{margin:0 0 20px;}
+.dpanel:last-child{margin-bottom:0;}
+.dpanel h3{margin:0 0 10px;font-size:12px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+.dpanel .dfoot{margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.5;}
+.dcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.dcard{background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hair);border-radius:12px;padding:11px 13px;}
+.dcard .dk{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.dcard .dv{font-size:16px;font-weight:750;margin-top:4px;}
+.dkv .r6d{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:7px 0;border-bottom:1px solid var(--hair);font-size:12.5px;}
+.dkv .r6d:last-child{border-bottom:0;}
+.dkv .r6d .k{color:var(--muted);}
+.dkv .r6d .vv{font-weight:650;text-align:right;}
+.dtable{width:100%;border-collapse:collapse;font-size:12.5px;}
+.dtable th{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:2px 8px 7px;border-bottom:1px solid var(--hair);white-space:nowrap;}
+.dtable th:first-child{text-align:left;}
+.dtable td{padding:7px 8px;border-bottom:1px solid var(--hair);text-align:right;font-variant-numeric:tabular-nums;}
+.dtable td:first-child{text-align:left;color:var(--muted);}
+.dtable tr:last-child td{border-bottom:0;}
+.dtable-wrap{overflow-x:auto;margin:0 -4px;padding:0 4px;}
+.dnotes{list-style:none;margin:0;padding:0;}
+.dnotes li{font-size:12.5px;line-height:1.55;padding:5px 0 5px 16px;position:relative;}
+.dnotes li::before{content:"·";position:absolute;left:2px;font-weight:900;}
+@media(prefers-reduced-motion:no-preference){
+  .dsr-dlg-backdrop{opacity:0;transition:opacity 240ms ease-out;}
+  .dsr-dlg.dsr-in .dsr-dlg-backdrop{opacity:1;}
+  .dsr-dlg-panel{opacity:0;transform:translateY(14px) scale(.965);transition:opacity 320ms cubic-bezier(.22,.9,.26,1.02),transform 320ms cubic-bezier(.22,.9,.26,1.02);}
+  .dsr-dlg.dsr-in .dsr-dlg-panel{opacity:1;transform:translateY(0) scale(1);}
+  .dsr-dlg.dsr-closing .dsr-dlg-backdrop,.dsr-dlg.dsr-closing .dsr-dlg-panel{transition-duration:180ms;}
+  .dsr-dlg-body > .dpanel{opacity:0;transform:translateY(10px);transition:opacity 300ms ease-out,transform 300ms cubic-bezier(.22,.9,.26,1.02);}
+  .dsr-dlg.dsr-in .dsr-dlg-body > .dpanel{opacity:1;transform:translateY(0);}
+  .dsr-dlg.dsr-in .dsr-dlg-body > .dpanel:nth-child(1){transition-delay:60ms;}
+  .dsr-dlg.dsr-in .dsr-dlg-body > .dpanel:nth-child(2){transition-delay:100ms;}
+  .dsr-dlg.dsr-in .dsr-dlg-body > .dpanel:nth-child(n+3){transition-delay:140ms;}
+  .dsr-closing .dsr-dlg-body > .dpanel{transition-delay:0ms!important;}
+}
+@media(max-width:700px){
+  .dsr-dlg{align-items:flex-end;}
+  .dsr-dlg-panel{width:calc(100% - 20px);max-width:none;max-height:88vh;border-radius:var(--v6-radius) var(--v6-radius) 0 0;margin:0 10px;}
+  .dsr-dlg-close{width:42px;height:42px;font-size:21px;}
+  .dsr-dlg-body{padding:15px 15px 24px;}
+}
+
 /* ── responsive (media queries AFTER base rules, always) ── */
-@media(max-width:1080px){.perf .pr{grid-template-columns:80px minmax(0,1fr) 62px;}.perf .spy{display:none;}}
 @media(max-width:980px){.cols{grid-template-columns:1fr;}}
 @media(max-width:860px){.hero-grid{grid-template-columns:1fr;gap:12px;}.px-block{text-align:left;}}
 @media(max-width:760px){.chart-mod .mod-hd{flex-wrap:wrap;}}
@@ -400,7 +452,6 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
   <nav id="v6jumps">
     <a href="#chart">{{ t('Chart', '图表') }}</a>
     {% if ladder %}<a href="#levels">{{ t('Levels', '点位') }}</a>{% endif %}
-    {% if performance %}<a href="#performance">{{ t('Performance', '表现') }}</a>{% endif %}
     {% if technicals %}<a href="#technicals">{{ t('Technicals', '技术面') }}</a>{% endif %}
     {% if earnings %}<a href="#earnings">{{ t('Earnings', '财报') }}</a>{% endif %}
     {% if valuation %}<a href="#valuation">{{ t('Valuation', '估值') }}</a>{% endif %}
@@ -413,6 +464,8 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 </div>
 
 <div class="page-wrap">
+{% set deep_ids = [] %}
+{% if deep %}{% for d in deep.dialogs %}{% set _ = deep_ids.append(d.id) %}{% endfor %}{% endif %}
 
 <p class="crumb">
   <a href="index.html">{{ t('Stocks', '股票') }}</a> <span class="mut">/</span>
@@ -504,29 +557,9 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 <div class="cols">
   <div class="main-col">
 
-  {% if performance %}
-  <section class="mod rv perf" id="performance">
-    <div class="mod-hd"><h2>{{ t('Performance', '价格表现') }}</h2><span class="hint">{{ t('total return vs S&P 500', '总回报对比标普500') }}</span></div>
-    {%- set pmax = namespace(v=1.0) -%}
-    {%- for row in performance -%}
-      {%- set mag = row.ticker_ret|replace('%','')|replace('+','')|float(0)|abs -%}
-      {%- if mag > pmax.v %}{% set pmax.v = mag %}{% endif -%}
-    {%- endfor -%}
-    {% for row in performance %}
-    {%- set mag = row.ticker_ret|replace('%','')|replace('+','')|float(0)|abs -%}
-    <div class="pr">
-      <span class="pk">{{ t(row.label_en, row.label_zh) }}</span>
-      <div class="bar"><i class="{{ '' if row.positive else 'nb' }}" style="width:{{ '%.0f'|format(mag / pmax.v * 100) }}%;"></i></div>
-      <span class="pv num {{ 'pos' if row.positive else 'neg' }}">{{ row.ticker_ret }}</span>
-      {% if row.spy_ret %}<span class="spy num">{{ t('index', '指数') }} {{ row.spy_ret }}</span>{% else %}<span class="spy"></span>{% endif %}
-    </div>
-    {% endfor %}
-  </section>
-  {% endif %}
-
   {% if technicals %}
   <section class="mod rv" id="technicals">
-    <div class="mod-hd"><h2>{{ t('Technicals', '技术面') }}</h2><span class="hint">{{ t('daily bars', '日线数据') }} · {{ freshness }}</span></div>
+    <div class="mod-hd"><h2>{{ t('Technicals', '技术面') }}</h2><span class="hint">{{ t('daily bars', '日线数据') }} · {{ freshness }} {% if 'technicals' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-technicals')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span></div>
     {% if technicals.active_signals %}
     {%- set shortsigs = [] -%}
     {%- for sig in technicals.active_signals -%}
@@ -583,7 +616,7 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
   {% if earnings %}
   <section class="mod rv" id="earnings">
     <div class="mod-hd"><h2>{{ t('Earnings', '财务业绩') }}</h2>
-      {% if earnings.next_date %}<span class="hint">{{ t('next report', '下次财报') }} {{ earnings.next_date }}</span>{% endif %}</div>
+      <span class="hint">{% if earnings.next_date %}{{ t('next report', '下次财报') }} {{ earnings.next_date }} {% endif %}{% if 'earnings' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-earnings')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span></div>
     <div class="earn-top">
       {% if earnings.days_to_next is not none and earnings.days_to_next >= 0 %}
       {%- set ep = 100 - ([[earnings.days_to_next, 45]|min, 0]|max / 45 * 100) -%}
@@ -622,7 +655,7 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
   {% if valuation %}
   <section class="mod rv" id="valuation">
     <div class="mod-hd"><h2>{{ t('Valuation', '估值') }}</h2>
-      {% if gauges and gauges.valuation %}<span class="hint"><span class="okx {{ 'y' if (gauges.valuation.pct|float(0)) > 55 else ('n' if (gauges.valuation.pct|float(0)) < 30 else 'w') }}" style="font-size:10.5px;">{{ t(gauges.valuation.verdict_en, gauges.valuation.verdict_zh) }}</span></span>{% endif %}
+      <span class="hint">{% if gauges and gauges.valuation %}<span class="okx {{ 'y' if (gauges.valuation.pct|float(0)) > 55 else ('n' if (gauges.valuation.pct|float(0)) < 30 else 'w') }}" style="font-size:10.5px;">{{ t(gauges.valuation.verdict_en, gauges.valuation.verdict_zh) }}</span> {% endif %}{% if 'stats' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-stats')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span>
     </div>
     <table class="vt">
       <thead><tr>
@@ -650,7 +683,7 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 
   {% if financials %}
   <section class="mod rv" id="financials">
-    <div class="mod-hd"><h2>{{ t('Financials', '财务数据') }}</h2><span class="hint">{{ t('fiscal years', '财年') }}</span></div>
+    <div class="mod-hd"><h2>{{ t('Financials', '财务数据') }}</h2><span class="hint">{{ t('fiscal years', '财年') }} {% if 'financials' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-financials')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span></div>
     {%- set fyears = financials.years -%}
     {%- set n_years = fyears | length -%}
     <div class="fin3">
@@ -751,7 +784,7 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 
   {% if options %}
   <section class="mod rv" id="options">
-    <div class="mod-hd"><h2>{{ t('Options positioning', '期权持仓') }}</h2><span class="hint">{{ t('as of last close', '截至上一收盘') }}</span></div>
+    <div class="mod-hd"><h2>{{ t('Options positioning', '期权持仓') }}</h2><span class="hint">{{ t('as of last close', '截至上一收盘') }} {% if 'options' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-options')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span></div>
     {% if options.regime_en %}<p style="margin:0 0 14px;font-size:12.5px;line-height:1.6;">{{ t(options.regime_en, options.regime_zh) }}</p>{% endif %}
     <div class="otiles">
       {% if options.em_daily_pct %}<div class="otile"><div class="ok6">{{ t('Expected daily move', '预期日波动') }}</div><div class="ov num">±{{ options.em_daily_pct }}%</div></div>{% endif %}
@@ -780,7 +813,7 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 
   {% if ownership %}
   <section class="mod rv" id="ownership">
-    <div class="mod-hd"><h2>{{ t('Ownership & smart money', '持仓与聪明钱') }}</h2><span class="hint">13F</span></div>
+    <div class="mod-hd"><h2>{{ t('Ownership & smart money', '持仓与聪明钱') }}</h2><span class="hint">13F {% if 'ownership' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-ownership')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span></div>
     {% if ownership.insider_en %}
     <p style="margin:0 0 10px;font-size:12.5px;"><span class="mut">{{ t('Insider activity:', '内部人动向：') }}</span> {{ t(ownership.insider_en, ownership.insider_zh) }}</p>
     {% endif %}
@@ -926,7 +959,7 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 
   {% if stats %}
   <section class="mod rv kv6" id="facts" style="--d:120ms;">
-    <div class="mod-hd"><h2>{{ t('Key facts', '关键数据') }}</h2></div>
+    <div class="mod-hd"><h2>{{ t('Key facts', '关键数据') }}</h2><span class="hint">{% if 'stats' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-stats')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span></div>
     {% if stats.mktcap %}<div class="r6"><span class="k6">{{ t('Market cap', '市值') }}</span><span class="v6 num">{{ stats.mktcap }}</span></div>{% endif %}
     {% if stats.trailing_pe or stats.forward_pe %}<div class="r6"><span class="k6">{{ t('P/E · forward', '市盈率 · 预测') }}</span><span class="v6 num">{{ stats.trailing_pe or '—' }} · {{ stats.forward_pe or '—' }}</span></div>{% endif %}
     {% if stats.eps %}<div class="r6"><span class="k6">{{ t('EPS (trailing)', '每股收益') }}</span><span class="v6 num">{{ stats.eps }}</span></div>{% endif %}
@@ -942,7 +975,7 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 
   {% if seasonality %}
   <section class="mod rv" id="seasonality" style="--d:160ms;">
-    <div class="mod-hd"><h2>{{ t('Seasonality', '季节性规律') }}</h2><span class="hint">{{ t(seasonality.computed_window_en or '', seasonality.computed_window_zh or '') }}</span></div>
+    <div class="mod-hd"><h2>{{ t('Seasonality', '季节性规律') }}</h2><span class="hint">{{ t(seasonality.computed_window_en or '', seasonality.computed_window_zh or '') }} {% if 'seasonality' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-seasonality')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span></div>
     {% if seasonality.this_label %}
     <p class="sm" style="margin:0 0 10px;line-height:1.5;"><span class="mut">{{ t('This month:', '本月：') }}</span> {{ t(seasonality.this_label, seasonality.this_label_zh) }}</p>
     {% endif %}
@@ -1028,6 +1061,57 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 </footer>
 
 </div><!-- /page-wrap -->
+
+{% if deep %}
+{% for d in deep.dialogs %}
+<div class="dsr-dlg" id="dlg-{{ d.id }}" role="dialog" aria-labelledby="dlg-{{ d.id }}-title">
+  <div class="dsr-dlg-backdrop"></div>
+  <div class="dsr-dlg-panel">
+    <div class="dsr-dlg-header">
+      <span class="dsr-dlg-title" id="dlg-{{ d.id }}-title">{{ t(d.title_en, d.title_zh) }}</span>
+      <button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">✕</button>
+    </div>
+    <div class="dsr-dlg-body">
+      {% for pnl in d.panels %}
+      <section class="dpanel">
+        {% if pnl.title_en %}<h3>{{ t(pnl.title_en, pnl.title_zh) }}</h3>{% endif %}
+        {% if pnl.kind == 'cards' %}
+        <div class="dcards">
+          {% for c in pnl.cards %}
+          <div class="dcard"><div class="dk">{{ t(c.k_en, c.k_zh) }}</div><div class="dv num {{ c.cls or '' }}">{{ c.v }}</div></div>
+          {% endfor %}
+        </div>
+        {% elif pnl.kind == 'kv' %}
+        <div class="dkv">
+          {% for r in pnl.rows %}
+          <div class="r6d"><span class="k">{{ t(r.k_en, r.k_zh) }}</span>
+            <span class="vv num {{ r.cls or '' }}">{{ r.v }}{% if r.v_en %}{{ t(r.v_en, r.v_zh) }}{% endif %}</span></div>
+          {% endfor %}
+        </div>
+        {% elif pnl.kind == 'table' %}
+        <div class="dtable-wrap"><table class="dtable">
+          <thead><tr>{% for h in pnl.head %}<th>{{ t(h[0], h[1]) }}</th>{% endfor %}</tr></thead>
+          <tbody>
+          {% for row in pnl.rows %}
+          <tr>{% for cell in row %}<td>{% if cell is mapping %}{{ t(cell.en, cell.zh) }}{% else %}{{ cell }}{% endif %}</td>{% endfor %}</tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+        {% elif pnl.kind == 'notes' %}
+        <ul class="dnotes">
+          {% for ln in pnl.lines %}<li class="{{ ln.cls or '' }}">{{ t(ln.en, ln.zh) }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% if pnl.foot_en %}<div class="dfoot">{{ t(pnl.foot_en, pnl.foot_zh) }}</div>{% endif %}
+      </section>
+      {% endfor %}
+      <div class="dfoot">{{ t('Research context only — refreshed nightly. Not investment advice.', '仅供研究参考 — 每晚更新，不构成投资建议。') }}</div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
 </main>
 
 <script>
@@ -1085,6 +1169,70 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
     }, {rootMargin: '-30% 0px -60% 0px'});
     Object.keys(links).forEach(function(id){ var el = document.getElementById(id); if (el) spy.observe(el); });
   }
+})();
+</script>
+
+
+<script>
+/* dsrOpenDlg — the macro.html mx5 dialog system (focus trap, scroll lock,
+   double-rAF entrance, animated close, Escape + backdrop, #dlg- deep links). */
+(function(){
+  var _active=null,_trigger=null,_scrollY=0;
+  function _reduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches);}
+  function _focusables(d){return d.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');}
+  function _trap(d,e){
+    if(e.key!=='Tab')return;
+    var f=_focusables(d);if(!f.length)return;
+    var first=f[0],last=f[f.length-1];
+    if(e.shiftKey){if(document.activeElement===first){e.preventDefault();last.focus();}}
+    else{if(document.activeElement===last){e.preventDefault();first.focus();}}
+  }
+  function _teardown(d){
+    d.classList.remove('open','dsr-in','dsr-closing');
+    d.removeAttribute('aria-modal');
+    if(d._trapH){d.removeEventListener('keydown',d._trapH);delete d._trapH;}
+    var bd=d.querySelector('.dsr-dlg-backdrop');
+    if(bd&&bd._h){bd.removeEventListener('click',bd._h);delete bd._h;}
+    if(d._timer){clearTimeout(d._timer);delete d._timer;}
+  }
+  function _release(){
+    document.documentElement.classList.remove('dsr-dlg-lock');
+    document.body.style.top='';
+    window.scrollTo(0,_scrollY);
+  }
+  window.dsrOpenDlg=function(id){
+    if(_active){_teardown(_active);_active=null;}
+    var d=document.getElementById(id);if(!d)return;
+    _trigger=document.activeElement;_active=d;
+    d.classList.remove('dsr-closing');
+    d.classList.add('open');d.setAttribute('aria-modal','true');
+    if(!document.documentElement.classList.contains('dsr-dlg-lock')){
+      _scrollY=window.pageYOffset||document.documentElement.scrollTop||0;
+      document.body.style.top=(-_scrollY)+'px';
+      document.documentElement.classList.add('dsr-dlg-lock');
+    }
+    if(_reduced()){d.classList.add('dsr-in');}
+    else{requestAnimationFrame(function(){requestAnimationFrame(function(){if(_active===d)d.classList.add('dsr-in');});});}
+    var f=_focusables(d);if(f.length)f[0].focus();
+    d._trapH=function(e){_trap(d,e);};d.addEventListener('keydown',d._trapH);
+    var bd=d.querySelector('.dsr-dlg-backdrop');
+    if(bd){bd._h=function(){window.dsrCloseDlg();};bd.addEventListener('click',bd._h);}
+  };
+  window.dsrCloseDlg=function(){
+    if(!_active)return;
+    var d=_active;_active=null;_release();
+    var trig=_trigger;_trigger=null;
+    var refocus=function(){if(trig&&typeof trig.focus==='function')trig.focus();};
+    if(_reduced()){_teardown(d);refocus();return;}
+    d.classList.add('dsr-closing');d.classList.remove('dsr-in');
+    var done=function(){_teardown(d);refocus();};
+    d._timer=setTimeout(done,340);
+  };
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&_active){e.stopImmediatePropagation();window.dsrCloseDlg();}
+  },true);
+  function _hash(){var h=(location.hash||'').slice(1);if(h&&h.indexOf('dlg-')===0)window.dsrOpenDlg(h);}
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',_hash);}else{_hash();}
 })();
 </script>
 
