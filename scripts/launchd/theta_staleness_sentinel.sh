@@ -6,8 +6,12 @@
 # human noticed frozen options planes on 07-20).
 #
 # Checks two things and ALERTS on either:
-#   1. Terminal reachability — :25503 not answering means the whole lane is
-#      dead ahead of the next post-close window (leading indicator).
+#   1. Terminal health — :25503 not answering, OR answering 200 with a trivial
+#      body on /v3/option/list/symbols (a terminal on a stale/revoked
+#      THETA_API_KEY stays up as a ZOMBIE serving empty 200s while real data
+#      endpoints time out — bit live 2026-07-20; a bare status-code check
+#      stayed green through it). Either shape means the whole lane is dead
+#      ahead of the next post-close window (leading indicator).
 #   2. Store staleness — latest date in greeks/SPY/{YYYY}.parquet vs the last
 #      session that SHOULD be there. sessions_missing counts NYSE weekday
 #      sessions from (latest+1) .. today, including today only when invoked
@@ -42,9 +46,17 @@ DUE_TODAY=0
 [ "$(date +%H)" -ge 17 ] && DUE_TODAY=1
 [ "${1:-}" = "--due-today" ] && DUE_TODAY=1
 
-term_code=$(curl -s -m 6 -o /dev/null -w '%{http_code}' "${HEALTH_URL}" 2>/dev/null); term_code="${term_code:-000}"
+# Health = 200 AND a non-trivial body (healthy symbols list ≈ 106 KB / 15.6k
+# roots; a stale-key zombie serves a 0 B body — see header). The body is
+# counted, never persisted.
+SYMBOLS_MIN_BYTES=1000
+term_body="$(mktemp /tmp/theta_sentinel_health.XXXXXX)"
+term_code=$(curl -s -m 6 -o "${term_body}" -w '%{http_code}' "${HEALTH_URL}" 2>/dev/null); term_code="${term_code:-000}"
+term_bytes=$(wc -c < "${term_body}" 2>/dev/null | tr -d '[:space:]'); term_bytes="${term_bytes:-0}"
+rm -f "${term_body}"
 
-DUE_TODAY="${DUE_TODAY}" TERM_CODE="${term_code}" STORE="${STORE}" OUT_JSON="${OUT_JSON}" LOG="${LOG}" \
+DUE_TODAY="${DUE_TODAY}" TERM_CODE="${term_code}" TERM_BYTES="${term_bytes}" \
+SYMBOLS_MIN_BYTES="${SYMBOLS_MIN_BYTES}" STORE="${STORE}" OUT_JSON="${OUT_JSON}" LOG="${LOG}" \
 "${PYTHON}" - <<'PY'
 import datetime as dt
 import json, os, subprocess, sys
@@ -52,6 +64,8 @@ import json, os, subprocess, sys
 store = os.environ["STORE"]
 due_today = os.environ["DUE_TODAY"] == "1"
 term_code = os.environ["TERM_CODE"]
+term_bytes = int(os.environ.get("TERM_BYTES", "0") or 0)
+min_bytes = int(os.environ.get("SYMBOLS_MIN_BYTES", "1000") or 1000)
 out_json = os.environ["OUT_JSON"]
 log_path = os.environ["LOG"]
 
@@ -94,6 +108,12 @@ reasons = []
 if term_code != "200":
     level = "ALERT"
     reasons.append(f"terminal :25503 unreachable (http={term_code})")
+elif term_bytes <= min_bytes:
+    # Zombie shape: the socket answers but serves nothing (stale/revoked key).
+    level = "ALERT"
+    reasons.append(
+        f"terminal :25503 ZOMBIE — http=200 but symbols body {term_bytes}B "
+        f"(<={min_bytes}B; stale/revoked THETA_API_KEY?)")
 if err:
     level = "ALERT"
     reasons.append(f"store read failed: {err}")
@@ -109,6 +129,7 @@ verdict = {
     "checked_at": now,
     "level": level,
     "terminal_http": term_code,
+    "terminal_body_bytes": term_bytes,
     "latest_greeks_date": str(latest) if latest else None,
     "sessions_missing": missing,
     "due_today": due_today,

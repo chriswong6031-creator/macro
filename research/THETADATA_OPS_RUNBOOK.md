@@ -91,9 +91,9 @@ merge, fast-forward the ops worktree before expecting behavior changes.
 
 | Lane | Label | Schedule | What it does |
 |------|-------|----------|--------------|
-| Terminal keepalive | `com.macro.theta-terminal` | `KeepAlive`, 60 s `ThrottleInterval` | Health-polls :25503; exits 0 when healthy (or when any ThetaTerminalv3 process exists — never duplicates a manual launch). Otherwise launches the terminal foreground with stdin held open (`tail -f /dev/null \|` pipe — stdin EOF is the v3 shutdown trigger; root cause of the 2026-07-17..07-20 outage). Backs off 240 s when the terminal dies in < 30 s (stale-`THETA_API_KEY` shape) so the auth endpoint is never hammered; auto-heals ~5 min after the key is fixed in `theta-ops-wt/.env`. Log: `/tmp/theta_terminal_keepalive.log`. |
+| Terminal keepalive | `com.macro.theta-terminal` | `KeepAlive`, 60 s `ThrottleInterval` | Health-polls :25503 — healthy = HTTP 200 **and** a non-trivial body (> 1000 B) on `/v3/option/list/symbols`; a bare 200 can be a ZOMBIE (stale/revoked `THETA_API_KEY` → empty 200s while data endpoints time out; bit live 2026-07-20). Exits 0 when healthy, or when a ThetaTerminalv3 process exists and the port doesn't answer (never duplicates a manual launch). A confirmed zombie (two consecutive empty-200 reads) is recycled: the bootstrapper jar plus the `:25503` LISTENer (the inner lib jar, which can orphan-survive the bootstrapper) are killed and the next fire relaunches with a fresh `.env` read. Otherwise launches the terminal with stdin held open on an anonymous FIFO (stdin EOF is the v3 shutdown trigger; root cause of the 2026-07-17..07-20 outage — and never a `tail -f \|` pipe, which deadlocks the wrapper when java dies), java backgrounded under an in-run watchdog that applies the same zombie law every 60 s (launchd cannot re-invoke a running job, so the wrapper polices its own child). Backs off 240 s on insta-death (< 30 s) or a zombie recycle so the auth endpoint is never hammered; auto-heals ~5 min after the key is fixed in `theta-ops-wt/.env`. Log: `/tmp/theta_terminal_keepalive.log`. |
 | Backfill keepalive | `com.macro.thetadata-backfill` | `KeepAlive` | Auto-resumes `backfill_thetadata_eod` after reboots; guard-exits when an instance is already running (§2). |
-| Staleness sentinel | `com.macro.theta-staleness` | 06:15 + 18:30 local (`StartCalendarInterval`) | Tripwire against silent stalls: ALERTs when :25503 is unreachable OR `greeks/SPY` is ≥ 2 weekday-sessions behind (WARN at 1; today counts as due when local hour ≥ 17, or force with `--due-today`). Writes `/tmp/theta_staleness.json` (latest machine-readable verdict, atomic), appends `/tmp/theta_staleness.log`, and raises a macOS notification on WARN/ALERT. 06:15 = pre-open sanity before the ledger seal; 18:30 = post-close check that today's pull landed. |
+| Staleness sentinel | `com.macro.theta-staleness` | 06:15 + 18:30 local (`StartCalendarInterval`) | Tripwire against silent stalls: ALERTs when :25503 is unreachable, answers 200 with a trivial symbols body (zombie — stale/revoked key), OR `greeks/SPY` is ≥ 2 weekday-sessions behind (WARN at 1; today counts as due when local hour ≥ 17, or force with `--due-today`). Writes `/tmp/theta_staleness.json` (latest machine-readable verdict, atomic), appends `/tmp/theta_staleness.log`, and raises a macOS notification on WARN/ALERT. 06:15 = pre-open sanity before the ledger seal; 18:30 = post-close check that today's pull landed. |
 
 The lanes are independent — install any subset.  The terminal keepalive is the
 one that prevents a repeat of the 07-17 silent death; the sentinel is the alarm
@@ -118,8 +118,11 @@ launchctl list "${LANE}"
 ### Verify — terminal keepalive
 
 ```bash
-curl -s -m 6 -o /dev/null -w '%{http_code}\n' \
-    'http://127.0.0.1:25503/v3/option/list/symbols'   # 200 once the terminal is up
+curl -s -m 6 -o /dev/null -w 'http=%{http_code} bytes=%{size_download}\n' \
+    'http://127.0.0.1:25503/v3/option/list/symbols'
+# Healthy = http=200 AND bytes ≈ 100k+ (the full symbols list). http=200 with
+# bytes=0 is a ZOMBIE (stale/revoked key) — the keepalive recycles it within
+# ~2 min + a 240 s backoff; if it persists, refresh the key.
 tail -5 /tmp/theta_terminal_keepalive.log
 # Healthy steady state is SILENT (the wrapper exits 0 without logging).
 # After a terminal death you should see "launching terminal (health was 000)"

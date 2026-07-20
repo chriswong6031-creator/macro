@@ -312,6 +312,22 @@ def _get_csv(session: requests.Session, path: str, params: dict) -> pd.DataFrame
         # 404: empty range for this request
         # 472: ThetaData NO_DATA — valid empty response (e.g., holiday, pre-history date)
         return pd.DataFrame()
+    if r.status_code == 400:
+        # Current-day wildcard rejection: greeks/eod (and friends) refuse
+        # expiration=* for TODAY on a trading day ("Cannot fetch current-day data
+        # without specifying an expiration"). This is EXPECTED post-close — treat
+        # it as an empty window rather than a hard failure, so the other (completed)
+        # day-windows in the same bulk pull are NOT discarded by _concurrent_windows.
+        # Today's greeks are then picked up on the next run (a 1-day lag) instead of
+        # the whole year nulling out and the store freezing until the weekend.
+        try:
+            body400 = r.text[:300].lower()
+        except Exception:  # noqa: BLE001
+            body400 = ""
+        if "specifying an expiration" in body400 or "current-day" in body400 or "current day" in body400:
+            log.info("thetadata: current-day wildcard not available yet for %s (%s→%s) — skipping this window",
+                     path, params.get("start_date"), params.get("end_date"))
+            return pd.DataFrame()
     if r.status_code != 200:
         try:
             body = r.text[:200]
