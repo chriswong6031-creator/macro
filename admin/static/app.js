@@ -997,7 +997,8 @@ RENDER.vector = async () => {
    Reads our own analytics_events / search_events / ip_geo via /api/analytics/fp/*.
    Sub-tabs lazy-load each panel; Umami/GA4 remain as a third-party cross-check.
    Session replay + visitor identity are hash sub-pages (#/session/… , #/visitor/…). */
-let AN = { tab: "overview", days: 7 };
+let AN = { tab: "overview", days: 7, tbl: { visitors: { q: "", rows: 250 }, sessions: { q: "", rows: 100 } } };
+let AN_QTIMER = null;
 const AN_TABS = [["overview", "Overview"], ["visitors", "Visitors"], ["sessions", "Sessions"], ["pages", "Pages"], ["geo", "Map"], ["flow", "Flow"], ["terminal", "Terminal"]];
 const AN_RENDER = {};
 
@@ -1112,12 +1113,42 @@ AN_RENDER.geo = async () => {
   const g = $("#anGeoNow");
   if (g) g.onclick = async () => { if (!confirm("Run geo-enrich now? This may make external API calls.")) return; g.disabled = true; g.textContent = "enriching…"; const r = await post("/api/analytics/fp/geo_enrich", { budget: 300, confirm: true }); toast(r.ok ? "geo enriched" : (r.reason || "failed"), !r.ok); anLoad("geo"); };
 };
-AN_RENDER.sessions = async () => {
-  const d = await api(`/api/analytics/fp/sessions?limit=60`);
-  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
-  const rows = d.sessions || [];
-  b.innerHTML = `<div class="section">Recent sessions <span class="cnt">${rows.length}</span> <span class="sub">— per visit: who (visitor id), their IP + location. Click replay to see the exact path.</span></div>
-    <table><thead><tr><th>Started</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
+/* Shared filter/rows toolbar for the Visitors + Sessions tables. Server-side filtering
+   (searches full history, not just the loaded page) + a row cap for deeper history. */
+const AN_ROWS_OPTS = [100, 250, 500, 1000, 2000];
+function anTableBar(kind) {
+  const st = AN.tbl[kind];
+  const opts = AN_ROWS_OPTS.map(n => `<option value="${n}"${st.rows === n ? " selected" : ""}>${fmtNum(n)} rows</option>`).join("");
+  const ph = kind === "visitors" ? "filter email / id / IP / city / country…" : "filter id / IP / site / city / country…";
+  return `<div class="an-tbar">
+    <input id="anQ" class="an-q" type="search" placeholder="${ph}" value="${esc(st.q)}" autocomplete="off" spellcheck="false">
+    <select id="anRows" class="an-rows" title="max rows loaded">${opts}</select>
+    <span class="an-spacer"></span>
+    <span class="sub"><span class="cnt" id="anTblCnt">…</span> shown</span>
+  </div>`;
+}
+function anWireTableBar(kind) {
+  const st = AN.tbl[kind];
+  const qi = $("#anQ"), rs = $("#anRows");
+  if (qi) qi.oninput = () => { st.q = qi.value; clearTimeout(AN_QTIMER); AN_QTIMER = setTimeout(() => anLoadTable(kind), 300); };
+  if (rs) rs.onchange = () => { st.rows = parseInt(rs.value, 10) || st.rows; anLoadTable(kind); };
+}
+async function anLoadTable(kind) {
+  const st = AN.tbl[kind];
+  const host = $("#anTbl"); if (!host) return;
+  host.setAttribute("aria-busy", "true");
+  const d = await api(`/api/analytics/fp/${kind}?limit=${st.rows}&q=${encodeURIComponent(st.q || "")}`);
+  if ($("#anTbl") !== host) return;               // tab switched mid-fetch — drop stale result
+  if (!d.ok) { host.innerHTML = anNotReady(d); return; }
+  const rows = kind === "visitors" ? (d.visitors || []) : (d.sessions || []);
+  const cnt = $("#anTblCnt");
+  if (cnt) cnt.textContent = fmtNum(rows.length) + (rows.length >= st.rows ? "+" : "") + (st.q ? " match" : "");
+  host.innerHTML = (kind === "visitors" ? anVisitorsTable : anSessionsTable)(rows, st.q);
+  host.removeAttribute("aria-busy");
+}
+function anSessionsTable(rows, q) {
+  const empty = q ? "no sessions match this filter" : "no sessions yet";
+  return `<table><thead><tr><th>Started</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
     ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
       <td><a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a></td>
       <td class="mono">${esc(s.ip || "—")}</td>
@@ -1125,15 +1156,12 @@ AN_RENDER.sessions = async () => {
       <td class="sub">${esc(s.site || "")}</td>
       <td class="r">${fmtNum(s.pages)}</td><td class="r">${fmtNum(s.events)}</td>
       <td class="r sub">${s.duration_s != null ? fmtElapsedSec(s.duration_s) : "—"}</td>
-      <td><a class="btn sm" href="#/session/${encodeURIComponent(s.session_id || "")}">replay ▸</a></td></tr>`).join("") || "<tr><td colspan='9' class='muted'>no sessions yet</td></tr>"}
+      <td><a class="btn sm" href="#/session/${encodeURIComponent(s.session_id || "")}">replay ▸</a></td></tr>`).join("") || `<tr><td colspan='9' class='muted'>${empty}</td></tr>`}
     </tbody></table>`;
-};
-AN_RENDER.visitors = async () => {
-  const d = await api(`/api/analytics/fp/visitors?limit=150`);
-  const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
-  const rows = d.visitors || [];
-  b.innerHTML = `<div class="section">Frequent visitors <span class="cnt">${rows.length}</span> <span class="sub">— one profile per person. Signed-in users are shown by email with every device/cookie merged into one; anonymous visitors keep their cookie id. Most sessions first — click to open full history + tickers searched.</span></div>
-    <table><thead><tr><th>Visitor</th><th>Last IP</th><th>Location</th><th>Net</th><th class="r">Sessions</th><th class="r">Events</th><th class="r">IPs</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>
+}
+function anVisitorsTable(rows, q) {
+  const empty = q ? "no visitors match this filter" : "no visitors yet";
+  return `<table><thead><tr><th>Visitor</th><th>Last IP</th><th>Location</th><th>Net</th><th class="r">Sessions</th><th class="r">Events</th><th class="r">IPs</th><th>First seen</th><th>Last seen</th></tr></thead><tbody>
     ${rows.map(v => `<tr>
       <td>${v.is_user
         ? `<a href="#/visitor/${encodeURIComponent(v.visitor_id || "")}"><b>${esc(v.email || "registered user")}</b></a> <span class="statpill s-ok">registered</span>`
@@ -1143,8 +1171,24 @@ AN_RENDER.visitors = async () => {
       <td>${esc(v.city || "—")}${v.region ? ", " + esc(v.region) : ""}${v.country_code ? " · " + esc(v.country_code) : ""}</td>
       <td>${v.is_vpn ? '<span class="statpill s-warn">VPN</span>' : '<span class="sub">—</span>'}</td>
       <td class="r"><b>${fmtNum(v.sessions)}</b></td><td class="r">${fmtNum(v.events)}</td><td class="r">${fmtNum(v.ips)}</td>
-      <td class="mono sub">${esc(v.first_seen || "")}</td><td class="mono sub">${esc(v.last_seen || "")}</td></tr>`).join("") || "<tr><td colspan='9' class='muted'>no visitors yet</td></tr>"}
+      <td class="mono sub">${esc(v.first_seen || "")}</td><td class="mono sub">${esc(v.last_seen || "")}</td></tr>`).join("") || `<tr><td colspan='9' class='muted'>${empty}</td></tr>`}
     </tbody></table>`;
+}
+AN_RENDER.sessions = async () => {
+  const b = $("#anBody");
+  b.innerHTML = `<div class="section">Recent sessions <span class="sub">— per visit: who (visitor id), their IP + location. Click replay to see the exact path.</span></div>
+    ${anTableBar("sessions")}
+    <div id="anTbl"><div class="spin">loading…</div></div>`;
+  anWireTableBar("sessions");
+  await anLoadTable("sessions");
+};
+AN_RENDER.visitors = async () => {
+  const b = $("#anBody");
+  b.innerHTML = `<div class="section">Frequent visitors <span class="sub">— one profile per person. Signed-in users are shown by email with every device/cookie merged into one; anonymous visitors keep their cookie id. Most sessions first — click to open full history + tickers searched.</span></div>
+    ${anTableBar("visitors")}
+    <div id="anTbl"><div class="spin">loading…</div></div>`;
+  anWireTableBar("visitors");
+  await anLoadTable("visitors");
 };
 AN_RENDER.flow = async () => {
   const d = await api(`/api/analytics/fp/flow?days=${AN.days}&limit=40`);
