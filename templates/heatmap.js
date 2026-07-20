@@ -558,12 +558,22 @@
   /* ====================================================================== */
   /*  GROUP HOVER POPUP — sector / subsector member list (Finviz style)      */
   /* ====================================================================== */
-  var _mem = null, _memFor = null;
+  var _mem = null, _memFor = null, _memHideTimer = null;
+  // Grace-delayed hide: the member popup lives on document.body, so moving the
+  // pointer from a sector header into the popup crosses the treemap's boundary and
+  // would fire mouseleave. A ~250ms delay lets the pointer travel in; entering the
+  // popup cancels it (so the list can be scrolled), leaving the popup re-arms it.
+  function scheduleMemHide() {
+    clearTimeout(_memHideTimer);
+    _memHideTimer = setTimeout(hideMembers, 250);
+  }
   function memEl() {
     if (_mem) return _mem;
     _mem = document.createElement('div');
     _mem.className = 'hm-mem';
     _mem.setAttribute('role', 'tooltip');
+    _mem.addEventListener('mouseenter', function () { clearTimeout(_memHideTimer); });
+    _mem.addEventListener('mouseleave', scheduleMemHide);
     document.body.appendChild(_mem);
     return _mem;
   }
@@ -588,6 +598,7 @@
       + '<div class="hm-mem-list">' + rowsHtml + '</div>';
   }
   function memShow(key, html, cx, cy) {
+    clearTimeout(_memHideTimer);   // a group is (re)showing — cancel any pending grace hide
     hideCard();
     var el = memEl();
     if (_memFor !== key) { _memFor = key; el.innerHTML = html; el._w = 0; el.classList.add('on'); }
@@ -671,7 +682,7 @@
     });
     memShow(key, memShellHtml(L(esc(lab.en), esc(lab.zh)), agg, subTiles.length, br, 'subsectors', '子板块', body), cx, cy);
   }
-  function hideMembers() { _memFor = null; if (_mem) _mem.classList.remove('on'); }
+  function hideMembers() { clearTimeout(_memHideTimer); _memFor = null; if (_mem) _mem.classList.remove('on'); }
 
   /* ====================================================================== */
   /*  FULL VIEW — controls + treemap (desktop) / sector list (mobile)        */
@@ -1230,7 +1241,8 @@
           return;
         }
       }
-      hideCard(); hideMembers();
+      // hovering a gap → grace-hide the member popup so the pointer can reach it
+      hideCard(); scheduleMemHide();
     }
     function onMove(e) {
       if (mode !== 'tree') return;
@@ -1244,7 +1256,7 @@
       var rec = tileEls[+el.getAttribute('data-i')];
       if (rec) window.location.href = STOCK_URL + encodeURIComponent(rec.t.t);
     }
-    function onLeave() { hideCard(); hideMembers(); }
+    function onLeave() { hideCard(); scheduleMemHide(); }
     tm.addEventListener('mousemove', onMove);
     tm.addEventListener('mouseleave', onLeave);
     tm.addEventListener('click', onClick);
@@ -1463,9 +1475,10 @@
         var name = sEl.getAttribute('data-sec-name');
         if (name && hier[name]) { showMembers(data, name, null, hier[name].tiles, e.clientX, e.clientY); return; }
       }
-      hideCard(); hideMembers();
+      // hovering a gap → grace-hide so the pointer can travel into the popup
+      hideCard(); scheduleMemHide();
     }
-    function onLeave() { hideCard(); hideMembers(); }
+    function onLeave() { hideCard(); scheduleMemHide(); }
     function onClick(e) {
       var el = e.target.closest && e.target.closest('.hm-tile');
       if (!el) return;
@@ -1669,7 +1682,7 @@
       + '.hm-c-foot{margin-top:10px;font-size:11px;font-weight:700;color:var(--link);}'
       // member popup (sector / subsector)
       + '.hm-mem{position:fixed;z-index:1200;left:0;top:0;width:286px;max-width:calc(100vw - 16px);background:color-mix(in srgb,var(--panel) 97%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));border-radius:13px;padding:0;box-shadow:0 8px 24px rgba(0,0,0,.34);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .13s,transform .13s;overflow:hidden;}'
-      + '.hm-mem.on{opacity:1;transform:none;}'
+      + '.hm-mem.on{opacity:1;transform:none;pointer-events:auto;}'
       + '.hm-mem .up{color:var(--up);} .hm-mem .dn{color:var(--down);}'
       + '.hm-mem-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:11px 13px 4px;}'
       + '.hm-mem-ttl{font-size:13px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.03em;line-height:1.25;} .hm-mem-ttl .sub{font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;}'
@@ -1678,7 +1691,12 @@
       + '.hm-mem-ct{font-weight:700;white-space:nowrap;}'
       + '.hm-mem-br{flex:1;height:6px;border-radius:3px;overflow:hidden;display:flex;background:var(--panel2);min-width:40px;} .hm-mem-br i{display:block;height:100%;} .hm-mem-br i.up{background:var(--up);} .hm-mem-br i.dn{background:var(--down);}'
       + '.hm-mem-bn{font-variant-numeric:tabular-nums;white-space:nowrap;} .hm-mem-bn b.up{color:var(--up);} .hm-mem-bn b.dn{color:var(--down);}'
-      + '.hm-mem-list{padding:6px;max-height:340px;overflow:hidden;}'
+      + '.hm-mem-list{padding:6px;max-height:min(56vh,480px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 22px),transparent);}'
+      + '.hm-mem-list::-webkit-scrollbar{width:8px;}'
+      + '.hm-mem-list::-webkit-scrollbar-track{background:transparent;}'
+      + '.hm-mem-list::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 34%,transparent);border-radius:999px;border:2px solid transparent;background-clip:padding-box;}'
+      + '.hm-mem-list::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--muted) 60%,transparent);background-clip:padding-box;}'
+      + '.hm-mem-list{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 40%,transparent) transparent;}'
       + '.hm-mem-row{display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:6px;}'
       + '.hm-mem-row:nth-child(odd){background:color-mix(in srgb,var(--text) 3.5%,transparent);}'
       + '.hm-mem-pc{font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;padding:2px 6px;border-radius:5px;min-width:54px;text-align:center;flex:none;}'
@@ -1690,8 +1708,10 @@
       + '.hm-sc-hd{display:flex;align-items:center;gap:10px;margin-bottom:11px;}'
       + '.hm-sc-tit{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:800;color:var(--text);}'
       + '.hm-sc-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}'
-      + '.hm-sc-exp{margin-left:auto;font:700 12px Inter,sans-serif;color:var(--text);background:var(--panel2);border:1px solid var(--line);padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;}'
-      + '.hm-sc-exp:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--line));background:color-mix(in srgb,var(--link) 10%,var(--panel2));}'
+      + '.hm-sc-exp{margin-left:auto;font:700 12px var(--font-ui);color:var(--text);background:var(--gbtn-bg,var(--panel2));border:1px solid var(--gbtn-brd,var(--line));-webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);box-shadow:inset 0 1px 0 var(--gbtn-sheen,rgba(255,255,255,.09));padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .2s ease,border-color .2s ease,transform .16s ease,box-shadow .25s ease;white-space:nowrap;}'
+      + '.hm-sc-exp:hover{border-color:color-mix(in srgb,var(--link) 45%,var(--gbtn-brd-hover,var(--line)));background:var(--gbtn-bg-hover,color-mix(in srgb,var(--link) 10%,var(--panel2)));transform:translateY(-1px);box-shadow:inset 0 1px 0 var(--gbtn-sheen,rgba(255,255,255,.09)),0 8px 20px -10px rgba(3,7,18,.5);}'
+      + '.hm-sc-exp:active{transform:translateY(0) scale(.985);}'
+      + '@media (prefers-reduced-motion:reduce){.hm-sc-exp,.hm-sc-exp:hover,.hm-sc-exp:active{transform:none;}}'
       + '.hm-scope.hm-sc.panel{border:0;}'
       + '.hm-sc-map{position:relative;width:100%;border-radius:12px;overflow:hidden;background:var(--hm-frame);}'
       + '.hm-sc-tm{position:relative;width:100%;}'
