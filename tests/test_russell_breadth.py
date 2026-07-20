@@ -66,6 +66,7 @@ def test_constituents_from_valid_json(tmp_path, monkeypatch):
     monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path)
     adapter = RussellBreadthAdapter.__new__(RussellBreadthAdapter)
     adapter.cache_path = tmp_path / "russell_breadth" / "_closes_cache.parquet"
+    adapter.cfg = {}  # _repair() reads cfg.ticker_fixups; runtime __init__ always sets it
 
     members = adapter.constituents()
     assert len(members) == 1900
@@ -84,6 +85,7 @@ def test_stale_json_falls_back_to_parquet(tmp_path, monkeypatch, caplog):
     monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path)
     adapter = RussellBreadthAdapter.__new__(RussellBreadthAdapter)
     adapter.cache_path = tmp_path / "russell_breadth" / "_closes_cache.parquet"
+    adapter.cfg = {}  # _repair() reads cfg.ticker_fixups; runtime __init__ always sets it
 
     import logging
     with caplog.at_level(logging.WARNING, logger="collectors.russell_breadth"):
@@ -104,6 +106,7 @@ def test_small_json_falls_back_to_parquet(tmp_path, monkeypatch, caplog):
     monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path)
     adapter = RussellBreadthAdapter.__new__(RussellBreadthAdapter)
     adapter.cache_path = tmp_path / "russell_breadth" / "_closes_cache.parquet"
+    adapter.cfg = {}  # _repair() reads cfg.ticker_fixups; runtime __init__ always sets it
 
     import logging
     with caplog.at_level(logging.WARNING, logger="collectors.russell_breadth"):
@@ -123,6 +126,7 @@ def test_absent_json_uses_parquet(tmp_path, monkeypatch):
     monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path)
     adapter = RussellBreadthAdapter.__new__(RussellBreadthAdapter)
     adapter.cache_path = tmp_path / "russell_breadth" / "_closes_cache.parquet"
+    adapter.cfg = {}  # _repair() reads cfg.ticker_fixups; runtime __init__ always sets it
 
     members = adapter.constituents()
     assert len(members) == 1750
@@ -137,6 +141,7 @@ def test_absent_json_and_absent_parquet_raises(tmp_path, monkeypatch):
     monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path)
     adapter = RussellBreadthAdapter.__new__(RussellBreadthAdapter)
     adapter.cache_path = tmp_path / "russell_breadth" / "_closes_cache.parquet"
+    adapter.cfg = {}  # _repair() reads cfg.ticker_fixups; runtime __init__ always sets it
 
     with pytest.raises(RuntimeError, match="absent/unusable"):
         adapter.constituents()
@@ -181,6 +186,10 @@ def test_compute_drops_rows_below_n_reporting_floor():
          for i in range(n_tickers)},
         index=dates,
     )
+    # Force the FINAL 5 days below the floor: only 900 tickers report (< 1200).
+    # These rows MUST be dropped by the n_members filter — the load-bearing case.
+    import numpy as np
+    closes.iloc[-5:, 900:] = np.nan
 
     # Patch in a minimal cfg so the base class compute() can read ma_windows etc.
     adapter = RussellBreadthAdapter.__new__(RussellBreadthAdapter)
@@ -189,12 +198,13 @@ def test_compute_drops_rows_below_n_reporting_floor():
     # Run compute (no network, pure math)
     out = adapter.compute(closes)
 
-    # All remaining rows should have n_members >= _N_REPORTING_FLOOR
-    if not out.empty:
-        assert (out["n_members"] >= _N_REPORTING_FLOOR).all(), (
-            f"compute() left rows below n_members floor {_N_REPORTING_FLOOR}: "
-            f"min={out['n_members'].min()}"
-        )
+    # The thin final rows (n_members=900) must be gone; earlier full rows survive.
+    assert not out.empty, "full-coverage rows must survive the floor"
+    assert (out["n_members"] >= _N_REPORTING_FLOOR).all(), (
+        f"compute() left rows below n_members floor {_N_REPORTING_FLOOR}: "
+        f"min={out['n_members'].min()}"
+    )
+    assert out.index.max() < dates[-5], "thin trailing rows were not dropped"
 
 
 # ---------------------------------------------------------------------------

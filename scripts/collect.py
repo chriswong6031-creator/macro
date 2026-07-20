@@ -705,6 +705,10 @@ def main() -> int:
                 import json as _json
                 flt = INDEX_FILTER[idx]
                 log.info("=== refreshing Finviz %s classification ===", flt)
+                _fv_out = config.data_dir() / OUT_DIR / f"{flt}.json"
+                if _fv_out.exists() and (time.time() - _fv_out.stat().st_mtime) < 7200:
+                    log.info("finviz %s fetched <2h ago (rut pre-fetch) — skip duplicate scrape", flt)
+                    continue
                 payload = _fv_fetch(flt)
                 out = config.data_dir() / OUT_DIR / f"{flt}.json"
                 out.parent.mkdir(parents=True, exist_ok=True)

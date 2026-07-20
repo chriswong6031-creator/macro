@@ -142,7 +142,9 @@ class RussellBreadthAdapter(BreadthAdapter):
             ])
             if not members.empty:
                 log.info("russell_breadth: loaded %d constituents from idx_rut.json", len(members))
-                return members
+                # Same symbol normalization the Wikipedia-sourced siblings get via
+                # _repair (BRK.B -> BRK-B, junk-symbol drop) — keeps page keys aligned.
+                return self._repair(members[["symbol", "name", "sector"]])
 
         # Fallback: previously committed constituents.parquet (never-shrink semantics)
         if cpath.exists():
@@ -191,9 +193,20 @@ class RussellBreadthAdapter(BreadthAdapter):
         orig_bs = self.ycfg.get("batch_size", 80)
         self.ycfg = {**self.ycfg, "batch_size": _CHUNK_SIZE}
         try:
-            return super()._download_closes(tickers, period)
+            closes = super()._download_closes(tickers, period)
         finally:
             self.ycfg = {**self.ycfg, "batch_size": orig_bs}
+        # Cold-start resilience: persist the matrix BEFORE the base class's 80%
+        # coverage gate (breadth.py raises "too sparse" pre-write). A partial
+        # first-night download is thus kept and the next run's incremental merge
+        # continues from it instead of restarting cold. Best-effort, never fatal.
+        try:
+            if closes is not None and not closes.empty:
+                self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+                closes.to_parquet(self.cache_path)
+        except Exception as e:  # noqa: BLE001
+            log.debug("russell_breadth: partial-cache persist skipped: %s", e)
+        return closes
 
     # ------------------------------------------------------------------
     # Breadth compute — n_members floor for the R2k universe

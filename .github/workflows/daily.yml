@@ -89,6 +89,12 @@ jobs:
           path: data/midcap_breadth/_closes_cache.parquet
           key: midcap-closes-${{ github.run_id }}
           restore-keys: midcap-closes-
+      - name: restore Russell 2000 breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/russell_breadth/_closes_cache.parquet
+          key: russell-closes-${{ github.run_id }}
+          restore-keys: russell-closes-
       - name: restore china breadth close cache
         uses: actions/cache@v4
         with:
@@ -668,6 +674,12 @@ jobs:
           path: data/midcap_breadth/_closes_cache.parquet
           key: midcap-closes-engine-${{ github.run_id }}
           restore-keys: midcap-closes-
+      - name: restore Russell 2000 breadth close cache (stock library needs constituent closes)
+        uses: actions/cache@v4
+        with:
+          path: data/russell_breadth/_closes_cache.parquet
+          key: russell-closes-engine-${{ github.run_id }}
+          restore-keys: russell-closes-
       - name: restore hk breadth close cache (hk stock search library needs constituent closes)
         uses: actions/cache@v4
         with:

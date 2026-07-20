@@ -104,6 +104,10 @@ def cap_bucket(
         try:
             row = membership_df[membership_df["ticker"] == ticker]
             if not row.empty:
+                # Dual-membership tickers (e.g. sp600+r2000) carry multiple rows —
+                # pick the most-senior group, never accretion order.
+                _sen = {"sp500": 0, "sp400": 1, "sp600": 2, "r2000": 3}
+                row = row.assign(_s=row["group"].astype(str).str.lower().map(_sen).fillna(99)).sort_values("_s")
                 grp = str(row.iloc[0]["group"]).lower()
                 if grp == "sp500":
                     bucket = "large"
