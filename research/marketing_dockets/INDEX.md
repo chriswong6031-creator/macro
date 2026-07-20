@@ -23,6 +23,8 @@ Department roster (`engine/marketing/departments.py`): **Command** (office_cmo),
 
 Strategy corpus (read the one your docket cites): `research/NEURAL_WEB_AUTONOMOUS_MARKETING_LOBE_GRANDMASTER_PLAN_FOR_FABLE.md`, `MARKETING_LOBE_GUERRILLA_GROWTH_AND_OPERATIONS_BY_FABLE.md`, `MARKETING_TRENDSPIDER_PLAYBOOK_AND_CHART_ENGINE_BY_FABLE.md`, `MARKETING_REALTIME_FASTLANE_ARCHITECTURE_BY_FABLE.md`, `MARKETING_ZERO_FOLLOWER_TRACTION_PLAYBOOK_BY_FABLE.md`, `TRENDSPIDER_GROWTH_SEO_AND_GUERRILLA_MARKETING_INTELLIGENCE_FOR_FABLE.md`.
 
+D11's recommended affiliate economics, dated Founding 20 offer, product-native attribution loop, and implementation packets are canonical in [`D11_AFFILIATE_CREATOR_PROGRAM_SHAPE_RULING.md`](D11_AFFILIATE_CREATOR_PROGRAM_SHAPE_RULING.md). It is a recommendation until the operator ratifies its seven decisions; it does not authorize outreach or payouts.
+
 ---
 
 ## 2. Docket table
@@ -39,7 +41,7 @@ Strategy corpus (read the one your docket cites): `research/NEURAL_WEB_AUTONOMOU
 | [D07](D07_FUNNEL_LIFECYCLE_MNZ.md) | Funnel W1: UTM attribution + trial-conversion join (MNZ) | Funnel | P2 | D02 live for real data | Analytics/Supabase join |
 | [D09](D09_STUDIO_FORMATS_WAVE2.md) | Studio W2: heatmap cards, day-recap, threads, weekly receipts | Studio | P2 | — | No |
 | [D10](D10_WORKSHOP_PUBLIC_TOOLS_W1.md) | Workshop W1: free public tools as lead magnets | Workshop | P3 | — | No |
-| [D11](D11_ALLIES_ECOSYSTEM_W1.md) | Allies W1: creator/partner/community scaffold | Allies | P3 | — | Mostly operator outreach |
+| [D11](D11_ALLIES_ECOSYSTEM_W1.md) | Allies W1: creator/partner/community scaffold + [affiliate program shape ruling](D11_AFFILIATE_CREATOR_PROGRAM_SHAPE_RULING.md) | Allies | P3 | D07 + MNZ for live payouts | Ratification + outreach |
 
 **Sequencing:** D08 → D02(W0) → D01(W0) unlocks launch the moment the operator provides accounts + host. D04/D05/D09 fatten content quality in parallel. D03 turns on the learning loop once posts are live. D06/D07 make the CMO loop real. D10/D11 are later waves.
 
