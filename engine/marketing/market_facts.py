@@ -15,6 +15,12 @@ All functions:
 - Put every number that appears in a fact text into numbers_whitelist
 - Never invent numbers — only values actually present in the source artifacts
 - Use plain-word language, no indicator vocabulary (MACD/RSI/Stochastic/etc.)
+
+Voice law (MARKETING_VOICE_DOCTRINE_V2 §6): fact TEXT feeds post copy, so it must
+translate metrics into plain observable words. NO regime labels ("Goldilocks"), NO
+internal scores (growth score / inflation score), NO "(read: ...)" asides, NO em
+dashes. Say what the data plainly shows, e.g. "growth data keeps coming in soft while
+inflation readings are still warm". If the facts are thin, say less.
 """
 from __future__ import annotations
 
@@ -27,29 +33,58 @@ PathLike = Union[str, Path]
 
 _EMPTY: dict = {"facts": [], "numbers_whitelist": []}
 
-# Plain-English label map for quad names (no raw slug leaks)
-_QUAD_PLAIN: dict[str, str] = {
-    "Q1": "Goldilocks",
-    "Q2": "Reflation",
-    "Q3": "Stagflation",
-    "Q4": "Deflation",
-}
 
-# Liquidity overlay → plain English
+def _growth_words(g: float) -> str:
+    """Plain observable phrase for a growth score (no label, no number)."""
+    if g <= -0.30:
+        return "growth data keeps coming in soft"
+    if g < -0.05:
+        return "growth data's been running a touch soft"
+    if g <= 0.05:
+        return "growth data's been roughly steady"
+    if g < 0.30:
+        return "growth data's firming up a little"
+    return "growth data's been running hot"
+
+
+def _inflation_words(i: float) -> str:
+    """Plain observable phrase for an inflation score (no label, no number)."""
+    if i <= -0.30:
+        return "inflation's cooling off fast"
+    if i < -0.05:
+        return "inflation's easing a little"
+    if i <= 0.05:
+        return "inflation's holding roughly flat"
+    if i < 0.30:
+        return "inflation readings are still a bit warm"
+    return "inflation readings are still warm"
+
+
+# Liquidity overlay → plain observable phrase (no label vocab)
 _LIQUIDITY_PLAIN: dict[str, str] = {
-    "expanding": "expanding",
-    "contracting": "contracting",
-    "neutral": "neutral",
-    "tightening": "tightening",
-    "easing": "easing",
+    "expanding": "loosening",
+    "contracting": "tightening up",
+    "neutral": "roughly steady",
+    "tightening": "tightening up",
+    "easing": "loosening",
 }
 
-# Transition state → plain English (keep the word but clarify)
-_TRANSITION_PLAIN: dict[str, str] = {
-    "TRANSITIONING": "transitioning",
-    "STABLE": "stable",
-    "EARLY": "early-stage",
-}
+
+def _sanitize_tape(text: str) -> str:
+    """Strip banned punctuation/vocab from a pulled tape/direction string so it's
+    safe to drop into copy. Replaces em/en dashes with a comma and swaps the banned
+    word 'de-rating' for a plain synonym. This is translation, not invention."""
+    out = str(text).strip().rstrip(".")
+    for dash in ("—", " – ", "–"):  # em dash, spaced en dash, en dash
+        out = out.replace(dash, ", ")
+    # Banned vocab swaps (case-insensitive, plain synonyms)
+    import re as _re
+    out = _re.sub(r"de-?rating", "selloff", out, flags=_re.IGNORECASE)
+    out = _re.sub(r"\bnarrative\b", "story", out, flags=_re.IGNORECASE)
+    out = _re.sub(r"\s+,", ",", out)          # tidy " ," → ","
+    out = _re.sub(r",\s*,", ",", out)         # collapse ", ,"
+    out = _re.sub(r"\s{2,}", " ", out).strip().strip(",").strip()
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -106,11 +141,11 @@ def macro_facts(root: PathLike) -> dict:
     """Compute macro facts from regime/latest.json, site/neuralwebdata/daily_brief.json,
     and data/neuralweb/world_state.json.
 
-    Example outputs:
-      "The macro regime is Goldilocks — growth score -0.07, inflation score +0.40."
-      "Liquidity is expanding."
-      "The regime is transitioning — not yet stable."
-      "Today's tape: AI/semis unwind — tech-led de-rating."
+    Example outputs (plain observable words, no labels or internal scores):
+      "Growth data keeps coming in soft while inflation readings are still warm."
+      "Liquidity's loosening a bit."
+      "The picture's still shifting, not settled yet."
+      "Today's tape: AI and semis unwinding, tech leading the selloff."
     """
     root = Path(root)
     regime_path = root / "data" / "regime" / "latest.json"
@@ -124,40 +159,52 @@ def macro_facts(root: PathLike) -> dict:
 
     facts: list[dict] = []
 
-    # ── Regime quad ──────────────────────────────────────────────────────────
+    # Observable count of groups on the move today (a real, honest number we can
+    # fold into the headline read so a macro post carries a concrete digit).
+    n_groups_str: str | None = None
+    _count_folded = False  # True once the group count is folded into the top fact
+    if isinstance(brief, dict):
+        _tl = brief.get("thematic_line") or {}
+        if isinstance(_tl, dict) and _tl.get("available"):
+            _nt = _tl.get("n_themes")
+            if _nt is not None:
+                try:
+                    n_groups_str = str(int(_nt))
+                except (TypeError, ValueError):
+                    n_groups_str = None
+
+    # ── Growth + inflation, translated to plain observable words ──────────────
+    # NO regime label, NO scores in the text. We read the underlying growth/
+    # inflation scores and say what they plainly imply. The numbers stay internal.
     if isinstance(regime, dict):
-        quad_name = regime.get("quad_name") or regime.get("label") or ""
-        quad_id = regime.get("quad") or ""
-        # Use human-readable name; fallback to raw quad_name
-        plain_name = _QUAD_PLAIN.get(quad_id, quad_name) or quad_name
         growth = regime.get("growth_score")
         inflation = regime.get("inflation_score")
 
-        if plain_name and growth is not None and inflation is not None:
+        if growth is not None and inflation is not None:
             try:
                 g = float(growth)
                 infl = float(inflation)
-                g_str = _fmt_score(g)
-                i_str = _fmt_score(infl)
-                text = (
-                    f"The macro regime is {plain_name} — "
-                    f"growth score {g_str}, inflation score {i_str}."
-                )
+                gw = _growth_words(g)
+                iw = _inflation_words(infl)
+                # Honest "not a comfortable mix" only when the two genuinely pull
+                # opposite ways (soft growth + warm inflation, or vice versa).
+                uncomfortable = (g < -0.05 and infl > 0.05) or (g > 0.05 and infl < -0.05)
+                tail = " Not a comfortable mix." if uncomfortable else ""
+                text = f"{gw[0].upper()}{gw[1:]} while {iw}.{tail}"
+                nums: list[str] = []
+                # Fold in the observable group count as a natural, checkable digit.
+                if n_groups_str:
+                    text += f" {n_groups_str} groups on the move today."
+                    nums = [n_groups_str]
+                    _count_folded = True
                 facts.append({
-                    "id": "regime_quad",
+                    "id": "growth_inflation",
                     "text": text,
                     "salience": 10,
-                    "numbers": [g_str, i_str],
+                    "numbers": nums,
                 })
             except (TypeError, ValueError):
                 pass
-        elif plain_name:
-            facts.append({
-                "id": "regime_quad",
-                "text": f"The macro regime is {plain_name}.",
-                "salience": 8,
-                "numbers": [],
-            })
 
         # ── Liquidity overlay ─────────────────────────────────────────────
         liq = regime.get("liquidity_overlay")
@@ -165,21 +212,29 @@ def macro_facts(root: PathLike) -> dict:
             liq_plain = _LIQUIDITY_PLAIN.get(str(liq).lower(), str(liq).lower())
             facts.append({
                 "id": "liquidity_overlay",
-                "text": f"Liquidity is {liq_plain}.",
+                "text": f"Liquidity's {liq_plain} right now.",
                 "salience": 7,
                 "numbers": [],
             })
 
-        # ── Transition state ──────────────────────────────────────────────
-        trans = regime.get("transition_state")
-        if trans:
-            trans_plain = _TRANSITION_PLAIN.get(str(trans).upper(), str(trans).lower())
+        # ── Transition state → plain words, no label ──────────────────────
+        trans = str(regime.get("transition_state") or "").upper()
+        if trans == "TRANSITIONING":
             facts.append({
                 "id": "transition_state",
-                "text": f"The regime is {trans_plain}.",
+                "text": "The picture's still shifting, not settled yet.",
                 "salience": 6,
                 "numbers": [],
             })
+        elif trans == "EARLY":
+            facts.append({
+                "id": "transition_state",
+                "text": "Feels early in whatever this turns into.",
+                "salience": 6,
+                "numbers": [],
+            })
+        # STABLE (or anything else) → no separate fact; the growth/inflation line
+        # already carries the read.
 
     # ── Daily brief narrative ─────────────────────────────────────────────────
     if isinstance(brief, dict):
@@ -188,31 +243,24 @@ def macro_facts(root: PathLike) -> dict:
             primary = tape.get("primary") or {}
             direction = primary.get("direction") or ""
             if direction:
-                # Strip internal tag noise — take first sentence-like chunk
-                text_clean = str(direction).strip().rstrip(".")
-                facts.append({
-                    "id": "tape_direction",
-                    "text": f"Today's tape: {text_clean}.",
-                    "salience": 9,
-                    "numbers": [],
-                })
-
-        # Thematic line breadth numbers
-        tl = brief.get("thematic_line") or {}
-        if isinstance(tl, dict) and tl.get("available"):
-            n_themes = tl.get("n_themes")
-            if n_themes is not None:
-                try:
-                    n = int(n_themes)
-                    n_str = str(n)
+                text_clean = _sanitize_tape(direction)
+                if text_clean:
                     facts.append({
-                        "id": "theme_count",
-                        "text": f"{n_str} themes are active on the dashboard right now.",
-                        "salience": 4,
-                        "numbers": [n_str],
+                        "id": "tape_direction",
+                        "text": f"Today's tape: {text_clean}.",
+                        "salience": 9,
+                        "numbers": [],
                     })
-                except (TypeError, ValueError):
-                    pass
+
+        # Thematic line breadth number — only as a STANDALONE fact when it wasn't
+        # already folded into the growth/inflation read (i.e. no regime data).
+        if n_groups_str and not _count_folded:
+            facts.append({
+                "id": "theme_count",
+                "text": f"{n_groups_str} different groups are on the move today.",
+                "salience": 4,
+                "numbers": [n_groups_str],
+            })
 
     # Sort salience-DESC, id-ASC for determinism
     facts.sort(key=lambda x: (-x["salience"], x["id"]))
@@ -458,8 +506,9 @@ def event_facts(root: PathLike) -> dict:
 
     Tries daily_brief first (why_the_tape_moved). Falls back to macro_facts.
 
-    Example output:
-      "Today's catalyst: AI/semis unwind — tech-led de-rating (coherence: supported)."
+    Example output (plain words, no "(read: ...)" asides, no em dashes):
+      "What's driving today: AI and semis unwinding, tech leading the selloff. The
+       cross-checks back it up."
     """
     root = Path(root)
     brief_path = root / "site" / "neuralwebdata" / "daily_brief.json"
@@ -472,19 +521,26 @@ def event_facts(root: PathLike) -> dict:
         if isinstance(tape, dict) and tape.get("available"):
             primary = tape.get("primary") or {}
             direction = primary.get("direction") or ""
-            coherence = primary.get("coherence") or ""
+            coherence = str(primary.get("coherence") or "").lower()
             if direction:
-                text_clean = str(direction).strip().rstrip(".")
-                if coherence and coherence != "unknown":
-                    text = f"Today's catalyst: {text_clean} (read: {coherence})."
-                else:
-                    text = f"Today's catalyst: {text_clean}."
-                facts.append({
-                    "id": "event_catalyst",
-                    "text": text,
-                    "salience": 10,
-                    "numbers": [],
-                })
+                text_clean = _sanitize_tape(direction)
+                if text_clean:
+                    # Translate the coherence flag into a plain aside (no "(read: ...)")
+                    if coherence == "supported":
+                        tail = " The cross-checks back it up."
+                    elif coherence in ("conflicted", "mixed"):
+                        tail = " Though the cross-checks are mixed on it."
+                    elif coherence == "unsupported":
+                        tail = " The rest of the data doesn't really back it up though."
+                    else:
+                        tail = ""
+                    text = f"What's driving today: {text_clean}.{tail}"
+                    facts.append({
+                        "id": "event_catalyst",
+                        "text": text,
+                        "salience": 10,
+                        "numbers": [],
+                    })
 
     if not facts:
         # Fall back to macro facts as best available context

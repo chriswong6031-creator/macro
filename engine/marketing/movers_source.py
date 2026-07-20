@@ -165,6 +165,26 @@ def top_movers(
 # theme_lists
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _load_cashtag_tiers(root: PathLike | None) -> dict[str, str]:
+    """Load data/marketing/cashtag_tiers.json and return a ticker→tier map.
+
+    Returns {} on any error (file absent, malformed). Fail-soft.
+    """
+    if root is None:
+        return {}
+    try:
+        path = Path(root) / "data" / "marketing" / "cashtag_tiers.json"
+        raw = _load_json(path)
+        if not isinstance(raw, dict):
+            return {}
+        tickers = raw.get("tickers") or {}
+        if not isinstance(tickers, dict):
+            return {}
+        return {t: v.get("tier", "") for t, v in tickers.items() if isinstance(v, dict)}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def theme_lists(
     data: dict,
     *,
@@ -172,6 +192,7 @@ def theme_lists(
     n: int = 8,
     min_members: int = 4,
     min_abs_theme: float = 1.0,
+    cashtag_tiers: dict[str, str] | None = None,
 ) -> list[dict]:
     """Build ranked theme list items from theme_tiles.
 
@@ -261,6 +282,19 @@ def theme_lists(
 
         tone = "selling off" if direction == "down" else "ripping"
 
+        # Leading-theme score = mean |pct_change| of members, +boost when ≥2 members
+        # are T1 in cashtag_tiers. Deterministic: boost is a fixed constant.
+        member_pcts = [abs(pct) for _, pct in top_n_members]
+        mean_abs = sum(member_pcts) / len(member_pcts) if member_pcts else 0.0
+        t1_boost = 0.0
+        if cashtag_tiers:
+            t1_count = sum(
+                1 for ticker, _ in top_n_members
+                if cashtag_tiers.get(ticker, "") == "T1"
+            )
+            if t1_count >= 2:
+                t1_boost = 1.5  # fixed boost for ≥2 T1 members
+
         raw_items.append({
             "theme": theme_name,
             "direction": direction,
@@ -268,10 +302,14 @@ def theme_lists(
             "all_members": dict(top_n_members),   # before dedup
             "agg_pct": round(agg_pct, 2),
             "question": question,
+            "_lead_score": mean_abs + t1_boost,
         })
 
-    # Step 3: rank by |agg_pct| descending
-    raw_items.sort(key=lambda x: abs(x["agg_pct"]), reverse=True)
+    # Step 3: rank by leading-theme score descending (mean |pct| + T1 boost).
+    # When cashtag_tiers is absent the T1 boost is 0 and this degrades to pure
+    # mean-|member-pct| sort (NOT |agg_pct| — the member mean and the tile agg_pct
+    # diverge whenever members are a strict subset of the tile universe).
+    raw_items.sort(key=lambda x: x["_lead_score"], reverse=True)
 
     # Step 4: dedupe tickers across themes (first theme wins)
     result = []
@@ -349,7 +387,7 @@ def mover_facts(mover: dict, data: dict | None = None) -> dict:
             whitelist.append(abs_pct_str)
         facts.append({
             "id": "mover_magnitude",
-            "text": f"{ticker} is {abs_pct_str} lower on the day — one of today's biggest moves in the index.",
+            "text": f"{ticker} is {abs_pct_str} lower on the day, one of the biggest moves in the index.",
             "salience": 8,
             "numbers": [abs_pct_str],
         })
