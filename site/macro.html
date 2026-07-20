@@ -407,7 +407,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">2</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -420,6 +420,15 @@
                   
                   
                   
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;finnhub_altdata&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;finnhub_altdata&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
                   
                   
                   
@@ -4512,11 +4521,11 @@
         
         <span class="mx5-ai-ticker-pill">SPY</span>
         
-        <span class="mx5-ai-ticker-pill">TSLA</span>
+        <span class="mx5-ai-ticker-pill">XLF</span>
         
-        <span class="mx5-ai-ticker-pill">AMD</span>
+        <span class="mx5-ai-ticker-pill">USO</span>
         
-        <span class="mx5-ai-ticker-pill">MSFT</span>
+        <span class="mx5-ai-ticker-pill">QQQ</span>
         
       </div>
       
@@ -4524,14 +4533,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          5 high-impact signals across channels
+          6 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          5 条高影响信号
+          6 条高影响信号
         </span>
         
       </div>
@@ -4624,8 +4633,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 1 of 2 in feed</span>
+          <span class="l-zh">显示 1 / 2 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -5635,7 +5644,7 @@
   
   
   <div class="rrx-cyc">
-    <span class="rrx-cyc-k"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span> · <span class="l-en">Apr–Oct window</span><span class="l-zh">4–10月窗口</span></span><button class="lens-q" type="button" aria-label="Explain" data-lens-kind="record" data-tip-en="Midterm-year drops between April and October have run deeper than usual — though the pattern is loose, and the worst crashes on record came in other years. The one measured edge: while the market still looks healthy (S&amp;P above its 200-day average), pullbacks have come about 1.25× as often in this window — an early heads-up for position size, never a trigger." data-tip-zh="中期选举年 4–10 月的回撤历来比平常更深——但规律并不严格，史上最深的下跌都发生在其他年份。 唯一可量化的优势：当大盘仍健康（标普高于 200 日均线）时，该窗口出现回撤的频率约为平常的 1.25 倍——仅作提前提醒、用于仓位，绝非买卖触发。" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · calendar adjusts sizing only — never raises an alarm" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 日历仅微调仓位，绝不单独报警">?</button>
+    <span class="rrx-cyc-k"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span> · <span class="l-en">Apr–Oct window</span><span class="l-zh">4–10月窗口</span></span><button class="lens-q" type="button" aria-label="Explain" data-lens-kind="record" data-tip-en="Midterm Apr–Oct drawdowns averaged −15% vs −10% otherwise (n=8, suggestive not significant, p≈0.09; the worst years on record are non-midterm). Edge is narrow: while the tape is still healthy (S&amp;P above its 200-day), this window has flagged ≥5% pullbacks at ~1.25× the base rate — early warning, sized not triggered." data-tip-zh="中期选举年 4–10 月最大回撤平均约 −15%（其余年份约 −10%；n=8，仅具提示性、未达显著，p≈0.09；史上最深回撤多发生在非中期年）。 优势有限：当大盘仍健康（标普高于 200 日线）时，该窗口的 ≥5% 回撤概率约为常态的 1.25 倍——用于提前预警与降低仓位，而非触发买卖。" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · calendar adjusts sizing only — never raises an alarm" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 日历仅微调仓位，绝不单独报警">?</button>
     <span class="rrx-cyc-tag">▲ <span class="l-en">early-warning sensitivity raised</span><span class="l-zh">已提高预警灵敏度</span></span>
     <div class="rrx-cyc-sub"><span class="l-en">historically bottoms ~Aug–Oct 2026</span><span class="l-zh">历史上约在 2026 年 8–10 月见底</span></div>
     
@@ -5664,11 +5673,11 @@
 
   <div class="rrx-cyc rrx-cax">
     <span class="rrx-cyc-k"><span class="l-en">Markets moving as one</span><span class="l-zh">多市场同涨同跌</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Absorption 88th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 88分位（5年）；集群：US、Commodities、Dollar</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Absorption 89th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 89分位（5年）；集群：US、Commodities、Dollar</span></span></span>
   </div>
 
   <div class="rrx-trk">
-    <span class="l-en">Monitoring paused — ledger stale</span><span class="l-zh">监控暂停 — 账本数据陈旧</span>
+    <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
     
     <span class="help">?<span class="tip"><span class="l-en">Past-year hit rate: too few graded alerts yet (daily readings — consecutive days overlap) | Watch/caution: too few graded | Recovery: too few graded</span><span class="l-zh">过去一年命中率：暂无足够评分记录（按日读数——连续日期相互重叠） | 观察/谨慎：暂无足够评分 | 修复信号：暂无足够评分</span></span></span>
   </div>
@@ -5886,7 +5895,7 @@
               <div class="rlx-viz" style="--rlx-c:var(--isle-markets,#4d8ef5)">
                 <div class="rlx-bar-row" style="grid-template-columns:70px 1fr">
                   <span class="rlx-bar-lbl"><span class="l-en">vs 5-year<br>range</span><span class="l-zh">相对5年<br>区间</span></span>
-                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:88%"></span></span>
+                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:89%"></span></span>
                 </div>
                 <div class="rlx-viz-cap"><span class="l-en">Further right = markets moving more tightly together than usual.</span><span class="l-zh">越靠右，代表市场比平常联动得更紧。</span></div>
               </div>
@@ -5904,8 +5913,8 @@
               </div>
               
               <div class="lens-receipt">
-                <span class="l-en">88th pctile co-movement · 5-year window · display context, not a trigger</span>
-                <span class="l-zh">联动度 88 分位 · 5 年区间 · 展示背景，非触发</span>
+                <span class="l-en">89th pctile co-movement · 5-year window · display context, not a trigger</span>
+                <span class="l-zh">联动度 89 分位 · 5 年区间 · 展示背景，非触发</span>
               </div>
             </span>
           </div>
@@ -7179,8 +7188,8 @@
               <span class="l-zh">初步迹象——初现火花，未经确认</span>
             </div>
             <div class="igd-asof">
-              <span class="l-en">as of 2026-07-21</span>
-              <span class="l-zh">截至 2026-07-21</span>
+              <span class="l-en">as of 2026-07-19</span>
+              <span class="l-zh">截至 2026-07-19</span>
             </div>
           </div>
         </div>
@@ -7251,7 +7260,7 @@
               </span>
             </span>
           </div>
-          <div class="igd-chip lit fresh" data-tip-en="20d log-RS slope=0.0189 (positive); turned positive 4bd ago" data-tip-zh="20日对数RS斜率=0.0189（正向）；4日前转正">
+          <div class="igd-chip lit fresh" data-tip-en="20d log-RS slope=0.0189 (positive); turned positive 2bd ago" data-tip-zh="20日对数RS斜率=0.0189（正向）；2日前转正">
             <span class="igd-chip-dot"></span>
             <span class="igd-chip-body">
               <span class="igd-chip-lbl">
@@ -8060,6 +8069,25 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
         
         
         
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;finnhub_altdata&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;finnhub_altdata&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+        </div>
+        
         
         
         
@@ -8104,21 +8132,10 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Boeing takes the right approach on new planes. Plus, a word of caution this earnings season</span><span class="l-zh">Boeing takes the right approach on new planes. Plus, a word of caution this earnings season</span></span>
+              <span class="nb-htitle"><span class="l-en">Wall Street struggles as investors await big tech earnings, semis recover</span><span class="l-zh">Wall Street struggles as investors await big tech earnings, semis recover</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/20/boeing-takes-the-right-approach-on-new-planes-plus-a-word-of-caution-this-earnings-season.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="nb-htitle"><span class="l-en">AMD stock rises on price target bumps, Microsoft deal</span><span class="l-zh">AMD stock rises on price target bumps, Microsoft deal</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://finance.yahoo.com/technology/article/amd-stock-rises-on-price-target-bumps-microsoft-deal-170106894.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4615324-sp500-nasdaq-composite-dow-jones-stock-market-news?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -8126,10 +8143,10 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Stock market today: Dow, S&amp;P 500, Nasdaq mixed as chip stocks rise in wait for Big Tech earnings</span><span class="l-zh">Stock market today: Dow, S&amp;P 500, Nasdaq mixed as chip stocks rise in wait for Big Tech earnings</span></span>
+              <span class="nb-htitle"><span class="l-en">Boeing takes the right approach on new planes. Plus, a word of caution this earnings season</span><span class="l-zh">Boeing takes the right approach on new planes. Plus, a word of caution this earnings season</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://finance.yahoo.com/markets/live/stock-market-today-monday-july-20-dow-sp-500-nasdaq-111429441.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/20/boeing-takes-the-right-approach-on-new-planes-plus-a-word-of-caution-this-earnings-season.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -8147,22 +8164,11 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Wall Street Eager For Robotaxi, Optimus News During Tesla Earnings</span><span class="l-zh">Wall Street Eager For Robotaxi, Optimus News During Tesla Earnings</span></span>
+              <span class="nb-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nb-htitle"><span class="l-en">Court ruling freezes Paramount-Warner Bros. merger for now</span><span class="l-zh">Court ruling freezes Paramount-Warner Bros. merger for now</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.investors.com/news/tesla-earnings-robotaxis-optimus-elon-musk-mag-7-tech/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">AMC, IMAX Stocks Deliver &#39;Odyssey&#39;, Earnings Thrills, Chills</span><span class="l-zh">AMC, IMAX Stocks Deliver &#39;Odyssey&#39;, Earnings Thrills, Chills</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.investors.com/news/amc-stock-earnings-imax-odyssey-opening-box-office/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.npr.org/2026/07/20/nx-s1-5900888/paramount-wbd-tro-restraining-lawsuit" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -8170,10 +8176,32 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nb-htitle"><span class="l-en">Bell delivers 700th Bell 505 helicopter at Farnborough Airshow</span><span class="l-zh">Bell delivers 700th Bell 505 helicopter at Farnborough Airshow</span></span>
+              <span class="nb-htitle"><span class="l-en">Invesco Variable Rate Investment Grade ETF declares monthly distribution of $0.0922</span><span class="l-zh">Invesco Variable Rate Investment Grade ETF declares monthly distribution of $0.0922</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4615492-bell-delivers-700th-bell-505-helicopter-at-farnborough-airshow?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4615538-invesco-variable-rate-investment-grade-etf-declares-monthly-distribution-of-00922?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">JetBlue Airways buys new landing and takeoff slots at LaGuardia from Spirit</span><span class="l-zh">JetBlue Airways buys new landing and takeoff slots at LaGuardia from Spirit</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4615540-jetblue-airways-buys-new-landing-and-takeoff-slots-at-laguardia-from-spirit?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">AMC outlines $200M-$235M 2026 net capex plan while targeting ~3x leverage</span><span class="l-zh">AMC outlines $200M-$235M 2026 net capex plan while targeting ~3x leverage</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4615542-amc-outlines-200m-235m-2026-net-capex-plan-while-targeting-3x-leverage?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -11754,9 +11782,9 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-20 17:47 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-20 19:15 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-20 17:47 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-20 19:15 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
