@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.theta-terminal.plist
+  launchd keepalive for the ThetaData Terminal v3 (serves :25503 for every EOD
+  options lane: backfill, liveflow poller, options hub, levels/vex/moves).
+
+  Installed 2026-07-20 after the 07-17..07-20 outage: the terminal only ever
+  ran nohup'd from an interactive shell; stdin EOF (tty closed) shut it down
+  and nothing restarted it. The wrapper holds stdin open with an infinite pipe
+  and backs off 240s on insta-death so a stale THETA_API_KEY does not hammer
+  the ThetaData auth endpoint.
+
+  Health loop: wrapper exits 0 immediately when :25503 answers; launchd
+  re-invokes every ThrottleInterval (60s) as a cheap health poll.
+
+  Install:
+    cp scripts/launchd/com.macro.theta-terminal.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.macro.theta-terminal.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.macro.theta-terminal</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <!-- Must live OUTSIDE ~/Documents/ (TCC denies launchd exec there) -->
+        <string>/Users/chriswong/theta-ops-wt/scripts/launchd/theta_terminal_keepalive.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/chriswong/theta-ops-wt</string>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/theta_terminal_keepalive.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/theta_terminal_keepalive.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/opt/openjdk@21/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+</dict>
+</plist>
