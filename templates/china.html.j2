@@ -7,6 +7,7 @@
 {% macro nm(name) -%}
 {% set p = (name or '').split(' / ') %}<span class="l-en">{{ p[0] }}</span><span class="l-zh">{{ p[1] if p|length > 1 else p[0] }}</span>
 {%- endmacro %}
+{% import "_aibrief_body.html.j2" as aib %}{# ABX v2 — the ONE shared AI-brief body renderer #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1018,77 +1019,12 @@
   [data-theme="light"] body.page-china .cnx-tkr-btn{color:#2456a8}
   [data-theme="light"] body.page-china .cnx-fq.refl{color:#9a6b0e}
 {%- endif %}{# /mode != stocks — MX5 CSS #}
-  /* ── AI BRIEF DIALOG — china scope (aib-* classes, scoped under body.page-china) ── */
-  /* Local token spine. Every colour/surface routes through these so both themes stay
-     correct and there are no stray hardcoded hex or undefined-var fallbacks.
-     --aib-acc pins to --info (stable blue) so it NEVER red-flips in ZH mode.           */
-  body.page-china #cnx-dlg-aibrief{
-    --aib-acc:var(--info);            /* brand accent — icon, meter fill, spine, markers */
-    --aib-warn:var(--warn);           /* severity — conflicts (amber, Western, stable)   */
-    --aib-tx:var(--info);             /* transmission channel — cool, Western, stable     */
-    --aib-mut:var(--muted);           /* secondary label text (theme-correct, not white)  */
-    --aib-surf:rgba(255,255,255,.035);/* card surface                                     */
-    --aib-hair:rgba(255,255,255,.09); /* hairlines / borders                              */
-    --aib-track:rgba(255,255,255,.12);/* meter track                                      */
-  }
-  [data-theme="light"] body.page-china #cnx-dlg-aibrief{
-    --aib-surf:rgba(0,0,0,.028);--aib-hair:rgba(0,0,0,.09);--aib-track:rgba(0,0,0,.12);
-  }
-  /* Header — icon plate + title + date + mandatory house-law badge */
-  body.page-china .aib-hdr-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;padding-bottom:15px;border-bottom:1px solid color-mix(in srgb,var(--aib-acc) 16%,var(--aib-hair));}
-  body.page-china .aib-icon{width:38px;height:38px;flex-shrink:0;border-radius:11px;background:linear-gradient(150deg,color-mix(in srgb,var(--aib-acc) 22%,transparent),color-mix(in srgb,var(--aib-acc) 8%,transparent));border:1px solid color-mix(in srgb,var(--aib-acc) 30%,transparent);color:var(--aib-acc);font-size:13px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;}
-  body.page-china .aib-hdr-meta{flex:1;min-width:0;}
-  body.page-china .aib-hdr-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:3px;}
-  body.page-china .aib-hdr-date{font-size:12px;color:var(--aib-mut);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
-  body.page-china .aib-badge{margin-left:auto;align-self:center;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--aib-acc);opacity:.85;text-align:right;line-height:1.45;white-space:normal;max-width:210px;flex-shrink:0;}
-  [data-theme="light"] body.page-china .aib-badge{opacity:.95;}
-  /* Section spine — a labelled hairline that names each movement (the signature).
-     Encodes structure: "the read" → "evidence" → "watch". Skipped before the lead. */
-  body.page-china .aib-sec{display:flex;align-items:center;gap:10px;margin:20px 0 12px;}
-  body.page-china .aib-sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,color-mix(in srgb,var(--aib-acc) 26%,var(--aib-hair)),transparent);}
-  body.page-china .aib-sec-label{font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--aib-mut);display:inline-flex;align-items:center;gap:7px;}
-  body.page-china .aib-sec-label::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--aib-acc);}
-  /* Lead — the one loud voice, accent-tinted with a spine rule */
-  body.page-china .aib-lead{font-size:16.5px;font-weight:600;line-height:1.62;color:var(--text);padding:16px 18px;border-radius:13px;margin-bottom:14px;background:color-mix(in srgb,var(--aib-acc) 7%,transparent);border:1px solid color-mix(in srgb,var(--aib-acc) 18%,transparent);border-left:3px solid color-mix(in srgb,var(--aib-acc) 60%,transparent);}
-  [data-theme="light"] body.page-china .aib-lead{background:color-mix(in srgb,var(--aib-acc) 6%,#fff);border-color:color-mix(in srgb,var(--aib-acc) 22%,transparent);border-left-color:color-mix(in srgb,var(--aib-acc) 60%,transparent);}
-  body.page-china .aib-regime{font-size:14px;color:var(--text);line-height:1.72;margin-bottom:16px;opacity:.92;}
-  /* Confidence — a labelled 3-step meter on a track (scales with level, not 3 loose bars) */
-  body.page-china .aib-conf-row{display:flex;align-items:center;gap:13px;margin-bottom:2px;padding:11px 14px;background:var(--aib-surf);border:1px solid var(--aib-hair);border-radius:11px;}
-  body.page-china .aib-conf-bar{display:flex;gap:4px;align-items:center;padding:4px;border-radius:7px;background:var(--aib-track);}
-  body.page-china .aib-conf-seg{width:26px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--aib-acc) 0%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 8%,transparent);transition:background .2s;}
-  body.page-china .aib-conf-seg.filled{background:var(--aib-acc);box-shadow:none;}
-  body.page-china .aib-conf-label{font-size:12.5px;font-weight:650;color:var(--text);}
-  body.page-china .aib-conf-asof{font-size:11.5px;color:var(--aib-mut);margin-left:auto;font-variant-numeric:tabular-nums;}
-  /* Evidence grid — auto-fit so a lone card spans full width (no half-width orphan) */
-  body.page-china .aib-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px;margin-bottom:6px;}
-  @media(max-width:560px){body.page-china .aib-grid{grid-template-columns:1fr;}}
-  body.page-china .aib-card{padding:14px 16px 15px;border-radius:12px;background:var(--aib-surf);border:1px solid var(--aib-hair);}
-  body.page-china .aib-card-full{padding:14px 16px 15px;border-radius:12px;background:var(--aib-surf);border:1px solid var(--aib-hair);margin-bottom:12px;}
-  body.page-china .aib-card-conflicts{border-left:3px solid var(--aib-warn);}
-  body.page-china .aib-card-tx{border-left:3px solid var(--aib-tx);}
-  body.page-china .aib-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--aib-mut);margin-bottom:9px;display:flex;align-items:center;gap:6px;}
-  body.page-china .aib-card-conflicts .aib-eyebrow{color:color-mix(in srgb,var(--aib-warn) 78%,var(--aib-mut));}
-  body.page-china .aib-card-tx .aib-eyebrow{color:color-mix(in srgb,var(--aib-tx) 72%,var(--aib-mut));}
-  body.page-china .aib-items{display:flex;flex-direction:column;gap:7px;}
-  body.page-china .aib-item{position:relative;padding-left:14px;font-size:13px;color:var(--text);line-height:1.6;}
-  body.page-china .aib-item::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,currentColor 32%,transparent);}
-  body.page-china .aib-card-conflicts .aib-item::before{background:color-mix(in srgb,var(--aib-warn) 55%,transparent);}
-  body.page-china .aib-card-tx .aib-item::before{background:color-mix(in srgb,var(--aib-tx) 55%,transparent);}
-  body.page-china .aib-rotation{font-size:13.5px;color:var(--text);line-height:1.72;}
-  /* What to watch — arrow-bullet rows, hanging indent, bold trigger head */
-  body.page-china .aib-watch-row{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;color:var(--text);line-height:1.6;padding:4px 0;}
-  body.page-china .aib-watch-row + .aib-watch-row{border-top:1px solid var(--aib-hair);}
-  body.page-china .aib-watch-marker{color:var(--aib-acc);flex-shrink:0;margin-top:1px;font-size:13px;line-height:1.5;}
-  body.page-china .aib-watch-row b{font-weight:700;color:var(--text);}
-  body.page-china .aib-degraded{font-size:12px;color:var(--aib-mut);margin:6px 0 4px;padding:9px 13px;border-radius:9px;background:color-mix(in srgb,var(--aib-warn) 9%,transparent);border:1px solid color-mix(in srgb,var(--aib-warn) 22%,transparent);border-left:3px solid var(--aib-warn);}
-  /* Empty-brief fallback text */
-  body.page-china .aib-empty{font-size:13px;color:var(--aib-mut);line-height:1.6;margin:4px 0;}
-  @media(max-width:560px){
-    body.page-china .aib-hdr-row{flex-wrap:wrap;}
-    body.page-china .aib-badge{margin-left:52px;text-align:left;max-width:none;align-self:flex-start;}
-    body.page-china .aib-conf-row{flex-wrap:wrap;gap:9px;}
-    body.page-china .aib-conf-asof{margin-left:0;width:100%;}
-  }
+  /* ── AI BRIEF DIALOG — ABX v2: rules live in the shared _aibrief_css.j2 include
+     (.aib2-* namespace, appended below). China keeps the ZH-safe blue accent by
+     inheriting the shared --aib2-acc default (--info) — no override needed. Empty-
+     brief fallback text keeps a local class. ──────────────────────────────────── */
+  body.page-china .aib-empty{font-size:13px;color:var(--muted);line-height:1.6;margin:4px 0;}
+{% include "_aibrief_css.j2" %}
 </style>
 </head>
 <body class="{{ 'page-china-stocks' if mode == 'stocks' else 'page-china mx4-grid' }}">
@@ -1775,21 +1711,37 @@
       {% endif %}
     </div>
 
-    {# AI Brief card #}
+    {# AI Brief card — v2 teaser: lead with the first key reading + the plain-word
+       gist line (falls back to summary on v1 payloads). No raw slugs (doctrine Law 2). #}
     <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-aibrief')">
       <div class="cnx-ctitle">{{ t('AI Brief','AI 简报') }}</div>
       {% if china_brief %}
       {% set _cb = china_brief %}
+      {% set _cbzh = _cb.zh if _cb.zh is defined and _cb.zh else {} %}
+      {% set _kf = _cb.key_facts or [] %}
+      {% if _kf %}
+      {# first ≤2 engine-computed key readings as chips (label · value) #}
+      <div class="cnx-chips">
+        {% for _f in _kf[:2] %}
+        <span class="cnx-chip"><span class="l-en">{{ _f.get('label_en') }}: {{ _f.get('value_en') }}</span><span class="l-zh">{{ _f.get('label_zh') or _f.get('label_en') }}：{{ _f.get('value_zh') or _f.get('value_en') }}</span></span>
+        {% endfor %}
+      </div>
+      {% else %}
       <div class="cnx-chips">
         <span class="cnx-chip">{{ t('Regime','周期') }}</span>
         <span class="cnx-chip">{{ t('Policy','政策') }}</span>
         <span class="cnx-chip">{{ t('Southbound','南向') }}</span>
-        <span class="cnx-chip">{{ t('Property','地产') }}</span>
       </div>
-      <div class="cnx-kv"><span class="k">{{ t('High-impact items','高影响项') }}</span><span class="v">{{ (_cb.watch_items or []) | length }}</span></div>
-      {% if CN %}
-      {% set _CNS = (CN.news.synthesis if CN.news and CN.news.synthesis else {}) %}
-      <div class="cnx-kv"><span class="k">{{ t('Dominant channel','主要渠道') }}</span><span class="v">{{ _CNS.get('dominant_channel','—') }}</span></div>
+      {% endif %}
+      {# the plain-word gist: prefer the tldr stance line, else the one-line summary #}
+      {% set _tldr = _cb.tldr or [] %}
+      {% set _tldr_zh = _cbzh.get('tldr') or [] %}
+      {% if _tldr %}
+      {% set _lead = _tldr[0] %}
+      {% set _lead_zh = _tldr_zh[0] if _tldr_zh else _lead %}
+      <p style="font-size:12px;margin:6px 0 0"><span class="l-en">{{ _lead }}</span><span class="l-zh">{{ _lead_zh }}</span></p>
+      {% elif _cb.summary %}
+      <p style="font-size:12px;margin:6px 0 0"><span class="l-en">{{ _cb.summary | truncate(110, true, '…') }}</span><span class="l-zh">{{ (_cbzh.get('summary') or _cb.summary) | truncate(110, true, '…') }}</span></p>
       {% endif %}
       {% else %}
       <div class="cnx-chips"><span class="cnx-chip">{{ t('Regime','周期') }}</span><span class="cnx-chip">{{ t('Policy','政策') }}</span></div>
@@ -2362,133 +2314,21 @@
     <div class="cnx-dlg-panel">
       <div class="cnx-dlg-head"><span class="cnx-dlg-title"><span class="l-en">AI Brief — China Synthesis</span><span class="l-zh">AI简报 — 中国综合</span></span><button class="cnx-dlg-close" onclick="cnxCloseDlg()">×</button></div>
       <div class="cnx-dlg-body">
-        {% if china_brief %}
-        {% set _cb = china_brief %}
-        {% set _cbzh = _cb.zh if _cb.zh is defined and _cb.zh else {} %}
-        {# Pre-compute section presence so we can draw labelled spine dividers only when
-           the movement below them actually renders (a degraded brief stays honest —
-           an empty section prints no divider and no empty card). #}
-        {% set _cb_conflicts = _cb.conflicts or [] %}
-        {% set _cb_tx = _cb.transmission or [] %}
-        {% set _cb_watch = _cb.watch_items or [] %}
-        {% set _cb_has_evidence = _cb_conflicts or _cb_tx or _cb.rotation_check %}
-        {# 1. Header row: AI icon + title + date + mandatory house-law badge #}
-        <div class="aib-hdr-row">
-          <div class="aib-icon">AI</div>
-          <div class="aib-hdr-meta">
-            <div class="aib-hdr-title"><span class="l-en">AI Daily Brief · China &amp; HK synthesis</span><span class="l-zh">AI 每日简报 · 中港综合</span></div>
-            <div class="aib-hdr-date num">{{ _cb.state_asof or latest.date }}</div>
-          </div>
-          <span class="aib-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
-        </div>
-        {# 2. Lead card — summary (accent-tinted) #}
-        {% if _cb.summary %}
-        <div class="aib-lead">
-          <span class="l-en">{{ _cb.summary }}</span>
-          <span class="l-zh">{{ _cbzh.get('summary') or _cb.summary }}</span>
-        </div>
-        {% endif %}
-        {# 3. Regime read #}
-        {% if _cb.regime_read %}
-        <div class="aib-regime">
-          <span class="l-en">{{ _cb.regime_read }}</span>
-          <span class="l-zh">{{ _cbzh.get('regime_read') or _cb.regime_read }}</span>
-        </div>
-        {% endif %}
-        {# 4. Confidence meter — 3-segment bar #}
-        {% set _cb_conf = _cb.confidence %}
-        {% if _cb_conf %}
-        {% set _cb_conf_n = 3 if _cb_conf == 'high' else (2 if _cb_conf == 'medium' else 1) %}
-        {% set _cb_conf_zh = '高' if _cb_conf == 'high' else ('中' if _cb_conf == 'medium' else '低') %}
-        <div class="aib-conf-row">
-          <div class="aib-conf-bar">
-            <div class="aib-conf-seg{% if _cb_conf_n >= 1 %} filled{% endif %}"></div>
-            <div class="aib-conf-seg{% if _cb_conf_n >= 2 %} filled{% endif %}"></div>
-            <div class="aib-conf-seg{% if _cb_conf_n >= 3 %} filled{% endif %}"></div>
-          </div>
-          <span class="aib-conf-label"><span class="l-en">Confidence: {{ _cb_conf }}</span><span class="l-zh">置信度：{{ _cb_conf_zh }}</span></span>
-          {% if _cb.state_asof %}<span class="aib-conf-asof">{{ t('as of','数据截至') }} {{ _cb.state_asof }}</span>{% endif %}
-        </div>
-        {% endif %}
-        {# Section spine — "Evidence" movement: where signals disagree / transmission / rotation #}
-        {% if _cb_has_evidence %}
-        <div class="aib-sec"><span class="aib-sec-label"><span class="l-en">The evidence</span><span class="l-zh">依据</span></span></div>
-        {% endif %}
-        {# 5. Evidence grid: conflicts + transmission (auto-fit — a lone card spans full width) #}
-        {% if _cb_conflicts or _cb_tx %}
-        <div class="aib-grid">
-          {% if _cb_conflicts %}
-          {% set _cb_conflicts_zh = _cbzh.get('conflicts') or [] %}
-          <div class="aib-card aib-card-conflicts">
-            <div class="aib-eyebrow"><span class="l-en">&#x2696; Where signals disagree</span><span class="l-zh">&#x2696; 信号分歧</span></div>
-            <div class="aib-items">
-              {% for _ci in _cb_conflicts %}
-              {% set _ci_zh = _cb_conflicts_zh[loop.index0] if _cb_conflicts_zh and loop.index0 < _cb_conflicts_zh|length else _ci %}
-              <div class="aib-item">
-                <span class="l-en">{{ _ci }}</span>
-                <span class="l-zh">{{ _ci_zh }}</span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-          {% if _cb_tx %}
-          {% set _cb_tx_zh = _cbzh.get('transmission') or [] %}
-          <div class="aib-card aib-card-tx">
-            <div class="aib-eyebrow"><span class="l-en">&#x26D3; Transmission</span><span class="l-zh">&#x26D3; 传导</span></div>
-            <div class="aib-items">
-              {% for _ti in _cb_tx %}
-              {% set _ti_zh = _cb_tx_zh[loop.index0] if _cb_tx_zh and loop.index0 < _cb_tx_zh|length else _ti %}
-              <div class="aib-item">
-                <span class="l-en">{{ _ti }}</span>
-                <span class="l-zh">{{ _ti_zh }}</span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-        </div>
-        {% endif %}
-        {# 6. Rotation — full-width card #}
-        {% if _cb.rotation_check %}
-        <div class="aib-card-full">
-          <div class="aib-eyebrow"><span class="l-en">&#x267B; Rotation</span><span class="l-zh">&#x267B; 轮动</span></div>
-          <div class="aib-rotation">
-            <span class="l-en">{{ _cb.rotation_check }}</span>
-            <span class="l-zh">{{ _cbzh.get('rotation_check') or _cb.rotation_check }}</span>
-          </div>
-        </div>
-        {% endif %}
-        {# 7. What to watch — arrow-bullet checklist; split on ':' to bold trigger head #}
-        {% if _cb_watch %}
-        {% set _cb_wi_zh = _cbzh.get('watch_items') or [] %}
-        {# Section spine — "Watch" movement (the actions / stance for the reader) #}
-        <div class="aib-sec"><span class="aib-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
-        <div class="aib-card-full">
-          <div class="aib-items">
-            {% for _wi in _cb_watch %}
-            {% set _wi_zh = _cb_wi_zh[loop.index0] if _cb_wi_zh and loop.index0 < _cb_wi_zh|length else _wi %}
-            <div class="aib-watch-row">
-              <span class="aib-watch-marker">&#x25B9;</span>
-              <span>
-                <span class="l-en">{% if ':' in _wi %}<b>{{ _wi.split(':',1)[0] }}</b>:{{ _wi.split(':',1)[1] }}{% else %}{{ _wi }}{% endif %}</span>
-                <span class="l-zh">{% if '：' in _wi_zh %}<b>{{ _wi_zh.split('：',1)[0] }}</b>：{{ _wi_zh.split('：',1)[1] }}{% elif ':' in _wi_zh %}<b>{{ _wi_zh.split(':',1)[0] }}</b>:{{ _wi_zh.split(':',1)[1] }}{% else %}{{ _wi_zh }}{% endif %}</span>
-              </span>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        {# NOTE: 'Upcoming catalysts' section OMITTED — china_brief has no forward_watch/forward_read fields #}
-        {# 8. Degraded notice #}
-        {% if _cb.degraded_reason %}
-        <div class="aib-degraded"><span class="l-en">Today's brief ran degraded: {{ _cb.degraded_reason }}</span><span class="l-zh">今日简报为降级运行：{{ _cb.degraded_reason }}</span></div>
-        {% endif %}
-        {% else %}
-        <p class="aib-empty">{{ t('The AI brief has not generated yet today. It rebuilds nightly from the dashboards — check back after the next run, or open the full brief page below.','今日AI简报尚未生成。每晚由看板重新生成 — 请在下次运行后再查看，或打开下方完整简报页。') }}</p>
-        {% endif %}
-        {# 9. Footer receipt — existing cnx-receipt preserved #}
+        {# ABX v2 — the ONE shared body renderer. China lens; no catalysts (china_brief
+           has no forward_watch). The nightly receipt is injected into the footer slot. #}
+        {% if china_brief and (china_brief.get('summary') or china_brief.get('tldr') or china_brief.get('regime_read')) %}
+        {% call aib.aibrief_body(china_brief, 'china', show_catalysts=False) %}
         <div class="cnx-receipt">{{ t('Research context only — not a signal. Generated nightly from the dashboards; full brief at','仅供研究参考 — 非交易信号。每晚由看板生成；完整简报位于') }} <a href="aibrief.html">aibrief.html</a>.</div>
+        {% endcall %}
+        {% else %}
+        <div class="aib2"><div class="aib2-hdr">
+          <div class="aib2-icon" aria-hidden="true">AI</div>
+          <div class="aib2-hdr-meta"><div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · China &amp; HK synthesis</span><span class="l-zh">AI 每日简报 · 中港综合</span></div></div>
+          <span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
+        </div>
+        <p class="aib-empty">{{ t('The AI brief has not generated yet today. It rebuilds nightly from the dashboards — check back after the next run, or open the full brief page below.','今日AI简报尚未生成。每晚由看板重新生成 — 请在下次运行后再查看，或打开下方完整简报页。') }}
+        <div class="cnx-receipt" style="margin-top:12px">{{ t('Research context only — not a signal. Generated nightly from the dashboards; full brief at','仅供研究参考 — 非交易信号。每晚由看板生成；完整简报位于') }} <a href="aibrief.html">aibrief.html</a>.</div></div>
+        {% endif %}
       </div>
     </div>
   </div>

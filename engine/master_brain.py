@@ -70,16 +70,80 @@ DISCLAIMER_TEXT = (
     "forecasts."
 )
 
+# ── ABX v2 shared prompt blocks ──────────────────────────────────────────────
+# The brief is a Tier-1 surface (docs/DESIGN_DOCTRINE.md), so the prompt IS a
+# copywriting contract: the model reads machine state but may only ever emit
+# plain language. engine-side style lint (_style_violations) enforces the bans.
+
+_VOICE_LAW = (
+    "VOICE — HARD RULES (any violation makes the reply invalid):\n"
+    "- Write for a smart reader with NO finance training. Short sentences, plain "
+    "words. Every line must pass the test: would a taxi driver get it on first read?\n"
+    "- The state JSON is for YOUR eyes only. NEVER let its vocabulary leak into the "
+    "output: no snake_case tokens (growth_score, mom_20d, cross_asset_confirm, "
+    "neural_web, cphase_days_left), no 'panel:'/'panels:' citations, no block or "
+    "schema names, no quadrant codes — write 'Goldilocks', never 'Q1 Goldilocks'.\n"
+    "- NEVER write σ, z-scores, percentiles, basis points, or 'n='. Translate "
+    "magnitude into meaning: not 'semis RS -2.5σ' but 'chip stocks have lagged the "
+    "market by the widest margin in about a year'; not 'MVRV-Z 20th percentile' but "
+    "'cheap by the on-chain yardstick — near the bottom of its historical range'.\n"
+    "- Numbers: at most one per sentence, and only ones a person would say out loud "
+    "— a price, a percent change, a count of days or flags, a date. Every number "
+    "carries its meaning in the same sentence, or gets dropped for the meaning alone.\n"
+    "- Acronyms: only front-page ones (Fed, ETF, GDP, CPI). Everything else in plain "
+    "words, optionally with the code in parentheses once: 'China's 7-day interbank "
+    "rate (FR007)', 'the reserve-requirement cut that frees banks to lend (RRR)', "
+    "'leveraged bets outstanding (open interest)'.\n"
+    "- Point at evidence by its desk in plain words — 'the bond desk', 'the China "
+    "liquidity read', 'the ETF-flow tracker' — never by an internal key.\n"
+)
+
+_REGIME_MAP_LAW = (
+    "REGIME = POSITION, NOT A BOX: a regime label is a position on a map, and the "
+    "state tells you where inside the regime we sit and which border we are drifting "
+    "toward (regime_path, transition/pending fields, score drifts, cycle clocks). "
+    "Never present the label as a settled fact. Say both things: 'still Goldilocks "
+    "on the map, but growth has cooled to the edge — one more soft month tips it "
+    "into Reflation.' When the state says the regime is transitioning or a flip is "
+    "pending, that drift IS the story — lead with it.\n"
+)
+
+_STANCE_LAW = (
+    "STANCE: the LAST tldr item starts exactly 'What to do:' and uses ONLY this "
+    "vocabulary: Act · Get ready · Watch — don't chase · Protect gains · Stand aside "
+    "· Ignore. It RESTATES the deterministic system's own posture from the state "
+    "(the playbook posture, the allocation, the risk label) in plain words — you may "
+    "soften it, you may never go further than the system does. 'Watch — don't "
+    "chase' is a complete, honest answer.\n"
+)
+
+_THESIS_RULE = (
+    "THE STANDING PLAYBOOK: a working hypothesis is on file below. The reader knows "
+    "it by heart — NEVER restate its wording, and never mention it in tldr, "
+    "regime_read, conflicts or transmission. Fill `rotation_check` ONLY when today's "
+    "evidence meaningfully moved for or against it (a leg confirmed, a leg broken, "
+    "the sequence running backwards); on an ordinary day OMIT the field entirely. "
+    "When you do write it: ≤40 words, plain words, name what moved.\n"
+)
+
 # Shared output contract + tail every lens reuses, so the three system prompts and
-# the client renderer stay identical bar the domain framing.
+# the renderers stay identical bar the domain framing.
 _SCHEMA_TAIL = (
     "Return ONLY a JSON object (no markdown fences) with keys:\n"
-    "  summary: string — one-line TL;DR of the read.\n"
-    "  regime_read: string — 1-2 short paragraphs: where we are.\n"
-    "  conflicts: array of strings — each a specific signal conflict + what it implies.\n"
-    "  rotation_check: string — is reality tracking the working thesis? where it diverges.\n"
-    "  transmission: array of strings — key second-order chains to watch.\n"
-    "  watch_items: array of strings — what would change this read / what to watch next.\n"
+    "  tldr: array of 3-5 strings — the glance read, most important first. Each "
+    "item 'Head: rest' (Head ≤3 words, rest ≤14 words). The LAST item is the "
+    "stance line ('What to do: ...' per the STANCE rule).\n"
+    "  summary: string — ONE sentence, ≤22 words, plain words.\n"
+    "  regime_read: string — ≤2 short paragraphs: where we are on the map, which "
+    "way we're drifting, and what today's dominant driver is.\n"
+    "  conflicts: array of 1-3 strings — each 'Head: A says X, B says Y — what "
+    "that implies', ≤30 words.\n"
+    "  transmission: array of 0-2 strings — each a chain reaction in the exact "
+    "shape 'If <what is happening> keeps up → <what follows next>', ≤24 words.\n"
+    "  rotation_check: OPTIONAL string — see the STANDING PLAYBOOK rule; omit on "
+    "an ordinary day.\n"
+    "  watch_items: array of 2-4 strings — each 'Trigger: what it means', ≤16 "
+    "words.\n"
     "  confidence: one of \"low\",\"medium\",\"high\"."
 )
 
@@ -131,154 +195,107 @@ _MACRO_THESES_TAIL = (
 )
 
 MASTER_SYSTEM_TMPL = (
-    "You are a senior cross-asset macro strategist writing a SHORT morning brief for "
-    "a solo top-down trader. You are given the trader's OWN deterministic dashboard "
-    "outputs (already computed, validated signals) across macro regime, China, Hong "
-    "Kong, commodities, FX, BONDS (the leading-family credit / curve / rates-vol / "
-    "sovereign read), and Bitcoin, plus an optional FOMC catalyst digest. Your job is "
-    "SYNTHESIS across them — not to recompute or invent numbers.\n\n"
-    "SAME-TAPE RULE (critical): every input block carries `_tape_family` and `_lead_lag` "
-    "metadata. Blocks sharing the SAME `_tape_family` (e.g. price_regime) are derived "
-    "from the SAME underlying price series — they are ONE observation of that series, "
-    "not independent confirmation. Do NOT count them as separate evidence: `macro`, "
-    "`forex`, `commodity`, `cross_asset_confirm`, `btc`, and `entry_quality_breadth` are "
-    "all price_regime reads. A conflict between them is a DECOMPOSITION of one tape, not "
-    "a cross-asset disagreement. True independence only exists across tape families "
-    "(price_regime vs rates_credit vs policy_text). `_lead_lag: leading` means a "
-    "defensible but noisy forward horizon exists; `coincident` means moves-with, not ahead-of.\n\n"
-    "Rules:\n"
-    "- Use ONLY the provided state. Never fabricate a level, score, or signal. If "
-    "something isn't in the state, say it's not available.\n"
-    "- Your value is the CROSS-ASSET view: the unified regime read, where signals "
-    "CONFLICT (e.g. risk-on FX vs a cautious macro-risk gauge) and what that implies, "
-    "and second-order transmission chains worth watching.\n"
-    "- Use the `bonds` block and `cross_asset_confirm` as the LEADING-FAMILY cross-check: "
-    "state plainly whether bonds + FX CONFIRM or DIVERGE from the equity regime, and lean "
-    "on the bond `drivers_for` hand-off for what bonds imply for FX / commodities / BTC / "
-    "equities. Be honest about lead-lag: only credit/EBP and the curve (NTFS) have a "
-    "defensible — and noisy — LEADING horizon; rates-vol-vs-VIX, the dollar/EM-FX risk-off "
-    "read and FX carry are COINCIDENT confirmation / fragility gauges, and the stock-bond "
-    "correlation is a slow regime descriptor. Do NOT claim bonds 'predict' an equity move. "
-    "A `cross_asset_confirm` divergence is an attention flag, not a forecast.\n"
-    "- Use `rate_inflation_transmission` for the rate/inflation backdrop: state the rates "
-    "regime, the inflation read (core PCE vs the 2% target) and whether expectations are "
-    "anchored, then name which assets it is a current headwind / tailwind for and which "
-    "causal chains are active. The coefficients are MEASURED forward IC but `scored` is "
-    "false on purpose — the gate found no leg robust enough to time returns, so frame it "
-    "as RISK (which assets are pressured), never as a return forecast.\n"
-    "- The nested `yield_curve` is the curve read: state the regime (bull/bear × steepener/"
-    "flattener) and its Fed-cycle phase, the recession-dashboard risk (n flags from the "
-    "near-term forward spread / 3m10y probit / un-inversion / TP-adjusted slope), the policy "
-    "stance, and the curve's style tilt (value vs growth, size). Display-only context — the "
-    "curve is REACTIVE; narrate the backdrop, never call it a timing signal.\n"
-    "- OPEN with the dominant driver in `macro.market_drivers` when one is present — "
-    "name it, the evidence, and what would invalidate it. It is a DETERMINISTIC "
-    "cross-asset attribution: narrate it, do not recompute it. If it reads 'mixed' or "
-    "'quiet', say so plainly rather than inventing a driver.\n"
-    "- If `fed_stance` is present, anchor the rate read with the EXPLICIT Fed reaction "
-    "function (hawkish/neutral/dovish) + the market-vs-Fed gap — a display-only read off "
-    "the implied path + statement guidance (reactive, not a forecast). If `policy_intel` "
-    "is present, factor the interest-driven (realpolitik) Fed/Admin thesis and the "
-    "targeted-vs-starved capital rotation into your regime_read and rotation_check, "
-    "honoring its FACT/INFERENCE/PRIOR labels — never trade a PRIOR or THEORY as fact.\n"
-    "- If `entry_quality_breadth` is present, it is a RISK / ENTRY-QUALITY breadth check "
-    "from the MTF confluence buy-filter across the US deep equity universe — it appears "
-    "ONLY because that breadth DISAGREES with the regime read, so treat it as a CALIBRATION "
-    "check: read its `calibration_check` line (e.g. a risk-on regime with few take-quality "
-    "entries = narrow leadership / rotation, not broad conviction). Its `trend_breadth` "
-    "(% above the 200-day) is the regime-tracking read; the long/short state mix is "
-    "short-horizon mean-reversion-oscillator colour, NOT a regime turn — do not read a "
-    "washed-out oscillator at a pullback low as a bear. It is a DRAWDOWN / entry-quality "
-    "read, NEVER a return / alpha signal or an auto-trade trigger; it is ONE input among "
-    "many; and it is a DIFFERENT axis from any cycle 'entry quality' (cycle proximity) — "
-    "do not conflate them. Use it to TEMPER conviction in the regime call, not to flip it.\n"
-    "- Evaluate the trader's working rotation thesis against the actual state; say "
-    "explicitly where reality tracks it and where it diverges.\n"
-    "- If `desk_track_records` is present, CALIBRATE to it: weight each desk's read by its "
-    "measured hit-rate, and treat a cold desk (few scored, tiny sample) or a sub-50% desk as "
-    "weak evidence — don't amplify a conflict that rests only on a desk that has been wrong.\n"
+    "You are a senior cross-asset strategist writing a SHORT plain-language brief for "
+    "the owner of this dashboard system. You are given the system's OWN deterministic "
+    "outputs (already computed, validated) across the US macro regime, China, Hong "
+    "Kong, commodities, FX, bonds/credit, and Bitcoin, plus optional policy digests "
+    "and a Neural-Web context packet. Your job is SYNTHESIS — the one picture the "
+    "individual panels can't see alone — never recomputing or inventing numbers.\n\n"
+    "EVIDENCE RULES:\n"
+    "- Use ONLY the provided state. Never fabricate a level, score, or signal; if "
+    "something is missing or marked stale/absent, say so in one plain line.\n"
+    "- Same-tape rule: blocks sharing a `_tape_family` are ONE observation of the "
+    "same underlying series, not independent confirmation. Independence only exists "
+    "across families (prices vs rates/credit vs policy text). A conflict between "
+    "same-family blocks is a decomposition, not a cross-asset disagreement.\n"
+    "- Open with the dominant driver when the state names one; when it reads mixed "
+    "or quiet, say that plainly rather than inventing a driver.\n"
+    "- Weigh desk track records when present: a cold desk (tiny sample) or a "
+    "sub-50% desk is weak evidence — don't build a conflict on it alone.\n"
     "- Do NOT give position sizes or fire trades — the deterministic system does "
-    "that. Give the read and what to watch.\n"
-    "- Be honest about uncertainty and small samples. Flag conflicts rather than "
-    "papering over them. Cite which dashboard supports each claim.\n"
-    "- If `neural_web` is present in the state, use it to CALIBRATE and cross-check "
-    "your read — never as independent confirmation when a block carries "
-    "_tape_family='nw_synthesis' (those are aggregations of the same US price tape "
-    "the macro block already reads, i.e. decomposition, not independent signal).\n"
-    "- If a neural_web block has stale:true or absent:true, say so plainly "
-    "('X is stale as of DATE' / 'not available') — never paper over a stale or "
-    "absent block by synthesising as if the data were current.\n"
-    "- The neural_web.cortex block is the overnight AI deliberation. When its "
-    "status is 'degraded', treat NW deliberation as absent (one honest line). "
-    "When present, weigh what_fired and deserves_operator as attention flags — "
-    "never as primary signals.\n\n"
-    "Working rotation thesis to test:\n{thesis}\n\n"
+    "that. Give the read and what would change it.\n"
+    "- Macro regimes have few historical cases: frame reads as odds, not forecasts.\n\n"
+    "BLOCK GUIDE (how to use, never how to cite):\n"
+    "- Bonds + the cross-asset check: say plainly whether bonds and credit AGREE "
+    "with the stock market's read or are worried. Credit and the curve lead only "
+    "loosely and noisily; everything else moves with prices — never claim bonds "
+    "'predict' stocks; a divergence is an attention flag, not a forecast.\n"
+    "- Rate/inflation transmission + yield curve: backdrop and risk framing only "
+    "(which assets feel pressure) — never a return forecast or a timing signal.\n"
+    "- Fed stance / policy intel: the Fed's stated stance and the market-vs-Fed "
+    "gap; honor FACT vs INFERENCE vs PRIOR labels — never present a PRIOR as fact.\n"
+    "- Entry-quality breadth (present only when it disagrees with the regime): a "
+    "temper-your-conviction check about how BROAD participation is — never a "
+    "buy/sell read, never a regime flip on its own.\n"
+    "- neural_web: calibration and cross-check; its synthesis blocks re-read the "
+    "same US tape, not new evidence. A degraded overnight review means it is "
+    "absent — one honest line at most.\n\n"
+    + _VOICE_LAW + "\n" + _REGIME_MAP_LAW + "\n" + _STANCE_LAW + "\n" + _THESIS_RULE
+    + "\nWorking playbook on file (do not restate):\n{thesis}\n\n"
     + _SCHEMA_TAIL + _MACRO_THESES_TAIL + _FORWARD_TAIL
 )
 
 CHINA_SYSTEM_TMPL = (
-    "You are a senior China & Hong-Kong equity strategist writing a SHORT brief for a "
-    "solo top-down trader. You are given the trader's OWN deterministic dashboard "
-    "outputs: the China A-share regime (growth/inflation quadrant, PBoC liquidity "
-    "overlay, business-cycle tag, sector relative strength, key ratios incl. "
-    "USD/CNY), the Hong-Kong regime (its global-risk score, the HKD peg state, sector "
-    "RS), and a compact US-macro / commodity / FX BACKDROP. Your job is SYNTHESIS — "
-    "not to recompute or invent numbers.\n\n"
-    "Rules:\n"
-    "- Use ONLY the provided state. Never fabricate a level, score, or signal. If "
-    "something isn't in the state, say it's not available.\n"
-    "- Centre the read on CHINA and HONG KONG; use the US-macro / dollar / global-"
-    "liquidity / commodity backdrop only to explain what is pushing on them.\n"
-    "- China A-shares MEAN-REVERT over short horizons — frame relative-strength "
-    "leaders as potentially EXTENDED, not as guaranteed continuation, and call out "
-    "deep-pullback names as the higher-odds setups. Note where Hong Kong is diverging "
-    "from the mainland because of global risk or the dollar.\n"
-    "- Surface where signals CONFLICT (e.g. easing PBoC liquidity vs a weak growth "
-    "score, or strong sector RS vs a late-cycle tag) and what that implies.\n"
+    "You are a senior China & Hong-Kong strategist writing a SHORT plain-language "
+    "brief for the owner of this dashboard system. You are given the system's OWN "
+    "deterministic outputs: the China A-share regime (growth/inflation position, "
+    "central-bank liquidity overlay, cycle tag, sector strength, key ratios incl. "
+    "USD/CNY), the Hong-Kong regime (global-risk score, currency-peg state, sector "
+    "strength), China policy/news intelligence, and a compact US / dollar / "
+    "commodity backdrop. Your job is SYNTHESIS — never recomputing or inventing "
+    "numbers.\n\n"
+    "EVIDENCE RULES:\n"
+    "- Use ONLY the provided state; anything missing or stale gets one honest "
+    "plain line, never a paper-over.\n"
+    "- Centre the read on China and Hong Kong; the US / dollar / commodity "
+    "backdrop exists only to explain what is pushing on them.\n"
+    "- Mainland A-shares tend to snap BACK over short horizons: frame this week's "
+    "leaders as stretched rather than as proof of continuation, and deep pullbacks "
+    "in good groups as the higher-odds setups. Say where Hong Kong is split from "
+    "the mainland — global risk appetite and the dollar push HK around far more.\n"
+    "- Policy easing and system liquidity can point in opposite directions — when "
+    "they do, that tension is usually the story: has the easing actually reached "
+    "the system, or is it still stuck in the pipes?\n"
     "- Do NOT give position sizes or fire trades — the deterministic system does "
-    "that. Give the read and what to watch.\n"
-    "- Be honest about uncertainty and small samples. Cite which panel supports each "
-    "claim.\n"
-    "- If `neural_web` is present in the state, use it to CALIBRATE and cross-check "
-    "your read — never as independent confirmation when a block carries "
-    "_tape_family='nw_synthesis' (same-tape decomposition, not independent signal).\n"
-    "- If a neural_web block has stale:true or absent:true, say so plainly "
-    "('X is stale as of DATE' / 'not available') — never paper over a stale block.\n"
-    "- The neural_web.cortex block is the overnight AI deliberation. When degraded, "
-    "treat NW deliberation as absent (one honest line). When present, weigh "
-    "what_fired and deserves_operator as attention flags, never as primary signals.\n\n"
-    "Working thesis to test:\n{thesis}\n\n"
+    "that. Be honest about uncertainty and small samples.\n"
+    "- neural_web blocks: calibration and cross-check only; a degraded overnight "
+    "review means it is absent — one honest line at most.\n\n"
+    + _VOICE_LAW + "\n" + _REGIME_MAP_LAW + "\n" + _STANCE_LAW + "\n" + _THESIS_RULE
+    + "\nWorking playbook on file (do not restate):\n{thesis}\n\n"
     + _SCHEMA_TAIL
 )
 
 BTC_SYSTEM_TMPL = (
-    "You are a senior crypto & macro strategist writing a SHORT brief on BITCOIN for "
-    "a solo trader. You are given the trader's OWN deterministic Bitcoin-Vector "
-    "outputs: the composite risk regime & optimal allocation, momentum/structure, "
-    "the halving-cycle position, valuation (MVRV-Z, NUPL, Mayer, reserve risk), "
-    "leverage & positioning (open interest, funding, basis, CME CoT), options "
-    "structure (DVOL, skew, put/call, gamma), on-chain demand (Coinbase premium, "
-    "SSR, miners), spot-ETF flows, and the macro-liquidity backdrop (net liquidity, "
-    "global M2, real yields, DXY, VIX, cross-asset correlations). Your job is "
-    "SYNTHESIS across these layers — not to recompute or invent numbers.\n\n"
-    "Rules:\n"
-    "- Use ONLY the provided state. Never fabricate a level, score, or signal. If "
-    "something isn't in the state, say it's not available.\n"
-    "- Centre the read on BITCOIN: tie the cycle/valuation position to the liquidity "
-    "backdrop and to positioning/leverage. Flag when valuation, leverage and flows "
-    "DISAGREE (e.g. cheap MVRV but crowded funding, or strong ETF flows into a "
-    "late-cycle valuation).\n"
-    "- Evaluate the working liquidity thesis against the actual state; say where "
-    "reality tracks it and where it diverges.\n"
-    "- Do NOT give position sizes or fire trades — the deterministic system already "
-    "sets the allocation. Give the read and what to watch.\n"
-    "- Be honest about uncertainty and small samples (few crypto cycles). Cite which "
-    "layer supports each claim.\n\n"
-    "Working liquidity thesis to test:\n{thesis}\n\n"
+    "You are a senior crypto & macro strategist writing a SHORT plain-language "
+    "brief on BITCOIN for the owner of this dashboard system. You are given the "
+    "system's OWN deterministic Bitcoin outputs — the composite risk regime and "
+    "its allocation, momentum and structure, the halving-cycle clock, on-chain "
+    "valuation, leverage and positioning, options, spot-ETF flows, miner/on-chain "
+    "demand — plus the global-liquidity and US-macro backdrop and a Neural-Web "
+    "context packet. Your job is SYNTHESIS across these layers — never recomputing "
+    "or inventing numbers.\n\n"
+    "EVIDENCE RULES:\n"
+    "- Use ONLY the provided state; anything missing or stale gets one honest "
+    "plain line, never a paper-over.\n"
+    "- Tie the cycle position and valuation to the liquidity backdrop and to "
+    "leverage/flows. When they disagree — cheap valuation inside a still-falling "
+    "structure, strong ETF inflows against crowded leverage — that disagreement IS "
+    "the story.\n"
+    "- The system's allocation is the system's call: narrate it (including any "
+    "override, honestly) — never argue the reader into overriding it, and never "
+    "set sizes yourself.\n"
+    "- This brief refreshes every few days, so write it to KEEP: the standing "
+    "picture plus the concrete triggers that would change it, rather than "
+    "day-count minutiae that ages overnight.\n"
+    "- Few crypto cycles exist — frame history-based claims as odds, not laws.\n"
+    "- neural_web blocks: calibration and cross-check only; a degraded overnight "
+    "review means it is absent — one honest line at most.\n\n"
+    + _VOICE_LAW + "\n" + _REGIME_MAP_LAW + "\n" + _STANCE_LAW + "\n" + _THESIS_RULE
+    + "\nWorking playbook on file (do not restate):\n{thesis}\n\n"
     + _SCHEMA_TAIL
 )
 
-_BRIEF_FIELDS = ("summary", "regime_read", "conflicts", "rotation_check",
+_BRIEF_FIELDS = ("tldr", "summary", "regime_read", "conflicts", "rotation_check",
                  "transmission", "watch_items", "confidence")
 
 
@@ -466,6 +483,22 @@ def _brief_age_days(prev: dict | None) -> float | None:
         return None
 
 
+def _interval_for(lens: str, cfg: dict) -> int:
+    """Resolve the regeneration interval for a lens (spec §7).
+
+    Resolution order: per-lens override (interval_days_by_lens.<lens>)
+    → global interval_days → 1.  Result clamped 1..7.  Exception-safe.
+    """
+    try:
+        by_lens = cfg.get("interval_days_by_lens") or {}
+        if isinstance(by_lens, dict) and lens in by_lens:
+            return max(1, min(7, int(by_lens[lens])))
+        global_val = cfg.get("interval_days", 1)
+        return max(1, min(7, int(global_val)))
+    except Exception:  # noqa: BLE001
+        return 1
+
+
 def _leg(x):
     """Compact a conditions leg dict down to its headline fields."""
     if isinstance(x, dict):
@@ -474,7 +507,138 @@ def _leg(x):
     return x
 
 
-def _macro_summary(m: dict) -> dict:
+def _regime_drift_strings(now_val, val_5, val_20, dimension: str) -> dict:
+    """Compose plain drift strings from score deltas (spec §5a).
+
+    Direction word from sign of delta only:
+      growth axis:    rising→strengthening, falling→cooling, |delta|<0.02→flat
+      inflation axis: rising→warming, falling→cooling, |delta|<0.02→flat
+    Never raises — returns {} on any exception.
+    """
+    try:
+        if now_val is None:
+            return {}
+        out: dict = {"now": round(float(now_val), 4)}
+
+        def _dir_word(delta: float) -> str:
+            if abs(delta) < 0.02:
+                return "flat"
+            if dimension == "growth":
+                return "strengthening" if delta > 0 else "cooling"
+            else:  # inflation
+                return "warming" if delta > 0 else "cooling"
+
+        if val_5 is not None:
+            d5 = float(now_val) - float(val_5)
+            out["vs_5d"] = round(float(val_5), 4)
+            out["delta_5d"] = round(d5, 4)
+            out["drift_5d"] = (
+                f"{dimension} {now_val:+.2f} now vs {val_5:+.2f} 5d ago "
+                f"({_dir_word(d5)})"
+            )
+        if val_20 is not None:
+            d20 = float(now_val) - float(val_20)
+            out["vs_20d"] = round(float(val_20), 4)
+            out["delta_20d"] = round(d20, 4)
+            out["drift_20d"] = (
+                f"{dimension} {now_val:+.2f} now vs {val_20:+.2f} 20d ago "
+                f"({_dir_word(d20)})"
+            )
+        return out
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _regime_path_drift(history_path) -> dict:
+    """Read growth/inflation drift from regime_history.parquet (spec §5a).
+
+    Reads last row + rows 5 and 20 positions back.
+    Fail-open: returns {} on ANY exception (file absent, corrupt, column mismatch).
+    """
+    try:
+        import pandas as pd  # lazy — master_brain avoids pandas at import
+        df = pd.read_parquet(history_path)
+        if df is None or len(df) < 1:
+            return {}
+        last = df.iloc[-1]
+        g_now = last.get("growth_score") if hasattr(last, "get") else last["growth_score"] if "growth_score" in df.columns else None
+        i_now = last.get("inflation_score") if hasattr(last, "get") else last["inflation_score"] if "inflation_score" in df.columns else None
+
+        # Safely pull a value from row at offset from the end
+        def _back(col, n):
+            if col not in df.columns or len(df) <= n:
+                return None
+            v = df.iloc[-(n + 1)][col]
+            try:
+                import math
+                return None if math.isnan(float(v)) else float(v)
+            except (TypeError, ValueError):
+                return None
+
+        g5 = _back("growth_score", 5)
+        g20 = _back("growth_score", 20)
+        i5 = _back("inflation_score", 5)
+        i20 = _back("inflation_score", 20)
+
+        growth_drift = _regime_drift_strings(
+            float(g_now) if g_now is not None else None, g5, g20, "growth"
+        )
+        inflation_drift = _regime_drift_strings(
+            float(i_now) if i_now is not None else None, i5, i20, "inflation"
+        )
+        out: dict = {}
+        if growth_drift:
+            out["growth"] = growth_drift
+        if inflation_drift:
+            out["inflation"] = inflation_drift
+        return out
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _build_regime_path(m: dict, root=None) -> dict:
+    """Compose the regime_path sub-dict from raw regime latest dict + history parquet (spec §5a).
+
+    Never raises — entirely fail-open; missing keys or missing file → fields omitted.
+    """
+    out: dict = {}
+    try:
+        # From the raw latest dict: transition fields + flip info
+        ts = m.get("transition_state")
+        if ts is not None:
+            out["transition_state"] = ts
+        tsr = m.get("transition_state_raw")
+        if tsr is not None:
+            out["transition_state_raw"] = tsr
+        tdr = m.get("transition_dwell_remaining")
+        if tdr is not None:
+            out["transition_dwell_remaining"] = tdr
+        fc = m.get("flip_condition")
+        if fc is not None:
+            out["flip_condition"] = fc
+        fm = m.get("flip_margin")
+        if fm is not None:
+            out["flip_margin"] = fm
+        # transition_flags: names only of True flags, cap 4 (spec §5a)
+        tf = m.get("transition_flags")
+        if isinstance(tf, dict):
+            active = [k for k, v in tf.items() if v][:4]
+            if active:
+                out["transition_flags"] = active
+
+        # Drift block from history parquet — fail-open on any exception
+        if root is not None:
+            import pathlib
+            hp = pathlib.Path(root) / "data" / "regime" / "regime_history.parquet"
+            drift = _regime_path_drift(hp)
+            if drift:
+                out["drift"] = drift
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
+def _macro_summary(m: dict, root=None) -> dict:
     cond = m.get("conditions") or {}
     dis = m.get("dislocation") or {}
     mr = m.get("macro_risk") or {}
@@ -486,7 +650,7 @@ def _macro_summary(m: dict) -> dict:
         drivers = {"primary": mdr.get("primary_label"), "direction": mdr.get("direction"),
                    "verdict": mdr.get("verdict"), "confidence": mdr.get("confidence"),
                    "evidence": mdr.get("evidence"), "invalidation": mdr.get("invalidation")}
-    return {
+    summary = {
         "date": m.get("date"), "quad": m.get("quad"), "quad_name": m.get("quad_name"),
         "label": m.get("label"),
         "growth_score": m.get("growth_score"), "inflation_score": m.get("inflation_score"),
@@ -502,6 +666,11 @@ def _macro_summary(m: dict) -> dict:
                      "dial_score": dial.get("score") if isinstance(dial, dict) else dial},
         "market_drivers": drivers,
     }
+    # regime_path: always additive — never raises, never blocks (spec §5a)
+    rp = _build_regime_path(m, root)
+    if rp:
+        summary["regime_path"] = rp
+    return summary
 
 
 def _macro_backdrop(m: dict | None) -> dict | None:
@@ -891,7 +1060,7 @@ def gather_state(root: Path | None = None) -> dict:
     """
     root = Path(root) if root else config.ROOT
     macro = _read_json(root / "data/regime/latest.json") or {}
-    macro_sum = _macro_summary(macro)
+    macro_sum = _macro_summary(macro, root)
     # Attach tape provenance to the macro block (W7 #35)
     macro_sum["_tape_family"] = "price_regime"
     macro_sum["_lead_lag"] = "coincident"
@@ -1143,6 +1312,14 @@ def gather_china_state(root: Path | None = None) -> dict:
             "growth_confidence", "inflation_confidence", "confidence",
             "liquidity_overlay", "cycle_tag", "pending_quad", "pending_days",
             "confirming", "contradicting", "sector_rs", "pair_ratios") if k in ch}
+        # regime_path for china: same-shape drift from china regime history (spec §5a)
+        try:
+            _ch_hp = root / "data" / "china_regime" / "regime_history.parquet"
+            _ch_drift = _regime_path_drift(_ch_hp)
+            if _ch_drift:
+                state["china"]["regime_path"] = {"drift": _ch_drift}
+        except Exception:  # noqa: BLE001 — silently omit, never block
+            pass
     hk = _read_json(root / "data/hk_regime/latest.json")
     if hk:
         state["hk"] = {k: hk.get(k) for k in (
@@ -1234,6 +1411,12 @@ def gather_btc_state(root: Path | None = None) -> dict:
     bonds = _bonds_backdrop(root)
     if bonds:
         state["bonds"] = bonds
+    # ADB-W1 / spec §5b: inject NW BTC context packet (lazy import, never fatal)
+    try:
+        from engine.neuralweb import brief_context  # noqa: PLC0415
+        state["neural_web"] = brief_context.btc_slice(root)
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
     return state
 
 
@@ -1283,24 +1466,29 @@ def _mb_prompt_hash(model: str, system: str, user: str) -> str:
     return h.hexdigest()
 
 
-def _mb_reply_cache_path(prompt_hash: str, cfg: dict):
+def _mb_reply_cache_path(prompt_hash: str, cfg: dict, root=None, create: bool = False):
+    """Cache file path, ROOT-AWARE: fixture runs (root=tmp) must never touch the
+    real data/ tree (MM_DATA_GUARD; the root-param≠data_dir bug class). The dir is
+    only created on writes — a read probe leaves the tree untouched."""
     from pathlib import Path as _P
-    cdir = config.ROOT / cfg.get("reply_cache_dir", "data/master_brain/reply_cache")
-    _P(cdir).mkdir(parents=True, exist_ok=True)
-    return _P(cdir) / f"{prompt_hash}.txt"
+    base = _P(root) if root else config.ROOT
+    cdir = base / cfg.get("reply_cache_dir", "data/master_brain/reply_cache")
+    if create:
+        cdir.mkdir(parents=True, exist_ok=True)
+    return cdir / f"{prompt_hash}.txt"
 
 
-def _mb_reply_cache_get(prompt_hash: str, cfg: dict) -> str | None:
-    p = _mb_reply_cache_path(prompt_hash, cfg)
+def _mb_reply_cache_get(prompt_hash: str, cfg: dict, root=None) -> str | None:
+    p = _mb_reply_cache_path(prompt_hash, cfg, root)
     try:
         return p.read_text() if p.exists() else None
     except Exception:  # noqa: BLE001
         return None
 
 
-def _mb_reply_cache_put(prompt_hash: str, text: str, cfg: dict) -> None:
+def _mb_reply_cache_put(prompt_hash: str, text: str, cfg: dict, root=None) -> None:
     try:
-        _mb_reply_cache_path(prompt_hash, cfg).write_text(text)
+        _mb_reply_cache_path(prompt_hash, cfg, root, create=True).write_text(text)
     except Exception:  # noqa: BLE001
         pass
 
@@ -1328,9 +1516,9 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     """Return (reply_text, degraded_reason). Never raises.
 
     Determinism kit (W7 #33): temperature=0 + seed=0 for greedy/deterministic
-    sampling. Content-hash cache: SHA-256(model‖system‖user) → cached reply text;
-    same inputs always yield the same output so the same day's theses ledger rows
-    are not polluted by sampling noise across re-runs.
+    sampling. Content-hash cache: SHA-256(model‖system‖user) → cached reply text.
+    Cache stores the FINAL post-lint text (updated by synthesize() after lint);
+    on a cache HIT the stored text is already post-lint — synthesize() skips lint.
 
     W5 ITEM 1 — 401-fallback: master_brain defaults to DeepSeek as its primary
     provider (llm_base_url / api_key_env configurable). The waterfall is built via
@@ -1353,13 +1541,9 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
                   "client": client, "model": model,
                   "usage_lane": "master-brain"}]
 
-    # content-hash cache check (graded producer theses land in a ledger)
-    phash = _mb_prompt_hash(model, system, user)
-    cached = _mb_reply_cache_get(phash, cfg)
-    if cached is not None:
-        log.debug("master_brain: reply cache HIT (%s)", phash[:12])
-        return cached, None
-
+    # NB: no caching here — synthesize() is the SOLE cache reader/writer, so only
+    # FINAL post-lint text ever lands under the prompt hash (a raw pre-lint reply
+    # cached here would dodge the style lint on the next same-day run).
     max_tokens = int(cfg.get("max_tokens", 4000))
 
     def _do_call(_client, _model: str):
@@ -1389,10 +1573,116 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("master_brain model call failed (%s)", e)
         return None, "llm_error"
-
-    if text:
-        _mb_reply_cache_put(phash, text, cfg)
     return text, reason
+
+
+# --------------------------------------------------------------------------- #
+# style lint — deterministic banned-token checker (spec §4)
+# --------------------------------------------------------------------------- #
+import re as _re
+
+# Paren-gated tokens: these are violations ONLY when NOT inside parentheses.
+# Pattern: the token appears in text NOT preceded by "(" context.
+_PAREN_GATED_TOKENS = (
+    "FR007", "MVRV", "NUPL", "SSR", "DVOL", "EBP", "SOFR", "IORB", "LPR", "RRR",
+)
+
+# Hard-banned tokens (case-insensitive, always a violation)
+_HARD_BANNED_TOKENS = (
+    "cross_asset_confirm", "neural_web", "nw_synthesis", "tape_family",
+    "cphase", "mvrv_z", "funding_z", "etf_flow_z", "oi_mcap", "hy_oas",
+    "ntfs", "display-tier", "display_only",
+)
+
+# Compiled patterns (module-level; re-use across calls)
+_RE_SNAKE = _re.compile(r"\b[A-Za-z]+_[A-Za-z0-9_]+\b")
+_RE_SIGMA = _re.compile(r"σ|\bz[- ]?scores?\b|[+-]?\d+(?:\.\d+)?\s*σ|%ile\b|\bpctile\b|\bpercentile\b", _re.IGNORECASE)
+_RE_PANEL = _re.compile(r"\bpanels?\s*:", _re.IGNORECASE)
+_RE_DASHBOARD = _re.compile(r"\bdashboards?\s*:", _re.IGNORECASE)
+_RE_QUAD = _re.compile(r"\bQ[1-4]\b")
+_RE_HARD_BANNED = _re.compile(
+    r"\b(" + "|".join(_re.escape(t) for t in _HARD_BANNED_TOKENS) + r")\b",
+    _re.IGNORECASE,
+)
+
+# For paren-gated: find occurrences of the token NOT inside parens.
+# We match "(... TOKEN ...)" as allowed; bare TOKEN is a violation.
+def _paren_gated_violations(text: str) -> list[str]:
+    """Return violations for paren-gated tokens found OUTSIDE parentheses."""
+    violations: list[str] = []
+    for token in _PAREN_GATED_TOKENS:
+        # Find all occurrences of token (case-sensitive, they are uppercase codes)
+        for m in _re.finditer(_re.escape(token), text):
+            start = m.start()
+            # Check if this occurrence is inside parentheses: scan left for '(' before ')'
+            prefix = text[:start]
+            open_count = prefix.count("(") - prefix.count(")")
+            if open_count <= 0:
+                violations.append(f"paren-gated token outside parens: {token}")
+                break  # one violation per token
+    return violations
+
+
+def _style_violations(text: str) -> list[str]:
+    """Return list of style violation descriptions for a single string (spec §4).
+
+    Checks: snake_case, sigma/z/percentile forms, panel citations, quad codes,
+    hard-banned tokens, paren-gated tokens (violation ONLY outside parens).
+    Returns [] on any exception (degrade-never-raise).
+    """
+    if not isinstance(text, str) or not text:
+        return []
+    try:
+        violations: list[str] = []
+
+        # 1. snake_case tokens
+        for m in _RE_SNAKE.finditer(text):
+            violations.append(f"snake_case: {m.group()}")
+
+        # 2. sigma/z/percentile forms
+        for m in _RE_SIGMA.finditer(text):
+            violations.append(f"sigma/z/pctile: {m.group()}")
+
+        # 3. panel citations (colon form only)
+        for m in _RE_PANEL.finditer(text):
+            violations.append(f"panel citation: {m.group()}")
+        for m in _RE_DASHBOARD.finditer(text):
+            violations.append(f"dashboard citation: {m.group()}")
+
+        # 4. quad codes
+        for m in _RE_QUAD.finditer(text):
+            violations.append(f"quad code: {m.group()}")
+
+        # 5. hard-banned tokens
+        for m in _RE_HARD_BANNED.finditer(text):
+            violations.append(f"banned token: {m.group()}")
+
+        # 6. paren-gated tokens (only when outside parens)
+        violations.extend(_paren_gated_violations(text))
+
+        return violations
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _collect_style_violations(parsed: dict) -> list[str]:
+    """Collect style violations across all LLM string fields of a parsed brief reply."""
+    fields_to_check: list[str] = []
+    # Scalar string fields
+    for k in ("summary", "regime_read", "rotation_check", "forward_read"):
+        v = parsed.get(k)
+        if isinstance(v, str):
+            fields_to_check.append(v)
+    # List fields (each item individually)
+    for k in ("tldr", "conflicts", "transmission", "watch_items"):
+        for item in (parsed.get(k) or []):
+            if isinstance(item, str):
+                fields_to_check.append(item)
+
+    all_violations: list[str] = []
+    for text in fields_to_check:
+        all_violations.extend(_style_violations(text))
+    return all_violations
 
 
 # --------------------------------------------------------------------------- #
@@ -1404,10 +1694,11 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
     cfg = cfg or _cfg()
     spec = LENSES.get(lens, LENSES["macro"])
     brief = {
-        "schema": "master_brief.v1", "lens": lens, "is_context_only": True,
+        "schema": "master_brief.v2", "lens": lens, "is_context_only": True,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": cfg.get("llm_model", "deepseek-v4-pro"),
         "state_asof": _state_asof(state),
+        "tldr": [],
         "summary": None, "regime_read": None, "conflicts": [], "rotation_check": None,
         "transmission": [], "watch_items": [], "confidence": "low",
         "theses": [],    # macro-lens producer leans (always present → additive when absent)
@@ -1417,7 +1708,22 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
     user = ("Today's deterministic state (JSON). Synthesize per your "
             "instructions.\n<state>\n"
             + json.dumps(state, indent=2, default=str) + "\n</state>")
-    reply, reason = _call_model(system, user, cfg)
+
+    # _call_model handles cache GET (returns cached if hit) and the raw provider call.
+    # Content-hash cache, ROOT-AWARE (spec §4): synthesize is the SOLE cache
+    # reader/writer, so only FINAL post-lint text ever lands under the prompt
+    # hash — a cache hit therefore skips both the (paid) call AND the lint.
+    # Root-awareness keeps fixture runs inside tmp roots (MM_DATA_GUARD).
+    model = cfg.get("llm_model", "deepseek-v4-pro")
+    phash = _mb_prompt_hash(model, system, user)
+    cached = _mb_reply_cache_get(phash, cfg, root)
+    _cache_was_hit = cached is not None
+    if _cache_was_hit:
+        log.debug("master_brain: reply cache HIT (%s)", phash[:12])
+        reply, reason = cached, None
+    else:
+        reply, reason = _call_model(system, user, cfg)
+
     brief["raw_text"] = reply
     if reply is None:
         brief["degraded_reason"] = reason
@@ -1426,6 +1732,43 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
     if not isinstance(parsed, dict):
         brief["degraded_reason"] = reason or "unparseable_reply"   # surfaces "truncated"
         return brief
+
+    # Style lint + ONE rewrite retry (spec §4).
+    # Skip lint on cache hits — stored text was already linted on the run that wrote it.
+    style_flags: list[str] = []
+    if not _cache_was_hit:
+        try:
+            violations = _collect_style_violations(parsed)
+            if violations:
+                # Build a deduplicated list of banned token names for the rewrite prompt
+                banned_list = list(dict.fromkeys(v.split(": ", 1)[-1] for v in violations))[:15]
+                rewrite_system = (
+                    "Your brief contains banned machine tokens: "
+                    + ", ".join(banned_list)
+                    + ". Rewrite the SAME JSON — identical structure and claims — "
+                    "replacing every banned token with plain language a non-finance "
+                    "reader understands. Return only the JSON."
+                )
+                rw_reply, _rw_reason = _call_model(rewrite_system, reply, cfg)
+                if rw_reply:
+                    rw_parsed = _extract_json(rw_reply)
+                    if isinstance(rw_parsed, dict):
+                        rw_violations = _collect_style_violations(rw_parsed)
+                        if len(rw_violations) <= len(violations):
+                            # Rewrite is better (or no worse) — accept it
+                            reply = rw_reply
+                            parsed = rw_parsed
+                            violations = rw_violations
+                style_flags = violations
+            # Cache the FINAL post-lint text under the ORIGINAL prompt hash. On a
+            # lint failure above we cache NOTHING (next run re-calls and re-lints)
+            # — never a raw pre-lint reply that would dodge the lint on a hit.
+            _mb_reply_cache_put(phash, reply, cfg, root)
+        except Exception:  # noqa: BLE001 — degrade, never raise
+            pass
+
+    brief["style_flags"] = style_flags
+
     for k in _BRIEF_FIELDS:
         if k in parsed:
             brief[k] = parsed[k]
@@ -1472,6 +1815,427 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
     return brief
 
 
+# --------------------------------------------------------------------------- #
+# key_facts builders (spec §6) — deterministic chip rail, bilingual at build
+# --------------------------------------------------------------------------- #
+
+def _prettify(s) -> str:
+    """Prettify an enum string: replace underscores with spaces, title-case."""
+    return str(s).replace("_", " ").title() if s is not None else ""
+
+
+# quad_name → (EN display, ZH display)
+_QUAD_NAME_MAP: dict[str, tuple[str, str]] = {
+    "goldilocks":  ("Goldilocks",      "金发姑娘(不冷不热)"),
+    "reflation":   ("Reflation",       "再通胀"),
+    "stagflation": ("Stagflation",     "滞胀"),
+    "deflation":   ("Deflation",       "通缩/放缓"),
+}
+_QUAD_TONE: dict[str, str] = {
+    "goldilocks": "good", "reflation": "info",
+    "stagflation": "warn", "deflation": "bad",
+}
+
+
+def _quad_display(quad_name, shifting: bool) -> tuple[str, str, str]:
+    """Return (value_en, value_zh, tone) for a quad_name, with optional shifting suffix."""
+    key = (quad_name or "").lower()
+    en_base, zh_base = _QUAD_NAME_MAP.get(key, (_prettify(quad_name), _prettify(quad_name)))
+    tone = _QUAD_TONE.get(key, "neutral")
+    if shifting:
+        tone = "warn"
+        return en_base + " · shifting", zh_base + " · 转换中", tone
+    return en_base, zh_base, tone
+
+
+def _kf_macro(state: dict) -> list[dict]:
+    """Build macro key_facts chips (spec §6, macro table)."""
+    chips: list[dict] = []
+    try:
+        macro = state.get("macro") or {}
+        bonds = state.get("bonds") or {}
+        ca = state.get("cross_asset_confirm") or {}
+        mdr = (macro.get("market_drivers") or {}) if isinstance(macro.get("market_drivers"), dict) else {}
+
+        # 1. regime
+        quad_name = macro.get("quad_name")
+        if quad_name is not None:
+            ts = (macro.get("transition_state") or macro.get("regime_path", {}).get("transition_state") or "")
+            shifting = (str(ts).upper() == "TRANSITIONING")
+            v_en, v_zh, tone = _quad_display(quad_name, shifting)
+            chips.append({
+                "key": "regime", "label_en": "Regime", "label_zh": "市场格局",
+                "value_en": v_en, "value_zh": v_zh, "tone": tone,
+            })
+
+        # 2. risk
+        risk_label = ((macro.get("macro_risk") or {}).get("label") or "")
+        _risk_map: dict[str, tuple[str, str, str]] = {
+            "low":      ("Low",      "低",   "good"),
+            "moderate": ("Moderate", "中等", "neutral"),
+            "elevated": ("Elevated", "偏高", "warn"),
+            "severe":   ("Severe",   "严重", "bad"),
+        }
+        if risk_label:
+            rv_en, rv_zh, rt = _risk_map.get(risk_label.lower(), (_prettify(risk_label), _prettify(risk_label), "neutral"))
+            chips.append({
+                "key": "risk", "label_en": "Market risk", "label_zh": "市场风险",
+                "value_en": rv_en, "value_zh": rv_zh, "tone": rt,
+            })
+
+        # 3. money (liquidity_overlay)
+        liq = (macro.get("liquidity_overlay") or "").lower()
+        if liq:
+            _liq_map: dict[str, tuple[str, str, str]] = {
+                "expand":    ("Expanding", "扩张", "good"),
+                "contract":  ("Tightening", "收紧", "warn"),
+            }
+            # match by prefix so "expanding", "contracting" both work
+            lv_en, lv_zh, lt = "Neutral", "中性", "neutral"
+            for k, v in _liq_map.items():
+                if liq.startswith(k):
+                    lv_en, lv_zh, lt = v
+                    break
+            chips.append({
+                "key": "money", "label_en": "Money", "label_zh": "资金面",
+                "value_en": lv_en, "value_zh": lv_zh, "tone": lt,
+            })
+
+        # 4. bonds (cross_asset_confirm.verdict)
+        ca_verdict = (ca.get("verdict") or "").lower()
+        if ca_verdict:
+            _ca_map: dict[str, tuple[str, str, str]] = {
+                "confirm":  ("Agree",                        "一致",         "good"),
+                "diverge":  ("Disagree — bonds worried",     "分歧 — 债市担忧", "warn"),
+                "mixed":    ("Mixed",                        "好坏参半",     "neutral"),
+            }
+            bv_en, bv_zh, bt = _ca_map.get(ca_verdict, (_prettify(ca_verdict), _prettify(ca_verdict), "neutral"))
+            chips.append({
+                "key": "bonds", "label_en": "Bonds vs stocks", "label_zh": "债股关系",
+                "value_en": bv_en, "value_zh": bv_zh, "tone": bt,
+            })
+
+        # 5. credit (bonds.credit.distress_band + direction)
+        credit = (bonds.get("credit") or {})
+        band = (credit.get("distress_band") or "").lower()
+        direction = (credit.get("direction") or "").lower()
+        if band:
+            # "tight" is the live distress_band vocabulary today (spec table only
+            # named calm/stressed) — map it bilingually so ZH never shows raw EN.
+            if band in ("calm", "tight") and "widen" in direction:
+                _b_en, _b_zh = ("Calm", "平静") if band == "calm" else ("Tight", "偏紧")
+                cv_en, cv_zh, ct = f"{_b_en}, but widening", f"{_b_zh}但在走宽", "warn"
+            elif band == "calm":
+                cv_en, cv_zh, ct = "Calm", "平静", "good"
+            elif band == "tight":
+                cv_en, cv_zh, ct = "Tight", "偏紧", "good"
+            elif band == "stressed":
+                cv_en, cv_zh, ct = "Stressed", "紧张", "bad"
+            else:
+                cv_en, cv_zh, ct = _prettify(band), _prettify(band), "neutral"
+            chips.append({
+                "key": "credit", "label_en": "Credit", "label_zh": "信用",
+                "value_en": cv_en, "value_zh": cv_zh, "tone": ct,
+            })
+
+        # 6. driver (market_drivers.primary_label + direction)
+        primary = mdr.get("primary_label") or (macro.get("market_drivers") or {}).get("primary_label") if isinstance(macro.get("market_drivers"), dict) else None
+        if not primary and isinstance(state.get("macro"), dict):
+            _mdr2 = state["macro"].get("market_drivers") or {}
+            if isinstance(_mdr2, dict):
+                primary = _mdr2.get("primary_label") or _mdr2.get("primary")
+        direction_raw = (mdr.get("direction") or (state.get("macro", {}).get("market_drivers") or {}).get("direction") or "").lower() if isinstance(state.get("macro", {}).get("market_drivers"), dict) else ""
+        _dir_suffix_en = {"down": " — down", "up": " — up"}.get(direction_raw, "")
+        _dir_suffix_zh = {"down": " — 走弱", "up": " — 走强"}.get(direction_raw, "")
+        if primary:
+            chips.append({
+                "key": "driver", "label_en": "What's moving markets", "label_zh": "当前主导",
+                "value_en": str(primary) + _dir_suffix_en,
+                "value_zh": str(primary) + _dir_suffix_zh,
+                "tone": "info",
+            })
+
+    except Exception:  # noqa: BLE001 — never raises, never blocks
+        pass
+    return chips[:6]
+
+
+def _lc(x) -> str:
+    """Type-safe lowercase for enum reads: non-strings (floats, dicts, None)
+    lower() to "" instead of raising inside the chip builders' fail-open try —
+    a raised AttributeError silently costs every chip after it."""
+    return x.lower() if isinstance(x, str) else ""
+
+
+def _is_pending(x) -> bool:
+    """True only for a real pending-quad value — None, NaN and '' are no-pending."""
+    if x is None:
+        return False
+    if isinstance(x, float) and x != x:          # NaN
+        return False
+    return str(x).strip().lower() not in ("", "nan", "none")
+
+
+def _kf_china(state: dict) -> list[dict]:
+    """Build china key_facts chips (spec §6, china table)."""
+    chips: list[dict] = []
+    try:
+        china = state.get("china") or {}
+        hk = state.get("hk") or {}
+        intel = state.get("china_intel") or {}
+        policy_block = (intel.get("policy") or {}) if isinstance(intel.get("policy"), dict) else {}
+
+        # 1. cn_regime
+        quad_name = china.get("quad_name")
+        if quad_name is not None:
+            shifting = _is_pending(china.get("pending_quad"))
+            v_en, v_zh, tone = _quad_display(quad_name, shifting)
+            chips.append({
+                "key": "cn_regime", "label_en": "China regime", "label_zh": "A股格局",
+                "value_en": v_en, "value_zh": v_zh, "tone": tone,
+            })
+
+        # 2. policy — the corridor classifier's stance string. Live key is
+        # `pboc_stance` ("easing"/"neutral"/"tightening"); `stance` exists but is
+        # a nested DICT in the intel payload (the .lower() on it was the crash
+        # that silently cost chips 2-6), so only string values are considered.
+        impulse = (_lc(policy_block.get("pboc_stance"))
+                   or _lc(policy_block.get("impulse"))
+                   or _lc(policy_block.get("stance_label_en")))
+        if impulse:
+            _policy_map: dict[str, tuple[str, str, str]] = {
+                "easing":     ("Cutting rates", "在降息", "info"),
+                "tightening": ("Tightening",    "在收紧", "warn"),
+            }
+            pv_en, pv_zh, pt = "On hold", "按兵不动", "neutral"
+            for k, v in _policy_map.items():
+                if k in impulse:
+                    pv_en, pv_zh, pt = v
+                    break
+            chips.append({
+                "key": "policy", "label_en": "Policy", "label_zh": "政策",
+                "value_en": pv_en, "value_zh": pv_zh, "tone": pt,
+            })
+
+        # 3. cn_money (liquidity_overlay from china block)
+        liq = _lc(china.get("liquidity_overlay"))
+        if liq:
+            _liq_map2: dict[str, tuple[str, str, str]] = {
+                "expand":   ("Expanding",  "扩张",   "good"),
+                "contract": ("Tightening", "收紧",   "warn"),
+            }
+            lv2_en, lv2_zh, lt2 = "Neutral", "中性", "neutral"
+            for k, v in _liq_map2.items():
+                if liq.startswith(k):
+                    lv2_en, lv2_zh, lt2 = v
+                    break
+            chips.append({
+                "key": "cn_money", "label_en": "System money", "label_zh": "系统流动性",
+                "value_en": lv2_en, "value_zh": lv2_zh, "tone": lt2,
+            })
+
+        # 4. hk_risk
+        risk_state = _lc(hk.get("risk_state"))
+        if risk_state:
+            _hk_risk_map: dict[str, tuple[str, str, str]] = {
+                "risk_on":  ("Risk-on",   "偏积极", "good"),
+                "risk-on":  ("Risk-on",   "偏积极", "good"),
+                "risk_off": ("Risk-off",  "避险",   "warn"),
+                "risk-off": ("Risk-off",  "避险",   "warn"),
+                "neutral":  ("Neutral",   "中性",   "neutral"),
+            }
+            hv_en, hv_zh, ht = _prettify(risk_state), _prettify(risk_state), "neutral"
+            if risk_state in _hk_risk_map:
+                hv_en, hv_zh, ht = _hk_risk_map[risk_state]
+            chips.append({
+                "key": "hk_risk", "label_en": "Hong Kong", "label_zh": "香港",
+                "value_en": hv_en, "value_zh": hv_zh, "tone": ht,
+            })
+
+        # 5. peg — live values carry suffixes ("weak-side (outflow)"), so match
+        # by substring, weak before strong so "weak-side" can never miss.
+        peg_state = _lc(hk.get("peg_state"))
+        if peg_state:
+            pv_en, pv_zh, pt2 = _prettify(peg_state), _prettify(peg_state), "neutral"
+            if "weak" in peg_state:
+                pv_en, pv_zh, pt2 = "At weak edge — watching", "贴近弱方 — 需留意", "warn"
+            elif "strong" in peg_state:
+                pv_en, pv_zh, pt2 = "At strong edge", "贴近强方", "info"
+            elif peg_state in ("normal", "mid") or "normal" in peg_state:
+                pv_en, pv_zh, pt2 = "Steady", "稳定", "good"
+            chips.append({
+                "key": "peg", "label_en": "HK dollar", "label_zh": "港元",
+                "value_en": pv_en, "value_zh": pv_zh, "tone": pt2,
+            })
+
+        # 6. cn_leader (top sector_rs by rank from china block)
+        sector_rs = china.get("sector_rs")
+        if isinstance(sector_rs, list) and sector_rs:
+            top = sorted(sector_rs, key=lambda x: x.get("rank", 999))[0]
+            leader_name = top.get("name") or top.get("display_name") or ""
+            if leader_name:
+                chips.append({
+                    "key": "cn_leader", "label_en": "Leading sector", "label_zh": "领涨板块",
+                    "value_en": leader_name, "value_zh": leader_name, "tone": "info",
+                })
+
+    except Exception:  # noqa: BLE001 — never raises, never blocks
+        pass
+    return chips[:6]
+
+
+def _kf_btc(state: dict) -> list[dict]:
+    """Build BTC key_facts chips (spec §6, btc table)."""
+    chips: list[dict] = []
+    try:
+        btc = state.get("btc") or {}
+
+        # 1. system (composite_state + alloc_optimal + override_active)
+        comp_state = _lc(btc.get("composite_state")).upper()
+        if comp_state:
+            _sys_map: dict[str, tuple[str, str, str]] = {
+                "ACCUMULATE": ("Accumulate",    "系统偏多",  "good"),
+                "HOLD":       ("Hold",          "持有",      "neutral"),
+                "NEUTRAL":    ("Hold",          "持有",      "neutral"),
+                "DISTRIBUTE": ("Distribute",    "系统减持",  "warn"),
+            }
+            sv_en, sv_zh, st = _sys_map.get(comp_state, (_prettify(comp_state), _prettify(comp_state), "neutral"))
+            alloc = btc.get("alloc_optimal")
+            if alloc == 0:
+                sv_en += " · allocation 0%"
+                sv_zh += " · 仓位 0%"
+                st = "bad"
+            if btc.get("override_active"):
+                sv_en += " (override)"
+                sv_zh += "（人工覆盖）"
+            chips.append({
+                "key": "system", "label_en": "System stance", "label_zh": "系统姿态",
+                "value_en": sv_en, "value_zh": sv_zh, "tone": st,
+            })
+
+        # 2. cycle (cycle_phase + cphase_pct)
+        cycle_phase = _lc(btc.get("cycle_phase")) or _lc(btc.get("cphase_phase"))
+        if cycle_phase:
+            _cyc_map: dict[str, tuple[str, str, str]] = {
+                "markup":       ("Early rise",    "上行早段",  "good"),
+                "accumulation": ("Bottoming",     "筑底",      "info"),
+                "distribution": ("Topping",       "筑顶",      "warn"),
+                "markdown":     ("Late decline",  "下行后段",  "warn"),
+            }
+            cv_en, cv_zh, ct = _cyc_map.get(cycle_phase, (_prettify(cycle_phase), _prettify(cycle_phase), "neutral"))
+            pct = btc.get("cphase_pct") or btc.get("cycle_pct")
+            if pct is not None:
+                try:
+                    # cphase_pct is a 0..1 FRACTION in the signals parquet
+                    # (0.783 = 78% through) — the raw int() read showed "~1%".
+                    pf = float(pct)
+                    if pf <= 1.5:
+                        pf *= 100.0
+                    pct_int = int(round(pf))
+                    if 0 <= pct_int <= 100:
+                        cv_en += f" · ~{pct_int}% through"
+                        cv_zh += f" · 约{pct_int}%进度"
+                except (TypeError, ValueError):
+                    pass
+            chips.append({
+                "key": "cycle", "label_en": "Cycle clock", "label_zh": "周期时钟",
+                "value_en": cv_en, "value_zh": cv_zh, "tone": ct,
+            })
+
+        # 3. value (valuation_state)
+        val_state = _lc(btc.get("valuation_state"))
+        if val_state:
+            _val_map: dict[str, tuple[str, str, str]] = {
+                "cheap": ("Cheap",     "偏便宜", "good"),
+                "fair":  ("Fair",      "中性",   "neutral"),
+                "rich":  ("Expensive", "偏贵",   "warn"),
+            }
+            vv_en, vv_zh, vt = _val_map.get(val_state, (_prettify(val_state), _prettify(val_state), "neutral"))
+            chips.append({
+                "key": "value", "label_en": "On-chain value", "label_zh": "链上估值",
+                "value_en": vv_en, "value_zh": vv_zh, "tone": vt,
+            })
+
+        # 4. leverage — leverage_stress is a NUMERIC 0-100 score in the live
+        # signals row (47.55 today), not an enum; the .lower() on it raised and
+        # silently cost chips 4-6. Accept both forms: numeric score bands
+        # (>=70 crowded / <=30 light) or a string enum, plus the funding_z gate.
+        lev_raw = btc.get("leverage_stress")
+        lev_str = _lc(lev_raw)
+        lev_num = None
+        if isinstance(lev_raw, (int, float)):
+            try:
+                lev_num = float(lev_raw)
+            except (TypeError, ValueError):
+                lev_num = None
+        funding_z = btc.get("funding_z")
+        if lev_str or lev_num is not None or funding_z is not None:
+            crowded = (lev_str == "high" or (lev_num is not None and lev_num >= 70)
+                       or (isinstance(funding_z, (int, float)) and funding_z > 2))
+            light = (lev_str == "low" or (lev_num is not None and lev_num <= 30))
+            if crowded:
+                lv_en, lv_zh, lt = "Crowded longs", "多头拥挤", "warn"
+            elif light:
+                lv_en, lv_zh, lt = "Light", "清淡", "good"
+            else:
+                lv_en, lv_zh, lt = "Normal", "正常", "neutral"
+            chips.append({
+                "key": "leverage", "label_en": "Leverage", "label_zh": "杠杆",
+                "value_en": lv_en, "value_zh": lv_zh, "tone": lt,
+            })
+
+        # 5. etf — live vocabulary is "accumulation"/"distribution", so match by
+        # substring rather than the literal inflow/outflow spec words.
+        etf_state = _lc(btc.get("etf_flow_state"))
+        if etf_state:
+            ev_en, ev_zh, et = _prettify(etf_state), _prettify(etf_state), "neutral"
+            if "inflow" in etf_state or "accum" in etf_state:
+                ev_en, ev_zh, et = "Money coming in", "资金流入", "good"
+            elif "outflow" in etf_state or "distribut" in etf_state:
+                ev_en, ev_zh, et = "Money leaving", "资金流出", "warn"
+            elif "flat" in etf_state or "neutral" in etf_state:
+                ev_en, ev_zh, et = "Flat", "持平", "neutral"
+            chips.append({
+                "key": "etf", "label_en": "ETF flows", "label_zh": "ETF资金",
+                "value_en": ev_en, "value_zh": ev_zh, "tone": et,
+            })
+
+        # 6. liquidity (global_liq_regime)
+        gliq = _lc(btc.get("global_liq_regime"))
+        if gliq:
+            _gliq_map: dict[str, tuple[str, str, str]] = {
+                "expanding":   ("Expanding",   "扩张", "good"),
+                "contracting": ("Contracting", "收缩", "warn"),
+            }
+            gv_en, gv_zh, gt = _gliq_map.get(gliq, ("Neutral", "中性", "neutral"))
+            chips.append({
+                "key": "liquidity", "label_en": "Global money", "label_zh": "全球流动性",
+                "value_en": gv_en, "value_zh": gv_zh, "tone": gt,
+            })
+
+    except Exception:  # noqa: BLE001 — never raises, never blocks
+        pass
+    return chips[:6]
+
+
+_LENS_KEY_FACTS: dict[str, object] = {
+    "macro": _kf_macro,
+    "china": _kf_china,
+    "btc":   _kf_btc,
+}
+
+
+def _key_facts_for(lens: str, state: dict) -> list[dict]:
+    """Dispatch to the per-lens key_facts builder. Returns [] on any exception."""
+    try:
+        fn = _LENS_KEY_FACTS.get(lens)
+        if fn is None:
+            return []
+        return fn(state)  # type: ignore[operator]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def render_markdown(brief: dict) -> str:
     """Human-readable rendering of a brief (for the CLI / a future panel)."""
     if not brief:
@@ -1481,6 +2245,8 @@ def render_markdown(brief: dict) -> str:
     L = [f"# Master brief — {brief.get('state_asof','?')} ({brief.get('model','?')})", ""]
     if brief.get("summary"):
         L += [f"**{brief['summary']}**", ""]
+    if brief.get("tldr"):
+        L += ["## The gist", *[f"- {x}" for x in brief["tldr"]], ""]
     if brief.get("regime_read"):
         L += ["## Regime read", brief["regime_read"], ""]
     if brief.get("conflicts"):
@@ -1496,7 +2262,7 @@ def render_markdown(brief: dict) -> str:
 
 
 _ZH_SCALARS = ("summary", "regime_read", "rotation_check")
-_ZH_LISTS = ("conflicts", "transmission", "watch_items")
+_ZH_LISTS = ("conflicts", "transmission", "watch_items", "tldr")
 
 
 def _translate_brief(brief: dict, cfg: dict) -> None:
@@ -1537,6 +2303,7 @@ def _translate_brief(brief: dict, cfg: dict) -> None:
         if not zh_list or all(x is None for x in zh_list):
             return
         zh: dict = {"summary": None, "regime_read": None, "rotation_check": None,
+                    "tldr": [None] * len(brief.get("tldr") or []),
                     "conflicts": [None] * len(brief.get("conflicts") or []),
                     "transmission": [None] * len(brief.get("transmission") or []),
                     "watch_items": [None] * len(brief.get("watch_items") or [])}
@@ -1573,10 +2340,7 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False,
         # always bypasses the gate. Anchored off data/regime (the canonical write
         # target); a missing/unparseable generated_at falls through to regeneration.
         if not force:
-            try:
-                interval = max(1, min(7, int(cfg.get("interval_days", 1))))
-            except Exception:  # noqa: BLE001
-                interval = 1
+            interval = _interval_for(lens, cfg)
             if interval > 1:
                 prev = _read_json(root / "data" / "regime" / spec["out"])
                 age = _brief_age_days(prev)
@@ -1586,13 +2350,20 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False,
                     return prev
         state = spec["state_fn"](root)
         brief = synthesize(state, cfg, lens=lens, root=root)
-        # ADB-R9: additive optional keys — schema id stays master_brief.v1
+        # ADB-R9: additive optional keys (schema: master_brief.v2)
         brief["nw_context_used"] = bool(state.get("neural_web"))
         _nw = state.get("neural_web") or {}
         _cortex = _nw.get("cortex") or {}
         brief["cortex_status"] = (
             _cortex.get("status", "absent") if not _cortex.get("absent") else "absent"
         )
+        # spec §7: expose the lens interval so the UI can show "Updated every N days"
+        brief["refresh_days"] = _interval_for(lens, cfg)
+        # spec §6: deterministic chip rail — bilingual at build, never sent to translator
+        try:
+            brief["key_facts"] = _key_facts_for(lens, state)
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            brief["key_facts"] = []
         _translate_brief(brief, cfg)          # attach brief['zh'] for the 中文 toggle
         if persist:
             try:

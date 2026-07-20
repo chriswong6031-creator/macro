@@ -4,6 +4,7 @@
 {% macro help(en, zh='') -%}
 <span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
+{% import "_aibrief_body.html.j2" as aib %}{# ABX v2 — the ONE shared AI-brief body renderer #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1068,6 +1069,8 @@
   [data-theme="light"] body.page-hk .hkx-chip.hot,[data-theme="light"] body.page-hk .hkx-imp.high{color:#b4232a}
   [data-theme="light"] body.page-hk .hkx-chip.turn{color:#1f7a44}
   [data-theme="light"] body.page-hk .hkx-tkr-btn{color:#2456a8}
+  /* ── AI BRIEF DIALOG — ABX v2 shared body (.aib2-*); ZH-safe blue accent by default ── */
+{% include "_aibrief_css.j2" %}
 </style>
 </head>
 <body{% if mode != 'stocks' %} class="page-hk"{% endif %}>
@@ -1593,8 +1596,17 @@
       {% if china_brief %}
       {% set _cb = china_brief %}
       {% set _cbzh = _cb.zh if _cb.zh is defined and _cb.zh else {} %}
+      {% set _kf = _cb.key_facts or [] %}
+      {% if _kf %}
+      <div class="hkx-chips">{% for _f in _kf[:2] %}<span class="hkx-nchip"><span class="l-en">{{ _f.get('label_en') }}: {{ _f.get('value_en') }}</span><span class="l-zh">{{ _f.get('label_zh') or _f.get('label_en') }}：{{ _f.get('value_zh') or _f.get('value_en') }}</span></span>{% endfor %}</div>
+      {% else %}
       <div class="hkx-chips"><span class="hkx-nchip">{{ t('World mood','全球情绪') }}</span><span class="hkx-nchip">{{ t('Currency','货币') }}</span><span class="hkx-nchip">{{ t('Mainland buying','南向资金') }}</span></div>
-      {% if _cb.summary %}
+      {% endif %}
+      {% set _tldr = _cb.tldr or [] %}
+      {% set _tldr_zh = _cbzh.get('tldr') or [] %}
+      {% if _tldr %}
+      <p style="font-size:12px;margin:4px 0 0"><span class="l-en">{{ _tldr[0] }}</span><span class="l-zh">{{ _tldr_zh[0] if _tldr_zh else _tldr[0] }}</span></p>
+      {% elif _cb.summary %}
       <p style="font-size:12px;margin:4px 0 0"><span class="l-en">{{ _cb.summary | truncate(120, true, '…') }}</span><span class="l-zh">{{ (_cbzh.get('summary') or _cb.summary) | truncate(120, true, '…') }}</span></p>
       {% endif %}
       {% else %}
@@ -2137,29 +2149,16 @@
     <div class="hkx-dlg-panel">
       <div class="hkx-dlg-head"><span class="hkx-dlg-title">{{ t('AI Summary — China & Hong Kong','AI简报 — 中国与香港') }}</span><button class="hkx-dlg-close" onclick="hkxCloseDlg()">×</button></div>
       <div class="hkx-dlg-body">
-        <div class="hkx-plain">{{ t('A short plain-English write-up that reads the China and Hong Kong dashboards together. It\'s the <b>same shared summary</b> used on the China page.','一段简明英语写作，综合解读中国与香港看板。与中国页面共用<b>同一份简报</b>。') | safe }}</div>
-        {% if china_brief %}
-        {% set _cb = china_brief %}
-        {% set _cbzh = _cb.zh if _cb.zh is defined and _cb.zh else {} %}
-        <div class="hkx-eyebrow">{{ t('Summary','摘要') }} · {{ t('as of','截至') }} {{ _cb.state_asof or latest.date }}</div>
-        <p style="font-size:13px;margin:0 0 12px"><span class="l-en">{{ _cb.summary or '' }}</span><span class="l-zh">{{ _cbzh.get('summary') or _cb.summary or '' }}</span></p>
-        {% if _cb.regime_read %}
-        <div class="hkx-eyebrow">{{ t('Regime read','周期解读') }}</div>
-        <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px"><span class="l-en">{{ _cb.regime_read or '' }}</span><span class="l-zh">{{ _cbzh.get('regime_read') or _cb.regime_read or '' }}</span></p>
-        {% endif %}
-        {% if _cb.watch_items %}
-        <div class="hkx-eyebrow">{{ t('What to watch','值得关注') }}</div>
-        <ul style="margin:0 0 12px;padding-left:18px">
-          {% for w in _cb.watch_items %}
-          {% set _wzh = (_cbzh.get('watch_items') or [])[loop.index0] if _cbzh.get('watch_items') and loop.index0 < (_cbzh.get('watch_items') or []) | length else none %}
-          <li style="font-size:12.5px;margin:5px 0"><span class="l-en">{{ w }}</span><span class="l-zh">{{ _wzh or w }}</span></li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-        {% else %}
-        <p style="font-size:12px;color:var(--muted)">{{ t('Summary building…','简报生成中…') }}</p>
-        {% endif %}
+        <div class="hkx-plain">{{ t('A plain-English read that takes the China and Hong Kong dashboards together — the same shared brief used on the China page.','综合解读中国与香港看板的白话摘要 — 与中国页面共用同一份简报。') }}</div>
+        {# ABX v2 — the ONE shared body renderer (China lens; HK shares the China brief). #}
+        {% if china_brief and (china_brief.get('summary') or china_brief.get('tldr') or china_brief.get('regime_read')) %}
+        {% call aib.aibrief_body(china_brief, 'china', show_catalysts=False) %}
         <div class="hkx-receipt">{{ t('Research context only — never a buy or sell signal. Generated nightly; the same brief appears on the China dashboard.','仅供研究参考 — 绝非买卖信号。每晚生成；同一份简报也出现在中国看板。') }}</div>
+        {% endcall %}
+        {% else %}
+        <p style="font-size:12px;color:var(--muted)">{{ t('Summary building… it rebuilds nightly from the dashboards.','简报生成中…每晚由看板重新生成。') }}</p>
+        <div class="hkx-receipt">{{ t('Research context only — never a buy or sell signal. Generated nightly; the same brief appears on the China dashboard.','仅供研究参考 — 绝非买卖信号。每晚生成；同一份简报也出现在中国看板。') }}</div>
+        {% endif %}
       </div>
     </div>
   </div>

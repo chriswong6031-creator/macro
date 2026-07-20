@@ -14,6 +14,50 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from engine import master_brain as mb  # noqa: E402
 
+
+def test_reply_cache_roundtrip_root_aware(tmp_path):
+    """Real cache helpers: miss -> call -> post-lint put under the tmp root;
+    second run -> hit that skips _call_model entirely. Nothing outside tmp_path
+    is touched (a read probe must not even create the cache dir)."""
+    calls = {"n": 0}
+    reply = json.dumps({"summary": "Plain words only.", "confidence": "low"})
+
+    def fake(system, user, cfg):
+        calls["n"] += 1
+        return (reply, None)
+
+    orig = mb._call_model
+    mb._call_model = fake
+    try:
+        cfg = {"llm_model": "deepseek-v4-pro"}
+        b1 = mb.synthesize({}, cfg, root=tmp_path)
+        assert b1["summary"] == "Plain words only." and calls["n"] == 1
+        cache_dir = tmp_path / "data" / "master_brain" / "reply_cache"
+        assert cache_dir.is_dir() and list(cache_dir.glob("*.txt"))
+        b2 = mb.synthesize({}, cfg, root=tmp_path)
+        assert b2["summary"] == "Plain words only."
+        assert calls["n"] == 1                      # cache hit — no second call
+        assert b2["style_flags"] == []
+    finally:
+        mb._call_model = orig
+
+
+def test_translate_brief_covers_tldr(monkeypatch):
+    """_translate_brief must pre-size zh['tldr'] — a missing key raised KeyError
+    inside the fail-open except and silently dropped the ENTIRE zh block."""
+    from engine import translate as _tr
+    monkeypatch.setattr(_tr, "translate_to_zh",
+                        lambda texts, cfg: ["ZH:" + t for t in texts])
+    brief = {"tldr": ["Head: one", "What to do: Watch — don't chase."],
+             "summary": "s", "regime_read": "r", "rotation_check": None,
+             "conflicts": ["c1"], "transmission": [], "watch_items": ["w1"],
+             "confidence": "low"}
+    mb._translate_brief(brief, {})
+    assert "zh" in brief, "zh block must survive a v2 brief with tldr"
+    assert brief["zh"]["tldr"] == ["ZH:Head: one",
+                                   "ZH:What to do: Watch — don't chase."]
+    assert brief["zh"]["conflicts"] == ["ZH:c1"]
+
 MACRO = {
     "date": "2026-06-12", "quad": "Q1", "quad_name": "Goldilocks", "label": "Q1",
     "growth_score": 0.4, "inflation_score": -0.1, "confidence": 0.7,
@@ -291,6 +335,222 @@ def test_run_all_disabled_returns_empty():
         assert mb.run_all(persist=False) == {}      # gated unless force / enabled
     finally:
         mb._cfg = orig
+
+
+# --------------------------------------------------------------------------- #
+# ABX v2 — new tests (spec §4, §5, §6, §7)
+# --------------------------------------------------------------------------- #
+
+def test_interval_for_btc_override():
+    """_interval_for: btc=3 override takes precedence over global interval_days."""
+    cfg = {"interval_days": 1, "interval_days_by_lens": {"btc": 3}}
+    assert mb._interval_for("btc", cfg) == 3
+    assert mb._interval_for("macro", cfg) == 1
+    assert mb._interval_for("china", cfg) == 1
+
+
+def test_interval_for_global_fallback():
+    """_interval_for: global interval_days is used when no per-lens override."""
+    cfg = {"interval_days": 2, "interval_days_by_lens": {}}
+    assert mb._interval_for("macro", cfg) == 2
+    assert mb._interval_for("btc", cfg) == 2
+
+
+def test_interval_for_defaults_to_1():
+    """_interval_for: empty cfg falls back to 1."""
+    assert mb._interval_for("macro", {}) == 1
+    assert mb._interval_for("btc", {}) == 1
+
+
+def test_interval_for_clamps():
+    """_interval_for: result is clamped 1..7."""
+    assert mb._interval_for("btc", {"interval_days_by_lens": {"btc": 0}}) == 1
+    assert mb._interval_for("btc", {"interval_days_by_lens": {"btc": 100}}) == 7
+
+
+def test_interval_for_exception_safe():
+    """_interval_for: returns 1 on bad values."""
+    assert mb._interval_for("btc", {"interval_days_by_lens": {"btc": "not-a-number"}}) == 1
+    assert mb._interval_for("macro", {"interval_days": "bad"}) == 1
+
+
+def test_style_violations_flags_snake_case():
+    """_style_violations: snake_case tokens are flagged."""
+    violations = mb._style_violations("growth_score -0.143 is declining")
+    assert any("snake_case" in v for v in violations), violations
+
+
+def test_style_violations_flags_sigma():
+    """-2.5σ and z-score forms are flagged."""
+    assert any("sigma" in v or "z/pctile" in v for v in mb._style_violations("-2.5σ drop"))
+    assert any(v for v in mb._style_violations("z-score of 2.1"))
+    assert any(v for v in mb._style_violations("at the 90th percentile"))
+
+
+def test_style_violations_flags_panel_citation():
+    """'panel: hk.sector_rs' is flagged (colon form)."""
+    violations = mb._style_violations("as shown in panel: hk.sector_rs")
+    assert any("panel" in v for v in violations), violations
+
+
+def test_style_violations_flags_quad_code():
+    """'Q1 Goldilocks' and 'Q4' are flagged."""
+    assert any("quad code" in v for v in mb._style_violations("Q1 Goldilocks regime"))
+    assert any("quad code" in v for v in mb._style_violations("Q4 is next"))
+
+
+def test_style_violations_flags_hard_banned():
+    """cross_asset_confirm and similar tokens are flagged."""
+    assert any("banned" in v for v in mb._style_violations("cross_asset_confirm shows divergence"))
+    assert any("banned" in v for v in mb._style_violations("neural_web synthesis"))
+
+
+def test_style_violations_allows_paren_gated():
+    """'China's 7-day interbank rate (FR007)' is NOT a violation."""
+    text = "China's 7-day interbank rate (FR007) is 2.1%"
+    violations = mb._style_violations(text)
+    assert not any("FR007" in v for v in violations), (
+        f"FR007 inside parens should be allowed, got: {violations}"
+    )
+
+
+def test_style_violations_flags_bare_paren_gated():
+    """'FR007 is rising' (no parens) IS a violation."""
+    violations = mb._style_violations("FR007 is rising sharply")
+    assert any("FR007" in v for v in violations), violations
+
+
+def test_style_violations_allows_plain_prose():
+    """Plain English prose with no machine tokens → no violations."""
+    text = "Equity breadth has narrowed over the past two weeks, with chip stocks lagging."
+    assert mb._style_violations(text) == []
+
+
+def test_key_facts_macro_regime_chip():
+    """_kf_macro: regime chip has correct label/value/tone for Goldilocks shifting."""
+    state = {
+        "macro": {
+            "quad_name": "Goldilocks",
+            "transition_state": "TRANSITIONING",
+            "macro_risk": {"label": "low"},
+            "liquidity_overlay": "expanding",
+        },
+        "cross_asset_confirm": {"verdict": "confirm"},
+        "bonds": {"credit": {"distress_band": "calm", "direction": "stable"}},
+    }
+    chips = mb._kf_macro(state)
+    regime = next((c for c in chips if c["key"] == "regime"), None)
+    assert regime is not None
+    assert "shifting" in regime["value_en"]
+    assert "转换中" in regime["value_zh"]
+    assert regime["tone"] == "warn"
+
+
+def test_key_facts_macro_missing_source_omitted():
+    """_kf_macro: chip omitted when source value is missing."""
+    # State with no cross_asset_confirm → bonds chip omitted
+    state = {"macro": {"quad_name": "Goldilocks", "macro_risk": {}}}
+    chips = mb._kf_macro(state)
+    keys = {c["key"] for c in chips}
+    assert "bonds" not in keys  # no cross_asset_confirm.verdict
+
+
+def test_key_facts_btc_system_chip():
+    """_kf_btc: system chip for ACCUMULATE with alloc=0 → bad tone."""
+    state = {"btc": {
+        "composite_state": "ACCUMULATE",
+        "alloc_optimal": 0,
+        "override_active": False,
+        "cycle_phase": "markup",
+        "valuation_state": "cheap",
+        "leverage_stress": "low",
+        "etf_flow_state": "inflow",
+        "global_liq_regime": "expanding",
+    }}
+    chips = mb._kf_btc(state)
+    sys_chip = next((c for c in chips if c["key"] == "system"), None)
+    assert sys_chip is not None
+    assert "allocation 0%" in sys_chip["value_en"]
+    assert "仓位 0%" in sys_chip["value_zh"]
+    assert sys_chip["tone"] == "bad"
+
+
+def test_key_facts_btc_never_raises():
+    """_kf_btc: returns [] not raises on garbage state."""
+    assert mb._kf_btc({"btc": {"composite_state": None}}) is not None
+
+
+def test_key_facts_china_peg_states():
+    """_kf_china: peg chip maps weak-side correctly."""
+    state = {
+        "china": {"quad_name": "Goldilocks", "liquidity_overlay": "neutral"},
+        "hk": {"risk_state": "risk_on", "peg_state": "weak-side"},
+        "china_intel": {},
+    }
+    chips = mb._kf_china(state)
+    peg = next((c for c in chips if c["key"] == "peg"), None)
+    assert peg is not None
+    assert "watching" in peg["value_en"].lower() or "weak" in peg["value_en"].lower()
+    assert "需留意" in peg["value_zh"]
+    assert peg["tone"] == "warn"
+
+
+def test_key_facts_for_dispatch():
+    """_key_facts_for: dispatches to correct builder, returns [] for unknown lens."""
+    assert mb._key_facts_for("unknown", {}) == []
+    # macro with empty state returns whatever chips are available (no crash)
+    result = mb._key_facts_for("macro", {})
+    assert isinstance(result, list)
+
+
+def test_run_attaches_refresh_days(tmp_path):
+    """run(): brief includes refresh_days = _interval_for(lens, cfg)."""
+    orig_cfg, orig_call = mb._cfg, mb._call_model
+    reply = json.dumps({"summary": "x", "confidence": "low"})
+    mb._cfg = lambda: {"enabled": True, "llm_model": "test", "translate_zh": False,
+                       "interval_days": 1, "interval_days_by_lens": {"btc": 3}}
+    mb._call_model = lambda system, user, cfg: (reply, None)
+    try:
+        (tmp_path / "data" / "regime").mkdir(parents=True)
+        (tmp_path / "site").mkdir()
+        b = mb.run(persist=True, root=tmp_path, lens="macro")
+        assert b["refresh_days"] == 1
+        b_btc = mb.run(persist=True, root=tmp_path, lens="btc")
+        assert b_btc["refresh_days"] == 3
+    finally:
+        mb._cfg, mb._call_model = orig_cfg, orig_call
+
+
+def test_run_attaches_key_facts(tmp_path):
+    """run(): brief includes key_facts list (may be empty for empty state)."""
+    orig_cfg, orig_call = mb._cfg, mb._call_model
+    reply = json.dumps({"summary": "x", "confidence": "low"})
+    mb._cfg = lambda: {"enabled": True, "llm_model": "test", "translate_zh": False}
+    mb._call_model = lambda system, user, cfg: (reply, None)
+    try:
+        (tmp_path / "data" / "regime").mkdir(parents=True)
+        (tmp_path / "site").mkdir()
+        b = mb.run(persist=True, root=tmp_path, lens="macro")
+        assert "key_facts" in b
+        assert isinstance(b["key_facts"], list)
+    finally:
+        mb._cfg, mb._call_model = orig_cfg, orig_call
+
+
+def test_synthesize_schema_is_v2():
+    """synthesize: schema field is master_brief.v2."""
+    orig = mb._call_model
+    mb._call_model = lambda s, u, c: (json.dumps({"summary": "x", "confidence": "low"}), None)
+    try:
+        b = mb.synthesize({}, {})
+        assert b["schema"] == "master_brief.v2"
+    finally:
+        mb._call_model = orig
+
+
+def test_zh_lists_includes_tldr():
+    """_ZH_LISTS must include 'tldr' so the translator covers it."""
+    assert "tldr" in mb._ZH_LISTS
 
 
 if __name__ == "__main__":

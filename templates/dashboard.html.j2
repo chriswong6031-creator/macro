@@ -92,6 +92,7 @@
 {# mag7_panel import retained (dormant) — _mag7_panel.html.j2 and _mag7_regime_view are NOT deleted (MLC-W2a spec) #}
 {% from "_mag7_panel.html.j2" import mag7_panel %}
 {% import "_leadership_board.html.j2" as ldb_macro %}
+{% import "_aibrief_body.html.j2" as aib %}{# ABX v2 — the ONE shared AI-brief body renderer #}
 {# coloured, arrowed direction word for a nowcast metric (from nowcast_hist) #}
 {% macro trendword(nh) -%}
 {% if nh and nh.trend %}{% set _ar = {'rising':'▲','accelerating':'▲','falling':'▼','cooling':'▼','flat':'▶'} %}{% set _zh = {'rising':'上行','falling':'下行','accelerating':'加速','cooling':'降温','flat':'走平'} %}<span class="tw tw-{{ nh.dir }}">{{ _ar[nh.trend] }} <span class="l-en">{{ nh.trend }}</span><span class="l-zh">{{ _zh[nh.trend] }}</span></span>{% endif %}
@@ -221,6 +222,7 @@
 
 {% include "_risk_radar_card.css.j2" %}
 {% include "_ignition_radar_card.css.j2" %}
+{% include "_aibrief_css.j2" %}{# ABX v2 — shared AI-brief body stylesheet (.aib2-*) #}
 {# _mag7_panel.css.j2 removed (MLC-W2a): .m7p-stale moved to ldb <style>; no .m7p elements rendered #}
 
   .help { display: inline-flex; align-items: center; justify-content: center;
@@ -5148,57 +5150,12 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .plx-dot-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
 .plx-dot-chip{font-size:11px;padding:2px 8px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);color:var(--warn,#f59e0b);}
 [data-theme="light"] .plx-dot-chip{background:rgba(245,158,11,.06);}
-/* ── AI BRIEF DIALOG (aib-* classes) ───────────────────────────── */
-.aib-hdr-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid color-mix(in srgb,var(--isle-brief,var(--up)) 15%,var(--line,rgba(255,255,255,.1)));}
-.aib-icon{width:38px;height:38px;flex-shrink:0;border-radius:10px;background:color-mix(in srgb,var(--isle-brief,var(--up)) 15%,var(--panel2,rgba(255,255,255,.04)));color:var(--isle-brief,var(--up));font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;}
-.aib-hdr-meta{flex:1;min-width:0;}
-.aib-hdr-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:2px;}
-.aib-hdr-date{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
-.aib-badge{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--isle-brief,var(--up));opacity:.8;text-align:right;line-height:1.4;white-space:normal;max-width:200px;flex-shrink:0;}
-[data-theme="light"] .aib-badge{opacity:.9;}
-/* Lead card — summary */
-.aib-lead{font-size:17px;font-weight:650;line-height:1.6;color:var(--text);padding:18px;border-radius:14px;margin-bottom:16px;background:color-mix(in srgb,var(--isle-brief,var(--up)) 7%,transparent);border:1px solid color-mix(in srgb,var(--isle-brief,var(--up)) 18%,transparent);}
-[data-theme="light"] .aib-lead{background:color-mix(in srgb,var(--isle-brief,var(--up)) 5%,#fff);border-color:color-mix(in srgb,var(--isle-brief,var(--up)) 22%,transparent);}
-/* Regime read */
-.aib-regime{font-size:14.5px;color:var(--text);line-height:1.75;margin-bottom:16px;}
-/* Confidence meter */
-.aib-conf-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:10px;}
-[data-theme="light"] .aib-conf-row{background:rgba(0,0,0,.03);}
-.aib-conf-bar{display:flex;gap:3px;align-items:center;}
-.aib-conf-seg{width:28px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);}
-[data-theme="light"] .aib-conf-seg{background:rgba(0,0,0,.1);}
-.aib-conf-seg.filled{background:var(--isle-brief,var(--up));}
-.aib-conf-label{font-size:13px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.6));}
-.aib-conf-asof{font-size:12px;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums;}
-/* Section grid */
-.aib-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
-@media(max-width:760px){.aib-grid{grid-template-columns:1fr;}}
-/* Section cards */
-.aib-card{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);}
-[data-theme="light"] .aib-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
-.aib-card-full{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:14px;}
-[data-theme="light"] .aib-card-full{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
-/* Conflicts card left-border accent */
-.aib-card-conflicts{border-left:3px solid var(--warn,#f59e0b);}
-/* Transmission card left-border accent */
-.aib-card-tx{border-left:3px solid var(--isle-deep,#3b82f6);}
-/* Eyebrows */
-.aib-eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--isle-brief,var(--up)) 70%,var(--ink-2,rgba(255,255,255,.6)));margin-bottom:10px;}
-/* List items in cards */
-.aib-items{display:flex;flex-direction:column;gap:6px;}
-.aib-item{font-size:13.5px;color:var(--text);line-height:1.65;}
-/* Rotation card */
-.aib-rotation{font-size:14px;color:var(--text);line-height:1.75;}
-/* Watch checklist */
-.aib-watch-row{display:flex;align-items:flex-start;gap:8px;font-size:14px;color:var(--text);line-height:1.6;padding:4px 0;}
-.aib-watch-marker{color:var(--isle-brief,var(--up));flex-shrink:0;margin-top:2px;font-size:13px;}
-/* Catalyst chips */
-.aib-catalyst-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
-.aib-catalyst-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--mx5-radius-pill,20px);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);font-size:12.5px;font-weight:600;}
-[data-theme="light"] .aib-catalyst-chip{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.09);}
-.aib-catalyst-read{font-size:12.5px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.55;margin-bottom:14px;}
-/* Degraded + footer */
-.aib-degraded{font-size:12px;color:var(--muted);margin-bottom:10px;padding:8px 12px;border-radius:8px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.14);}
+/* ── AI BRIEF DIALOG — ABX v2: rules live in the shared _aibrief_css.j2 include
+   (.aib2-* namespace). Here we only pin the per-surface accent: macro's brief
+   green (--isle-brief). The literal #38c472 fallback matches --isle-brief exactly
+   and — critically — is a FIXED hex, so the brand accent never red-flips in ZH
+   (unlike --up, which swaps to red under html[data-lang="zh"]). ──────────────── */
+#dlg-aibrief .aib2{--aib2-acc:var(--isle-brief,#38c472);}
 /* ── MARKET SENTIMENT (static card — odometer dial) ────────────── */
 body.page-macro.mx4-grid .mx5-sentiment-dial-wrap{
   text-align:center;margin-bottom:4px;
@@ -10981,146 +10938,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
       </div>
       <div class="mx5-dlg-body">
-        {# 1. Header row: icon (38px) + title (15px bold) + date + mandatory badge (≥10.5px) #}
-        <div class="aib-hdr-row">
-          <div class="aib-icon">AI</div>
-          <div class="aib-hdr-meta">
-            <div class="aib-hdr-title"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
-            <div class="aib-hdr-date num">{% if master_brief is defined and master_brief and master_brief.get('state_asof') %}{{ master_brief.get('state_asof') }}{% else %}{{ latest.date if latest.date else generated_utc[:10] }}{% endif %}</div>
-          </div>
-          {# Mandatory house-law note — never delete or alter text #}
-          <span class="aib-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
-        </div>
-        {# Full brief body when master_brief is present #}
-        {% if master_brief is defined and master_brief and master_brief.get('summary') %}
-        {% set _mb_zh = master_brief.get('zh') or {} %}
-        {# 2. Lead card — summary (17px/650 weight, accent-tinted) #}
-        <div class="aib-lead">
-          <span class="l-en">{{ master_brief.get('summary') }}</span>
-          <span class="l-zh">{{ _mb_zh.get('summary') or master_brief.get('summary') }}</span>
-        </div>
-        {# 3. Regime read (14.5px prose) #}
-        {% if master_brief.get('regime_read') %}
-        <div class="aib-regime">
-          <span class="l-en">{{ master_brief.get('regime_read') }}</span>
-          <span class="l-zh">{{ _mb_zh.get('regime_read') or master_brief.get('regime_read') }}</span>
-        </div>
-        {% endif %}
-        {# 4. Confidence meter — 3-segment bar (moved UP per spec) #}
-        {% set _mb_conf = master_brief.get('confidence') %}
-        {% if _mb_conf %}
-        {% set _mb_conf_n = 3 if _mb_conf == 'high' else (2 if _mb_conf == 'medium' else 1) %}
-        {% set _mb_conf_zh = '高' if _mb_conf == 'high' else ('中' if _mb_conf == 'medium' else '低') %}
-        <div class="aib-conf-row">
-          <div class="aib-conf-bar">
-            <div class="aib-conf-seg{% if _mb_conf_n >= 1 %} filled{% endif %}"></div>
-            <div class="aib-conf-seg{% if _mb_conf_n >= 2 %} filled{% endif %}"></div>
-            <div class="aib-conf-seg{% if _mb_conf_n >= 3 %} filled{% endif %}"></div>
-          </div>
-          <span class="aib-conf-label"><span class="l-en">Confidence: {{ _mb_conf }}</span><span class="l-zh">置信度：{{ _mb_conf_zh }}</span></span>
-          {% if master_brief.get('state_asof') %}<span class="aib-conf-asof">{{ t('as of','数据截至') }} {{ master_brief.get('state_asof') }}</span>{% endif %}
-        </div>
-        {% endif %}
-        {# 5. Section grid (2-col ≥760px): Conflicts + Transmission #}
-        {% set _mb_conflicts = master_brief.get('conflicts') or [] %}
-        {% set _mb_tx = master_brief.get('transmission') or [] %}
-        {% if _mb_conflicts or _mb_tx %}
-        <div class="aib-grid">
-          {# Conflicts card — left-border warn amber #}
-          {% if _mb_conflicts %}
-          {% set _mb_conflicts_zh = _mb_zh.get('conflicts') or [] %}
-          <div class="aib-card aib-card-conflicts">
-            <div class="aib-eyebrow"><span class="l-en">&#x2696; Where signals disagree</span><span class="l-zh">&#x2696; 信号分歧</span></div>
-            <div class="aib-items">
-              {% for _ci in _mb_conflicts %}
-              {% set _ci_zh = _mb_conflicts_zh[loop.index0] if _mb_conflicts_zh and loop.index0 < _mb_conflicts_zh|length else _ci %}
-              <div class="aib-item">
-                <span class="l-en">{{ _ci }}</span>
-                <span class="l-zh">{{ _ci_zh }}</span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-          {# Transmission card — left-border blue #}
-          {% if _mb_tx %}
-          {% set _mb_tx_zh = _mb_zh.get('transmission') or [] %}
-          <div class="aib-card aib-card-tx">
-            <div class="aib-eyebrow"><span class="l-en">&#x26D3; Transmission</span><span class="l-zh">&#x26D3; 传导</span></div>
-            <div class="aib-items">
-              {% for _ti in _mb_tx %}
-              {% set _ti_zh = _mb_tx_zh[loop.index0] if _mb_tx_zh and loop.index0 < _mb_tx_zh|length else _ti %}
-              <div class="aib-item">
-                <span class="l-en">{{ _ti }}</span>
-                <span class="l-zh">{{ _ti_zh }}</span>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-          {% endif %}
-        </div>
-        {% endif %}
-        {# 6. Rotation — full-width card #}
-        {% if master_brief.get('rotation_check') %}
-        <div class="aib-card-full">
-          <div class="aib-eyebrow"><span class="l-en">&#x267B; Rotation</span><span class="l-zh">&#x267B; 轮动</span></div>
-          <div class="aib-rotation">
-            <span class="l-en">{{ master_brief.get('rotation_check') }}</span>
-            <span class="l-zh">{{ _mb_zh.get('rotation_check') or master_brief.get('rotation_check') }}</span>
-          </div>
-        </div>
-        {% endif %}
-        {# 7. What to watch — checklist with bolded trigger head (split on ':' / '：') #}
-        {% set _mb_watch = master_brief.get('watch_items') or [] %}
-        {% if _mb_watch %}
-        {% set _mb_wi_zh = _mb_zh.get('watch_items') or [] %}
-        <div class="aib-card-full">
-          <div class="aib-eyebrow"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></div>
-          <div class="aib-items">
-            {% for _wi in _mb_watch %}
-            {% set _wi_zh = _mb_wi_zh[loop.index0] if _mb_wi_zh and loop.index0 < _mb_wi_zh|length else _wi %}
-            <div class="aib-watch-row">
-              <span class="aib-watch-marker">&#x25B9;</span>
-              <span>
-                <span class="l-en">{% if ':' in _wi %}<b>{{ _wi.split(':',1)[0] }}</b>:{{ _wi.split(':',1)[1] }}{% else %}{{ _wi }}{% endif %}</span>
-                <span class="l-zh">{% if '：' in _wi_zh %}<b>{{ _wi_zh.split('：',1)[0] }}</b>：{{ _wi_zh.split('：',1)[1] }}{% elif ':' in _wi_zh %}<b>{{ _wi_zh.split(':',1)[0] }}</b>:{{ _wi_zh.split(':',1)[1] }}{% else %}{{ _wi_zh }}{% endif %}</span>
-              </span>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-        {# 8. Upcoming catalysts (forward_watch[] — previously unused in dialog) #}
-        {% set _mb_fw = master_brief.get('forward_watch') if master_brief.get('forward_watch') is defined else [] %}
-        {% if _mb_fw is not none and _mb_fw %}
-        <div class="aib-card-full">
-          <div class="aib-eyebrow"><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化剂</span></div>
-          <div class="aib-catalyst-row">
-            {% for _fw in _mb_fw %}
-            {% set _fw_date = _fw.get('date','') %}
-            {% set _fw_label = _fw.get('label','') %}
-            <span class="aib-catalyst-chip">
-              <span class="l-en">{{ _fw_date[5:10] if _fw_date|length >= 10 else _fw_date }} {{ _fw_label }}</span>
-              <span class="l-zh">{{ _fw_date[5:10] if _fw_date|length >= 10 else _fw_date }} {{ _fw_label }}</span>
-            </span>
-            {% endfor %}
-          </div>
-          {% set _mb_fwr = master_brief.get('forward_read') %}
-          {% if _mb_fwr %}
-          <div class="aib-catalyst-read">
-            <span class="l-en">{{ _mb_fwr }}</span>
-            <span class="l-zh">{{ _mb_fwr }}</span>
-          </div>
-          {% endif %}
-        </div>
-        {% endif %}
-        {# 9. Degraded notice + footer link #}
-        {% set _mb_deg = master_brief.get('degraded_reason') %}
-        {% if _mb_deg %}
-        <div class="aib-degraded"><span class="l-en">Today's brief ran degraded: {{ _mb_deg }}</span><span class="l-zh">今日简报为降级运行：{{ _mb_deg }}</span></div>
-        {% endif %}
+        {# ABX v2 — the ONE shared body renderer (_aibrief_body.html.j2). show_catalysts
+           because macro is the only lens with forward_watch. The footer link-out is
+           injected into the macro's footer slot. Fail-open: master_brief absent →
+           the existing news-teaser fallback below. #}
+        {% if master_brief is defined and master_brief and (master_brief.get('summary') or master_brief.get('tldr') or master_brief.get('regime_read')) %}
+        {% call aib.aibrief_body(master_brief, 'macro', show_catalysts=True) %}
         <div class="isle-aibrief-footer"><span></span><a href="aibrief.html" class="isle-aibrief-link"><span class="l-en">Full brief page (China &amp; Bitcoin lenses) →</span><span class="l-zh">完整简报页（中国与比特币视角）→</span></a></div>
+        {% endcall %}
         {% else %}
+        {# Fallback teaser when master_brief is absent — keeps the mandatory badge visible #}
+        <div class="aib2"><div class="aib2-hdr">
+          <div class="aib2-icon" aria-hidden="true">AI</div>
+          <div class="aib2-hdr-meta">
+            <div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
+          </div>
+          <span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
+        </div></div>
         {# Fallback teaser when master_brief is absent #}
         {% if macro_news is defined and macro_news and macro_news.synthesis and macro_news.synthesis.get('read') %}
         {% set _dlg_syn = macro_news.synthesis %}

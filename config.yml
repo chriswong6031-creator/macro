@@ -3994,6 +3994,8 @@ master_brain:
                                   # skips the (paid) LLM call until it's that many days old
                                   # — set from the admin dashboard's AI Brief panel.
   lenses: [macro, china, btc]     # which briefs to generate (one LLM call each)
+  interval_days_by_lens:          # per-lens override for interval_days (spec §7)
+    btc: 3                        # BTC refreshes every 3 days (daily is wasteful)
   api_key_env: DEEPSEEK_API_KEY
   llm_base_url: https://api.deepseek.com/anthropic
   llm_model: deepseek-v4-pro      # reasoning tier ($0.435/$0.87 per 1M tok)
