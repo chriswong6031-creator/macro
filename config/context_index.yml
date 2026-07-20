@@ -70,6 +70,14 @@ projects:
         source_type: research
 
       # A3 — durable interpretation (docs + research markdown)
+      - id: site-semantics
+        roots:
+          - docs/site_semantics/**/*.md
+        authority_class: A3
+        visibility: shared
+        chunker: markdown_sections
+        source_type: research
+
       - id: repo-docs
         roots:
           - docs/**/*.md

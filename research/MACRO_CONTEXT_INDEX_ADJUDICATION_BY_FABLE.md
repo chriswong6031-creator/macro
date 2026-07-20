@@ -188,3 +188,36 @@ benchmark v1.2 + this amendment text. CXI-2 fusion gains per-project DB merge (d
 already assumed multi-list RRF). Consumer wiring for Mastermind brain seats / Terminal
 build sessions (both already run Claude on this host) is a CXI-6-class step behind the
 same §15 gates.
+
+---
+
+## Amendment 2 (2026-07-20, operator order) — comprehension layer + discovery
+
+Operator evidence: a fresh session was asked what the `china.html` track-record strip
+("Beating CSI300 so far: 67% CI 63–70%, median excess +3.8%, n=660") means, and burned
+~108k tokens on repo exploration, collision checks, and task setup for what is a lookup.
+Root causes, both structural: (a) no session is told the Context Index exists — the CLI
+shipped in CXI-2 but discovery is zero; (b) the corpus has no layer answering "what does
+this user-facing stat MEAN" — the answer lives split across a template
+(`china.html.j2:3287`) and an engine grader (`china_standout_track.py:_wilson_ci`/
+`hit_vs_csi300`) with no curated entry for either humans or retrieval to hit.
+
+### Rulings
+
+| # | Ruling |
+|---|---|
+| **CXI-R18** | **Comprehension is a first-class question family; the site-semantics glossary layer is chartered.** `docs/site_semantics/<page>.md` — one curated entry per user-facing stat/panel: plain-word meaning, computed-by (file + symbol references, never line numbers), universe/window, threshold or CI method, and the design-doctrine "so what" line. Authority A3 (derived interpretation); every entry MUST cite its computing source; a drift test asserts referenced files and symbols exist (full hash-pinning deferred to the curator wave). This is documentation of the product, NOT a second source of truth (CXI-R12 untouched): when glossary and code disagree, code wins and the entry is a bug. The benchmark gains a `comprehension` family seeded with real operator questions — the CSI300 question verbatim is row 1 — and future operator questions are mined into it continuously (the benchmark was designed to grow from real sessions). Bilingual bodies optional in v1; entry titles EN. |
+| **CXI-R19** | **Advisory discovery pointer permitted now; mandatory preflight stays gated.** A ≤4-line advisory in `CLAUDE.md` telling sessions the index exists and to TRY it for lookup/comprehension/collision questions before broad exploration is authorized immediately — the tool cannot earn usage evidence if no session knows it exists, and the pointer's worst case is one ~1s CLI call returning a cited packet. The docket §12 session operating contract (mandatory preflight, packet discipline, knowledge-candidate emission) remains gated on the §15 A/B success gates, unchanged. The pointer must be marked advisory and must not claim reliability the eval numbers don't support. |
+| **CXI-R20** | **"Ask the site" direction noted for a later wave.** The Brain gateway chat (dashboard/Terminal, W6a) may eventually wire `context_search` as a context-only, citation-bearing tool so operator comprehension questions are answered by the Fast tier + retrieval instead of a full Claude Code session. Compliant with CXI-R2 (retrieval output is data, never authority). Requires CXI-3 tool surface; not built in this pass. |
+| **CXI-R21** | **Comprehension rows grade on the glossary entry.** As authored, CTX-097..104 required the glossary page AND the computing engine file jointly in top-10 — the CXI-R17 defect class again: the glossary entry alone answers a comprehension question (its Computed-by citation is the pointer; `context_open` follows it). Engine files demoted to acceptable. Post-regold run v5: comprehension 8/8. Standing rule for future comprehension rows: required = the curated entry; acceptable = its cited sources. |
+| **CXI-R22** | **No-answer floor verdict — honest null, next mechanism named.** A fused-score floor cannot separate negative controls from real queries at this corpus state (score ranges overlap; a distinctive-term rule false-nulled real code queries and was reverted). The floor ships at 0.010 (degenerate-empties only). Negative controls stay 0/10 and the gate stays red until either an IDF-rarity term rule (deterministic, preferred first) or the CXI-R9-gated semantic lane addresses it — this documented miss class is admissible entry evidence for CXI-W4. Threshold-tuning re-attempts without a new mechanism are rejected. |
+
+### Build-plan impact
+
+**CXI-2x** (this pass, one PR): (a) retrieval-quality iteration — no-answer score floor
+(negative controls are 0/10, the dominant gate drag; floor calibrated on the frozen set,
+overfit risk accepted for v1 and printed), residual replay/governance miss diagnosis from
+the v1.4 run-v2 failure list, eval production-parity for adjudication rows; (b) glossary
+seed for the four highest-traffic pages (macro, us_stocks, china, china_stocks) including
+the CSI300 strip entry; (c) benchmark v1.5 `comprehension` family; (d) re-eval appended as
+run v3. **CLAUDE-pointer micro-PR** separately (hot file, cut fresh at merge time).
