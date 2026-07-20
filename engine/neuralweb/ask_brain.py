@@ -327,15 +327,19 @@ def _post_filter_advice(answer: str, citations: list[str]) -> tuple[str, bool]:
     """
     for pat in _ADVICE_PATTERNS:
         if pat.search(answer):
-            # Genuine personal-order language slipped through — decline the *order* gracefully
-            # and point back to what the calibrated signals say (no jargon trailer).
-            refusal = (
-                "I can't give a personal buy/sell instruction — but I cannot provide "
-                "investment advice, so here's the honest version: what the dashboard's "
-                "calibrated signals show, and the stance they point to."
-            )
+            # Genuine personal-order language slipped through — decline the *order*
+            # gracefully. Language-aware: a Chinese answer must never be replaced with an
+            # English refusal (and the old copy promised an "honest version" it never gave).
+            zh = bool(re.search(r"[一-鿿]", answer))
+            if zh:
+                refusal = ("我不能给出个人买卖指令 —— 但可以告诉你看板的校准信号现在显示什么，"
+                           "以及它们指向的立场。想让我按信号帮你梳理当前的方向吗？")
+            else:
+                refusal = ("I can't give a personal buy/sell call — but I can tell you what the "
+                           "dashboard's calibrated signals show and the stance they point to. "
+                           "Want me to walk through what the signals favor right now?")
             if citations:
-                refusal += "\n\nSources: " + ", ".join(citations)
+                refusal += ("\n\n来源: " if zh else "\n\nSources: ") + ", ".join(citations)
             return refusal, True
     return answer, False
 
