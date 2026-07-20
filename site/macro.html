@@ -1426,20 +1426,12 @@
   .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
   .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
   .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
-  /* W2 outcomes strip — recently surfaced → outcome (pinned toggle) */
-  /* board-track-toggle — gbtn glass pill (macro sweep 2026-07); keeps its --link
-     open-state identity */
-  .board-track-toggle{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;font-weight:600;
-    padding:3px 10px;border-radius:999px;border:1px solid var(--gbtn-brd);background:var(--gbtn-bg);color:var(--muted);
-    -webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
-    box-shadow:inset 0 1px 0 var(--gbtn-sheen);
-    cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;
-    transition:border-color .2s ease,color .2s ease,background .2s ease}
-  .board-track-toggle:hover{border-color:color-mix(in srgb, var(--link) 45%, var(--gbtn-brd-hover));color:var(--link);background:var(--gbtn-bg-hover)}
-  .board-track-toggle.is-open{border-color:color-mix(in srgb, var(--link) 55%, var(--gbtn-brd));color:var(--link);background:linear-gradient(180deg, color-mix(in srgb, var(--link) 12%, var(--gbtn-bg)), var(--gbtn-bg))}
-  /* when relocated into the show-more bar, pin it to the left edge and keep the
-     "Showing X of Y" / show-more controls in their centered positions */
-  .sm-bar>.board-track-toggle{order:-1;margin-right:auto}
+  /* W2 outcomes strip — recently surfaced → outcome */
+  /* NOTE: the old .board-track-toggle glass pill + its .sm-bar relocation rules
+     were removed with the Track-record popup revamp (2026-07-20). The receipt
+     chip + dialog now live in the shared partial templates/_track_record_dlg.html.j2
+     (all styles are self-scoped `trd-`). theme.js pinBoardTrackToggle() early-
+     returns harmlessly now that #board-track-toggle no longer renders. */
   .board-outcomes{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
   .board-outcomes-hdr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:5px}
   .board-outcomes-title{font-weight:700;font-size:12px}
@@ -3168,8 +3160,18 @@ body.page-macro .mxqm-eyebrow-chip{margin-left:auto;font-size:9.5px;font-weight:
 body.page-macro #mx5FlipCtxPop .mxfs-badge{display:none}
 body.page-macro .mxqm-glance{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.78));margin:2px 0 10px}
 body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b);font-weight:700}
-body.page-macro .mxqm-wrap{margin:0 0 10px}
-body.page-macro .mxqm-svg-box{width:100%;max-width:340px;margin:0 auto}
+/* Goldilocks trim (2026-07-20): ONE quiet compressed line (grip + weakest support)
+   replacing the deleted flip-strip section; + one-line footer. */
+body.page-macro .mxqm-hold{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px;
+  font-size:12px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.68))}
+body.page-macro .mxqm-hold-txt b{color:var(--ink-1,rgba(255,255,255,.92));font-weight:650}
+body.page-macro .mxqm-hold .help{flex:0 0 auto}
+[data-theme="light"] body.page-macro .mxqm-hold{color:rgba(0,0,0,.62)}
+body.page-macro .mxqm-foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
+  font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.42))}
+[data-theme="light"] body.page-macro .mxqm-foot{color:rgba(0,0,0,.42)}
+body.page-macro .mxqm-wrap{margin:0 0 8px}
+body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
 /* Quad fill classes — fixed hex (SVG presentation fills don't read var()); match
    theme.css dark defaults. Active tile lifts brighter. */
@@ -3239,26 +3241,15 @@ body.page-macro.mx4-grid .mx5-flipctx-pop{
   opacity:0;visibility:hidden;transform:translateY(-4px);
   transition:opacity .18s ease .05s,transform .18s ease .05s,visibility 0s linear .3s;
   pointer-events:none;
-  /* belt-and-braces: cap height so a tall pop scrolls inside itself rather than
-     bleeding under the section below (the JS lift on #regime-radar is the primary fix) */
-  max-height:min(64vh,540px);overflow-y:auto;overscroll-behavior:contain;
+  /* Goldilocks trim (2026-07-20): the pop now fits without scrolling (flip-strip section
+     deleted, weakest+grip compressed to one line), so the scroll cap + bottom fade are
+     removed per Fable's "a hover popup must never scroll" ruling. */
   background:var(--mx5-pop-bg,rgba(16,21,30,.97));
   border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));
   border-radius:14px;
   box-shadow:0 18px 48px rgba(0,0,0,.5);
-  padding:12px 14px 18px;
+  padding:12px 14px 14px;
   backdrop-filter:blur(20px);
-}
-/* Wave E — bottom fade-out hint so a scroll-clipped row reads as "there's more below".
-   Applied to an inner wrapper via a pseudo so it doesn't fade the border/backdrop. */
-body.page-macro.mx4-grid .mx5-flipctx-pop::after{
-  content:"";position:sticky;bottom:0;left:0;right:0;display:block;
-  height:20px;margin:-20px -14px -18px;pointer-events:none;
-  background:linear-gradient(to bottom,transparent,var(--mx5-pop-bg,rgba(16,21,30,.97)));
-  border-radius:0 0 14px 14px;
-}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop::after{
-  background:linear-gradient(to bottom,transparent,#fff);
 }
 [data-theme="light"] body.page-macro.mx4-grid .mx5-flipctx-pop{
   background:#fff;
@@ -6237,6 +6228,59 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(n+6){transition-delay:.40s;}
 }
 
+/* ── rlx-* : rich-lens popover anatomy (Tier-2 rework 2026-07-20) ────────────
+   Illustrated hover cards for the six dlg-risk signal tiles (+ any heavy tip).
+   Content lives in a hidden .lens-src child of the tile; the site LENS engine
+   (theme.js #3102) clones it into a body-appended glass .lens-pop and manages
+   chrome / clamping / bottom-sheet at ≤640px / reduced-motion. These classes
+   style the CLONE, so they are global (not #dlg-risk-scoped) and lean on the
+   --lens-* token chain the engine sets, so light mode + vector pages inherit.
+   Anatomy (Fable direction): .lens-hd (engine) → optional rlx-viz mini-illustration
+   → rlx-rows label:value glance rows → optional rlx-chips ticker row → .lens-receipt
+   (engine) honest compressed receipt. Budget ≤ ~45 visible words + receipt. */
+.rlx-viz{margin:2px 16px 4px;padding:10px 12px;border-radius:11px;
+  background:color-mix(in srgb,var(--lens-text,#d7dce3) 4%,transparent);
+  border:1px solid color-mix(in srgb,var(--lens-text,#d7dce3) 9%,transparent);}
+.rlx-viz-cap{font:600 10px/1.4 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);margin-top:8px;}
+/* comparison bars — two labelled horizontal bars (deeper vs shallower, cohort vs cohort) */
+.rlx-bars{display:flex;flex-direction:column;gap:8px;}
+.rlx-bar-row{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:9px;min-width:0;}
+.rlx-bar-lbl{font:600 9.5px/1.2 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);
+  overflow-wrap:anywhere;}
+.rlx-bar-track{position:relative;height:9px;border-radius:5px;
+  background:color-mix(in srgb,var(--lens-mut,#8b93a1) 20%,transparent);overflow:hidden;}
+.rlx-bar-fill{position:absolute;inset:0 auto 0 0;border-radius:5px;
+  width:var(--rlx-w,50%);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--rlx-c,var(--lens-accent,#5b9bf0)) 55%,transparent),var(--rlx-c,var(--lens-accent,#5b9bf0)));}
+.rlx-bar-fill.muted{background:color-mix(in srgb,var(--lens-mut,#8b93a1) 45%,transparent);}
+/* progress-to-maturity bar (single track + marker) */
+.rlx-prog{position:relative;height:10px;border-radius:6px;
+  background:color-mix(in srgb,var(--lens-mut,#8b93a1) 20%,transparent);overflow:hidden;}
+.rlx-prog-fill{position:absolute;inset:0 auto 0 0;width:var(--rlx-w,50%);border-radius:6px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--rlx-c,var(--lens-accent,#5b9bf0)) 50%,transparent),var(--rlx-c,var(--lens-accent,#5b9bf0)));}
+/* label:value glance rows */
+.rlx-rows{margin:6px 16px 10px;display:flex;flex-direction:column;gap:8px;}
+.rlx-row{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.rlx-k{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.11em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--lens-mut,#8b93a1) 82%,transparent);}
+.rlx-v{font:450 12px/1.5 var(--font-ui,Inter,sans-serif);color:color-mix(in srgb,var(--lens-text,#d7dce3) 90%,var(--lens-mut,#8b93a1));}
+.rlx-v b{font-weight:650;color:var(--lens-text,#d7dce3);}
+/* ticker chip row — Favor (green-tint) · Trim (red-tint) */
+.rlx-chips{margin:0 16px 12px;display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center;}
+.rlx-chips-lbl{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.1em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--lens-mut,#8b93a1) 80%,transparent);margin-right:1px;}
+.rlx-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-mono,ui-monospace,Menlo,monospace);
+  letter-spacing:.02em;padding:3px 7px;border-radius:6px;white-space:nowrap;}
+.rlx-chip.up{color:var(--ok,var(--up,#3da564));background:color-mix(in srgb,var(--ok,var(--up,#3da564)) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--ok,var(--up,#3da564)) 30%,transparent);}
+.rlx-chip.dn{color:var(--down,#ef4444);background:color-mix(in srgb,var(--down,#ef4444) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
+@media(prefers-reduced-motion:no-preference){
+  .lens-pop.open .rlx-bar-fill,.lens-pop.open .rlx-prog-fill{transform:scaleX(0);transform-origin:0 50%;
+    animation:rlxGrow .6s cubic-bezier(.22,.9,.26,1.02) .1s both;}
+}
+@keyframes rlxGrow{to{transform:scaleX(1);}}
+
 /* — 3. US Leaders chart block (mono tickers, animated gradient bars, count chip) — */
 .rkc-ldr-head{display:flex;align-items:center;gap:9px;margin:2px 0 10px;}
 .rkc-ldr-state{flex:1;min-width:0;font:600 13px/1.4 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
@@ -6909,7 +6953,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">2</span>
+                <span class="ct">1</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -6922,15 +6966,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   
                   
                   
-                  
-                  
-                  
-                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Source &#39;finnhub_altdata&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;finnhub_altdata&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
-                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
-                  </a>
                   
                   
                   
@@ -7255,68 +7290,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         
         
-    
-    
-    
-    
-    
-    
-    
-    
-    <div class="mxfs">
-      <div class="mxfs-hd">
-        <span class="l-en">What could change the regime call</span><span class="l-zh">什么会改变周期判断</span>
-        <span class="help">?<span class="tip"><span class="l-en">Drawn only from today&#39;s regime-engine readings, shown as-is. Weakest support: the component still supporting the call — slope z -0.61 vs its ±0.45 cutoff, margin 0.16. Drift: how the model&#39;s regime probabilities moved over the last 5 sessions. How firmly held: 0–1 = probability behind the label × how much the inputs agree. Conditional context only — nothing here predicts a flip.</span><span class="l-zh">仅取自今日周期引擎的读数，原样展示。最弱支撑：仍支撑当前判断的最弱分量 — 斜率 z -0.61，阈值 ±0.45（边际 0.16）。漂移方向：模型周期概率近 5 个交易日的变化。把握程度：0–1 = 标签背后的概率 × 输入一致度。仅为条件性参考 — 并非预测翻转。</span></span></span>
-        <span class="mxfs-badge"><span class="l-en">Context — not a forecast</span><span class="l-zh">情景参考 — 非预测</span></span>
-      </div>
-      <div class="mxfs-subtitle"><span class="l-en">About the regime label — not the 0-100 risk score.</span><span class="l-zh">指上方周期标签——并非 0-100 风险评分。</span></div>
-      
-      
-      
-      
-      
-      
-      
-      <div class="mxfs-row">
-        <span class="mxfs-k"><span class="l-en">Weakest support</span><span class="l-zh">最弱支撑</span></span>
-        <span class="mxfs-v">
-          <span class="l-en"><b>the shopper-confidence trade</b> is the shakiest evidence behind this call — cushion today: <b>narrow</b></span>
-          <span class="l-zh"><b>消费信心交易</b>是当前判断中最不稳的一条证据 — 今日缓冲：<b>偏窄</b></span>
-        </span>
-      </div>
-      
-      
-      
-      
-      <div class="mxfs-row">
-        <span class="mxfs-k"><span class="l-en">Drift</span><span class="l-zh">漂移方向</span></span>
-        <span class="mxfs-v">
-          
-          <span class="l-en">the model's odds have been sliding toward <b>Reflation</b>, away from <b>Goldilocks</b>, for 5 sessions</span>
-          <span class="l-zh">近5个交易日概率正滑向<b>再通胀</b>、离开<b>理想增长</b></span>
-          
-        </span>
-      </div>
-      
-      
-      
-      
-      <div class="mxfs-row">
-        <span class="mxfs-k"><span class="l-en">How firmly held</span><span class="l-zh">把握程度</span></span>
-        <span class="mxfs-v">
-          <span class="l-en"><b>loosely</b> (0.17 / 1) — it wouldn't take much new evidence to change this label</span>
-          <span class="l-zh"><b>较松</b>（0.17 / 1）— 不需太多新证据即可改变该判断</span>
-        </span>
-      </div>
-      
-      
-      
-      
-      <div class="mxfs-stance"><span class="l-en">Treat the label as provisional — lean on the risk score, not the regime name.</span><span class="l-zh">该标签宜视为临时——以风险评分为主，勿依赖周期名称。</span></div>
-      
-    </div>
-    
-    
+        <div class="mxqm-hold">
+          <span class="mxqm-hold-txt">
+            <span class="l-en">Held loosely — weakest support is <b>the shopper-confidence read</b>.</span>
+            <span class="l-zh">把握较松 — 最弱支撑为<b>消费信心读数</b>。</span>
+          </span>
+          <span class="help">?<span class="tip"><span class="l-en">conviction 0.17 / 1 · cushion 0.16 · drift measured over 5 sessions</span><span class="l-zh">把握 0.17 / 1 · 缓冲 0.16 · 漂移基于近 5 个交易日</span></span></span>
+        </div>
+        
+        
+        <div class="mxqm-foot"><span class="l-en">About the regime label — not the 0–100 risk score.</span><span class="l-zh">指周期标签——并非 0–100 风险评分。</span></div>
       </div>
       </div>
 
@@ -11364,9 +11347,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         
         <span class="mx5-ai-ticker-pill">USO</span>
         
-        <span class="mx5-ai-ticker-pill">SPY</span>
-        
         <span class="mx5-ai-ticker-pill">GLD</span>
+        
+        <span class="mx5-ai-ticker-pill">SPY</span>
         
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
@@ -11376,14 +11359,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          7 high-impact signals across channels
+          6 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">6 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          7 条高影响信号
+          6 条高影响信号
         </span>
         
       </div>
@@ -11459,11 +11442,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">We&#39;re raising our price target on Goldman Sachs after a blowout quarter, upbeat …</span>
-              <span class="l-zh">高盛季度业绩强劲、展望乐观，我们上调其目标价</span>
+              <span class="l-en">These energy stocks are trading near oversold levels as Q2 earnings gains pace t…</span>
+              <span class="l-zh">These energy stocks are trading near oversold levels as Q2 e…</span>
             </div>
             <div class="mx5-alert-detail">
-              <span>CNBC - Markets</span> · 
+              <span>Seeking Alpha - Market Currents</span> · 
               <span style="color:var(--mx5-warn-ink,#9c6212);font-weight:600"><span class="l-en">High impact</span><span class="l-zh">高影响</span></span>
             </div>
           </div>
@@ -11476,8 +11459,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 2 in feed</span>
-          <span class="l-zh">显示 1 / 2 条</span>
+          <span class="l-en">Showing 1 of 1 in feed</span>
+          <span class="l-zh">显示 1 / 1 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -12487,7 +12470,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   
   
   <div class="rrx-cyc">
-    <span class="rrx-cyc-k"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span> · <span class="l-en">Apr–Oct window</span><span class="l-zh">4–10月窗口</span></span><button class="lens-q" type="button" aria-label="Explain" data-lens-kind="record" data-tip-en="Midterm Apr–Oct drawdowns averaged −15% vs −10% otherwise (n=8, suggestive not significant, p≈0.09; the worst years on record are non-midterm). Edge is narrow: while the tape is still healthy (S&amp;P above its 200-day), this window has flagged ≥5% pullbacks at ~1.25× the base rate — early warning, sized not triggered." data-tip-zh="中期选举年 4–10 月最大回撤平均约 −15%（其余年份约 −10%；n=8，仅具提示性、未达显著，p≈0.09；史上最深回撤多发生在非中期年）。 优势有限：当大盘仍健康（标普高于 200 日线）时，该窗口的 ≥5% 回撤概率约为常态的 1.25 倍——用于提前预警与降低仓位，而非触发买卖。" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · calendar adjusts sizing only — never raises an alarm" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 日历仅微调仓位，绝不单独报警">?</button>
+    <span class="rrx-cyc-k"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span> · <span class="l-en">Apr–Oct window</span><span class="l-zh">4–10月窗口</span></span><button class="lens-q" type="button" aria-label="Explain" data-lens-kind="record" data-tip-en="Midterm-year drops between April and October have run deeper than usual — though the pattern is loose, and the worst crashes on record came in other years. The one measured edge: while the market still looks healthy (S&amp;P above its 200-day average), pullbacks have come about 1.25× as often in this window — an early heads-up for position size, never a trigger." data-tip-zh="中期选举年 4–10 月的回撤历来比平常更深——但规律并不严格，史上最深的下跌都发生在其他年份。 唯一可量化的优势：当大盘仍健康（标普高于 200 日均线）时，该窗口出现回撤的频率约为平常的 1.25 倍——仅作提前提醒、用于仓位，绝非买卖触发。" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · calendar adjusts sizing only — never raises an alarm" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 日历仅微调仓位，绝不单独报警">?</button>
     <span class="rrx-cyc-tag">▲ <span class="l-en">early-warning sensitivity raised</span><span class="l-zh">已提高预警灵敏度</span></span>
     <div class="rrx-cyc-sub"><span class="l-en">historically bottoms ~Aug–Oct 2026</span><span class="l-zh">历史上约在 2026 年 8–10 月见底</span></div>
     
@@ -12516,7 +12499,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   <div class="rrx-cyc rrx-cax">
     <span class="rrx-cyc-k"><span class="l-en">Markets moving as one</span><span class="l-zh">多市场同涨同跌</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Absorption 89th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 89分位（5年）；集群：US、Commodities、Dollar</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Absorption 88th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 88分位（5年）；集群：US、Commodities、Dollar</span></span></span>
   </div>
 
   <div class="rrx-trk">
@@ -12534,7 +12517,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="rkc-sig-grid">
 
           
-          <div class="rkc-sig" style="--rkc-c:var(--isle-risk,#e05c5c)" data-tip-en="Leading leg sits at the 72nd percentile, a second at the 66th — measured against a 5-year window. Higher = more stretched." data-tip-zh="领先因素处于 72 分位，另一因素处于 66 分位——基于近5年区间衡量。越高越极端。">
+          <div class="rkc-sig" style="--rkc-c:var(--isle-risk,#e05c5c)" data-lens-kind="caution" data-tip-en="Leading leg at the 72nd percentile of its 5-year range — higher = more stretched." data-tip-zh="领先因素处于其 5 年区间的 72 分位——越高越极端。">
             <span class="rkc-sig-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl"><span class="l-en">Leading</span><span class="l-zh">领先信号</span></div>
@@ -12542,6 +12525,41 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <div class="rkc-sig-state"><span class="l-en">Cyclicals fading vs defensives</span><span class="l-zh">周期股弱于防御</span> <span class="l-en">— clearly</span><span class="l-zh">— 明显</span></div>
             </div>
             <span class="rkc-sig-tip">?</span>
+            
+            <span class="lens-src" data-lens-kind="caution" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">LEADING PRESSURE</span><span class="l-zh">领先压力</span></span>
+                  <span class="lens-title"><span class="l-en">How stretched, vs 5 years</span><span class="l-zh">相对5年区间的极端度</span></span>
+                </span>
+              </div>
+              <div class="rlx-viz" style="--rlx-c:var(--isle-risk,#e05c5c)">
+                <div class="rlx-bars">
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">Cyclicals fading vs defensives</span><span class="l-zh">周期股弱于防御</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:72%"></span></span>
+                  </div>
+                  
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">Defensives outperforming</span><span class="l-zh">防御股跑赢</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill muted" style="--rlx-w:66%"></span></span>
+                  </div>
+                  
+                </div>
+                <div class="rlx-viz-cap"><span class="l-en">Bars sit further right the more stretched a leg is vs its own 5-year range.</span><span class="l-zh">越靠右，代表该因素相对其自身 5 年区间越极端。</span></div>
+              </div>
+              <div class="rlx-rows">
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">What it is</span><span class="l-zh">这是什么</span></span>
+                  <span class="rlx-v"><span class="l-en">The risk read that&rsquo;s furthest out right now — the one carrying the caution.</span><span class="l-zh">当前最极端的一条风险读数——警惕主要来自它。</span></span>
+                </div>
+              </div>
+              <div class="lens-receipt">
+                <span class="l-en">72th pctile · second at 66th · 5-year window · display context</span>
+                <span class="l-zh">72 分位 · 次高 66 分位 · 5 年区间 · 展示背景</span>
+              </div>
+            </span>
           </div>
           
 
@@ -12560,7 +12578,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           
 
           
-          <div class="rkc-sig" style="--rkc-c:var(--isle-events,#e0a030)" data-lens-kind="record" data-tip-en="Midterm years tend to sag from April to October — pullbacks have come about 1.25× as often as usual, even while the market still looks healthy. Treat it as a lean-carefully season, not a sell signal: nothing fires from the calendar alone. In past midterm second halves, defensives (health care, staples, utilities) held up best while energy and discretionary lagged." data-tip-zh="中期选举年的 4–10 月往往偏弱——即使大盘仍然健康，回撤出现的频率也约为平常的 1.25 倍。把它当作「谨慎一些」的季节，而非卖出信号：日历本身绝不单独触发操作。历次中期年下半年，防御板块（医疗、必需消费、公用事业）相对抗跌，能源与可选消费偏弱。" data-tip-rc-en="8 midterm cases · weak edge (p≈.09) · worst crashes non-midterm · favor XLV·XLP·XLU / trim XLE·XLY" data-tip-rc-zh="8 个中期年样本 · 优势较弱（p≈.09）· 史上最深回撤在非中期年 · 偏好 XLV·XLP·XLU / 减持 XLE·XLY">
+          <div class="rkc-sig" style="--rkc-c:var(--isle-events,#e0a030)" data-lens-kind="record" data-tip-en="Midterm Apr–Oct tends to run weaker — a lean-carefully season, not a sell signal. Nothing fires from the calendar alone." data-tip-zh="中期选举年 4–10 月往往偏弱——是「谨慎一些」的季节，而非卖出信号。日历本身绝不单独触发操作。">
             <span class="rkc-sig-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14l2.5 2.5L15 12"/></svg></span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl"><span class="l-en">Calendar</span><span class="l-zh">日历</span></div>
@@ -12571,11 +12589,57 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
             </div>
             <span class="rkc-sig-tip">?</span>
+            
+            <span class="lens-src" data-lens-kind="record" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M8 14l2.5 2.5L15 12"/></svg></span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">SEASONAL WINDOW</span><span class="l-zh">季节窗口</span></span>
+                  <span class="lens-title"><span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span></span>
+                </span>
+              </div>
+              
+              <div class="rlx-viz" style="--rlx-c:var(--isle-events,#e0a030)">
+                <div class="rlx-bars">
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">Midterm<br>Apr–Oct</span><span class="l-zh">中期年<br>4–10月</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:82%"></span></span>
+                  </div>
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">Other<br>years</span><span class="l-zh">其他<br>年份</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill muted" style="--rlx-w:58%"></span></span>
+                  </div>
+                </div>
+                <div class="rlx-viz-cap"><span class="l-en">Pullbacks in this window have run deeper — even while the tape looks healthy.</span><span class="l-zh">该窗口的回撤历来更深——即便大盘看起来仍健康。</span></div>
+              </div>
+              <div class="rlx-rows">
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">Right now</span><span class="l-zh">当前</span></span>
+                  <span class="rlx-v"><span class="l-en">A <b>lean-carefully</b> season — not a sell signal. Nothing fires from the calendar alone.</span><span class="l-zh"><b>谨慎一些</b>的季节——并非卖出信号。日历本身绝不单独触发操作。</span></span>
+                </div>
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">What it does</span><span class="l-zh">作用</span></span>
+                  <span class="rlx-v"><span class="l-en">Nudges position sizing <b>smaller</b> and early alerts <b>sooner</b> — never raises the loud banner.</span><span class="l-zh">将仓位<b>略调小</b>、早期预警<b>略提前</b>——绝不拉响响亮警报。</span></span>
+                </div>
+              </div>
+              
+              <div class="rlx-chips">
+                <span class="rlx-chips-lbl"><span class="l-en">Favor</span><span class="l-zh">偏好</span></span>
+                <span class="rlx-chip up">XLV</span><span class="rlx-chip up">XLP</span><span class="rlx-chip up">XLU</span>
+                <span class="rlx-chips-lbl" style="margin-left:4px"><span class="l-en">Trim</span><span class="l-zh">减持</span></span>
+                <span class="rlx-chip dn">XLE</span><span class="rlx-chip dn">XLY</span>
+              </div>
+              
+              <div class="lens-receipt">
+                <span class="l-en">8 past midterms · suggestive, not significant · ~1.25× as often · deepest drops were in other years</span>
+                <span class="l-zh">8 个中期年样本 · 提示性、不显著 · 约 1.25 倍频率 · 史上最深回撤都在其他年份</span>
+              </div>
+            </span>
           </div>
           
 
           
-          <div class="rkc-sig" style="--rkc-c:var(--down,#ef4444)" data-tip-en="Pressure from abroad: HIGH — Taiwan&#39;s selloff is the main source · Main sources: Taiwan (11% off high), China (10% off high), Japan (11% off high)" data-tip-zh="海外传导压力：高 — 台湾的抛售是主要来源 · 主要来源：台湾（距高11%）、中国（距高10%）、日本（距高11%）">
+          <div class="rkc-sig" style="--rkc-c:var(--down,#ef4444)" data-lens-kind="caution" data-tip-en="Pressure from abroad: HIGH — Taiwan&#39;s selloff is the main source" data-tip-zh="海外传导压力：高 — 台湾的抛售是主要来源">
             <span class="rkc-sig-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="10" r="7"/><path d="M5 10h14M12 3a12 12 0 010 14"/><path d="M12 17v4"/></svg></span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl"><span class="l-en">Overseas</span><span class="l-zh">境外</span></div>
@@ -12585,11 +12649,57 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
             </div>
             <span class="rkc-sig-tip">?</span>
+            
+            <span class="lens-src" data-lens-kind="caution" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill" style="color:var(--down,#ef4444)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="10" r="7"/><path d="M5 10h14M12 3a12 12 0 010 14"/><path d="M12 17v4"/></svg></span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">OVERSEAS PRESSURE</span><span class="l-zh">境外压力</span></span>
+                  <span class="lens-title"><span class="l-en">Stress carried in from abroad — high</span><span class="l-zh">来自海外的压力——高</span></span>
+                </span>
+              </div>
+              
+              <div class="rlx-viz" style="--rlx-c:var(--down,#ef4444)">
+                <div class="rlx-bars">
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">Taiwan</span><span class="l-zh">台湾</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:33%"></span></span>
+                  </div>
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">China</span><span class="l-zh">中国</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill muted" style="--rlx-w:30%"></span></span>
+                  </div>
+                  <div class="rlx-bar-row">
+                    <span class="rlx-bar-lbl"><span class="l-en">Japan</span><span class="l-zh">日本</span></span>
+                    <span class="rlx-bar-track"><span class="rlx-bar-fill muted" style="--rlx-w:33%"></span></span>
+                  </div>
+                  
+                </div>
+                <div class="rlx-viz-cap"><span class="l-en">How far each big exporter has fallen from its recent high.</span><span class="l-zh">各主要出口市场距近期高点的回撤幅度。</span></div>
+              </div>
+              
+              <div class="rlx-rows">
+                
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">Right now</span><span class="l-zh">当前</span></span>
+                  <span class="rlx-v"><span class="l-en">Pressure from abroad: HIGH — Taiwan&#39;s selloff is the main source</span><span class="l-zh">海外传导压力：高 — 台湾的抛售是主要来源</span></span>
+                </div>
+                
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">Why it matters</span><span class="l-zh">为何重要</span></span>
+                  <span class="rlx-v"><span class="l-en">Overseas selling can wash back into US names — a heads-up, not a trigger.</span><span class="l-zh">海外抛售可能回流至美股——仅为提示，非触发。</span></span>
+                </div>
+              </div>
+              <div class="lens-receipt">
+                <span class="l-en">Pressure: high · tw 11% · cn 10% · jp 11% · display context</span>
+                <span class="l-zh">压力：高 · tw 11% · cn 10% · jp 11% · 展示背景</span>
+              </div>
+            </span>
           </div>
           
 
           
-          <div class="rkc-sig" style="--rkc-c:var(--isle-markets,#4d8ef5)" data-tip-en="When markets move together, one shock hits everything at once — diversification helps less. Co-movement at the 89th percentile (5y). Cluster: US, Commodities, Dollar." data-tip-zh="市场同步波动时，单一冲击会同时打击各类资产——分散配置作用下降。 联动度处于 89 分位（5年）。 集群：US、Commodities、Dollar。">
+          <div class="rkc-sig" style="--rkc-c:var(--isle-markets,#4d8ef5)" data-lens-kind="caution" data-tip-en="Markets are moving together — one shock hits everything at once, so spreading bets helps less." data-tip-zh="各市场正同步波动——单一冲击会同时打击各类资产，分散配置的作用下降。">
             <span class="rkc-sig-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="7" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M7.8 8.6l2.6 7.2M16.2 8.6l-2.6 7.2M8.4 7h7.2"/></svg></span>
             <div class="rkc-sig-body">
               <div class="rkc-sig-lbl"><span class="l-en">Correlation</span><span class="l-zh">相关性</span></div>
@@ -12598,6 +12708,41 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </div>
             </div>
             <span class="rkc-sig-tip">?</span>
+            
+            <span class="lens-src" data-lens-kind="caution" hidden>
+              <div class="lens-hd">
+                <span class="lens-ill" style="color:var(--isle-markets,#4d8ef5)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="7" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M7.8 8.6l2.6 7.2M16.2 8.6l-2.6 7.2M8.4 7h7.2"/></svg></span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">CO-MOVEMENT</span><span class="l-zh">联动度</span></span>
+                  <span class="lens-title"><span class="l-en">Moving as one — right now</span><span class="l-zh">同涨同跌——当前</span></span>
+                </span>
+              </div>
+              
+              <div class="rlx-viz" style="--rlx-c:var(--isle-markets,#4d8ef5)">
+                <div class="rlx-bar-row" style="grid-template-columns:70px 1fr">
+                  <span class="rlx-bar-lbl"><span class="l-en">vs 5-year<br>range</span><span class="l-zh">相对5年<br>区间</span></span>
+                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:88%"></span></span>
+                </div>
+                <div class="rlx-viz-cap"><span class="l-en">Further right = markets moving more tightly together than usual.</span><span class="l-zh">越靠右，代表市场比平常联动得更紧。</span></div>
+              </div>
+              
+              <div class="rlx-rows">
+                <div class="rlx-row">
+                  <span class="rlx-k"><span class="l-en">What it means</span><span class="l-zh">含义</span></span>
+                  <span class="rlx-v"><span class="l-en">When everything moves as one, <b>diversification protects less</b> — size risk to the whole book, not the name.</span><span class="l-zh">当资产同涨同跌时，<b>分散配置的保护更弱</b>——应按整体组合而非单一持仓来控风险。</span></span>
+                </div>
+              </div>
+              
+              <div class="rlx-chips">
+                <span class="rlx-chips-lbl"><span class="l-en">Tightest cluster</span><span class="l-zh">最紧集群</span></span>
+                <span class="rlx-chip dn">US</span><span class="rlx-chip dn">Commodities</span><span class="rlx-chip dn">Dollar</span>
+              </div>
+              
+              <div class="lens-receipt">
+                <span class="l-en">88th pctile co-movement · 5-year window · display context, not a trigger</span>
+                <span class="l-zh">联动度 88 分位 · 5 年区间 · 展示背景，非触发</span>
+              </div>
+            </span>
           </div>
           
 
@@ -12613,6 +12758,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 
               </div>
             </div>
+            
             
           </div>
 
@@ -13868,8 +14014,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="l-zh">初步迹象——初现火花，未经确认</span>
             </div>
             <div class="igd-asof">
-              <span class="l-en">as of 2026-07-19</span>
-              <span class="l-zh">截至 2026-07-19</span>
+              <span class="l-en">as of 2026-07-20</span>
+              <span class="l-zh">截至 2026-07-20</span>
             </div>
           </div>
         </div>
@@ -13940,7 +14086,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               </span>
             </span>
           </div>
-          <div class="igd-chip lit fresh" data-tip-en="20d log-RS slope=0.0189 (positive); turned positive 2bd ago" data-tip-zh="20日对数RS斜率=0.0189（正向）；2日前转正">
+          <div class="igd-chip lit fresh" data-tip-en="20d log-RS slope=0.0189 (positive); turned positive 3bd ago" data-tip-zh="20日对数RS斜率=0.0189（正向）；3日前转正">
             <span class="igd-chip-dot"></span>
             <span class="igd-chip-body">
               <span class="igd-chip-lbl">
@@ -14749,25 +14895,6 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
         
         
         
-        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
-          
-          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
-                  <span style="font-size:11px;margin-right:3px">🔌</span>
-                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
-                </div>
-                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
-              </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;finnhub_altdata&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;finnhub_altdata&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
-            </div>
-          </div>
-          
-        </div>
-        
         
         
         
@@ -14777,6 +14904,17 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           
           
           <details class="nb-item" open>
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">These energy stocks are trading near oversold levels as Q2 earnings gains pace this week</span><span class="l-zh">These energy stocks are trading near oversold levels as Q2 earnings gains pace this week</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://seekingalpha.com/news/4615204-these-energy-stocks-are-trading-near-oversold-levels-as-q2-earnings-gains-pace-this-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
               <span class="nb-htitle"><span class="l-en">We&#39;re raising our price target on Goldman Sachs after a blowout quarter, upbeat outlook</span><span class="l-zh">高盛季度业绩强劲、展望乐观，我们上调其目标价</span></span>
@@ -14790,10 +14928,10 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nb-htitle"><span class="l-en">Genesis Energy raises dividend by 11% to $0.20</span><span class="l-zh">Genesis Energy raises dividend by 11% to $0.20</span></span>
+              <span class="nb-htitle"><span class="l-en">Magnolia Oil &amp; Gas to buy WildFire Energy in $4B deal, raises dividend</span><span class="l-zh">Magnolia Oil &amp; Gas to buy WildFire Energy in $4B deal, raises dividend</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4615172-genesis-energy-raises-dividend-by-11-to-020?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4615200-magnolia-oil-gas-to-buy-wildfire-energy-in-4b-deal-raises-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -14823,6 +14961,17 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">Stock market today: Dow, S&amp;P 500, Nasdaq futures edge up as oil turns lower in wait for Big Tech earnings</span><span class="l-zh">Stock market today: Dow, S&amp;P 500, Nasdaq futures edge up as oil turns lower in wait for Big Tech earnings</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://finance.yahoo.com/markets/live/stock-market-today-monday-july-20-dow-sp-500-nasdaq-111429441.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
               <span class="nb-htitle"><span class="l-en">If history is a guide, there’s still another week before earnings will start to move the stock market</span><span class="l-zh">If history is a guide, there’s still another week before earnings will start to move the stock market</span></span>
             </summary>
             <div class="nb-body">
@@ -14844,22 +14993,11 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
           
           <details class="nb-item">
             <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nb-htitle"><span class="l-en">Crombie REIT declares CAD 0.0758 dividend</span><span class="l-zh">Crombie REIT declares CAD 0.0758 dividend</span></span>
+              <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nb-htitle"><span class="l-en">Best Energy Stocks</span><span class="l-zh">最佳能源股</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4615171-crombie-reit-declares-cad-0_0758-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nb-htitle"><span class="l-en">Peyto Exploration &amp; Development declares CAD 0.12 dividend</span><span class="l-zh">Peyto Exploration &amp; Development declares CAD 0.12 dividend</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://seekingalpha.com/news/4615168-peyto-exploration-and-development-declares-cad-0_12-dividend?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.benzinga.com/money/best-energy-stocks" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -14871,17 +15009,6 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
             </summary>
             <div class="nb-body">
               <a class="nb-read" href="https://finance.yahoo.com/markets/article/earnings-need-to-be-strong-wall-street-assesses-next-catalyst-for-ai-trade-120841127.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nb-htitle"><span class="l-en">Federal Reserve Board&#39;s annual bank stress test confirms that large banks are well positioned to weather a severe recession and able to continue to lend to households and businesses</span><span class="l-zh">美联储年度银行压力测试确认大型银行具备承受严重衰退的能力，可继续向家庭和企业放贷</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260624a.htm" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -18462,9 +18589,9 @@ Today&#39;s market is driven by a sharp unwind in AI and semiconductor stocks: c
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-20 09:54 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-20 11:28 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-20 09:54 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-20 11:28 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   

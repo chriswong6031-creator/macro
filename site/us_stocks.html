@@ -1426,20 +1426,12 @@
   .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
   .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
   .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
-  /* W2 outcomes strip — recently surfaced → outcome (pinned toggle) */
-  /* board-track-toggle — gbtn glass pill (macro sweep 2026-07); keeps its --link
-     open-state identity */
-  .board-track-toggle{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;font-weight:600;
-    padding:3px 10px;border-radius:999px;border:1px solid var(--gbtn-brd);background:var(--gbtn-bg);color:var(--muted);
-    -webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
-    box-shadow:inset 0 1px 0 var(--gbtn-sheen);
-    cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;
-    transition:border-color .2s ease,color .2s ease,background .2s ease}
-  .board-track-toggle:hover{border-color:color-mix(in srgb, var(--link) 45%, var(--gbtn-brd-hover));color:var(--link);background:var(--gbtn-bg-hover)}
-  .board-track-toggle.is-open{border-color:color-mix(in srgb, var(--link) 55%, var(--gbtn-brd));color:var(--link);background:linear-gradient(180deg, color-mix(in srgb, var(--link) 12%, var(--gbtn-bg)), var(--gbtn-bg))}
-  /* when relocated into the show-more bar, pin it to the left edge and keep the
-     "Showing X of Y" / show-more controls in their centered positions */
-  .sm-bar>.board-track-toggle{order:-1;margin-right:auto}
+  /* W2 outcomes strip — recently surfaced → outcome */
+  /* NOTE: the old .board-track-toggle glass pill + its .sm-bar relocation rules
+     were removed with the Track-record popup revamp (2026-07-20). The receipt
+     chip + dialog now live in the shared partial templates/_track_record_dlg.html.j2
+     (all styles are self-scoped `trd-`). theme.js pinBoardTrackToggle() early-
+     returns harmlessly now that #board-track-toggle no longer renders. */
   .board-outcomes{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
   .board-outcomes-hdr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:5px}
   .board-outcomes-title{font-weight:700;font-size:12px}
@@ -2489,7 +2481,7 @@
     <span class="igs-ic">🔥</span>
     <span class="igs-ttl"><span class="l-en">Ignition Radar</span><span class="l-zh">点火雷达</span></span>
     <span class="igs-state"><span class="l-en">Warming up</span><span class="l-zh">升温中</span></span>
-    <span class="igs-glance"><span class="l-en">XLE running · day 5</span><span class="l-zh">XLE 持续运行 · 第5日</span></span><span class="help">?<span class="tip">
+    <span class="igs-glance"><span class="l-en">XLE running · day 6</span><span class="l-zh">XLE 持续运行 · 第6日</span></span><span class="help">?<span class="tip">
       <span class="l-en">Gauges the evidence that risk appetite is turning back ON: eight broad-market turn signals plus turn evidence in the hottest theme groups — a theme's rank reflects its checklist, not a price gain. Today: Theme ignition with adequate participation. Evidence read, not a buy call — confluence with your own entry process. Grades its own calls nightly; the track record is still building. Risk-off mirror (macro page) reads: caution. Evidence, not a buy signal.</span>
       <span class="l-zh">衡量风险偏好回暖的证据：八个大盘转折信号加最热主题的转折证据 — 主题排名反映清单证据，并非涨幅。今日：主题点火且参与度尚可。证据读取，非买入信号 — 请结合您的入场流程综合判断。 每晚自评，记录仍在积累。风险预警镜像（宏观页）当前读数：caution。仅为证据，非买入信号。</span>
     </span></span>
@@ -2516,8 +2508,8 @@
         data-tip-en="Participation confirm · New highs flipping positive — 10d mean(nh-nl)=23.9 (was 26.3 10d ago)"
         data-tip-zh="参与度确认 · 新高翻正 — 10日均(新高-新低)=23.9（10日前26.3）"></span>
       <span class="igs-dot lit fresh"
-        data-tip-en="Participation confirm · Equal-weight RS (RSP/SPY) — 20d log-RS slope=0.0189 (positive); turned positive 2bd ago"
-        data-tip-zh="参与度确认 · 等权RS（RSP/SPY） — 20日对数RS斜率=0.0189（正向）；2日前转正"></span>
+        data-tip-en="Participation confirm · Equal-weight RS (RSP/SPY) — 20d log-RS slope=0.0189 (positive); turned positive 3bd ago"
+        data-tip-zh="参与度确认 · 等权RS（RSP/SPY） — 20日对数RS斜率=0.0189（正向）；3日前转正"></span>
       <span class="igs-dot"
         data-tip-en="Participation confirm · Sector breadth (8-of-11) — 5/11 ETFs above rising 50dma (need 8)"
         data-tip-zh="参与度确认 · 板块广度（11中8） — 5/11个ETF高于上升中50日线（需8个）"></span>
@@ -2536,7 +2528,7 @@
     <span class="igs-theme igniting"
       data-tip-en="#3 by turn evidence: 94% of this theme's checklist (member thrust, relative strength turning up, multi-timeframe confirm) is lit — evidence, not a price change · above a rising 200-day average"
       data-tip-zh="转折证据第3名：该主题清单（成分推进、相对强度转折、多周期确认）当前亮起94% — 为证据而非涨幅 · 高于上升中的200日均线">
-      <span class="igs-rank">#3</span> XLV ↗</span><span class="igs-asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-19</span>
+      <span class="igs-rank">#3</span> XLV ↗</span><span class="igs-asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-20</span>
   </div>
 </div>
   
@@ -9511,17 +9503,594 @@
         
       
       
-      <div class="board-track-glance" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span id="board-track-toggle" class="board-track-toggle" style="cursor:default"><span class="l-en">📊 Track record: 68% win · +2% avg</span><span class="l-zh">📊 往绩：胜率 68% · 平均 +2%</span></span>
-        
-        
-        <span class="muted" style="font-size:11px">
-          <span class="az-up">74 <span class="l-en">running</span><span class="l-zh">上涨</span></span>
-          · <span class="az-dn">34 <span class="l-en">stopped</span><span class="l-zh">止损</span></span> · 40 <span class="l-en">flat</span><span class="l-zh">持平</span>
-        </span>
-        
-        <a href="us_track_record.html" style="font-size:12px;font-weight:700;color:var(--link);white-space:nowrap"><span class="l-en">Full track record →</span><span class="l-zh">完整往绩 →</span></a>
+      
+      
+      
+      <style>
+/* ── trd tokens: fallback chains so all four CSS families resolve ──────────────
+   Every var falls back through theme.css :root (--gbtn-*, --panel2, --text …),
+   then to a literal so a single missing var never drops the whole declaration
+   (the color-mix-undefined-var trap). Accent is set per-band by the .trd-band-*
+   class below, so the chip, sparkline and card numbers all read one stance. */
+.trd-wrap{
+  --trd-accent: var(--link, #7aa7e0);
+  --trd-bg:     var(--gbtn-bg, color-mix(in srgb, var(--panel2, var(--panel, #181b21)) 52%, transparent));
+  --trd-bg-hi:  var(--gbtn-bg-hover, color-mix(in srgb, var(--panel2, var(--panel, #181b21)) 76%, transparent));
+  --trd-brd:    var(--gbtn-brd, color-mix(in srgb, var(--text, #d7dce3) 12%, transparent));
+  --trd-sheen:  var(--gbtn-sheen, rgba(255,255,255,.09));
+  --trd-panel:  var(--panel2, var(--panel, #181b21));
+  --trd-panel1: var(--panel, #181b21);
+  --trd-line:   var(--line, #2a2f3a);
+  --trd-text:   var(--text, #d7dce3);
+  --trd-muted:  var(--muted, #8b93a1);
+  --trd-link:   var(--link, #7aa7e0);
+  --trd-warn:   var(--warn, #e0a030);
+  display:inline-flex;max-width:100%;
+}
+.trd-band-up{ --trd-accent: var(--up, #45b873); }
+.trd-band-dn{ --trd-accent: var(--down, #e06464); }
+.trd-band-neutral{ --trd-accent: var(--link, #7aa7e0); }
+
+/* ── the chip / button ──────────────────────────────────────────────────────
+   Elevates the .gbtn glass DNA — never clones .board-track-toggle. */
+.trd-btn{
+  display:inline-flex;align-items:center;gap:9px;
+  border-radius:999px;padding:8px 15px 8px 12px;
+  border:1px solid color-mix(in srgb, var(--trd-accent) 35%, var(--trd-brd));
+  background:var(--trd-bg);
+  -webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
+  box-shadow:inset 0 1px 0 var(--trd-sheen), 0 1px 2px rgba(3,7,18,.18);
+  color:var(--trd-text);font:600 12.5px/1 var(--font-ui,inherit);
+  cursor:pointer;position:relative;overflow:hidden;isolation:isolate;
+  -webkit-tap-highlight-color:transparent;max-width:100%;
+  transition:border-color .22s ease, transform .12s ease, box-shadow .22s ease;
+}
+.trd-btn::after{ /* diagonal sheen sweep on hover */
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(115deg,transparent 30%,color-mix(in srgb,var(--trd-accent) 22%,transparent) 48%,transparent 66%);
+  transform:translateX(-120%);transition:transform .5s ease;
+}
+.trd-btn:hover{ transform:translateY(-1px);
+  border-color:color-mix(in srgb, var(--trd-accent) 55%, var(--trd-brd));
+  background:var(--trd-bg-hi); }
+.trd-btn:hover::after{ transform:translateX(120%); }
+.trd-btn:active{ transform:scale(.985); }
+.trd-btn:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:2px; }
+.trd-btn.trd-is-open{
+  border-color:var(--trd-accent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--trd-accent) 30%,transparent),
+             inset 0 1px 0 var(--trd-sheen), 0 0 14px color-mix(in srgb,var(--trd-accent) 22%,transparent);
+}
+/* sparkline icon */
+.trd-spark{ display:block;flex:none;width:40px;height:14px;overflow:visible; }
+.trd-spark path{ fill:none;stroke:var(--trd-accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--trd-accent) 60%,transparent)); }
+/* label + stat */
+.trd-lead{ color:var(--trd-muted);font-weight:600; }
+.trd-stat{ color:var(--trd-text);font-weight:600;white-space:nowrap; }
+.trd-stat b{ color:var(--trd-accent);font-weight:700; }
+.trd-sep{ color:var(--trd-muted);margin:0 2px; }
+/* chevron affordance */
+.trd-chev{ display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:18px;height:18px;border-radius:50%;
+  border:1px solid color-mix(in srgb,var(--trd-accent) 40%,var(--trd-brd));
+  transition:transform .2s ease,border-color .2s ease; }
+.trd-chev svg{ width:9px;height:9px;display:block;stroke:var(--trd-accent);stroke-width:2.4;
+  stroke-linecap:round;stroke-linejoin:round;fill:none; }
+.trd-btn:hover .trd-chev{ transform:translateX(2px);border-color:var(--trd-accent); }
+
+@media (prefers-reduced-motion: no-preference){
+  /* sparkline draw-in, once on load */
+  .trd-spark path.trd-live{ stroke-dasharray:120;stroke-dashoffset:120;animation:trd-draw .9s ease-out .15s forwards; }
+  @keyframes trd-draw{ to{ stroke-dashoffset:0; } }
+  /* slow breathing halo — scored/interim winning states only; NOT accruing
+     (nothing to brag about — honesty in motion). Quieter than .gbtn-cta. */
+  .trd-btn.trd-breathe{ animation:trd-breathe 3.8s ease-in-out infinite; }
+  @keyframes trd-breathe{
+    0%,100%{ box-shadow:inset 0 1px 0 var(--trd-sheen), 0 1px 2px rgba(3,7,18,.18); }
+    50%{ box-shadow:inset 0 1px 0 var(--trd-sheen), 0 0 0 4px color-mix(in srgb,var(--trd-accent) 12%,transparent), 0 1px 2px rgba(3,7,18,.18); }
+  }
+}
+
+/* ── dialog shell ───────────────────────────────────────────────────────────*/
+html.trd-lock{ overflow:hidden; }
+html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
+.trd-dlg{ display:none;position:fixed;inset:0;z-index:9200; }
+.trd-dlg.trd-open{ display:block; }
+.trd-backdrop{ position:absolute;inset:0;background:rgba(3,6,10,.55);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .28s ease; }
+.trd-dlg.trd-in .trd-backdrop{ opacity:1; }
+.trd-panel{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  box-sizing:border-box;
+  width:min(94vw,1020px);max-width:1020px;max-height:min(86vh,900px);
+  display:flex;flex-direction:column;
+  background:color-mix(in srgb,var(--trd-panel1) 92%, #05070d);
+  border:1px solid color-mix(in srgb,var(--trd-text) 12%,transparent);
+  border-radius:18px;overflow:hidden;
+  box-shadow:0 40px 120px rgba(0,0,0,.6),0 2px 0 rgba(255,255,255,.05) inset;
+  opacity:0;transition:opacity .1s ease;
+}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .trd-panel{ background:color-mix(in srgb,var(--trd-panel1) 82%, transparent);
+    -webkit-backdrop-filter:blur(26px) saturate(1.4);backdrop-filter:blur(26px) saturate(1.4); }
+}
+[data-theme="light"] .trd-panel{ background:#ffffff;border-color:rgba(0,0,0,.06);
+  box-shadow:0 32px 96px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.04); }
+@media (prefers-reduced-motion: no-preference){
+  .trd-panel{ transform:translate(-50%,calc(-50% + 14px)) scale(.985);
+    transition:opacity .34s ease, transform .34s cubic-bezier(.22,.9,.26,1); }
+  .trd-dlg.trd-in .trd-panel{ opacity:1;transform:translate(-50%,-50%) scale(1); }
+  .trd-dlg.trd-closing .trd-backdrop,.trd-dlg.trd-closing .trd-panel{ transition-duration:.18s; }
+  .trd-dlg.trd-closing .trd-backdrop{ opacity:0; }
+  .trd-dlg.trd-closing .trd-panel{ opacity:0;transform:translate(-50%,calc(-50% + 8px)) scale(.99); }
+}
+.trd-dlg.trd-in .trd-panel{ opacity:1; }
+
+/* sticky header */
+.trd-hd{ position:sticky;top:0;z-index:3;flex:none;
+  padding:18px 22px 14px;display:flex;align-items:flex-start;gap:14px;
+  background:color-mix(in srgb,var(--trd-panel1) 92%, #05070d);
+  border-bottom:1px solid color-mix(in srgb,var(--trd-text) 8%,transparent); }
+[data-theme="light"] .trd-hd{ background:#ffffff;border-bottom-color:rgba(0,0,0,.07); }
+.trd-hd-txt{ flex:1;min-width:0; }
+.trd-eyebrow{ font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--trd-muted); }
+.trd-title{ font-size:19px;font-weight:800;line-height:1.15;margin:2px 0 3px;color:var(--trd-text); }
+.trd-sub{ font-size:12.5px;line-height:1.35;color:var(--trd-muted);max-width:62ch; }
+.trd-close{ flex:none;width:32px;height:32px;border-radius:50%;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--trd-brd);background:var(--trd-bg);color:var(--trd-muted);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:inset 0 1px 0 var(--trd-sheen);transition:color .18s,border-color .18s,transform .12s; }
+.trd-close:hover{ color:var(--trd-text);border-color:color-mix(in srgb,var(--trd-text) 30%,var(--trd-brd)); }
+.trd-close:active{ transform:scale(.94); }
+.trd-close:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:2px; }
+.trd-close svg{ width:13px;height:13px;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;fill:none; }
+
+.trd-body{ overflow-y:auto;padding:16px 22px 20px;flex:1; }
+@media (prefers-reduced-motion: no-preference){
+  .trd-dlg.trd-in .trd-stg{ opacity:0;transform:translateY(8px);animation:trd-rise .4s ease forwards; }
+  .trd-dlg.trd-in .trd-stg-1{ animation-delay:.06s; } .trd-dlg.trd-in .trd-stg-2{ animation-delay:.10s; }
+  .trd-dlg.trd-in .trd-stg-3{ animation-delay:.14s; } .trd-dlg.trd-in .trd-stg-4{ animation-delay:.18s; }
+  @keyframes trd-rise{ to{ opacity:1;transform:none; } }
+}
+
+/* Zone A — verdict cards */
+.trd-ribbon{ margin:0 0 14px;padding:9px 13px;border-radius:10px;font-size:12px;line-height:1.4;
+  background:color-mix(in srgb,var(--trd-warn) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--trd-warn) 34%,transparent);color:var(--trd-text); }
+.trd-cards{ display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px; }
+.trd-card{ padding:14px;border-radius:12px;border:1px solid var(--trd-line);
+  background:color-mix(in srgb,var(--trd-panel) 60%,transparent); }
+.trd-card-k{ font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--trd-muted); }
+.trd-card-v{ font-size:26px;font-weight:700;line-height:1.1;margin:4px 0 2px;font-variant-numeric:tabular-nums; }
+.trd-card-v.trd-accented{ color:var(--trd-accent); }
+.trd-card-m{ font-size:10.5px;line-height:1.35;color:var(--trd-muted); }
+.trd-card.trd-card-wide{ grid-column:1 / -1; }
+/* segmented resolved bar */
+.trd-segbar{ display:flex;height:8px;border-radius:5px;overflow:hidden;margin:8px 0 6px;background:var(--trd-line); }
+.trd-seg{ height:100%;transition:none; }
+.trd-seg-up{ background:var(--up,#45b873); } .trd-seg-dn{ background:var(--down,#e06464); }
+.trd-seg-flat{ background:var(--trd-muted); }
+@media (prefers-reduced-motion: no-preference){ .trd-seg{ width:0;transition:width .6s ease .2s; } .trd-dlg.trd-in .trd-seg{ /* width set inline */ } }
+.trd-seg-legend{ font-size:10.5px;color:var(--trd-muted); }
+.trd-seg-legend b.trd-up{ color:var(--up,#45b873); } .trd-seg-legend b.trd-dn{ color:var(--down,#e06464); }
+/* timeline card (accruing) */
+.trd-tl{ margin-top:2px; }
+.trd-tl-bar{ position:relative;height:6px;border-radius:4px;background:var(--trd-line);margin:10px 0 6px;overflow:visible; }
+.trd-tl-fill{ position:absolute;left:0;top:0;bottom:0;border-radius:4px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--trd-accent) 30%,transparent),var(--trd-accent)); }
+.trd-tl-now{ position:absolute;top:-3px;width:12px;height:12px;border-radius:50%;
+  background:var(--trd-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--trd-accent) 25%,transparent);transform:translateX(-50%); }
+.trd-tl-ends{ display:flex;justify-content:space-between;font-size:10.5px;color:var(--trd-muted); }
+
+/* Zone B — filter rail + table */
+.trd-rail{ position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;
+  padding:10px 0 12px;margin-bottom:6px;border-bottom:1px solid var(--trd-line);
+  background:color-mix(in srgb,var(--trd-panel1) 92%,#05070d); }
+[data-theme="light"] .trd-rail{ background:#ffffff; }
+.trd-chips{ display:inline-flex;flex-wrap:wrap;gap:6px; }
+.trd-chip{ font:600 11.5px/1 var(--font-ui,inherit);padding:6px 11px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--trd-brd);background:transparent;color:var(--trd-muted);
+  transition:background .15s,color .15s,border-color .15s;white-space:nowrap; }
+.trd-chip:hover{ color:var(--trd-text);border-color:color-mix(in srgb,var(--trd-text) 26%,var(--trd-brd)); }
+.trd-chip[aria-pressed="true"]{ background:color-mix(in srgb,var(--trd-accent) 22%,transparent);
+  color:var(--trd-text);border-color:color-mix(in srgb,var(--trd-accent) 55%,transparent); }
+.trd-chip:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:2px; }
+.trd-search,.trd-sel{ font:500 12px/1 var(--font-ui,inherit);padding:6px 10px;border-radius:8px;
+  border:1px solid var(--trd-brd);background:color-mix(in srgb,var(--trd-panel) 50%,transparent);color:var(--trd-text); }
+.trd-search{ min-width:130px; } .trd-search::placeholder{ color:var(--trd-muted); }
+.trd-search:focus-visible,.trd-sel:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:1px; }
+.trd-rail-grow{ flex:1;min-width:6px; }
+
+.trd-tbl-wrap{ overflow-x:auto;border-radius:10px;border:1px solid var(--trd-line); }
+.trd-tbl{ width:100%;border-collapse:collapse;font-size:12px; }
+.trd-tbl th{ text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.02em;color:var(--trd-muted);
+  padding:8px 10px;border-bottom:1px solid var(--trd-line);white-space:nowrap;
+  background:color-mix(in srgb,var(--trd-panel) 40%,transparent);position:sticky;top:0; }
+.trd-tbl th.trd-num{ text-align:right; }
+.trd-tbl th.trd-sortable{ cursor:pointer;user-select:none; }
+.trd-tbl th.trd-sortable:hover{ color:var(--trd-text); }
+.trd-sort-ar{ opacity:.4;font-size:9px;margin-left:2px; }
+.trd-tbl th[aria-sort="ascending"] .trd-sort-ar,.trd-tbl th[aria-sort="descending"] .trd-sort-ar{ opacity:1;color:var(--trd-accent); }
+.trd-tbl td{ padding:7px 10px;border-bottom:1px solid color-mix(in srgb,var(--trd-line) 55%,transparent);vertical-align:middle;white-space:nowrap; }
+.trd-tbl td.trd-num{ text-align:right;font-variant-numeric:tabular-nums; }
+.trd-tbl tr:last-child td{ border-bottom:none; }
+.trd-tk{ font-weight:700;color:var(--trd-text); }
+.trd-tk a{ color:inherit;text-decoration:none;border-bottom:1px solid transparent; }
+.trd-tk a:hover{ border-bottom-color:currentColor; }
+.trd-sub-cell{ display:block;font-size:10px;color:var(--trd-muted);font-weight:400; }
+.trd-mut{ color:var(--trd-muted); }
+.trd-dot{ display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle; }
+.trd-dot-up{ background:var(--up,#45b873); } .trd-dot-dn{ background:var(--down,#e06464); }
+.trd-dot-flat{ background:var(--trd-muted); } .trd-dot-early{ background:var(--trd-warn); }
+.trd-flag{ font-size:10px;color:var(--trd-muted);margin-left:4px;cursor:help; }
+@media (prefers-reduced-motion: no-preference){
+  .trd-tbl tbody tr.trd-anim{ opacity:0;transform:translateY(8px);animation:trd-rowin .22s ease forwards; }
+  @keyframes trd-rowin{ to{ opacity:1;transform:none; } }
+}
+/* shimmer skeleton */
+.trd-skel{ border-radius:8px;background:linear-gradient(90deg,var(--trd-line) 25%,color-mix(in srgb,var(--trd-line) 40%,transparent) 50%,var(--trd-line) 75%);
+  background-size:200% 100%; }
+@media (prefers-reduced-motion: no-preference){ .trd-skel{ animation:trd-shimmer 1.3s linear infinite; } }
+@keyframes trd-shimmer{ to{ background-position:-200% 0; } }
+.trd-skel-row{ height:34px;margin:6px 0; } .trd-skel-card{ height:78px; }
+.trd-err{ padding:20px;text-align:center;color:var(--trd-muted);font-size:12.5px;line-height:1.5; }
+.trd-retry{ margin-top:8px;font:600 12px/1 var(--font-ui,inherit);padding:6px 14px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--trd-brd);background:var(--trd-bg);color:var(--trd-text); }
+.trd-retry:hover{ border-color:color-mix(in srgb,var(--trd-accent) 50%,var(--trd-brd)); }
+
+/* pagination */
+.trd-pg{ display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;margin-top:12px; }
+.trd-pg-btn{ font:600 12px/1 var(--font-ui,inherit);min-width:30px;padding:6px 9px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--trd-brd);background:transparent;color:var(--trd-muted);transition:background .15s,color .15s,border-color .15s; }
+.trd-pg-btn:hover:not(:disabled){ color:var(--trd-text);border-color:color-mix(in srgb,var(--trd-text) 26%,var(--trd-brd)); }
+.trd-pg-btn[aria-current="page"]{ background:color-mix(in srgb,var(--trd-accent) 22%,transparent);
+  color:var(--trd-text);border-color:color-mix(in srgb,var(--trd-accent) 55%,transparent); }
+.trd-pg-btn:disabled{ opacity:.4;cursor:default; }
+.trd-pg-btn:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:2px; }
+.trd-pg-ell{ color:var(--trd-muted);padding:0 2px; }
+.trd-pg-count{ font-size:11px;color:var(--trd-muted);margin-left:6px; }
+
+/* Zone C — footer */
+.trd-ft{ flex:none;padding:12px 22px;border-top:1px solid color-mix(in srgb,var(--trd-text) 8%,transparent);
+  display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
+  background:color-mix(in srgb,var(--trd-panel1) 92%,#05070d); }
+[data-theme="light"] .trd-ft{ background:#ffffff;border-top-color:rgba(0,0,0,.07); }
+.trd-ft-note{ flex:1;min-width:220px;font-size:10.5px;line-height:1.45;color:var(--trd-muted); }
+.trd-ft-link{ font:600 11.5px/1 var(--font-ui,inherit);padding:6px 12px;border-radius:999px;white-space:nowrap;
+  border:1px solid var(--trd-brd);background:var(--trd-bg);color:var(--trd-link);text-decoration:none;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px); }
+.trd-ft-link:hover{ border-color:color-mix(in srgb,var(--trd-link) 50%,var(--trd-brd)); }
+
+/* ── mobile: bottom sheet ≤700px ─────────────────────────────────────────────*/
+@media (max-width:700px){
+  .trd-panel{ left:0;top:auto;bottom:0;transform:none;width:100vw;max-width:100vw;
+    max-height:92vh;border-radius:16px 16px 0 0;border-bottom:none; }
+  @media (prefers-reduced-motion: no-preference){
+    .trd-panel{ transform:translateY(16px);transition:opacity .3s ease,transform .3s cubic-bezier(.22,.9,.26,1); }
+    .trd-dlg.trd-in .trd-panel{ transform:translateY(0); }
+    .trd-dlg.trd-closing .trd-panel{ transform:translateY(16px); }
+  }
+  .trd-hd,.trd-body,.trd-ft{ padding-left:16px;padding-right:16px; }
+  .trd-title{ font-size:17px; }
+}
+</style><span class="trd-wrap trd-band-up">
+<button type="button" id="trd-btn" class="trd-btn trd-breathe"
+        aria-haspopup="dialog" aria-expanded="false" aria-controls="trd-dlg"><svg class="trd-spark" viewBox="0 0 40 14" aria-hidden="true" preserveAspectRatio="none">
+    <path class="trd-live" d="M0.0,2.0 L13.3,7.7 L26.7,12.0 L40.0,7.2"/>
+  </svg><span class="trd-stat"><span class="trd-lead"><span class="l-en">Track record</span><span class="l-zh">往绩</span></span><span class="trd-sep">·</span><span class="l-en"><b>68% win</b> · +2% avg</span><span class="l-zh"><b>胜率 68%</b> · 平均 +2%</span></span>
+  <span class="trd-chev" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M4.5 2.5 L8 6 L4.5 9.5"/></svg></span>
+</button>
+</span><div class="trd-wrap trd-band-up" style="display:contents">
+<div id="trd-dlg" class="trd-dlg" role="dialog" aria-modal="true" aria-labelledby="trd-dlg-title" data-url="factordata/us_track_ledger.json" data-market="us" data-state="scored"
+     data-bench-en="S&amp;P 500" data-bench-zh="标普500" data-up-class="az-up" data-dn-class="az-dn">
+  <div class="trd-backdrop" data-trd-close></div>
+  <div class="trd-panel">
+    <div class="trd-hd">
+      <div class="trd-hd-txt">
+        <div class="trd-eyebrow"><span class="l-en">US buy board · vs S&amp;P 500</span><span class="l-zh">美股买入榜 · 对比标普500</span></div>
+        <div class="trd-title" id="trd-dlg-title"><span class="l-en">Track record</span><span class="l-zh">榜单往绩</span></div>
+        <div class="trd-sub"><span class="l-en">Worth following — wins are outrunning stops.</span><span class="l-zh">值得跟踪——盈多于损。</span></div>
       </div>
+      <button type="button" class="trd-close" data-trd-close aria-label="Close">
+        <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2 L12 12 M12 2 L2 12"/></svg>
+      </button>
+    </div>
+
+    <div class="trd-body"><div class="trd-stg trd-stg-1"><div class="trd-cards"><div class="trd-card">
+          <div class="trd-card-k"><span class="l-en">Win rate</span><span class="l-zh">胜率</span></div>
+          <div class="trd-card-v trd-accented">68%</div>
+          <div class="trd-card-m" data-tip-en="A win = a pick that left the board up more than 2% from its surfaced price. Flat names (within ±2%) don't count either way." data-tip-zh="胜＝上榜后较上榜价上涨超过 2% 的标的。持平（±2% 以内）不计入任何一方。"><span class="l-en">resolved picks that rose</span><span class="l-zh">已了结且上涨的占比</span></div>
+        </div>
+        <div class="trd-card">
+          <div class="trd-card-k"><span class="l-en">Avg move</span><span class="l-zh">平均涨跌</span></div>
+          <div class="trd-card-v az-up">+2%</div>
+          <div class="trd-card-m"><span class="l-en">surfaced price → latest, all resolved</span><span class="l-zh">上榜价→最新价，全部已了结</span></div>
+        </div>
+        <div class="trd-card trd-card-wide">
+          <div class="trd-card-k"><span class="l-en">Resolved</span><span class="l-zh">已了结</span></div>
+          <div class="trd-card-v">148</div><div class="trd-segbar" role="img" aria-label="up / flat / stopped mix">
+            <span class="trd-seg trd-seg-up" data-w="50.0" style="width:50.0%"></span>
+            <span class="trd-seg trd-seg-flat" data-w="27.0" style="width:27.0%"></span>
+            <span class="trd-seg trd-seg-dn" data-w="23.0" style="width:23.0%"></span>
+          </div>
+          <div class="trd-seg-legend"><b class="trd-up">74</b> <span class="l-en">up</span><span class="l-zh">涨</span> · 40 <span class="l-en">flat</span><span class="l-zh">持平</span> · <b class="trd-dn">34</b> <span class="l-en">stopped</span><span class="l-zh">止损</span></div>
+        </div></div>
+      </div><div class="trd-stg trd-stg-2">
+      <div class="trd-rail" id="trd-rail" role="toolbar" aria-label="Filter ledger">
+        <div class="trd-chips" id="trd-status-chips" data-market="us"></div>
+        <input type="search" class="trd-search" id="trd-search" data-ph-en="Find a stock" data-ph-zh="搜索股票" aria-label="Find a stock">
+        <div class="trd-chips" id="trd-window-chips"></div><select class="trd-sel" id="trd-sector" aria-label="Sector"></select><span class="trd-rail-grow"></span>
+      </div>
+      <div id="trd-tbl-mount">
+        <div class="trd-err" style="display:none"></div>
+      </div>
+      <div class="trd-pg" id="trd-pg"></div>
+      </div>
+    </div><div class="trd-ft">
+      <div class="trd-ft-note"><span class="l-en">Grading: entry = the closing price on the day a name surfaces; a win = it left the board up more than 2%. Delisted names can&#39;t be priced and sit outside these numbers. As of 2026-07-17.</span><span class="l-zh">打分：入场＝上榜当日收盘价；胜＝离榜时上涨超过 2%。退市个股无法定价，不计入以上数据。 截至 2026-07-17。</span></div><a class="trd-ft-link" href="us_track_record.html"><span class="l-en">Methodology &amp; full history ↗</span><span class="l-zh">方法与完整历史 ↗</span></a></div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  var btn = document.getElementById('trd-btn');
+  var dlg = document.getElementById('trd-dlg');
+  if(!btn || !dlg || dlg.dataset.trdInit) return;
+  dlg.dataset.trdInit = '1';
+  var panel = dlg.querySelector('.trd-panel');
+  var closeBtn = dlg.querySelector('.trd-close');
+  var isZh = function(){ return document.documentElement.getAttribute('data-lang') === 'zh'; };
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var scrollY = 0, loaded = false, DATA = null;
+
+  // ── open / close ──────────────────────────────────────────────────────────
+  function open(){
+    scrollY = window.scrollY || 0;
+    dlg.classList.add('trd-open');
+    document.documentElement.classList.add('trd-lock');
+    document.body.style.top = (-scrollY) + 'px';
+    btn.setAttribute('aria-expanded','true'); btn.classList.add('trd-is-open');
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ dlg.classList.add('trd-in'); }); });
+    (closeBtn || panel).focus();
+    if(!loaded) loadLedger();
+    animateCards();
+  }
+  function close(){
+    dlg.classList.add('trd-closing'); dlg.classList.remove('trd-in');
+    btn.setAttribute('aria-expanded','false'); btn.classList.remove('trd-is-open');
+    var done = function(){
+      dlg.classList.remove('trd-open','trd-closing');
+      document.documentElement.classList.remove('trd-lock');
+      document.body.style.top = '';
+      window.scrollTo(0, scrollY);
+      btn.focus();
+      panel.removeEventListener('transitionend', done);
+    };
+    if(reduce){ done(); } else { var t=setTimeout(done, 260); panel.addEventListener('transitionend', function h(){ clearTimeout(t); done(); }, {once:true}); }
+  }
+  btn.addEventListener('click', function(){ dlg.classList.contains('trd-open') ? close() : open(); });
+  dlg.querySelectorAll('[data-trd-close]').forEach(function(el){ el.addEventListener('click', close); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && dlg.classList.contains('trd-open')) close(); });
+  // focus trap (lightweight)
+  dlg.addEventListener('keydown', function(e){
+    if(e.key !== 'Tab') return;
+    var f = dlg.querySelectorAll('button,a[href],input,select,[tabindex]:not([tabindex="-1"])');
+    f = Array.prototype.filter.call(f, function(x){ return x.offsetParent !== null; });
+    if(!f.length) return;
+    var first = f[0], last = f[f.length-1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
+
+  // ── count-up on verdict cards ─────────────────────────────────────────────
+  var animated = false;
+  function animateCards(){
+    if(animated) return; animated = true;
+    if(reduce) return;
+    dlg.querySelectorAll('.trd-card-v').forEach(function(el){
+      var final = el.textContent;
+      var m = final.match(/^([+-]?)(\d+(?:\.\d+)?)(.*)$/);
+      if(!m) return;
+      var sign = m[1], target = parseFloat(m[2]), suffix = m[3], dec = (m[2].split('.')[1]||'').length;
+      var t0 = null, dur = 600, running = true;
+      // Safety net: if rAF never advances (throttled/background tab), snap to the
+      // real value — the server-rendered number must never be left stuck at 0.
+      var guard = setTimeout(function(){ if(running){ running = false; el.textContent = final; } }, dur + 120);
+      function step(ts){ if(!running) return; if(!t0) t0 = ts; var p = Math.min((ts - t0)/dur, 1);
+        var e = 1 - Math.pow(1 - p, 3); var v = (target * e).toFixed(dec);
+        el.textContent = sign + v + suffix;
+        if(p < 1){ requestAnimationFrame(step); } else { running = false; clearTimeout(guard); el.textContent = final; } }
+      el.textContent = sign + '0' + (dec? '.'+'0'.repeat(dec):'') + suffix;
+      requestAnimationFrame(step);
+    });
+    // segment bars grow from 0 via CSS transition. Snap back with a timeout guard
+    // so a throttled rAF can never leave the bar collapsed at 0.
+    dlg.querySelectorAll('.trd-seg').forEach(function(s){ var w = s.getAttribute('data-w'); s.style.width='0%';
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ s.style.width = w + '%'; }); });
+      setTimeout(function(){ s.style.width = w + '%'; }, 120); });
+  }
+
+  // ── ledger table ──────────────────────────────────────────────────────────
+  var mount = document.getElementById('trd-tbl-mount');
+  var pgEl = document.getElementById('trd-pg');
+  var state = { status:'all', win:'all', q:'', sector:'all', sortKey:'d', sortDir:-1, page:1 };
+  var PAGE = 25;
+  var market = dlg.dataset.market, benchEn = dlg.dataset.benchEn, benchZh = dlg.dataset.benchZh;
+  var upC = dlg.dataset.upClass || 'az-up', dnC = dlg.dataset.dnClass || 'az-dn';
+  var T = { // tiny bilingual helper
+    en:{ all:'All', up:'Up', stopped:'Stopped', flat:'Flat', early:'Early', matured:'Matured', suspended:'Suspended',
+         beat:'Beat index', lag:'Lagged', onboard:'On board', stock:'Stock', logged:'Logged', entry:'Entry', latest:'Latest',
+         move:'Move %', vs:'vs '+(benchEn||'index')+' %', days:'Days', status:'Status', find:'Find a stock',
+         prev:'Prev', next:'Next', err:'Ledger unavailable right now — the numbers above are still current.', retry:'Retry',
+         win90:'90d', win30:'30d', winall:'All', of:'of' },
+    zh:{ all:'全部', up:'上涨', stopped:'止损', flat:'持平', early:'初期', matured:'已成熟', suspended:'停牌',
+         beat:'跑赢', lag:'跑输', onboard:'在榜', stock:'个股', logged:'上榜', entry:'入场', latest:'最新',
+         move:'涨跌', vs:'超额', days:'天数', status:'状态', find:'搜索股票',
+         prev:'上一页', next:'下一页', err:'台账暂时不可用——上方数据仍然有效。', retry:'重试',
+         win90:'90天', win30:'30天', winall:'全部', of:'共' }
+  };
+  function L(k){ return (isZh()? T.zh : T.en)[k]; }
+
+  function statusChipDefs(){
+    if(market === 'cn') return [['all','all'],['matured','matured'],['early','early']];
+    if(market === 'us') return [['all','all'],['up','up'],['stopped','stopped'],['flat','flat']];
+    return [['all','all'],['early','early']]; // hk/ca
+  }
+  function buildRail(){
+    var host = document.getElementById('trd-status-chips'); host.innerHTML='';
+    statusChipDefs().forEach(function(d){
+      var b=document.createElement('button'); b.type='button'; b.className='trd-chip'; b.dataset.status=d[0];
+      b.setAttribute('aria-pressed', d[0]===state.status ? 'true':'false');
+      b.textContent = L(d[1]); b.dataset.k=d[1];
+      b.addEventListener('click', function(){ state.status=d[0]; state.page=1; syncPressed(host,'status'); render(); });
+      host.appendChild(b);
+    });
+    // suspended chip if any suspended rows exist
+    var win = document.getElementById('trd-window-chips'); win.innerHTML='';
+    [['all','winall'],['90d','win90'],['30d','win30']].forEach(function(d){
+      var b=document.createElement('button'); b.type='button'; b.className='trd-chip'; b.dataset.win=d[0]; b.dataset.k=d[1];
+      b.setAttribute('aria-pressed', d[0]===state.win ? 'true':'false'); b.textContent=L(d[1]);
+      b.addEventListener('click', function(){ state.win=d[0]; state.page=1; syncPressed(win,'win'); render(); });
+      win.appendChild(b);
+    });
+    var s = document.getElementById('trd-search'); if(s){ s.placeholder = L('find');
+      var deb; s.addEventListener('input', function(){ clearTimeout(deb); deb=setTimeout(function(){ state.q=s.value.trim().toLowerCase(); state.page=1; render(); }, 150); }); }
+    if(market === 'us'){ var sel=document.getElementById('trd-sector'); if(sel && DATA){
+      var secs = {}; DATA.rows.forEach(function(r){ if(r.sec) secs[r.sec]=1; });
+      var opts = '<option value="all">'+(isZh()?'全部板块':'All sectors')+'</option>';
+      Object.keys(secs).sort().forEach(function(x){ opts += '<option value="'+esc(x)+'">'+esc(x)+'</option>'; });
+      sel.innerHTML = opts;
+      sel.value = state.sector; if(sel.value !== state.sector){ state.sector = 'all'; sel.value = 'all'; }
+      if(!sel.dataset.trdWired){ sel.dataset.trdWired = '1';
+        sel.addEventListener('change', function(){ state.sector=sel.value; state.page=1; render(); }); }
+    }}
+  }
+  function syncPressed(host, attr){ host.querySelectorAll('.trd-chip').forEach(function(c){ c.setAttribute('aria-pressed', c.dataset[attr]===state[attr]?'true':'false'); }); }
+
+  function loadLedger(){
+    loaded = true;
+    var url = dlg.dataset.url; if(!url){ showError(); return; }
+    mount.innerHTML = skeleton();
+    fetch(url, {cache:'no-cache'}).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(j){ DATA = j; buildRail(); render(); })
+      .catch(function(){ showError(); });
+  }
+  function skeleton(){
+    var s = '<div class="trd-tbl-wrap" style="border:none"><div style="padding:4px">';
+    for(var i=0;i<6;i++) s += '<div class="trd-skel trd-skel-row"></div>';
+    return s + '</div></div>';
+  }
+  function showError(){
+    mount.innerHTML = '<div class="trd-err">'+L('err')+'<br><button type="button" class="trd-retry">'+L('retry')+'</button></div>';
+    var rb = mount.querySelector('.trd-retry'); if(rb) rb.addEventListener('click', function(){ loaded=false; loadLedger(); });
+  }
+
+  function filtered(){
+    if(!DATA) return [];
+    var now = DATA.as_of ? new Date(DATA.as_of) : new Date();
+    return DATA.rows.filter(function(r){
+      if(state.status !== 'all'){
+        if(state.status === 'matured'){ if(!r.m) return false; }
+        else if(state.status === 'early'){ if(r.st !== 'early' && r.m) return false; }
+        else if(r.st !== state.status) return false;
+      }
+      if(state.sector !== 'all' && r.sec !== state.sector) return false;
+      if(state.q){ var hay = ((r.t||'')+' '+(r.nm||'')).toLowerCase(); if(hay.indexOf(state.q) < 0) return false; }
+      if(state.win !== 'all' && r.d){ var days = (now - new Date(r.d))/86400000; var lim = state.win==='90d'?90:30; if(days > lim) return false; }
+      return true;
+    });
+  }
+  function sorted(rows){
+    var k = state.sortKey, dir = state.sortDir;
+    return rows.slice().sort(function(a,b){
+      var av=a[k], bv=b[k];
+      if(k==='d'){ av = av||''; bv = bv||''; return av<bv?-dir:av>bv?dir:0; }
+      av = (av==null)? -Infinity : av; bv = (bv==null)? -Infinity : bv;
+      return (av-bv)*dir;
+    });
+  }
+  var STDOT = { up:'trd-dot-up', stopped:'trd-dot-dn', flat:'trd-dot-flat', early:'trd-dot-early', beat:'trd-dot-up', lag:'trd-dot-dn', onboard:'trd-dot-flat' };
+  function stWord(st){ var mp = { up:L('up'), stopped:L('stopped'), flat:L('flat'), early:L('early'), beat:L('beat'), lag:L('lag'), onboard:L('onboard') }; return mp[st]||st; }
+  var FLAG = { locked:{en:'Locked-limit day excluded', zh:'一字板剔除'}, susp:{en:'Suspended', zh:'停牌'}, delisted:{en:'Delisted', zh:'退市'} };
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function primaryCol(){ return (market==='us') ? 'p' : 'x'; } // CN/HK/CA grade on excess
+
+  function render(){
+    if(!DATA) return;
+    var rows = sorted(filtered());
+    var total = rows.length;
+    var pages = Math.max(1, Math.ceil(total/PAGE));
+    if(state.page > pages) state.page = pages;
+    var start = (state.page-1)*PAGE;
+    var pageRows = rows.slice(start, start+PAGE);
+    var pcol = primaryCol();
+    var moveHdr = (market==='us') ? L('move') : L('vs');
+    var zh = isZh();
+    var h = '<div class="trd-tbl-wrap"><table class="trd-tbl"><thead><tr>';
+    h += '<th>'+L('stock')+'</th>';
+    h += sortTh('d', L('logged'));
+    h += '<th class="trd-num trd-mut">'+L('entry')+'</th>';
+    h += '<th class="trd-num trd-mut">'+L('latest')+'</th>';
+    h += sortTh(pcol, moveHdr, true);
+    h += sortTh('dy', L('days'), true);
+    h += '<th>'+L('status')+'</th>';
+    h += '</tr></thead><tbody>';
+    if(!pageRows.length){ h += '<tr><td colspan="7" class="trd-mut" style="text-align:center;padding:18px">'+(zh?'无匹配记录':'No matching rows')+'</td></tr>'; }
+    pageRows.forEach(function(r, i){
+      var mv = r[pcol];
+      var mvCls = (mv==null)?'trd-mut':(mv>=0?upC:dnC);
+      var mvTxt = (mv==null)?'—':((mv>=0?'+':'')+ (Math.round(mv*10)/10) + '%');
+      var tk = esc(r.t);
+      var tkInner = (market==='us') ? '<a href="stock.html#'+tk+'">'+tk+'</a>' : tk;
+      var subInfo = r.sec || r.grp || '';
+      var flags = (r.fl||[]).map(function(f){ var d=FLAG[f]; return d? '<span class="trd-flag" data-tip-en="'+d.en+'" data-tip-zh="'+d.zh+'">⚑</span>':''; }).join('');
+      h += '<tr class="'+(reduce?'':'trd-anim')+'" style="'+(reduce?'':'animation-delay:'+Math.min(i,25)*12+'ms')+'">';
+      h += '<td><span class="trd-tk">'+tkInner+'</span>'+flags+(subInfo?'<span class="trd-sub-cell">'+esc(subInfo)+'</span>':'')+'</td>';
+      h += '<td class="trd-num trd-mut">'+esc(r.d||'—')+'</td>';
+      h += '<td class="trd-num trd-mut">'+(r.e!=null?r.e:'—')+'</td>';
+      h += '<td class="trd-num trd-mut">'+(r.l!=null?r.l:'—')+'</td>';
+      h += '<td class="trd-num '+mvCls+'">'+mvTxt+'</td>';
+      h += '<td class="trd-num trd-mut">'+(r.dy!=null?r.dy:'—')+'</td>';
+      h += '<td><span class="trd-dot '+(STDOT[r.st]||'trd-dot-flat')+'"></span>'+stWord(r.st)+'</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table></div>';
+    mount.innerHTML = h;
+    mount.querySelectorAll('th.trd-sortable').forEach(function(th){ th.addEventListener('click', function(){
+      var k = th.dataset.k; if(state.sortKey===k){ state.sortDir *= -1; } else { state.sortKey=k; state.sortDir = -1; } render(); }); });
+    renderPg(total, pages, start, pageRows.length);
+  }
+  function sortTh(key, label, num){
+    var dir = state.sortKey===key ? (state.sortDir>0?'ascending':'descending') : 'none';
+    var ar = state.sortKey===key ? (state.sortDir>0?'▲':'▼') : '▲▼';
+    return '<th class="trd-sortable'+(num?' trd-num':'')+'" data-k="'+key+'" aria-sort="'+dir+'" tabindex="0" role="button">'+label+'<span class="trd-sort-ar">'+ar+'</span></th>';
+  }
+  function renderPg(total, pages, start, shown){
+    var zh = isZh();
+    var h = '<button type="button" class="trd-pg-btn" '+(state.page<=1?'disabled':'')+' data-pg="prev">‹ '+L('prev')+'</button>';
+    var win = 5, half = Math.floor(win/2);
+    var lo = Math.max(1, state.page-half), hi = Math.min(pages, lo+win-1); lo = Math.max(1, hi-win+1);
+    if(lo>1){ h += pgNum(1); if(lo>2) h += '<span class="trd-pg-ell">…</span>'; }
+    for(var p=lo;p<=hi;p++) h += pgNum(p);
+    if(hi<pages){ if(hi<pages-1) h += '<span class="trd-pg-ell">…</span>'; h += pgNum(pages); }
+    h += '<button type="button" class="trd-pg-btn" '+(state.page>=pages?'disabled':'')+' data-pg="next">'+L('next')+' ›</button>';
+    var from = total? (start+1) : 0;
+    h += '<span class="trd-pg-count">'+from+'–'+(start+shown)+' '+L('of')+' '+total+'</span>';
+    pgEl.innerHTML = h;
+    pgEl.querySelectorAll('.trd-pg-btn[data-pg]').forEach(function(b){ b.addEventListener('click', function(){
+      var d=b.dataset.pg; if(d==='prev'&&state.page>1)state.page--; else if(d==='next'&&state.page<pages)state.page++; else if(!isNaN(+d))state.page=+d; render(); }); });
+  }
+  function pgNum(p){ return '<button type="button" class="trd-pg-btn" '+(p===state.page?'aria-current="page"':'')+' data-pg="'+p+'">'+p+'</button>'; }
+
+  // re-render chips/labels on language flip so ZH copy stays live
+  var langObs = new MutationObserver(function(){ if(DATA){ buildRail(); render(); } });
+  langObs.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
+})();
+</script>
       
       
       <div class="topsetups">
