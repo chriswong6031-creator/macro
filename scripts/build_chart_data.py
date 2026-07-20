@@ -127,7 +127,7 @@ def _bars_recon(close: pd.Series, vol: pd.Series | None = None) -> list:
 def _load_caches() -> dict[str, pd.DataFrame]:
     """Close-only constituent caches, loaded once and reused across the universe."""
     caches: dict[str, pd.DataFrame] = {}
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+    for grp in ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth"):
         p = config.data_dir() / grp / "_closes_cache.parquet"
         if p.exists():
             try:
@@ -151,9 +151,9 @@ def _build_ticker(t: str, deep_dir: Path, caches: dict[str, pd.DataFrame]) -> di
         except Exception as e:  # noqa: BLE001
             log.warning("deep %s unreadable (%s)", t, e)
 
-    # 2/3. close-only constituent caches (large-cap first, then small-cap).
+    # 2/3/4. close-only constituent caches (large-cap first, then small/mid/russell).
     # Reconstruct a conservative high/low so these names render candles too.
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+    for grp in ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth"):
         cache = caches.get(grp)
         if cache is not None and t in cache.columns:
             bars = _bars_recon(cache[t])

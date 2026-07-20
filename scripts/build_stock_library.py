@@ -478,10 +478,11 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     # Index constituents from the breadth close caches (~3y window each). The
     # S&P 500 + 400 + 600 together form the S&P Composite 1500 — ~1500 unique
     # liquid US names, the practical "all US equities" search set (S&P 600 also
-    # serves as the free Russell 2000 small-cap proxy). Order is priority: a
-    # ticker is taken from the first cache that carries it, and data/stocks deep
-    # history above already won the ~110 holdings names.
-    for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
+    # serves as the free Russell 2000 small-cap proxy). The Russell 2000 cache
+    # adds ~1,400 further small-cap names not already in the S&P 600 (order is
+    # priority: a ticker is taken from the FIRST cache that carries it, and the
+    # data/stocks deep history above already won the ~110 holdings names).
+    for grp in ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth"):
         cache = config.data_dir() / grp / "_closes_cache.parquet"
         cons = config.data_dir() / grp / "constituents.parquet"
         if not (cache.exists() and cons.exists()):
@@ -1371,6 +1372,7 @@ def _stamp_personality_forward_ledger(
 
 
 def main() -> int:
+    _main_t0 = time.time()
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "stockdata"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -1908,6 +1910,8 @@ def main() -> int:
     _liq_map: dict[str, dict] = {}              # P0.3 liquidity/capacity hygiene (display-only, R10)
     to_write: list[tuple[str, dict]] = []
     uni = universe()
+    log.info("::notice title=stock_library::universe=%d elapsed=%.0fs",
+             len(uni), time.time() - _main_t0)
     # extension / exhaustion read over the WHOLE library universe (own-history ext_z +
     # grade), wired in EXACTLY as build_discovery does — this is what re-arms the validated
     # parabolic/stretched penalty in stock_score._axis_entry that was dead on this board
