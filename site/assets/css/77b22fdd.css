@@ -1,0 +1,155 @@
+
+/* ── base tokens (mirrors bonds.html inline block) ─────────────────── */
+:root{
+  --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
+  --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42; --green:#1a7f43; --teal:#1F8A70;
+  --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
+  /* theme.css-sourced tokens used by i18n-tip-pop; bridged here for the mockup */
+  --panel:var(--card); --line:var(--grid);
+}
+html[data-theme="dark"]{
+  --bg:#0f1115; --card:#181b21; --grid:#2a2f3a; --ink:#e8edf4; --text:#d7dce3;
+  --muted:#8b93a1; --faint:#6b7280;
+  --panel:#181b21; --line:#2a2f3a;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+
+/* ── layout ─────────────────────────────────────────────────────────── */
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+
+/* ── section head (bonds.html idiom) ────────────────────────────────── */
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+
+/* ── card (bonds.html idiom) ────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0;overflow-wrap:break-word;position:relative;overflow:hidden}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+/* ── 3px top-stripe severity accent (us_stocks.html nbcard idiom) ────
+   Applied via .cs-card.cs-calm / .cs-amber / .cs-red / .cs-neutral
+   Uses severity tokens (--red/--amber/--green/--faint), NOT direction
+   tokens (--up/--down), so zh directional colour swap never fires.    */
+.cs-card{position:relative;overflow:visible}
+.cs-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;pointer-events:none;opacity:0}
+.cs-amber::before{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 30%,transparent));opacity:1}
+.cs-red::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+.cs-calm::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.cs-neutral::before{background:linear-gradient(90deg,var(--faint),color-mix(in srgb,var(--faint) 30%,transparent));opacity:1}
+
+/* ── hero state (bonds.html idiom) ──────────────────────────────────── */
+.hero-state{font-size:40px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;line-height:1;color:var(--ink)}
+.hero-meta{font-size:14px;color:var(--text);margin-bottom:8px}
+.verdict-lead{font-size:15px;color:var(--text);line-height:1.5;margin:8px 0 0}
+
+/* ── stance pill ─────────────────────────────────────────────────────── */
+.stance-pill{display:inline-block;padding:5px 16px;border-radius:999px;font-size:14px;font-weight:700;color:#fff;letter-spacing:.02em;margin:6px 0}
+.stance-amber{background:var(--amber);color:#5a3800}
+.stance-red{background:var(--red)}
+.stance-calm{background:var(--green)}
+.stance-neutral{background:var(--faint);color:var(--ink)}
+
+/* ── as-of stamp ─────────────────────────────────────────────────────── */
+.as-of{font-size:12px;color:var(--faint);margin-top:8px}
+
+/* ── market strip chips ─────────────────────────────────────────────── */
+.mkt-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.mkt-chip{display:inline-flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:12px;border:1px solid var(--grid);background:var(--card);cursor:help;min-width:0;flex:1;min-width:160px}
+.mkt-chip .chip-label{font-size:13px;font-weight:700;color:var(--ink)}
+.mkt-chip .chip-sub{font-size:11px;color:var(--muted)}
+.mkt-chip.chip-amber{border-color:color-mix(in srgb,var(--amber) 55%,var(--grid));background:color-mix(in srgb,var(--amber) 7%,var(--card))}
+.mkt-chip.chip-red{border-color:color-mix(in srgb,var(--red) 45%,var(--grid));background:color-mix(in srgb,var(--red) 6%,var(--card))}
+.mkt-chip.chip-calm{border-color:color-mix(in srgb,var(--green) 40%,var(--grid));background:color-mix(in srgb,var(--green) 5%,var(--card))}
+
+/* ── theme tiles ─────────────────────────────────────────────────────── */
+.theme-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:4px}
+.tile{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:16px;position:relative;overflow:hidden;cursor:help}
+.tile::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;pointer-events:none;opacity:0}
+.tile.t-amber::before{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 30%,transparent));opacity:1}
+.tile.t-red::before{background:linear-gradient(90deg,var(--red),color-mix(in srgb,var(--red) 30%,transparent));opacity:1}
+.tile.t-calm::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 30%,transparent));opacity:1}
+.tile.t-neutral::before{background:linear-gradient(90deg,var(--faint),color-mix(in srgb,var(--faint) 30%,transparent));opacity:1}
+.tile .t-name{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+.tile .t-val{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1;margin-bottom:4px}
+.tile .t-sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.tile .t-stance{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.tile .ts-amber{background:color-mix(in srgb,var(--amber) 18%,transparent);color:#8a5c00}
+.tile .ts-red{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red)}
+.tile .ts-calm{background:color-mix(in srgb,var(--green) 13%,transparent);color:var(--green)}
+.tile .ts-neutral{background:color-mix(in srgb,var(--faint) 20%,transparent);color:var(--faint)}
+html[data-theme="dark"] .tile .ts-amber{color:#e0a030}
+html[data-theme="dark"] .tile .ts-red{color:#ff6b6b}
+html[data-theme="dark"] .tile .ts-calm{color:#4ade80}
+html[data-theme="dark"] .tile .ts-neutral{color:var(--faint)}
+
+/* ── watch strip ─────────────────────────────────────────────────────── */
+.watch-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.watch-chip{display:inline-block;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:600;color:var(--ink);border:1px solid var(--grid);cursor:help;flex:1;min-width:200px;line-height:1.45}
+.watch-chip.wc-amber{border-color:color-mix(in srgb,var(--amber) 55%,var(--grid));background:color-mix(in srgb,var(--amber) 7%,var(--card));color:#6b4300}
+.watch-chip.wc-neutral{background:var(--card)}
+html[data-theme="dark"] .watch-chip.wc-amber{color:#e0a030}
+
+/* ── tape card ───────────────────────────────────────────────────────── */
+.tape-line{font-size:14px;font-weight:600;color:var(--ink);line-height:1.5;margin:6px 0 10px}
+.source-chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--grid);color:var(--muted)}
+
+/* ── maturity wall mini bars ─────────────────────────────────────────── */
+.mat-wall{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.mat-row{display:grid;grid-template-columns:128px 1fr;gap:10px;align-items:center;font-size:12px}
+.mat-label{color:var(--text);font-weight:600;min-width:0}
+.mat-bars{display:flex;gap:2px;height:14px;border-radius:4px;overflow:hidden}
+.mat-seg{display:block;height:100%;min-width:2px}
+.seg-0{background:color-mix(in srgb,var(--amber) 80%,var(--red))}/* 0-1y */
+.seg-1{background:var(--amber)}/* 1-3y */
+.seg-2{background:color-mix(in srgb,var(--blue) 60%,var(--faint))}/* 3-5y */
+.seg-3{background:var(--blue)}/* 5-10y */
+.seg-4{background:var(--indigo)}/* 10y+ */
+.mat-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--muted)}
+.mat-legend span{display:flex;align-items:center;gap:4px}
+.mat-legend .dot{width:8px;height:8px;border-radius:2px;flex:none}
+
+/* ── sub text ────────────────────────────────────────────────────────── */
+.sub{font-size:13px;color:var(--muted);min-width:0}
+.faint{color:var(--faint)}
+
+/* ── placeholder bars ────────────────────────────────────────────────── */
+.placeholder-bar{padding:12px 20px;background:color-mix(in srgb,var(--faint) 8%,var(--bg));border:1px dashed var(--grid);border-radius:10px;text-align:center;font-size:13px;color:var(--faint);font-style:italic;margin:10px 0}
+
+/* ── footer line ─────────────────────────────────────────────────────── */
+.foot-note{font-size:12px;color:var(--faint);margin-top:12px;line-height:1.6;border-top:1px solid var(--grid);padding-top:10px}
+
+/* ── i18n-tip-pop (copied from theme.css; needed since this page doesn't link theme.css) */
+.i18n-tip-pop{display:none;position:fixed;z-index:12500;max-width:min(320px,calc(100vw - 24px));padding:7px 10px;border-radius:8px;background:var(--panel);border:1px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:11px;font-weight:500;line-height:1.5;color:var(--text);text-align:left;text-transform:none;letter-spacing:normal;white-space:normal}
+
+/* ── ambient aurora (bonds.html idiom) ──────────────────────────────── */
+html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),
+   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%);}
+html[data-theme="dark"] body::before{
+  background:
+   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 20%,transparent),transparent 68%),
+   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 16%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 14%,transparent),transparent 70%);}
+
+/* ── responsive breakpoints ─────────────────────────────────────────── */
+@media(max-width:900px){
+  .cols-2,.cols-3,.cols-4{grid-template-columns:1fr}
+  .theme-tiles{grid-template-columns:repeat(2,1fr)}
+  .mkt-strip,.watch-strip{flex-direction:column}
+}
+@media(max-width:560px){
+  .wrap{padding:0 12px 48px}
+  .card{padding:16px}
+  .hero-state{font-size:32px}
+  .theme-tiles{grid-template-columns:1fr}
+  .mat-row{grid-template-columns:100px 1fr}
+}

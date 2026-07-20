@@ -1,0 +1,87 @@
+
+
+  /* ===== The Relapse — stat band, evidence chips, odds ledger, buy-list cards, figures ===== */
+  .rl-acc { --acc:#e0973a; }          /* amber accent — reads on both themes */
+
+  /* at-a-glance stat band (reused idiom from The Second Act) */
+  .statband { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:18px 0 4px; }
+  .stat { background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+          padding:13px 14px; position:relative; overflow:hidden; }
+  .stat::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--sc,var(--link)); }
+  .stat .sv { display:block; font-size:22px; font-weight:750; color:var(--text);
+              font-variant-numeric:tabular-nums; letter-spacing:-.01em; line-height:1.05; }
+  .stat .sv.up { color:#2f9e63; } .stat .sv.dn { color:#d23f3f; }
+  html[data-theme="dark"] .stat .sv.up { color:#3fc07e; }
+  html[data-theme="dark"] .stat .sv.dn { color:#ef6a6a; }
+  .stat .sl { font-size:11px; color:var(--muted); line-height:1.35; margin-top:6px; display:block; }
+  @media (max-width:720px){ .statband { grid-template-columns:repeat(2,1fr); } }
+
+  /* evidence-label chips: [F] fact / [C] consensus / [I] inference / [S] speculation */
+  sup.ev { display:inline-block; font-size:9px; font-weight:800; line-height:1; padding:2px 4px;
+           border-radius:5px; letter-spacing:.02em; margin-left:2px; transform:translateY(-1px); }
+  .ev-f { color:#2f9e63; background:color-mix(in srgb,#46b87a 14%,transparent); }
+  .ev-c { color:#4d7fd6; background:color-mix(in srgb,#5b8def 14%,transparent); }
+  .ev-i { color:#a55fe0; background:color-mix(in srgb,#c77dff 15%,transparent); }
+  .ev-s { color:#c07f22; background:color-mix(in srgb,#e0973a 17%,transparent); }
+  html[data-theme="dark"] .ev-f { color:#3fc07e; }
+  html[data-theme="dark"] .ev-c { color:#7aa7e0; }
+  html[data-theme="dark"] .ev-i { color:#c77dff; }
+  html[data-theme="dark"] .ev-s { color:#e0973a; }
+
+  /* single-sentence compression pull-quote */
+  .pquote { position:relative; margin:22px 0 8px; padding:24px 28px; border-radius:18px;
+            border:1px solid var(--line); overflow:hidden;
+            background:linear-gradient(135deg, color-mix(in srgb,#e0973a 15%,var(--panel)),
+                                                color-mix(in srgb,#e0607a 12%,var(--panel))); }
+  .pquote::before { content:"\201C"; position:absolute; top:-16px; left:16px; font-size:96px; line-height:1;
+                    color:var(--acc,#e0973a); opacity:.20; font-family:Georgia,"Times New Roman",serif; }
+  .pquote p { position:relative; font-size:16.5px; line-height:1.6; font-weight:550; color:var(--text); margin:0; }
+  .pquote .l-zh { display:block; font-size:13.5px; opacity:.82; margin-top:8px; font-weight:500; }
+
+  /* figure wrapper for inline SVG illustrations */
+  .fig { margin:22px 0; border:1px solid var(--line); border-radius:16px; background:var(--panel);
+         padding:15px 17px 13px; box-shadow:var(--card-shadow); overflow:hidden; }
+  .fig > svg { display:block; width:100%; height:auto; }
+  .fig-h { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--link);
+           font-weight:700; margin:0 0 11px; display:flex; align-items:center; gap:8px; }
+  .fig-h::before { content:""; width:18px; height:2px; border-radius:2px; flex:0 0 auto;
+                   background:linear-gradient(90deg,#e0973a,#e0607a); }
+  .fig figcaption { margin-top:11px; font-size:11.5px; color:var(--muted); line-height:1.5;
+                    border-top:1px dashed var(--line); padding-top:9px; }
+
+  /* odds re-mark ledger — was → now probability bars */
+  .ledger { border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:18px 0; }
+  .led-row { display:grid; grid-template-columns:minmax(200px,1.3fr) 1fr; border-bottom:1px solid var(--line); background:var(--panel); }
+  .led-row:last-child { border-bottom:none; }
+  .led-head { background:var(--panel2); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  .led-head > div { padding:9px 15px; }
+  .led-name { padding:14px 15px; font-size:13px; line-height:1.5; border-right:1px solid var(--line); }
+  .led-name .up { color:#d23f3f; font-weight:700; } .led-name .dn { color:#2f9e63; font-weight:700; }
+  html[data-theme="dark"] .led-name .up { color:#ef6a6a; } html[data-theme="dark"] .led-name .dn { color:#3fc07e; }
+  .led-bars { padding:14px 15px; display:flex; flex-direction:column; gap:8px; justify-content:center; }
+  .bar-line { display:flex; align-items:center; gap:10px; font-size:11.5px; font-variant-numeric:tabular-nums; }
+  .bar-line .lbl { width:40px; color:var(--muted); flex:none; font-size:10px; letter-spacing:.06em; }
+  .bar-track { flex:1; height:7px; background:var(--panel2); border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:3px; }
+  .was .bar-fill { background:var(--muted); opacity:.5; }
+  .now .bar-fill { background:var(--acc,#e0973a); }
+  .bar-line .pct { width:52px; text-align:right; flex:none; color:var(--muted); }
+  .now .pct { color:var(--acc,#e0973a); font-weight:700; }
+  @media (prefers-reduced-motion: no-preference){ .now .bar-fill { animation:rl-grow .9s cubic-bezier(.2,.7,.2,1) both; } }
+  @keyframes rl-grow { from { width:0; } }
+
+  /* ranked buy-list cards */
+  .pick { border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:20px 22px; margin:18px 0; box-shadow:var(--card-shadow); }
+  .pick > h3 { display:flex; align-items:baseline; gap:11px; margin:0 0 8px; font-size:16.5px; }
+  .pick .rk { font-size:12px; font-weight:800; color:#fff; background:var(--acc,#e0973a); border-radius:7px;
+              padding:3px 8px; letter-spacing:.03em; flex:0 0 auto; font-variant-numeric:tabular-nums; }
+  .pick .rows { margin-top:14px; border-top:1px solid var(--line); }
+  .pick .krow { display:grid; grid-template-columns:126px minmax(0,1fr); gap:14px; padding:11px 0;
+                border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); font-size:13px; line-height:1.6; }
+  .pick .krow:last-child { border-bottom:none; }
+  .pick .k { font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); padding-top:3px; font-weight:700; }
+  .pick .kill .k { color:#d23f3f; }
+  html[data-theme="dark"] .pick .kill .k { color:#ef6a6a; }
+  @media (max-width:600px){ .pick .krow { grid-template-columns:1fr; gap:3px; }
+    .led-row { grid-template-columns:1fr; } .led-name { border-right:none; border-bottom:1px solid var(--line); } }
+

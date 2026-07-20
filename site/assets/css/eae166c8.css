@@ -1,0 +1,185 @@
+
+:root{
+  --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
+  --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42; --green:#1a7f43; --teal:#1F8A70;
+  --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--red:#e06464}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1.05fr .95fr}.cols-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0;overflow-wrap:break-word}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.brand .gn{color:var(--blue)}
+.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
+.hero-state{font-size:40px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;line-height:1}
+.hero-state small{font-size:18px;color:var(--muted);font-weight:700}
+.hero-meta{font-size:14px;color:var(--text);margin-bottom:8px}.hero-meta b{color:var(--ink)}
+.verdict-lead{font-size:15px;color:var(--text);line-height:1.5;margin:8px 0 0}
+.sub{font-size:13px;color:var(--muted);min-width:0}.faint{color:var(--faint)}
+.pill{display:inline-block;max-width:100%;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f6;color:var(--ink);margin:2px 4px 2px 0;white-space:normal;overflow-wrap:anywhere}
+html[data-theme="dark"] .pill{background:#222732}
+.kpis{display:flex;gap:18px 22px;flex-wrap:wrap;margin-top:14px}
+.kpi{font-size:12.5px;color:var(--muted);min-width:0}.kpi b{display:block;font-size:19px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .ksub{font-size:11px;color:var(--faint)}
+.band-chip{display:inline-block;max-width:100%;padding:4px 13px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;letter-spacing:.01em;white-space:normal;overflow-wrap:anywhere}
+.flag{display:inline-block;max-width:100%;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:12px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}
+.flag.warn{background:rgba(245,173,66,.16);color:#9a6a10}
+.flag.alarm{background:rgba(211,11,11,.13);color:var(--red)}
+.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
+.flag.ok{background:rgba(26,127,67,.12);color:var(--green)}
+.tax-note{font-size:13px;color:var(--muted);margin:8px 0 0;line-height:1.5}
+/* stress-leg mini bars */
+.legs{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.leg{display:grid;grid-template-columns:118px 1fr 34px;align-items:center;gap:10px;font-size:12px}
+.leg .lname{color:var(--text);min-width:0}
+.leg .lbar{position:relative;height:8px;background:#eef1f6;border-radius:5px;overflow:hidden}
+html[data-theme="dark"] .leg .lbar{background:#222732}
+.leg .lfill{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.leg .lval{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.lvg{margin-left:5px;font-weight:800;font-size:11px;cursor:help}
+.vg-measured{color:var(--green)}.vg-directional{color:var(--amber)}.vg-context{color:var(--faint)}.vg-inverted{color:var(--indigo)}
+.measured-edge{margin-top:12px;padding:10px 13px;border-radius:10px;background:rgba(26,127,67,.08);font-size:13px;line-height:1.5;color:var(--text)}
+.measured-edge b{color:var(--green)}
+html[data-theme="dark"] .measured-edge{background:rgba(26,127,67,.12)}
+/* cross-asset drivers */
+.drv{display:grid;grid-template-columns:120px 1fr;gap:10px 16px;align-items:start;padding:12px 0;border-bottom:1px solid var(--grid);min-width:0}
+.drv:last-child{border-bottom:none}
+.drv .dasset{font-weight:700;color:var(--ink);font-size:14px}
+.drv .dnote{font-size:13px;color:var(--muted);line-height:1.5;min-width:0;overflow-wrap:anywhere}
+.drv .dnote b{color:var(--text)}
+/* timeline */
+.timeline{margin-top:6px}
+.tl-day{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
+.tl-ev{display:flex;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.tl-type{flex:none;min-width:78px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.tl-head{color:var(--text)}
+.sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
+.note{font-size:13px;color:var(--muted);line-height:1.6}.note b{color:var(--ink)}
+.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
+/* section jump-nav */
+.jump-nav{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 20px}
+.jump-nav a{font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:5px 12px;white-space:nowrap;transition:color .15s,border-color .15s}
+.jump-nav a:hover{color:var(--ink);border-color:var(--blue)}
+/* duration compass gauge */
+.compass-wrap{margin:10px 0 4px}
+.compass-track{position:relative;height:30px;border-radius:8px;background:linear-gradient(90deg,rgba(211,11,11,.16),rgba(160,160,160,.10) 50%,rgba(26,127,67,.16));border:1px solid var(--grid)}
+.compass-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.6}
+.compass-marker{position:absolute;top:-5px;width:3px;height:40px;border-radius:2px;background:var(--ink);transition:left .4s cubic-bezier(.34,1.2,.5,1)}
+.compass-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+.bias-chip{display:inline-block;padding:4px 13px;border-radius:999px;font-size:13px;font-weight:700;color:#fff}
+.leg-state{margin-left:auto;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+/* generic scorecard table */
+.sc-wrap{overflow-x:auto}
+.sc-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+.sc-tbl th{text-align:right;padding:6px 8px;border-bottom:1px solid var(--grid);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:700;white-space:nowrap}
+.sc-tbl th:first-child,.sc-tbl td:first-child{text-align:left}
+.sc-tbl td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sc-tbl tr:hover td{background:rgba(40,95,255,.04)}
+html[data-theme="dark"] .sc-tbl tr:hover td{background:rgba(40,95,255,.10)}
+.sc-tbl .cty{font-weight:700;color:var(--ink)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.mini-tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;color:#fff}
+.stale-tag{font-size:9.5px;color:var(--amber);font-weight:700;margin-left:4px}
+/* bonds→everything transmission rows */
+.xa-row{display:grid;grid-template-columns:152px 1fr 92px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--grid)}
+.xa-row:last-child{border-bottom:none}
+.xa-asset{font-weight:700;color:var(--ink);font-size:13.5px}
+.xa-asset .xa-sub{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.xa-note{margin-top:5px;font-size:12px;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}
+.xa-bar{position:relative;height:9px;background:#eef1f6;border-radius:5px}
+html[data-theme="dark"] .xa-bar{background:#222732}
+.xa-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--faint);opacity:.5}
+.xa-fill{position:absolute;top:0;bottom:0;border-radius:5px}
+.xa-verd{text-align:right;font-size:12px;font-weight:700}
+.table-wrap{overflow-x:auto}
+.supply-tbl,.credit-cycle-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:620px}
+/* phone: the 152px + 92px fixed columns + bar don't fit a card on a narrow screen
+   (the row overflowed the viewport). Stack to two rows — asset / verdict on top,
+   the bar full-width below — and let the label column shrink + wrap. */
+@media(max-width:560px){
+  .wrap{padding:0 12px 48px}
+  .card{padding:16px}
+  .hero-state{font-size:32px}
+  .site-footer{padding:16px 12px}
+  .drv{grid-template-columns:1fr}
+  .tl-ev{align-items:flex-start}
+  .tl-type{min-width:62px}
+  .leg{grid-template-columns:minmax(0,1fr) 44px;row-gap:6px}
+  .leg .lname{grid-column:1/2}
+  .leg .lval{grid-column:2/3}
+  .leg .lbar{grid-column:1/3}
+  .xa-row{grid-template-columns:1fr auto;column-gap:10px;row-gap:7px}
+  .xa-row>.xa-asset{grid-area:1/1;min-width:0}
+  .xa-row>.xa-verd{grid-area:1/2;min-width:0}
+  .xa-row>.xa-bar{grid-area:2/1/3/3}
+}
+/* ═══════════════════════════════════════════════════════════════════════════
+   MACRO-STYLE MAKEOVER — depth + hierarchy layer, loaded last so it wins on order.
+   The palette already matches theme.css (--bg/--card/--grid/--blue); this adds the
+   soft card elevation, layered surfaces, calmer section headers, a bolder hero and
+   tokenised chips that give macro.html its polish. Scoped to .wrap so the shared
+   nav (_vector_polish) is untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{--panel2:#eef1f6;
+  --card-shadow:0 1px 2px rgba(20,30,50,.045), 0 6px 20px -10px rgba(20,32,64,.13);
+  --card-shadow-lg:0 2px 6px rgba(20,30,50,.06), 0 18px 42px -18px rgba(20,32,64,.22);
+  --card-brd:#e9edf3}
+html[data-theme="dark"]{--panel2:#1e222a;
+  --card-shadow:0 1px 0 rgba(255,255,255,.03), 0 10px 28px -14px rgba(0,0,0,.6);
+  --card-shadow-lg:0 1px 0 rgba(255,255,255,.04), 0 22px 50px -20px rgba(0,0,0,.72);
+  --card-brd:#242a36}
+/* cards float instead of sitting flat — the single biggest lift */
+.wrap .card{border-radius:18px;border-color:var(--card-brd);box-shadow:var(--card-shadow);
+  transition:box-shadow .22s ease,transform .22s ease}
+/* size cards to their content — kills the dead space the equal-height grid stretch
+   left under short cards (e.g. the health-history chart had ~290px of blank bottom) */
+.wrap .grid{align-items:start}
+/* page header — larger, tighter */
+.wrap>.brand{font-size:27px;letter-spacing:-.025em;margin:12px 0 5px}
+.wrap>.lead{font-size:14.5px;line-height:1.55;max-width:800px;margin-bottom:18px}
+/* jump-nav → floating pill row */
+.wrap .jump-nav{gap:7px;margin:8px 0 26px}
+.wrap .jump-nav a{background:var(--card);box-shadow:var(--card-shadow);border-color:transparent;padding:6px 13px}
+.wrap .jump-nav a:hover{box-shadow:var(--card-shadow-lg);color:var(--ink);transform:translateY(-1px)}
+/* section headers — quiet kicker + hairline that fades to the edge */
+.wrap .sec-head{display:flex;align-items:center;gap:12px;padding:0;border-bottom:none;
+  font-size:11.5px;color:var(--muted);letter-spacing:.09em;margin:38px 0 15px}
+.wrap .sec-head::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--grid),transparent)}
+/* card titles — macro's small muted kicker */
+.wrap .card h2{font-size:11.5px;letter-spacing:.07em;margin-bottom:9px}
+/* hero — bolder score, calmer supporting copy */
+.wrap .hero-state{font-size:54px;letter-spacing:-.03em;line-height:1;margin:2px 0 8px}
+.wrap .hero-state small{font-size:19px}
+.wrap .hero-meta{font-size:13.5px;line-height:1.7}
+.wrap .verdict-lead{font-size:15px;line-height:1.6;color:var(--text);margin-top:12px;max-width:62ch}
+/* chips / pills / flags — tokenised soft fills */
+.wrap .pill{background:var(--panel2);color:var(--ink);border:1px solid transparent;font-weight:600}
+.wrap .band-chip,.wrap .bias-chip{box-shadow:0 1px 3px rgba(20,30,50,.14)}
+.wrap .flag{border-radius:11px;padding:9px 13px}
+/* kpi group — each metric gets a soft little tile */
+.wrap .kpis{gap:11px 12px}
+.wrap .kpi{background:var(--panel2);border-radius:12px;padding:11px 14px;min-width:96px}
+.wrap .kpi b{margin-top:3px}
+/* bars — softer track using the panel-2 surface */
+.wrap .leg .lbar,.wrap .xa-bar{background:var(--panel2)}
+.wrap .measured-edge{border-radius:12px}
+/* mobile — the bolder desktop hero/brand/kpi sizes above sit at (0,2,0) and would
+   otherwise beat the base ≤560 rules, so restate them tighter for phones */
+@media(max-width:560px){
+  .wrap>.brand{font-size:22px}
+  .wrap .hero-state{font-size:38px}
+  .wrap .card{border-radius:14px}
+  .wrap .kpi{min-width:0;flex:1 1 42%;padding:9px 11px}
+  .wrap .sec-head{margin:28px 0 12px}
+}

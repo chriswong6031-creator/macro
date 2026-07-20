@@ -1,0 +1,58 @@
+
+
+  /* ===== AI Master Plan — figures, stat band, pull-quote, hero aurora ===== */
+  .fig { margin:22px 0; border:1px solid var(--line); border-radius:16px; background:var(--panel);
+         padding:15px 17px 13px; box-shadow:var(--card-shadow); overflow:hidden; }
+  .fig > svg { display:block; width:100%; height:auto; }
+  .fig-h { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--link);
+           font-weight:700; margin:0 0 11px; display:flex; align-items:center; gap:8px; }
+  .fig-h::before { content:""; width:18px; height:2px; border-radius:2px; flex:0 0 auto;
+                   background:linear-gradient(90deg,#5b8def,#c77dff); }
+  .fig figcaption { margin-top:11px; font-size:11.5px; color:var(--muted); line-height:1.5;
+                    border-top:1px dashed var(--line); padding-top:9px; }
+
+  /* at-a-glance stat band */
+  .statband { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:18px 0 4px; }
+  .stat { background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+          padding:13px 14px; position:relative; overflow:hidden; }
+  .stat::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+                  background:var(--sc,var(--link)); }
+  .stat .sv { display:block; font-size:23px; font-weight:750; color:var(--text);
+              font-variant-numeric:tabular-nums; letter-spacing:-.01em; line-height:1.05; }
+  .stat .sl { font-size:11px; color:var(--muted); line-height:1.35; margin-top:6px; display:block; }
+
+  /* single-sentence compression pull-quote */
+  .pquote { position:relative; margin:16px 0 8px; padding:24px 28px; border-radius:18px;
+            border:1px solid var(--line); overflow:hidden;
+            background:linear-gradient(135deg, color-mix(in srgb,#5b8def 15%,var(--panel)),
+                                                color-mix(in srgb,#c77dff 13%,var(--panel))); }
+  .pquote::before { content:"\201C"; position:absolute; top:-16px; left:16px; font-size:96px; line-height:1;
+                    color:var(--link); opacity:.20; font-family:Georgia,"Times New Roman",serif; }
+  .pquote p { position:relative; font-size:19px; line-height:1.5; font-weight:600; color:var(--text);
+              margin:0; letter-spacing:-.005em; }
+  html[data-lang="zh"] .pquote p { letter-spacing:0; }
+  .pquote .pq-sub { position:relative; font-size:14px; font-weight:500; line-height:1.5; color:var(--text);
+                    opacity:.82; margin:12px 0 0; letter-spacing:0; border-top:1px solid var(--line); padding-top:12px; }
+
+  /* hero: a slow drifting aurora behind the standard accent bar (reduced-motion safe) */
+  .art-hero::before { z-index:2; }
+  .art-hero > * { position:relative; z-index:1; }
+  .art-hero::after { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.5;
+      background:
+        radial-gradient(58% 120% at 12% -12%, color-mix(in srgb,#5b8def 30%,transparent), transparent 60%),
+        radial-gradient(52% 120% at 92% 4%, color-mix(in srgb,#c77dff 26%,transparent), transparent 62%),
+        radial-gradient(46% 120% at 64% 120%, color-mix(in srgb,#e0973a 18%,transparent), transparent 60%);
+      animation:amp-hero 16s ease-in-out infinite alternate; }
+  @keyframes amp-hero { from { transform:translate3d(-2%,0,0) scale(1); }
+                        to   { transform:translate3d(3%,1.5%,0) scale(1.07); } }
+
+  @media (max-width:760px){ .statband { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:600px){
+    .statband { gap:8px; }
+    .stat .sv { font-size:20px; }
+    .pquote { padding:18px 18px; }
+    .pquote p { font-size:16px; }
+    .fig { padding:12px 12px 11px; border-radius:14px; }
+  }
+  @media (prefers-reduced-motion: reduce){ .art-hero::after { animation:none; } }
+

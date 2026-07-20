@@ -1,0 +1,23 @@
+
+    body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:18px;}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;max-width:1280px;margin:0 auto;}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+    .span12{grid-column:span 12;} .span6{grid-column:span 6;}
+    @media(max-width:820px){.span6{grid-column:span 12;}}
+    h1{font-size:22px;margin:0 0 4px;} h2{font-size:16px;margin:0 0 10px;} h3{font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+    table{width:100%;border-collapse:collapse;font-size:13px;} th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;} th.l,td.l{text-align:left;}
+    .muted{color:var(--muted);} .pos{color:var(--up);} .neg{color:var(--down);}
+    .verdict{font-size:15px;font-weight:700;padding:3px 10px;border-radius:8px;display:inline-block;}
+    .v-bad{background:rgba(224,100,100,.16);color:var(--down);} .v-warn{background:rgba(224,160,48,.16);color:var(--warn);} .v-ok{background:rgba(69,184,115,.16);color:var(--up);}
+    .bar{height:10px;border-radius:5px;background:var(--panel2);position:relative;overflow:hidden;margin:4px 0;}
+    .bar i{position:absolute;top:0;bottom:0;left:0;border-radius:5px;background:var(--link);}
+    .heat{display:inline-block;min-width:42px;text-align:center;border-radius:4px;padding:2px 4px;}
+    .lab-intro{background:var(--panel2);}
+    .help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:10px;font-weight:600;cursor:help;position:relative;vertical-align:middle;margin-left:5px;flex:none;}
+    .help .tip{display:none;position:absolute;bottom:140%;left:50%;transform:translateX(-50%);width:290px;background:var(--panel);border:1px solid var(--line);padding:9px 11px;border-radius:8px;z-index:60;font-size:12px;line-height:1.45;color:var(--text);text-align:left;font-weight:400;text-transform:none;letter-spacing:normal;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:auto;cursor:auto;white-space:normal;max-height:min(60vh,420px);overflow-y:auto;overscroll-behavior:contain;}
+    /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+    .help:hover::before{content:'';position:absolute;bottom:100%;left:-30px;right:-30px;height:10px;}
+    .help:hover .tip{display:block;}
+    .help.below .tip{bottom:auto;top:140%;}
+    .help.below:hover::before{bottom:auto;top:100%;}
+  

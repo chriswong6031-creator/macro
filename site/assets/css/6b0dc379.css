@@ -1,0 +1,22 @@
+
+    .bc-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    .bc-ax{fill:var(--muted);font-size:9px;}
+    .bc-lb{font-size:9.5px;font-weight:600;}
+    .bc-ann{font-size:9.5px;}
+    .bc-win{font-size:10px;font-weight:700;letter-spacing:.05em;fill:#46b87a;}
+    .bc-heret{font-size:10.5px;font-weight:600;fill:#5b8def;}
+    .bc-fn{fill:var(--muted);font-size:9.5px;}
+    .bc-leg{font-size:9.5px;}
+    .bc-histf{opacity:0;animation:bc-fade 1.4s ease-out .2s forwards;}
+    .bc-drawp{stroke-dasharray:1;stroke-dashoffset:1;animation:bc-draw 1.8s ease-out .5s forwards;}
+    .bc-heref{opacity:0;animation:bc-fade .8s ease-out 2s forwards;}
+    .bc-projf{opacity:0;animation:bc-fade 1s ease-out 2.4s forwards;}
+    .bc-annf{opacity:0;animation:bc-fade 1s ease-out 2.8s forwards;}
+    @keyframes bc-fade{to{opacity:1;}}
+    @keyframes bc-draw{to{stroke-dashoffset:0;}}
+    .bc-here{animation:bc-pulse 2.2s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes bc-pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+    .bc-ring{animation:bc-ringk 2.2s ease-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes bc-ringk{0%{transform:scale(.5);opacity:.7;}80%,100%{transform:scale(2.8);opacity:0;}}
+    @media (prefers-reduced-motion: reduce){ [class*="bc-"]{ animation:none !important; opacity:1 !important; stroke-dashoffset:0 !important; } }
+  

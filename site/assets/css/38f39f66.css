@@ -1,0 +1,21 @@
+
+    .tm-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    .tm-title{fill:var(--text);font-size:16.5px;font-weight:700;}
+    .tm-sub{fill:var(--muted);font-size:11px;}
+    .tm-lbl{fill:var(--text);font-size:12.5px;font-weight:600;}
+    .tm-status{font-size:11px;font-weight:700;letter-spacing:.04em;}
+    .tm-substatus{font-size:9px;font-weight:700;letter-spacing:.05em;}
+    .tm-note{fill:var(--muted);font-size:10.5px;}
+    .tm-sum{fill:var(--text);font-size:12px;font-weight:600;}
+
+    .tm-row{animation:tm-rise .7s ease-out both;}
+    @keyframes tm-rise{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+    .tm-pulse-amber{animation:tm-glow 3s ease-in-out infinite;}
+    .tm-pulse-red{animation:tm-glow 2s ease-in-out infinite;}
+    @keyframes tm-glow{0%,100%{opacity:1;}50%{opacity:.45;}}
+    .tm-ring{animation:tm-ring 2.2s ease-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes tm-ring{0%{transform:scale(.6);opacity:.75;}80%,100%{transform:scale(2.4);opacity:0;}}
+    .tm-crack{animation:tm-crack 3.5s ease-in-out infinite;}
+    @keyframes tm-crack{0%,100%{opacity:.35;}50%{opacity:.9;}}
+    @media (prefers-reduced-motion: reduce){ [class*="tm-"]{ animation:none !important; } }
+  

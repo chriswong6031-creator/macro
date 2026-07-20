@@ -1,0 +1,255 @@
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:15px; margin:0 0 6px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); }
+  .sm { font-size:13px; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative;
+          vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%;
+               transform:translateX(-50%); width:330px; max-width:78vw; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto;
+               max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
+  .help:hover .tip { display:block; }
+  /* market toggle tabs */
+  .brief-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
+  .brief-tab-btn { background:var(--panel); border:1px solid var(--line); color:var(--muted);
+                   border-radius:999px; padding:7px 16px; font:600 13px/1 inherit; cursor:pointer;
+                   font-family:inherit; transition:background .15s,color .15s,border-color .15s; }
+  .brief-tab-btn:hover { color:var(--text); border-color:var(--muted); }
+  .brief-tab-btn.active { background:var(--link); border-color:var(--link); color:#fff; }
+  .brief-tab { display:none; }
+  .brief-tab.active { display:block; }
+  /* AI-brief bodies are server-rendered by the shared macro (.aib2-*); the page's
+     .panel gives them their frame. The macro tab keeps the green brief accent; the
+     other tabs inherit the ZH-safe blue default. The literal #38c472 (== macro's
+     --isle-brief) is a FIXED hex so the brand accent never red-flips in ZH — --up
+     swaps to red under html[data-lang="zh"], so it must NOT back the accent. */
+  .panel.ai-brief[data-lens="macro"] .aib2 { --aib2-acc: #38c472; }
+  .panel.ai-brief { padding-top: 12px; }
+  /* .mb-deg retained — the cortex panel (aibrief.js) still emits it */
+  .mb-deg { color:var(--muted); font-size:12px; font-style:italic; margin:4px 0; }
+  /* ── Panel A: context strip ────────────────────────────────────────────────── */
+  .ctx-strip { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:flex-start; }
+  .ctx-chip { display:inline-flex; align-items:center; gap:5px; background:var(--panel);
+              border:1px solid var(--line); border-radius:6px; padding:5px 10px;
+              font-size:13px; font-weight:600; }
+  .ctx-chip.regime { border-color:var(--link); color:var(--link); }
+  .ctx-chip.cortex-ok { border-color:#22c55e; color:#22c55e; }
+  .ctx-chip.cortex-deg { border-color:var(--muted); color:var(--muted); }
+  .ctx-row { display:flex; align-items:center; gap:6px; font-size:13px; line-height:1.4; }
+  .ctx-label { color:var(--muted); font-size:11px; font-weight:600; text-transform:uppercase;
+               letter-spacing:.05em; white-space:nowrap; }
+  /* ── Panel B: What's ahead ─────────────────────────────────────────────────── */
+  .fwd-list { list-style:none; margin:8px 0 0; padding:0; }
+  .fwd-list li { display:flex; align-items:baseline; gap:8px; padding:5px 0;
+                 border-bottom:1px solid var(--line); font-size:13px; }
+  .fwd-list li:last-child { border-bottom:none; }
+  .fwd-date { color:var(--muted); font-size:12px; white-space:nowrap; min-width:70px; }
+  /* ── Panel C: Brief's own record ───────────────────────────────────────────── */
+  .record-cal { color:var(--muted); font-size:12px; margin:4px 0 10px; font-style:italic; }
+  .open-lean { padding:6px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .open-lean:last-child { border-bottom:none; }
+  /* ── Panel D: Cortex deliberation (client-side) ─────────────────────────────── */
+  #cortex-panel { display:none; }
+  .cortex-label { display:inline-block; background:var(--panel); border:1px solid var(--line);
+                  border-radius:4px; font-size:11px; font-weight:600; color:var(--muted);
+                  padding:1px 6px; margin-bottom:6px; letter-spacing:.04em; }
+  .cortex-section { margin:8px 0; }
+  .cortex-h { font-weight:600; color:var(--link); margin:0 0 3px; font-size:13px; }
+  .cortex-list { margin:3px 0 0 16px; padding:0; font-size:13px; }
+  .cortex-list li { margin:2px 0; }
+
+/* ── AI BRIEF v2 (aib2-*) — shared token spine ──────────────────────────────── */
+.aib2{
+  /* accent defaults to a stable Western blue (never red-flips in ZH); macro
+     overrides to its green brief accent on its own dialog root. */
+  --aib2-acc:var(--info,#3b82f6);
+  --aib2-mut:var(--muted,rgba(255,255,255,.55));
+  --aib2-surf:rgba(255,255,255,.035);
+  --aib2-hair:rgba(255,255,255,.09);
+  --aib2-track:rgba(255,255,255,.12);
+  /* tone palette — engine-computed key_facts + stance tints. These are SEMANTIC
+     quality tints (good/warn/bad), NOT price direction, so they use FIXED hexes and
+     must NOT bind to --up/--down (which swap red<->green under html[data-lang="zh"]).
+     This matches the sibling china chip idiom (.cnx-chip.turn = fixed green,
+     .cnx-chip.hot = fixed red) — a "good" reading stays green in EN and ZH alike. */
+  --aib2-good:#45b873;   /* == the site's canonical gain-green (fixed) */
+  --aib2-bad:#e06464;    /* == the site's canonical loss-red (fixed)   */
+  --aib2-warn:var(--warn,#f59e0b);  /* amber — does not flip in ZH */
+  --aib2-info:var(--info,#5b9bf0);  /* blue  — does not flip in ZH */
+  color:var(--text);
+}
+[data-theme="light"] .aib2{
+  --aib2-surf:rgba(0,0,0,.028);--aib2-hair:rgba(0,0,0,.09);--aib2-track:rgba(0,0,0,.12);
+  --aib2-good:#1f9a55;--aib2-bad:#cf4040;  /* light-theme fixed variants (match theme.css) */
+}
+
+/* ── 1 · header strip ───────────────────────────────────────────────────────── */
+.aib2-hdr{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;padding-bottom:15px;
+  border-bottom:1px solid color-mix(in srgb,var(--aib2-acc) 16%,var(--aib2-hair));}
+.aib2-icon{width:38px;height:38px;flex-shrink:0;border-radius:11px;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--aib2-acc) 22%,transparent),color-mix(in srgb,var(--aib2-acc) 8%,transparent));
+  border:1px solid color-mix(in srgb,var(--aib2-acc) 30%,transparent);
+  color:var(--aib2-acc);font-size:13px;font-weight:800;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;}
+.aib2-hdr-meta{flex:1;min-width:0;}
+.aib2-hdr-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px;}
+.aib2-hdr-sub{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.aib2-hdr-date{font-size:12px;color:var(--aib2-mut);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+.aib2-cadence{font-size:10.5px;font-weight:650;letter-spacing:.02em;
+  padding:2px 9px;border-radius:999px;
+  background:color-mix(in srgb,var(--aib2-acc) 11%,transparent);
+  border:1px solid color-mix(in srgb,var(--aib2-acc) 24%,transparent);
+  color:color-mix(in srgb,var(--aib2-acc) 82%,var(--text));}
+.aib2-badge{margin-left:auto;align-self:center;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--aib2-acc);opacity:.85;text-align:right;line-height:1.45;
+  white-space:normal;max-width:210px;flex-shrink:0;}
+[data-theme="light"] .aib2-badge{opacity:.95;}
+
+/* ── section spine — a labelled hairline naming each movement ────────────────── */
+.aib2-sec{display:flex;align-items:center;gap:10px;margin:20px 0 11px;}
+.aib2-sec:first-child{margin-top:4px;}
+.aib2-sec::after{content:"";flex:1;height:1px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--aib2-acc) 26%,var(--aib2-hair)),transparent);}
+.aib2-sec-label{font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--aib2-mut);display:inline-flex;align-items:center;gap:7px;}
+.aib2-sec-label::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--aib2-acc);}
+
+/* ── 2 · the gist (glance tick-list) ────────────────────────────────────────── */
+.aib2-gist{margin-bottom:16px;}
+.aib2-gist-list{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:9px;}
+.aib2-gist-list li{position:relative;padding-left:20px;
+  font-size:14.5px;line-height:1.55;color:var(--text);font-weight:500;}
+.aib2-gist-list li::before{content:"";position:absolute;left:2px;top:.58em;
+  width:7px;height:7px;border-radius:2px;transform:rotate(45deg);
+  background:color-mix(in srgb,var(--aib2-acc) 62%,transparent);}
+.aib2-gist-list li b{font-weight:750;color:var(--text);}
+/* first gist item = the most important thing today — a touch louder */
+.aib2-gist-list li:first-child{font-size:15px;font-weight:600;}
+
+/* STANCE PILL — the signature. Accent-tinted directive; the stance verb is bold. */
+.aib2-stance{display:flex;align-items:flex-start;gap:11px;
+  padding:13px 16px;border-radius:13px;
+  background:color-mix(in srgb,var(--aib2-acc) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--aib2-acc) 30%,transparent);
+  border-left:4px solid color-mix(in srgb,var(--aib2-acc) 72%,transparent);
+  box-shadow:0 1px 0 color-mix(in srgb,var(--aib2-acc) 8%,transparent);}
+[data-theme="light"] .aib2-stance{background:color-mix(in srgb,var(--aib2-acc) 9%,#fff);}
+.aib2-stance-mark{color:var(--aib2-acc);font-size:15px;line-height:1.4;flex-shrink:0;margin-top:1px;}
+.aib2-stance-body{font-size:15px;line-height:1.5;color:var(--text);font-weight:600;}
+.aib2-stance-body b{font-weight:800;
+  /* the stance verb gets the accent so the eye lands on the directive first */
+  color:color-mix(in srgb,var(--aib2-acc) 55%,var(--text));}
+/* tone variants — protect/stand-aside lean amber; act leans green; ignore muted */
+.aib2-stance--warn{--aib2-acc:var(--aib2-warn);}
+.aib2-stance--go{--aib2-acc:var(--aib2-good);}
+.aib2-stance--muted{--aib2-acc:var(--aib2-mut);}
+.aib2-stance--muted .aib2-stance-body b{color:var(--text);}
+
+/* v1 lead card (summary fallback when tldr absent) */
+.aib2-lead{font-size:16.5px;font-weight:600;line-height:1.62;color:var(--text);
+  padding:16px 18px;border-radius:13px;margin-bottom:16px;
+  background:color-mix(in srgb,var(--aib2-acc) 7%,transparent);
+  border:1px solid color-mix(in srgb,var(--aib2-acc) 18%,transparent);
+  border-left:3px solid color-mix(in srgb,var(--aib2-acc) 60%,transparent);}
+[data-theme="light"] .aib2-lead{background:color-mix(in srgb,var(--aib2-acc) 6%,#fff);}
+
+/* ── 3 · key readings (key_facts chip rail) ─────────────────────────────────── */
+.aib2-kf-rail{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.aib2-kf{display:inline-flex;align-items:baseline;gap:7px;
+  padding:6px 12px;border-radius:999px;font-size:12.5px;line-height:1.3;
+  background:var(--aib2-surf);border:1px solid var(--aib2-hair);max-width:100%;}
+.aib2-kf-k{color:var(--aib2-mut);font-weight:600;white-space:nowrap;}
+.aib2-kf-v{color:var(--text);font-weight:700;min-width:0;}
+/* tone tints — the value carries the read; the chip border/wash confirms it */
+.aib2-kf--good{background:color-mix(in srgb,var(--aib2-good) 10%,var(--aib2-surf));
+  border-color:color-mix(in srgb,var(--aib2-good) 34%,transparent);}
+.aib2-kf--good .aib2-kf-v{color:color-mix(in srgb,var(--aib2-good) 72%,var(--text));}
+.aib2-kf--warn{background:color-mix(in srgb,var(--aib2-warn) 10%,var(--aib2-surf));
+  border-color:color-mix(in srgb,var(--aib2-warn) 34%,transparent);}
+.aib2-kf--warn .aib2-kf-v{color:color-mix(in srgb,var(--aib2-warn) 74%,var(--text));}
+.aib2-kf--bad{background:color-mix(in srgb,var(--aib2-bad) 11%,var(--aib2-surf));
+  border-color:color-mix(in srgb,var(--aib2-bad) 36%,transparent);}
+.aib2-kf--bad .aib2-kf-v{color:color-mix(in srgb,var(--aib2-bad) 74%,var(--text));}
+.aib2-kf--info{background:color-mix(in srgb,var(--aib2-info) 10%,var(--aib2-surf));
+  border-color:color-mix(in srgb,var(--aib2-info) 32%,transparent);}
+.aib2-kf--info .aib2-kf-v{color:color-mix(in srgb,var(--aib2-info) 78%,var(--text));}
+.aib2-kf--neutral{/* uses base surf/hair; value stays --text */}
+
+/* ── 4 · confidence meter ────────────────────────────────────────────────────── */
+.aib2-conf{display:flex;align-items:center;gap:13px;margin-bottom:4px;
+  padding:11px 14px;background:var(--aib2-surf);border:1px solid var(--aib2-hair);border-radius:11px;}
+.aib2-conf-bar{display:flex;gap:4px;align-items:center;padding:4px;border-radius:7px;background:var(--aib2-track);cursor:help;}
+.aib2-conf-seg{width:26px;height:6px;border-radius:3px;
+  background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 8%,transparent);transition:background .2s;}
+.aib2-conf-seg.on{background:var(--aib2-acc);box-shadow:none;}
+.aib2-conf-label{font-size:12.5px;font-weight:650;color:var(--text);}
+.aib2-conf-asof{font-size:11.5px;color:var(--aib2-mut);margin-left:auto;font-variant-numeric:tabular-nums;}
+
+/* ── 5 · the full read (regime prose) ───────────────────────────────────────── */
+.aib2-regime{font-size:14px;color:var(--text);line-height:1.72;margin-bottom:16px;opacity:.94;}
+
+/* ── 6/7/8/9 · cards + grid ─────────────────────────────────────────────────── */
+.aib2-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:13px;margin-bottom:12px;}
+@media(max-width:560px){.aib2-grid{grid-template-columns:1fr;}}
+.aib2-card{padding:14px 16px 15px;border-radius:12px;background:var(--aib2-surf);border:1px solid var(--aib2-hair);}
+.aib2-card--full{margin-bottom:12px;}
+.aib2-card--conflicts{border-left:3px solid var(--aib2-warn);}
+.aib2-card--tx{border-left:3px solid var(--aib2-info);}
+.aib2-card--playbook{border-left:3px solid var(--aib2-acc);}
+.aib2-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--aib2-mut);margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+.aib2-card--conflicts .aib2-eyebrow{color:color-mix(in srgb,var(--aib2-warn) 78%,var(--aib2-mut));}
+.aib2-card--tx .aib2-eyebrow{color:color-mix(in srgb,var(--aib2-info) 74%,var(--aib2-mut));}
+.aib2-card--playbook .aib2-eyebrow{color:color-mix(in srgb,var(--aib2-acc) 74%,var(--aib2-mut));}
+.aib2-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+.aib2-items li{position:relative;padding-left:14px;font-size:13px;color:var(--text);line-height:1.6;}
+.aib2-items li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;
+  background:color-mix(in srgb,currentColor 32%,transparent);}
+.aib2-card--conflicts .aib2-items li::before{background:color-mix(in srgb,var(--aib2-warn) 55%,transparent);}
+.aib2-card--tx .aib2-items li::before{background:color-mix(in srgb,var(--aib2-info) 55%,transparent);}
+.aib2-items li b,.aib2-prose b,.aib2-watch-body b{font-weight:700;color:var(--text);}
+.aib2-prose{font-size:13.5px;color:var(--text);line-height:1.72;}
+
+/* what to watch */
+.aib2-watch{list-style:none;margin:0;padding:0;}
+.aib2-watch-row{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;color:var(--text);line-height:1.6;padding:5px 0;}
+.aib2-watch-row + .aib2-watch-row{border-top:1px solid var(--aib2-hair);}
+.aib2-watch-mark{color:var(--aib2-acc);flex-shrink:0;margin-top:1px;font-size:13px;line-height:1.5;}
+
+/* upcoming catalysts */
+.aib2-cat-rail{display:flex;flex-wrap:wrap;gap:8px;}
+.aib2-cat{display:inline-flex;align-items:baseline;gap:6px;padding:5px 12px;border-radius:999px;
+  font-size:12.5px;font-weight:600;background:var(--aib2-surf);border:1px solid var(--aib2-hair);color:var(--text);}
+.aib2-cat-d{color:var(--aib2-mut);font-variant-numeric:tabular-nums;font-weight:700;}
+.aib2-cat-read{font-size:12.5px;color:var(--aib2-mut);line-height:1.55;margin-top:11px;}
+
+/* ── 10 · degraded notice ────────────────────────────────────────────────────── */
+.aib2-degraded{font-size:12px;color:var(--aib2-mut);margin:8px 0 4px;padding:9px 13px;border-radius:9px;
+  background:color-mix(in srgb,var(--aib2-warn) 9%,transparent);
+  border:1px solid color-mix(in srgb,var(--aib2-warn) 22%,transparent);
+  border-left:3px solid var(--aib2-warn);}
+
+/* ── responsive — 390px bleed guard ─────────────────────────────────────────── */
+@media(max-width:560px){
+  .aib2-hdr{flex-wrap:wrap;}
+  /* the house-law badge takes its own wrapped row (aligned under the title,
+     past the 38px icon + 14px gap) — without a flex-basis it stays on row 1
+     and clips at the panel edge on narrow phones */
+  .aib2-badge{flex-basis:calc(100% - 52px);margin-left:52px;text-align:left;max-width:none;align-self:flex-start;}
+  .aib2-conf{flex-wrap:wrap;gap:9px;}
+  .aib2-conf-asof{margin-left:0;width:100%;}
+  .aib2-kf{width:100%;justify-content:space-between;}
+}

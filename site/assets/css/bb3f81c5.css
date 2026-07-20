@@ -1,0 +1,343 @@
+
+/* ═══════════════════════════════════════════════════════════════
+   MX4 — Scorecard Grid view-system (S1 skeleton)
+   All selectors scoped under body.page-macro.
+   Grid-view styles scoped under body.page-macro.mx4-grid.
+   Ledger view (no .mx4-grid) = pixel-faithful to v3 HEAD.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* v5.1: Segmented control + ledger-view CSS removed (grid is the permanent view) */
+body.page-macro .mx4-rack{display:block;}
+/* sxg-face hidden outside grid context — overridden below in .mx4-grid */
+body.page-macro .sxg-face{display:none;}
+
+/* ── GRID VIEW — .mx4-grid body class ───────────────────────── */
+
+/* Rack becomes 12-col grid */
+body.page-macro.mx4-grid .mx4-rack{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:14px;
+  padding:12px 0;
+}
+
+/* Show face in grid view (.mx4-grid is permanent in macro mode) */
+body.page-macro.mx4-grid .sxg-face{display:flex;}
+
+/* ── Card spans (desktop ≥1100px) ───────────────────────────── */
+/* v5 layout:
+   Row 1 (Command Scorecard) = sx-risk-v2 span 12, order:-1
+   Row 2 (Markets tiles)     = sx-markets-v2 span 12
+   Row 3 (WTD | Events)      = sx-evidence span 6, sx-events-v2 span 6
+   Row 4 (Fed | Sent | Sect) = #sx-v5-fed span 4, #sx-v5-sentiment span 4, #sx-v5-sector span 4
+   Row 5 (Alerts|Policy|AI)  = sx-news-v2 span 5, sx-policy-v2 span 3, sx-aibrief-v2 span 4
+   Row 6 (Deep Context)      = sx-deep-context span 12
+*/
+@media(min-width:1100px){
+  body.page-macro.mx4-grid #sx-evidence{grid-column:span 6;}
+  body.page-macro.mx4-grid #sx-events-v2{grid-column:span 6;}
+  body.page-macro.mx4-grid #sx-markets-v2{grid-column:span 12;}
+  body.page-macro.mx4-grid #sx-risk-v2{grid-column:span 12;order:-1;}
+  body.page-macro.mx4-grid #sx-policy-v2{grid-column:span 3;}
+  body.page-macro.mx4-grid #sx-aibrief-v2{grid-column:span 4;}
+  body.page-macro.mx4-grid #sx-news-v2{grid-column:span 5;}
+  body.page-macro.mx4-grid #sx-deep-context{grid-column:span 12;}
+  body.page-macro.mx4-grid #sx-v5-fed{grid-column:span 4;}
+  body.page-macro.mx4-grid #sx-v5-sentiment{grid-column:span 4;}
+  body.page-macro.mx4-grid #sx-v5-sector{grid-column:span 4;}
+}
+/* ≤1100px — two-col */
+@media(max-width:1099px){
+  body.page-macro.mx4-grid .sx{grid-column:span 6;}
+  body.page-macro.mx4-grid #sx-risk-v2{grid-column:span 12;order:-1;}
+  body.page-macro.mx4-grid #sx-markets-v2{grid-column:span 12;}
+  body.page-macro.mx4-grid #sx-deep-context{grid-column:span 12;}
+  body.page-macro.mx4-grid #sx-v5-fed,
+  body.page-macro.mx4-grid #sx-v5-sentiment,
+  body.page-macro.mx4-grid #sx-v5-sector{grid-column:span 6;}
+  body.page-macro.mx4-grid #sx-news-v2{grid-column:span 6;}
+  body.page-macro.mx4-grid #sx-aibrief-v2{grid-column:span 6;}
+}
+/* ≤700px — full width stack */
+@media(max-width:700px){
+  body.page-macro.mx4-grid .sx,
+  body.page-macro.mx4-grid #sx-v5-fed,
+  body.page-macro.mx4-grid #sx-v5-sentiment,
+  body.page-macro.mx4-grid #sx-v5-sector{grid-column:span 12;}
+}
+
+/* Expanded card spans full width */
+body.page-macro.mx4-grid .sx[data-open]{grid-column:1/-1;}
+
+/* ── Risk card: face hidden in grid (band zone-2 is its face) ── */
+body.page-macro.mx4-grid #sx-risk-v2 .sxg-face{display:none!important;}
+/* But when data-open, show the tray normally */
+
+/* ── Sibling dim on expansion (graft 5, reuse v3 dim) ────────── */
+/* v3 already dims via has-open-island / many-open on body;
+   in grid view we replicate the same effect */
+body.page-macro.mx4-grid.has-open-island .sx:not([data-open]) .sxg-face{
+  opacity:.55;filter:saturate(.5);transition:opacity .2s,filter .2s;
+}
+
+/* ── Face base styles ─────────────────────────────────────────── */
+body.page-macro .sxg-face{
+  flex-direction:column;
+  gap:8px;
+  padding:14px 16px;
+  cursor:pointer;
+  border-radius:inherit;
+  min-height:90px;
+  user-select:none;
+}
+body.page-macro .sxg-face:focus-visible{
+  outline:2px solid var(--link);outline-offset:2px;
+}
+
+body.page-macro .sxg-face-eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--isle-color,var(--ink-3));
+  display:flex;align-items:center;gap:6px;
+}
+body.page-macro .sxg-face-eyebrow::after{
+  content:'';flex:1;height:1px;background:color-mix(in srgb,var(--isle-color,var(--line)) 35%,transparent);
+}
+
+body.page-macro .sxg-face-stance{
+  font-size:13px;font-weight:600;color:var(--ink-1);line-height:1.4;
+  flex:1;
+}
+
+body.page-macro .sxg-face-sub{
+  font-size:11px;color:var(--ink-2);line-height:1.4;
+}
+
+/* 3px left accent edge per card (graft 3) */
+body.page-macro.mx4-grid .sx{
+  /* v5.2: no colored left accents on containers (operator order) */
+  border-radius:10px;
+  background:var(--panel);
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  overflow:hidden;
+  transition:box-shadow .15s,opacity .2s,filter .2s;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+}
+/* v5.3 (Order 5): per-card colored hover tint REMOVED — unified idiom is applied
+   on the interactive face element itself (see .sxg-face.mx5-card-face:hover below). */
+
+/* ── Markets face tiles ───────────────────────────────────────── */
+body.page-macro .sxg-face-tiles{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:6px;
+}
+body.page-macro .sxg-mkt-tile{
+  display:flex;flex-direction:column;gap:2px;
+  padding:6px 8px;border-radius:6px;background:var(--tile);
+}
+body.page-macro .sxg-mkt-sym{
+  font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--ink-2);
+}
+body.page-macro .sxg-mkt-chg{
+  font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+body.page-macro .sxg-mkt-chg.up{color:var(--up);}
+body.page-macro .sxg-mkt-chg.dn{color:var(--down);}
+
+/* ── News face rows ───────────────────────────────────────────── */
+body.page-macro .sxg-face-news-list{display:flex;flex-direction:column;gap:6px;flex:1;}
+body.page-macro .sxg-news-row{display:flex;align-items:flex-start;gap:6px;}
+body.page-macro .sxg-news-dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;
+  background:var(--ink-3);
+}
+body.page-macro .sxg-dot-high{background:var(--down);}
+body.page-macro .sxg-dot-med{background:var(--warn);}
+body.page-macro .sxg-news-hl{
+  font-size:12px;color:var(--ink-1);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;
+}
+body.page-macro .sxg-news-age{font-size:10px;color:var(--ink-3);font-weight:400;}
+
+/* ── AI Brief face badge (VIS-02: wraps freely, no fixed-width clip) ─ */
+body.page-macro .sxg-aibrief-badge{
+  font-size:10px;color:var(--ink-3);line-height:1.4;white-space:normal;
+  border-top:1px solid var(--line);padding-top:6px;margin-top:2px;
+}
+
+/* ── Deep context face chips ──────────────────────────────────── */
+body.page-macro .sxg-face-chips{display:flex;flex-wrap:wrap;gap:5px;}
+body.page-macro .sxg-deep-chip{
+  display:inline-flex;padding:4px 10px;border-radius:100px;
+  font-size:11px;font-weight:600;
+  background:var(--tile);color:var(--ink-2);
+  border:1px solid var(--line);text-decoration:none;
+  transition:border-color .12s,color .12s;
+}
+body.page-macro .sxg-deep-chip:hover{border-color:var(--link);color:var(--link);}
+
+/* ── MOB: score-block overflow guard at narrow viewports ─────────────────── */
+/* mx2-hero-row wraps at small widths but score-block needs to shrink */
+@media(max-width:480px){
+  body.page-macro .mx2-score-block{
+    min-width:0;width:100%;box-sizing:border-box;
+  }
+  body.page-macro .mx2-prog-wrap,
+  body.page-macro .mx2-bzone-flip-caption{
+    max-width:100%;
+  }
+}
+
+/* ── MOB-07: pause infinite island animations on touch-primary devices ──── */
+@media(hover:none){
+  body.page-macro .sx[data-open] .sx-island::before,
+  body.page-macro .sx[data-open] .sx-island::after{
+    animation:none!important;
+  }
+  body.page-macro #risk-state.rs-loud,
+  body.page-macro #risk-radar.rr-loud{animation:none!important;}
+}
+
+/* ── MOB-01: ledger glance rows — single-line + ellipsis at ≤560px ──────── */
+@media(max-width:560px){
+  body.page-macro .sx-glance{flex-wrap:nowrap;overflow:hidden;}
+  body.page-macro .sx-glance > span:not(.sx-chev),
+  body.page-macro .sx-glance > div:not(.sx-chev){
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100vw - 160px);
+  }
+  body.page-macro .sx-glance .v2chip{flex-shrink:0;}
+  /* MARKETS glance: compact single-row chips (symbol · chg only, hide price block) */
+  body.page-macro .sx-glance .mx2-mkt-glance{flex-wrap:nowrap;overflow:hidden;gap:4px}
+  body.page-macro .sx-glance .mx2-mkt-tile{
+    min-width:unset;width:auto;flex:none;
+    padding:3px 7px;border-radius:6px;
+    display:flex;align-items:center;gap:4px;
+  }
+  /* Collapse tile to one row: show name + chg, hide big price */
+  body.page-macro .sx-glance .mx2-mkt-top{flex-direction:row;gap:4px;align-items:center}
+  body.page-macro .sx-glance .mx2-mkt-px{display:none}
+  body.page-macro .sx-glance .mx2-mkt-name{font-size:10px;white-space:nowrap}
+  body.page-macro .sx-glance .mx2-mkt-chg{font-size:10px;white-space:nowrap}
+  /* DEEP CONTEXT chips: no-wrap strip */
+  body.page-macro .sx-glance .mx2-deep-chips{flex-wrap:nowrap;overflow:hidden}
+  body.page-macro .sx-glance .mx2-deep-chip{flex-shrink:0}
+  /* RISK glance: no-wrap */
+  body.page-macro .sx-glance .mx2-risk-glance{flex-wrap:nowrap;overflow:hidden}
+  /* EVENTS glance: no-wrap */
+  body.page-macro .sx-glance .mx2-events-glance{flex-wrap:nowrap;overflow:hidden}
+}
+
+/* ── In grid view the sx-tray behaves as normal (expands in-flow at 1/-1) ── */
+/* sx-risk-v2: face and sum hidden — band zone-2 (S2/S3) is its card face.
+   The .sx element collapses to zero height when not open; when open (data-open),
+   it spans 1/-1 at order:-1 top of rack showing the full island. */
+/* sx-risk-v2 sx-sum{display:none} — removed (sx-sum rows retired v5.1) */
+/* Collapse the risk card when not expanded — it has no face in grid view */
+body.page-macro.mx4-grid #sx-risk-v2:not([data-open]){
+  min-height:0;
+  border:none;
+  background:transparent;
+  box-shadow:none;
+  padding:0;
+  margin:0;
+  /* still keep order:-1 so when opened it goes to top */
+}
+
+/* ── grid-only utility: visible only in mx4-grid, hidden in ledger ── */
+body.page-macro .mx4-grid-only{display:none;}
+body.page-macro.mx4-grid .mx4-grid-only{display:block;}
+
+/* ── Hide mx4-verdict-band (removed in v5) in all views ─────────── */
+body.page-macro .mx4-verdict-band{display:none!important;}
+
+/* ── In grid view: sx-evidence face = WHAT TO DO card (v5); popover button opens island ── */
+/* sx-risk-v2 face still hidden; its tray opens from the rack as before */
+/* sx-evidence face is now visible in grid view as the WTD card — override the hide rule */
+body.page-macro.mx4-grid #sx-evidence .sxg-face{display:flex!important;}
+/* sx-risk-v2 face already hidden via existing rule body.page-macro.mx4-grid #sx-risk-v2 .sxg-face */
+
+/* ══════════════════════════════════════════════════════════
+   S2 — EVIDENCE face full content
+   ══════════════════════════════════════════════════════════ */
+body.page-macro .sxg-ev-rows{
+  display:flex;flex-direction:column;gap:5px;flex:1;
+}
+body.page-macro .sxg-ev-row{
+  display:grid;grid-template-columns:14px minmax(0,1fr) 56px 28px;
+  align-items:center;gap:5px;font-size:11px;
+}
+body.page-macro .sxg-ev-arrow{font-size:11px;font-weight:700;}
+body.page-macro .sxg-ev-name{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.page-macro .sxg-ev-bar-track{height:3px;border-radius:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);}
+body.page-macro .sxg-ev-bar-fill{height:3px;border-radius:2px;}
+body.page-macro .sxg-ev-score{font-size:10px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;}
+
+/* ══════════════════════════════════════════════════════════
+   S2 — EVENTS face full content
+   ══════════════════════════════════════════════════════════ */
+body.page-macro .sxg-ev-cal-list{
+  display:flex;flex-direction:column;gap:4px;flex:1;
+}
+body.page-macro .sxg-evcal-row{
+  display:grid;grid-template-columns:40px minmax(0,1fr) auto;
+  align-items:center;gap:6px;font-size:11px;
+}
+body.page-macro .sxg-evcal-date{
+  font-size:10px;font-weight:700;color:var(--ink-3);font-variant-numeric:tabular-nums;
+}
+body.page-macro .sxg-evcal-label{
+  color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+body.page-macro .sxg-evcal-imp{
+  font-size:9px;font-weight:700;letter-spacing:.04em;padding:1px 4px;border-radius:3px;
+}
+body.page-macro .sxg-evcal-imp.high{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn);}
+body.page-macro .sxg-evcal-imp.med{background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up);}
+body.page-macro .sxg-fed-odds{
+  font-size:10.5px;color:var(--ink-2);margin-top:5px;border-top:1px solid var(--line);padding-top:5px;
+  display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+}
+body.page-macro .sxg-fed-odds b{color:var(--ink-1);font-weight:700;}
+
+/* ══════════════════════════════════════════════════════════
+   S2 — MARKETS face full content
+   ══════════════════════════════════════════════════════════ */
+/* Override S1 tiles: add price row */
+body.page-macro .sxg-mkt-price{
+  font-size:12px;font-weight:700;color:var(--ink-1);
+  font-variant-numeric:tabular-nums;
+}
+body.page-macro .sxg-sector-hot-cold{
+  font-size:10px;color:var(--ink-3);margin-top:4px;border-top:1px solid var(--line);padding-top:4px;
+}
+body.page-macro .sxg-sector-hot-cold b{font-weight:700;}
+body.page-macro .sxg-sector-up{color:var(--up);}
+body.page-macro .sxg-sector-dn{color:var(--down);}
+
+/* ══════════════════════════════════════════════════════════
+   S2 — POLICY face full content
+   ══════════════════════════════════════════════════════════ */
+body.page-macro .sxg-policy-state{
+  font-size:12.5px;font-weight:700;color:var(--ink-1);line-height:1.4;
+}
+body.page-macro .sxg-policy-rows{
+  display:flex;flex-direction:column;gap:4px;flex:1;
+}
+body.page-macro .sxg-policy-row{
+  display:flex;align-items:baseline;gap:6px;font-size:11px;
+}
+body.page-macro .sxg-policy-key{
+  color:var(--ink-3);font-size:10px;flex-shrink:0;min-width:56px;
+}
+body.page-macro .sxg-policy-val{color:var(--ink-1);font-weight:600;}
+body.page-macro .sxg-fed-path{
+  display:flex;flex-direction:column;gap:3px;margin-top:4px;
+}
+body.page-macro .sxg-fed-path-row{
+  display:flex;align-items:center;gap:6px;font-size:10.5px;
+}
+body.page-macro .sxg-fed-path-lbl{color:var(--ink-3);min-width:110px;flex-shrink:0;}
+body.page-macro .sxg-fed-path-bar{flex:1;height:4px;border-radius:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);position:relative;}
+body.page-macro .sxg-fed-path-fill{height:4px;border-radius:2px;background:var(--up);position:absolute;top:0;left:0;}
+body.page-macro .sxg-fed-path-pct{min-width:36px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-1);}
+

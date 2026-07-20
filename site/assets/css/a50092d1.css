@@ -1,0 +1,21 @@
+
+    .st-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    .st-ttl{font-size:15px;font-weight:700;letter-spacing:.03em;}
+    .st-chip{font-size:10px;font-weight:600;}
+    .st-det{fill:var(--muted);font-size:11px;}
+    .st-num{font-size:10px;font-weight:700;letter-spacing:.06em;}
+    .st-note{fill:var(--muted);font-size:11px;font-style:italic;}
+    .st-cap{fill:var(--muted);font-size:11px;}
+
+    .st-step{animation:st-rise .7s ease-out both;}
+    @keyframes st-rise{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+    .st-rail{stroke-dasharray:940;stroke-dashoffset:940;animation:st-draw 2.2s ease-out .25s forwards;}
+    @keyframes st-draw{to{stroke-dashoffset:0;}}
+    .st-fade{animation:st-fadein .7s ease-out both;}
+    @keyframes st-fadein{from{opacity:0;}to{opacity:1;}}
+    .st-bead{animation:st-travel 5.5s ease-in-out 2.5s infinite;}
+    @keyframes st-travel{0%{offset-distance:0%;opacity:0;}7%{opacity:1;}93%{opacity:1;}100%{offset-distance:100%;opacity:0;}}
+    .st-glow{animation:st-pulse 2.4s ease-in-out infinite;}
+    @keyframes st-pulse{0%,100%{opacity:.55;}50%{opacity:.12;}}
+    @media (prefers-reduced-motion: reduce){ [class*="st-"]{ animation:none !important; stroke-dashoffset:0 !important; } }
+  

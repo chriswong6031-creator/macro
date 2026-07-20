@@ -1,0 +1,263 @@
+
+:root{
+  /* Inter loads via the _interfonts @font-face partial; the token mirrors
+     theme.css --font-ui (this standalone page does not link theme.css). */
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  --blue:#285FFF; --indigo:#4559DC; --r1:#E2E7FC; --r2:#B8C6FA; --r3:#D14343;
+  --r4:#6888FB; --r5:#285FFF; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
+  --faint:#A0A0A0; --red:#D30B0B; --redfill:#FEB5B5; --amber:#F5AD42;
+  --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
+  /* DIVERGING tone semantic: bull=blue, bear=red, caution=amber, neutral=grey.
+     --r3 is remapped to red above so every legacy bear/down/risk element flips to red.
+     In zh mode the direction/risk poles invert to the Asia convention (red=up,
+     green=down) — see the html[data-lang="zh"] block below. --brand / --hot / --cold
+     are the deliberate non-swapping exceptions. */
+  --bull:var(--blue); --bull-soft:#DCE6FF; --bear:#D14343; --bear-soft:#FBE0E0;
+  --warn:#E0922E; --neutral:var(--muted);
+  /* --brand: nav / links / category accent — always blue, never swapped by zh.
+     --hot / --cold: RSI & StochRSI over/oversold HEAT zones (not price direction),
+     so they stay red>70 / blue<30 in both languages (keeps the card legend honest). */
+  --brand:#285FFF; --hot:#D14343; --cold:#285FFF;
+  /* §1 surface tokens */
+  --surface: rgba(255,255,255,.78);
+  --surface-brd: rgba(12,18,32,.07);
+  --surface-hover-brd: rgba(12,18,32,.13);
+  --surface-shadow: 0 1px 2px rgba(20,32,64,.05), 0 10px 30px -12px rgba(20,32,64,.12), inset 0 1px 0 rgba(255,255,255,.9);
+  --surface-shadow-hover: 0 2px 4px rgba(20,32,64,.06), 0 16px 40px -14px rgba(20,32,64,.18), inset 0 1px 0 rgba(255,255,255,.95);
+}
+*{box-sizing:border-box}
+/* language toggle: dual-emit text, hide the inactive language. */
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC","Microsoft JhengHei","Heiti SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--brand);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 80px}
+.brand{font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
+.brand .gn{color:var(--brand)}
+html[data-theme="dark"]{--bg:#0b0d13;--card:#151923;--grid:#272d3a;--ink:#eef2f8;--text:#d3dae4;--muted:#8b93a1;--faint:#687384;--red:#e06464;--r1:#1b2740;--r2:#243352;--r3:#F1736B;--bear:#F1736B;--bear-soft:#3a1c1c;--bull-soft:#14233f;--hot:#F1736B;--surface:rgba(19,24,34,.62);--surface-brd:rgba(255,255,255,.09);--surface-hover-brd:rgba(255,255,255,.16);--surface-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 12px 36px -10px rgba(0,0,0,.55);--surface-shadow-hover:0 1px 0 rgba(255,255,255,.06) inset, 0 18px 48px -12px rgba(0,0,0,.65)}
+html[data-theme="dark"] body{-webkit-font-smoothing:antialiased}
+/* ---- Chinese mode: Asia colour convention ----------------------------------
+   In Asia red = up/bullish, green = down/bearish (the inverse of the West), so in
+   zh we invert the direction/risk poles: the bull/up/risk-on pole (--blue, and
+   --bull which aliases it) -> red, and the bear/down/risk-off pole (--r3 / --bear)
+   -> green. This matches macro.html (theme.css swaps --up/--down the same way).
+   Brand/nav (--brand) and the RSI/StochRSI heat gauge (--hot/--cold) are pinned —
+   they don't encode price direction. NOTE: server-rendered Plotly charts bake
+   C.blue/C.bear at build time, so they keep blue/red even in zh (recolouring a
+   static chart on the client-side toggle isn't feasible). The greens/reds mirror
+   theme.css's zh values for cross-page consistency. Specificity: the dual-attr
+   light/dark+zh selectors (0,2,0) win over the single-attr theme/lang blocks. */
+html[data-lang="zh"]{--blue:#cf4040;--r3:#1f9a55;--bear:#1f9a55;--bull-soft:#fbe0e0;--bear-soft:#e2f5e9}
+html[data-theme="dark"][data-lang="zh"]{--blue:#e06464;--r3:#45b873;--bear:#45b873;--bull-soft:#3a1c1c;--bear-soft:#14331f}
+/* layout */
+.grid{display:grid;gap:20px}
+.cols-2{grid-template-columns:1.15fr .85fr}
+.cols-eq{grid-template-columns:1fr 1fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+.cols-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.cols-2,.cols-eq,.cols-3,.cols-4{grid-template-columns:1fr}}
+/* §2 card + section treatment */
+.card{background:var(--surface);border:1px solid var(--surface-brd);border-radius:18px;
+  padding:24px 26px;position:relative;box-shadow:var(--surface-shadow);
+  transition:border-color .2s ease, box-shadow .25s ease, transform .2s cubic-bezier(.2,.7,.3,1)}
+.card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 55%)}
+.card:hover{border-color:var(--surface-hover-brd);box-shadow:var(--surface-shadow-hover);transform:translateY(-1px)}
+/* §3 card headings */
+.card h2{margin:0 0 4px;font-size:11.5px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.08em}
+.card h3{margin:0 0 14px;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px}
+.mut{color:var(--muted)} .faint{color:var(--faint)}
+/* §2 section eyebrows */
+.section-title{display:flex;align-items:center;font-size:11.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:46px 4px 14px}
+.section-title .st-lab{flex:none;min-width:0}
+.section-title::after{content:"";flex:1;height:1px;margin-left:12px;
+  background:linear-gradient(90deg,var(--grid),transparent)}
+/* §3 mono tabular numerals */
+.mini .lab b,.score .v,.cmd-price,.big,.reco-exp-band,.cone-stat b,.vtm-price,.vtm-date,
+.mg-score,.dir-num,.needle-num,.risk-nums b,.scn-line b,.rgc-tier span:last-child{
+  font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* §6 motion system — global keyframes */
+@keyframes vec-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.up{color:var(--blue)} .down{color:var(--r3)}
+/* small mini-gauge */
+.mini{margin-top:4px}
+.mini .bar{height:6px;border-radius:4px;background:var(--grid);position:relative;margin:6px 0}
+.mini .fill{position:absolute;height:100%;border-radius:4px;background:var(--blue)}
+.mini .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+/* §5 allocation bar — BTC lit, cash parked-hatched */
+.allocbar{height:52px;border-radius:14px;overflow:hidden;display:flex;font-weight:700;margin-top:8px;
+  border:1px solid var(--surface-brd);background:color-mix(in srgb,var(--muted) 8%,transparent)}
+.allocbar .btc{position:relative;display:flex;align-items:center;justify-content:center;color:#fff;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--blue) 78%,#000 6%),var(--blue));
+  font-family:var(--font-mono);letter-spacing:-.01em;gap:.35em}
+.allocbar .btc::after{content:"";position:absolute;inset:0 0 55% 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),transparent)}
+.allocbar .cash{display:flex;align-items:center;justify-content:center;color:var(--muted);
+  font-family:var(--font-mono);gap:.35em;
+  background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--muted) 14%,transparent) 0 1px,transparent 1px 9px)}
+/* chips */
+.chip{display:inline-block;padding:6px 14px;border-radius:10px;font-weight:700;font-size:14px}
+.chip-bull{background:var(--bull);color:#fff} .chip-bear{background:var(--bear);color:#fff}
+.chip-ghost{background:var(--grid);color:var(--muted)}
+.chip-strategic{background:var(--brand);color:#fff} .chip-tactical{background:var(--redfill);color:var(--red)}
+/* probability bar */
+.prob{display:flex;align-items:center;gap:10px;margin:8px 0}
+.prob .lab{width:54px} .prob .track{flex:1;height:10px;border-radius:6px;background:var(--grid);overflow:hidden}
+.prob .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--r3),var(--blue))}
+.prob .fill.bear{background:linear-gradient(90deg,var(--r1),var(--r3))}
+.prob .pct{width:42px;text-align:right;font-weight:700;color:var(--ink)}
+/* conviction dots */
+.dots{display:inline-flex;gap:6px}
+.dots i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--r2);display:inline-block}
+.dots i.on{background:var(--bull);border-color:var(--bull)}
+.dots i.on.bear{background:var(--bear);border-color:var(--bear)}
+/* cross-asset table */
+.catbl{width:100%;border-collapse:collapse}
+.catbl td{padding:9px 4px;border-bottom:1px solid var(--grid);font-size:14px}
+.catbl td.a{font-weight:700;color:var(--ink)} .catbl td.r{text-align:right}
+.catbl tr:last-child td{border-bottom:none}
+.cat-h{font-weight:700;color:var(--ink);margin:2px 0 4px;font-size:15px}
+/* scorecard */
+.score{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.score .s{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black in dark → lift tiles to the card-elevation grey so they read on the card */
+.score .s .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.score .s .v{font-size:20px;font-weight:800;color:var(--ink)}
+.score .s .h{font-size:11px;color:var(--faint);margin-top:2px}
+.variant-tabs{display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.variant-tabs .t{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
+  font-weight:700;font-size:13px;cursor:pointer;border:none}
+.variant-tabs .t.active{background:var(--brand);color:#fff}
+/* badges / verdict */
+.verdict{display:inline-block;padding:3px 9px;border-radius:7px;font-size:12px;font-weight:700}
+.v-conf{background:#E3F5E9;color:#1a7f43} .v-dir{background:#FFF2D9;color:#9a6a00}
+.v-ctx{background:var(--grid);color:var(--muted)}
+.tip{border-bottom:1px dashed var(--faint);cursor:help}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);
+  font-size:12px;color:var(--faint);line-height:1.7}
+.site-footer{max-width:1180px;margin:40px auto 8px;padding-top:22px;
+  border-top:1px solid var(--grid);text-align:center;line-height:1.6}
+.site-footer .made{display:block;font-size:13.5px;font-weight:700;
+  color:var(--ink);letter-spacing:.2px}
+.site-footer .dev{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
+.scn-line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--grid);font-size:14px}
+.scn-line:last-child{border:none}
+.big{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+/* conviction layer (TOSS-UP / LEAN / EDGE) — honest no-edge labeling. Monochrome:
+   bull=blue, bear=r3 (lighter blue), toss-up=grey; no red (reserved for alerts). */
+.conv-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.conv-n{font-size:11px;color:var(--faint);font-weight:600;white-space:nowrap}
+.cw{font-size:31px;font-weight:800;letter-spacing:-.02em;line-height:1.08;margin-top:7px}
+.cw-toss{color:var(--muted)}
+.cw-lean.bull{color:color-mix(in srgb,var(--blue) 58%,var(--grid))}
+.cw-lean.bear{color:color-mix(in srgb,var(--r3) 60%,var(--grid))}
+.cw-edge.bull{color:var(--blue)} .cw-edge.bear{color:var(--r3)}
+.conv-tag{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11.5px;font-weight:700;vertical-align:middle;margin-left:8px;background:var(--grid);color:var(--muted)}
+.conv-ok{margin-left:6px;color:var(--blue);font-weight:800;font-size:20px;vertical-align:middle}
+.conv-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.needle{margin:15px 0 4px}
+.needle-axis{position:relative;height:14px;border-radius:8px;background:var(--grid)}
+.needle-dead{position:absolute;left:47%;width:6%;top:0;bottom:0;background:var(--muted);opacity:.32;border-radius:4px}
+.needle-tick{position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--muted);opacity:.65}
+.needle-dot{position:absolute;top:50%;width:15px;height:15px;margin-left:-7.5px;transform:translateY(-50%);border-radius:50%;box-shadow:0 0 0 3px var(--card)}
+.needle-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);font-weight:600;margin-top:6px}
+.needle-num{color:var(--muted);font-weight:700}
+.conv-why{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+.conv-defer{font-size:12px;margin-top:7px;font-weight:600;line-height:1.45}
+/* forward-risk (drawdown) layer — risk LEADS, direction demoted. Monochrome:
+   downside=r3, upside=faint blue, now/calm=grey; no red. */
+.risk-word{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.12;margin-top:6px}
+.risk-nums{font-size:13px;color:var(--ink);margin-top:5px}
+.risk-nums b{font-weight:800}
+.ddrail{margin:13px 0 2px}
+.ddrail-bar{position:relative;height:14px;border-radius:8px;background:var(--grid)}
+.dd-down{position:absolute;top:0;bottom:0;border-radius:8px 0 0 8px;background:linear-gradient(90deg,var(--r3),color-mix(in srgb,var(--r3) 18%,var(--grid)))}
+.dd-up{position:absolute;top:0;bottom:0;border-radius:0 8px 8px 0;background:color-mix(in srgb,var(--blue) 16%,var(--grid))}
+.dd-now{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink)}
+.dd-mk{position:absolute;top:50%;width:13px;height:13px;margin-left:-6.5px;transform:translateY(-50%);border-radius:50%;box-shadow:0 0 0 3px var(--card)}
+.dd-tail{background:var(--r3)} .dd-tail.thin{opacity:.45}
+.dd-typ{background:color-mix(in srgb,var(--r3) 50%,var(--grid))}
+.dd-calm{width:9px;height:9px;margin-left:-4.5px;background:var(--faint);box-shadow:0 0 0 2px var(--card)}
+.dd-uptick{width:9px;height:9px;margin-left:-4.5px;background:color-mix(in srgb,var(--blue) 55%,var(--grid))}
+.ddrail-lab{display:flex;justify-content:space-between;font-size:11px;margin-top:8px}
+.ddrail-lab .r3b{color:var(--r3);font-weight:700} .ddrail-lab .now{color:var(--muted)}
+.ddrail-lab .upf{color:color-mix(in srgb,var(--blue) 60%,var(--muted))}
+.dir-strip{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:11px;border-top:1px solid var(--grid)}
+.dir-chip{font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.mini-needle{position:relative;flex:1;max-width:120px;height:10px;border-radius:5px;background:var(--grid)}
+.mn-dead{position:absolute;left:47%;width:6%;top:0;bottom:0;background:var(--muted);opacity:.32;border-radius:3px}
+.mn-tick{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted);opacity:.6}
+.mn-dot{position:absolute;top:50%;width:11px;height:11px;margin-left:-5.5px;transform:translateY(-50%);border-radius:50%;box-shadow:0 0 0 2px var(--card)}
+.dir-num{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
+/* alert timeline */
+.tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
+ font-weight:700;font-size:13px;cursor:pointer;border:none}
+.tlf.active{background:var(--brand);color:#fff}
+.timeline{position:relative}
+.tl-day{margin-bottom:20px}
+.tl-date{font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;
+ letter-spacing:.05em;margin:0 0 10px;position:sticky;top:64px;background:var(--card);padding:4px 0;z-index:5}
+.tl-item{border-left:2px solid var(--grid);padding:0 0 0 18px;margin-left:6px;position:relative}
+.tl-item summary{display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;
+ list-style:none;flex-wrap:wrap}
+.tl-item summary::-webkit-details-marker{display:none}
+.tl-node{position:absolute;left:-7px;top:15px;width:12px;height:12px;border-radius:50%;
+ background:var(--faint);border:2px solid var(--card)}
+.tl-node.n-high{background:var(--red)} .tl-node.n-medium{background:var(--brand)} .tl-node.n-info{background:var(--r3)}
+.tl-node.n-flash_crash{background:var(--red)} .tl-node.n-momentum_trigger{background:var(--indigo)}
+.tl-chip{font-size:11px;font-weight:700;padding:2px 9px;border-radius:7px;background:var(--grid);color:var(--muted)}
+.tl-chip.f-flash{background:var(--redfill);color:var(--red)}
+.tl-chip.f-risk{background:#FDEBEB;color:var(--red)}
+.tl-chip.f-structure{background:#E8EEFF;color:var(--brand)}
+.tl-chip.f-momentum{background:#ECE9FB;color:var(--indigo)}
+.tl-head{font-weight:600;color:var(--ink);font-size:14px;flex:1;min-width:200px}
+.tl-time{font-size:12px;color:var(--faint);font-weight:600}
+.tl-detail{padding:2px 0 12px;font-size:13px;color:var(--muted);line-height:1.6}
+.tl-edge{margin-top:7px;font-size:12px;color:var(--ink)}
+.tl-fwd{margin-top:3px;font-size:12px;color:var(--muted)}
+.tl-link{display:inline-block;margin-left:8px;font-weight:700;font-size:13px}
+.tl-item[hidden]{display:none}
+/* cycle time machine (vector_timemachine.js) */
+#vtm{padding:20px 22px}
+.vtm-wrap{position:relative;margin:2px 0}
+.vtm-canvas{display:block;width:100%;height:56px;cursor:ew-resize;border-radius:8px;touch-action:none}
+.vtm-range{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;margin:2px 0 0;cursor:ew-resize}
+.vtm-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--grid)}
+.vtm-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:var(--ink);border:2px solid var(--card);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.vtm-range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:2px solid var(--card)}
+.vtm-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px}
+.vtm-btn{font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--bg);border:1px solid var(--grid);border-radius:8px;padding:5px 11px;color:var(--muted);transition:color .15s,border-color .15s}
+.vtm-btn:hover{color:var(--ink);border-color:var(--muted)}
+.vtm-play{display:inline-flex;align-items:center;justify-content:center;width:34px;padding:0}
+.vtm-play-ico{width:0;height:0;border-style:solid;border-width:6px 0 6px 10px;border-color:transparent transparent transparent var(--ink)}
+.vtm-play.is-playing .vtm-play-ico{width:9px;height:11px;border:none;border-left:3px solid var(--ink);border-right:3px solid var(--ink)}
+.vtm-presets{display:flex;gap:6px;flex-wrap:wrap}
+.vtm-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:9px 2px 0}
+.vtm-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+/* §2 vtm-readout surface recipe */
+.vtm-readout{background:var(--surface);border:1px solid var(--surface-brd);border-radius:14px;padding:14px 16px;margin-top:13px}
+.vtm-asof{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.vtm-date{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.vtm-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 9px;border-radius:9px}
+.vtm-tag.is-live{color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--card))}
+.vtm-tag.is-hist{color:var(--muted);background:var(--grid)}
+.vtm-price{margin-left:auto;font-size:17px;font-weight:800;color:var(--ink)}
+.vtm-badges{display:flex;align-items:center;gap:9px 16px;flex-wrap:wrap;margin-top:13px;font-size:13px;color:var(--muted)}
+.vtm-badge{display:inline-block;padding:3px 11px;border-radius:10px;font-weight:700;font-size:12.5px;background:var(--grid);color:var(--ink)}
+.vtm-badges .kv b{color:var(--ink);font-weight:700}
+.vtm-gauge{margin-top:15px}
+.vtm-glabel{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+.vtm-glabel span:last-child{font-weight:700;color:var(--ink)}
+.vtm-grail{position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--grid) 50%,var(--r3))}
+.vtm-grail i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--card);transform:translate(-50%,-50%)}

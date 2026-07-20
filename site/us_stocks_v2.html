@@ -27,81 +27,7 @@
 <title>Buy Board 2.0 — shadow preview (dual-gated)</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=de86232e">
-<style>
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1360px)/2)); } }
-  a { text-decoration:none; color:inherit; }
-  h1 { font-size:22px; margin:0 0 2px; }
-  .lead-p { color:var(--muted); font-size:13px; margin:0 0 12px; max-width:900px; }
-  .shadow-tag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em;
-    color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));
-    background:color-mix(in srgb,var(--warn) 12%,transparent); padding:2px 8px; border-radius:7px; margin-left:8px; }
-  /* stat strip */
-  .strip { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 14px; }
-  .stat { font-size:12px; color:var(--muted); padding:5px 12px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
-  .stat b { color:var(--text); font-size:14px; font-variant-numeric:tabular-nums; }
-  /* section heads */
-  .sec { display:flex; align-items:baseline; gap:10px; margin:22px 0 4px; }
-  .sec h2 { font-size:16px; margin:0; }
-  .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
-  .sub { color:var(--muted); font-size:12.5px; margin:0 0 8px; max-width:840px; }
-  .conc { font-size:12px; color:var(--muted); padding:6px 12px; border:1px dashed var(--line); border-radius:9px; margin:0 0 10px; display:inline-block; }
-  .conc.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 45%,var(--line)); border-style:solid; }
-  /* grid + cards */
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin:4px 0 6px; }
-  .v2-card { display:flex; flex-direction:column; gap:7px; min-width:0; overflow:hidden; position:relative;
-    background:var(--panel); border:1px solid var(--line);
-    border-radius:12px; padding:12px 13px; transition:border-color .12s; }
-  /* lane accent as a TOP gradient stripe (RIPENING-shelf idiom) — not a left border */
-  .v2-card::before { content:""; position:absolute; top:0; left:0; right:0; height:3px; pointer-events:none;
-    background:linear-gradient(90deg,var(--muted),transparent); opacity:.6; }
-  .v2-card[data-lane="entry_open"]::before { background:linear-gradient(90deg,var(--up),color-mix(in srgb,var(--up) 30%,transparent)); opacity:1; }
-  .v2-card[data-lane="setting_up"]::before { background:linear-gradient(90deg,var(--warn),color-mix(in srgb,var(--warn) 30%,transparent)); opacity:1; }
-  .v2-card:hover { border-color:var(--accent,var(--up)); }
-  .v2-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .v2-rank { font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .v2-tk { font-weight:800; font-size:15px; letter-spacing:.02em; }
-  .glyph { font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px; border:1px solid var(--line);
-    font-variant-numeric:tabular-nums; }
-  .glyph.edge { min-width:22px; text-align:center; }
-  .glyph.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); background:color-mix(in srgb,var(--up) 10%,transparent); }
-  .glyph.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); background:color-mix(in srgb,var(--down) 10%,transparent); }
-  .glyph.tone-neutral { color:var(--muted); }
-  .glyph.tone-warm { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); background:color-mix(in srgb,var(--warn) 10%,transparent); }
-  .glyph.prov { color:var(--muted); font-weight:600; border-style:dashed; }
-  .v2-name { font-size:12.5px; color:var(--text); }
-  .v2-sec { color:var(--muted); }
-  .v2-lead { display:flex; align-items:center; gap:8px; }
-  .lead-bar { flex:0 0 60px; height:5px; border-radius:3px; background:var(--line); position:relative; overflow:hidden; }
-  .lead-bar::after { content:""; position:absolute; inset:0 auto 0 0; width:calc(var(--lead)*1%);
-    background:linear-gradient(90deg,var(--down),var(--muted) 50%,var(--up)); }
-  .lead-txt { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .v2-chips { display:flex; flex-wrap:wrap; gap:5px; }
-  .chip { font-size:11px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
-  .chip.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,var(--line)); }
-  .chip.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
-  .chip.tone-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
-  .chip.tone-warm { color:var(--warn); }
-  .v2-foot { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .fp.ok { color:var(--up); }
-  .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
-  .pass { font-size:11.5px; color:var(--muted); margin:6px 0 0; }
-  .foot { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
-  code { font-size:11px; background:color-mix(in srgb,var(--muted) 12%,transparent); padding:1px 4px; border-radius:4px; }
-  /* W4 reflexivity overlay */
-  .rx-chip { cursor:help; }
-  .rx-basis { font-size:10px; color:var(--muted); cursor:help; margin-left:4px; }
-  .rx-banner { font-size:11.5px; color:var(--muted); margin:0 0 10px;
-    padding:5px 12px; border:1px solid color-mix(in srgb,var(--muted) 30%,var(--line));
-    border-radius:9px; display:inline-block; }
-  .rx-banner b { color:var(--text); font-variant-numeric:tabular-nums; }
-  .rx-thesis-banner { border-color:color-mix(in srgb,var(--warn) 50%,var(--line));
-    color:var(--warn); display:block; margin-top:4px; }
-  .rx-caveat { display:inline-block; font-size:10px; cursor:help; margin-left:6px;
-    color:var(--muted); border:1px solid var(--line); border-radius:50%;
-    width:15px; height:15px; text-align:center; line-height:13px; vertical-align:middle; }
-</style>
+<link rel="stylesheet" href="assets/css/d456a57c.css?v=d456a57c">
 </head>
 <body>
 <h1><span class="l-en">Buy Board 2.0</span><span class="l-zh">买入榜 2.0</span><span class="shadow-tag">SHADOW · not live</span></h1>
@@ -442,7 +368,7 @@
 
 <div class="foot">
   <span class="l-en">SHADOW artifact</span><span class="l-zh">影子产物</span> · <code>site/factordata/us_standouts_v2.json</code> ·
-  <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-20 11:57 UTC ·
+  <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-20 15:02 UTC ·
   <span class="l-en">reader contract</span><span class="l-zh">读取契约</span> v1 ·
   <span class="l-en">flips to live only when measured precision@k ≥ live board (US-2 ledger).</span><span class="l-zh">仅当实测 precision@k ≥ 现网榜单时才切换上线（US-2 记录簿）。</span>
 </div>

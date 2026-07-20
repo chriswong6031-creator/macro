@@ -1,0 +1,22 @@
+
+  #rc-events-hk-panel h2 { font-size:16px; font-weight:800; letter-spacing:-.015em; margin:0 0 4px; }
+  .rc-sub-hk { color:var(--muted); font-size:12px; margin:0 0 10px; max-width:84ch; line-height:1.5; }
+  .rc-grid-hk { display:flex; flex-wrap:wrap; gap:10px; }
+  .rc-card-hk { flex:1 1 300px; min-width:260px; border-radius:12px; border:1px solid var(--line);
+    background:var(--panel2); padding:12px 14px; }
+  .rc-card-hk.rc-major { border-top:3px solid var(--warn); }
+  .rc-card-hk.rc-notable { border-top:3px solid var(--link); }
+  .rc-hd-hk { display:flex; align-items:baseline; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
+  .rc-title-hk { font-weight:800; font-size:13px; }
+  .rc-sev-hk { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;
+    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }
+  .rc-sev-hk.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+  .rc-sev-hk.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .rc-day-hk { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }
+  .rc-copy-hk { font-size:12.5px; line-height:1.55; }
+  .rc-receipts-hk { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .rc-stale-hk { font-style:italic; }
+  .rc-quiet-hk { color:var(--muted); font-size:12.5px; padding:6px 0; }
+  .rc-sb-hk { margin-top:8px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .rc-sb-hk b { color:var(--text); }
+  .rc-caveat-hk { margin-top:8px; font-size:10.5px; color:var(--muted); line-height:1.55; }

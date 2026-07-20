@@ -1,0 +1,23 @@
+
+  #rc-events-cn { margin:18px 2px 22px; }
+  #rc-events-cn h2 { font-size:17px; font-weight:800; letter-spacing:-.015em; margin:0 0 4px; }
+  .rc-sub-cn { color:var(--muted); font-size:12px; margin:0 0 10px; max-width:84ch; line-height:1.5; }
+  .rc-grid-cn { display:flex; flex-wrap:wrap; gap:10px; }
+  .rc-card-cn { flex:1 1 300px; min-width:260px; border-radius:12px; border:1px solid var(--line);
+    background:var(--panel); padding:12px 14px; }
+  .rc-card-cn.rc-major { border-left:4px solid var(--warn); }
+  .rc-hd-cn { display:flex; align-items:baseline; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
+  .rc-title-cn { font-weight:800; font-size:13.5px; }
+  .rc-sev-cn { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;
+    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }
+  .rc-sev-cn.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+  .rc-sev-cn.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .rc-day-cn { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }
+  .rc-copy-cn { font-size:12.5px; line-height:1.55; }
+  .rc-receipts-cn { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .rc-stale-cn { font-style:italic; }
+  .rc-quiet-cn { color:var(--muted); font-size:12.5px; padding:8px 0; }
+  .rc-connect { margin-top:10px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .rc-connect b { color:var(--text); }
+  .rc-connect .rc-nb-disc { font-style:italic; }
+  .rc-caveat-cn { margin-top:10px; font-size:10.5px; color:var(--muted); line-height:1.55; }

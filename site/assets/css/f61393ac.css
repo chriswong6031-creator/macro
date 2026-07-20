@@ -1,0 +1,107 @@
+
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  .sid { --num: "SF Mono", ui-monospace, "DejaVu Sans Mono", monospace; max-width:1180px; margin:0 auto; }
+  .sid-eyebrow { font:600 12px/1 var(--num); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .sid h1 { font-size:clamp(26px,4vw,38px); margin:.28em 0 .15em; letter-spacing:-.01em; }
+  .sid-sub { color:var(--muted); max-width:760px; font-size:14px; line-height:1.55; }
+  .sid-meta { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 6px; }
+  .sid-meta .chip { font-family:var(--num); }
+  .sid-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:20px 0; }
+  .sid-stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 15px; }
+  .sid-stat .k { font:600 10px/1 var(--num); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .sid-stat .v { font:650 25px/1.1 var(--num); margin-top:7px; }
+  .sid-stat .m { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .sid-regime { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info);
+                border-radius:10px; padding:12px 15px; margin:8px 0 4px; font-size:13.5px; line-height:1.55; }
+  .sid-regime .lab { font:600 10px/1 var(--num); letter-spacing:.12em; text-transform:uppercase; color:var(--info); display:block; margin-bottom:6px; }
+  .sid-sec { margin:30px 0 8px; }
+  .sid-sec h2 { font-size:18px; margin:0 0 3px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .sid-sec .h-note { font-size:12px; color:var(--muted); font-weight:400; }
+  .sid-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:12px; }
+  .conv-list { display:flex; flex-direction:column; gap:10px; }
+  .conv-row { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:12px 14px;
+              display:grid; grid-template-columns:64px 1fr; gap:14px; align-items:start; }
+  .conv-score { text-align:center; }
+  .conv-score .sc { font:700 27px/1 var(--num); }
+  .conv-score .scl { font:600 9px/1 var(--num); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+  .conv-main .tkline { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+  .conv-main .tk { font:700 17px/1 var(--num); }
+  .conv-chips { display:flex; flex-wrap:wrap; gap:5px; margin:7px 0; }
+  .pill { font:600 10.5px/1 var(--num); padding:4px 8px; border-radius:999px; border:1px solid var(--line);
+          color:var(--muted); background:var(--panel2); white-space:nowrap; }
+  .pill.act-ACCUMULATE { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, transparent); }
+  .pill.act-AVOID { color:var(--down); border-color:color-mix(in srgb, var(--down) 45%, transparent); }
+  .pill.act-WATCH { color:var(--info); border-color:color-mix(in srgb, var(--info) 45%, transparent); }
+  .pill.cv-high { color:var(--text); border-color:var(--text); font-weight:700; }
+  .pill.ext { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 45%, transparent); }
+  .pill.trump { color:var(--down); border-color:color-mix(in srgb, var(--down) 40%, transparent); }
+  .pill.ch { color:var(--info); border-color:color-mix(in srgb, var(--info) 30%, transparent); }
+  .pill.src-brain { color:#c77dff; border-color:#c77dff66; }
+  .conv-thesis { font-size:13px; line-height:1.55; margin:6px 0 2px; }
+  .conv-actors { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .conv-so { font-size:11.5px; color:var(--muted); margin-top:4px; }
+  .conv-so b { color:var(--text); font-weight:600; }
+  table.sid-t { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
+  table.sid-t th { text-align:left; font:600 10px/1.2 var(--num); letter-spacing:.06em; text-transform:uppercase;
+                   color:var(--muted); padding:5px 9px 7px; border-bottom:1px solid var(--line); }
+  table.sid-t td { padding:6px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.sid-t tr:last-child td { border-bottom:none; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; font-family:var(--num); }
+  .tkc { font-weight:700; font-variant-numeric:tabular-nums; font-family:var(--num); }
+  .mut { color:var(--muted); }
+  .sid-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:12px; }
+  .sid-grid h3 { margin:0 0 6px; font-size:14px; }
+  .kind-row { display:flex; flex-wrap:wrap; gap:7px 16px; margin:4px 0 10px; }
+  .kind-grp { font-size:11.5px; }
+  .kind-grp .kl { font:600 9.5px/1 var(--num); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .repoint { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--warn);
+             border-radius:9px; padding:9px 12px; margin-top:9px; font-size:12.5px; line-height:1.5; }
+  .repoint .strike { text-decoration:line-through; color:var(--muted); }
+  details.sid-more { margin-top:10px; }
+  details.sid-more > summary { cursor:pointer; font-size:12px; color:var(--info); list-style:none; }
+  details.sid-more > summary::-webkit-details-marker { display:none; }
+  .feedlink { font-family:var(--num); font-size:11.5px; }
+  .sid-cov { display:flex; flex-wrap:wrap; gap:7px; }
+  .cov { font:600 11px/1 var(--num); padding:5px 9px; border-radius:8px; border:1px solid var(--line); color:var(--muted); }
+  .cov.empty { opacity:.4; }
+  @media (max-width:760px){ .sid-stats{grid-template-columns:repeat(2,1fr);} .sid-grid{grid-template-columns:1fr;}
+    .conv-row{grid-template-columns:52px 1fr;gap:10px;} }
+  /* qledger honesty chips (D10) */
+  .ql-chip { display:inline-flex; align-items:center; font:700 9.5px/1 var(--num);
+    letter-spacing:.05em; text-transform:uppercase; padding:3px 8px; border-radius:6px;
+    border:1px solid; white-space:nowrap; vertical-align:middle; min-width:0; }
+  .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent);
+    color:var(--muted); border-color:color-mix(in srgb,var(--muted) 30%,transparent); }
+  .ql-chip-accruing { background:color-mix(in srgb,var(--warn) 14%,transparent);
+    color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,transparent); }
+  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent);
+    color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
+  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
+    color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
+

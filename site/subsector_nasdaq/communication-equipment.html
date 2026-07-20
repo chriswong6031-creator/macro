@@ -9,37 +9,7 @@
 <title>Communication Equipment — Subsector Confluence</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css?v=de86232e">
-<style>
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:20px 0 30px; }
-  a { text-decoration:none; color:inherit; }
-  .wrap { padding:14px 16px; }
-  @media (min-width:1100px){ .wrap{ padding:16px max(28px,calc((100vw - 1320px)/2)); } }
-  .back { color:var(--muted); font-size:12.5px; display:inline-block; margin:2px 2px 12px; }
-  .dh { display:flex; flex-wrap:wrap; align-items:flex-start; gap:8px 18px; margin:2px 2px 6px; }
-  .dh h1 { font-size:22px; margin:0; font-weight:800; letter-spacing:-.015em; }
-  .dh .sct { color:var(--muted); font-size:12px; margin-top:3px; text-transform:uppercase; letter-spacing:.03em; }
-  .dh .badges { display:flex; gap:7px; align-items:center; margin-left:auto; flex-wrap:wrap; }
-  .tier { font-weight:800; font-size:12px; padding:2px 8px; border-radius:6px; color:#fff; }
-  .tier.T1{ background:var(--up); } .tier.T2{ background:#3da564; } .tier.T3{ background:var(--info); } .tier.T4{ background:#6b7cc4; } .tier.none{ background:var(--g-mid); color:var(--muted); }
-  .pill { font-size:11px; font-weight:700; padding:2px 9px; border-radius:10px; border:1px solid var(--line); }
-  .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
-  .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
-  .pill.neutral{ color:var(--muted); } .pill.tactical,.pill.late{ color:var(--orange); }
-  .action { color:var(--text); font-size:13px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link); border-radius:9px; padding:9px 12px; margin:10px 2px 4px; max-width:108ch; }
-  .stats { display:flex; flex-wrap:wrap; gap:6px 18px; color:var(--muted); font-size:11.5px; margin:8px 2px 14px; }
-  .stats b { color:var(--text); font-weight:600; }
-  .chart-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px; margin:6px 0 18px; }
-  #chart-host { width:100%; min-height:420px; }
-  h2 { font-size:15px; font-weight:700; margin:18px 2px 8px; }
-  table.tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
-  table.tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:6px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
-  table.tbl td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
-  table.tbl tr:hover td { background:var(--panel); }
-  .tk { font-weight:700; } .num { font-variant-numeric:tabular-nums; } .pos{ color:var(--up); } .neg{ color:var(--down); }
-  tr.buyable td { background:color-mix(in srgb,var(--up) 7%,transparent); }
-  .foot { color:var(--muted); font-size:11px; margin:22px 2px 0; line-height:1.6; max-width:108ch; border-top:1px solid var(--line); padding-top:12px; }
-</style>
+<link rel="stylesheet" href="../assets/css/44eeb90b.css?v=44eeb90b">
 </head>
 <body>
 <nav class="site-nav">
@@ -194,71 +164,7 @@
       </div>
     </div>
     
-    <style>
-    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
-       clip off the left edge. Instead anchor the mega to the full-width .nav-links
-       row (its right edge = the nav rail right): make .nav-links the positioning
-       context and the Research .nav-dd static >700px, so right:0 right-aligns the
-       panel to the rail and it stays fully on-screen. The ::before bridges the
-       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
-    @media (min-width:701px){
-      /* nav-links is the positioning context for the rail-anchored mega; desktop
-         only, so it never overrides theme.js's position:absolute hamburger flyout
-         (≤700px), which shares this specificity. */
-      .site-nav .nav-links,.topbar .nav-links{position:relative}
-      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
-      /* the base .nav-dd::after bridge would become a full-width strip once the
-         trigger is static — disable it; the mega's own ::before bridges the gap. */
-      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
-        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
-      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
-    }
-    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      padding-bottom:13px;margin-bottom:13px;
-      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
-    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-      white-space:normal;text-decoration:none;
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
-      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
-      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
-    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
-      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
-      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
-    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
-    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
-    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
-    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
-    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
-    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
-    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
-    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
-      white-space:normal;text-decoration:none;transition:background .15s ease}
-    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
-    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
-    .nav-mega .nm-tx{min-width:0}
-    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
-    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
-      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
-    @media (max-width:1080px) and (min-width:701px){
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
-      .nav-mega-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:700px){
-      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
-      .nav-mega-grid{grid-template-columns:1fr;gap:0}
-      .nav-mega-h{padding-top:9px}
-      /* the hamburger accordion caps each open dropdown at max-height:600px
-         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
-         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
-         Same specificity trick overrides theme.js's generic accordion-panel
-         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
-         submenus) with symmetric sides + top breathing room, so the feature
-         cards read centered under the trigger instead of crooked. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
-    </style>
+    <link rel="stylesheet" href="../assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="../intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -340,7 +246,7 @@
 <script src="../lightweight-charts-v5.js?v=c0992580" defer></script>
 <script src="../chart.js?v=f8f558cb" defer></script>
 <script>
-const DETAIL = {"group":{"key":"communication-equipment","kind":"subsector","label":"Communication Equipment","label_zh":null,"sector":"Semis & Silicon","sector_zh":null,"n_members":5,"n_priced":5,"reliability":"low","coverage_pct":0.8,"n_live":5,"start":"2014-01-03","as_of":"2026-07-17","price_level":60.7818,"class":"neutral","entry":{"tier":null,"weight":0.0,"tier_sub":null,"ticks":40,"bars_to_cross":null,"fresh_bars":null,"eligible":false,"buyable":false,"above200":true,"reason":"flat: sell"},"regime":{"state":"NEUTRAL","side":"neutral","label":"NEUTRAL","label_zh":"\u4e2d\u6027","action":"In trend, nothing fresh \u2014 no edge either way.","action_zh":"\u5904\u4e8e\u8d8b\u52bf\u4e2d\uff0c\u65e0\u65b0\u4fe1\u53f7\u2014\u2014\u4e24\u8fb9\u90fd\u65e0\u4f18\u52bf\u3002","color":"var(--muted)","conviction":0,"rsi_3d":48.0,"stoch_3d":6.0,"rsi_d":40.0,"stoch_d":24.0,"days_to_cross":null,"rs_60d":-11.6,"signal_line":"no fresh cross","tailwind":false,"headwind":false,"ok":true},"members":[{"ticker":"ANET","name_zh":null,"price":168.61,"ret_20d":2.2,"vs_basket":14.3,"stock_tier":null,"stock_weight":0.0,"stock_ticks":2,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"},{"ticker":"CSCO","name_zh":null,"price":111.94,"ret_20d":-4.2,"vs_basket":7.8,"stock_tier":null,"stock_weight":0.0,"stock_ticks":24,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"CIEN","name_zh":null,"price":374.41,"ret_20d":-14.3,"vs_basket":-2.2,"stock_tier":null,"stock_weight":0.0,"stock_ticks":29,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"LITE","name_zh":null,"price":732.82,"ret_20d":-15.8,"vs_basket":-3.7,"stock_tier":null,"stock_weight":0.0,"stock_ticks":18,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"AAOI","name_zh":null,"price":119.92,"ret_20d":-28.3,"vs_basket":-16.3,"stock_tier":null,"stock_weight":0.0,"stock_ticks":17,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"}],"chart_key":"communication-equipment","has_signals":true},"kind":"subsector","kind_label_en":"Nasdaq-100 sub-industry","kind_label_zh":"\u7eb3\u65af\u8fbe\u514b100\u5b50\u884c\u4e1a","as_of":"2026-07-17","ohlc_dir":"subsectorohlc_nasdaq","sig_dir":"subsector_signals_nasdaq","back":"../subsectors.html","stock_base":"../stock.html#","generated_utc":"2026-07-20 13:02"};
+const DETAIL = {"group":{"key":"communication-equipment","kind":"subsector","label":"Communication Equipment","label_zh":null,"sector":"Semis & Silicon","sector_zh":null,"n_members":5,"n_priced":5,"reliability":"low","coverage_pct":0.8,"n_live":5,"start":"2014-01-03","as_of":"2026-07-17","price_level":60.7818,"class":"neutral","entry":{"tier":null,"weight":0.0,"tier_sub":null,"ticks":40,"bars_to_cross":null,"fresh_bars":null,"eligible":false,"buyable":false,"above200":true,"reason":"flat: sell"},"regime":{"state":"NEUTRAL","side":"neutral","label":"NEUTRAL","label_zh":"\u4e2d\u6027","action":"In trend, nothing fresh \u2014 no edge either way.","action_zh":"\u5904\u4e8e\u8d8b\u52bf\u4e2d\uff0c\u65e0\u65b0\u4fe1\u53f7\u2014\u2014\u4e24\u8fb9\u90fd\u65e0\u4f18\u52bf\u3002","color":"var(--muted)","conviction":0,"rsi_3d":48.0,"stoch_3d":6.0,"rsi_d":40.0,"stoch_d":24.0,"days_to_cross":null,"rs_60d":-11.6,"signal_line":"no fresh cross","tailwind":false,"headwind":false,"ok":true},"members":[{"ticker":"ANET","name_zh":null,"price":168.61,"ret_20d":2.2,"vs_basket":14.3,"stock_tier":null,"stock_weight":0.0,"stock_ticks":2,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"},{"ticker":"CSCO","name_zh":null,"price":111.94,"ret_20d":-4.2,"vs_basket":7.8,"stock_tier":null,"stock_weight":0.0,"stock_ticks":24,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"CIEN","name_zh":null,"price":374.41,"ret_20d":-14.3,"vs_basket":-2.2,"stock_tier":null,"stock_weight":0.0,"stock_ticks":29,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"LITE","name_zh":null,"price":732.82,"ret_20d":-15.8,"vs_basket":-3.7,"stock_tier":null,"stock_weight":0.0,"stock_ticks":18,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"AAOI","name_zh":null,"price":119.92,"ret_20d":-28.3,"vs_basket":-16.3,"stock_tier":null,"stock_weight":0.0,"stock_ticks":17,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"}],"chart_key":"communication-equipment","has_signals":true},"kind":"subsector","kind_label_en":"Nasdaq-100 sub-industry","kind_label_zh":"\u7eb3\u65af\u8fbe\u514b100\u5b50\u884c\u4e1a","as_of":"2026-07-17","ohlc_dir":"subsectorohlc_nasdaq","sig_dir":"subsector_signals_nasdaq","back":"../subsectors.html","stock_base":"../stock.html#","generated_utc":"2026-07-20 14:30"};
 const CHART_KEY = "communication-equipment";
 const HAS_SIGNALS = true;
 const L = (en, zh) => `<span class="l-en">${en}</span><span class="l-zh">${zh == null ? en : zh}</span>`;

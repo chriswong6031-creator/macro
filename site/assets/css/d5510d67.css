@@ -1,0 +1,40 @@
+
+    .pathway-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    .pathway-line{stroke-dasharray:1600;stroke-dashoffset:1600;animation:pathway-draw 3.8s ease-in-out .3s forwards;}
+    .pathway-area{opacity:0;animation:pathway-fill 1.4s ease-out 3.4s forwards;}
+    .pathway-band{opacity:0;animation:pathway-bandfade .9s ease-out forwards;}
+    .pathway-b1{animation-delay:.7s;}
+    .pathway-b2{animation-delay:1.5s;}
+    .pathway-b3{animation-delay:2.3s;}
+    .pathway-mk{opacity:0;animation:pathway-mkin .7s ease-out forwards;}
+    .pathway-mk1{animation-delay:1.0s;}
+    .pathway-mk2{animation-delay:1.6s;}
+    .pathway-mk3{animation-delay:2.2s;}
+    .pathway-mk4{animation-delay:2.8s;}
+    .pathway-mk5{animation-delay:3.2s;}
+    .pathway-dot{opacity:0;animation:pathway-nodein .6s ease-out forwards;}
+    .pathway-dotA{animation-delay:1.4s;}
+    .pathway-dotB{animation-delay:2.9s;}
+    .pathway-dotC{animation-delay:3.6s;}
+    .pathway-arrow{opacity:0;animation:pathway-nodein .8s ease-out 1.1s forwards;}
+    .pathway-branch{transform:scaleX(0);transform-origin:left center;animation:pathway-grow 1s cubic-bezier(.2,.8,.3,1) forwards;}
+    .pathway-brA{animation-delay:4.0s;}
+    .pathway-brB{animation-delay:4.2s;}
+    .pathway-brC{animation-delay:4.4s;}
+    .pathway-node{opacity:0;animation:pathway-nodein .6s ease-out forwards;}
+    .pathway-nA{animation-delay:4.4s;}
+    .pathway-nB{animation-delay:4.6s;}
+    .pathway-nC{animation-delay:4.8s;}
+    .pathway-pulse{animation:pathway-pulse 3.4s ease-in-out 5.0s infinite;}
+    .pathway-dash{stroke-dasharray:5 6;animation:pathway-flow 3s linear infinite;}
+    .pathway-wall{opacity:0;animation:pathway-fill 1s ease-out 3.0s forwards;}
+    @keyframes pathway-draw{to{stroke-dashoffset:0;}}
+    @keyframes pathway-fill{to{opacity:1;}}
+    @keyframes pathway-bandfade{to{opacity:1;}}
+    @keyframes pathway-mkin{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes pathway-grow{to{transform:scaleX(1);}}
+    @keyframes pathway-nodein{to{opacity:1;}}
+    @keyframes pathway-pulse{0%,100%{opacity:.9;}50%{opacity:1;filter:drop-shadow(0 0 6px #e0607a);}}
+    @keyframes pathway-flow{to{stroke-dashoffset:-22;}}
+    @media (prefers-reduced-motion: reduce){[class*="pathway-"]{animation:none !important;transform:none !important;stroke-dashoffset:0 !important;opacity:1 !important;}}
+  

@@ -1,0 +1,261 @@
+
+  /* ===== MARKET STATE — command-center (DISPLAY-ONLY synthesis) =====
+     Bloomberg-grade: monochrome by default, colour spent only on signal.
+     Verdict (left) reads in 2s; the six-factor evidence matrix (right) and the
+     multi-timeframe tape say WHY. The macro backdrop quadrant lives below. */
+  body.page-macro .ms{--ms-c:var(--ink-3)}
+  body.page-macro .ms.ms-green{--ms-c:var(--up)}
+  body.page-macro .ms.ms-yellow{--ms-c:var(--warn)}
+  body.page-macro .ms.ms-red{--ms-c:var(--down)}
+
+  /* header strip */
+  body.page-macro .ms-head{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;margin:0 0 4px}
+  body.page-macro .ms-eyebrow{display:inline-flex;align-items:center;gap:9px;white-space:nowrap;font-family:var(--num);
+    font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2);margin:0}
+  body.page-macro .ms-live{width:7px;height:7px;border-radius:50%;background:var(--ms-c);flex:none;
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--ms-c) 20%,transparent)}
+  body.page-macro .ms-date{font-family:var(--num);font-size:11px;letter-spacing:.04em;color:var(--ink-3);white-space:nowrap}
+  body.page-macro .ms-alerts{white-space:nowrap;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+    border:var(--rule) solid var(--hair-strong);background:transparent;color:var(--ink-2);border-radius:999px;
+    padding:5px 12px;font-size:11.5px;font-weight:600;letter-spacing:.02em;transition:border-color .14s,color .14s}
+  body.page-macro .ms-alerts:hover{border-color:var(--ink-3);color:var(--ink-1)}
+  body.page-macro .ms-alerts .dot{width:6px;height:6px;border-radius:50%;background:var(--act);flex:none}
+  body.page-macro .ms-alerts .ct{font-family:var(--num);font-weight:700;color:var(--ink-1)}
+  body.page-macro .ms-alerts .ct.is-zero{color:var(--ink-3)}
+
+  /* one-line reconciliation: names the slow backdrop and the fast risk read as two
+     DIFFERENT questions, so "Goldilocks" + "Risk-off" don't read as a contradiction */
+  body.page-macro .ms-oneline{display:flex;align-items:baseline;gap:7px 10px;flex-wrap:wrap;
+    margin:0 0 15px;padding-bottom:14px;border-bottom:var(--rule) solid var(--hair-strong);font-family:var(--num)}
+  body.page-macro .ms-oneline .olk{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+  body.page-macro .ms-oneline b{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink-1)}
+  body.page-macro .ms-oneline .olsep{color:var(--hair-strong);font-weight:700}
+  html[data-lang="zh"] body.page-macro .ms-oneline .olk{letter-spacing:0}
+
+  /* ===== FRONT BOARD — Market State (left) + Macro Backdrop (right), side by side =====
+     Base = mobile: one tight stack (radar → eyebrow → verdict/evidence → tape → divider →
+     backdrop). At >=901px it promotes to a grid: radar + eyebrow span the top, the tape spans
+     the bottom, Market State sits left (~60%) and the Macro Backdrop right (~40%). The .ms
+     class is only present when market_state exists, so the grid never triggers on the
+     (already mode-gated) empty case. */
+  body.page-macro .ms-front.ms{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+  body.page-macro .ms-front>.rrx{margin:0}
+  body.page-macro .ms-front>.ms-head{margin:0}
+  body.page-macro .ms-front>.ms-top{margin-top:0}
+  body.page-macro .ms-front>.ms-tape{margin-top:0}
+  body.page-macro .ms-front>.ms-divider{margin:4px 0 0}
+  @media(min-width:1100px){
+    body.page-macro .ms-front.ms{display:grid;gap:0 30px;align-items:start;
+      grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+      grid-template-areas:"radar radar" "head head" "state hero" "tape hero"}
+    /* Risk Radar = a wide BANNER spanning the top: header + escalating odds on the left,
+       and the threat meters / leading evidence / action — which used to stack at the bottom
+       of a tall half-width block — moved into the right column that was empty whitespace.
+       Even 1fr/1fr columns (the detail-heavy right column used to be squeezed narrow, which
+       made it TALLER and left the sparse left column with a ~190px void beneath the ramp). */
+    body.page-macro .ms-front>.rrx{grid-area:radar;margin-bottom:12px;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:22px;row-gap:0;align-items:stretch}
+    body.page-macro .ms-front>.rrx>.rrx-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-odds{flex:0 0 auto}
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-ramp{align-items:flex-end}
+    body.page-macro .ms-front>.rrx>.rrx-main .rrx-tk{height:44px;flex:0 0 44px;min-height:44px}
+    body.page-macro .ms-front>.rrx>.rrx-side{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:0;
+      padding-left:20px;border-left:1px solid color-mix(in srgb,var(--rc) 22%,var(--line))}
+    body.page-macro .ms-front>.ms-head{grid-area:head}
+    body.page-macro .ms-front>.ms-top{grid-area:state;margin-top:14px}
+    body.page-macro .ms-front>.ms-tape{grid-area:tape}
+    body.page-macro .ms-front>.ms-divider{display:none}
+    /* the backdrop, recomposed for the narrow right column: [locator | regime] on top,
+       the four vitals as a 2×2 strip beneath — never the wide 3-up desktop layout */
+    body.page-macro .ms-front>.hero-bar{grid-area:hero;margin-top:14px;padding-left:30px;
+      border-left:var(--rule) solid var(--hair);grid-template-columns:auto minmax(0,1fr);gap:12px 18px}
+    body.page-macro .ms-front>.hero-bar .hero-main{grid-column:2;border:0;padding:0}
+    body.page-macro .ms-front>.hero-bar .hero-vitals{grid-column:1/-1;gap:12px 18px}
+  }
+
+  /* top: verdict | evidence */
+  body.page-macro .ms-top{display:grid;grid-template-columns:minmax(0,236px) minmax(0,1fr);margin-top:16px}
+  body.page-macro .ms-verdict{padding-right:22px;border-right:var(--rule) solid var(--hair)}
+  body.page-macro .ms-evidence{padding-left:22px;min-width:0}
+  @media(max-width:760px){
+    body.page-macro .ms-top{grid-template-columns:1fr}
+    body.page-macro .ms-verdict{padding:0 0 16px;border-right:0;border-bottom:var(--rule) solid var(--hair-strong)}
+    body.page-macro .ms-evidence{padding:16px 0 0}
+  }
+
+  /* verdict column */
+  body.page-macro .v-label{font-family:var(--num);font-size:var(--fs-micro);font-weight:700;letter-spacing:var(--trk);text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 9px}
+  body.page-macro .v-word{font-size:var(--fs-display);line-height:.92;font-weight:800;letter-spacing:-.03em;margin:0;color:var(--ms-c);
+    display:flex;align-items:center;gap:.2em}
+  body.page-macro .v-word .arr{font-family:var(--num);font-size:.42em;font-weight:700;transform:translateY(-.04em)}
+  html[data-lang="zh"] body.page-macro .v-word{letter-spacing:0}
+  @media(max-width:560px){body.page-macro .v-word{font-size:38px}}
+  body.page-macro .v-scorerow{display:flex;align-items:baseline;gap:7px;margin-top:12px}
+  body.page-macro .v-score{font-family:var(--num);font-size:var(--fs-num-xl);font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--ink-1)}
+  body.page-macro .v-outof{font-family:var(--num);font-size:var(--fs-sm);color:var(--ink-3)}
+  body.page-macro .v-meter{margin-top:12px;height:6px;border-radius:3px;position:relative;overflow:hidden;
+    background:linear-gradient(90deg,
+      color-mix(in srgb,var(--down) 30%,var(--panel2)) 0 42%,
+      color-mix(in srgb,var(--warn) 30%,var(--panel2)) 42% 60%,
+      color-mix(in srgb,var(--up) 30%,var(--panel2)) 60% 100%)}
+  body.page-macro .v-meter .tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ms-c);border-radius:2px;
+    box-shadow:0 0 0 2px var(--panel)}
+  body.page-macro .v-scale{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--num);font-size:9.5px;
+    letter-spacing:.02em;color:var(--ink-3)}
+  /* mx merge: the board's own thesis IS the page headline — gradient display type
+     (operator ruling: one hero, the Market State board; score appears once, on the bar). */
+  body.page-macro .v-thesis{
+    margin:14px 0 0;font-size:clamp(17px,1.8vw,22px);font-weight:800;line-height:1.28;letter-spacing:-.02em;
+    background:linear-gradient(120deg,var(--up) 0%,color-mix(in srgb,var(--up) 60%,var(--info)) 45%,var(--info) 85%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  body.page-macro .ms-red .v-thesis{background:linear-gradient(120deg,var(--down) 0%,color-mix(in srgb,var(--down) 60%,var(--warn)) 45%,var(--warn) 85%);-webkit-background-clip:text;background-clip:text}
+  body.page-macro .ms-yellow .v-thesis{background:linear-gradient(120deg,var(--warn) 0%,color-mix(in srgb,var(--warn) 55%,var(--info)) 50%,var(--info) 90%);-webkit-background-clip:text;background-clip:text}
+  body.page-macro .v-flip{margin:12px 0 0;padding:1px 0 1px 11px;border-left:2px solid color-mix(in srgb,var(--warn) 55%,transparent);
+    background:none;font-size:12px;line-height:1.45;color:var(--ink-3)}
+  body.page-macro .v-override{margin:10px 0 0;display:flex;align-items:flex-start;gap:7px;padding:8px 11px;border-radius:7px;
+    border:var(--rule) solid color-mix(in srgb,var(--act) 38%,var(--hair));background:color-mix(in srgb,var(--act) 11%,transparent);
+    font-size:11.5px;line-height:1.4;color:var(--ink-1)}
+  body.page-macro .v-override .ic{color:var(--act);flex:none;font-size:12px;line-height:1.3}
+
+  /* Risk-Radar banner now renders through the shared .rrx card (macro risk_radar_card);
+     its old .ms-radar / .msr-* styling was retired with the cramped text-run markup. */
+
+  /* Heads-up chips — compact live flags integrated into the Market State board. */
+  .heads-up{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .heads-up .hu-label{font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);flex:none}
+  /* institutional flag: a status dot in the state colour + a clean label —
+     no emoji, no border-left hack, no bubble pill */
+  .heads-up .hu-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:9px;
+    font-size:12.5px;line-height:1.3;color:var(--text);text-decoration:none;font-weight:500;
+    background:var(--panel2);border:1px solid var(--line);transition:border-color .14s,box-shadow .14s}
+  .heads-up .hu-chip::before{content:"";width:7px;height:7px;border-radius:50%;flex:none;background:var(--hc);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--hc) 18%,transparent)}
+  .heads-up a.hu-chip:hover{border-color:color-mix(in srgb,var(--hc) 55%,var(--line));
+    box-shadow:0 4px 14px -8px color-mix(in srgb,var(--hc) 60%,transparent)}
+  .heads-up .hu-chip b{font-family:var(--font-mono);color:var(--hc)}
+
+  /* evidence matrix — one tight row per factor (arrow · title · bar · score). The short read
+     and the metric tags live in a hover popup anchored to the dotted-underlined title; there
+     is no inline description and no expand/collapse. */
+  body.page-macro .e-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 2px}
+  body.page-macro .e-title{font-family:var(--num);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-3);margin:0}
+  body.page-macro .e-cols{font-family:var(--num);font-size:9.5px;letter-spacing:.06em;color:var(--ink-3)}
+  body.page-macro .ms-f{border-top:var(--rule) solid var(--hair);display:grid;align-items:center;
+    grid-template-columns:14px minmax(0,1fr) 70px 28px;column-gap:11px;padding:6px 3px}
+  body.page-macro .ms-f.tone-good{--ft:var(--up)}
+  body.page-macro .ms-f.tone-warn{--ft:var(--warn)}
+  body.page-macro .ms-f.tone-bad{--ft:var(--down)}
+  body.page-macro .ms-f.tone-flat{--ft:var(--ink-3)}
+  body.page-macro .f-dir{font-family:var(--num);font-size:11px;line-height:1;text-align:center;color:var(--ft)}
+  /* the title IS the hover target: reuse the .help/.tip machinery but strip the 15px ?-circle
+     down to plain dotted-underlined text (overflow:visible so the popup is never clipped) */
+  body.page-macro .f-name.help{position:relative;display:block;min-width:0;width:auto;height:auto;
+    border:0;border-radius:0;margin:0;overflow:visible;cursor:help}
+  body.page-macro .f-name .f-txt{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:12.5px;font-weight:600;color:var(--ink-1);
+    text-decoration:underline dotted color-mix(in srgb,var(--ink-3) 55%,transparent);text-underline-offset:3px}
+  body.page-macro .f-name.help:hover .f-txt{text-decoration-color:var(--ink-2)}
+  html[data-lang="zh"] body.page-macro .f-name .f-txt{text-underline-offset:2px}
+  body.page-macro .f-name .tip{width:248px;font-weight:400}
+  body.page-macro .f-tipread{display:block;color:var(--ink-1);line-height:1.45;margin-bottom:7px}
+  body.page-macro .f-tipmetrics{display:flex;flex-wrap:wrap;gap:6px 7px}
+  body.page-macro .f-tone{height:4px;border-radius:2px;background:var(--panel2);overflow:hidden}
+  body.page-macro .f-tone i{display:block;height:100%;border-radius:2px;background:var(--ft)}
+  body.page-macro .f-score{font-family:var(--num);font-size:15px;font-weight:700;text-align:right;line-height:1;color:var(--ft)}
+  body.page-macro .ms-metric{display:inline-flex;align-items:baseline;gap:6px;padding:3px 9px;background:var(--tile);
+    border:var(--rule) solid var(--hair);border-radius:6px;font-size:11px;color:var(--ink-3)}
+  body.page-macro .ms-metric b{font-family:var(--num);font-weight:700;color:var(--ink-1)}
+  @media(max-width:760px){
+    body.page-macro .ms-f{grid-template-columns:14px minmax(0,1fr) 72px 26px;column-gap:9px}
+  }
+  @media(max-width:560px){
+    body.page-macro .f-score{font-size:14px}
+  }
+
+  /* multi-timeframe tape — the technical detail behind the Trend factor */
+  body.page-macro .ms-tape{margin-top:16px;padding-top:13px;border-top:var(--rule) solid var(--hair-strong)}
+  body.page-macro .tape-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+  body.page-macro .tape-title{display:inline-flex;align-items:center;gap:7px;font-family:var(--num);font-size:10px;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin:0}
+  body.page-macro .tape-sub{font-family:var(--num);font-size:9.5px;letter-spacing:.04em;color:var(--ink-3)}
+  body.page-macro table.ms-tapetbl{width:100%;border-collapse:collapse}
+  body.page-macro table.ms-tapetbl th{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
+    text-align:center;padding:6px 6px;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro table.ms-tapetbl th.l,body.page-macro table.ms-tapetbl td.l{text-align:left}
+  body.page-macro table.ms-tapetbl th.r,body.page-macro table.ms-tapetbl td.r{text-align:right}
+  body.page-macro table.ms-tapetbl td{padding:6px 6px;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro table.ms-tapetbl tr:last-child td{border-bottom:0}
+  body.page-macro .t-inst{font-size:13px;font-weight:600;color:var(--ink-1)}
+  body.page-macro .ms-cell2{display:inline-flex;align-items:baseline;gap:6px;justify-content:center;font-family:var(--num)}
+  body.page-macro .ms-cell2 .ar{font-size:11px;line-height:1}
+  body.page-macro .ms-cell2 .rsi{font-size:12.5px;color:var(--ink-2)}
+  body.page-macro .ms-cell2.good,body.page-macro .ms-conf.good{color:var(--up)}
+  body.page-macro .ms-cell2.bad,body.page-macro .ms-conf.bad{color:var(--down)}
+  body.page-macro .ms-cell2.flat,body.page-macro .ms-conf.warn,body.page-macro .ms-conf.flat{color:var(--warn)}
+  body.page-macro .ms-conf{font-size:12px;font-weight:700;white-space:nowrap}
+  @media(max-width:560px){
+    body.page-macro table.ms-tapetbl th,body.page-macro table.ms-tapetbl td{padding-left:3px;padding-right:3px}
+    body.page-macro .ms-cell2 .rsi{display:none}
+  }
+
+  /* divider into the macro-backdrop quadrant locator below */
+  body.page-macro .ms-divider{display:flex;align-items:center;gap:12px;margin:22px 0 6px;font-family:var(--num);
+    font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  body.page-macro .ms-divider::after{content:"";flex:1;height:1px;background:var(--hair)}
+  html[data-lang="zh"] body.page-macro .ms-divider,html[data-lang="zh"] body.page-macro .tape-title,
+  html[data-lang="zh"] body.page-macro .ms-eyebrow{letter-spacing:0}
+
+  /* ===== fired-alerts popup (hover-activated; tap-toggle fallback via #ms-alerts-toggle) =====
+     Replaces the old right slide-out drawer: the "Fired alerts" pill now reveals a
+     frosted-glass popover anchored beneath it ON HOVER — no click needed. The glass
+     matches the nav dropdowns / gear popover (shared --glass-* tokens in theme.css).
+     On touch (no hover) the pill still tap-toggles the popup via the #ms-alerts-toggle
+     checkbox; Esc, a jump-link, or a click outside closes it (script at end of panel). */
+  body.page-macro .ms-alerts-wrap{position:relative;margin-left:auto;display:inline-flex}
+  body.page-macro .ms-alerts-pop{position:absolute;top:calc(100% + 9px);right:0;z-index:120;
+    width:min(442px,calc(100vw - 24px));max-height:min(560px,72vh);overflow-y:auto;box-sizing:border-box;
+    background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+    border:1px solid var(--glass-brd);border-radius:16px;box-shadow:var(--glass-shadow);padding:14px 15px 15px;
+    transform-origin:top right;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px) scale(.98);
+    transition:opacity .16s ease,transform .22s cubic-bezier(.32,1.3,.5,1),visibility 0s linear .22s}
+  body.page-macro .ms-alerts-pop::-webkit-scrollbar{width:7px}
+  body.page-macro .ms-alerts-pop::-webkit-scrollbar-thumb{background:var(--hair-strong);border-radius:7px}
+  body.page-macro #ms-alerts-toggle:checked ~ .ms-front .ms-alerts-pop{opacity:1;visibility:visible;pointer-events:auto;
+    transform:none;transition:opacity .16s ease,transform .22s cubic-bezier(.32,1.3,.5,1),visibility 0s}
+  body.page-macro #ms-alerts-toggle:checked ~ .ms-front .ms-alerts{border-color:var(--ink-3);color:var(--ink-1)}
+  @media (hover:hover) and (pointer:fine){
+    body.page-macro .ms-alerts-wrap::after{content:"";position:absolute;top:100%;right:0;width:100%;height:13px}
+    body.page-macro .ms-alerts-wrap:hover .ms-alerts-pop,
+    body.page-macro .ms-alerts-wrap:focus-within .ms-alerts-pop{opacity:1;visibility:visible;pointer-events:auto;
+      transform:none;transition:opacity .16s ease,transform .22s cubic-bezier(.32,1.3,.5,1),visibility 0s}
+    body.page-macro .ms-alerts-wrap:hover .ms-alerts,body.page-macro .ms-alerts-wrap:focus-within .ms-alerts{border-color:var(--ink-3);color:var(--ink-1)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    body.page-macro .ms-alerts-pop{transition:opacity .14s ease,visibility 0s linear .14s;transform:none}
+    body.page-macro .ms-alerts-wrap:hover .ms-alerts-pop,
+    body.page-macro #ms-alerts-toggle:checked ~ .ms-front .ms-alerts-pop{transform:none;transition:opacity .14s ease}}
+  body.page-macro .ms-pop-head{display:flex;align-items:flex-start;gap:10px;margin:0 0 11px;padding-bottom:11px;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro .ms-pop-title{font-size:13.5px;font-weight:800;color:var(--ink-1);line-height:1.25}
+  body.page-macro .ms-pop-sub{font-size:11px;color:var(--ink-3);line-height:1.45;margin-top:3px}
+  body.page-macro .ms-pop-body{display:flex;flex-direction:column;gap:9px}
+  body.page-macro .ms-sig{display:block;border:var(--rule) solid var(--hair);
+    border-radius:10px;background:var(--tile);padding:12px 14px;color:var(--ink-1);transition:transform .12s,box-shadow .12s}
+  body.page-macro a.ms-sig:hover{transform:translateX(-2px);box-shadow:0 4px 16px -8px rgba(0,0,0,.4)}
+  body.page-macro .ms-sig.sev-act{--sgc:var(--act)}
+  body.page-macro .ms-sig.sev-warn{--sgc:var(--warn)}
+  body.page-macro .ms-sig.sev-info{--sgc:var(--info)}
+  body.page-macro .ms-sig-head{display:flex;align-items:baseline;gap:9px}
+  body.page-macro .ms-sig-ico{font-size:16px;line-height:1;flex:none}
+  body.page-macro .ms-sig-title{font-size:13.5px;font-weight:700;color:var(--ink-1);line-height:1.3}
+  body.page-macro .ms-sig-jump{margin-left:auto;font-size:11px;font-weight:700;color:var(--link);white-space:nowrap;flex:none}
+  body.page-macro .ms-sig-detail{font-family:var(--num);font-size:12px;color:var(--ink-2);margin:8px 0 0;line-height:1.4}
+  body.page-macro .ms-sig-what{font-size:11.5px;color:var(--ink-3);line-height:1.5;margin:8px 0 0;padding-top:8px;border-top:var(--rule) solid var(--hair)}
+  body.page-macro .ms-sig-edge{font-size:11.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.45}
+  body.page-macro .ms-sig-edge b{color:var(--ink-3);font-weight:600}
+  body.page-macro .ms-pop-empty{text-align:center;color:var(--ink-3);padding:30px 18px;font-size:12.5px;line-height:1.55}
+  body.page-macro .ms-pop-empty .big{font-size:32px;display:block;margin-bottom:8px;color:var(--up);opacity:.7}
+  

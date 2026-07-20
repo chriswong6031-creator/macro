@@ -1,0 +1,15 @@
+
+    .ff-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    .ff-lbl{fill:var(--muted);font-size:11px;}
+    .ff-lblb{fill:var(--text);font-size:11.5px;font-weight:700;}
+    .ff-ax{fill:var(--muted);font-size:10.5px;}
+    .ff-line{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:900;stroke-dashoffset:900;animation:ff-draw 2s ease-out forwards;}
+    @keyframes ff-draw{to{stroke-dashoffset:0;}}
+    .ff-area{opacity:0;animation:ff-fade 1.2s ease-out 1.6s forwards;}
+    @keyframes ff-fade{to{opacity:1;}}
+    .ff-x{animation:ff-pulse 2.4s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes ff-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+    .ff-xr{animation:ff-ring 2.4s ease-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes ff-ring{0%{transform:scale(.5);opacity:.7;}80%,100%{transform:scale(2.6);opacity:0;}}
+    @media (prefers-reduced-motion: reduce){ [class*="ff-"]{ animation:none !important; stroke-dashoffset:0 !important; opacity:1 !important; } }
+  

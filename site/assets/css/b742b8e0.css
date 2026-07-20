@@ -1,0 +1,103 @@
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(40px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; font-weight:600; letter-spacing:.2px; }
+  h3 { font-size:13px; margin:0 0 8px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px; }
+  .note { margin:8px 0 0; line-height:1.5; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:290px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
+  .help:hover .tip { display:block; }
+  .tabnum { font-variant-numeric:tabular-nums; }
+  .lag-tag { display:inline-block; font-size:10px; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--muted); vertical-align:middle; margin-left:6px; }
+  .topline .asof { margin-left:auto; color:var(--muted); font-size:12px; }
+  .topline .asof b { font-weight:600; color:var(--text); }
+  .topline .asof.is-stale b { color:var(--down); font-weight:700; }
+  .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:4px; }
+
+  /* ── Market Tide ───────────────────────────────────────────────── */
+  .tide-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:14px; }
+  .tide-stat { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 14px; }
+  .tide-stat .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; }
+  .tide-stat .val { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .tide-stat .sub { font-size:11px; color:var(--muted); margin-top:2px; }
+
+  /* Sparkline canvas area */
+  .spark-wrap { height:64px; position:relative; margin-top:10px; }
+  #fd-spark { width:100%; height:64px; }
+
+  /* ── Cohorts Strip (FL-B) ─────────────────────────────────────── */
+  .cohorts-strip { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:0; }
+  .cohort-tile { flex:1 1 150px; min-width:140px; max-width:240px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 14px; }
+  .cohort-tile .c-name { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); margin-bottom:4px; }
+  .cohort-tile .c-gross { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; margin-bottom:3px; }
+  .cohort-tile .c-chips { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px; }
+  .cohort-tile .c-detail { font-size:11px; color:var(--muted); line-height:1.4; }
+  .cohort-tile .c-coverage { font-size:10px; color:var(--muted); margin-top:4px; }
+  /* tone chips for cohorts */
+  .ch-call { color:var(--up); border-color:var(--up); }
+  .ch-put  { color:var(--down); border-color:var(--down); }
+  .ch-bal  { color:var(--muted); border-color:var(--muted); }
+  .cohorts-footer { font-size:11px; color:var(--muted); margin-top:7px; font-style:italic; }
+
+  /* ── Sector Heatmap ────────────────────────────────────────────── */
+  .hm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+  .hm-cell { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; position:relative; }
+  .hm-cell .sec-name { font-size:12.5px; font-weight:600; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hm-cell .sec-prem { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .hm-cell .sec-meta { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:5px; font-size:11px; color:var(--muted); }
+  .z-badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; border:1px solid; }
+  .z-hi { color:var(--up); border-color:var(--up); }
+  .z-lo { color:var(--down); border-color:var(--down); }
+  .z-neu { color:var(--muted); border-color:var(--muted); }
+  .z-raw { color:var(--muted); border-color:transparent; font-style:italic; font-weight:400; }
+  .tone-chip { display:inline-block; font-size:10px; padding:1px 6px; border-radius:5px; border:1px solid; }
+  .tone-pos { color:var(--up); border-color:var(--up); }
+  .tone-neg { color:var(--down); border-color:var(--down); }
+  .tone-neu { color:var(--muted); border-color:var(--muted); }
+  .breadth-bar { width:100%; height:4px; background:var(--line); border-radius:2px; margin-top:5px; }
+  .breadth-fill { height:4px; border-radius:2px; background:var(--info,#3b82f6); }
+  .breadth-pos { background:var(--up); }
+  .breadth-neg { background:var(--down); }
+
+  /* ── Top Movers ────────────────────────────────────────────────── */
+  .movers-list { display:flex; flex-direction:column; gap:6px; }
+  .mover-row { display:flex; align-items:center; gap:10px; padding:7px 11px; background:var(--panel2); border:1px solid var(--line); border-radius:9px; }
+  .mover-row .tk { font-weight:700; font-size:13.5px; min-width:60px; }
+  .mover-row .net { font-variant-numeric:tabular-nums; font-size:14px; font-weight:600; min-width:80px; text-align:right; }
+  .mover-row .details { font-size:11px; color:var(--muted); flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .mover-row .tone-chip { flex:none; }
+
+  /* ── ETF Tile ─────────────────────────────────────────────────── */
+  .etf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-top:10px; }
+  .etf-cell { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 12px; }
+  .etf-cell .etf-tk { font-weight:700; font-size:13px; margin-bottom:4px; }
+  .etf-cell .etf-flow { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .etf-cell .etf-5d { font-size:11px; color:var(--muted); }
+
+  /* ── Flow Score panel (FS-4 Lane C) ───────────────────────────── */
+  .fs-badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; border:1px solid var(--muted); color:var(--muted); vertical-align:middle; }
+  .fs-badge-building { border-color:var(--orange,#f97316); color:var(--orange,#f97316); }
+  .fs-n { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .fs-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+  .fs-receipt { margin-top:10px; }
+  .fs-receipt-row { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); padding:3px 0; border-top:1px solid var(--line); }
+  .fs-receipt-row .rk { flex:1; }
+  .fs-receipt-row .rv { font-variant-numeric:tabular-nums; text-align:right; }
+
+  /* ── Two-col layout on wide ────────────────────────────────────── */
+  @media (min-width:900px) {
+    .fd-main { display:grid; grid-template-columns:2fr 1fr; gap:14px; align-items:start; }
+    .fd-right { display:flex; flex-direction:column; gap:14px; }
+  }
+  @media (max-width:899px) {
+    .fd-right { margin-top:0; }
+  }

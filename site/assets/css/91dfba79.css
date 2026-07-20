@@ -1,0 +1,23 @@
+
+  .tpo-section { margin:44px 2px 0; }
+  .tpo-section h2 { font-size:19px; font-weight:800; letter-spacing:-.015em; margin:0 0 5px; }
+  .tpo-sub { color:var(--muted); font-size:12.5px; margin-bottom:14px; max-width:82ch; line-height:1.55; }
+  .tpo-quiet { color:var(--muted); font-size:13px; padding:18px 0; }
+  .tpo-grid { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .tpo-node-card { flex:1 1 220px; min-width:180px; border-radius:11px; border:1px solid var(--line);
+    background:var(--panel); padding:11px 14px; }
+  .tpo-node-name { font-weight:800; font-size:13px; margin-bottom:4px; }
+  .tpo-flag-badge { display:inline-block; font-size:9.5px; font-weight:700; text-transform:uppercase;
+    padding:2px 7px; border-radius:6px; margin-left:5px; vertical-align:middle;
+    background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn); }
+  .tpo-rates { font-size:10.5px; color:var(--muted); margin-top:4px; line-height:1.5; }
+  .tpo-rates b { color:var(--text); }
+  .tpo-caveats { margin-top:14px; padding:11px 14px; border-radius:10px;
+    background:color-mix(in srgb,var(--muted) 6%,transparent); border:1px solid var(--line);
+    font-size:11.5px; color:var(--muted); line-height:1.6; }
+  .tpo-caveats strong { color:var(--text); }
+  .tpo-unconfirmed-note { margin-top:6px; font-size:10.5px; color:var(--warn); font-style:italic; }
+  .tpo-help { display:inline-flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:700;
+    color:var(--muted); border:1px solid var(--line); border-radius:50%; width:16px; height:16px; cursor:help;
+    vertical-align:middle; }
+  @media (max-width:520px){ .tpo-grid { flex-direction:column; } }

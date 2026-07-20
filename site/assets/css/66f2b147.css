@@ -1,0 +1,16 @@
+
+    .sc-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    .sc-name{fill:var(--text);font-size:13px;font-weight:700;}
+    .sc-pct{font-size:16px;font-weight:750;font-variant-numeric:tabular-nums;}
+    .sc-desc{fill:var(--muted);font-size:10.5px;}
+    .sc-tgt{fill:var(--text);font-size:10.5px;font-weight:600;}
+    .sc-root{fill:var(--text);font-size:13px;font-weight:700;}
+    .sc-link{fill:none;stroke-width:2;opacity:.55;stroke-dasharray:500;stroke-dashoffset:500;animation:sc-draw 1.4s ease-out forwards;}
+    .sc-band{animation:sc-rise .7s ease-out both;}
+    .sc-spark{fill:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:220;stroke-dashoffset:220;animation:sc-draw 1.6s ease-out forwards;}
+    @keyframes sc-draw{to{stroke-dashoffset:0;}}
+    @keyframes sc-rise{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+    .sc-here{animation:sc-pulse 2.2s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes sc-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+    @media (prefers-reduced-motion: reduce){ [class*="sc-"]{ animation:none !important; stroke-dashoffset:0 !important; opacity:1 !important; } }
+  

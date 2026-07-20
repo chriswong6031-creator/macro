@@ -1,0 +1,22 @@
+
+  .levers-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+  .levers-title{fill:var(--text);font-size:19px;font-weight:700;}
+  .levers-sub{fill:var(--muted);font-size:12.5px;}
+  .levers-lname{fill:var(--text);font-size:13.5px;font-weight:600;}
+  .levers-ltag{fill:var(--muted);font-size:11.5px;}
+  .levers-num{fill:var(--text);font-size:13px;font-weight:700;}
+  .levers-slabT{fill:var(--text);font-size:14.5px;font-weight:700;}
+  .levers-slabS{fill:var(--muted);font-size:12.5px;}
+  .levers-cap{fill:var(--muted);font-size:11px;letter-spacing:.06em;}
+  .levers-node{fill:var(--panel2);stroke:var(--line);stroke-width:1.4;}
+  .levers-flow{stroke-dasharray:7 9;animation:levers-flow 2.4s linear infinite;}
+  .levers-g1{animation:levers-spin 9s linear infinite;transform-origin:center;transform-box:fill-box;}
+  .levers-g2{animation:levers-spin-r 11s linear infinite;transform-origin:center;transform-box:fill-box;}
+  .levers-glow{animation:levers-pulse 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+  .levers-draw{stroke-dasharray:1400;stroke-dashoffset:1400;animation:levers-draw 2.2s ease-out forwards;}
+  @keyframes levers-flow{to{stroke-dashoffset:-160;}}
+  @keyframes levers-spin{to{transform:rotate(360deg);}}
+  @keyframes levers-spin-r{to{transform:rotate(-360deg);}}
+  @keyframes levers-pulse{0%,100%{opacity:.30;}50%{opacity:.62;}}
+  @keyframes levers-draw{to{stroke-dashoffset:0;}}
+  @media (prefers-reduced-motion: reduce){ [class*="levers-"]{ animation:none !important; stroke-dashoffset:0 !important; } }

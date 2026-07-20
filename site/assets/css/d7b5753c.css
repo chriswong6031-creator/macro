@@ -1,0 +1,33 @@
+
+  .td-section { margin:44px 2px 0; }
+  .td-section h2 { font-size:19px; font-weight:800; letter-spacing:-.015em; margin:0 0 5px; }
+  .td-sub { color:var(--muted); font-size:12.5px; margin-bottom:14px; max-width:82ch; line-height:1.55; }
+  .td-quiet { color:var(--muted); font-size:13px; padding:18px 0; }
+  .td-armed-grid { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .td-sector-card { flex:1 1 280px; min-width:240px; border-radius:13px; border:1px solid var(--line);
+    background:var(--panel); padding:14px 16px; }
+  .td-card-hd { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
+  .td-sector-name { font-weight:800; font-size:14px; }
+  .td-window-badge { font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 7px;
+    border-radius:6px; background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .td-sessions-left { font-size:11px; color:var(--muted); margin-left:auto; }
+  .td-member-list { list-style:none; margin:0; padding:0; }
+  .td-member-item { display:flex; align-items:baseline; gap:6px; font-size:12px; padding:4px 0;
+    border-bottom:1px solid var(--line); }
+  .td-member-item:last-child { border-bottom:none; }
+  .td-member-ticker { font-weight:700; min-width:52px; }
+  .td-tier-tag { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:1px 6px;
+    border-radius:5px; background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); }
+  .td-tier-tag.t3 { background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn); }
+  .td-provisional-note { font-size:9.5px; color:var(--warn); margin-left:2px; }
+  .td-no-fires { color:var(--muted); font-size:11.5px; font-style:italic; }
+  .td-staleness-note { font-size:11px; color:var(--warn); margin-bottom:8px; }
+  .td-caveats { margin-top:18px; padding:12px 15px; border-radius:11px;
+    background:color-mix(in srgb,var(--muted) 6%,transparent); border:1px solid var(--line);
+    font-size:11.5px; color:var(--muted); line-height:1.6; }
+  .td-caveats strong { color:var(--text); }
+  .td-promotion-clock { margin-top:10px; font-size:11px; color:var(--muted); }
+  .td-qual-filters { margin-top:8px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); padding-top:6px; }
+  .td-qual-filter-tag { display:inline-block; margin:1px 3px 1px 0; padding:1px 5px; border-radius:4px;
+    background:color-mix(in srgb,var(--link) 12%,transparent); color:var(--link); font-size:9.5px; font-weight:700; }
+  .td-qual-accrual-note { margin-top:6px; font-size:10px; color:var(--muted); font-style:italic; }

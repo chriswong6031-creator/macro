@@ -1,0 +1,240 @@
+
+/* ══════════════════════════════════════════════════════
+   MX-* Weather-Station design layer — macro mode only
+   All classes namespaced mx- to avoid collision with the
+   1497-line legacy style block (stocks mode uses that).
+   Tokens: reuses theme.css vars (--panel, --bg, etc.).
+   ══════════════════════════════════════════════════════ */
+
+/* Aurora — scoped to body.page-macro so stocks is unaffected */
+body.page-macro::before{
+  content:'';
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 0%,color-mix(in srgb,var(--q1) 6%,transparent) 0%,transparent 65%),
+    radial-gradient(ellipse 55% 45% at 88% 12%,color-mix(in srgb,var(--info) 5%,transparent) 0%,transparent 65%),
+    radial-gradient(ellipse 45% 35% at 50% 100%,color-mix(in srgb,var(--warn) 4%,transparent) 0%,transparent 60%);
+}
+
+/* ── Section eyebrow ───────────────────────────────── */
+.mx-eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin:26px 0 12px;display:flex;align-items:center;gap:8px;
+}
+.mx-eyebrow::after{content:'';flex:1;height:1px;background:var(--line)}
+
+
+
+/* ── KPI area right of dial ───────────────────────── */
+
+/* ── KPI chips ─────────────────────────────────────── */
+.mx-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:100px;
+  font-size:11px;font-weight:600;letter-spacing:.03em;white-space:nowrap;
+}
+.mx-c-q1{background:color-mix(in srgb,var(--q1) 16%,var(--panel));color:var(--q1);border:1px solid color-mix(in srgb,var(--q1) 28%,transparent)}
+.mx-c-q2{background:color-mix(in srgb,var(--q2) 16%,var(--panel));color:var(--q2);border:1px solid color-mix(in srgb,var(--q2) 28%,transparent)}
+.mx-c-q3{background:color-mix(in srgb,var(--q3) 16%,var(--panel));color:var(--q3);border:1px solid color-mix(in srgb,var(--q3) 28%,transparent)}
+.mx-c-q4{background:color-mix(in srgb,var(--q4) 16%,var(--panel));color:var(--q4);border:1px solid color-mix(in srgb,var(--q4) 28%,transparent)}
+.mx-c-up{background:color-mix(in srgb,var(--up) 14%,var(--panel));color:var(--up);border:1px solid color-mix(in srgb,var(--up) 25%,transparent)}
+.mx-c-down{background:color-mix(in srgb,var(--down) 14%,var(--panel));color:var(--down);border:1px solid color-mix(in srgb,var(--down) 25%,transparent)}
+.mx-c-warn{background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
+.mx-c-info{background:color-mix(in srgb,var(--info) 14%,var(--panel));color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
+.mx-c-muted{background:color-mix(in srgb,var(--muted) 12%,var(--panel));color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent)}
+
+
+
+/* ── TODAY / THIS WEEK band ────────────────────────── */
+.mx-band{padding:0 0 4px;overflow-x:hidden}
+
+/* TODAY tier */
+.mx-today-tier{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.mx-breaking-slug{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 15px;
+  background:color-mix(in srgb,var(--down) 10%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--down) 25%,transparent);
+  border-radius:8px;font-size:12px;
+}
+.mx-breaking-label{
+  font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--down);white-space:nowrap;flex-shrink:0;
+}
+.mx-breaking-text{color:var(--text);flex:1}
+.mx-breaking-sub{color:var(--muted);font-size:11px;margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* THIS WEEK tier */
+.mx-week-rail{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:0 -2px}
+.mx-week-rail::-webkit-scrollbar{height:3px}
+.mx-week-rail::-webkit-scrollbar-track{background:transparent}
+.mx-week-rail::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+.mx-week-card{
+  flex:0 0 auto;min-width:118px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;
+  opacity:.85;
+}
+.mx-week-card.mx-week-high{
+  border-color:color-mix(in srgb,var(--warn) 40%,var(--line));
+  opacity:1;
+}
+.mx-week-date{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;font-variant-numeric:tabular-nums}
+.mx-week-title{font-size:11px;font-weight:700;color:var(--text);line-height:1.25;margin-bottom:2px}
+.mx-week-meta{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mx-pm-row{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;
+  padding:9px 12px;margin-top:8px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  font-size:12px;
+}
+.mx-pm-src{font-family:var(--font-mono);font-size:10px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.mx-pm-row b{font-variant-numeric:tabular-nums}
+
+/* ── Single-col collapse ≤900px ────────────────────── */
+@media(max-width:900px){
+    }
+@media(max-width:680px){
+            }
+@media(max-width:390px){
+    .mx-chip{font-size:10px;padding:2px 8px}
+}
+
+/* ── POLICY BAND (mx restyle of the policy lever panel + flip confirmation) ── */
+body.page-macro .mx-policy-band{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:0}
+body.page-macro .mx-pcol{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+body.page-macro .mx-pcol-label{font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+body.page-macro .mx-pcol-state{font-size:16px;font-weight:800;line-height:1.2;margin-bottom:8px}
+body.page-macro .mx-pcol-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:12px}
+body.page-macro .mx-pcol-row:last-child{border-bottom:none}
+body.page-macro .mx-pcol-key{color:var(--muted)}
+body.page-macro .mx-delta-chip{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;font-variant-numeric:tabular-nums}
+body.page-macro .mx-delta-up{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up);border:1px solid color-mix(in srgb,var(--up) 22%,transparent)}
+body.page-macro .mx-delta-dn{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 22%,transparent)}
+body.page-macro .mx-delta-wn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro .mx-delta-mu{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 18%,transparent)}
+body.page-macro .mx-prog-row{display:flex;flex-direction:column;gap:2px;margin:5px 0}
+body.page-macro .mx-prog-label-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:1px}
+body.page-macro .mx-prog-track{height:4px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:2px;overflow:hidden}
+body.page-macro .mx-prog-fill{height:4px;border-radius:2px}
+body.page-macro .mx-pcol-sub{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+@media(max-width:900px){body.page-macro .mx-policy-band{grid-template-columns:1fr}}
+@media(max-width:600px){body.page-macro .mx-policy-band{grid-template-columns:1fr}}
+
+/* ── RELEASE RADAR rr-card chrome (macro-scoped additions) ── */
+body.page-macro .rr-card{background:color-mix(in srgb,var(--panel2) 90%,var(--panel));border-color:var(--line)}
+body.page-macro .rr-card:hover{border-color:color-mix(in srgb,var(--info) 45%,var(--line));box-shadow:0 2px 12px color-mix(in srgb,var(--info) 8%,transparent)}
+body.page-macro #release-radar{background:var(--panel)}
+/* v5.2: the rack wrapper is NOT a container — cards sit directly on the canvas */
+body.page-macro.mx4-grid .mx5-rack-panel{background:none!important;border:none!important;box-shadow:none!important;border-radius:0;padding:0;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+/* v5.2: no colored left accents on the radar/ignition banner cards inside dialogs */
+body.page-macro.mx4-grid .rrx{border-left:1px solid var(--line)!important}
+body.page-macro.mx4-grid .rrx-rec{border-left:1px solid var(--line)!important}
+/* v5.1: the standalone Release Radar panel does not render on the grid page — its cards
+   are the data source for the RR modal, reachable from the Events dialog (mmOpenFirstRR).
+   Offscreen + visibility (NOT display:none) so the position:fixed modal overlay nested
+   inside stays functional; overlay re-shows itself when opened. */
+body.page-macro.mx4-grid #release-radar{position:absolute;left:-10000px;top:0;width:920px;visibility:hidden;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.page-macro.mx4-grid #release-radar #rr-modal-overlay.open{visibility:visible}
+/* projection fill-bars reuse mx-prog-track/fill */
+
+/* ── AI BRIEF CARD (macro upgrade) ── */
+body.page-macro .mx-aibrief{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;text-decoration:none;display:block;color:inherit}
+body.page-macro .mx-aibrief:hover{border-color:color-mix(in srgb,var(--info) 40%,var(--line));text-decoration:none}
+body.page-macro .mx-aibrief-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+body.page-macro .mx-aibrief-icon{width:32px;height:32px;border-radius:8px;flex-shrink:0;background:color-mix(in srgb,var(--info) 14%,var(--panel2));border:1px solid color-mix(in srgb,var(--info) 25%,transparent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--info)}
+body.page-macro .mx-aibrief-title{font-size:13px;font-weight:700;color:var(--text)}
+body.page-macro .mx-aibrief-date{font-size:11px;color:var(--muted)}
+body.page-macro .mx-aibrief-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin-left:auto}
+body.page-macro .mx-aibrief-body{font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:10px}
+body.page-macro .mx-aibrief-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+body.page-macro .mx-aibrief-link{font-size:12px;font-weight:700;color:var(--link)}
+
+/* ── SECTOR HEAT strip (mx restyle) ── */
+body.page-macro #sector-heat{padding:12px 16px}
+body.page-macro #sector-heat .sh-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+body.page-macro #sector-heat .sh-chips{display:flex;flex-wrap:wrap;gap:6px}
+body.page-macro #sector-heat .sh-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;border:1px solid;text-decoration:none;transition:opacity .15s}
+body.page-macro #sector-heat .sh-heat{background:color-mix(in srgb,var(--up) 12%,var(--panel2));color:var(--up);border-color:color-mix(in srgb,var(--up) 25%,transparent)}
+body.page-macro #sector-heat .sh-heat:hover{opacity:.8;text-decoration:none}
+body.page-macro #sector-heat .sh-cool{background:color-mix(in srgb,var(--down) 10%,var(--panel2));color:var(--down);border-color:color-mix(in srgb,var(--down) 20%,transparent)}
+body.page-macro #sector-heat .sh-cool:hover{opacity:.8;text-decoration:none}
+body.page-macro #sector-heat .sh-arr{font-size:10px;flex-shrink:0}
+body.page-macro #sector-heat .sh-rk{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+body.page-macro #sector-heat .sh-div{color:var(--muted);padding:0 2px}
+body.page-macro #sector-heat .sh-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+body.page-macro #sector-heat .sh-asof{font-size:10px;color:var(--muted);margin-left:auto}
+
+/* ── SENTIMENT band (macro compact) ── */
+body.page-macro #sentiment-regime.mx-sent-band{padding:14px 16px}
+body.page-macro .mx-sent-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+body.page-macro .mx-sent-col{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+body.page-macro .mx-sent-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+body.page-macro .mx-sent-val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+body.page-macro .mx-sent-band-label{font-size:11px;color:var(--muted);margin-top:2px}
+body.page-macro .mx-grad-track{height:8px;border-radius:4px;overflow:hidden;position:relative;background:linear-gradient(90deg,var(--down) 0%,var(--warn) 50%,var(--up) 100%);margin:8px 0 4px;opacity:.55}
+body.page-macro .mx-grad-marker{position:absolute;top:-3px;width:6px;height:14px;background:var(--text);border-radius:3px;border:2px solid var(--bg)}
+body.page-macro .mx-froth-items{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+body.page-macro .mx-froth-item{display:flex;align-items:center;gap:8px}
+body.page-macro .mx-froth-label{font-size:11px;color:var(--muted);flex:1}
+body.page-macro .mx-froth-bar-wrap{flex:1.5;height:5px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:3px;overflow:hidden}
+body.page-macro .mx-froth-bar{height:5px;border-radius:3px;background:var(--warn)}
+body.page-macro .mx-froth-val{font-size:11px;font-weight:700;min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:680px){body.page-macro .mx-sent-grid{grid-template-columns:1fr}}
+
+/* ── CROSS-ASSET tile strip (mx macro variant) ── */
+body.page-macro .mx-asset-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+body.page-macro .mx-asset-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;transition:transform .15s;min-width:0;overflow-wrap:break-word}
+body.page-macro .mx-asset-tile h3{display:flex;flex-wrap:wrap;gap:4px 8px;min-width:0}
+@media(max-width:680px){body.page-macro .mx-asset-grid{grid-template-columns:1fr !important}}
+body.page-macro .mx-asset-tile:hover{transform:translateY(-1px)}
+body.page-macro .mx-at-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+body.page-macro .mx-at-val{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px}
+body.page-macro .mx-at-chg{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+body.page-macro .mx-at-chg.up{color:var(--up)}
+body.page-macro .mx-at-chg.dn{color:var(--down)}
+body.page-macro .mx-at-sub{font-size:10px;color:var(--muted);margin-top:2px}
+body.page-macro .mx-regime-strip{margin-top:10px;padding:9px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+@media(max-width:900px){body.page-macro .mx-asset-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:390px){body.page-macro .mx-asset-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ── INDEX HEALTH grid (mx macro variant) ── */
+body.page-macro .mx-idx-health-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+body.page-macro .mx-iht{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+body.page-macro .mx-iht-ticker{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+body.page-macro .mx-iht-name{font-size:11px;font-weight:600;margin:3px 0}
+body.page-macro .mx-iht-price{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+body.page-macro .mx-iht-chg{font-size:12px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+body.page-macro .mx-iht-chg.up{color:var(--up)}
+body.page-macro .mx-iht-chg.dn{color:var(--down)}
+body.page-macro .mx-iht-meta{display:flex;justify-content:space-between;margin-top:7px;padding-top:7px;border-top:1px solid var(--line)}
+body.page-macro .mx-iht-meta-item{text-align:center}
+body.page-macro .mx-iht-meta-lbl{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block}
+body.page-macro .mx-iht-meta-val{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;display:block;margin-top:2px}
+@media(max-width:900px){body.page-macro .mx-idx-health-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:390px){body.page-macro .mx-idx-health-grid{grid-template-columns:1fr 1fr}}
+
+/* ── NEWS board chrome (mx additions) ── */
+body.page-macro #now-board .mx-ni-top{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
+body.page-macro #now-board .mx-ni-tag{font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;text-transform:uppercase}
+body.page-macro #now-board .mx-ni-tag.macro{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro #now-board .mx-ni-tag.earnings{background:color-mix(in srgb,var(--q2) 14%,transparent);color:var(--q2);border:1px solid color-mix(in srgb,var(--q2) 25%,transparent)}
+body.page-macro #now-board .mx-ni-tag.stocks{background:color-mix(in srgb,var(--info) 14%,transparent);color:var(--info);border:1px solid color-mix(in srgb,var(--info) 25%,transparent)}
+body.page-macro #now-board .mx-ni-date{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+body.page-macro #now-board .mx-ni-score{font-size:10px;font-weight:700;color:var(--muted);margin-left:auto}
+body.page-macro #now-board .mx-ni-impact{font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px}
+body.page-macro #now-board .mx-ni-impact.high{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+body.page-macro #now-board .mx-ni-impact.med{background:color-mix(in srgb,var(--info) 12%,transparent);color:var(--info);border:1px solid color-mix(in srgb,var(--info) 20%,transparent)}
+
+/* ── LINK-OUT strip ── */
+body.page-macro .mx-linkout-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:9px;margin-top:0}
+body.page-macro .mx-linkout-card{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;transition:border-color .15s,transform .15s,box-shadow .15s}
+body.page-macro .mx-linkout-card:hover{border-color:var(--link);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.25);text-decoration:none}
+body.page-macro .mx-lc-icon{font-size:18px;flex-shrink:0}
+body.page-macro .mx-lc-title{font-size:12px;font-weight:700;color:var(--text)}
+body.page-macro .mx-lc-sub{font-size:10px;color:var(--muted);margin-top:2px}
+@media(max-width:390px){body.page-macro .mx-linkout-strip{grid-template-columns:1fr}}
+
+/* ── DISLOCATION + HEALTH light chrome ── */
+body.page-macro .mx-panel-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+body.page-macro .mx-panel-eyebrow{font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--muted)}

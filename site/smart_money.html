@@ -8,376 +8,25 @@
 <title>Ownership Intelligence Desk — 13F Smart-Money Context</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=de86232e">
-<style>
-  /* ---------- shared Research-Reports chrome ---------- */
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
-  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
-  a { color:var(--link); text-decoration:none; }
-  .wrap { max-width:1060px; margin:0 auto; }
-  /* unambiguous move colours (NOT tied to the zh red=up swap) */
-  .r-neg { color:#d23f3f; font-weight:600; }
-  .r-pos { color:#1f9a55; font-weight:600; }
-  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
-  html[data-theme="dark"] .r-pos { color:#3fc07e; }
-  .mut { color:var(--muted); }
-  /* tags / chips */
-  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
-          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
-  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
-  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
-  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
-  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
-  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
-  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
-  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
-  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
-  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
-  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
-  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
-  
-/* ---- core tokens (SM4-R3: --numf retired; Inter inherits; spark keeps mono) ---- */
-.sm { --mono:var(--font-mono,"SF Mono",ui-monospace,monospace); max-width:1220px; margin:0 auto; }
-.sm .num { font-family:inherit; font-variant-numeric:tabular-nums; }
-.grade { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px;
-         padding:0 5px; border-radius:6px; font-weight:700; font-size:12px; line-height:1; border:1px solid var(--line); }
-.grade.A { color:#1f9a55; border-color:#1f9a5566; background:#1f9a5514; }
-.grade.B { color:#3b82f6; border-color:#3b82f666; background:#3b82f614; }
-.grade.C { color:#c98a1a; border-color:#c98a1a66; background:#c98a1a14; }
-.grade.D { color:#d23f3f; border-color:#d23f3f66; background:#d23f3f14; }
-.grade.na { color:var(--muted); }
-html[data-theme="dark"] .grade.A { color:#3fc07e; }
-html[data-theme="dark"] .grade.C { color:#e0a93a; }
-html[data-theme="dark"] .grade.D { color:#ef6a6a; }
+<link rel="stylesheet" href="assets/css/2c5f118e.css?v=2c5f118e">
 
-/* ---- axis tags ---- */
-.axis-tag { font-weight:600; font-size:11px; line-height:1; letter-spacing:.04em; text-transform:uppercase;
-            padding:3px 6px; border-radius:5px; border:1px solid var(--line); color:var(--muted); }
-.axis-13f  { color:#c9a24a; border-color:#c9a24a55; }
-.axis-13fa { color:#c9a24a; border-color:#c9a24a55; }
-.axis-13dg { color:#5b9bf0; border-color:#5b9bf055; }
-.axis-form4 { color:#45b873; border-color:#45b87355; }
-.axis-short { color:#b07fd8; border-color:#b07fd855; }
 
-/* ---- freshness chips ---- */
-/* inline-block (not inline-flex): long labels must wrap as flowing text, not stack as flex columns */
-.chip-fresh { display:inline-block; padding:2px 9px;
-              border-radius:100px; font-weight:500; font-size:11px; line-height:1.6; letter-spacing:.03em;
-              border:1px solid var(--line); color:var(--muted); background:var(--panel2);
-              max-width:100%; }
-.chip-fresh .fdot { width:7px; height:7px; border-radius:50%; display:inline-block;
-                    vertical-align:middle; margin:-1px 5px 0 0; }
-.t-green { color:var(--up); } .t-green .fdot { background:var(--up); }
-.t-amber { color:#e0a030; } .t-amber .fdot { background:#e0a030; }
-.t-red { color:var(--down); } .t-red .fdot { background:var(--down); }
 
-/* ---- tier pills ---- */
-.tier { font-weight:500; font-size:11px; line-height:1; padding:3px 7px; border-radius:5px;
-        letter-spacing:.02em; text-transform:capitalize; }
-.tier.elevated { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
-.tier.moderate { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
-.tier.low { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
-.tier.unavail { color:var(--muted); background:transparent; border:1px dashed var(--line); }
-.tier.activist { color:#5b9bf0; background:rgba(91,155,240,.1); border:1px solid rgba(91,155,240,.35); }
-.tier.flip { color:#5b9bf0; background:rgba(91,155,240,.1); border:1px solid rgba(91,155,240,.35); }
-.tier.custodial { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
-
-/* ---- turnover tier ---- */
-.tlow { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
-.tmed { color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
-.thigh { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
-
-/* ---- S0 command deck ---- */
-.sm-deck { background:var(--panel); border:1px solid var(--line); border-radius:16px;
-           padding:20px 22px; display:grid; grid-template-columns:1.2fr 1fr 1.4fr; gap:22px;
-           margin-bottom:10px; }
-.sm-deck > * { min-width:0; } /* grid children must be shrinkable or long chips blow the deck out of the card */
-.sm-deck > .axis-rail { grid-column:1/-1; margin-top:0; }
-@media(max-width:960px){ .sm-deck { grid-template-columns:1fr; } }
-.sm-deck .deck-eyebrow { font-weight:600; font-size:11px; line-height:1; letter-spacing:.06em;
-                          text-transform:uppercase; color:var(--muted); }
-.sm-deck h1 { font-size:clamp(22px,3vw,30px); margin:.25em 0 .1em; letter-spacing:-.01em; }
-.sm-deck .deck-sub { color:var(--muted); font-size:12.5px; max-width:420px; }
-.sm-clock { border-left:1px solid var(--line); border-right:1px solid var(--line);
-            padding:0 22px; display:flex; flex-direction:column; justify-content:center; gap:4px; }
-@media(max-width:960px){ .sm-clock { border:0; border-top:1px solid var(--line);
-                                     border-bottom:1px solid var(--line); padding:14px 0; } }
-.sm-clock .ck { font-weight:600; font-size:11px; line-height:1; letter-spacing:.02em;
-                color:var(--muted); }
-.sm-clock .bignum { font-weight:700; font-size:30px; line-height:1; font-variant-numeric:tabular-nums; }
-.sm-clock .bignum span { font-size:14px; color:var(--muted); font-weight:600; }
-.sm-clock .qstate { font-weight:600; font-size:11px; line-height:1.5; color:#e0a030; }
-.sm-gridbox .gbk { font-weight:600; font-size:11px; line-height:1; letter-spacing:.02em;
-                    color:var(--muted); margin-bottom:7px;
-                    display:flex; justify-content:space-between; }
-.dots-grid { display:grid; grid-template-columns:repeat(18,minmax(0,14px)); gap:5px; }
-.dots-grid i { width:10px; height:10px; border-radius:50%; border:1.5px solid var(--muted);
-               display:block; }
-.dots-grid i.df { background:var(--up); border-color:var(--up); }
-.dots-grid i.dp { border-color:#e0a030; }
-.axis-rail { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
-.hon-note { margin-top:12px; font-size:11px; color:var(--muted);
-            border-top:1px solid var(--line); padding-top:10px; }
-
-/* ---- section headers ---- */
-.sm-sec { margin:42px 0 10px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-.sm-sec::after { content:''; flex:1; height:1px; background:var(--line); align-self:center; }
-.sm-sec h2 { font-size:17px; margin:0; }
-.sm-sec .h-note { font-size:12px; color:var(--muted); font-weight:400; }
-.sm-sec-sub { font-size:12.5px; color:var(--muted); margin:0 0 10px; line-height:1.5; max-width:640px; }
-
-/* ---- cards / banners ---- */
-.sm-card { background:var(--panel); border:1px solid var(--line); border-radius:12px;
-           padding:18px 20px; margin-top:10px; overflow-x:auto; }
-.banner { font-size:11.5px; color:var(--muted); background:var(--panel2); border:1px solid var(--line);
-          border-left:3px solid var(--info); border-radius:9px; padding:8px 12px; margin:8px 0 4px;
-          line-height:1.55; }
-.banner.hazard { border-left-color:var(--down); }
-
-/* ---- wire ---- */
-.wire { list-style:none; margin:0; padding:0; }
-.wire li { display:flex; align-items:center; gap:10px; padding:7px 2px;
-           border-top:1px solid var(--line); font-size:12.3px; flex-wrap:wrap; }
-.wire .wd { font-weight:600; font-size:11px; line-height:1; color:var(--muted); min-width:74px; }
-.wire .wtk { font-weight:700; font-size:12.3px; line-height:1; min-width:52px; }
-.wire .wdesc { color:var(--text); }
-.wire .wasof { margin-left:auto; }
-.filters { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 4px; }
-.filters .fpill { font-weight:500; font-size:11px; line-height:1.8; padding:2px 11px; border-radius:99px;
-                  border:1px solid var(--line); color:var(--muted); cursor:pointer; user-select:none; }
-.filters .fpill.on { color:var(--text); border-color:var(--info); background:rgba(91,155,240,.08); }
-.wire-count { font-size:11.5px; color:var(--muted); margin:6px 0 2px; }
-
-/* ---- act pills ---- */
-.act-pill { font-weight:500; font-size:11px; line-height:1; padding:3px 6px; border-radius:5px; border:1px solid var(--line);
-            color:var(--muted); text-transform:capitalize; letter-spacing:.02em; }
-.act-pill.new,.act-pill.add { color:var(--up); border-color:rgba(69,184,115,.4); }
-.act-pill.trim,.act-pill.exit { color:var(--down); border-color:rgba(224,100,100,.4); }
-
-/* ---- tables ---- */
-table.sm-t { width:100%; border-collapse:collapse; font-size:12.3px; margin-top:6px; }
-table.sm-t th { text-align:right; font-weight:500; font-size:11px; line-height:1.3; letter-spacing:.04em;
-                color:var(--muted); padding:6px 8px 7px;
-                border-bottom:1px solid var(--line); white-space:nowrap; }
-table.sm-t th.l, table.sm-t td.l { text-align:left; }
-table.sm-t td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
-table.sm-t tbody tr:hover { background:var(--panel2); }
-table.sm-t td .tk { font-weight:700; font-size:12.3px; line-height:1; }
-table.sm-t tr.feat td { background:color-mix(in srgb, var(--up) 6%, transparent); }
-table.sm-t tr.closed td { opacity:.55; }
-table.sm-t .rk { color:var(--muted); font-variant-numeric:tabular-nums; }
-.sub { font-size:10.5px; color:var(--muted); }
-.sub2 { opacity:.72; font-weight:500; }
-.star { color:#e0a030; }
-.spark { font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--info); }
-
-/* ---- vs card ---- */
-.sm-vs { display:grid; grid-template-columns:1fr auto 1fr; gap:0; align-items:stretch; margin-top:10px; }
-@media(max-width:760px){ .sm-vs { grid-template-columns:1fr; } .vs-mid { flex-direction:row; padding:10px 0; } }
-.vs-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
-.vs-card.win { border-left:4px solid var(--up); }
-.vs-card.lag { border-left:4px solid var(--down); }
-.vs-mid { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:0 14px; }
-.vs-mid .vs-gap { font-weight:700; font-size:22px; line-height:1; font-variant-numeric:tabular-nums; }
-.vs-mid .vs-lab { font-weight:500; font-size:11px; line-height:1.2; letter-spacing:.02em;
-                  color:var(--muted); text-align:center; }
-.vs-role { font-weight:600; font-size:11px; line-height:1; letter-spacing:.02em; }
-.vs-card.win .vs-role { color:var(--up); } .vs-card.lag .vs-role { color:var(--down); }
-.vs-name { font-size:17px; font-weight:700; margin:5px 0 2px; }
-.vs-stat { display:flex; gap:14px; flex-wrap:wrap; margin:10px 0 6px; }
-.vs-stat .k { font-weight:500; font-size:11px; line-height:1.2; letter-spacing:.02em; color:var(--muted); }
-.vs-stat .v { font-weight:650; font-size:17px; line-height:1.1; font-variant-numeric:tabular-nums; margin-top:3px; }
-.vs-list { margin:8px 0 0; padding:0; list-style:none; }
-.vs-list li { display:flex; align-items:baseline; gap:8px; padding:4px 0;
-              border-top:1px solid var(--line); font-size:12px; }
-.vs-list li .vtk { font-weight:700; font-size:12px; line-height:1; min-width:44px; }
-.vs-list li .vact { font-size:11px; color:var(--muted); text-transform:capitalize; letter-spacing:.02em; }
-.vs-sig { font-size:11.5px; color:var(--muted); margin-top:8px; }
-
-/* ---- per-fund accordion ---- */
-details.fund { background:var(--panel); border:1px solid var(--line); border-radius:11px; margin-top:9px; }
-details.fund > summary { list-style:none; cursor:pointer; padding:11px 15px;
-                         display:flex; align-items:center; gap:11px; flex-wrap:wrap; font-size:13px; }
-details.fund > summary::-webkit-details-marker { display:none; }
-details.fund[open] > summary { border-bottom:1px solid var(--line); }
-.fund .f-name { font-weight:700; font-size:14px; }
-.fund .f-body { padding:6px 15px 14px; }
-.rot-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-@media(max-width:680px){ .rot-grid { grid-template-columns:1fr; } }
-.rot-h { font-weight:500; font-size:11px; line-height:1; letter-spacing:.02em;
-         color:var(--muted); margin:4px 0 2px; }
-.rot-h.into { color:var(--up); } .rot-h.out { color:var(--down); }
-.mini { width:100%; border-collapse:collapse; font-size:12px; }
-.mini td { padding:4px 6px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
-.mini td.l { text-align:left; }
-.mini .tk { font-weight:700; font-size:12px; line-height:1; }
-.hold { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-.hold .h-pill { font-weight:500; font-size:11px; line-height:1; padding:4px 8px; border-radius:999px;
-               border:1px solid var(--line); background:var(--panel2); }
-
-/* ---- S7 dossier ---- */
-.sm-search { display:flex; gap:8px; margin:8px 0; align-items:center; flex-wrap:wrap; }
-.sm-search input { flex:1; max-width:340px; background:var(--panel2); border:1px solid var(--line);
-                   border-radius:9px; color:var(--text); font-weight:600; font-size:13px;
-                   padding:8px 13px; outline:none; }
-.sm-search input:focus { border-color:var(--info); }
-.dossier-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px; }
-@media(max-width:820px){ .dossier-grid { grid-template-columns:1fr; } }
-.axisblock { border:1px solid var(--line); border-radius:10px; padding:11px 13px; background:var(--panel2); }
-.axisblock .ab-h { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; }
-.axisblock .ab-body { font-size:12.3px; line-height:1.6; }
-#dossier-card { display:none; }
-
-/* ---- S8 ledger ---- */
-.ledgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px; }
-@media(max-width:960px){ .ledgrid { grid-template-columns:1fr 1fr; } }
-@media(max-width:600px){ .ledgrid { grid-template-columns:1fr; } }
-.led { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:12px 14px; }
-.led .led-nm { font-weight:700; font-size:12.5px; margin-bottom:3px; }
-.led .led-rule { font-size:10.5px; color:var(--muted); min-height:36px; margin-bottom:6px; }
-.led .led-row { display:flex; justify-content:space-between; font-weight:500; font-size:11px; line-height:1.9; font-variant-numeric:tabular-nums; }
-.led .led-row .lk { color:var(--muted); font-weight:500; }
-
-/* ---- misc ---- */
-.disc { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info);
-        border-radius:10px; padding:11px 14px; margin:14px 0 4px; font-size:12px;
-        line-height:1.55; color:var(--muted); }
-.sm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-@media(max-width:820px){ .sm-2col { grid-template-columns:1fr; } }
-/* two-up boards hold wide nowrap tables: columns must shrink (min-width:0) and
-   scroll independently instead of blowing the pair out of the card */
-.sm-2col > *, .ii-grid > *, .rot-grid > * { min-width:0; overflow-x:auto; }
-.dossier-grid > *, .sm-vs > *, .ledgrid > * { min-width:0; }
-
-/* ---- v3: sticky section rail ---- */
-.sm-rail { position:sticky; top:0; z-index:30; display:flex; gap:6px; flex-wrap:wrap;
-           padding:9px 2px 8px; margin:2px 0 0; background:var(--bg);
-           border-bottom:1px solid var(--line); }
-.sm-rail a { font-weight:500; font-size:11px; line-height:1.8; padding:2px 11px; border-radius:99px;
-             border:1px solid var(--line); color:var(--muted); text-decoration:none;
-             white-space:nowrap; }
-.sm-rail a:hover { color:var(--text); border-color:var(--info); }
-.sm-sec[id] { scroll-margin-top:56px; }
-
-/* ---- v3: ticker logos (big boards only — never wire rows / leaderboard) ---- */
-.tlogo { width:18px; height:18px; border-radius:4px; vertical-align:-4px; margin-right:6px;
-         background:var(--panel2); object-fit:contain; }
-
-/* ---- v3: S1.5 / S2.5 boards ---- */
-.ii-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px; }
-@media(max-width:960px){ .ii-grid { grid-template-columns:1fr; } }
-.board-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.board-h .bt { font-weight:700; font-size:13px; }
-.board-h .chip-fresh { margin-left:auto; }
-.board-note { font-size:11px; color:var(--muted); margin:3px 0 4px; line-height:1.5; }
-details.fullboard > summary { list-style:none; cursor:pointer; padding:7px 2px 3px;
-                              font-weight:500; font-size:11px; line-height:1.6; color:var(--muted); }
-details.fullboard > summary::-webkit-details-marker { display:none; }
-details.fullboard > summary:hover { color:var(--text); }
-.role-pill { font-weight:500; font-size:11px; line-height:1; padding:3px 6px; border-radius:5px; letter-spacing:.04em;
-             text-transform:capitalize; color:#5b9bf0; border:1px solid #5b9bf055; }
-.ip-score { font-weight:500; font-size:11px; line-height:1.4; padding:2px 7px; border-radius:5px;
-            border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
-.mchip { display:inline-block; font-weight:500; font-size:11px; line-height:1.4; padding:2px 6px; margin:1px 2px 1px 0;
-         border-radius:5px; border:1px solid var(--line); color:var(--muted);
-         background:var(--panel2); white-space:nowrap; }
-
-/* ---- v3: flow breadth mini-bar ---- */
-.bbar { display:inline-flex; width:56px; height:7px; border-radius:4px; overflow:hidden;
-        background:var(--panel2); vertical-align:middle; }
-.bbar i { display:block; height:100%; }
-.bbar .bi { background:var(--up); }
-.bbar .bo { background:var(--down); }
-
-/* ---- v3: rotation bars (zero-centred) ---- */
-.rotbars { list-style:none; margin:6px 0 0; padding:0; }
-.rotbars li { display:flex; align-items:center; gap:9px; padding:4px 0; font-size:12px;
-              border-top:1px solid var(--line); }
-.rotbars .rb-lab { min-width:132px; font-size:11.5px; }
-.rotbars .rb-track { flex:1; height:9px; border-radius:5px; background:var(--panel2);
-                     position:relative; overflow:hidden; }
-.rotbars .rb-track::after { content:''; position:absolute; left:50%; top:0; bottom:0;
-                            width:1px; background:var(--line); }
-.rotbars .rb-fill { position:absolute; top:0; bottom:0; }
-.rotbars .rb-fill.pos { left:50%; background:var(--up); border-radius:0 5px 5px 0; }
-.rotbars .rb-fill.neg { right:50%; background:var(--down); border-radius:5px 0 0 5px; }
-.rotbars .rb-val { min-width:58px; text-align:right; }
-
-/* ---- v3: wire see-more ---- */
-.wire-more-row { display:flex; gap:8px; align-items:center; margin-top:8px;
-                 padding-top:9px; border-top:1px solid var(--line); }
-.wire-more { font-weight:600; font-size:11.5px; line-height:1.8; padding:3px 14px; border-radius:99px;
-             border:1px solid var(--line); background:var(--panel2); color:var(--text);
-             cursor:pointer; }
-.wire-more:hover { border-color:var(--info); }
-
-/* ---- Follow Desk (sec-follow) ---- */
-.ftier { font-weight:500; font-size:11px; line-height:1; padding:3px 7px; border-radius:5px;
-         letter-spacing:.02em; text-transform:capitalize; border:1px solid var(--line); }
-.ftier.follow { color:var(--up); background:rgba(69,184,115,.1); border-color:rgba(69,184,115,.4); }
-.ftier.watch  { color:var(--muted); background:var(--panel2); }
-.ftier.fade   { color:var(--down); background:rgba(224,100,100,.08); border-color:rgba(224,100,100,.3); opacity:.75; }
-.ftier.insufficient,.ftier.low-data { color:var(--muted); background:transparent; border-style:dashed; }
-.fsc-bar { display:inline-block; width:48px; height:5px; border-radius:3px;
-           background:var(--panel2); vertical-align:middle; position:relative; overflow:hidden; }
-.fsc-bar i { position:absolute; left:0; top:0; height:100%; border-radius:3px; background:var(--info); }
-.cap-chip { font-weight:500; font-size:11px; line-height:1; padding:2px 5px; border-radius:4px; text-transform:uppercase;
-            letter-spacing:.04em; border:1px solid var(--line); color:var(--muted); }
-.cap-chip.large { color:#5b9bf0; border-color:#5b9bf055; }
-.cap-chip.mid   { color:#c9a24a; border-color:#c9a24a55; }
-.cap-chip.small { color:#45b873; border-color:#45b87355; }
-.cap-chip.off_index { color:var(--muted); border-style:dashed; }
-.fboard-row-accent td { background:color-mix(in srgb, var(--info) 4%, transparent); }
-.follow-banner { font-size:11.5px; color:var(--muted); background:var(--panel2);
-                 border:1px solid var(--line); border-left:3px solid var(--up);
-                 border-radius:9px; padding:8px 12px; margin:8px 0 4px; line-height:1.55; }
-.follow-empty { font-size:12px; color:var(--muted); padding:18px 4px; text-align:center; }
-.sm-2half { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:10px; }
-@media(max-width:820px){ .sm-2half { grid-template-columns:1fr; } }
-.sm-2half > * { min-width:0; overflow-x:auto; }
-.frozen-chip { font-weight:500; font-size:11px; line-height:1; padding:2px 6px; border-radius:4px;
-               letter-spacing:.02em; text-transform:capitalize;
-               color:#e0a030; background:rgba(224,160,48,.1); border:1px solid rgba(224,160,48,.3); }
-
-/* ---- v3: reliability chip + fund links + inline fund-list details ---- */
-.rely { font-weight:500; font-size:11px; line-height:1.4; padding:2px 7px; border-radius:5px; letter-spacing:.03em;
-        text-transform:capitalize; border:1px solid var(--line); }
-.rely.up { color:var(--up); border-color:rgba(69,184,115,.4); background:rgba(69,184,115,.08); }
-.rely.down { color:var(--down); border-color:rgba(224,100,100,.4); background:rgba(224,100,100,.08); }
-.rely.flat { color:var(--muted); background:var(--panel2); }
-.fund-link { color:inherit; text-decoration:none; border-bottom:1px dotted var(--line); }
-.fund-link:hover { color:var(--info); border-bottom-color:var(--info); }
-details.fl > summary { list-style:none; cursor:pointer; color:var(--info);
-                       font-weight:500; font-size:11px; line-height:1.6; white-space:nowrap; }
-details.fl > summary::-webkit-details-marker { display:none; }
-details.fl .fl-body { text-align:left; white-space:normal; padding:4px 0 2px; max-width:340px; }
-
-/* ---- SM4: memory hero cards, qdot motif, smFold, wire followed-fund chip ---- */
-.mem-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin:10px 0; }
-a.mem-card { display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px;
-             padding:14px 16px; text-decoration:none; color:inherit; transition:border-color .15s; }
-a.mem-card:hover { border-color:var(--info); }
-.mem-card .mc-name { font-weight:700; font-size:13px; margin-bottom:4px; }
-.mem-card .mc-dots { display:flex; gap:5px; margin:6px 0; }
-.qdot { width:12px; height:12px; border-radius:50%; display:inline-block; }
-.qdot.beat { background:var(--up); }
-.qdot.miss { background:var(--down); }
-.qdot.nd { background:transparent; border:1.5px solid var(--muted); }
-.mem-card .mc-line { font-size:11.5px; color:var(--muted); margin-top:4px; line-height:1.4; }
-.mc-edge { font-weight:700; }
-.mem-legend { font-size:11px; color:var(--muted); margin:4px 0 12px; }
-.followed-chip { font-weight:500; font-size:11px; line-height:1; padding:2px 7px; border-radius:5px;
-                 color:var(--up); background:rgba(69,184,115,.1); border:1px solid rgba(69,184,115,.4); }
-/* smFold shared controller */
-.smfold-more-row { display:flex; gap:8px; align-items:center; margin-top:8px;
-                   padding-top:9px; border-top:1px solid var(--line); }
-.smfold-btn { font-weight:500; font-size:11.5px; line-height:1.8; padding:3px 14px; border-radius:99px;
-              border:1px solid var(--line); background:var(--panel2); color:var(--text);
-              cursor:pointer; }
-.smfold-btn:hover { border-color:var(--info); }
-
-</style>
-
+<meta name="description" content="What top funds actually did last quarter — new stakes, exits and conviction shifts with four-quarter fund memory, from 13F filings.">
+<link rel="canonical" href="https://www.mastermind-x.com/smart_money.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="13F Smart Money Desk — Mastermind">
+<meta property="og:description" content="What top funds actually did last quarter — new stakes, exits and conviction shifts with four-quarter fund memory, from 13F filings.">
+<meta property="og:url" content="https://www.mastermind-x.com/smart_money.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="13F Smart Money Desk — Mastermind">
+<meta name="twitter:description" content="What top funds actually did last quarter — new stakes, exits and conviction shifts with four-quarter fund memory, from 13F filings.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
 
@@ -534,71 +183,7 @@ a.mem-card:hover { border-color:var(--info); }
       </div>
     </div>
     
-    <style>
-    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
-       clip off the left edge. Instead anchor the mega to the full-width .nav-links
-       row (its right edge = the nav rail right): make .nav-links the positioning
-       context and the Research .nav-dd static >700px, so right:0 right-aligns the
-       panel to the rail and it stays fully on-screen. The ::before bridges the
-       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
-    @media (min-width:701px){
-      /* nav-links is the positioning context for the rail-anchored mega; desktop
-         only, so it never overrides theme.js's position:absolute hamburger flyout
-         (≤700px), which shares this specificity. */
-      .site-nav .nav-links,.topbar .nav-links{position:relative}
-      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
-      /* the base .nav-dd::after bridge would become a full-width strip once the
-         trigger is static — disable it; the mega's own ::before bridges the gap. */
-      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
-        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
-      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
-    }
-    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      padding-bottom:13px;margin-bottom:13px;
-      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
-    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-      white-space:normal;text-decoration:none;
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
-      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
-      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
-    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
-      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
-      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
-    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
-    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
-    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
-    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
-    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
-    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
-    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
-    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
-      white-space:normal;text-decoration:none;transition:background .15s ease}
-    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
-    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
-    .nav-mega .nm-tx{min-width:0}
-    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
-    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
-      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
-    @media (max-width:1080px) and (min-width:701px){
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
-      .nav-mega-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:700px){
-      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
-      .nav-mega-grid{grid-template-columns:1fr;gap:0}
-      .nav-mega-h{padding-top:9px}
-      /* the hamburger accordion caps each open dropdown at max-height:600px
-         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
-         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
-         Same specificity trick overrides theme.js's generic accordion-panel
-         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
-         submenus) with symmetric sides + top breathing room, so the feature
-         cards read centered under the trigger instead of crooked. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
-    </style>
+    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -5480,7 +5065,7 @@ research/smart_money_grade_a_q1_2026.md
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
-      <span class="wdesc">JANA Partners Management files amendment</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
+      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
     </li>
   
     
@@ -5504,7 +5089,7 @@ research/smart_money_grade_a_q1_2026.md
       <span class="wd num">2026-06-30</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
-      <span class="wdesc">JANA Partners Management files amendment — -100.0pct_shares_change</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
+      <span class="wdesc">JANA Partners Management files amendment</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-06-30</span>
     </li>
   
     
@@ -5672,7 +5257,7 @@ research/smart_money_grade_a_q1_2026.md
       <span class="wd num">2026-05-20</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment — -100.0pct_shares_change</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
+      <span class="wdesc">Oaktree Capital Management files amendment</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
     </li>
   
     
@@ -5720,31 +5305,7 @@ research/smart_money_grade_a_q1_2026.md
       <span class="wd num">2026-05-20</span>
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
-    </li>
-  
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    <li data-axis="13fa" data-fold="0" style="display:none">
-      <span class="wd num">2026-05-19</span>
-      <span class="axis-tag axis-13f">13F/A</span>
-      <span class="wtk num"></span>
-      <span class="wdesc">Oaktree Capital Management files amendment — -96.7pct_shares_change</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-19</span>
+      <span class="wdesc">Oaktree Capital Management files amendment — -100.0pct_shares_change</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-20</span>
     </li>
   
     
@@ -5769,6 +5330,30 @@ research/smart_money_grade_a_q1_2026.md
       <span class="axis-tag axis-13f">13F/A</span>
       <span class="wtk num"></span>
       <span class="wdesc">Oaktree Capital Management files amendment — 145.0pct_shares_change</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-19</span>
+    </li>
+  
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    
+    <li data-axis="13fa" data-fold="0" style="display:none">
+      <span class="wd num">2026-05-19</span>
+      <span class="axis-tag axis-13f">13F/A</span>
+      <span class="wtk num"></span>
+      <span class="wdesc">Oaktree Capital Management files amendment — -96.7pct_shares_change</span><span class="chip-fresh t-amber wasof"><span class="fdot"></span>13F-HR/A amendment 2026-05-19</span>
     </li>
   
     
@@ -23079,7 +22664,7 @@ inp.addEventListener('keydown',function(e){if(e.key==='Enter'){var v=inp.value.t
 <p class="sub" style="margin-top:32px;border-top:1px solid var(--border);padding-top:14px">
   <span class="l-en">Pre-registered track record starts accruing 2026-10-15 · display-only · no authority · nulls printed.</span><span class="l-zh">预登记业绩记录于2026-10-15开始积累 · 仅供展示 · 不具权威 · 空值照实显示。</span>
 </p>
-<p class="sub" style="margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-20 13:02 UTC</p>
+<p class="sub" style="margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-20 14:30 UTC</p>
 
 </div>
 

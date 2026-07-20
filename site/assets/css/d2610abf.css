@@ -1,0 +1,49 @@
+
+/* ── The Big Seven price ledger ─────────────────────────────────────────── */
+.big7 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 16px 12px; margin-bottom: 12px; }
+.big7-top { display: flex; align-items: baseline; gap: 8px 12px; flex-wrap: wrap; }
+.big7-title { font-size: 13px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-1); margin: 0; }
+.big7-verdict { font-size: 12.5px; font-weight: 700; color: var(--ink-1); }
+.big7-verdict b { font-variant-numeric: tabular-nums; }
+.big7-help { display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: 700;
+  background: var(--panel3); color: var(--ink-3); cursor: help; flex-shrink: 0; }
+.big7-sub { display: flex; align-items: baseline; gap: 8px 12px; flex-wrap: wrap;
+  margin: 3px 0 10px; }
+.big7-stance { font-size: 12px; font-weight: 700; }
+.big7-stance.st-fav  { color: var(--up); }
+.big7-stance.st-watch{ color: var(--warn); }
+.big7-stance.st-aside{ color: var(--down); }
+.big7-asof { font-size: 10.5px; color: var(--ink-3); margin-left: auto; white-space: nowrap; }
+.big7-asof .big7-delayed { color: #d97706; font-weight: 700; }
+/* rows */
+.big7-rows { display: flex; flex-direction: column; gap: 2px; }
+.big7-row { display: grid; grid-template-columns: 1fr auto auto; align-items: baseline;
+  gap: 10px; padding: 5px 8px 5px 10px; border-radius: 6px; position: relative; }
+.big7-row::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px;
+  width: 3px; border-radius: 3px; }
+.big7-row.up::before { background: var(--up); }
+.big7-row.dn::before { background: var(--down); }
+.big7-row:nth-child(odd) { background: color-mix(in srgb, var(--panel3) 45%, transparent); }
+.big7-name { font-size: 12.5px; font-weight: 600; color: var(--ink-1); }
+.big7-name .big7-tkr { font-size: 9px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink-3); margin-left: 5px; }
+.big7-move { font-variant-numeric: tabular-nums; font-family: var(--num, inherit); white-space: nowrap; }
+.big7-wk { font-size: 12.5px; font-weight: 700; min-width: 116px; text-align: right; }
+.big7-mo { font-size: 11px; font-weight: 600; min-width: 96px; text-align: right; }
+.big7-move .u { color: var(--up); }
+.big7-move .n { color: var(--down); }
+.big7-move .z { color: var(--ink-3); }
+.big7-move .lbl { font-size: 9px; font-weight: 600; letter-spacing: .03em;
+  text-transform: uppercase; color: var(--ink-3); margin-left: 4px; }
+.big7-arrow { font-size: 10px; margin-right: 3px; }
+.big7-earn { display: inline-block; font-size: 9px; font-weight: 700; vertical-align: middle;
+  background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn);
+  border-radius: 3px; padding: 0 4px; margin-left: 6px; }
+.big7-foot { font-size: 10px; color: var(--ink-3); margin-top: 9px; }
+@media (max-width: 520px) {
+  .big7-wk { min-width: 92px; } .big7-mo { min-width: 78px; }
+  .big7-mo .lbl, .big7-wk .lbl { display: none; }
+}

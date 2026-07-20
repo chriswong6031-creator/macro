@@ -1,0 +1,93 @@
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:22px 0 30px; }
+  a { text-decoration:none; color:inherit; }
+  .wrap { padding:16px; }
+  @media (min-width:1100px){ .wrap{ padding:18px max(28px,calc((100vw - 1560px)/2)); } }
+  .sc-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:6px 22px; margin:8px 2px 6px; }
+  .sc-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
+  .sc-head .asof { color:var(--muted); font-size:12px; margin-left:auto; }
+  .sc-sub { color:var(--muted); font-size:12.5px; margin:2px 2px 14px; max-width:96ch; line-height:1.55; }
+  .sec { margin:22px 0 8px; }
+  .sec h2 { font-size:15px; font-weight:700; margin:0 2px 3px; display:flex; align-items:center; gap:8px; }
+  .sec .desc { color:var(--muted); font-size:11.5px; margin:0 2px 10px; max-width:92ch; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(238px,1fr)); gap:10px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-left-width:3px; border-radius:11px; padding:11px 12px; display:block; transition:border-color .12s,transform .08s; }
+  .card:hover { transform:translateY(-1px); border-color:var(--link); }
+  .card .top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .card .nm { font-weight:700; font-size:13.5px; line-height:1.25; }
+  .card .sct { color:var(--muted); font-size:10.5px; margin-top:1px; text-transform:uppercase; letter-spacing:.03em; }
+  .card .row2 { display:flex; align-items:center; gap:6px; margin-top:9px; flex-wrap:wrap; }
+  .card .meta { color:var(--muted); font-size:11px; margin-top:7px; line-height:1.45; }
+  .tier { font-weight:800; font-size:11px; padding:1px 6px; border-radius:5px; letter-spacing:.02em; color:#fff; }
+  .tier.T1{ background:var(--up); } .tier.T2{ background:#3da564; } .tier.T3{ background:var(--info); } .tier.T4{ background:#6b7cc4; }
+  .tier.none{ background:var(--g-mid); color:var(--muted); }
+  /* zh 红涨绿跌: T2 bullish tier badge swaps green→red */
+  html[data-lang="zh"] .tier.T2{ background:#d04545; }
+  .pill { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:9px; border:1px solid var(--line); }
+  .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
+  .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
+  .pill.neutral{ color:var(--muted); }
+  .pill.tactical,.pill.late{ color:var(--orange); border-color:color-mix(in srgb,var(--orange) 45%,transparent); }
+  table.tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:6px 9px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
+  table.tbl td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.tbl tr:hover td { background:var(--panel); }
+  .sc-card-hidden { display:none !important; }
+  .sc-more { margin:9px 2px 0; font:600 12px/1.4 inherit; color:var(--link); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
+  .sc-more:hover { border-color:var(--link); background:color-mix(in srgb,var(--link) 8%,transparent); }
+  .tk { font-weight:700; }
+  .num { font-variant-numeric:tabular-nums; }
+  .pos{ color:var(--up); } .neg{ color:var(--down); }
+  .scbar { display:inline-block; height:7px; border-radius:4px; background:var(--up); vertical-align:middle; }
+  .relb { font-size:9.5px; font-weight:800; padding:0 5px; border-radius:6px; letter-spacing:.02em; vertical-align:middle; white-space:nowrap; }
+  .rel-low { color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
+  .rel-med { color:var(--muted); }
+  .npc { color:var(--muted); font-size:10.5px; font-variant-numeric:tabular-nums; }
+  details.thin { margin:14px 2px 0; border:1px dashed var(--line); border-radius:10px; padding:0 12px 12px; background:color-mix(in srgb,var(--orange) 4%,transparent); }
+  details.thin > summary { cursor:pointer; font-weight:700; font-size:13.5px; padding:11px 2px; list-style:none; display:flex; align-items:center; gap:8px; }
+  details.thin > summary::-webkit-details-marker { display:none; }
+  details.thin > summary::before { content:'▸'; color:var(--muted); }
+  details.thin[open] > summary::before { content:'▾'; }
+  .sc-foot { color:var(--muted); font-size:11px; margin:24px 2px 0; line-height:1.65; max-width:108ch; border-top:1px solid var(--line); padding-top:12px; }
+  .empty { color:var(--muted); padding:14px; }
+  @media (max-width:720px){
+    .wrap { padding:12px; }
+    .sec { margin-top:18px; }
+    .sec h2 { font-size:14px; gap:6px; }
+    .sec .desc { font-size:11px; line-height:1.45; }
+    .cards { grid-template-columns:1fr; gap:8px; }
+    .card { border-radius:9px; padding:10px; }
+    .card .nm { overflow-wrap:anywhere; }
+    .card .sct,.card .meta { overflow-wrap:anywhere; }
+    .tbl-scroll { overflow-x:visible; }
+    table.tbl.db-table,
+    table.tbl.hw-table,
+    table.tbl.all-table { table-layout:fixed; width:100%; font-size:11.5px; }
+    table.tbl.db-table th,
+    table.tbl.db-table td,
+    table.tbl.hw-table th,
+    table.tbl.hw-table td,
+    table.tbl.all-table th,
+    table.tbl.all-table td { padding:6px 5px; white-space:normal; overflow-wrap:anywhere; vertical-align:top; }
+    table.tbl.db-table .col-stock,
+    table.tbl.hw-table .col-stock { width:82px; overflow-wrap:normal; }
+    table.tbl.db-table .col-tier,
+    table.tbl.hw-table .col-tier { width:54px; }
+    table.tbl.db-table .col-concept,
+    table.tbl.hw-table .col-concept { width:auto; }
+    table.tbl.all-table .col-concept { width:50%; }
+    table.tbl.all-table .col-entry { width:56px; }
+    table.tbl.all-table .col-regime { width:70px; }
+    table.tbl.db-table .col-concept-state,
+    table.tbl.db-table .col-conviction,
+    table.tbl.db-table .col-vs20,
+    table.tbl.hw-table .col-regime,
+    table.tbl.all-table .col-fresh,
+    table.tbl.all-table .col-rs,
+    table.tbl.all-table .col-n { display:none; }
+    table.tbl .stock-name,
+    table.tbl .npc { display:none; }
+    .tier,.pill { font-size:10px; padding:1px 5px; }
+    .relb { font-size:9px; padding:0 4px; }
+  }

@@ -1,0 +1,95 @@
+
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  .rep-hero { max-width:1060px; margin:18px auto 0; }
+  .rep-hero .eyebrow { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .rep-hero h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
+  .rep-hero .lede { font-size:15.5px; color:var(--text); opacity:.82; margin:0; max-width:78ch; }
+  html[data-lang="zh"] .rep-hero h1 { letter-spacing:0; }
+
+  .controls { max-width:1060px; margin:22px auto 0; display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+              padding-bottom:14px; border-bottom:1px solid var(--line); }
+  .search-box { position:relative; flex:1 1 280px; min-width:200px; }
+  .search-box input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text);
+              border-radius:10px; padding:10px 12px 10px 34px; font-size:13.5px; outline:none; transition:border-color .15s; }
+  .search-box input:focus { border-color:var(--link); }
+  .search-box .mag { position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.6; font-size:13px; }
+  .sortsel { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
+  .sortsel select { background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:8px 10px; font-size:13px; cursor:pointer; }
+  .tagbar { width:100%; display:flex; flex-wrap:wrap; gap:7px; }
+  .tagbar .chip { cursor:pointer; user-select:none; transition:transform .12s, border-color .15s, background .15s; }
+  .tagbar .chip:hover { transform:translateY(-1px); }
+  .tagbar .chip.on { background:var(--link); border-color:var(--link); color:#fff; }
+  .rescount { font-size:12px; color:var(--muted); margin-left:auto; white-space:nowrap; }
+
+  .report-list { max-width:1060px; margin:6px auto 0; display:flex; flex-direction:column; }
+  .report-row { display:grid; grid-template-columns:84px minmax(0,1fr) auto; gap:20px; align-items:center;
+                padding:20px 18px; border-bottom:1px solid var(--line); position:relative;
+                border-left:3px solid transparent; border-radius:10px; transition:background .15s, border-color .15s, transform .12s; }
+  .report-row:hover { background:var(--panel); border-left-color:var(--link); transform:translateX(2px); }
+  .rr-date { text-align:center; line-height:1; color:var(--muted); }
+  .rr-date .mo { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--link); font-weight:700; }
+  .rr-date .day { display:block; font-size:26px; font-weight:700; color:var(--text); margin:3px 0; font-variant-numeric:tabular-nums; }
+  .rr-date .yr { display:block; font-size:11px; }
+  .rr-title { font-size:18px; font-weight:680; color:var(--text); line-height:1.25; margin:0 0 5px; letter-spacing:-.005em; }
+  html[data-lang="zh"] .rr-title { letter-spacing:0; }
+  .report-row:hover .rr-title { color:var(--link); }
+  .rr-dek { font-size:13.5px; color:var(--muted); line-height:1.5; margin:0 0 9px; }
+  .rr-tags { display:flex; flex-wrap:wrap; gap:6px; }
+  .rr-aside { display:flex; flex-direction:column; align-items:flex-end; gap:8px; color:var(--muted); font-size:12px; white-space:nowrap; }
+  .rr-arrow { font-size:18px; color:var(--line); transition:color .15s, transform .15s; }
+  .report-row:hover .rr-arrow { color:var(--link); transform:translateX(3px); }
+
+  /* featured (latest) row */
+  .report-row.feat { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link);
+                     border-radius:14px; margin-bottom:10px; padding:24px 22px; box-shadow:var(--card-shadow); }
+  .report-row.feat .rr-title { font-size:22px; }
+  .report-row.feat .rr-dek { font-size:14.5px; color:var(--text); opacity:.82; }
+  .feat-badge { position:absolute; top:-9px; left:18px; background:var(--link); color:#fff; font-size:10px; font-weight:700;
+                letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:6px; }
+
+  .noresults { max-width:1060px; margin:30px auto; text-align:center; color:var(--muted); font-size:14px; display:none; }
+  @media (max-width:760px){
+    body{ padding-left:14px; padding-right:14px; }
+    .rep-hero h1{ font-size:24px; }
+    .rep-hero .lede{ font-size:14px; }
+    .controls{ margin-top:16px; gap:8px 12px; }
+    .search-box{ flex:1 1 100%; }
+    .rescount{ margin-left:0; }
+  }
+  @media (max-width:640px){
+    .report-row { grid-template-columns:54px minmax(0,1fr); gap:14px; padding:16px 12px; }
+    .report-row.feat{ padding:18px 14px; }
+    .rr-aside { grid-column:2; flex-direction:row; align-items:center; gap:12px; }
+    .rr-arrow{ display:none; }
+    .rr-date .day { font-size:21px; }
+    .rr-title{ font-size:16.5px; }
+    .report-row.feat .rr-title{ font-size:18.5px; }
+    .rr-dek{ font-size:13px; }
+  }
+

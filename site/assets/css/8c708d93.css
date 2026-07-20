@@ -1,0 +1,25 @@
+
+.deprec-t{font-size:13px;fill:var(--text)}
+.deprec-mut{font-size:11.5px;fill:var(--muted)}
+.deprec-head{font-size:19px;fill:var(--text);font-weight:600}
+.deprec-sub{font-size:12.5px;fill:var(--muted)}
+.deprec-val{font-size:20px;fill:var(--text);font-weight:700}
+.deprec-axis{stroke:var(--line);stroke-width:1}
+.deprec-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 5;opacity:.55}
+.deprec-bar5{fill:#5b8def;opacity:.30;stroke:#5b8def;stroke-width:1.5}
+.deprec-bar3{fill:#e0607a;opacity:.30;stroke:#e0607a;stroke-width:1.5}
+.deprec-delta{fill:#e0607a;opacity:.16;stroke:#e0607a;stroke-width:1.2;stroke-dasharray:4 3}
+.deprec-grow3{transform-box:fill-box;transform-origin:bottom;animation:deprec-grow 4.5s cubic-bezier(.5,0,.2,1) infinite}
+.deprec-growd{transform-box:fill-box;transform-origin:bottom;animation:deprec-growd 4.5s cubic-bezier(.5,0,.2,1) infinite}
+@keyframes deprec-grow{0%,14%{transform:scaleY(.752)}42%,88%{transform:scaleY(1)}100%{transform:scaleY(.752)}}
+@keyframes deprec-growd{0%,14%{transform:scaleY(0);opacity:0}30%{opacity:0}44%,88%{transform:scaleY(1);opacity:1}100%{transform:scaleY(0);opacity:0}}
+.deprec-arrow{animation:deprec-pulse 2.6s ease-in-out infinite}
+.deprec-arrowlbl{animation:deprec-pulse 2.6s ease-in-out infinite}
+@keyframes deprec-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.deprec-tickline{stroke:var(--line);stroke-width:1.4;stroke-dasharray:640;stroke-dashoffset:640;animation:deprec-draw 4s ease-out infinite}
+@keyframes deprec-draw{0%{stroke-dashoffset:640}40%,100%{stroke-dashoffset:0}}
+.deprec-tick{opacity:0;animation:deprec-fade 4s ease-out infinite}
+@keyframes deprec-fade{0%,18%{opacity:0}40%,100%{opacity:1}}
+.deprec-tk1{animation-delay:.15s}.deprec-tk2{animation-delay:.9s}.deprec-tk3{animation-delay:1.65s}.deprec-tk4{animation-delay:2.4s}
+.deprec-chip{fill:var(--panel2);stroke:var(--line);stroke-width:1}
+@media (prefers-reduced-motion:reduce){[class*="deprec-"]{animation:none!important;transform:none!important;stroke-dashoffset:0!important;opacity:1!important}.deprec-growd{opacity:1!important}}

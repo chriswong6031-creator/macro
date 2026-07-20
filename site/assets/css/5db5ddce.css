@@ -1,0 +1,22 @@
+
+    .wv-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    .wv-title{fill:var(--text);font-size:19px;font-weight:700;}
+    .wv-sub{fill:var(--muted);font-size:12.5px;}
+    .wv-lyr{fill:var(--text);font-size:12.5px;font-weight:600;}
+    .wv-pos{fill:var(--muted);font-size:11px;}
+    .wv-ph{fill:var(--muted);font-size:11px;font-weight:600;letter-spacing:.05em;}
+    .wv-zone{fill:var(--muted);font-size:10.5px;font-style:italic;}
+
+    .wv-wavepath{stroke-dasharray:1400;stroke-dashoffset:1400;animation:wv-draw 2.6s ease-out .3s forwards;}
+    @keyframes wv-draw{to{stroke-dashoffset:0;}}
+    .wv-bead{animation:wv-travel 5.2s ease-in-out 1.2s infinite;}
+    @keyframes wv-travel{0%{offset-distance:0%;opacity:0;}8%{opacity:1;}92%{opacity:1;}100%{offset-distance:100%;opacity:0;}}
+    .wv-dot{transform-origin:center;transform-box:fill-box;}
+    .wv-pulse{animation:wv-pulse 2.4s ease-in-out infinite;}
+    @keyframes wv-pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+    .wv-ring{animation:wv-ring 2.4s ease-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes wv-ring{0%{transform:scale(.5);opacity:.7;}80%,100%{transform:scale(2.6);opacity:0;}}
+    .wv-row{animation:wv-rise .7s ease-out both;}
+    @media (prefers-reduced-motion: reduce){ [class*="wv-"]{ animation:none !important; stroke-dashoffset:0 !important; } }
+    @keyframes wv-rise{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+  

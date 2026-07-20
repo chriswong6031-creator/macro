@@ -1,0 +1,64 @@
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:15px; margin:0 0 8px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); }
+  .sm { font-size:13px; }
+  .up { color:var(--up); } .down { color:var(--down); }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative;
+          vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%;
+               transform:translateX(-50%); width:330px; max-width:78vw; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto;
+               max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
+  .help:hover .tip { display:block; }
+  /* live-dashboard button */
+  .live-btn { display:inline-flex; align-items:center; gap:6px; background:var(--link);
+              color:#fff; border-radius:999px; padding:7px 16px; font:600 13px/1 inherit;
+              border:1px solid var(--link); }
+  .live-btn:hover { filter:brightness(1.08); }
+  /* book tabs (same look as the AI-brief tabs) */
+  .mm-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
+  .mm-tab-btn { background:var(--panel); border:1px solid var(--line); color:var(--muted);
+                border-radius:999px; padding:7px 16px; font:600 13px/1 inherit; cursor:pointer;
+                font-family:inherit; transition:background .15s,color .15s,border-color .15s; }
+  .mm-tab-btn:hover { color:var(--text); border-color:var(--muted); }
+  .mm-tab-btn.active { background:var(--link); border-color:var(--link); color:#fff; }
+  .mm-tab-btn .tl { font-weight:400; opacity:.8; margin-left:6px; font-size:11px; }
+  /* stat grid */
+  .mm-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+  .mm-stat { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:9px 11px; }
+  .mm-stat .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .mm-stat .v { font-size:18px; font-weight:700; margin-top:2px; }
+  /* sleeve / allocation bar */
+  .mm-bar { display:flex; height:18px; border-radius:6px; overflow:hidden; border:1px solid var(--line); }
+  .mm-bar > span { display:block; height:100%; }
+  .mm-legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:8px; font-size:12px; color:var(--muted); }
+  .mm-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+  /* tables */
+  table.mm { width:100%; border-collapse:collapse; font-size:13px; }
+  table.mm th, table.mm td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+  table.mm th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; }
+  table.mm td.num, table.mm th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .pill { display:inline-block; padding:1px 7px; border-radius:999px; font-size:11px; font-weight:600;
+          border:1px solid var(--line); color:var(--muted); }
+  .pill.pend { color:var(--down); border-color:var(--down); }
+  .pill.hold { color:var(--up); border-color:var(--up); }
+  .mm-dec { border-bottom:1px solid var(--line); padding:9px 0; }
+  .mm-dec:last-child { border-bottom:none; }
+  .mm-dec .h { font-weight:600; }
+  .mm-empty { color:var(--muted); padding:18px 4px; }
+  .sparkwrap { position:relative; }
+  .spark-leg { font-size:11px; color:var(--muted); margin-top:4px; }

@@ -8,102 +8,25 @@
 <title>China News Feed - Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=de86232e">
-<style>
-  /* ---------- shared Research-Reports chrome ---------- */
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
-  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
-  a { color:var(--link); text-decoration:none; }
-  .wrap { max-width:1060px; margin:0 auto; }
-  /* unambiguous move colours (NOT tied to the zh red=up swap) */
-  .r-neg { color:#d23f3f; font-weight:600; }
-  .r-pos { color:#1f9a55; font-weight:600; }
-  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
-  html[data-theme="dark"] .r-pos { color:#3fc07e; }
-  .mut { color:var(--muted); }
-  /* tags / chips */
-  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
-          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
-  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
-  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
-  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
-  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
-  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
-  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
-  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
-  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
-  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
-  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
-  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
-  
-  body { padding-bottom:52px; }
-  @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
-  .shell { max-width:1180px; margin:0 auto; }
-  .hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:18px; margin:24px 0 16px; align-items:start; }
-  .hero-main,.side,.card,.rail-card,.empty { background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--card-shadow); }
-  .hero-main { min-height:0; padding:24px; display:flex; flex-direction:column; position:relative; overflow:hidden; }
-  .hero-main:before { content:''; position:absolute; inset:0 0 auto; height:5px; background:linear-gradient(90deg,#d04545,var(--warn),var(--link)); }
-  .eyebrow { display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin:0 0 14px; }
-  html[data-lang="zh"] .eyebrow { letter-spacing:0; }
-  .live { width:7px; height:7px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 14%,transparent); align-self:center; }
-  .hero h1 { font-size:36px; line-height:1.04; margin:0 0 12px; letter-spacing:0; }
-  .hero h1 a { color:var(--text); }
-  .hero h1 a:hover { color:var(--link); }
-  .dek { color:var(--muted); font-size:14.5px; max-width:72ch; margin:0; }
-  .meta,.intel { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-top:16px; }
-  .chip { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:999px; padding:5px 10px; font-size:11.5px; color:var(--muted); background:var(--panel2); }
-  .chip b { color:var(--text); }
-  .theme { --c:var(--link); color:color-mix(in srgb,var(--c) 82%,var(--text)); border-color:color-mix(in srgb,var(--c) 40%,var(--line)); background:color-mix(in srgb,var(--c) 12%,var(--panel)); }
-  .th-monetary{--c:#7aa7e0}.th-inflation{--c:#e08b45}.th-growth{--c:#9cbf5a}.th-credit{--c:#a78bfa}.th-fiscal{--c:#e0a030}.th-policy{--c:#d04545}.th-markets{--c:#45b873}.th-macro{--c:var(--muted)}
-  .imp-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 48%,var(--line)); }
-  .imp-medium { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 48%,var(--line)); }
-  .tk { color:var(--link); border-color:color-mix(in srgb,var(--link) 42%,var(--line)); }
-  .read { margin-left:auto; color:var(--link); font-size:12px; font-weight:800; }
-  .side { padding:16px; display:grid; gap:12px; align-content:start; }
-  .tile { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; padding:13px 14px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); }
-  .tile .k { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
-  .tile .v { font-size:18px; font-weight:760; margin-top:2px; }
-  .tile .s { color:var(--muted); font-size:11.5px; }
-  .tile .num { font-size:26px; font-weight:850; font-variant-numeric:tabular-nums; }
-  .layout { display:grid; grid-template-columns:minmax(0,1fr) 328px; gap:18px; align-items:start; }
-  .toolbar { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px 0 14px; background:linear-gradient(180deg,var(--bg) 72%,transparent); }
-  .search { position:relative; flex:1 1 260px; min-width:210px; }
-  .search input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:10px 12px 10px 34px; outline:none; font-size:13px; }
-  .search input:focus { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
-  .search .mag { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); }
-  .filters { display:flex; flex-wrap:wrap; gap:6px; }
-  .fbtn { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:7px 10px; font-size:11.5px; cursor:pointer; }
-  .fbtn:hover,.fbtn.on { color:var(--text); border-color:var(--link); background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
-  .count { color:var(--muted); font-size:12px; margin-left:auto; white-space:nowrap; }
-  .feed { display:grid; gap:10px; }
-  .card { display:grid; grid-template-columns:86px minmax(0,1fr); overflow:hidden; color:var(--text); transition:transform .16s,border-color .16s,box-shadow .16s; }
-  .card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 50%,transparent); }
-  .rank { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; min-height:112px; background:var(--panel2); border-right:1px solid var(--line); color:var(--muted); }
-  .rank b { color:var(--link); font-size:11px; letter-spacing:.08em; }
-  .rank span { font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
-  .body { padding:14px 16px; min-width:0; }
-  .top { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-bottom:8px; }
-  .title { font-size:17px; line-height:1.28; font-weight:730; margin:0; color:var(--text); }
-  .card:hover .title { color:var(--link); }
-  .summary { color:var(--muted); font-size:12.5px; margin:8px 0 0; }
-  .rail { display:grid; gap:12px; position:sticky; top:12px; }
-  .rail-card { padding:15px; }
-  .rail-card h2 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
-  .line { display:flex; gap:9px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--line); }
-  .line:last-child { border-bottom:0; }
-  .date { flex:0 0 74px; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
-  .main { min-width:0; font-size:12.5px; }
-  .tag { display:inline-flex; min-width:45px; justify-content:center; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--link); font-size:10.5px; font-weight:800; margin-right:5px; }
-  .empty { padding:34px 28px; text-align:center; }
-  .empty h2 { font-size:21px; color:var(--text); text-transform:none; letter-spacing:0; margin:0 0 8px; }
-  .empty p,.disc { color:var(--muted); }
-  .disc { font-size:11.5px; line-height:1.55; margin:14px 0 0; }
-  .hidden { display:none !important; }
-  @media(max-width:900px){ .hero,.layout{grid-template-columns:1fr}.hero-main{min-height:0}.hero h1{font-size:28px}.rail{position:static} }
-  @media(max-width:560px){ .hero-main{padding:20px 16px}.card{grid-template-columns:1fr}.rank{min-height:auto;flex-direction:row;justify-content:flex-start;padding:8px 14px;border-right:0;border-bottom:1px solid var(--line)}.toolbar{position:static} }
+<link rel="stylesheet" href="assets/css/f5b5ce34.css?v=f5b5ce34">
 
-</style>
 
+
+<meta name="description" content="China market news distilled — what moved, why it matters and which groups care, through each session.">
+<link rel="canonical" href="https://www.mastermind-x.com/china_news.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="China News Feed — Mastermind">
+<meta property="og:description" content="China market news distilled — what moved, why it matters and which groups care, through each session.">
+<meta property="og:url" content="https://www.mastermind-x.com/china_news.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="China News Feed — Mastermind">
+<meta name="twitter:description" content="China market news distilled — what moved, why it matters and which groups care, through each session.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
 
@@ -260,71 +183,7 @@
       </div>
     </div>
     
-    <style>
-    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
-       clip off the left edge. Instead anchor the mega to the full-width .nav-links
-       row (its right edge = the nav rail right): make .nav-links the positioning
-       context and the Research .nav-dd static >700px, so right:0 right-aligns the
-       panel to the rail and it stays fully on-screen. The ::before bridges the
-       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
-    @media (min-width:701px){
-      /* nav-links is the positioning context for the rail-anchored mega; desktop
-         only, so it never overrides theme.js's position:absolute hamburger flyout
-         (≤700px), which shares this specificity. */
-      .site-nav .nav-links,.topbar .nav-links{position:relative}
-      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
-      /* the base .nav-dd::after bridge would become a full-width strip once the
-         trigger is static — disable it; the mega's own ::before bridges the gap. */
-      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
-        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
-      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
-    }
-    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      padding-bottom:13px;margin-bottom:13px;
-      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
-    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-      white-space:normal;text-decoration:none;
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
-      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
-      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
-    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
-      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
-      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
-    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
-    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
-    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
-    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
-    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
-    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
-    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
-    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
-      white-space:normal;text-decoration:none;transition:background .15s ease}
-    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
-    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
-    .nav-mega .nm-tx{min-width:0}
-    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
-    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
-      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
-    @media (max-width:1080px) and (min-width:701px){
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
-      .nav-mega-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:700px){
-      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
-      .nav-mega-grid{grid-template-columns:1fr;gap:0}
-      .nav-mega-h{padding-top:9px}
-      /* the hamburger accordion caps each open dropdown at max-height:600px
-         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
-         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
-         Same specificity trick overrides theme.js's generic accordion-panel
-         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
-         submenus) with symmetric sides + top breathing room, so the feature
-         cards read centered under the trigger instead of crooked. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
-    </style>
+    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -694,28 +553,9 @@
         </a>
         
         
-        <a class="card" href="https://www.scmp.com/business/article/3361167/ikeas-china-remodelling-parent-firm-puts-eight-former-retail-sites-block?utm_source=rss_feed" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium" data-search="ikea’s china remodelling: parent firm puts 8 former retail sites on block  宜家中国布局调整：母公司挂牌出售8处原零售物业 ikea’s parent company ingka group has hired property consultancy jll as its sole sales agent to offload eight retail properties in mainland china, the multinational furniture brand’s largest asset disposal since it entered the market nearly 30 years ago.
-seven of the properties were ikea stores that ceased their operations in february. the remaining one, a site in guiyang in the southern province of guizhou, shut down in 2022 and has been vacant ever since, according to disclosure from jll last...  宜家母公司英格卡集团已聘请房地产咨询公司仲量联行为其独家销售代理，出售中国大陆八处零售物业。这是这家跨国家居品牌近30年前进入中国市场以来最大规模的资产处置。其中七处物业为宜家门店，已于今年2月停止运营，剩余一处为... scmp - business property consumer property 房地产 consumer 消费 512200.ss">
-          <div class="rank"><b>#15</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
-              
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>SCMP - Business</b></span>
-              <span class="chip imp-medium"><b>62</b>/100</span>
-            </div>
-            <h2 class="title"><span class="l-en">Ikea’s China remodelling: parent firm puts 8 former retail sites on block</span><span class="l-zh">宜家中国布局调整：母公司挂牌出售8处原零售物业</span></h2>
-            <p class="summary"><span class="l-en">Ikea’s parent company Ingka Group has hired property consultancy JLL as its sole sales agent to offload eight retail properties in mainland China, the multinational furniture brand’s largest asset disposal since it entered the market nearly 30 years ago.
-Seven of the properties were Ikea stores that ceased their operations in February. The remaining one, a site in Guiyang in the southern province of Guizhou, shut down in 2022 and has been vacant ever since, according to disclosure from JLL last...</span><span class="l-zh">宜家母公司英格卡集团已聘请房地产咨询公司仲量联行为其独家销售代理，出售中国大陆八处零售物业。这是这家跨国家居品牌近30年前进入中国市场以来最大规模的资产处置。其中七处物业为宜家门店，已于今年2月停止运营，剩余一处为...</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="chip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="chip tk">512200.SS</span></div>
-          </div>
-        </a>
-        
-        
         <a class="card" href="https://flash.jin10.com/detail/20260720173316920800" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium" data-search="港交所文件显示，中国石化(snp.n)于7月20日在其他交易所回购了65万股a股，金额为340万人民币；同日还回购了300万股h股，金额为1290万港元 hkex filing shows sinopec (snp.n) repurchased 650,000 a-shares on another exchange on july 20 for 3.4 million yuan; also repurchased 3 million h-shares for 12.9 million hkd on the same day 港交所文件显示，中国石化(snp.n)于7月20日在其他交易所回购了65万股a股，金额为340万人民币；同日还回购了300万股h股，金额为1290万港元 港交所文件显示，中国石化(snp.n)于7月20日在其他交易所回购了65万股a股，金额为340万人民币；同日还回购了300万股h股，金额为1290万港元。  港交所文件显示，中国石化(snp.n)于7月20日在其他交易所回购了65万股a股，金额为340万人民币；同日还回购了300万股h股，金额为1290万港元。 金十数据 markets yuan equity market 股票市场 yuan & fx 人民币与汇率 cny">
-          <div class="rank"><b>#16</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="rank"><b>#15</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
               
@@ -732,7 +572,7 @@ Seven of the properties were Ikea stores that ceased their operations in Februar
         
         <a class="card" href="https://wallstreetcn.com/livenews/3136770" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium" data-search="中国建筑：控股股东中建集团拟增持公司a股股份5亿元-10亿元 china state construction: controlling shareholder cscec group plans to increase its a-share holdings in the company by 500 million to 1 billion yuan 中国建筑：控股股东中建集团拟增持公司a股股份5亿元-10亿元 中国建筑公告，公司于2026年7月20日收到控股股东中建集团通知，中建集团拟自本公告披露之日起12个月内通过上海证券交易所交易系统以集中竞价交易方式增持公司a股股份，增持总金额不低于人民币5亿元，不超过人民币10亿元。  中国建筑公告，公司于2026年7月20日收到控股股东中建集团通知，中建集团拟自本公告披露之日起12个月内通过上海证券交易所交易系统以集中竞价交易方式增持公司a股股份，增持总金额不低于人民币5亿元，不超过人民币10亿元。 华尔街见闻 markets yuan equity market 股票市场 yuan & fx 人民币与汇率 cny 512880.ss">
-          <div class="rank"><b>#17</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="rank"><b>#16</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
               
@@ -749,7 +589,7 @@ Seven of the properties were Ikea stores that ceased their operations in Februar
         
         <a class="card" href="https://flash.jin10.com/detail/20260720172143711800" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium" data-search="仙鹤股份：实控人王敏文、王敏良拟增持不低于6000万元 xianhe co., ltd.: actual controllers wang minwen and wang minliang plan to increase holdings by no less than 60 million yuan 仙鹤股份：实控人王敏文、王敏良拟增持不低于6000万元 金十数据7月20日讯，仙鹤股份公告，公司实际控制人王敏文、王敏良计划以自有或自筹资金，自2026年7月21日至2027年1月20日通过上海证券交易所系统以集中竞价方式增持公司a股股份，合计增持金额不低于人民币6000万元（含）且不超过人民币1亿元（含）。  金十数据7月20日讯，仙鹤股份公告，公司实际控制人王敏文、王敏良计划以自有或自筹资金，自2026年7月21日至2027年1月20日通过上海证券交易所系统以集中竞价方式增持公司a股股份，合计增持金额不低于人民币6000万元（含）且不超过人民币1亿元（含）。 金十数据 markets yuan equity market 股票市场 yuan & fx 人民币与汇率 cny 512880.ss">
-          <div class="rank"><b>#18</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="rank"><b>#17</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
               
@@ -764,26 +604,9 @@ Seven of the properties were Ikea stores that ceased their operations in Februar
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3136669" target="_blank" rel="noopener"
-           data-theme="tech" data-importance="medium" data-search="a股收盘：上证50指数涨超3%，油气、煤炭板块集体走强 a-share close: sse 50 index rises over 3%; oil, gas and coal sectors strengthen collectively a股收盘：上证50指数涨超3%，油气、煤炭板块集体走强 1、市场全天宽幅震荡，三大指数涨跌互现。油气股集体大涨，中国海油、中曼石油、博迈科等涨停。煤炭板块拉升，淮北矿业、大有能源、兖矿能源等涨停。电力股反复走强，华银电力、华电辽能、立新能源等涨停。白酒股表现活跃，古井贡酒涨停，贵州茅台涨近6%。下跌方面，芯片股高开低走，德明利连续4日跌停；pcb概念股下挫，金安国纪等跌停。个股跌多涨少，沪深京三市超3700股飘绿，今日成交2.72万亿。截止收盘沪指涨0.85%，深成指跌0.71%，创业板指涨0.42%。 2、板块概念方面，油气、电力、煤炭、白酒等板块涨幅居前，电子特气、光刻机、pcb、存储芯片等板块跌幅居前。  1、市场全天宽幅震荡，三大指数涨跌互现。油气股集体大涨，中国海油、中曼石油、博迈科等涨停。煤炭板块拉升，淮北矿业、大有能源、兖矿能源等涨停。电力股反复走强，华银电力、华电辽能、立新能源等涨停。白酒股表现活跃，古井贡酒涨停，贵州茅台涨近6%。下跌方面，芯片股高开低走，德明利连续4日跌停；pcb概念股下挫，金安国纪等跌停。个股跌多涨少，沪深京三市超3700股飘绿，今日成交2.72万亿。截止收盘沪指涨0.85%，深成指跌0.71%，创业板指涨0.42%。 2、板块概念方面，油气、电力、煤炭、白酒等板块涨幅居前，电子特气、光刻机、pcb、存储芯片等板块跌幅居前。 华尔街见闻 markets tech_policy commodities equity market 股票市场 tech policy 科技政策 commodities 大宗商品 510300.ss ashr">
-          <div class="rank"><b>#19</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
-              
-              <span class="chip theme th-tech"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>54</b>/100</span>
-            </div>
-            <h2 class="title"><span class="l-en">A-share close: SSE 50 Index rises over 3%; oil, gas and coal sectors strengthen collectively</span><span class="l-zh">A股收盘：上证50指数涨超3%，油气、煤炭板块集体走强</span></h2>
-            <p class="summary"><span class="l-en">1、市场全天宽幅震荡，三大指数涨跌互现。油气股集体大涨，中国海油、中曼石油、博迈科等涨停。煤炭板块拉升，淮北矿业、大有能源、兖矿能源等涨停。电力股反复走强，华银电力、华电辽能、立新能源等涨停。白酒股表现活跃，古井贡酒涨停，贵州茅台涨近6%。下跌方面，芯片股高开低走，德明利连续4日跌停；PCB概念股下挫，金安国纪等跌停。个股跌多涨少，沪深京三市超3700股飘绿，今日成交2.72万亿。截止收盘沪指涨0.85%，深成指跌0.71%，创业板指涨0.42%。 2、板块概念方面，油气、电力、煤炭、白酒等板块涨幅居前，电子特气、光刻机、PCB、存储芯片等板块跌幅居前。</span><span class="l-zh">1、市场全天宽幅震荡，三大指数涨跌互现。油气股集体大涨，中国海油、中曼石油、博迈科等涨停。煤炭板块拉升，淮北矿业、大有能源、兖矿能源等涨停。电力股反复走强，华银电力、华电辽能、立新能源等涨停。白酒股表现活跃，古井贡酒涨停，贵州茅台涨近6%。下跌方面，芯片股高开低走，德明利连续4日跌停；PCB概念股下挫，金安国纪等跌停。个股跌多涨少，沪深京三市超3700股飘绿，今日成交2.72万亿。截止收盘沪指涨0.85%，深成指跌0.71%，创业板指涨0.42%。 2、板块概念方面，油气、电力、煤炭、白酒等板块涨幅居前，电子特气、光刻机、PCB、存储芯片等板块跌幅居前。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="chip"><span class="l-en">commodities</span><span class="l-zh">大宗商品</span></span><span class="chip tk">510300.SS</span><span class="chip tk">ASHR</span></div>
-          </div>
-        </a>
-        
-        
         <a class="card" href="https://wallstreetcn.com/livenews/3136709" target="_blank" rel="noopener"
            data-theme="growth" data-importance="medium" data-search="今年上半年霍尔果斯口岸汽车出口同比增长25.7% horgos port's auto exports up 25.7% year-on-year in h1 今年上半年霍尔果斯口岸汽车出口同比增长25.7% 据霍尔果斯海关统计，今年上半年，依托区位与通道优势，全国最大商品车陆路出口口岸——霍尔果斯口岸汽车出口贸易持续升温，出口汽车21.9万辆，同比增长25.7%，出口总量、增速均创同期新高，成为新疆外贸提质增效的核心增长点。  据霍尔果斯海关统计，今年上半年，依托区位与通道优势，全国最大商品车陆路出口口岸——霍尔果斯口岸汽车出口贸易持续升温，出口汽车21.9万辆，同比增长25.7%，出口总量、增速均创同期新高，成为新疆外贸提质增效的核心增长点。 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
-          <div class="rank"><b>#20</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="rank"><b>#18</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
               
@@ -800,7 +623,7 @@ Seven of the properties were Ikea stores that ceased their operations in Februar
         
         <a class="card" href="https://www.stcn.com/article/detail/4030241.html" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium" data-search="中控技术展示工业ai产品 zhongkong technology showcases industrial ai products 中控技术展示工业ai产品    证券时报 industrial tech_policy industry & manufacturing 工业与制造业 tech policy 科技政策 512880.ss">
-          <div class="rank"><b>#21</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="rank"><b>#19</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
               
@@ -815,9 +638,28 @@ Seven of the properties were Ikea stores that ceased their operations in Februar
         </a>
         
         
+        <a class="card" href="https://www.scmp.com/business/article/3361167/ikeas-china-remodelling-parent-firm-puts-eight-former-retail-sites-block?utm_source=rss_feed" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium" data-search="ikea’s china remodelling: parent firm puts 8 former retail sites on block  宜家中国布局调整：母公司挂牌出售8处原零售物业 ikea’s parent company ingka group has hired property consultancy jll as its sole sales agent to offload eight retail properties in mainland china, the multinational furniture brand’s largest asset disposal since it entered the market nearly 30 years ago.
+seven of the properties were ikea stores that ceased their operations in february. the remaining one, a site in guiyang in the southern province of guizhou, shut down in 2022 and has been vacant ever since, according to disclosure from jll last...  宜家母公司英格卡集团已聘请房地产咨询公司仲量联行为其独家销售代理，出售中国大陆八处零售物业。这是这家跨国家居品牌近30年前进入中国市场以来最大规模的资产处置。其中七处物业为宜家门店，已于今年2月停止运营，剩余一处为... scmp - business property consumer property 房地产 consumer 消费 512200.ss">
+          <div class="rank"><b>#20</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>SCMP - Business</b></span>
+              <span class="chip imp-medium"><b>62</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">Ikea’s China remodelling: parent firm puts 8 former retail sites on block</span><span class="l-zh">宜家中国布局调整：母公司挂牌出售8处原零售物业</span></h2>
+            <p class="summary"><span class="l-en">Ikea’s parent company Ingka Group has hired property consultancy JLL as its sole sales agent to offload eight retail properties in mainland China, the multinational furniture brand’s largest asset disposal since it entered the market nearly 30 years ago.
+Seven of the properties were Ikea stores that ceased their operations in February. The remaining one, a site in Guiyang in the southern province of Guizhou, shut down in 2022 and has been vacant ever since, according to disclosure from JLL last...</span><span class="l-zh">宜家母公司英格卡集团已聘请房地产咨询公司仲量联行为其独家销售代理，出售中国大陆八处零售物业。这是这家跨国家居品牌近30年前进入中国市场以来最大规模的资产处置。其中七处物业为宜家门店，已于今年2月停止运营，剩余一处为...</span></p>
+            <div class="intel"><span class="chip"><span class="l-en">property</span><span class="l-zh">房地产</span></span><span class="chip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="chip tk">512200.SS</span></div>
+          </div>
+        </a>
+        
+        
         <a class="card" href="https://www.pbc.gov.cn/en/3688110/3688172/2026/2026072016382167123/index.html" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium" data-search="deputy governor xuan changneng speaks with john berrigan, director-general for financial stability, financial services and capital markets union at the european commission  副行长宣昌能与欧盟委员会金融稳定、金融服务与资本市场联盟总干事约翰·贝里根会谈    pboc pboc_liquidity markets pboc & liquidity 央行与流动性 equity market 股票市场 510300.ss">
-          <div class="rank"><b>#22</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="rank"><b>#21</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
               
@@ -828,6 +670,23 @@ Seven of the properties were Ikea stores that ceased their operations in Februar
             <h2 class="title"><span class="l-en">Deputy Governor Xuan Changneng Speaks with John Berrigan, Director-General for Financial Stability, Financial Services and Capital Markets Union at the European Commission</span><span class="l-zh">副行长宣昌能与欧盟委员会金融稳定、金融服务与资本市场联盟总干事约翰·贝里根会谈</span></h2>
             
             <div class="intel"><span class="chip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip tk">510300.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="card" href="https://wallstreetcn.com/livenews/3136669" target="_blank" rel="noopener"
+           data-theme="tech" data-importance="medium" data-search="a股收盘：上证50指数涨超3%，油气、煤炭板块集体走强 a-share close: sse 50 index rises over 3%; oil, gas and coal sectors strengthen collectively a股收盘：上证50指数涨超3%，油气、煤炭板块集体走强 1、市场全天宽幅震荡，三大指数涨跌互现。油气股集体大涨，中国海油、中曼石油、博迈科等涨停。煤炭板块拉升，淮北矿业、大有能源、兖矿能源等涨停。电力股反复走强，华银电力、华电辽能、立新能源等涨停。白酒股表现活跃，古井贡酒涨停，贵州茅台涨近6%。下跌方面，芯片股高开低走，德明利连续4日跌停；pcb概念股下挫，金安国纪等跌停。个股跌多涨少，沪深京三市超3700股飘绿，今日成交2.72万亿。截止收盘沪指涨0.85%，深成指跌0.71%，创业板指涨0.42%。 2、板块概念方面，油气、电力、煤炭、白酒等板块涨幅居前，电子特气、光刻机、pcb、存储芯片等板块跌幅居前。  1、市场全天宽幅震荡，三大指数涨跌互现。油气股集体大涨，中国海油、中曼石油、博迈科等涨停。煤炭板块拉升，淮北矿业、大有能源、兖矿能源等涨停。电力股反复走强，华银电力、华电辽能、立新能源等涨停。白酒股表现活跃，古井贡酒涨停，贵州茅台涨近6%。下跌方面，芯片股高开低走，德明利连续4日跌停；pcb概念股下挫，金安国纪等跌停。个股跌多涨少，沪深京三市超3700股飘绿，今日成交2.72万亿。截止收盘沪指涨0.85%，深成指跌0.71%，创业板指涨0.42%。 2、板块概念方面，油气、电力、煤炭、白酒等板块涨幅居前，电子特气、光刻机、pcb、存储芯片等板块跌幅居前。 华尔街见闻 markets tech_policy commodities equity market 股票市场 tech policy 科技政策 commodities 大宗商品 510300.ss ashr">
+          <div class="rank"><b>#22</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-tech"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
+              <span class="chip"><b>华尔街见闻</b></span>
+              <span class="chip imp-medium"><b>54</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">A-share close: SSE 50 Index rises over 3%; oil, gas and coal sectors strengthen collectively</span><span class="l-zh">A股收盘：上证50指数涨超3%，油气、煤炭板块集体走强</span></h2>
+            <p class="summary"><span class="l-en">1、市场全天宽幅震荡，三大指数涨跌互现。油气股集体大涨，中国海油、中曼石油、博迈科等涨停。煤炭板块拉升，淮北矿业、大有能源、兖矿能源等涨停。电力股反复走强，华银电力、华电辽能、立新能源等涨停。白酒股表现活跃，古井贡酒涨停，贵州茅台涨近6%。下跌方面，芯片股高开低走，德明利连续4日跌停；PCB概念股下挫，金安国纪等跌停。个股跌多涨少，沪深京三市超3700股飘绿，今日成交2.72万亿。截止收盘沪指涨0.85%，深成指跌0.71%，创业板指涨0.42%。 2、板块概念方面，油气、电力、煤炭、白酒等板块涨幅居前，电子特气、光刻机、PCB、存储芯片等板块跌幅居前。</span><span class="l-zh">1、市场全天宽幅震荡，三大指数涨跌互现。油气股集体大涨，中国海油、中曼石油、博迈科等涨停。煤炭板块拉升，淮北矿业、大有能源、兖矿能源等涨停。电力股反复走强，华银电力、华电辽能、立新能源等涨停。白酒股表现活跃，古井贡酒涨停，贵州茅台涨近6%。下跌方面，芯片股高开低走，德明利连续4日跌停；PCB概念股下挫，金安国纪等跌停。个股跌多涨少，沪深京三市超3700股飘绿，今日成交2.72万亿。截止收盘沪指涨0.85%，深成指跌0.71%，创业板指涨0.42%。 2、板块概念方面，油气、电力、煤炭、白酒等板块涨幅居前，电子特气、光刻机、PCB、存储芯片等板块跌幅居前。</span></p>
+            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="chip"><span class="l-en">commodities</span><span class="l-zh">大宗商品</span></span><span class="chip tk">510300.SS</span><span class="chip tk">ASHR</span></div>
           </div>
         </a>
         
