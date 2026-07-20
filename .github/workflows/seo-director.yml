@@ -78,15 +78,9 @@ jobs:
       - name: summary
         if: always()
         run: |
-          if [ -f data/marketing/seo/seo_scorecard.json ]; then
-            python -c "
-import json
-sc = json.load(open('data/marketing/seo/seo_scorecard.json'))
-print('health_score:', sc.get('health_score'))
-counts = sc.get('issue_counts_by_severity', {})
-print('issues:', counts)
-deltas = sc.get('deltas_vs_prior')
-if deltas:
-    print('deltas_vs_prior:', deltas)
-" 2>/dev/null || true
+          SC=data/marketing/seo/seo_scorecard.json
+          if [ -f "$SC" ]; then
+            python -c "import json; sc=json.load(open('data/marketing/seo/seo_scorecard.json')); print('health_score:', sc.get('health_score')); print('issues:', sc.get('issue_counts_by_severity')); print('deltas_vs_prior:', sc.get('deltas_vs_prior'))" || true
+          else
+            echo "no scorecard artifact (dry run or audit failed)"
           fi

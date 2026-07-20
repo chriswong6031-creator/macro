@@ -869,3 +869,21 @@ class TestWorkOrdersHonesty:
         # order count must be the TRUE class count, not the exemplar-list length.
         mfs = next(o for o in wo["orders"] if o["class"] == "missing_from_sitemap")
         assert mfs["pages_count"] == audit["issue_counts_by_class"]["missing_from_sitemap"]
+
+
+class TestWorkflowFileParses:
+    """Regression guard: #3141's workflow shipped with un-indented Python inside a
+    `run: |` block, which ends the YAML block scalar and invalidates the whole
+    workflow (GitHub then rejects workflow_dispatch and logs 0s push failures).
+    Any edit to seo-director.yml must keep it parseable with the right triggers."""
+
+    def test_seo_director_workflow_yaml(self):
+        import yaml
+        wf = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "seo-director.yml"
+        doc = yaml.safe_load(wf.read_text())
+        triggers = doc.get(True) or doc.get("on")  # yaml 1.1 parses bare `on` as True
+        assert set(triggers) == {"schedule", "workflow_dispatch"}
+        job = doc["jobs"]["seo-audit"]
+        assert "SEO_DIRECTOR_ENABLED" in job["if"] and "workflow_dispatch" in job["if"]
+        adds = [st.get("run", "") for st in job["steps"] if "git add" in st.get("run", "")]
+        assert adds and all("data/marketing/seo" in a for a in adds)
