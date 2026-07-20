@@ -1491,12 +1491,11 @@ def test_research_system_prompt_contains_directive():
     """_build_system_prompt('research') prepends the research directive to the base prompt."""
     prompt = gw._build_system_prompt("research")
     assert "RESEARCH MODE" in prompt
-    assert "Regime" in prompt
-    assert "Contradictions" in prompt
-    assert "is_context_only" in prompt.lower() or "STANCE" in prompt
-    # Base prompt governance content is also present (answer-first prompt keeps the
-    # never-originate guardrail under a "HOW TO STAY HONEST" section).
-    assert "never originate" in prompt.lower()
+    assert "regime" in prompt.lower()
+    assert "disagree" in prompt.lower() or "Tensions" in prompt   # the divergences thread
+    assert "STANCE" in prompt
+    # Base prompt governance content is also present (never-invent guardrail).
+    assert "never invent" in prompt.lower()
 
 
 def test_chat_mode_system_prompt_unchanged():
@@ -1504,8 +1503,11 @@ def test_chat_mode_system_prompt_unchanged():
     prompt = gw._build_system_prompt("chat")
     assert "RESEARCH MODE" not in prompt
     # Answer-first prompt: mission + honesty guardrail both present.
-    assert "ANSWER THE QUESTION" in prompt
-    assert "never originate" in prompt.lower()
+    assert "YOUR JOB" in prompt
+    assert "never invent" in prompt.lower()
+    # Plain-language law (W-voice): the prompt bans machine text + mandates translation.
+    assert "NEVER use machine text" in prompt
+    assert "Turn every number into meaning" in prompt
     # Non-terminal pages must NOT be told about the chart-control tools.
     assert "CHART CONTROL" not in prompt
 
