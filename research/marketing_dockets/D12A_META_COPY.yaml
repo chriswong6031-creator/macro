@@ -1,0 +1,290 @@
+# D12A ratified meta copy table — consumed by PR B (mechanical application).
+# Law (see D12A R6): seo_title/seo_desc are EN plain text (no t()/markup, no internal
+# state names, no untranslated stats, never the word "validated"); <title> tags are NOT
+# edited in W1. seo_path = the page filename. Descriptions target ~120-160 chars.
+# Pages already carrying full _seo_head (macro, us_stocks, china, hk, canada, bonds,
+# forex, cycle, commodities, macro_context, market_structure, movers, transmission,
+# china_mechanics, stage_analysis, china_stocks, hk_stocks, index, confluence_screener)
+# are NOT listed — leave them untouched.
+# If a template already emits an inline <meta name="description"> or canonical, REMOVE
+# the inline tag when adding the _seo_head include (no duplicate meta).
+
+pages:
+  markets.html:
+    seo_title: "Global Market Cycles — Mastermind"
+    seo_desc: "Where each major market sits in its cycle — trend, breadth and regime reads for the US, China, Hong Kong, Canada, Europe and Japan, updated through the latest close."
+  sector_cycles.html:
+    seo_title: "US Sector Cycles — Mastermind"
+    seo_desc: "Every US sector placed on its cycle clock — who is early, who is late, and where leadership is rotating next. Updated nightly from price, breadth and flows."
+  sector_central.html:
+    seo_title: "US Sector Central — Mastermind"
+    seo_desc: "One desk for every US sector: trend, momentum, breadth and rotation signals, ranked and updated nightly."
+  sector_central_china.html:
+    seo_title: "China Sector Central — Mastermind"
+    seo_desc: "China's sectors on one desk — trend, momentum and rotation reads across the A-share sector map, updated after each Asia close."
+  sector_cycles_china.html:
+    seo_title: "China Sector Cycles — Mastermind"
+    seo_desc: "Every China A-share sector placed on its cycle clock — early, late, and rotating leadership, updated after each Asia close."
+  country_cycles.html:
+    seo_title: "Country Cycles — Mastermind"
+    seo_desc: "Country stock markets ranked by cycle position — who is basing, who is trending, who is topping — across major world markets, updated weekly."
+  state_of_themes.html:
+    seo_title: "State of Themes — Mastermind"
+    seo_desc: "The market's themes ranked by health — which stories are gaining money and breadth, which are fading. Updated nightly."
+  measurement.html:
+    seo_title: "Cycle Measurement Hub — Mastermind"
+    seo_desc: "How Mastermind measures market cycles — the gauges, their current readings, and what each one is saying right now."
+  learn.html:
+    seo_title: "Learn: Gamma Weather — Mastermind"
+    seo_desc: "A plain-English field manual for dealer positioning — what gamma, walls and vol surfaces mean, and how to read the options weather before it moves stocks."
+  darkpool.html:
+    seo_title: "Dark Pool Desk — Mastermind"
+    seo_desc: "Off-exchange and short-volume tracking — where dark pool activity concentrates and what it says about real positioning. Updated nightly."
+  subsectors.html:
+    seo_title: "US Subsector Confluence — Mastermind"
+    seo_desc: "US subsectors ranked by signal confluence — where trend, breadth and flows agree, and which groups are quietly turning. Updated nightly."
+  subsectors_china.html:
+    seo_title: "China Subsector Confluence — Mastermind"
+    seo_desc: "China concept and subsector boards ranked by signal confluence — where money and momentum agree. Updated after each Asia close."
+  baskets.html:
+    seo_title: "Thematic Stock Baskets vs S&P 500 — Mastermind"
+    seo_desc: "Hand-built thematic stock baskets tracked against the S&P 500 — dozens of themes with leadership health and member signals, updated nightly."
+  baskets_china.html:
+    seo_title: "China Thematic Baskets vs CSI 300 — Mastermind"
+    seo_desc: "China thematic baskets tracked against the CSI 300 — theme scores, leadership health and entry radar, updated after each Asia close."
+  baskets_hk.html:
+    seo_title: "Hong Kong Thematic Baskets vs HSI — Mastermind"
+    seo_desc: "Hong Kong thematic baskets tracked against the Hang Seng — theme performance and leadership health, updated after each Asia close."
+  baskets_canada.html:
+    seo_title: "Canada Thematic Baskets vs TSX — Mastermind"
+    seo_desc: "Canadian thematic baskets tracked against the S&P/TSX — theme performance and leadership health, updated nightly."
+  baskets_intl.html:
+    seo_title: "International Baskets — Mastermind"
+    seo_desc: "International thematic baskets tracked against world ex-US benchmarks — where global themes are leading, updated nightly."
+  factors.html:
+    seo_title: "Equity Factor Rankings — Mastermind"
+    seo_desc: "Value, quality, momentum, low-vol and more — US equity factors ranked by current performance with seasonality context. Updated nightly."
+  congress_trades.html:
+    seo_title: "Congressional Trading Tracker — Mastermind"
+    seo_desc: "Recent stock trades by members of Congress with entry-timing context and member track records, updated as new filings land."
+  special_situations.html:
+    seo_title: "Special Situations Desk — Mastermind"
+    seo_desc: "Event-driven setups — washouts, reversals and catalysts — screened and tiered nightly with plain-word setup scores."
+  reports.html:
+    seo_title: "Research Reports — Mastermind"
+    seo_desc: "Long-form Mastermind research — macro turning points, policy shocks and market narratives, with receipts and follow-ups."
+  sector_heatmap.html:
+    seo_title: "Market Heatmaps — Mastermind"
+    seo_desc: "S&P 500 and theme heatmaps — today's winners and losers at a glance, sized by market cap. Updated nightly."
+  crossasset.html:
+    seo_title: "Cross-Asset Desk — Mastermind"
+    seo_desc: "Is it one trade or many? Trend, dollar and plumbing reads across stocks, bonds, commodities and FX. Updated nightly."
+  policy_watch.html:
+    seo_title: "Fed & Policy Watch — Mastermind"
+    seo_desc: "The Fed's path, real-time policy expectations and what would change them — read from market prices, updated daily."
+  allocation.html:
+    seo_title: "US Theme Allocation — Mastermind"
+    seo_desc: "Where money is rotating across US themes — narrative strength, crowding and entry timing to guide allocation. Updated nightly."
+  allocation_china.html:
+    seo_title: "China Theme Allocation — Mastermind"
+    seo_desc: "Where money is rotating across China A-share themes — narrative strength and entry timing to guide allocation, after each Asia close."
+  allocation_hk.html:
+    seo_title: "Hong Kong Theme Allocation — Mastermind"
+    seo_desc: "Where money is rotating across Hong Kong themes — narrative strength and entry timing to guide allocation, after each Asia close."
+  allocation_canada.html:
+    seo_title: "Canada Theme Allocation — Mastermind"
+    seo_desc: "Where money is rotating across Canadian themes — narrative strength and entry timing to guide allocation. Updated nightly."
+  smart_money.html:
+    seo_title: "13F Smart Money Desk — Mastermind"
+    seo_desc: "What top funds actually did last quarter — new stakes, exits and conviction shifts with four-quarter fund memory, from 13F filings."
+  etfs.html:
+    seo_title: "Real Fund Moves — Mastermind"
+    seo_desc: "Which stocks real money managers are accumulating — fund ownership moves ranked and updated with each filing cycle."
+  fund_index.html:
+    seo_title: "Fund Directory: 13F Ownership — Mastermind"
+    seo_desc: "Browse tracked funds — 13F holdings, conviction shifts and four-quarter memory for each manager Mastermind follows."
+  discovery.html:
+    seo_title: "Top Picks — Mastermind"
+    seo_desc: "The highest-conviction setups across every Mastermind signal desk — holistic scores plus entry timing, refreshed nightly."
+  strategies.html:
+    seo_title: "Strategy Scorecards — Mastermind"
+    seo_desc: "Every Mastermind strategy with its live track record — what it trades, when it works, and how it is doing now."
+  commodity_strategies.html:
+    seo_title: "Commodity Strategy Scorecards — Mastermind"
+    seo_desc: "Rules-based commodity strategies with live track records — what each trades and how it is doing now."
+  china_strategies.html:
+    seo_title: "China Strategy Scorecards — Mastermind"
+    seo_desc: "Rules-based China A-share strategies with live track records — what each trades and how it is doing now."
+  btc_strategy.html:
+    seo_title: "BTC Strategy: Bitcoin Vector — Mastermind"
+    seo_desc: "A rules-based Bitcoin strategy — regime reads, allocation calls and full track record, updated daily."
+  vector.html:
+    seo_title: "Bitcoin Vector — Mastermind"
+    seo_desc: "Bitcoin's regime on one page — trend, cycle and market context with a plain-word stance. Updated daily."
+  vector_allocation.html:
+    seo_title: "Bitcoin Vector Allocation — Mastermind"
+    seo_desc: "How Bitcoin Vector sizes exposure — the current allocation call and the regime evidence behind it."
+  spvector.html:
+    seo_title: "US Allocation Strategy: S&P Vector — Mastermind"
+    seo_desc: "A rules-based S&P 500 allocation strategy — macro vector reads, current stance and track record."
+  news.html:
+    seo_title: "News Intelligence — Mastermind"
+    seo_desc: "Market-moving news distilled into deltas — what changed, which assets care, and how narratives are shifting through the day."
+  narrative_radar.html:
+    seo_title: "China Narrative Radar — Mastermind"
+    seo_desc: "China's hottest narrative baskets tracked closely — which stories are igniting and which are exhausting, after each Asia close."
+  china_radar.html:
+    seo_title: "China Divergence Radar — Mastermind"
+    seo_desc: "Real activity vs price across China's market — where the tape and the data disagree, updated after each Asia close."
+  radar.html:
+    seo_title: "Divergence Radar — Mastermind"
+    seo_desc: "Real activity vs price — where fundamentals and the tape disagree across US markets. Updated nightly."
+  impulse.html:
+    seo_title: "Impulse Tracker — Mastermind"
+    seo_desc: "An early-ignition momentum screen — stocks and groups just starting to move, surfaced before the crowd. Updated nightly."
+  leader_radar.html:
+    seo_title: "Leader Radar — Mastermind"
+    seo_desc: "The early-entry desk — emerging leaders ranked by leadership quality and entry timing. Updated nightly."
+  flow_desk.html:
+    seo_title: "China Flow Heatmap & Market Tide — Mastermind"
+    seo_desc: "Group-level money flow across China's market — the tide, the leaders and the laggards, updated after each Asia close."
+  flow_leaders.html:
+    seo_title: "Flow Leaders — Mastermind"
+    seo_desc: "Stocks leading on real money flow in China and Hong Kong — ranked, tiered and updated after each Asia close."
+  flow_velocity.html:
+    seo_title: "Capital Flow Velocity — Mastermind"
+    seo_desc: "How fast money is moving through China and Hong Kong groups — acceleration, rotation and exhaustion reads."
+  intraday_flow.html:
+    seo_title: "Intraday Flow: China — Mastermind"
+    seo_desc: "Intraday money-flow tracking for China's market — what is being bought and sold during the session."
+  gex.html:
+    seo_title: "Options Desk: GEX, Walls & Vol Surface — Mastermind"
+    seo_desc: "Gamma exposure, option walls and the vol surface for major indexes and stocks — where dealers pin and where moves accelerate."
+  options_screener.html:
+    seo_title: "Options Screener — Mastermind"
+    seo_desc: "Screen options by IV, gamma exposure and flow — find where positioning is extreme. Updated daily."
+  seasonality.html:
+    seo_title: "Factor Seasonality — Mastermind"
+    seo_desc: "Which equity factors work in which months — Ken French monthly factor data turned into a practical seasonal map."
+  demand.html:
+    seo_title: "Demand Desk — Mastermind"
+    seo_desc: "Demand vs expectations across the economy — where real activity beats or misses what markets price, updated as data lands."
+  history.html:
+    seo_title: "US Regime History — Mastermind"
+    seo_desc: "Every US market regime call on the record — when regimes flipped, what was said, and how it played out."
+  china_history.html:
+    seo_title: "China Regime History — Mastermind"
+    seo_desc: "Every China market regime call on the record — when regimes flipped and how each call played out."
+  hk_history.html:
+    seo_title: "Hong Kong Regime History — Mastermind"
+    seo_desc: "Every Hong Kong market regime call on the record — when regimes flipped and how each call played out."
+  canada_history.html:
+    seo_title: "Canada Regime History — Mastermind"
+    seo_desc: "Every Canada market regime call on the record — when regimes flipped and how each call played out."
+  macro_signals.html:
+    seo_title: "Macro Signals Board — Mastermind"
+    seo_desc: "The full macro signal board — every indicator, its current reading and its plain-word meaning. Updated nightly."
+  signal_lab.html:
+    seo_title: "Signal Lab — Mastermind"
+    seo_desc: "Does each signal actually work? Hit rates, forward returns and honest nulls for every signal Mastermind runs."
+  alt_data.html:
+    seo_title: "Alternative Data Desk — Mastermind"
+    seo_desc: "Alternative-data signals — hiring, web and activity reads — turned into market context. Updated nightly."
+  china_altdata.html:
+    seo_title: "China Alternative Data — Mastermind"
+    seo_desc: "Alternative-data reads on China's economy and market — activity, sentiment and flows beyond the official prints."
+  china_intel.html:
+    seo_title: "China Intelligence — Mastermind"
+    seo_desc: "The China desk brief — policy, flows, sectors and narratives in one nightly intelligence read."
+  china_news.html:
+    seo_title: "China News Feed — Mastermind"
+    seo_desc: "China market news distilled — what moved, why it matters and which groups care, through each session."
+  china_policy_watch.html:
+    seo_title: "PBoC & Policy Watch — Mastermind"
+    seo_desc: "China's policy pulse — central bank operations, stimulus signals and what they mean for A-shares. Updated daily."
+  china_sector_desk.html:
+    seo_title: "China Sector Desk — Mastermind"
+    seo_desc: "China's sectors ranked and read — trend, flow and rotation on one desk, updated after each Asia close."
+  china_special_situations.html:
+    seo_title: "China Special Situations — Mastermind"
+    seo_desc: "Event-driven setups in China's market — washouts, reversals and catalysts, screened after each Asia close."
+  subsector_rotation.html:
+    seo_title: "US Subsector Rotation — Mastermind"
+    seo_desc: "Which US subsectors money is rotating into and out of — rotation maps updated nightly."
+  subsector_rotation_china.html:
+    seo_title: "China Subsector Rotation — Mastermind"
+    seo_desc: "Which China subsectors money is rotating into and out of — rotation maps updated after each Asia close."
+  masterminds.html:
+    seo_title: "Mastermind Strategies — Mastermind"
+    seo_desc: "The flagship Mastermind strategies — what each one trades, its live stance and its record."
+  methodology.html:
+    seo_title: "Methodology — Mastermind"
+    seo_desc: "How Mastermind computes its signals — factor labs, baskets, seasonality and cycle gauges, documented plainly."
+  whitehouse.html:
+    seo_title: "White House Watch — Mastermind"
+    seo_desc: "Policy moves from the White House read for markets — executive actions, trade policy and what reprices."
+  odds.html:
+    seo_title: "Odds Desk: Historical Base Rates — Mastermind"
+    seo_desc: "What usually happens next — historical base rates for the current market setup, computed from decades of data."
+  anticipation.html:
+    seo_title: "Anticipation: Forward Outcome Cones — Mastermind"
+    seo_desc: "Multi-horizon forward outcome cones — the range of likely paths for major assets, drawn from historical analogs."
+  foresight.html:
+    seo_title: "Thematic Foresight Desk — Mastermind"
+    seo_desc: "Early thematic signals ranked before they become consensus stories. Updated nightly."
+  spr.html:
+    seo_title: "Strategic Petroleum Reserve Tracker — Mastermind"
+    seo_desc: "US Strategic Petroleum Reserve levels, releases and refills — tracked against oil prices. Updated weekly."
+  intl.html:
+    seo_title: "International Economies — Mastermind"
+    seo_desc: "Major economies at a glance — growth, inflation and market regime reads beyond the US. Updated weekly."
+  intl_stocks.html:
+    seo_title: "International Stock Boards — Mastermind"
+    seo_desc: "Stock boards for major non-US markets — trend and regime context by country. Updated weekly."
+  hk_heatmap.html:
+    seo_title: "Hong Kong Stock Heatmap — Mastermind"
+    seo_desc: "Hong Kong stocks at a glance — today's winners and losers sized by market cap, after each close."
+  china_heatmap.html:
+    seo_title: "China A-Share Heatmap — Mastermind"
+    seo_desc: "China A-shares at a glance — today's winners and losers sized by market cap, after each close."
+  canada_heatmap.html:
+    seo_title: "Canada TSX Heatmap — Mastermind"
+    seo_desc: "TSX stocks at a glance — today's winners and losers sized by market cap. Updated nightly."
+  advanced.html:
+    seo_title: "Quant Lab — Mastermind"
+    seo_desc: "Mastermind's quant lab — advanced indicators, experiments and diagnostic boards for power users."
+  watchlist.html:
+    seo_title: "Watchlist & Portfolio — Mastermind"
+    seo_desc: "Your list, your holdings, their signals — track any stock with Mastermind's full signal stack attached. Free account."
+  aibrief.html:
+    seo_title: "AI Daily Brief — Mastermind"
+    seo_desc: "The market day in plain words — an AI-drafted, engine-grounded daily brief covering regimes, movers and what changed."
+  ai_desk.html:
+    seo_title: "AI Desk — Mastermind"
+    seo_desc: "AI-surfaced market intelligence — thematic reads and daily context, grounded in Mastermind's deterministic engines."
+  alerts.html:
+    seo_title: "Alert Command Center — Mastermind"
+    seo_desc: "What the tape is saying, ranked and triaged — every triggered alert with its meaning, through the day."
+  cn_reversal_sleeve.html:
+    seo_title: "CN Reversal Sleeve — Mastermind"
+    seo_desc: "A monthly-rebalanced contrarian China basket — the portfolio, its rules and its record. A portfolio, not stock tips."
+  china_lookup.html:
+    seo_title: "China Stock Lookup — Mastermind"
+    seo_desc: "Look up any China A-share — regime, stage and signal context on demand."
+
+# Multi-page family patterns — builder substitutes {name} from each page's context.
+family_patterns:
+  fund:   # fund_*.html (52 pages) — {name} = fund display name
+    seo_title: "{name} 13F Holdings & Moves — Mastermind"
+    seo_desc: "{name}'s latest 13F — top holdings, new stakes, exits and conviction shifts, with four-quarter memory. Updated each filing cycle."
+  strategy:   # strategy_*.html (46 pages) — {name} = strategy display name
+    seo_title: "{name} — Strategy Scorecard — Mastermind"
+    seo_desc: "The {name} strategy — rules, live stance and full track record, updated with each close."
+  report:   # report_*.html (6 pages) — title from report registry; desc = the report's
+            # own visible lede/subtitle, truncated ~155 chars (never invent content).
+    seo_title: "{report_title} — Mastermind Research"
+    seo_desc: "{report_lede}"
+
+# Rules for pages found in site/ but not listed above (e.g. lab pages): default
+# seo_title = existing <title> stripped of dates; seo_desc = one honest sentence from
+# the page's own hero/subtitle text; flag any page where no honest sentence exists.
