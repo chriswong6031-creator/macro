@@ -5,7 +5,7 @@
 
 {% block art_kicker %}{{ t('Core Thesis · Macro &amp; Thematic Strategy · Sequel to <a href="report_ai_master_plan.html">The AI Master Plan</a>', '核心论点 · 宏观与主题策略 · <a href="report_ai_master_plan.html">《AI 总体规划》</a>续篇') }}{% endblock %}
 
-{% block head_extra %}
+{% block head_extra %}{{ super() }}
 <style>
 {% raw %}
   /* ===== The Second Act — figures, stat band, pull-quote, evidence chips, hero aurora ===== */

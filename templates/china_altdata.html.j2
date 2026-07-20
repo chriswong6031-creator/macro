@@ -11,6 +11,13 @@
 
 {% block title %}Alternative Data — Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "China Alternative Data — Mastermind" %}
+{% set seo_desc = "Alternative-data reads on China's economy and market — activity, sentiment and flows beyond the official prints." %}
+{% set seo_path = "china_altdata.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .ad-hero { max-width:1060px; margin:18px auto 0; }
   .ad-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }

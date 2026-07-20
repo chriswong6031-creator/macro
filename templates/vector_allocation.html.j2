@@ -14,6 +14,8 @@
 {% include "_interfonts.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);else document.documentElement.setAttribute('data-theme','dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Bitcoin Vector — Allocation Strategy</title>
+{% set seo_title = "Bitcoin Vector Allocation — Mastermind" %}{% set seo_desc = "How Bitcoin Vector sizes exposure — the current allocation call and the regime evidence behind it." %}{% set seo_path = "vector_allocation.html" %}
+{% include "_seo_head.html.j2" %}
 {% include '_plotly_head.html.j2' %}
 <style>
 :root{

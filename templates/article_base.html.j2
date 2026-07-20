@@ -5,6 +5,13 @@
 
 {% block title %}{{ report.title_en }} — Research Reports{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = report.title_en ~ " — Mastermind Research" %}
+{% set seo_desc = (report.dek_en or '')[:155] %}
+{% set seo_path = report.slug ~ ".html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   /* ---------- article layout ---------- */
   .crumb { max-width:1060px; margin:16px auto 0; font-size:12.5px; }

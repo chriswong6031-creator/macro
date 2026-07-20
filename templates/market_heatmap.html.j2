@@ -7,6 +7,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ mk.title }} — Market Intelligence</title>
+{%- if mk.key == 'hk' %}
+{% set seo_title = "Hong Kong Stock Heatmap — Mastermind" %}{% set seo_desc = "Hong Kong stocks at a glance — today's winners and losers sized by market cap, after each close." %}{% set seo_path = "hk_heatmap.html" %}
+{%- elif mk.key == 'china' %}
+{% set seo_title = "China A-Share Heatmap — Mastermind" %}{% set seo_desc = "China A-shares at a glance — today's winners and losers sized by market cap, after each close." %}{% set seo_path = "china_heatmap.html" %}
+{%- elif mk.key == 'canada' %}
+{% set seo_title = "Canada TSX Heatmap — Mastermind" %}{% set seo_desc = "TSX stocks at a glance — today's winners and losers sized by market cap. Updated nightly." %}{% set seo_path = "canada_heatmap.html" %}
+{%- else %}
+{% set seo_title = mk.title ~ " — Mastermind" %}{% set seo_path = mk.key ~ "_heatmap.html" %}
+{%- endif %}
+{% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>

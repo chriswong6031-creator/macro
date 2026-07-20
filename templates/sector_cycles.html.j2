@@ -12,7 +12,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Sector Cycle Intelligence — Mastermind</title>
-<meta name="description" content="Every US sector ETF on one cycle clock — real price (rebased / log) with a cycle-position toggle, auto-detected peaks & troughs, the phase each sector sits in (topping · expanding · rolling over · bottoming), and the story behind each move.">
+{% set seo_title = "US Sector Cycles — Mastermind" %}{% set seo_desc = "Every US sector placed on its cycle clock — who is early, who is late, and where leadership is rotating next. Updated nightly from price, breadth and flows." %}{% set seo_path = "sector_cycles.html" %}
+{% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css">

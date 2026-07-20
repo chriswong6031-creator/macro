@@ -5,6 +5,13 @@
 
 {% block title %}China Special Situations — Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "China Special Situations — Mastermind" %}
+{% set seo_desc = "Event-driven setups in China's market — washouts, reversals and catalysts, screened after each Asia close." %}
+{% set seo_path = "china_special_situations.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .ss-hero { max-width:1060px; margin:18px auto 0; }
   .ss-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }

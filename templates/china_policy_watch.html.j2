@@ -8,6 +8,13 @@
 
 {% block title %}PBoC & Policy Watch — Macro Dashboard{% endblock %}
 
+{%- block head_extra %}
+{% set seo_title = "PBoC & Policy Watch — Mastermind" %}
+{% set seo_desc = "China's policy pulse — central bank operations, stimulus signals and what they mean for A-shares. Updated daily." %}
+{% set seo_path = "china_policy_watch.html" %}
+{%- include "_seo_head.html.j2" %}
+{%- endblock %}
+
 {% block base_css %}
   .pw-hero { max-width:1060px; margin:18px auto 0; }
   .pw-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
