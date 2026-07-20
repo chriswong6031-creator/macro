@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Learn — Gamma Weather · a field manual for dealer-positioning boards</title>
+<meta name="description" content="An interactive field manual for reading a dealer-positioning (gamma-levels) board. Positioning, not prophecy — display-tier education, never advice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Besley:wght@600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--chartroom:#0F1520;--squall:#182130;--squall2:#1c2635;--paper:#E9E4D8;--graphite:#8A94A6;
+--glacier:#5FD4C0;--ember:#FF8A5C;--hair:rgba(233,228,216,0.09);--bezel:rgba(255,255,255,0.04);--regime-hue:var(--glacier);--ink:#0c111a}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Public Sans',system-ui,-apple-system,sans-serif;color:var(--paper);background:var(--chartroom);
+line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--graphite)}
+h1,h2.disp,.disp{font-family:'Besley',Georgia,serif;font-weight:700;letter-spacing:-.01em;line-height:1.04;color:var(--paper);margin:0}
+h1{font-size:clamp(2.6rem,6vw,4.25rem);margin:.35rem 0 1.1rem}
+h2.disp{font-size:clamp(1.6rem,3vw,2.25rem);font-weight:600;margin:0 0 .8rem}
+p{max-width:720px;color:#cbcabf}
+a{color:inherit}
+.chrome{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;
+padding:13px 24px;background:rgba(15,21,32,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--hair)}
+.mark{display:flex;align-items:center;gap:9px;font-family:'Besley',serif;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.mark .dot{width:11px;height:11px;border-radius:3px;background:var(--regime-hue);box-shadow:0 0 14px -2px var(--regime-hue);transition:background 1100ms,box-shadow 1100ms}
+.chrome-r{display:flex;align-items:center;gap:16px}
+.seg{display:inline-flex;border:1px solid var(--hair);border-radius:8px;overflow:hidden}
+.seg button{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;padding:6px 13px;background:transparent;color:var(--graphite);border:0;cursor:pointer;transition:all 140ms}
+.seg button[aria-pressed="true"]{background:var(--bezel);color:var(--paper)}
+.ghost{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--graphite);text-decoration:none;border-bottom:1px solid transparent;transition:all 140ms;white-space:nowrap}
+.ghost:hover{color:var(--paper);border-color:var(--hair)}
+.stage{display:grid;grid-template-columns:224px 1fr;gap:44px;align-items:start}
+.rail{position:sticky;top:76px;padding:26px 0}
+.rail ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--hair)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:7px 0 7px 16px;text-decoration:none;color:var(--graphite);font-size:13px;transition:color 140ms,border-color 140ms;border-left:2px solid transparent;margin-left:-1px}
+.rail a .n{font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.7;min-width:18px}
+.rail a:hover,.rail a.on{color:var(--paper)}
+.rail a.on{border-left-color:var(--regime-hue)}
+.content{padding:26px 0 72px;min-width:0}
+section.ch{padding:46px 0;border-top:1px solid var(--hair);scroll-margin-top:80px}
+section.ch:first-child{border-top:0}
+.chlabel{color:var(--regime-hue);transition:color 1100ms}
+.hero{padding:40px 0 22px}
+.btn{font-family:'IBM Plex Mono',monospace;font-size:13px;padding:11px 18px;border-radius:8px;border:1px solid var(--hair);background:var(--squall);color:var(--paper);cursor:pointer;transition:all 140ms;text-decoration:none;display:inline-block}
+.btn:hover{border-color:rgba(233,228,216,.28)}
+.btn.primary{background:transparent;border-color:rgba(95,212,192,.42)}
+.btns{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 4px}
+.chip{display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;padding:5px 11px;border-radius:7px;border:1px solid var(--hair);color:var(--graphite)}
+.chip .sig{width:7px;height:7px;border-radius:50%;background:var(--regime-hue);transition:background 1100ms}
+.board{background:var(--squall);border:1px solid var(--hair);border-radius:16px;padding:15px 16px 11px;box-shadow:inset 0 1px 0 var(--bezel)}
+.board.live{box-shadow:inset 0 1px 0 var(--bezel),0 0 80px -34px var(--regime-hue),0 0 0 1px var(--hair);transition:box-shadow 1100ms}
+.board .cap{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+.board .cap .wm{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.04em;color:var(--graphite)}
+.regchip{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;padding:5px 11px;border-radius:7px;border:1px solid var(--glacier);color:var(--glacier);background:rgba(95,212,192,.1);transition:all 600ms}
+.readout{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--paper)}
+.readout .lab{color:var(--graphite)}
+svg.bd{display:block;width:100%;height:auto;touch-action:none}
+.instr{background:var(--squall);border:1px solid var(--hair);border-radius:12px;padding:16px;margin-top:18px;box-shadow:inset 0 1px 0 var(--bezel)}
+.instr .hd{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--graphite);margin-bottom:8px}
+.ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.ctl label{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--graphite);min-width:56px}
+input[type=range]{-webkit-appearance:none;appearance:none;height:3px;background:var(--hair);border-radius:3px;outline:none;flex:1;min-width:120px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--paper);cursor:pointer;border:0}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--paper);cursor:pointer;border:0}
+.val{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--paper);min-width:64px}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:12px;overflow:hidden;margin-top:16px}
+.lcard{background:var(--squall);padding:15px;transition:background 140ms}
+.lcard:hover,.lcard:focus-within{background:var(--squall2)}
+.lcard .g{font-family:'IBM Plex Mono',monospace;font-size:19px;color:var(--regime-hue);transition:color 1100ms}
+.lcard .nm{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;margin:7px 0 5px;color:var(--paper)}
+.lcard .d{font-size:12.5px;color:var(--graphite);line-height:1.5;max-width:none}
+.colorlaw{display:flex;gap:20px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--graphite);margin:6px 0 6px}
+.colorlaw b{color:var(--paper);font-weight:500}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:6px}
+.tri{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.tricard{background:var(--squall);border:1px solid var(--hair);border-radius:12px;padding:15px;box-shadow:inset 0 1px 0 var(--bezel)}
+.tricard .t{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--paper);margin-bottom:8px}
+.dial{display:flex;align-items:baseline;gap:8px}
+.dial .num{font-family:'Besley',serif;font-size:2.1rem;font-weight:700}
+.dial .lab{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--graphite)}
+.seal{font-family:'IBM Plex Mono',monospace;font-size:11.5px;background:var(--ink);border:1px solid var(--hair);border-radius:8px;padding:12px;color:var(--graphite);white-space:pre-wrap;word-break:break-all;line-height:1.55}
+.hash{color:var(--glacier);word-break:break-all}
+.refuse{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.rtok{font-family:'IBM Plex Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;border:1px dashed rgba(255,138,92,.5);color:var(--ember);cursor:pointer;transition:all 140ms}
+.rtok:hover{background:rgba(255,138,92,.09)}
+.rtok.done{border-style:solid;border-color:var(--hair);color:var(--paper)}
+.refl{font-size:13.5px;color:var(--paper);margin-top:14px;max-width:640px;min-height:1.5em;transition:opacity 300ms}
+.strike{text-decoration:line-through;opacity:.85}
+.drill .q{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--paper);margin-top:14px}
+.opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.oo{font-family:'IBM Plex Mono',monospace;font-size:12px;padding:7px 13px;border-radius:7px;border:1px solid var(--hair);background:var(--squall);color:var(--paper);cursor:pointer;transition:all 140ms}
+.oo:hover{border-color:rgba(233,228,216,.3)}
+.oo.ok{border-color:var(--glacier);color:var(--glacier)}
+.oo.no{border-color:var(--ember);color:var(--ember)}
+.fb{font-size:12.5px;color:var(--graphite);margin-top:10px;min-height:1.4em;max-width:660px}
+.endcard{text-align:center;padding:44px 0 8px}
+footer{border-top:1px solid var(--hair);padding:30px 0 10px;color:var(--graphite)}
+footer p{font-size:12px;max-width:840px;line-height:1.65}
+.reveal{opacity:0;transform:translateY(12px)}
+.reveal.in{opacity:1;transform:none;transition:opacity 340ms cubic-bezier(.22,1,.36,1),transform 340ms cubic-bezier(.22,1,.36,1)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+::selection{background:rgba(95,212,192,.28)}
+@media(max-width:900px){
+.stage{grid-template-columns:1fr;gap:0}
+.rail{position:sticky;top:56px;z-index:30;padding:0;margin:0 -24px;background:rgba(15,21,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--hair)}
+.rail ol{display:flex;overflow-x:auto;border-left:0;padding:8px 24px;gap:2px;scrollbar-width:none}
+.rail ol::-webkit-scrollbar{display:none}
+.rail a{border-left:0;border-bottom:2px solid transparent;padding:6px 9px;white-space:nowrap}
+.rail a.on{border-left:0;border-bottom-color:var(--regime-hue)}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<h1 class="sr-only">Learn: an interactive field manual for reading a dealer-positioning gamma-levels board. Positioning, not prophecy.</h1>
+
+<div class="chrome">
+  <div class="mark"><span class="dot"></span>Gamma&nbsp;Weather</div>
+  <div class="chrome-r">
+    <div class="seg" role="group" aria-label="Board mode">
+      <button id="mGEX" aria-pressed="true">GEX</button><button id="mVEX" aria-pressed="false">VEX</button>
+    </div>
+    <a class="ghost" href="#c0">Open the live board ↗</a>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="stage">
+  <nav class="rail" aria-label="Chapters"><ol id="toc"></ol></nav>
+  <main class="content">
+
+    <section class="ch hero" id="c0" aria-label="Introduction">
+      <div class="eyebrow reveal">Field manual · dealer positioning · 10 chapters</div>
+      <h1 class="reveal">Positioning,<br>not prophecy.</h1>
+      <p class="reveal" style="font-size:17px">This is a weather map of options-dealer hedging — where it piles up, where it thins out, where it flips. It describes terrain; it never gives directions. Ten short chapters and you'll read it fluently — including the parts where it's wrong.</p>
+      <div class="btns reveal"><a class="btn primary" href="#c1">Start chapter 01</a><a class="btn" href="#c5">Jump to the legend</a></div>
+      <div class="reveal" style="margin:14px 0 22px"><span class="chip"><span class="sig"></span>Display-tier: descriptions, never advice.</span></div>
+      <div class="board live reveal">
+        <div id="heroSvg"></div>
+        <div class="cap"><span class="wm">PRACTICE TAPE — illustrative positioning, not live data. Drag the spot marker.</span><span class="readout"><span class="lab">net GEX </span><span id="heroNet">—</span></span><span class="regchip" id="heroReg">STICKY</span></div>
+      </div>
+    </section>
+
+    <section class="ch" id="c1"><div class="eyebrow"><span class="chlabel">Ch 01</span></div>
+      <h2 class="disp reveal">Dealers don't have opinions. They have inventory.</h2>
+      <p class="reveal">When you trade an option, a market-maker usually takes the other side — and they don't want your directional risk, they want the spread. So they hedge with stock, mechanically, and they re-hedge every time price moves. Where option positioning concentrates, that re-hedging flow concentrates too. One caveat before anything else: true dealer inventory is not observable, so every map here assumes the standard convention — dealers long calls, short puts. It's an assumption, and we say so on every board.</p>
+      <div class="instr reveal"><div class="hd">One strike · drag the open interest</div>
+        <div id="c1demo"></div>
+        <div class="ctl"><label for="c1oi">Open interest</label><input type="range" id="c1oi" min="0" max="100" value="45" step="1"><span class="val" id="c1val">45k</span></div>
+        <div class="mono" style="font-size:12px;margin-top:10px">Hedge shares to stay neutral on a 1% move: <span id="c1hedge" style="color:var(--glacier)">—</span></div>
+        <div class="mono" style="font-size:11.5px;color:var(--graphite);margin-top:9px;cursor:pointer" id="c1flip" role="button" tabindex="0">ⓘ what if the sign convention is wrong?</div>
+      </div>
+    </section>
+
+    <section class="ch" id="c2"><div class="eyebrow"><span class="chlabel">Ch 02</span></div>
+      <h2 class="disp reveal">Sticky tape, slippery tape.</h2>
+      <p class="reveal">Net positive gamma means dealer hedging leans against price — selling into strength, bidding into weakness near their strikes — so moves get absorbed. That's sticky. Net negative gamma means hedging chases price, so the same shove travels further. That's slippery. Same market, same news; the terrain decides how far the move goes.</p>
+      <div class="instr reveal"><div class="hd">Drag spot across the profile — the whole page changes regime</div><div id="c2board"></div></div>
+    </section>
+
+    <section class="ch" id="c3"><div class="eyebrow"><span class="chlabel">Ch 03</span></div>
+      <h2 class="disp reveal">The Flip: where the terrain changes law.</h2>
+      <p class="reveal">The flip is the price where net dealer gamma crosses zero — the border between sticky and slippery. It is a border, not a tripwire: nothing detonates on contact. But the same 1% shove behaves differently on each side, and that difference is worth knowing before it happens, not after.</p>
+      <div class="instr reveal"><div class="btns" style="margin:0 0 10px"><button class="btn" id="c3sticky">Shove from the sticky side</button><button class="btn" id="c3slip">Shove from the slippery side</button></div>
+        <div class="mono" style="font-size:13px">Same shove &nbsp;·&nbsp; travelled <span id="c3out" style="color:var(--paper)">—</span></div></div>
+    </section>
+
+    <section class="ch" id="c4"><div class="eyebrow"><span class="chlabel">Ch 04</span></div>
+      <h2 class="disp reveal">Ceiling and Floor: walls that hold until they don't.</h2>
+      <p class="reveal">The Ceiling is the largest positive-gamma strike overhead — advances into it meet hedging that leans harder the closer price gets. The Floor mirrors it below. Two honest caveats: containment is a tendency we measure in the track record, not a promise; and walls are rebuilt every session as positioning migrates. Yesterday's ceiling can be today's open air.</p>
+      <div class="instr reveal"><div id="c4board"></div>
+        <div class="btns" style="margin:12px 0 0"><button class="btn" id="c4up">Push price up</button><button class="btn" id="c4dn">Push price down</button><button class="btn" id="c4roll">Roll the calendar</button></div>
+        <div class="mono" style="font-size:12px;color:var(--graphite);margin-top:10px" id="c4note">Push price into a wall, or roll to the next session and watch the walls move.</div></div>
+    </section>
+
+    <section class="ch" id="c5"><div class="eyebrow"><span class="chlabel">Ch 05</span></div>
+      <h2 class="disp reveal">The nomenclature.</h2>
+      <p class="reveal">Ten words for terrain. Learn these and you can read any board we publish. The color law rides above all of them: Glacier always means sticky, Ember always means slippery — on this product, color is never decoration.</p>
+      <div class="colorlaw reveal"><span><span class="sw" style="background:var(--glacier)"></span><b>Glacier</b> = sticky (positive gamma)</span><span><span class="sw" style="background:var(--ember)"></span><b>Ember</b> = slippery (negative gamma)</span></div>
+      <div class="legend reveal" id="legend"></div>
+    </section>
+
+    <section class="ch" id="c6"><div class="eyebrow"><span class="chlabel">Ch 06</span></div>
+      <h2 class="disp reveal">The other axis: what if vol moves first?</h2>
+      <p class="reveal">GEX answers "what does hedging do if price moves." VEX asks the same question about a jump in implied volatility. A vol shock re-prices every option at once, and dealer vega hedging has its own terrain — strikes that look sleepy on the gamma board can be live on the vol board. One market, two weather maps; the toggle is the same everywhere in the product.</p>
+      <div class="instr reveal"><div class="btns" style="margin:0 0 12px"><button class="btn" id="c6toggle">Toggle GEX ↔ VEX</button></div><div id="c6board"></div></div>
+    </section>
+
+    <section class="ch" id="c7"><div class="eyebrow"><span class="chlabel">Ch 07</span></div>
+      <h2 class="disp reveal">The move the market already paid for.</h2>
+      <p class="reveal">From at-the-money IV you can back out the move options are pricing: spot ± spot · IV · √(t/252) · k. The textbook k = 1.96 draws the familiar ~95% band. We also draw a learned band: the smallest multiplier that would have contained the next session's range about two-thirds of the time, calibrated per ticker over years of history. Both are context, not fences — and we show you every miss.</p>
+      <div class="instr reveal"><div id="c7band"></div>
+        <div class="ctl"><label for="c7iv">IV</label><input type="range" id="c7iv" min="8" max="60" value="18" step="1"><span class="val" id="c7ivv">18%</span></div>
+        <div class="ctl"><label for="c7h">Horizon</label><input type="range" id="c7h" min="1" max="21" value="1" step="1"><span class="val" id="c7hv">1d</span><button class="btn" id="c7k" style="padding:8px 12px">k: STANDARD 1.96</button></div>
+        <div class="mono" style="font-size:12px;color:var(--graphite);margin-top:12px">This band contained the next session's range <span style="color:var(--paper)">67%</span> of the time (n=2,514). Every miss is drawn in <span style="color:var(--ember)">Ember</span>.</div></div>
+    </section>
+
+    <section class="ch" id="c8"><div class="eyebrow"><span class="chlabel">Ch 08</span></div>
+      <h2 class="disp reveal">Trust is a measurement, not a vibe.</h2>
+      <p class="reveal">Three instruments keep this map honest. The Track Record: every "has tended to" on this page is reconstructed over years of history, with failures drawn as prominently as the wins. The Trust Index: one number per ticker for how well the map has described that specific name — thin options books earn low trust, and we print the low number instead of guessing. The Ledger: every pre-open board is SHA-256 hashed and sealed before the bell, so nobody can quietly redraw the map after the move.</p>
+      <div class="tri reveal">
+        <div class="tricard"><div class="t">TRUST INDEX</div><div class="dial"><span class="num" style="color:var(--glacier)">84</span><span class="lab">DEEP · dense book,<br>9 yrs history, stable walls</span></div></div>
+        <div class="tricard"><div class="t">TRUST INDEX</div><div class="dial"><span class="num" style="color:var(--ember)">31</span><span class="lab">THIN · sparse OI,<br>gappy chain, walls wander</span></div><div class="mono" style="font-size:11px;color:var(--graphite);margin-top:8px">Low trust isn't shame. It's the map telling you when to ignore the map.</div></div>
+      </div>
+      <div class="instr reveal"><div class="hd">The seal — the map is hashed before the open. Alter one character and watch it avalanche.</div>
+        <div class="seal" id="sealBody"></div>
+        <div class="mono" style="font-size:12px;margin-top:8px">SHA-256: <span class="hash" id="sealHash">computing…</span></div>
+        <div class="btns" style="margin-top:10px"><button class="btn" id="sealAlter">Alter one character</button><button class="btn" id="sealReset">Reset the sealed map</button></div>
+        <div class="mono" style="font-size:11.5px;color:var(--graphite);margin-top:9px">09:14 hashed → 09:15 published → anytime: re-hash and compare.</div></div>
+    </section>
+
+    <section class="ch" id="c9"><div class="eyebrow"><span class="chlabel">Ch 09</span></div>
+      <h2 class="disp reveal">What this map will never say.</h2>
+      <p class="reveal">No forecasts, no entries, no exits, no scores kept in your favor. The board describes where hedging pressure concentrates; what you do about terrain is your job and your responsibility. Five words are banned from this product — click one to translate it into honest phrasing.</p>
+      <div class="refuse reveal" id="refuse"></div>
+      <div class="refl mono reveal" id="refl">Click a struck word above.</div>
+    </section>
+
+    <section class="ch drill" id="c10"><div class="eyebrow"><span class="chlabel">Ch 10</span></div>
+      <h2 class="disp reveal">Read one board. Out loud.</h2>
+      <p class="reveal">A fresh practice board, randomized every time. Answer the way you'd brief a desk: which side of the Flip are we on, and where is the Keystone? You'll be graded on reading, because reading is the whole skill.</p>
+      <div class="instr reveal"><div id="drillBoard"></div>
+        <div class="q">1 · Which regime is spot in?</div>
+        <div class="opts"><button class="oo" data-a="sticky">Sticky</button><button class="oo" data-a="slippery">Slippery</button></div>
+        <div class="q" id="drillQ2" style="opacity:.45">2 · Tap the Keystone strike on the board above.</div>
+        <div class="fb" id="drillFb">Boards read: 0 · clean reads: <span id="streak">0</span></div>
+        <div class="btns" style="margin-top:12px"><button class="btn" id="drillNew">Deal a new board</button></div></div>
+      <div class="endcard"><span class="disp" style="font-size:clamp(1.6rem,3vw,2.2rem)">You can read the terrain.</span></div>
+    </section>
+
+    <footer>
+      <p>Display-tier education. Everything on this page describes hedging terrain under an assumed dealer-sign convention (dealers long calls, short puts); real dealer inventory is not observable. Boards on this page are practice data, watermarked as such. Nothing here is investment advice or a recommendation of any kind. Live boards are hashed before the open — verify in the Ledger.</p>
+    </footer>
+  </main>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+var GLACIER='#5FD4C0',EMBER='#FF8A5C',PAPER='#E9E4D8',GRAPH='#8A94A6',HAIR='rgba(233,228,216,0.10)';
+var W=680,ROWH=26,PADT=14,PADB=16,AXISX=175,BARMAX=250,FLIPX=520,GX0=548,GX1=662,ROWS=13;
+var BH=PADT+ROWS*ROWH+PADB;
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function mul(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function mix(a,b,t){t=clamp(t,0,1);function h(x){return[parseInt(x.substr(1,2),16),parseInt(x.substr(3,2),16),parseInt(x.substr(5,2),16)]}var A=h(a),B=h(b);return'#'+[0,1,2].map(function(i){var v=Math.round(A[i]+(B[i]-A[i])*t).toString(16);return v.length<2?'0'+v:v}).join('')}
+function rowY(i){return PADT+i*ROWH+ROWH/2}
+
+function genBoard(seed){var r=mul(seed);var spot=4800+Math.floor(r()*600);var mid=(ROWS-1)/2;
+ var strikes=[];for(var i=0;i<ROWS;i++)strikes.push(spot+Math.round((mid-i))*25);
+ var flipIdx=Math.round(mid+(r()*2-1)*2.2);
+ var mass=[];for(i=0;i<ROWS;i++){var d=i-flipIdx;var sign=d<0?1:-1;var m=(0.28+r()*0.72)*(1-Math.min(Math.abs(d)/8,0.82));mass.push({k:strikes[i],i:i,sign:sign,m:m});}
+ function heaviest(arr){return arr.slice().sort(function(a,b){return b.m-a.m})[0]}
+ var lv={};lv.keystone=heaviest(mass).i;lv.flip=flipIdx;
+ var above=mass.filter(function(x){return x.i<flipIdx&&x.sign>0}),below=mass.filter(function(x){return x.i>flipIdx&&x.sign<0});
+ if(above.length)lv.ceiling=heaviest(above).i;if(below.length)lv.floor=heaviest(below).i;
+ var clu=mass.filter(function(x){return x.i!==lv.keystone&&x.m>=mass[lv.keystone].m*0.55}).sort(function(a,b){return b.m-a.m})[0];if(clu)lv.cluster=clu.i;
+ lv.void=mass.slice().sort(function(a,b){return a.m-b.m})[0].i;
+ return{spot:spot,strikes:strikes,mass:mass,levels:lv,flipIdx:flipIdx,spotIdx:flipIdx-1.2,mode:'GEX'};}
+function netAt(b,idx){var s=0;for(var i=0;i<b.mass.length;i++){var m=b.mass[i];s+=m.sign*m.m*Math.exp(-Math.abs(i-idx)/2.4);}return s;}
+
+var LNAME={keystone:'KEYSTONE',ceiling:'CEILING',floor:'FLOOR',flip:'FLIP',cluster:'CLUSTER',void:'VOID'};
+function render(el,b,id,opts){opts=opts||{};
+ var s='<svg class="bd" viewBox="0 0 '+W+' '+BH+'" role="img" preserveAspectRatio="xMidYMid meet"><title>Practice dealer-positioning board</title><desc>Gamma mass by strike with a draggable spot marker and a live price tape.</desc>';
+ for(var i=0;i<ROWS;i++){var y=rowY(i);s+='<line x1="'+AXISX+'" y1="'+y+'" x2="'+FLIPX+'" y2="'+y+'" stroke="'+HAIR+'" stroke-width="0.5"/>';}
+ for(i=0;i<b.mass.length;i++){var m=b.mass[i];var yy=PADT+i*ROWH+4;var w=Math.max(5,m.m*BARMAX);
+  var col=(b.mode==='VEX')?(i%2?'#78ACE4':'#C79BF0'):(m.sign>0?GLACIER:EMBER);
+  var op=(opts.iso!=null)?(opts.iso===i?0.96:0.16):0.82;
+  s+='<rect x="'+AXISX+'" y="'+yy+'" width="'+w.toFixed(1)+'" height="'+(ROWH-8)+'" rx="3" fill="'+col+'" opacity="'+op+'"/>';
+  s+='<text x="'+(AXISX-12)+'" y="'+(yy+ROWH-11)+'" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="11" fill="'+GRAPH+'">'+Math.round(b.strikes[i])+'</text>';
+  var tag=null;for(var kk in b.levels){if(b.levels[kk]===i&&LNAME[kk]){tag=LNAME[kk];break;}}
+  if(tag){var to=(opts.iso!=null&&opts.iso!==i)?0.25:0.92;s+='<text x="'+(AXISX+w+9)+'" y="'+(yy+ROWH-11)+'" font-family="IBM Plex Mono,monospace" font-size="10" letter-spacing="0.06em" fill="'+PAPER+'" opacity="'+to+'">'+tag+'</text>';}
+ }
+ var fy=rowY(b.flipIdx);
+ s+='<line x1="'+AXISX+'" y1="'+fy+'" x2="'+FLIPX+'" y2="'+fy+'" stroke="'+PAPER+'" stroke-width="1" stroke-dasharray="2 4" opacity="0.5"/>';
+ s+='<text x="'+(FLIPX-2)+'" y="'+(fy-6)+'" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="'+GRAPH+'">net gamma zero</text>';
+ s+='<line x1="'+GX0+'" y1="'+PADT+'" x2="'+GX0+'" y2="'+(BH-PADB)+'" stroke="'+HAIR+'" stroke-width="0.5"/>';
+ s+='<text x="'+GX0+'" y="'+(PADT-3)+'" font-family="IBM Plex Mono,monospace" font-size="8.5" letter-spacing="0.1em" fill="'+GRAPH+'">TAPE</text>';
+ s+='<polyline id="tape_'+id+'" points="" fill="none" stroke="'+GRAPH+'" stroke-width="1.3" opacity="0.9"/>';
+ var sy=rowY(b.spotIdx);
+ s+='<g id="puck_'+id+'"><line x1="'+AXISX+'" y1="'+sy+'" x2="'+FLIPX+'" y2="'+sy+'" stroke="'+PAPER+'" stroke-width="0.75" opacity="0.45"/><circle cx="28" cy="'+sy+'" r="6" fill="'+PAPER+'"/><text x="42" y="'+(sy+4)+'" font-family="IBM Plex Mono,monospace" font-size="10" fill="'+PAPER+'">SPOT</text></g>';
+ s+='</svg>';el.innerHTML=s;}
+function movePuck(el,b,id){var sv=el.querySelector('svg');if(!sv)return;var g=sv.querySelector('#puck_'+id);if(!g)return;var y=rowY(b.spotIdx);
+ var ln=g.querySelector('line'),c=g.querySelector('circle'),t=g.querySelector('text');ln.setAttribute('y1',y);ln.setAttribute('y2',y);c.setAttribute('cy',y);t.setAttribute('y',y+4);}
+
+function setRegime(v){v=clamp(v,-1,1);document.documentElement.style.setProperty('--regime-hue',mix(EMBER,GLACIER,(v+1)/2));}
+function paintReg(c,sticky){if(!c)return;c.textContent=sticky?'STICKY':'SLIPPERY';var col=sticky?GLACIER:EMBER;c.style.color=col;c.style.borderColor=col;c.style.background=(sticky?'rgba(95,212,192,':'rgba(255,138,92,')+'0.10)';}
+
+var tapes={};
+function addTape(el,b,id){tapes[id]={el:el,b:b,last:BH/2};}
+function stepTapes(){for(var id in tapes){var T=tapes[id];var sv=T.el.querySelector('svg');if(!sv){continue;}var pl=sv.querySelector('#tape_'+id);if(!pl)continue;
+ if(!T.pts)T.pts=[];var sticky=(T.b.flipIdx-T.b.spotIdx)>=0;var mid=BH/2;
+ var drift=(Math.random()-0.5)*(sticky?2.4:6.2);var pull=sticky?(mid-T.last)*0.05:0;
+ T.last=clamp(T.last+drift+pull,PADT+6,BH-PADB-6);T.pts.push(T.last);if(T.pts.length>46)T.pts.shift();
+ var n=T.pts.length;var str='';for(var i=0;i<n;i++){var x=GX0+ (i/(45))*(GX1-GX0);str+=x.toFixed(1)+','+T.pts[i].toFixed(1)+' ';}
+ pl.setAttribute('points',str.trim());pl.setAttribute('stroke',sticky?GLACIER:EMBER);pl.setAttribute('opacity','0.75');}}
+
+function wirePuck(el,b,id,cb){var sv=el.querySelector('svg');if(!sv)return;var drag=false;
+ function idxFromY(cy){var r=sv.getBoundingClientRect();var sc=BH/r.height;var y=(cy-r.top)*sc;return clamp((y-PADT-ROWH/2)/ROWH,-0.5,ROWS-0.5);}
+ function upd(cy){b.spotIdx=idxFromY(cy);movePuck(el,b,id);cb&&cb();}
+ sv.addEventListener('pointerdown',function(e){drag=true;try{sv.setPointerCapture(e.pointerId);}catch(x){}upd(e.clientY);e.preventDefault();});
+ sv.addEventListener('pointermove',function(e){if(drag)upd(e.clientY);});
+ sv.addEventListener('pointerup',function(){if(!drag)return;drag=false;release(el,b,id,cb);});
+ sv.addEventListener('pointercancel',function(){drag=false;});
+ var g=sv.querySelector('#puck_'+id);if(g){g.setAttribute('tabindex','0');g.setAttribute('role','slider');g.setAttribute('aria-label','Spot price');g.style.cursor='ns-resize';
+  g.addEventListener('keydown',function(e){if(e.key==='ArrowUp')b.spotIdx=clamp(b.spotIdx-1,-0.4,ROWS-0.6);else if(e.key==='ArrowDown')b.spotIdx=clamp(b.spotIdx+1,-0.4,ROWS-0.6);else return;e.preventDefault();movePuck(el,b,id);cb&&cb();});}
+ cb&&cb();}
+function release(el,b,id,cb){if(RM){cb&&cb();return;}var sticky=(b.flipIdx-b.spotIdx)>=0;var target;
+ if(sticky){target=b.spotIdx+(b.levels.keystone-b.spotIdx)*0.32;}else{target=b.spotIdx+((b.spotIdx-b.flipIdx)>=0?0.9:-0.9);}
+ target=clamp(target,-0.4,ROWS-0.6);var t0=performance.now(),from=b.spotIdx;
+ (function an(t){var k=clamp((t-t0)/600,0,1);var e=1-Math.pow(1-k,3);b.spotIdx=from+(target-from)*e;movePuck(el,b,id);cb&&cb();if(k<1)requestAnimationFrame(an);})(t0);}
+
+/* hero */
+var heroEl=document.getElementById('heroSvg'),hseed=12,hero=genBoard(hseed);
+while(hseed<60&&(hero.levels.keystone===hero.flipIdx||Math.abs(hero.levels.keystone-hero.flipIdx)<2)){hseed++;hero=genBoard(hseed);}
+hero.spotIdx=hero.flipIdx-1.3;
+function heroCb(){var n=netAt(hero,hero.spotIdx);document.getElementById('heroNet').textContent=(n>=0?'+':'')+n.toFixed(2)+'B / 1%';var sticky=(hero.flipIdx-hero.spotIdx)>=0;setRegime((hero.flipIdx-hero.spotIdx)/3);paintReg(document.getElementById('heroReg'),sticky);}
+render(heroEl,hero,'hero',{});wirePuck(heroEl,hero,'hero',heroCb);addTape(heroEl,hero,'hero');
+
+/* c1 */
+var c1=document.getElementById('c1demo'),c1sign=1;
+function drawC1(){var oi=+document.getElementById('c1oi').value,w=Math.max(6,oi*2.4),col=c1sign>0?GLACIER:EMBER;
+ c1.innerHTML='<svg viewBox="0 0 680 66" class="bd"><rect x="175" y="20" width="'+w+'" height="26" rx="4" fill="'+col+'" opacity="0.85"/><text x="163" y="38" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8A94A6">5000 C</text><text x="'+(175+w+9)+'" y="38" font-family="IBM Plex Mono,monospace" font-size="11" fill="#E9E4D8">'+oi+'k OI</text></svg>';
+ document.getElementById('c1val').textContent=oi+'k';var h=document.getElementById('c1hedge');h.textContent=Math.round(oi*13)+' shares';h.style.color=col;}
+document.getElementById('c1oi').addEventListener('input',drawC1);
+function c1toggle(){c1sign*=-1;document.getElementById('c1flip').textContent=c1sign>0?'ⓘ what if the sign convention is wrong?':'→ sticky and slippery swap sides; the terrain is real, the sign is assumed';drawC1();}
+document.getElementById('c1flip').addEventListener('click',c1toggle);
+document.getElementById('c1flip').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();c1toggle();}});
+drawC1();
+
+/* c2 */
+var c2El=document.getElementById('c2board'),b2=genBoard(19);render(c2El,b2,'c2',{});
+wirePuck(c2El,b2,'c2',function(){var sticky=(b2.flipIdx-b2.spotIdx)>=0;setRegime((b2.flipIdx-b2.spotIdx)/3);});addTape(c2El,b2,'c2');
+
+/* c3 */
+document.getElementById('c3sticky').addEventListener('click',function(){var o=document.getElementById('c3out');o.textContent='+0.4% travelled';o.style.color=GLACIER;});
+document.getElementById('c3slip').addEventListener('click',function(){var o=document.getElementById('c3out');o.textContent='+1.3% travelled';o.style.color=EMBER;});
+
+/* c4 */
+var c4El=document.getElementById('c4board'),b4=genBoard(29);render(c4El,b4,'c4',{});addTape(c4El,b4,'c4');
+document.getElementById('c4up').addEventListener('click',function(){b4.spotIdx=clamp(b4.spotIdx-2,-0.4,ROWS-0.6);movePuck(c4El,b4,'c4');document.getElementById('c4note').textContent='Advance decelerates into the Ceiling — hedging leans harder near the wall. Containment is a tendency, not a promise.';});
+document.getElementById('c4dn').addEventListener('click',function(){b4.spotIdx=clamp(b4.spotIdx+2,-0.4,ROWS-0.6);movePuck(c4El,b4,'c4');document.getElementById('c4note').textContent='Decline slows into the Floor — the largest negative-gamma strike below spot.';});
+document.getElementById('c4roll').addEventListener('click',function(){b4=genBoard(29+Math.floor(Math.random()*900));render(c4El,b4,'c4',{});tapes['c4'].b=b4;document.getElementById('c4note').textContent='Same ticker, next session — the walls have moved. The map is redrawn daily.';});
+
+/* c5 legend */
+var LEG=[['◆','KEYSTONE','The heaviest open-interest gamma mass on the board. Everything else is measured against it; price nearby has tended to slow.'],
+['◎','PULSE','Today’s live-flow magnet — where this session’s volume is stacking gamma right now. Fast-moving; can fade by the close.'],
+['⌐','BACKSTOP','The largest counter-mass on the far side of spot. The level most likely to matter if the day reverses.'],
+['▤','CLUSTER','A stack at least half the Keystone’s weight. Not the king, but heavy enough to bend the tape.'],
+['┈','VOID','A stretch with almost no positioning. Nothing to lean against a move — price tends to travel it fast.'],
+['⤓','TRAPDOOR','A downside level that, once broken, has tended to accelerate the move — hedging flips from absorbing to chasing.'],
+['⤒','LAUNCHPAD','The upside mirror of the Trapdoor: a break above has tended to extend, not exhaust.'],
+['⤨','FLIP','The zero-crossing of net gamma. The border between sticky and slippery.'],
+['▔','CEILING / FLOOR','The largest positive- and negative-gamma strikes around spot. Tend to contain; redrawn every session.'],
+['⇶','CONFLUENCE','Several levels landing in a tight window. When independent maps agree, the terrain reads louder.']];
+document.getElementById('legend').innerHTML=LEG.map(function(l){return '<div class="lcard" tabindex="0"><div class="g">'+l[0]+'</div><div class="nm">'+l[1]+'</div><div class="d">'+l[2]+'</div></div>';}).join('');
+
+/* c6 vex */
+var c6El=document.getElementById('c6board'),b6=genBoard(41);render(c6El,b6,'c6',{});addTape(c6El,b6,'c6');
+function setMode(mode){b6.mode=mode;render(c6El,b6,'c6',{});document.getElementById('mGEX').setAttribute('aria-pressed',mode==='GEX');document.getElementById('mVEX').setAttribute('aria-pressed',mode==='VEX');document.getElementById('c6toggle').textContent=mode==='GEX'?'Toggle GEX ↔ VEX':'Now: VEX — toggle back';}
+document.getElementById('c6toggle').addEventListener('click',function(){setMode(b6.mode==='GEX'?'VEX':'GEX');});
+document.getElementById('mGEX').addEventListener('click',function(){setMode('GEX');});
+document.getElementById('mVEX').addEventListener('click',function(){setMode('VEX');});
+
+/* c7 band */
+var c7k=1.96;
+function drawBand(){var iv=+document.getElementById('c7iv').value/100,h=+document.getElementById('c7h').value;var pct=Math.sqrt(h/252)*iv*c7k*100;
+ var H=124,loY=H/2,ph=clamp(pct*3.4,6,50);
+ document.getElementById('c7band').innerHTML='<svg viewBox="0 0 680 '+H+'" class="bd"><rect x="90" y="'+(loY-ph)+'" width="470" height="'+(ph*2)+'" rx="6" fill="#5FD4C0" opacity="0.10"/><line x1="90" y1="'+loY+'" x2="560" y2="'+loY+'" stroke="#8A94A6" stroke-width="0.75" stroke-dasharray="2 4"/><line x1="90" y1="'+(loY-ph)+'" x2="560" y2="'+(loY-ph)+'" stroke="#5FD4C0" stroke-width="1"/><line x1="90" y1="'+(loY+ph)+'" x2="560" y2="'+(loY+ph)+'" stroke="#5FD4C0" stroke-width="1"/><text x="570" y="'+(loY-ph+4)+'" font-family="IBM Plex Mono,monospace" font-size="11" fill="#5FD4C0">+'+pct.toFixed(1)+'%</text><text x="570" y="'+(loY+ph+4)+'" font-family="IBM Plex Mono,monospace" font-size="11" fill="#5FD4C0">−'+pct.toFixed(1)+'%</text><text x="570" y="'+(loY+4)+'" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8A94A6">spot</text></svg>';
+ document.getElementById('c7ivv').textContent=document.getElementById('c7iv').value+'%';document.getElementById('c7hv').textContent=h+'d';}
+document.getElementById('c7iv').addEventListener('input',drawBand);document.getElementById('c7h').addEventListener('input',drawBand);
+document.getElementById('c7k').addEventListener('click',function(){c7k=c7k===1.96?1.21:1.96;this.textContent='k: '+(c7k===1.96?'STANDARD 1.96':'LEARNED 1.21');drawBand();});
+drawBand();
+
+/* c8 seal */
+var sealObj={root:"SPY",session:"2026-07-17",flip:4950,keystone:5000,ceiling:5100,floor:4850,regime:"sticky"};
+function sha256hex(str){if(window.crypto&&crypto.subtle&&crypto.subtle.digest&&location.protocol!=='file:'){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(str)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('');});}return Promise.resolve(jsSha(str));}
+function jsSha(a){function r(n,x){return(x>>>n)|(x<<(32-n))}var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+ var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+ var b=[],i;for(i=0;i<a.length;i++){var cc=a.charCodeAt(i);if(cc<128)b.push(cc);else if(cc<2048){b.push(192|cc>>6);b.push(128|cc&63);}else{b.push(224|cc>>12);b.push(128|(cc>>6)&63);b.push(128|cc&63);}}
+ var l=b.length*8;b.push(0x80);while(b.length%64!=56)b.push(0);for(i=7;i>=0;i--)b.push(Math.floor(l/Math.pow(2,i*8))&0xff);
+ var w=new Int32Array(64);for(var j=0;j<b.length;j+=64){for(i=0;i<16;i++)w[i]=(b[j+i*4]<<24)|(b[j+i*4+1]<<16)|(b[j+i*4+2]<<8)|b[j+i*4+3];
+ for(i=16;i<64;i++){var s0=r(7,w[i-15])^r(18,w[i-15])^(w[i-15]>>>3),s1=r(17,w[i-2])^r(19,w[i-2])^(w[i-2]>>>10);w[i]=(w[i-16]+s0+w[i-7]+s1)|0;}
+ var A=H[0],B=H[1],C=H[2],D=H[3],E=H[4],F=H[5],G=H[6],Hh=H[7];
+ for(i=0;i<64;i++){var S1=r(6,E)^r(11,E)^r(25,E),ch=(E&F)^(~E&G),t1=(Hh+S1+ch+K[i]+w[i])|0,S0=r(2,A)^r(13,A)^r(22,A),mj=(A&B)^(A&C)^(B&C),t2=(S0+mj)|0;Hh=G;G=F;F=E;E=(D+t1)|0;D=C;C=B;B=A;A=(t1+t2)|0;}
+ H[0]=(H[0]+A)|0;H[1]=(H[1]+B)|0;H[2]=(H[2]+C)|0;H[3]=(H[3]+D)|0;H[4]=(H[4]+E)|0;H[5]=(H[5]+F)|0;H[6]=(H[6]+G)|0;H[7]=(H[7]+Hh)|0;}
+ return H.map(function(x){return((x>>>0).toString(16)).padStart(8,'0')}).join('');}
+function renderSeal(){document.getElementById('sealBody').textContent=JSON.stringify(sealObj,null,1);document.getElementById('sealHash').textContent='computing…';sha256hex(JSON.stringify(sealObj)).then(function(h){document.getElementById('sealHash').textContent=h;});}
+document.getElementById('sealAlter').addEventListener('click',function(){sealObj.keystone=sealObj.keystone+(sealObj.keystone===5000?1:-1);renderSeal();});
+document.getElementById('sealReset').addEventListener('click',function(){sealObj.keystone=5000;renderSeal();});
+renderSeal();
+
+/* c9 refusals */
+var REF=[['5000 is a target','5000 is the Keystone — the heaviest mass on the board. Approaches have slowed there 68% of the time (n=412). Misses shown.','target'],
+['Sell the wall','Spot is approaching the Ceiling. Advances into a wall this size have stalled within a session 61% of the time in this ticker’s history.','Sell'],
+['It’s a signal','It’s a description of positioning under a stated assumption, graded in public.','signal'],
+['Buy the flip','It’s the border between sticky and slippery. The same shove has travelled ~3× further on the slippery side historically.','Buy'],
+['Guaranteed bounce','Nothing is guaranteed. The Floor has contained the close 57% of sessions it was tested — and every miss is drawn.','Guaranteed']];
+document.getElementById('refuse').innerHTML=REF.map(function(r,i){return '<span class="rtok" data-i="'+i+'" role="button" tabindex="0">'+r[0].replace(r[2],'<span class="strike">'+r[2]+'</span>')+'</span>';}).join('');
+function doRef(t){var i=+t.dataset.i;document.querySelectorAll('.rtok').forEach(function(x){x.classList.remove('done');});t.classList.add('done');var f=document.getElementById('refl');f.style.opacity=0;setTimeout(function(){f.textContent=REF[i][1];f.style.opacity=1;},130);}
+document.getElementById('refuse').addEventListener('click',function(e){var t=e.target.closest('.rtok');if(t)doRef(t);});
+document.getElementById('refuse').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){var t=e.target.closest('.rtok');if(t){e.preventDefault();doRef(t);}}});
+
+/* c10 drill */
+var drillEl=document.getElementById('drillBoard'),db,dseed=101,streak=0,read=0,step=0;
+function newDrill(){db=genBoard(dseed++);db.spotIdx=db.flipIdx+(Math.random()>0.5?-1.3:1.3);render(drillEl,db,'drill',{});addTape(drillEl,db,'drill');step=0;
+ document.querySelectorAll('#c10 .oo').forEach(function(o){o.classList.remove('ok','no');});document.getElementById('drillQ2').style.opacity='.45';
+ document.getElementById('drillFb').innerHTML='Boards read: '+read+' · clean reads: <span id="streak">'+streak+'</span>';}
+document.querySelectorAll('#c10 .oo').forEach(function(o){o.addEventListener('click',function(){if(step!==0)return;var sticky=(db.flipIdx-db.spotIdx)>=0;var correct=(this.dataset.a==='sticky')===sticky;this.classList.add(correct?'ok':'no');
+ if(correct){step=1;document.getElementById('drillQ2').style.opacity='1';document.getElementById('drillFb').innerHTML='✓ '+(sticky?'Sticky':'Slippery')+' — spot is '+(sticky?'above':'below')+' the flip. Now tap the Keystone strike on the board.';}
+ else{streak=0;document.getElementById('drillFb').innerHTML='✗ Look again: the flip is the dashed line. Spot sits on the '+(sticky?'sticky (upper)':'slippery (lower)')+' side. · clean reads: 0';}});});
+drillEl.addEventListener('click',function(e){if(step!==1)return;var sv=drillEl.querySelector('svg');var r=sv.getBoundingClientRect();var sc=BH/r.height;var y=(e.clientY-r.top)*sc;var idx=Math.round((y-PADT-ROWH/2)/ROWH);
+ read++;if(idx===db.levels.keystone){streak++;document.getElementById('drillFb').innerHTML='✓ Clean read — that’s the Keystone at '+Math.round(db.strikes[db.levels.keystone])+'. Deal another. · clean reads: '+streak;}
+ else{streak=0;document.getElementById('drillFb').innerHTML='✗ Not the Keystone — that was '+Math.round(db.strikes[db.levels.keystone])+', the heaviest bar. · clean reads: 0';}step=2;});
+document.getElementById('drillNew').addEventListener('click',newDrill);newDrill();
+
+/* TOC + scrollspy */
+var titles=['Positioning, not prophecy','Inventory, not opinions','Sticky & slippery','The Flip','Walls','The nomenclature','GEX ↔ VEX','Expected move','Trust, measured','Refusals','Read a board'];
+document.getElementById('toc').innerHTML=titles.map(function(t,i){return '<li><a href="#c'+i+'" data-i="'+i+'"><span class="n">'+(i<10?'0'+i:i)+'</span>'+t+'</a></li>';}).join('');
+var links=[].slice.call(document.querySelectorAll('#toc a'));
+var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){var id=en.target.id.replace('c','');links.forEach(function(a){a.classList.toggle('on',a.dataset.i===id);});}});},{rootMargin:'-42% 0px -53% 0px'});
+for(var ci=0;ci<=10;ci++){var sec=document.getElementById('c'+ci);if(sec)io.observe(sec);}
+var ro=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');ro.unobserve(en.target);}});},{threshold:0.12});
+document.querySelectorAll('.reveal').forEach(function(e){ro.observe(e);});
+
+if(!RM){setInterval(stepTapes,95);}
+})();
+</script>
+</body>
+</html>
