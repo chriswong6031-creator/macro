@@ -534,8 +534,8 @@ entries:
     reason: >
       FORBIDDEN — public-audience answers come only from what the site
       ships (Tier-2 receipts, on-page help) or a separately curated
-      public FAQ; CXI retrieval is operator/agent-audience only.
-      Source-visibil
+      public FAQ; CXI retrieval is operator/agent-audience only. SOLE
+      exception
     source: 'CXI-R23, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` Amendment 2 (2026-07-20, operator ruling)'
 
   - id: BL-G026

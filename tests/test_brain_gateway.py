@@ -568,7 +568,7 @@ def test_client_history_used_when_thread_store_absent(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -815,7 +815,7 @@ def test_1500_char_message_reaches_model_loop(tmp_path):
 
     loop_called = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         loop_called.append(message)
         return "OK.", [], [], [], {}, [], []
 
@@ -847,7 +847,7 @@ def test_client_history_injection_filtered(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -894,7 +894,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
 
     captured_messages: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         # We can't introspect user_content directly, so we return and check that
         # the loop was called (no crash, no injection)
         return "OK.", [], [], [], {}, [], []
@@ -903,7 +903,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
     original_loop = gw._run_brain_loop
     built_contents: list[str] = []
 
-    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         # Re-run the actual loop with a mock client that ends immediately
         return _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode=mode)
 
@@ -1374,7 +1374,7 @@ def test_research_mode_raises_tool_budget(tmp_path):
     root = _make_temp_root()
     captured_tb: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         captured_tb.append(tb)
         return "Research done.", [], [], [], {}, [], []
 
@@ -1874,7 +1874,7 @@ def test_chat_with_image_routes_fast_to_vision_provider(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -1904,7 +1904,7 @@ def test_chat_no_image_stays_on_deepseek(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         captured["model"] = model
         captured["image_blocks"] = image_blocks
         return "OK. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -1937,7 +1937,7 @@ def test_chat_fast_image_borrows_pro_vision_when_no_in_lane_claude(tmp_path):
             "pro": [{"client": "OPUS", "model": "claude-opus-4-8"}],
         }[lane]
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -2039,7 +2039,7 @@ def test_chat_free_tier_image_is_gated_text_only(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         captured["image_blocks"] = image_blocks
         captured["model"] = model
         return "text answer. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -2203,7 +2203,7 @@ def test_chat_splits_suggestions_from_reply(tmp_path):
     )
     persisted = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         return reply_with_next, [], [], [], {}, [], []
 
     def _cap_append(tid, role, content, meta=None):
@@ -2232,7 +2232,7 @@ def test_chat_omits_suggestions_key_when_absent(tmp_path):
     """No [NEXT] block → no 'suggestions' key in the result."""
     root = _make_temp_root()
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
         return "Plain answer, no marker. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
 
     mock_providers = [{"client": _MockClient([]), "model": "deepseek-chat"}]
@@ -2497,7 +2497,7 @@ def test_run_brain_loop_accepts_user_id_kwarg(tmp_path):
     client = _MockClient([tool_resp, text_resp])
     seen = {}
 
-    def _spy_dispatch(name, params, root_, tdd, thu, user_id=""):
+    def _spy_dispatch(name, params, root_, tdd, thu, user_id="", internals_ok=False):
         seen["user_id"] = user_id
         return {"available": False, "note": "stub"}
 
