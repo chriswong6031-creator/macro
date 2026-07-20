@@ -1,0 +1,56 @@
+{
+  "activate": true,
+  "importance": 65,
+  "banner_days": 3,
+  "tone": "mixed",
+  "banner_title": "Trump halves aluminum tariff for onshoring smelter investments — shift in U.S. primary aluminum supply",
+  "banner_title_zh": "特朗普对投资美国铝冶炼厂企业减半关税，推动本土原铝产能",
+  "summary": "Trump signed a Proclamation creating an incentive program: companies that commit to building, expanding, or refurbishing U.S. aluminum smelters can import primary aluminum at half the Section 232 tariff rate. The move aims to boost domestic smelting capacity and reshapes competitive dynamics for aluminum producers and downstream manufacturers.",
+  "summary_zh": "特朗普签署公告，建立激励计划：企业若承诺在美国新建、扩建或翻新铝冶炼厂，可获准以现行232条款关税一半的税率进口原铝，旨在提升国内产能。此举将重塑原铝生产商与下游制造商的竞争格局。",
+  "analysis": "The Proclamation directs the Commerce Secretary to establish a program allowing approved onshoring plans from investors in U.S. aluminum smelters. Qualifying firms may import primary aluminum at a reduced tariff (half the applicable Section 232 rate) commensurate with their investment. This effectively lowers the cost of imported primary aluminum for those with credible capacity-building commitments, creating an incentive to expand domestic production while maintaining access to cheaper foreign metal during the ramp-up.\n\nFor markets, the immediate impact is a potential increase in import volumes at lower tariff rates by approved entities, which could depress the US Midwest aluminum premium and benefit downstream consumers like automakers and can manufacturers. However, existing domestic smelters without approved plans may face pressure from cheaper imports, while the threat of retroactive tariff clawbacks adds execution risk for investors. The program’s details—selection criteria, monitoring, and how quickly new capacity materializes—will determine the long-term balance between supply and domestic self-sufficiency.\n\nThe key uncertainty is uptake. Large global aluminum producers with existing U.S. footprints (like Alcoa or Rio Tinto) could apply, but the program may also attract new entrants willing to accept the onshoring commitments. If successful, it could gradually reduce reliance on imports, but the immediate effect may be a temporary increase in lower-tariff imports before smelters come online. Trade partners could also view the conditional tariff reduction as a disguised subsidy, raising the risk of WTO challenges or retaliatory actions.",
+  "sectors": [
+    {
+      "name": "Domestic aluminum smelters and potential new entrants",
+      "impact": "tailwind",
+      "rationale": "They gain access to cheaper imported primary aluminum while investing in capacity, improving project economics."
+    },
+    {
+      "name": "Aluminum consumers (automakers, aerospace, can manufacturers)",
+      "impact": "tailwind",
+      "rationale": "More low-tariff imports could lower domestic aluminum premiums and raw material costs."
+    },
+    {
+      "name": "Non-approved aluminum importers and foreign producers not investing",
+      "impact": "headwind",
+      "rationale": "They face full tariffs while approved competitors enjoy lower rates, potentially losing market share."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "CENX",
+      "direction": "benefit",
+      "rationale": "Pure-play U.S. aluminum smelter; can apply for incentives to refurbish or expand capacity and import at half-tariff."
+    },
+    {
+      "symbol": "AA",
+      "direction": "benefit",
+      "rationale": "Major U.S.-based aluminum producer with domestic smelters; eligible to participate and lower its import costs."
+    },
+    {
+      "symbol": "BALL",
+      "direction": "benefit",
+      "rationale": "Large consumer of aluminum sheet for beverage cans; could see lower input costs if cheaper imports flow."
+    },
+    {
+      "symbol": "F",
+      "direction": "benefit",
+      "rationale": "Significant user of aluminum in vehicle body and components; a decline in domestic premiums would ease cost pressure."
+    },
+    {
+      "symbol": "RIO",
+      "direction": "hurt",
+      "rationale": "Major aluminum exporter to the U.S. (Canadian smelters); full-tariff imports face a competitive disadvantage against approved lower-tariff volumes."
+    }
+  ],
+  "confidence": "medium"
+}

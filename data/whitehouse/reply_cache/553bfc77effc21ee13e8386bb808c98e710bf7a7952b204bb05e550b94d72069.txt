@@ -1,0 +1,56 @@
+{
+  "activate": true,
+  "importance": 62,
+  "banner_days": 3,
+  "tone": "mixed",
+  "banner_title": "Trump defense supply chain order: domestic miners benefit, import-reliant contractors hurt",
+  "banner_title_zh": "特朗普国防供应链行政令：本土矿企受益，依赖进口的承包商受损",
+  "summary": "President Trump signed an executive order limiting DoD waivers for critical materials from adversarial nations and pushing defense contractors to qualify domestic sources, accelerating reshoring of military supply chains.",
+  "summary_zh": "特朗普签署行政令，限制国防部对敌对国家关键材料的豁免，并推动国防承包商认证本土资源，加速军工供应链回流。",
+  "analysis": "The executive order directs the Department of Defense to restrict waivers under 10 U.S.C. 4872 for critical materials from covered nations and to require mitigation plans for onshoring. It also mandates regulatory action for comprehensive supply chain mapping and encourages contractors to qualify new domestic and partner-nation sources. This builds on prior actions to boost domestic mineral production and modernize defense acquisition.\n\nFor markets, the immediate transmission mechanism is a shift in procurement practices. Defense primes that rely on foreign critical materials—particularly rare earths, titanium, and specialty metals—face near-term compliance costs, potential supply disruptions, and margin pressure as they rework supply chains. Conversely, the order provides a clear demand catalyst for domestic miners and processors of these materials, as they become preferred sources for national security contracts.\n\nThe key uncertainty is the scope and pace of the waiver restrictions. If the definition of \"covered nations\" is broad (e.g., China, Russia) and applied stringently, the disruption could be pronounced, forcing rapid re-sourcing and potentially increasing costs for the Pentagon and contractors. However, the order’s encouraging language and removal of regulatory barriers for new sources suggest a gradual, carrot-and-stick approach that may favor those with existing domestic capabilities.\n\nOverall, this is a structural policy tailwind for US-based critical mineral producers and a compliance headwind for major defense contractors with entrenched foreign dependencies. The net market impact is mixed but tilts toward a reallocation of capital within the defense ecosystem.",
+  "sectors": [
+    {
+      "name": "Domestic Critical Minerals & Mining",
+      "impact": "tailwind",
+      "rationale": "Direct demand boost as defense contractors seek qualified domestic sources for rare earths, lithium, titanium, and other critical materials."
+    },
+    {
+      "name": "Defense Contractors",
+      "impact": "headwind",
+      "rationale": "Increased compliance burden, supply chain mapping requirements, and potential disruptions if existing foreign mineral sources are limited."
+    },
+    {
+      "name": "Rare Earths & Strategic Metals",
+      "impact": "tailwind",
+      "rationale": "US-based rare earth and specialty metals producers become critical suppliers under the new onshoring push."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "MP",
+      "direction": "benefit",
+      "rationale": "Sole US rare earth producer; stands to gain directly from DoD push for domestic sourcing of critical minerals."
+    },
+    {
+      "symbol": "FCX",
+      "direction": "benefit",
+      "rationale": "Major US copper producer; copper is a critical defense material and likely beneficiary of supply chain reshoring."
+    },
+    {
+      "symbol": "ATI",
+      "direction": "benefit",
+      "rationale": "Specialty metals producer (titanium, nickel alloys) for defense; increased domestic qualification requirements support its order book."
+    },
+    {
+      "symbol": "LMT",
+      "direction": "hurt",
+      "rationale": "Prime defense contractor; faces near-term supply chain disruption risk and higher compliance costs as it maps and re-shores critical mineral inputs."
+    },
+    {
+      "symbol": "RTX",
+      "direction": "hurt",
+      "rationale": "Major defense supplier with advanced systems reliant on specialty materials; likely to incur transition costs under stricter waiver regime."
+    }
+  ],
+  "confidence": "medium"
+}

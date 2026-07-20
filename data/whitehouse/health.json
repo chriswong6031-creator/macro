@@ -1,10 +1,47 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-20T19:06:07.301827+00:00",
-  "posts_seen": 2,
-  "seen_total": 36,
-  "evaluated": 0,
-  "activated": 0,
+  "as_of": "2026-07-20T20:44:31.043588+00:00",
+  "posts_seen": 10,
+  "seen_total": 42,
+  "evaluated": 6,
+  "activated": 2,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-20-fact-sheet-president-donald-j-trump-takes-further-action-to-adjust-imports-of-al",
+      "importance": 65,
+      "activated": true,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-07-20-further-strengthening-actions-taken-to-adjust-imports-of-aluminum-into-the-unite",
+      "importance": 45,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-07-20-fact-sheet-president-donald-j-trump-secures-americas-defense-supply-chains-and-e",
+      "importance": 62,
+      "activated": true,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-07-20-securing-americas-defense-supply-chains-and-ensuring-domestic-acquisition-of-cri",
+      "importance": null,
+      "activated": false,
+      "degraded_reason": "empty_reply"
+    },
+    {
+      "id": "wh-2026-07-20-nomination-sent-to-the-senate-4c22",
+      "importance": 5,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-07-20-captive-nations-week-2026",
+      "importance": 0,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }

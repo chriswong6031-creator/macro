@@ -1,0 +1,36 @@
+{
+  "activate": true,
+  "importance": 45,
+  "banner_days": 3,
+  "tone": "mixed",
+  "banner_title": "Aluminum onshoring incentive: new US plants get tariff breaks, a boon for domestic producers",
+  "banner_title_zh": "铝业在岸激励：新建美国原铝厂获关税减免，利好国内生产商",
+  "summary": "President Trump authorized a program to incentivize U.S. primary aluminum production. Companies committing to build, expand, or refurbish domestic primary aluminum facilities may import matching volumes at half the Section 232 tariff rate, provided construction starts by January 2029.",
+  "summary_zh": "特朗普总统授权一项激励美国原铝生产的计划。承诺建设、扩建或翻新国内原铝设施的企业可按匹配产量进口原铝，适用232条款关税的一半税率，前提是2029年1月前开工。",
+  "analysis": "The proclamation establishes a voluntary onshoring program under Section 232. Firms with approved plans can import primary aluminum at a 50% tariff discount, tied to their new facility's projected output. This directly reduces the cost of imported metal for qualifying producers while they build domestic capacity, effectively subsidizing new U.S. smelters. The program includes clawback provisions and requires construction to begin by January 20, 2029.\n\nThe market impact is nuanced. For existing U.S. primary producers like Alcoa and Century Aluminum, the plan is a tailwind: it signals policy support and potential for increased domestic capacity, which could strengthen their competitive position against imports. However, in the long term, new capacity may eventually increase domestic supply and weigh on regional aluminum premiums, a mixed outcome for incumbents.\n\nThe transmission mechanism is slow. No new production is imminent, and tariff benefits are tied to future output. The program could accelerate capital allocation decisions in the aluminum sector, potentially boosting related engineering and construction activity. The key uncertainty is the scale and speed of adoption—whether large producers submit viable onshoring plans. The announcement does not change current tariff rates for existing imports, so the near-term price floor for aluminum remains intact. Downstream consumers (beverage cans, autos) might see a negligible effect until new capacity comes online, and that could eventually lower costs if domestic premiums fall.",
+  "sectors": [
+    {
+      "name": "Primary Aluminum Producers",
+      "impact": "tailwind",
+      "rationale": "Direct beneficiaries of the tariff incentive and policy support for expanding domestic smelting capacity."
+    },
+    {
+      "name": "Aluminum Importers & Traders",
+      "impact": "headwind",
+      "rationale": "New domestic capacity could reduce reliance on imports over time, shrinking market share for foreign metal."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "AA",
+      "direction": "benefit",
+      "rationale": "Alcoa is the largest U.S. primary aluminum producer and could use the incentive to expand or modernize smelters."
+    },
+    {
+      "symbol": "CENX",
+      "direction": "benefit",
+      "rationale": "Century Aluminum is a pure-play U.S. primary aluminum producer, well-positioned to utilize the onshoring tariff break."
+    }
+  ],
+  "confidence": "medium"
+}
