@@ -39,6 +39,16 @@ jobs:
           python -m engine.marketing.seo_director --root .
           echo "seo_director: audit complete"
 
+      - name: search console ingest (credentials-gated)
+        if: always()
+        env:
+          GSC_SA_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$GSC_SA_JSON" ]; then
+            echo "GSC credentials not configured — writing unavailable state"
+          fi
+          python -m engine.marketing.seo_search_console --root . || echo "::warning::gsc ingest crashed (non-fatal)"
+
       - name: commit data/marketing/seo artifacts
         if: always()
         run: |
