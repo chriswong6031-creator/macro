@@ -27,6 +27,14 @@
 # Usage:
 #   scripts/run_theta_terminal.sh
 #   THETA_API_KEY=your_key scripts/run_theta_terminal.sh
+#
+# Durable operation: this script is for interactive/manual (re)starts only.
+# Terminal v3 shuts down on stdin EOF, so the launch below holds stdin open with
+# an infinite pipe (tail -f /dev/null |) — the naked nohup form died whenever the
+# launching tty closed (root cause of the 2026-07-17..07-20 EOD store outage).
+# For unattended operation that self-heals across exits/reboots, install the
+# launchd keepalive lane instead: scripts/launchd/com.macro.theta-terminal.plist
+# + theta_terminal_keepalive.sh — see research/THETADATA_OPS_RUNBOOK.md §3.
 
 set -euo pipefail
 
@@ -145,11 +153,19 @@ echo "  (API key passed via environment, not argv — never echoed)"
 echo ""
 
 # Launch headless; nohup so it survives the shell exit.
+# stdin MUST be held open: stdin EOF is the v3 shutdown trigger ("WARN: Shutting
+# down terminal") — an infinite pipe (tail -f /dev/null |) holds it, same pattern
+# as theta_terminal_keepalive.sh. Never launch with stdin on /dev/null or a
+# mortal tty. Both pipe members are nohup'd: if the tail died on tty-close HUP,
+# the pipe would EOF and shut the terminal down again. (If the terminal dies,
+# its tail lingers idle — do NOT blanket-kill `tail -f /dev/null`; the launchd
+# keepalive's own stdin-holder has the identical argv.)
 # The key goes to the JVM as the THETADATA_API_KEY env var (shell prefix
 # assignment — scoped to this one child process, never appears in argv).
-THETADATA_API_KEY="$THETA_KEY" nohup java -jar "$JAR_PATH" \
+nohup tail -f /dev/null 2>/dev/null | \
+    THETADATA_API_KEY="$THETA_KEY" nohup java -jar "$JAR_PATH" \
     > "$LOG_PATH" 2>&1 &
-THETA_PID=$!
+THETA_PID=$!   # $! of an async pipeline = its last member = the java process
 
 echo "ThetaData Terminal v3 launched — PID $THETA_PID"
 echo "Log: tail -f $LOG_PATH"
@@ -159,3 +175,11 @@ echo "  curl -s '$HEALTH_URL' | head -5"
 echo ""
 echo "Or probe via the backfill driver:"
 echo "  python -m scripts.backfill_thetadata_eod --probe"
+echo ""
+echo "NOTE: manual launches like this one have no owner — nothing restarts the"
+echo "terminal if it exits. For durable operation install the launchd keepalive"
+echo "(health-polls :25503, auto-relaunches, backs off on auth failure):"
+echo "  cp scripts/launchd/com.macro.theta-terminal.plist ~/Library/LaunchAgents/"
+echo "  launchctl bootstrap gui/\$(id -u) ~/Library/LaunchAgents/com.macro.theta-terminal.plist"
+echo "See research/THETADATA_OPS_RUNBOOK.md §3. (Its guard defers to an already-"
+echo "running terminal, so installing it now is safe.)"
