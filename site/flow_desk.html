@@ -7,6 +7,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Group Flow Heatmap &amp; Market Tide · 资金潮汐与板块流量图</title>
+
+<meta name="description" content="Group-level money flow across China's market — the tide, the leaders and the laggards, updated after each Asia close.">
+<link rel="canonical" href="https://www.mastermind-x.com/flow_desk.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="China Flow Heatmap & Market Tide — Mastermind">
+<meta property="og:description" content="Group-level money flow across China's market — the tide, the leaders and the laggards, updated after each Asia close.">
+<meta property="og:url" content="https://www.mastermind-x.com/flow_desk.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="China Flow Heatmap & Market Tide — Mastermind">
+<meta name="twitter:description" content="Group-level money flow across China's market — the tide, the leaders and the laggards, updated after each Asia close.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=de86232e">
 <link rel="stylesheet" href="assets/css/b742b8e0.css?v=b742b8e0">
@@ -258,7 +274,7 @@
   <div class="topline">
     <h1>🌊 <span class="l-en">Group Flow Heatmap &amp; Market Tide</span><span class="l-zh">资金潮汐与板块流量图</span></h1>
     <span class="lag-tag"><span class="l-en">EOD · direction approx</span><span class="l-zh">EOD · 方向近似</span></span>
-    <span class="asof tabnum" id="fd-asof" data-asof="2026-07-16"><span class="l-en">data as of</span><span class="l-zh">数据截至</span> <b>2026-07-16</b> · <span class="l-en">updated</span><span class="l-zh">更新</span> 2026-07-19</span>
+    <span class="asof tabnum" id="fd-asof" data-asof="2026-07-17"><span class="l-en">data as of</span><span class="l-zh">数据截至</span> <b>2026-07-17</b> · <span class="l-en">updated</span><span class="l-zh">更新</span> 2026-07-20</span>
   </div>
   <p class="muted sm note"><span class="l-en">EOD options-flow rollup across 353 names — gross premium magnitude is reliable; net premium direction is SOFT (minute tick-rule signing, not NBBO). Z-scores vs own history (min 20 obs — raw shown below threshold). Tape-flow breadth where ThetaData signed columns are present (auto-upgrades as accrual grows). ETF creation/redemption is a proxy (delta(SO)×NAV), labeled accordingly. No score or rank path; display-tier only.</span><span class="l-zh">353只标的的收盘期权资金汇总 — 名义权利金绝对值可信；净权利金方向为软性近似（逐分钟打单规则签名，非NBBO）。Z分数对比自身历史（最低20个观测值 — 低于阈值时显示原始值）。有ThetaData签名列时显示资金广度（随积累自动升级）。ETF申购/赎回为代理指标（delta(SO)×NAV），已标注。不进入评分或排名路径；仅展示层。</span></p>
 </div>
@@ -275,14 +291,14 @@
   <div class="tide-grid">
     <div class="tide-stat">
       <div class="label"><span class="l-en">Gross Premium</span><span class="l-zh">名义权利金</span></div>
-      <div class="val tabnum" id="fd-gross">$28227M</div>
+      <div class="val tabnum" id="fd-gross">$24602M</div>
       <div class="sub"><span class="l-en">total $ committed</span><span class="l-zh">期权总投入金额</span></div>
     </div>
     <div class="tide-stat">
       <div class="label"><span class="l-en">Net Tone</span><span class="l-zh">净向倾向</span> <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span></div>
       <div class="val tabnum pos" id="fd-net">
         
-          +$2202M
+          +$3085M
         
       </div>
       <div class="sub"><span class="l-en">net call vs put premium (approx)</span><span class="l-zh">看涨-看跌净额（近似）</span></div>
@@ -290,14 +306,14 @@
     <div class="tide-stat">
       <div class="label"><span class="l-en">0DTE Share</span><span class="l-zh">0DTE占比</span></div>
       <div class="val tabnum" id="fd-zerodte">
-        11%
+        53%
       </div>
       <div class="sub"><span class="l-en">by gross premium weight</span><span class="l-zh">按名义权利金加权</span></div>
     </div>
     <div class="tide-stat">
       <div class="label"><span class="l-en">Coverage</span><span class="l-zh">覆盖数量</span></div>
       <div class="val tabnum">370</div>
-      <div class="sub"><span class="l-en">names · asof</span><span class="l-zh">标的 · 截至</span> 2026-07-16</div>
+      <div class="sub"><span class="l-en">names · asof</span><span class="l-zh">标的 · 截至</span> 2026-07-17</div>
     </div>
   </div>
   
@@ -319,8 +335,8 @@
     
     
     <div class="cohort-tile"
-         data-tip-en="Mag 7 — net premium ~—M (direction approx); 0DTE —%; 0 of 7 members covered; asof 2026-07-19"
-         data-tip-zh="七巨头 — 净权利金~—M（方向近似）；0DTE —%；0 of 7 members covered；截至2026-07-19">
+         data-tip-en="Mag 7 — net premium ~—M (direction approx); 0DTE —%; 0 of 7 members covered; asof 2026-07-20"
+         data-tip-zh="七巨头 — 净权利金~—M（方向近似）；0DTE —%；0 of 7 members covered；截至2026-07-20">
       <div class="c-name">
         <span class="l-en">Mag 7</span><span class="l-zh">七巨头</span>
       </div>
@@ -349,8 +365,8 @@
     
     
     <div class="cohort-tile"
-         data-tip-en="Memory — net premium ~—M (direction approx); 0DTE —%; 0 of 4 members covered; asof 2026-07-19"
-         data-tip-zh="存储 — 净权利金~—M（方向近似）；0DTE —%；0 of 4 members covered；截至2026-07-19">
+         data-tip-en="Memory — net premium ~—M (direction approx); 0DTE —%; 0 of 4 members covered; asof 2026-07-20"
+         data-tip-zh="存储 — 净权利金~—M（方向近似）；0DTE —%；0 of 4 members covered；截至2026-07-20">
       <div class="c-name">
         <span class="l-en">Memory</span><span class="l-zh">存储</span>
       </div>
@@ -379,8 +395,8 @@
     
     
     <div class="cohort-tile"
-         data-tip-en="AI chips — net premium ~—M (direction approx); 0DTE —%; 0 of 12 members covered; asof 2026-07-19"
-         data-tip-zh="AI芯片 — 净权利金~—M（方向近似）；0DTE —%；0 of 12 members covered；截至2026-07-19">
+         data-tip-en="AI chips — net premium ~—M (direction approx); 0DTE —%; 0 of 12 members covered; asof 2026-07-20"
+         data-tip-zh="AI芯片 — 净权利金~—M（方向近似）；0DTE —%；0 of 12 members covered；截至2026-07-20">
       <div class="c-name">
         <span class="l-en">AI chips</span><span class="l-zh">AI芯片</span>
       </div>
@@ -409,8 +425,8 @@
     
     
     <div class="cohort-tile"
-         data-tip-en="Software — net premium ~—M (direction approx); 0DTE —%; 0 of 17 members covered; asof 2026-07-19"
-         data-tip-zh="软件 — 净权利金~—M（方向近似）；0DTE —%；0 of 17 members covered；截至2026-07-19">
+         data-tip-en="Software — net premium ~—M (direction approx); 0DTE —%; 0 of 17 members covered; asof 2026-07-20"
+         data-tip-zh="软件 — 净权利金~—M（方向近似）；0DTE —%；0 of 17 members covered；截至2026-07-20">
       <div class="c-name">
         <span class="l-en">Software</span><span class="l-zh">软件</span>
       </div>
@@ -455,18 +471,18 @@
     <div class="hm-cell">
       <div class="sec-name">Technology</div>
       <div class="sec-prem pos">
-        $14698M
+        $11452M
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-hi">z 1.4</span>
+          <span class="z-badge z-neu">z 0.6</span>
         
         <span class="tone-chip tone-pos">
           <span class="l-en">call~</span><span class="l-zh">偏多~</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>51<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 51%</span>
       </div>
       
       <div class="breadth-bar">
@@ -482,18 +498,18 @@
     <div class="hm-cell">
       <div class="sec-name">Index ETFs</div>
       <div class="sec-prem pos">
-        $4699M
+        $6040M
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-neu">z -0.1</span>
+          <span class="z-badge z-neu">z 0.4</span>
         
         <span class="tone-chip tone-pos">
           <span class="l-en">call~</span><span class="l-zh">偏多~</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>4<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 66%</span>
+        <span>0DTE 68%</span>
       </div>
       
       <div class="breadth-bar">
@@ -509,7 +525,7 @@
     <div class="hm-cell">
       <div class="sec-name">Consumer Disc.</div>
       <div class="sec-prem pos">
-        $1784M
+        $1825M
       </div>
       <div class="sec-meta">
         
@@ -520,7 +536,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>26<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 56%</span>
       </div>
       
       <div class="breadth-bar">
@@ -536,18 +552,18 @@
     <div class="hm-cell">
       <div class="sec-name">Communication</div>
       <div class="sec-prem neg">
-        $1677M
+        $1242M
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-neu">z 0.8</span>
+          <span class="z-badge z-neu">z 0.2</span>
         
         <span class="tone-chip tone-neg">
           <span class="l-en">put~</span><span class="l-zh">偏空~</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>4<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 54%</span>
       </div>
       
       <div class="breadth-bar">
@@ -563,18 +579,18 @@
     <div class="hm-cell">
       <div class="sec-name">Industrials</div>
       <div class="sec-prem ">
-        $446M
+        $368M
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-neu">z 0.0</span>
+          <span class="z-badge z-neu">z -0.1</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>41<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 31%</span>
       </div>
       
       <div class="breadth-bar">
@@ -588,36 +604,9 @@
     
     
     <div class="hm-cell">
-      <div class="sec-name">Health Care</div>
-      <div class="sec-prem ">
-        $340M
-      </div>
-      <div class="sec-meta">
-        
-          <span class="z-badge z-neu">z -0.1</span>
-        
-        <span class="tone-chip tone-neu">
-          <span class="l-en">neutral</span><span class="l-zh">中性</span>
-          <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
-        </span>
-        <span>15<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
-      </div>
-      
-      <div class="breadth-bar">
-        <div class="breadth-fill "
-             style="width:60%"></div>
-      </div>
-      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 60% (15<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
-      
-    </div>
-    
-    
-    
-    <div class="hm-cell">
       <div class="sec-name">Financials</div>
       <div class="sec-prem ">
-        $331M
+        $328M
       </div>
       <div class="sec-meta">
         
@@ -628,7 +617,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>25<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 38%</span>
       </div>
       
       <div class="breadth-bar">
@@ -642,27 +631,27 @@
     
     
     <div class="hm-cell">
-      <div class="sec-name">Staples</div>
+      <div class="sec-name">Health Care</div>
       <div class="sec-prem ">
-        $165M
+        $292M
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-neu">z -0.1</span>
+          <span class="z-badge z-neu">z -0.2</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
-        <span>21<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>15<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
+        <span>0DTE 38%</span>
       </div>
       
       <div class="breadth-bar">
         <div class="breadth-fill "
-             style="width:57%"></div>
+             style="width:60%"></div>
       </div>
-      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 57% (21<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 60% (15<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
       
     </div>
     
@@ -671,18 +660,18 @@
     <div class="hm-cell">
       <div class="sec-name">Energy</div>
       <div class="sec-prem ">
-        $140M
+        $131M
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-neu">z -0.1</span>
+          <span class="z-badge z-neu">z -0.2</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>19<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 30%</span>
       </div>
       
       <div class="breadth-bar">
@@ -696,9 +685,9 @@
     
     
     <div class="hm-cell">
-      <div class="sec-name">Utilities</div>
+      <div class="sec-name">Staples</div>
       <div class="sec-prem ">
-        $37M
+        $128M
       </div>
       <div class="sec-meta">
         
@@ -708,8 +697,35 @@
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
+        <span>21<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
+        <span>0DTE 29%</span>
+      </div>
+      
+      <div class="breadth-bar">
+        <div class="breadth-fill "
+             style="width:57%"></div>
+      </div>
+      <div class="xs muted" style="margin-top:3px"><span class="l-en">tape breadth</span><span class="l-zh">资金广度</span> 57% (21<span class="l-en"> names</span><span class="l-zh">只</span>)</div>
+      
+    </div>
+    
+    
+    
+    <div class="hm-cell">
+      <div class="sec-name">Utilities</div>
+      <div class="sec-prem ">
+        $30M
+      </div>
+      <div class="sec-meta">
+        
+          <span class="z-badge z-neu">z -0.4</span>
+        
+        <span class="tone-chip tone-neu">
+          <span class="l-en">neutral</span><span class="l-zh">中性</span>
+          <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
+        </span>
         <span>11<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 24%</span>
       </div>
       
       <div class="breadth-bar">
@@ -725,18 +741,18 @@
     <div class="hm-cell">
       <div class="sec-name">Materials</div>
       <div class="sec-prem ">
-        $28M
+        $6M
       </div>
       <div class="sec-meta">
         
-          <span class="z-badge z-neu">z 0.2</span>
+          <span class="z-badge z-neu">z -0.2</span>
         
         <span class="tone-chip tone-neu">
           <span class="l-en">neutral</span><span class="l-zh">中性</span>
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>3<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 20%</span>
       </div>
       
       <div class="breadth-bar">
@@ -763,7 +779,7 @@
           <span class="soft-tag"><span class="l-en">~soft</span><span class="l-zh">~软</span></span>
         </span>
         <span>1<span class="l-en"> names</span><span class="l-zh">只标的</span></span>
-        <span>0DTE 0%</span>
+        <span>0DTE 15%</span>
       </div>
       
       <div class="breadth-bar">
@@ -791,15 +807,15 @@
   <div class="movers-list">
     
     <div class="mover-row">
-      <div class="tk">ORCL</div>
+      <div class="tk">QQQ</div>
       <div class="net pos">
-        +$523M
+        +$991M
       </div>
-      <div class="tone-chip tone-pos">
-        <span class="l-en">call~</span><span class="l-zh">多~</span>
+      <div class="tone-chip tone-neg">
+        <span class="l-en">put~</span><span class="l-zh">空~</span>
       </div>
       <div class="details muted">
-        0DTE 0%
+        0DTE 70%
         
         
         
@@ -810,13 +826,13 @@
     <div class="mover-row">
       <div class="tk">SPY</div>
       <div class="net pos">
-        +$472M
+        +$952M
       </div>
       <div class="tone-chip tone-neg">
         <span class="l-en">put~</span><span class="l-zh">空~</span>
       </div>
       <div class="details muted">
-        0DTE 67%
+        0DTE 68%
         
         
         
@@ -825,49 +841,15 @@
     </div>
     
     <div class="mover-row">
-      <div class="tk">QQQ</div>
+      <div class="tk">SNDK</div>
       <div class="net pos">
-        +$401M
+        +$523M
       </div>
       <div class="tone-chip tone-neg">
         <span class="l-en">put~</span><span class="l-zh">空~</span>
       </div>
       <div class="details muted">
-        0DTE 67%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">TSLA</div>
-      <div class="net pos">
-        +$237M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">WDC</div>
-      <div class="net pos">
-        +$233M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
+        0DTE 56%
         
         <span class="lag-tag" title="Appeared in top-20 net-impact board 3 times in trailing 10 sessions">×3/10d</span>
         
@@ -876,49 +858,15 @@
     </div>
     
     <div class="mover-row">
-      <div class="tk">AAPL</div>
-      <div class="net pos">
-        +$223M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
       <div class="tk">MU</div>
       <div class="net pos">
-        +$195M
+        +$404M
       </div>
       <div class="tone-chip tone-neg">
         <span class="l-en">put~</span><span class="l-zh">空~</span>
       </div>
       <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">MSFT</div>
-      <div class="net pos">
-        +$170M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
+        0DTE 55%
         
         
         
@@ -929,13 +877,13 @@
     <div class="mover-row">
       <div class="tk">SMH</div>
       <div class="net pos">
-        +$170M
+        +$200M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
+        0DTE 18%
         
         
         
@@ -946,83 +894,15 @@
     <div class="mover-row">
       <div class="tk">META</div>
       <div class="net neg">
-        $-164M
+        $-129M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
+        0DTE 57%
         
         
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">SNDK</div>
-      <div class="net neg">
-        $-152M
-      </div>
-      <div class="tone-chip tone-neg">
-        <span class="l-en">put~</span><span class="l-zh">空~</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        <span class="lag-tag" title="Appeared in top-20 net-impact board 3 times in trailing 10 sessions">×3/10d</span>
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">NBIS</div>
-      <div class="net neg">
-        $-143M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">ARM</div>
-      <div class="net neg">
-        $-140M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        
-        
-        
-      </div>
-    </div>
-    
-    <div class="mover-row">
-      <div class="tk">LRCX</div>
-      <div class="net pos">
-        +$137M
-      </div>
-      <div class="tone-chip tone-neu">
-        <span class="l-en">neu</span><span class="l-zh">中性</span>
-      </div>
-      <div class="details muted">
-        0DTE 0%
-        
-        <span class="lag-tag" title="Appeared in top-20 net-impact board 1 times in trailing 10 sessions">×1/10d</span>
         
         
       </div>
@@ -1030,14 +910,150 @@
     
     <div class="mover-row">
       <div class="tk">AMD</div>
-      <div class="net neg">
-        $-126M
+      <div class="net pos">
+        +$119M
       </div>
       <div class="tone-chip tone-neu">
         <span class="l-en">neu</span><span class="l-zh">中性</span>
       </div>
       <div class="details muted">
-        0DTE 0%
+        0DTE 53%
+        
+        
+        
+        
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">AAPL</div>
+      <div class="net pos">
+        +$111M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 63%
+        
+        
+        
+        
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">QCOM</div>
+      <div class="net neg">
+        $-91M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 20%
+        
+        
+        
+        
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">NVDA</div>
+      <div class="net neg">
+        $-69M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 56%
+        
+        
+        
+        
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">TSLA</div>
+      <div class="net pos">
+        +$52M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 61%
+        
+        
+        
+        
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">AVGO</div>
+      <div class="net pos">
+        +$42M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 39%
+        
+        
+        
+        
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">IONQ</div>
+      <div class="net neg">
+        $-37M
+      </div>
+      <div class="tone-chip tone-neg">
+        <span class="l-en">put~</span><span class="l-zh">空~</span>
+      </div>
+      <div class="details muted">
+        0DTE 38%
+        
+        
+        
+        
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">NBIS</div>
+      <div class="net pos">
+        +$37M
+      </div>
+      <div class="tone-chip tone-neu">
+        <span class="l-en">neu</span><span class="l-zh">中性</span>
+      </div>
+      <div class="details muted">
+        0DTE 40%
+        
+        
+        
+        
+      </div>
+    </div>
+    
+    <div class="mover-row">
+      <div class="tk">SOXX</div>
+      <div class="net neg">
+        $-33M
+      </div>
+      <div class="tone-chip tone-neg">
+        <span class="l-en">put~</span><span class="l-zh">空~</span>
+      </div>
+      <div class="details muted">
+        0DTE 32%
         
         
         
@@ -1272,7 +1288,7 @@
 </div>
 
 <p class="muted xs" style="margin-top:6px;text-align:center">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-19 ·
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-20 ·
   <span class="l-en">EOD options flow · gross premium magnitude reliable · net direction ~soft (minute tick-rule) · ETF flows are creation/redemption proxy · no score or rank path</span><span class="l-zh">EOD期权资金 · 名义权利金绝对值可信 · 净方向~软性（逐分钟打单） · ETF资金流为申购/赎回代理 · 不进入评分或排名</span>
 </p>
 
@@ -1285,7 +1301,7 @@
 })();
 (function(){
   // ── Data injected from Python ────────────────────────────────────
-  var SPARK = [{"date": "2026-06-01", "net_premium_mn": 0.0, "premium_mn": 3776.81}, {"date": "2026-06-02", "net_premium_mn": 0.0, "premium_mn": 4086.25}, {"date": "2026-06-03", "net_premium_mn": 0.0, "premium_mn": 3604.81}, {"date": "2026-06-04", "net_premium_mn": 0.0, "premium_mn": 4512.27}, {"date": "2026-06-05", "net_premium_mn": 0.0, "premium_mn": 19273.63}, {"date": "2026-06-08", "net_premium_mn": 0.0, "premium_mn": 5012.11}, {"date": "2026-06-09", "net_premium_mn": 0.0, "premium_mn": 10480.45}, {"date": "2026-06-10", "net_premium_mn": 0.0, "premium_mn": 8316.230000000001}, {"date": "2026-06-11", "net_premium_mn": 0.0, "premium_mn": 9615.169999999998}, {"date": "2026-06-12", "net_premium_mn": 0.0, "premium_mn": 7359.450000000001}, {"date": "2026-06-15", "net_premium_mn": 0.0, "premium_mn": 5078.509999999999}, {"date": "2026-06-16", "net_premium_mn": 0.0, "premium_mn": 5554.870000000001}, {"date": "2026-06-17", "net_premium_mn": 0.0, "premium_mn": 9599.03}, {"date": "2026-06-18", "net_premium_mn": 0.0, "premium_mn": 4593.1}, {"date": "2026-06-22", "net_premium_mn": 0.0, "premium_mn": 3584.31}, {"date": "2026-06-23", "net_premium_mn": 0.0, "premium_mn": 5340.05}, {"date": "2026-06-24", "net_premium_mn": 0.0, "premium_mn": 5222.54}, {"date": "2026-06-25", "net_premium_mn": 0.0, "premium_mn": 4612.6}, {"date": "2026-06-26", "net_premium_mn": 0.0, "premium_mn": 4583.38}, {"date": "2026-06-29", "net_premium_mn": 0.0, "premium_mn": 4732.369999999999}, {"date": "2026-06-30", "net_premium_mn": 0.0, "premium_mn": 4570.62}, {"date": "2026-07-01", "net_premium_mn": 0.0, "premium_mn": 4085.89}, {"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}, {"date": "2026-07-10", "net_premium_mn": 51.18, "premium_mn": 2962.08}, {"date": "2026-07-13", "net_premium_mn": 484.09000000000003, "premium_mn": 3974.88}, {"date": "2026-07-14", "net_premium_mn": 554.8799999999999, "premium_mn": 3383.13}, {"date": "2026-07-15", "net_premium_mn": 932.0500000000001, "premium_mn": 3943.7799999999997}, {"date": "2026-07-16", "net_premium_mn": 940.18, "premium_mn": 4698.950000000001}];
+  var SPARK = [{"date": "2026-06-02", "net_premium_mn": 0.0, "premium_mn": 4086.25}, {"date": "2026-06-03", "net_premium_mn": 0.0, "premium_mn": 3604.81}, {"date": "2026-06-04", "net_premium_mn": 0.0, "premium_mn": 4512.27}, {"date": "2026-06-05", "net_premium_mn": 0.0, "premium_mn": 19273.63}, {"date": "2026-06-08", "net_premium_mn": 0.0, "premium_mn": 5012.11}, {"date": "2026-06-09", "net_premium_mn": 0.0, "premium_mn": 10480.45}, {"date": "2026-06-10", "net_premium_mn": 0.0, "premium_mn": 8316.230000000001}, {"date": "2026-06-11", "net_premium_mn": 0.0, "premium_mn": 9615.169999999998}, {"date": "2026-06-12", "net_premium_mn": 0.0, "premium_mn": 7359.450000000001}, {"date": "2026-06-15", "net_premium_mn": 0.0, "premium_mn": 5078.509999999999}, {"date": "2026-06-16", "net_premium_mn": 0.0, "premium_mn": 5554.870000000001}, {"date": "2026-06-17", "net_premium_mn": 0.0, "premium_mn": 9599.03}, {"date": "2026-06-18", "net_premium_mn": 0.0, "premium_mn": 4593.1}, {"date": "2026-06-22", "net_premium_mn": 0.0, "premium_mn": 3584.31}, {"date": "2026-06-23", "net_premium_mn": 0.0, "premium_mn": 5340.05}, {"date": "2026-06-24", "net_premium_mn": 0.0, "premium_mn": 5222.54}, {"date": "2026-06-25", "net_premium_mn": 0.0, "premium_mn": 4612.6}, {"date": "2026-06-26", "net_premium_mn": 0.0, "premium_mn": 4583.38}, {"date": "2026-06-29", "net_premium_mn": 0.0, "premium_mn": 4732.369999999999}, {"date": "2026-06-30", "net_premium_mn": 0.0, "premium_mn": 4570.62}, {"date": "2026-07-01", "net_premium_mn": 0.0, "premium_mn": 4085.89}, {"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}, {"date": "2026-07-10", "net_premium_mn": 51.18, "premium_mn": 2962.08}, {"date": "2026-07-13", "net_premium_mn": 484.09000000000003, "premium_mn": 3974.88}, {"date": "2026-07-14", "net_premium_mn": 554.8799999999999, "premium_mn": 3383.13}, {"date": "2026-07-15", "net_premium_mn": 932.0500000000001, "premium_mn": 3943.7799999999997}, {"date": "2026-07-16", "net_premium_mn": 940.18, "premium_mn": 4698.950000000001}, {"date": "2026-07-17", "net_premium_mn": 1969.6299999999999, "premium_mn": 6039.88}];
 
   // ── Sparkline canvas ─────────────────────────────────────────────
   var canvas = document.getElementById('fd-spark');
@@ -1339,6 +1355,5 @@
 })();
 </script>
 <script src="theme.js?v=e63903ba" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

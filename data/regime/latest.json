@@ -441,7 +441,7 @@
       "skew_pctile": 0.5208333333333334,
       "stock_bond_corr": 0.5629123759574785,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.5674182806238178,
+      "roro": 0.5695830663057849,
       "roro_state": "risk-on",
       "vol_target_scalar": 1.056019781945416,
       "news_sentiment": 0.12348560243844986,
@@ -8747,7 +8747,7 @@
         "Crypto": 1.0,
         "China": 0.01,
         "HK": 0.03,
-        "Commodities": 0.23,
+        "Commodities": 0.22,
         "Dollar": 0.39
       },
       "China": {
@@ -8764,11 +8764,11 @@
         "China": 0.33,
         "HK": 1.0,
         "Commodities": 0.17,
-        "Dollar": 0.1
+        "Dollar": 0.11
       },
       "Commodities": {
         "US": 0.52,
-        "Crypto": 0.23,
+        "Crypto": 0.22,
         "China": 0.37,
         "HK": 0.17,
         "Commodities": 1.0,
@@ -8778,7 +8778,7 @@
         "US": 0.49,
         "Crypto": 0.39,
         "China": 0.09,
-        "HK": 0.1,
+        "HK": 0.11,
         "Commodities": 0.43,
         "Dollar": 1.0
       }
@@ -8907,7 +8907,7 @@
     "confidence": "low",
     "confidence_zh": "\u4f4e",
     "strength": 0.94,
-    "dominance_ratio": 1.16,
+    "dominance_ratio": 1.18,
     "agreement": 1.0,
     "runner_up": "crypto_liquidity",
     "runner_up_label": "Crypto liquidity",
@@ -8953,8 +8953,8 @@
         "label": "Crypto liquidity",
         "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
         "family": "crypto",
-        "projection": 0.81,
-        "strength": 0.81,
+        "projection": 0.79,
+        "strength": 0.79,
         "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
       },
       {
@@ -8971,8 +8971,8 @@
         "label": "Fed repricing",
         "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": -0.51,
-        "strength": 0.51,
+        "projection": -0.52,
+        "strength": 0.52,
         "direction": "dovish repricing \u2014 cuts priced in, front-end down"
       },
       {
@@ -9007,8 +9007,8 @@
         "label": "USD shock",
         "label_zh": "\u7f8e\u5143\u51b2\u51fb",
         "family": "fx",
-        "projection": -0.13,
-        "strength": 0.13,
+        "projection": -0.14,
+        "strength": 0.14,
         "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
       },
       {
@@ -9061,7 +9061,7 @@
         },
         "risk_contrib": {
           "US": 0.124,
-          "Crypto": 0.363,
+          "Crypto": 0.362,
           "China": 0.116,
           "HK": 0.103,
           "Commodities": 0.262,
@@ -9069,7 +9069,7 @@
         },
         "port_vol_ann": 0.139,
         "diversification_ratio": 1.62,
-        "max_risk_contrib": 0.363
+        "max_risk_contrib": 0.362
       },
       "inverse_vol": {
         "scheme": "inverse_vol",
@@ -9258,7 +9258,7 @@
   },
   "fed_path": {
     "asof": "2026-07-20",
-    "built": "2026-07-20T21:39:06.271732+00:00",
+    "built": "2026-07-20T21:23:18.575134+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -18741,7 +18741,7 @@
       "phase": null
     },
     "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-    "_timing_s": 2.55,
+    "_timing_s": 2.56,
     "forward_log": {
       "market": "us",
       "n_graded": 0,
@@ -18915,7 +18915,7 @@
       }
     ],
     "flow": null,
-    "_timing_s": 0.1
+    "_timing_s": 0.15
   },
   "index_momentum": {
     "organ": "index_momentum.v1",
@@ -20483,7 +20483,7 @@
       "fresh_crossers": []
     },
     "n_roster": 13,
-    "_timing_s": 2.7
+    "_timing_s": 2.09
   },
   "vol_shock": {
     "score": 45.8,
@@ -23250,7 +23250,7 @@
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 100.99,
+        "price": 100.97,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 0.8,
@@ -23336,7 +23336,7 @@
   },
   "freshness": {
     "asof": "2026-07-20",
-    "built_at": "2026-07-20T21:39:18Z",
+    "built_at": "2026-07-20T21:23:30Z",
     "age_days": 0,
     "age_sessions": 0,
     "max_age_sessions": 1,
@@ -23371,7 +23371,7 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 244.2427,
+        "trail_stop": 244.0828,
         "early_now": false,
         "last": {
           "date": "2026-05-01",
@@ -23403,7 +23403,7 @@
         "above200": false,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 93.1904,
+        "trail_stop": 93.1062,
         "early_now": false,
         "last": {
           "date": "2026-05-18",
@@ -23585,7 +23585,7 @@
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 294.3214,
+        "trail_stop": 294.2331,
         "early_now": false,
         "last": {
           "date": "2026-06-29",
@@ -23627,17 +23627,15 @@
       {
         "ticker": "AVB",
         "asof": "2026-07-16",
-        "state": "mixed",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 189.912,
+        "trail_stop": 189.8294,
         "early_now": false,
         "last": {
-          "date": "2026-06-30",
-          "type": "buy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-07-16",
+          "type": "sell"
         }
       },
       {
@@ -23769,7 +23767,7 @@
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 58.5737,
+        "trail_stop": 58.5424,
         "early_now": false,
         "last": {
           "date": "2026-07-01",
@@ -23883,13 +23881,29 @@
         }
       },
       {
+        "ticker": "CBRE",
+        "asof": "2026-07-17",
+        "state": "mixed",
+        "above200": false,
+        "weekly_bull": true,
+        "trail_breach": false,
+        "trail_stop": 138.7652,
+        "early_now": false,
+        "last": {
+          "date": "2026-06-05",
+          "type": "buy",
+          "quality": "block",
+          "reason": "counter-trend, no 200-reclaim/hold"
+        }
+      },
+      {
         "ticker": "CCI",
         "asof": "2026-07-15",
         "state": "mixed",
         "above200": false,
         "weekly_bull": false,
         "trail_breach": true,
-        "trail_stop": 80.2184,
+        "trail_stop": 80.195,
         "early_now": false,
         "last": {
           "date": "2026-06-11",
@@ -23965,7 +23979,7 @@
         "above200": false,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 23.4862,
+        "trail_stop": 23.4692,
         "early_now": false,
         "last": {
           "date": "2026-06-29",
@@ -24233,7 +24247,7 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 119.9764,
+        "trail_stop": 119.9419,
         "early_now": false,
         "last": {
           "date": "2026-05-28",
@@ -24265,7 +24279,7 @@
         "above200": false,
         "weekly_bull": true,
         "trail_breach": true,
-        "trail_stop": 97.9049,
+        "trail_stop": 97.8663,
         "early_now": false,
         "last": {
           "date": "2026-06-24",
@@ -24276,10 +24290,10 @@
         "ticker": "DLR",
         "asof": "2026-07-16",
         "state": "mixed",
-        "above200": false,
+        "above200": true,
         "weekly_bull": false,
         "trail_breach": true,
-        "trail_stop": 179.5399,
+        "trail_stop": 179.5168,
         "early_now": false,
         "last": {
           "date": "2026-05-01",
@@ -24455,13 +24469,13 @@
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 136.3159,
+        "trail_stop": 136.1811,
         "early_now": false,
         "last": {
           "date": "2026-07-14",
           "type": "buy",
-          "quality": "pending",
-          "reason": "pending confirmation"
+          "quality": "take",
+          "reason": "held confirmation"
         }
       },
       {
@@ -24485,7 +24499,7 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 67.9876,
+        "trail_stop": 67.9548,
         "early_now": false,
         "last": {
           "date": "2026-07-10",
@@ -24515,13 +24529,11 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 290.4303,
+        "trail_stop": 290.3147,
         "early_now": false,
         "last": {
-          "date": "2026-06-29",
-          "type": "rebuy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-07-07",
+          "type": "sell"
         }
       },
       {
@@ -24713,7 +24725,7 @@
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 131.9578,
+        "trail_stop": 131.9421,
         "early_now": false,
         "last": {
           "date": "2026-07-01",
@@ -24822,18 +24834,16 @@
       },
       {
         "ticker": "HON",
-        "asof": "2026-06-29",
-        "state": "mixed",
+        "asof": "2026-07-15",
+        "state": "short-bias",
         "above200": true,
-        "weekly_bull": true,
+        "weekly_bull": false,
         "trail_breach": true,
-        "trail_stop": 232.8996,
+        "trail_stop": 227.8105,
         "early_now": false,
         "last": {
-          "date": "2026-05-21",
-          "type": "buy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-06-29",
+          "type": "sell"
         }
       },
       {
@@ -24957,6 +24967,22 @@
         }
       },
       {
+        "ticker": "ISRG",
+        "asof": "2026-07-16",
+        "state": "short-bias",
+        "above200": false,
+        "weekly_bull": true,
+        "trail_breach": true,
+        "trail_stop": 395.8451,
+        "early_now": false,
+        "last": {
+          "date": "2026-06-30",
+          "type": "buy",
+          "quality": "block",
+          "reason": "counter-trend, no 200-reclaim/hold"
+        }
+      },
+      {
         "ticker": "JCI",
         "asof": "2026-07-15",
         "state": "short-bias",
@@ -25061,13 +25087,27 @@
         }
       },
       {
+        "ticker": "KMI",
+        "asof": "2026-07-15",
+        "state": "mixed",
+        "above200": true,
+        "weekly_bull": false,
+        "trail_breach": false,
+        "trail_stop": 32.2447,
+        "early_now": false,
+        "last": {
+          "date": "2026-05-26",
+          "type": "cut"
+        }
+      },
+      {
         "ticker": "KO",
         "asof": "2026-07-15",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": true,
-        "trail_stop": 81.8359,
+        "trail_stop": 81.8242,
         "early_now": false,
         "last": {
           "date": "2026-07-15",
@@ -25265,9 +25305,9 @@
         "asof": "2026-07-16",
         "state": "mixed",
         "above200": true,
-        "weekly_bull": false,
+        "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 60.1504,
+        "trail_stop": 60.1256,
         "early_now": false,
         "last": {
           "date": "2026-06-17",
@@ -25301,6 +25341,22 @@
         "early_now": false,
         "last": {
           "date": "2026-06-29",
+          "type": "buy",
+          "quality": "block",
+          "reason": "counter-trend, no 200-reclaim/hold"
+        }
+      },
+      {
+        "ticker": "MLM",
+        "asof": "2026-07-15",
+        "state": "mixed",
+        "above200": false,
+        "weekly_bull": true,
+        "trail_breach": true,
+        "trail_stop": 580.2262,
+        "early_now": false,
+        "last": {
+          "date": "2026-06-03",
           "type": "buy",
           "quality": "block",
           "reason": "counter-trend, no 200-reclaim/hold"
@@ -25345,7 +25401,7 @@
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 71.8527,
+        "trail_stop": 71.8291,
         "early_now": false,
         "last": {
           "date": "2026-03-16",
@@ -25373,7 +25429,7 @@
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 123.4491,
+        "trail_stop": 123.4305,
         "early_now": false,
         "last": {
           "date": "2026-06-19",
@@ -25793,11 +25849,11 @@
       {
         "ticker": "PLD",
         "asof": "2026-07-15",
-        "state": "long-bias",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 143.3365,
+        "trail_stop": 143.3131,
         "early_now": false,
         "last": {
           "date": "2026-07-15",
@@ -25829,7 +25885,7 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 182.293,
+        "trail_stop": 182.2365,
         "early_now": false,
         "last": {
           "date": "2026-07-15",
@@ -25873,7 +25929,7 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": true,
-        "trail_stop": 320.0311,
+        "trail_stop": 319.9811,
         "early_now": false,
         "last": {
           "date": "2026-04-13",
@@ -26106,16 +26162,16 @@
         "ticker": "SPGI",
         "asof": "2026-07-17",
         "state": "long-bias",
-        "above200": false,
+        "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 430.745,
+        "trail_stop": 429.6353,
         "early_now": false,
         "last": {
           "date": "2026-07-01",
-          "type": "buy",
+          "type": "rebuy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "failed reclaim-and-hold"
         }
       },
       {
@@ -26125,7 +26181,7 @@
         "above200": true,
         "weekly_bull": false,
         "trail_breach": true,
-        "trail_stop": 92.6151,
+        "trail_stop": 92.59,
         "early_now": false,
         "last": {
           "date": "2026-06-24",
@@ -26199,7 +26255,7 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 81.5821,
+        "trail_stop": 81.5581,
         "early_now": false,
         "last": {
           "date": "2026-03-05",
@@ -26213,7 +26269,7 @@
         "above200": false,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 21.6524,
+        "trail_stop": 21.6189,
         "early_now": false,
         "last": {
           "date": "2026-07-15",
@@ -26423,7 +26479,7 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 419.504,
+        "trail_stop": 419.4562,
         "early_now": false,
         "last": {
           "date": "2026-06-24",
@@ -26453,7 +26509,7 @@
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 61.3982,
+        "trail_stop": 61.3805,
         "early_now": false,
         "last": {
           "date": "2026-05-12",
@@ -26569,7 +26625,7 @@
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 90.7219,
+        "trail_stop": 90.6971,
         "early_now": false,
         "last": {
           "date": "2026-05-26",
@@ -26580,10 +26636,10 @@
         "ticker": "VZ",
         "asof": "2026-07-15",
         "state": "mixed",
-        "above200": false,
+        "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
-        "trail_stop": 43.4393,
+        "trail_stop": 43.3571,
         "early_now": false,
         "last": {
           "date": "2026-03-19",
