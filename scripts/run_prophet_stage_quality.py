@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Run the Prophet × Stage quality re-grade backtest (PSQ).
 
-Thin CLI that reuses the PSF run_backtest engine and extracts the PSQ
-falsifier block from the results dict.  Off the render-critical path (a
-research backtest, not a nightly artifact).  Writes:
+Single-pass CLI that fans fire-detection+grading once, then assembles both
+the PSF results dict AND the PSQ quality-tilt falsifiers in one pass.
+Writes:
 
   * data/research/psq_results.json          — full results dict (PSF + PSQ)
   * data/research/psf_fires.parquet         — per-fire dump (if <= 20 MB; else gitignored)
@@ -30,7 +30,10 @@ import logging
 import os
 import sys
 import tempfile
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+
+import numpy as np
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
@@ -69,6 +72,78 @@ def _fmt_ci(ci, pct: bool = False, digits: int = 4) -> str:
 def _verdict_line(key: str, verdict: str, reason: str | None = None) -> str:
     r = f" ({reason})" if reason else ""
     return f"- **{key}: `{verdict}`**{r}"
+
+
+# --------------------------------------------------------------------------- #
+# Single-pass fan-out (captures Fire objects without a second run)              #
+# --------------------------------------------------------------------------- #
+def run_single_pass(data_root: Path, ec_path: str | Path | None = None,
+                    max_workers: int = 4, sample_n: int | None = None,
+                    sample_seed: int = 20260720) -> tuple[list[psf.Fire], dict]:
+    """One parallel fan-out → (all_fires, assembled_results_dict).
+
+    Replicates psf.run_backtest internally, but returns the raw Fire objects
+    so the caller can build the per-fire parquet without a second fan-out.
+    """
+    data_root = Path(data_root)
+    dead_prices = psf.grading.load_dead_prices() or {}
+    tickers = psf.build_universe(data_root, dead_prices=dead_prices)
+    n_universe = len(tickers)
+    surv = psf.survivorship_disclosure(data_root, dead_prices=dead_prices)
+
+    sampled = False
+    sample_note = None
+    if sample_n is not None and sample_n < n_universe:
+        rng = np.random.default_rng(sample_seed)
+        idx = rng.choice(n_universe, size=sample_n, replace=False)
+        tickers = [tickers[i] for i in sorted(idx)]
+        sampled = True
+        sample_note = (f"Representative random sample of {sample_n}/{n_universe} names "
+                       f"(seed={sample_seed}, uniform over the union universe) — DISCLOSED, "
+                       "not a silent truncation.")
+
+    workers = max(1, min(int(max_workers), 4))
+    all_fires: list[psf.Fire] = []
+    n_late_ipo = 0
+    n_with_prices = 0
+    ec_str = str(ec_path) if ec_path is not None else None
+
+    if workers > 1 and len(tickers) > 20:
+        try:
+            with ProcessPoolExecutor(max_workers=workers, initializer=psf._run_init,
+                                     initargs=(str(data_root), ec_str)) as ex:
+                for fires_t, late, had in ex.map(psf._run_one, tickers, chunksize=16):
+                    all_fires.extend(fires_t)
+                    n_late_ipo += int(late)
+                    n_with_prices += int(had)
+        except Exception as e:  # noqa: BLE001
+            log.warning("PSQ: parallel run failed (%s) — serial fallback", e)
+            all_fires, n_late_ipo, n_with_prices = [], 0, 0
+            psf._run_init(str(data_root), ec_str)
+            for tk in tickers:
+                fires_t, late, had = psf._run_one(tk)
+                all_fires.extend(fires_t)
+                n_late_ipo += int(late)
+                n_with_prices += int(had)
+    else:
+        psf._run_init(str(data_root), ec_str)
+        for tk in tickers:
+            fires_t, late, had = psf._run_one(tk)
+            all_fires.extend(fires_t)
+            n_late_ipo += int(late)
+            n_with_prices += int(had)
+
+    results = psf.assemble_results(
+        all_fires,
+        n_universe=n_universe,
+        n_with_prices=n_with_prices,
+        n_late_ipo=n_late_ipo,
+        sampled=sampled,
+        sample_note=sample_note,
+        sample_n=(len(tickers) if sampled else n_universe),
+        survivorship=surv,
+    )
+    return all_fires, results
 
 
 # --------------------------------------------------------------------------- #
@@ -154,7 +229,6 @@ def build_report(results: dict, fires_parquet_path: Path | None,
         o = arms[arm]["overall"]
         bm = arms[arm]["bootstrap_winrate"]
         n_months = bm.get("n_months", "—")
-        # EA: need to compute from the arm's median mfe + median mdd.
         mfe = o.get("median_fwd_mfe_126")
         mdd = o.get("median_fwd_mdd_126")
         ea = ((mfe or 0) + (mdd or 0)) if (mfe is not None and mdd is not None) else None
@@ -272,7 +346,7 @@ def build_report(results: dict, fires_parquet_path: Path | None,
 
     # Regime leg.
     lines += [
-        "## Regime leg — H1 point diff per regime (SUPPORTING, no verdict change)",
+        "## Regime leg — H1 point diff per regime (SUPPORTING, no verdict change alone)",
         "",
         "| Regime | n_dates (A) | n_fires C | n_fires A | med ret C | med ret A | diff (C−A) |",
         "|---|---|---|---|---|---|---|",
@@ -343,6 +417,23 @@ def build_report(results: dict, fires_parquet_path: Path | None,
         lines.append("- Per-fire parquet not written (run with `--fires-out` to generate).")
     lines.append("")
 
+    # PSF win-rate falsifiers (PSF results carried for context).
+    psf_fals = results["params"]["clean15_126"]["falsifiers"]
+    psf_h1 = psf_fals.get("PSF_H1", {})
+    psf_h2 = psf_fals.get("PSF_H2", {})
+    b_psf1 = psf_h1.get("bootstrap_diff", {})
+    b_psf2 = psf_h2.get("bootstrap_diff", {})
+    lines += [
+        "## PSF win-rate falsifiers (carried from predecessor test — context only)",
+        "",
+        f"- PSF-H1 (B−A win-rate): `{psf_h1.get('verdict', '—').upper()}` — "
+        f"bootstrap CI {_fmt_ci(b_psf1.get('ci95'), pct=True)} (n_months={b_psf1.get('n_months', '—')})",
+        f"- PSF-H2 (C−B win-rate): `{psf_h2.get('verdict', '—').upper()}` — "
+        f"bootstrap CI {_fmt_ci(b_psf2.get('ci95'), pct=True)} (n_months={b_psf2.get('n_months', '—')})",
+        f"- PSF KILL: `{'TRIGGERED' if psf_fals.get('KILL', {}).get('triggered') else 'not triggered'}`",
+        "",
+    ]
+
     # Adjudication placeholder.
     lines += [
         "## Adjudication (main loop)",
@@ -378,8 +469,10 @@ def main(argv: list[str] | None = None) -> int:
     data_root = Path(args.root) if args.root else config.data_dir()
 
     log.info("PSQ: building universe under %s", data_root)
-    results = psf.run_backtest(data_root, ec_path=args.ec_path,
-                               max_workers=args.max_workers, sample_n=args.sample)
+    all_fires, results = run_single_pass(
+        data_root, ec_path=args.ec_path,
+        max_workers=args.max_workers, sample_n=args.sample,
+    )
     log.info("PSQ: %d total fires across %d names with prices",
              results["n_fires_total"], results["universe"]["n_with_prices"])
 
@@ -394,91 +487,23 @@ def main(argv: list[str] | None = None) -> int:
     # Per-fire parquet dump.
     fires_path: Path | None = None
     fires_size: int | None = None
-    # Reconstruct fires list from the run (we need the raw fires not just the results dict).
-    # The results dict does not store raw fires — we must call run_backtest differently.
-    # Strategy: re-use the already-computed results but build fires from the psq section's
-    # n_matured counts as a sanity check; for the actual dump we need the Fire objects.
-    # The runner calls run_backtest which returns results WITHOUT the raw Fire objects.
-    # To avoid a full re-run, we wire the fires dump into the backtest engine directly.
-    # We do a second call with fires capture via _patched assemble_results.
     fires_out_path = Path(args.fires_out) if args.fires_out else (
         _REPO_ROOT / "data" / "research" / "psf_fires.parquet")
 
-    log.info("PSQ: building per-fire dump at %s", fires_out_path)
-    # Rebuild fires (cheap if already cached in workers — but requires a second fan-out).
-    # We use a helper that captures fires during the backtest.
-    fires_list: list[psf.Fire] = []
-    _orig_assemble = psf.assemble_results
-
-    def _capturing_assemble(fires: list[psf.Fire], **kw):
-        fires_list.extend(fires)
-        return _orig_assemble(fires, **kw)
-
-    psf.assemble_results = _capturing_assemble  # type: ignore[assignment]
-    try:
-        # Re-run from scratch (needed to get Fire objects — JSON results don't carry them).
-        # This is acceptable overhead for a one-off research backtest.
-        dead_prices = psf.grading.load_dead_prices() or {}
-        tickers = psf.build_universe(data_root, dead_prices=dead_prices)
-        n_universe = len(tickers)
-        if args.sample and args.sample < n_universe:
-            import numpy as np
-            rng = np.random.default_rng(20260720)
-            idx = rng.choice(n_universe, size=args.sample, replace=False)
-            tickers = [tickers[i] for i in sorted(idx)]
-        surv = psf.survivorship_disclosure(data_root, dead_prices=dead_prices)
-        # Serial or parallel (mirrors run_backtest).
-        workers = max(1, min(int(args.max_workers), 4))
-        all_fires: list[psf.Fire] = []
-        n_late_ipo = 0
-        n_with_prices = 0
-        if workers > 1 and len(tickers) > 20:
-            try:
-                from concurrent.futures import ProcessPoolExecutor
-                ec_str = str(args.ec_path) if args.ec_path else None
-                with ProcessPoolExecutor(max_workers=workers, initializer=psf._run_init,
-                                         initargs=(str(data_root), ec_str)) as ex:
-                    for fires_t, late, had in ex.map(psf._run_one, tickers, chunksize=16):
-                        all_fires.extend(fires_t)
-                        n_late_ipo += int(late)
-                        n_with_prices += int(had)
-            except Exception as e:
-                log.warning("PSQ fires dump: parallel failed (%s) — serial fallback", e)
-                all_fires, n_late_ipo, n_with_prices = [], 0, 0
-                psf._run_init(str(data_root), str(args.ec_path) if args.ec_path else None)
-                for tk in tickers:
-                    fires_t, late, had = psf._run_one(tk)
-                    all_fires.extend(fires_t)
-                    n_late_ipo += int(late)
-                    n_with_prices += int(had)
-        else:
-            psf._run_init(str(data_root), str(args.ec_path) if args.ec_path else None)
-            for tk in tickers:
-                fires_t, late, had = psf._run_one(tk)
-                all_fires.extend(fires_t)
-                n_late_ipo += int(late)
-                n_with_prices += int(had)
-        fires_list.extend(all_fires)
-    finally:
-        psf.assemble_results = _orig_assemble  # type: ignore[assignment]
-
-    if fires_list:
-        tbl = psf.build_psq_fires_table(fires_list, psf.EC_SENT_GATE)
+    if all_fires:
+        tbl = psf.build_psq_fires_table(all_fires, psf.EC_SENT_GATE)
         if not tbl.empty:
             fires_out_path.parent.mkdir(parents=True, exist_ok=True)
             tmp_pq = Path(tempfile.mktemp(dir=fires_out_path.parent, suffix=".tmp.parquet"))
             tbl.to_parquet(tmp_pq, index=False)
             fires_size = tmp_pq.stat().st_size
+            os.replace(tmp_pq, fires_out_path)
+            fires_path = fires_out_path
+            size_mb = fires_size / 1024 / 1024
             if fires_size <= _FIRES_PARQUET_SIZE_LIMIT:
-                os.replace(tmp_pq, fires_out_path)
-                fires_path = fires_out_path
-                log.info("PSQ: wrote %s (%.1f MB)", fires_out_path, fires_size / 1024 / 1024)
+                log.info("PSQ: wrote %s (%.1f MB) — within 20 MB limit, committed", fires_out_path, size_mb)
             else:
-                # Too large — gitignore it (write to path but document).
-                os.replace(tmp_pq, fires_out_path)
-                fires_path = fires_out_path
-                log.warning("PSQ: fires parquet is %.1f MB (> 20 MB) — should be gitignored",
-                             fires_size / 1024 / 1024)
+                log.warning("PSQ: fires parquet is %.1f MB (> 20 MB) — must be gitignored", size_mb)
         else:
             log.warning("PSQ: fires table is empty — no parquet written")
 
