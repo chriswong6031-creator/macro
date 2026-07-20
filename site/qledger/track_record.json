@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-19T09:05:31.625481+00:00",
+  "generated_at": "2026-07-20T02:46:54.284112+00:00",
   "grade_horizons": [
     5,
     21,
@@ -375,7 +375,7 @@
     }
   },
   "counts": {
-    "n_claims": 21408,
+    "n_claims": 21470,
     "n_grades": 15357,
     "n_placebo": 652,
     "n_rejected": 0,
@@ -851,7 +851,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-19T09:05:43.019485+00:00",
+  "ladder_states_at": "2026-07-20T02:47:05.479053+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1096,6 +1096,41 @@
         "approaching": false,
         "projected_ready_date": null,
         "reason": "No claims found for claim_family='communique_diff'"
+      }
+    },
+    "earnings_qualitative": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='earnings_qualitative'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='earnings_qualitative'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='earnings_qualitative'"
       }
     },
     "epu_gpr": {
@@ -1448,6 +1483,41 @@
         "reason": "No claims found for claim_family='sfed_sentiment'"
       }
     },
+    "stage_analysis": {
+      "5": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='stage_analysis'"
+      },
+      "21": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='stage_analysis'"
+      },
+      "63": {
+        "n_dates": 0,
+        "needed": 25,
+        "wilson_ci_low": null,
+        "hit_rate": null,
+        "excess_mean": null,
+        "ready": false,
+        "approaching": false,
+        "projected_ready_date": null,
+        "reason": "No claims found for claim_family='stage_analysis'"
+      }
+    },
     "us_importance_v0": {
       "5": {
         "n_dates": 12,
@@ -1596,6 +1666,12 @@
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
+      "earnings_qualitative": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.066272,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
       "epu_gpr": {
         "challenger_excess_mean_5d": null,
         "placebo_covered_abs_excess_5d": 0.066272,
@@ -1656,6 +1732,12 @@
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
+      "stage_analysis": {
+        "challenger_excess_mean_5d": null,
+        "placebo_covered_abs_excess_5d": 0.066272,
+        "n_dates_5d": 0,
+        "wilson_ci_low_5d": null
+      },
       "us_importance_v0": {
         "challenger_excess_mean_5d": -0.005683,
         "placebo_covered_abs_excess_5d": 0.066272,
@@ -1676,5 +1758,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-19T09:05:58.621471+00:00"
+  "promotion_readiness_at": "2026-07-20T02:47:22.382206+00:00"
 }
