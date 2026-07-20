@@ -1597,11 +1597,24 @@ RENDER.cost = async () => {
       return;
     }
     const fmtTok = (n) => n == null ? "—" : Number(n) >= 1000 ? `${(Number(n)/1000).toFixed(1)}k` : String(n);
+    // Bot (MM) reset label: "window → HH:MM" | "weekly → MM-DD" | "<kind> → <raw>".
+    // Fails soft to the raw hint (or a bare arrow) if the timestamp won't parse.
+    const fmtMmReset = (kind, hint) => {
+      const k2 = (kind === "window" || kind === "weekly") ? kind : (kind || "cooling");
+      if (!hint) return `${k2} → ?`;
+      const dt = new Date(hint);
+      if (isNaN(dt.getTime())) return `${k2} → ${hint}`;
+      const p = (x) => String(x).padStart(2, "0");
+      const tail = kind === "weekly"
+        ? `${p(dt.getMonth() + 1)}-${p(dt.getDate())}`
+        : `${p(dt.getHours())}:${p(dt.getMinutes())}`;
+      return `${k2} → ${tail}`;
+    };
     kc.innerHTML = `<table><thead><tr>
       <th>Key ID</th><th>Enabled</th><th>Cooling</th><th>Reset hint</th>
       <th class="r">5h est tokens</th><th class="r">5h sessions</th>
       <th class="r">7d est tokens</th><th class="r">7d sessions</th>
-      <th class="r">MM 7d</th>
+      <th class="r">MM 7d</th><th>Bot (MM)</th>
       <th>Last outcome</th><th>Reported rate-limit headers</th>
     </tr></thead><tbody>
     ${rows.map(k => {
@@ -1612,6 +1625,20 @@ RENDER.cost = async () => {
         ? Object.entries(k.ratelimit_headers).map(([h, hv]) => `<div class="sub mono">${esc(h)}: <b>${esc(String(hv))}</b> <span class="muted">(reported)</span></div>`).join("")
         : `<span class="muted sub">—</span>`;
       const displayKeyId = k.key_id === "legacy" ? "legacy (deprecated)" : (k.key_id || "—");
+      // Bot (MM) cell: bot-side key-pool health from the federation join.
+      // AUTH DEAD (red) > cooling window/weekly (amber) > OK (muted green).
+      const botTip = `bot last: ${k.mm_last_outcome || "—"}${k.mm_last_ts ? " @ " + k.mm_last_ts : ""}`;
+      let botLabel;
+      if (k.mm_cooling && k.mm_cool_kind === "auth") {
+        botLabel = `<span class="statpill s-bad" title="${esc(botTip)}">AUTH DEAD</span>`;
+      } else if (k.mm_cooling) {
+        const reset = fmtMmReset(k.mm_cool_kind, k.mm_reset_hint);
+        botLabel = `<span class="statpill s-warn" title="${esc(botTip)}">${esc(reset)}</span>`;
+      } else if (k.mm_last_outcome || k.mm_last_ts) {
+        botLabel = `<span class="statpill s-ok" style="opacity:.72" title="${esc(botTip)}">OK</span>`;
+      } else {
+        botLabel = `<span class="muted sub" title="no bot activity reported">—</span>`;
+      }
       return `<tr>
         <td class="mono">${esc(displayKeyId)}${presentLabel}</td>
         <td>${enabledLabel}</td>
@@ -1622,12 +1649,13 @@ RENDER.cost = async () => {
         <td class="r">${fmtTok(k.weekly_est_tokens)} <span class="muted sub">est.</span></td>
         <td class="r">${k.weekly_sessions != null ? k.weekly_sessions : "—"}</td>
         <td class="r">${(k.mm_sessions || 0) > 0 ? k.mm_sessions : `<span class="muted sub">0</span>`}</td>
+        <td>${botLabel}</td>
         <td>${k.last_outcome ? `<span class="statpill ${k.last_outcome === "ok" ? "s-ok" : "s-bad"}">${esc(k.last_outcome)}</span>` : `<span class="muted sub">—</span>`}</td>
         <td style="max-width:320px">${headers}</td>
       </tr>`;
     }).join("")}
     </tbody></table>
-    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value · MM 7d = Mastermind bot sessions in last 7 days</div>`;
+    <div class="sub muted" style="margin-top:8px">est. = locally-observed rolling window estimate · reported = Anthropic response header value · MM 7d = Mastermind bot sessions in last 7 days · Bot (MM) = bot-reported key-pool health (OK / cooling reset / AUTH DEAD)</div>`;
   })();
 };
 

@@ -81,6 +81,20 @@ _USAGE_SCHEMA = "metabolism.key_usage.v1"
 # weekly_load, discover_present_keys) remain macro-only by design.
 # Cross-repo rotation coordination is an explicitly deferred follow-up.
 _MM_EVENTS_REL = "data/mastermind/key_events.jsonl"
+# Mastermind bot also publishes a point-in-time pool-status snapshot here (a
+# NEW artifact from the parallel bot-side PR; may be ABSENT for a while). When
+# present, fresh, and schema-valid it is the preferred source for per-key bot
+# cooling state; otherwise state is reconstructed from the _MM_EVENTS tail.
+# Display-only join — rotation reads (is_cooling, window_load, weekly_load,
+# discover_present_keys) remain macro-only by design.
+_MM_STATUS_REL = "data/mastermind/key_pool_status.json"
+_MM_STATUS_SCHEMA = "mastermind.key_pool_status.v1"
+# The status snapshot is trusted only while fresh; a stale file (bot stopped
+# publishing) falls back to events-tail reconstruction.
+_MM_STATUS_MAX_AGE_SECONDS = 48 * 3600
+# How many trailing lines of the events ledger to scan when reconstructing
+# bot cooling state (bounded read — the ledger is append-only and unbounded).
+_MM_EVENTS_TAIL_LINES = 300
 
 # The capability_ids this pool manages (in order).
 # Operator adds keys by setting CLAUDE_CODE_OAUTH_TOKEN_1.._7 as GH secrets
@@ -131,6 +145,11 @@ def _mm_events_path(root: Path | None = None) -> Path:
     return base / _MM_EVENTS_REL
 
 
+def _mm_status_path(root: Path | None = None) -> Path:
+    base = root if root is not None else _repo_root()
+    return base / _MM_STATUS_REL
+
+
 # ── Mastermind event reader ───────────────────────────────────────────────────
 
 def _read_mm_events(root: Path | None = None) -> list[dict[str, Any]]:
@@ -160,6 +179,158 @@ def _read_mm_events(root: Path | None = None) -> list[dict[str, Any]]:
     except Exception as exc:  # noqa: BLE001
         log.warning("key_pool._read_mm_events: %s", exc)
         return []
+
+
+def _read_mm_status(root: Path | None = None) -> dict[str, Any] | None:
+    """Read the Mastermind bot pool-status snapshot (display-only join).
+
+    Returns the parsed dict when the file exists, parses, carries the expected
+    schema, and its `ts` is younger than _MM_STATUS_MAX_AGE_SECONDS. Otherwise
+    returns None (absent / corrupt / wrong-schema / stale) so the caller falls
+    back to events-tail reconstruction. NEVER raises.
+    """
+    try:
+        p = _mm_status_path(root)
+        if not p.exists():
+            return None
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return None
+        if raw.get("schema") != _MM_STATUS_SCHEMA:
+            return None
+        ts = _parse_ts(raw.get("ts", "") or "")
+        if ts is None:
+            return None  # no usable timestamp — cannot judge freshness
+        age = (datetime.now(timezone.utc) - ts).total_seconds()
+        if age > _MM_STATUS_MAX_AGE_SECONDS:
+            return None  # stale — fall back to events reconstruction
+        return raw
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool._read_mm_status: %s", exc)
+        return None
+
+
+def _mm_state_from_status(status: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Build the per-key bot-state map from a fresh status snapshot.
+
+    Returns {key_id: {mm_cooling, mm_cool_kind, mm_reset_hint,
+    mm_last_outcome, mm_last_ts}} for each valid key row. NEVER raises.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    try:
+        keys = status.get("keys")
+        if not isinstance(keys, list):
+            return out
+        for entry in keys:
+            if not isinstance(entry, dict):
+                continue
+            kid = entry.get("key_id")
+            if not kid:
+                continue
+            out[kid] = {
+                "mm_cooling": bool(entry.get("cooling", False)),
+                "mm_cool_kind": entry.get("cool_kind"),
+                "mm_reset_hint": entry.get("reset_hint"),
+                "mm_last_outcome": entry.get("last_outcome"),
+                "mm_last_ts": entry.get("last_ts"),
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool._mm_state_from_status: %s", exc)
+    return out
+
+
+def _mm_state_from_events(
+    mm_rows: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Reconstruct per-key bot cooling state from the events-ledger tail.
+
+    A key is `mm_cooling` when its most-recent cooling row (outcome
+    rate_limited|auth_failed, carrying a reset_hint) is NEWER than its
+    most-recent `ok` row AND that reset_hint is still in the future.
+
+    mm_cool_kind / mm_reset_hint come from that latest cooling row.
+    mm_last_outcome / mm_last_ts come from the latest row of ANY outcome (so
+    the tooltip reflects the true tail even when the key is not cooling).
+
+    `mm_rows` must already be schema/key filtered by the caller. NEVER raises.
+    Returns {key_id: {mm_cooling, mm_cool_kind, mm_reset_hint,
+    mm_last_outcome, mm_last_ts}}.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    try:
+        now = datetime.now(timezone.utc)
+        # latest row overall + latest cooling row + latest ok row, per key
+        latest_any: dict[str, tuple[datetime, dict[str, Any]]] = {}
+        latest_cool: dict[str, tuple[datetime, dict[str, Any]]] = {}
+        latest_ok_dt: dict[str, datetime] = {}
+        for r in mm_rows:
+            kid = r.get("key_id")
+            if not kid:
+                continue
+            ts = _parse_ts(r.get("ts", "") or "")
+            if ts is None:
+                continue
+            if kid not in latest_any or ts > latest_any[kid][0]:
+                latest_any[kid] = (ts, r)
+            outcome = r.get("outcome")
+            if outcome == "ok":
+                if kid not in latest_ok_dt or ts > latest_ok_dt[kid]:
+                    latest_ok_dt[kid] = ts
+            elif outcome in ("rate_limited", "auth_failed") and r.get("reset_hint"):
+                if kid not in latest_cool or ts > latest_cool[kid][0]:
+                    latest_cool[kid] = (ts, r)
+
+        for kid, (_last_dt, last_row) in latest_any.items():
+            mm_cooling = False
+            mm_cool_kind: str | None = None
+            mm_reset_hint: str | None = None
+            cool = latest_cool.get(kid)
+            if cool is not None:
+                cool_dt, cool_row = cool
+                ok_dt = latest_ok_dt.get(kid)
+                newer_than_ok = ok_dt is None or cool_dt > ok_dt
+                reset_dt = _parse_ts(cool_row.get("reset_hint", "") or "")
+                reset_in_future = reset_dt is not None and now < reset_dt
+                if newer_than_ok and reset_in_future:
+                    mm_cooling = True
+                    mm_cool_kind = cool_row.get("cool_kind")
+                    mm_reset_hint = cool_row.get("reset_hint")
+            out[kid] = {
+                "mm_cooling": mm_cooling,
+                "mm_cool_kind": mm_cool_kind,
+                "mm_reset_hint": mm_reset_hint,
+                "mm_last_outcome": last_row.get("outcome"),
+                "mm_last_ts": last_row.get("ts"),
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool._mm_state_from_events: %s", exc)
+    return out
+
+
+def _mm_pool_state(
+    mm_rows: list[dict[str, Any]],
+    root: Path | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Derive per-key Mastermind bot state (display-only).
+
+    Preference order (spec):
+      (a) a fresh (< 48h), schema-valid data/mastermind/key_pool_status.json
+          snapshot is used directly;
+      (b) otherwise state is reconstructed from the events-ledger tail
+          (`mm_rows`, already schema/key filtered by the caller).
+
+    Returns {key_id: {mm_cooling, mm_cool_kind, mm_reset_hint,
+    mm_last_outcome, mm_last_ts}}. Missing keys default (in the caller) to
+    False/None. NEVER raises.
+    """
+    try:
+        status = _read_mm_status(root)
+        if status is not None:
+            return _mm_state_from_status(status)
+        return _mm_state_from_events(mm_rows)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("key_pool._mm_pool_state: %s", exc)
+        return {}
 
 
 # ── Manifest helpers ─────────────────────────────────────────────────────────
@@ -350,7 +521,13 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
         window_5h_sessions, weekly_sessions,
         last_outcome, last_ts,
         ratelimit_headers, headers_ts,
-        mm_sessions (count of Mastermind bot rows for this key in the last 7d).
+        mm_sessions (count of Mastermind bot rows for this key in the last 7d),
+        mm_cooling (bool), mm_cool_kind (str|None), mm_reset_hint (ISO|None),
+        mm_last_outcome (str|None), mm_last_ts (ISO|None)
+            — Mastermind bot key-pool health (display-only join): sourced from a
+            fresh data/mastermind/key_pool_status.json snapshot when present,
+            else reconstructed from the key_events.jsonl tail.  Default
+            False/None when the bot has published nothing.
 
     Covers POOL_CAPABILITY_IDS + "legacy".
     Returns [] on error (NEVER-RAISE).
@@ -381,6 +558,12 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
             ts = _parse_ts(row.get("ts", ""))
             if ts is not None and ts >= week_cutoff:
                 mm_sessions_per_key[kid] = mm_sessions_per_key.get(kid, 0) + 1
+
+        # Derive per-key bot cooling state (status snapshot preferred, else
+        # events-tail reconstruction). Additive display fields; fail-soft to
+        # {} → per-key defaults of False/None below. Bounded to the last
+        # _MM_EVENTS_TAIL_LINES events rows.
+        mm_state = _mm_pool_state(mm_rows[-_MM_EVENTS_TAIL_LINES:], root)
 
         # Build per-key aggregates from the main ledger
         per_key: dict[str, dict[str, Any]] = {}
@@ -478,6 +661,7 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
             ci = cooling_info.get(kid, {})
             agg = per_key.get(kid, {})
             lu = latest_usage.get(kid, {})
+            ms = mm_state.get(kid, {})
             result.append({
                 "key_id": kid,
                 "present": present,
@@ -494,6 +678,12 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
                 "ratelimit_headers": lu.get("ratelimit_headers", {}),
                 "headers_ts": lu.get("headers_ts"),
                 "mm_sessions": mm_sessions_per_key.get(kid, 0),
+                # Additive Mastermind bot key-pool health (display-only join).
+                "mm_cooling": ms.get("mm_cooling", False),
+                "mm_cool_kind": ms.get("mm_cool_kind"),
+                "mm_reset_hint": ms.get("mm_reset_hint"),
+                "mm_last_outcome": ms.get("mm_last_outcome"),
+                "mm_last_ts": ms.get("mm_last_ts"),
             })
         return result
     except Exception as exc:  # noqa: BLE001
