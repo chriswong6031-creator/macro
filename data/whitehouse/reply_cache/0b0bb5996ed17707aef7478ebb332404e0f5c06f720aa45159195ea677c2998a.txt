@@ -1,0 +1,8 @@
+{
+  "activate": true,
+  "importance": 82,
+  "banner_days": 5,
+  "tone": "mixed",
+  "banner_title": "50% US tariff on Canada hits autos — North American supply chains disrupted",
+  "banner_title_zh": "美国对加拿大加征50%关税打击汽车业——北美供应链受扰",
+  "summary": "The US will impose an additional 50% tariff on certain Canadian products starting August 19, 2026, retaliating against Canada's discriminatory 

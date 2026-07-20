@@ -1,0 +1,36 @@
+{
+  "activate": true,
+  "importance": 65,
+  "banner_days": 4,
+  "tone": "headwind",
+  "banner_title": "Trump imposes 50% tariff on Canadian goods in retaliation for alcohol bans — target list unknown",
+  "banner_title_zh": "特朗普对加商品征50%关税报复酒精禁令，目标清单未明",
+  "summary": "President Trump proclaimed a 50% additional duty on certain Canadian products effective August 19, 2026, using Section 338 of the Tariff Act of 1930, to offset Canadian provincial bans on U.S. alcoholic beverages. The specific goods affected were not immediately disclosed, leaving markets uncertain about the scope of trade disruption.",
+  "summary_zh": "特朗普总统宣布自2026年8月19日起对某些加拿大产品加征50%关税，援引《1930年关税法》第338条，以回应加拿大各省禁止美国酒精饮料销售。受影响的商品清单未立即公布，市场不确定贸易干扰的范围。",
+  "analysis": "The proclamation finds that Canadian provincial bans on U.S. alcohol have caused an 81% drop in American alcohol exports to Canada, while exports from other countries have gained. In retaliation, the U.S. is imposing the maximum-allowed 50% ad valorem tariff on unspecified Canadian goods. This escalates bilateral trade tensions and injects uncertainty for importers and exporters alike. The immediate transmission mechanism: targeted Canadian producers will face margin compression and potential loss of U.S. market share; U.S. importers of those goods will see higher costs. The lack of a published product list forces markets to await further details to gauge precise sector impacts. The risk of further Canadian countermeasures could weigh on broader sentiment, though the overall U.S. economy is currently in a “Goldilocks” low-risk environment.",
+  "sectors": [
+    {
+      "name": "Canadian exporters (broadly)",
+      "impact": "headwind",
+      "rationale": "Any targeted Canadian goods will face a 50% US tariff, reducing competitiveness and squeezing margins."
+    },
+    {
+      "name": "U.S. alcohol producers",
+      "impact": "headwind",
+      "rationale": "The Canadian bans that prompted the retaliation remain in place, so U.S. distillers, vintners, and brewers still lack access to a key export market."
+    },
+    {
+      "name": "U.S. importers of Canadian goods",
+      "impact": "headwind",
+      "rationale": "Importers of the yet-to-be-named products will absorb higher duty costs, potentially passing them to consumers or compressing profits."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "EWC",
+      "direction": "hurt",
+      "rationale": "iShares MSCI Canada ETF; a broad tariff on select Canadian exports weighs on the Canadian dollar and Canadian equity sentiment."
+    }
+  ],
+  "confidence": "medium"
+}

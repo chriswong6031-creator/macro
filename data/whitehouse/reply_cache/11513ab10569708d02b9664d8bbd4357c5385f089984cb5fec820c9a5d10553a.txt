@@ -1,0 +1,6 @@
+{
+  "activate": true,
+  "importance": 70,
+  "banner_days": 3,
+  "tone": "headwind",
+  "

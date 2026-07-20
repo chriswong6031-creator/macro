@@ -251,6 +251,36 @@
       "at": "2026-07-20T20:44:31.041807+00:00",
       "activated": false,
       "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=45364": {
+      "id": "wh-2026-07-20-imposing-additional-duties-to-offset-canadian-discrimination-against-the-commerc",
+      "at": "2026-07-20T22:13:39.617051+00:00",
+      "activated": false,
+      "importance": null
+    },
+    "https://www.whitehouse.gov/?p=45360": {
+      "id": "wh-2026-07-20-imposing-additional-duties-to-offset-canadian-discrimination-against-the-commerc",
+      "at": "2026-07-20T22:14:29.050784+00:00",
+      "activated": true,
+      "importance": 65
+    },
+    "https://www.whitehouse.gov/?p=45356": {
+      "id": "wh-2026-07-20-imposing-additional-duties-to-offset-canadian-discrimination-against-the-commerc",
+      "at": "2026-07-20T22:14:43.093847+00:00",
+      "activated": false,
+      "importance": 25
+    },
+    "https://www.whitehouse.gov/?p=45353": {
+      "id": "wh-2026-07-20-fact-sheet-president-donald-j-trump-imposes-additional-tariffs-on-canada",
+      "at": "2026-07-20T22:16:01.071492+00:00",
+      "activated": false,
+      "importance": null
+    },
+    "https://www.whitehouse.gov/?p=45262": {
+      "id": "wh-2026-07-20-made-in-america-week-2026",
+      "at": "2026-07-20T22:16:07.874422+00:00",
+      "activated": false,
+      "importance": 5
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
