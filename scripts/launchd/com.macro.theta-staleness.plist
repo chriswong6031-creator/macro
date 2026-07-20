@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.theta-staleness.plist
+  Twice-daily staleness sentinel for the ThetaData EOD store (see
+  theta_staleness_sentinel.sh). 06:15 local = pre-open sanity (yesterday's
+  session must be in the store before the ledger seal); 18:30 local = post-close
+  check (today's refresh pull should have landed by then; the script infers
+  due-today from the local hour).
+
+  Install:
+    cp scripts/launchd/com.macro.theta-staleness.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.macro.theta-staleness.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.macro.theta-staleness</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/chriswong/theta-ops-wt/scripts/launchd/theta_staleness_sentinel.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key><integer>6</integer>
+            <key>Minute</key><integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>18</integer>
+            <key>Minute</key><integer>30</integer>
+        </dict>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/chriswong/theta-ops-wt</string>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/theta_staleness.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/theta_staleness.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/Caskroom/miniconda/base/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+</dict>
+</plist>
