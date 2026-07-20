@@ -1449,7 +1449,7 @@ html{overflow-x:hidden}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  font-family:var(--font-ui);display:flex;flex-direction:column;align-items:center;
- padding:22px max(20px,env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));position:relative;overflow-x:hidden}
+ position:relative;overflow-x:hidden}
 .wrap{width:100%;max-width:1180px;display:flex;flex-direction:column}
 @media(min-width:1600px){.wrap{max-width:1360px}}
 .hub-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px}
@@ -1542,7 +1542,6 @@ html[data-lang="zh"] .card-h{letter-spacing:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .pill{font-size:11.5px;font-weight:700;letter-spacing:-.005em;background:color-mix(in srgb,var(--accent) 12%,var(--panel2));
  color:color-mix(in srgb,var(--accent) 74%,var(--text));padding:3px 9px;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent) 18%,transparent)}
-html[data-theme="light"] .pill{color:color-mix(in srgb,var(--accent) 48%,var(--text))}
 .pill.q1{background:color-mix(in srgb,var(--q1) 13%,var(--panel2));color:color-mix(in srgb,var(--q1) 80%,var(--text));border-color:color-mix(in srgb,var(--q1) 24%,transparent)}
 .pill.q2{background:color-mix(in srgb,var(--q2) 13%,var(--panel2));color:color-mix(in srgb,var(--q2) 80%,var(--text));border-color:color-mix(in srgb,var(--q2) 24%,transparent)}
 .pill.q3{background:color-mix(in srgb,var(--q3) 13%,var(--panel2));color:color-mix(in srgb,var(--q3) 80%,var(--text));border-color:color-mix(in srgb,var(--q3) 24%,transparent)}
@@ -1966,6 +1965,17 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 
 /* ===== report teaser badge on reports card ===== */
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
+</style>"""
+
+# Critical a11y CSS that must ship INLINE in index.html itself: the hub-a11y CI
+# guard (scripts/check_hub_a11y.py checks c+d) greps the page HTML for the
+# body{} safe-area padding and the light-theme .pill contrast override, while
+# scripts/externalize_css.py lifts every <style> block >= 1024 bytes into an
+# external hashed file post-render. Keep this block UNDER 1024 bytes and do not
+# fold these rules back into _GLOBE_HUB_CSS, or the next render goes red again.
+_HUB_CRITICAL_CSS = r"""<style>
+body{padding:22px max(20px,env(safe-area-inset-right)) calc(56px + env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+html[data-theme="light"] .pill{color:color-mix(in srgb,var(--accent) 48%,var(--text))}
 </style>"""
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
@@ -2518,7 +2528,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             _jsonld +
             "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('soft-contrast');}catch(e){}</script>\n"
             '<link rel="stylesheet" href="theme.css">\n'
-            + _GLOBE_HUB_CSS + "</head><body>")
+            + _GLOBE_HUB_CSS + _HUB_CRITICAL_CSS + "</head><body>")
 
     body = (
         '<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div>'
