@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
-  "as_of": "2026-07-19",
-  "generated_utc": "2026-07-19T22:27:23.489741+00:00",
-  "n_tickers": 5114,
+  "as_of": "2026-07-20",
+  "generated_utc": "2026-07-20T01:52:10.541782+00:00",
+  "n_tickers": 5113,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -204,6 +204,18 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "MDLN": {
+      "ticker": "MDLN",
+      "channels": [
+        "gov_contract"
+      ],
+      "weighted_score": 0.45,
+      "gov_contract_usd_30d": 84278790.0,
+      "gov_contract_accel": 1.0,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "DELL": {
       "ticker": "DELL",
       "channels": [
@@ -211,8 +223,8 @@
         "gov_contract"
       ],
       "weighted_score": 1.0,
-      "gov_contract_usd_30d": 100393045.0,
-      "gov_contract_accel": 0.88,
+      "gov_contract_usd_30d": 76956248.0,
+      "gov_contract_accel": 0.56,
       "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
@@ -221,31 +233,19 @@
       "ticker": "PLTR",
       "channels": [
         "affiliation",
-        "gov_contract_accel",
+        "gov_contract",
         "lobbying",
         "retail_buzz"
       ],
-      "weighted_score": 1.85,
-      "gov_contract_usd_30d": 96367794.0,
-      "gov_contract_accel": 22.79,
+      "weighted_score": 1.4,
+      "gov_contract_usd_30d": 61699968.0,
+      "gov_contract_accel": 1.59,
       "lobbying_usd": 2660000.0,
       "wsb_mentions": 91,
       "github_stars": 21932,
       "convergence_score": 4,
       "trump_linked": false,
       "affiliated": true
-    },
-    "MDLN": {
-      "ticker": "MDLN",
-      "channels": [
-        "gov_contract"
-      ],
-      "weighted_score": 0.45,
-      "gov_contract_usd_30d": 84619776.0,
-      "gov_contract_accel": 1.01,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
     },
     "ACN": {
       "ticker": "ACN",
@@ -254,8 +254,8 @@
         "material_8k"
       ],
       "weighted_score": 1.45,
-      "gov_contract_usd_30d": 29242266.0,
-      "gov_contract_accel": 40.56,
+      "gov_contract_usd_30d": 27834144.0,
+      "gov_contract_accel": 13.07,
       "material_8k_30d": 2,
       "congress_position_usd": 28524000.0,
       "convergence_score": 2,
@@ -269,8 +269,8 @@
         "special_situation"
       ],
       "weighted_score": 0.85,
-      "gov_contract_usd_30d": 27863600.0,
-      "gov_contract_accel": 1.44,
+      "gov_contract_usd_30d": 27106907.0,
+      "gov_contract_accel": 1.37,
       "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
@@ -279,36 +279,16 @@
       "ticker": "LUMN",
       "channels": [
         "gov_contract_accel",
+        "lobbying",
         "special_situation"
       ],
-      "weighted_score": 1.3,
+      "weighted_score": 1.6,
       "gov_contract_usd_30d": 23746146.0,
       "gov_contract_accel": 53.67,
-      "convergence_score": 2,
+      "lobbying_usd": 850000.0,
+      "convergence_score": 3,
       "trump_linked": false,
       "affiliated": false
-    },
-    "MSFT": {
-      "ticker": "MSFT",
-      "channels": [
-        "affiliation",
-        "app_demand",
-        "github_momentum",
-        "gov_contract",
-        "patent_cluster"
-      ],
-      "weighted_score": 2.05,
-      "gov_contract_usd_30d": 22858532.0,
-      "gov_contract_accel": null,
-      "app_rating": 4.77,
-      "app_reviews": 19783172,
-      "patents": 149,
-      "hf_downloads_30d": 30788932.0,
-      "github_stars": 187651,
-      "congress_position_usd": 513756000.0,
-      "convergence_score": 5,
-      "trump_linked": false,
-      "affiliated": true
     },
     "GD": {
       "ticker": "GD",
@@ -316,7 +296,7 @@
         "gov_contract"
       ],
       "weighted_score": 0.45,
-      "gov_contract_usd_30d": 17729097.0,
+      "gov_contract_usd_30d": 17671657.0,
       "gov_contract_accel": 0.18,
       "donor_usd": 57500.0,
       "convergence_score": 1,
@@ -370,8 +350,8 @@
         "gov_contract_accel"
       ],
       "weighted_score": 1.45,
-      "gov_contract_usd_30d": 12671831.0,
-      "gov_contract_accel": 3.53,
+      "gov_contract_usd_30d": 11364389.0,
+      "gov_contract_accel": 2.43,
       "congress_position_usd": 16584000.0,
       "convergence_score": 2,
       "trump_linked": false,
@@ -390,29 +370,17 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "AXON": {
-      "ticker": "AXON",
-      "channels": [
-        "gov_contract"
-      ],
-      "weighted_score": 0.45,
-      "gov_contract_usd_30d": 8823158.0,
-      "gov_contract_accel": 1.56,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "IBM": {
       "ticker": "IBM",
       "channels": [
         "github_momentum",
-        "gov_contract",
+        "gov_contract_accel",
         "hf_model_momentum",
         "patent_cluster"
       ],
-      "weighted_score": 1.5,
+      "weighted_score": 1.95,
       "gov_contract_usd_30d": 8803093.0,
-      "gov_contract_accel": 1.03,
+      "gov_contract_accel": 6.4,
       "patents": 244,
       "hf_downloads_30d": 12945054.0,
       "github_stars": 7611,
@@ -420,6 +388,40 @@
       "convergence_score": 4,
       "trump_linked": false,
       "affiliated": false
+    },
+    "TEM": {
+      "ticker": "TEM",
+      "channels": [
+        "gov_contract"
+      ],
+      "weighted_score": 0.45,
+      "gov_contract_usd_30d": 8394876.0,
+      "gov_contract_accel": null,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "MSFT": {
+      "ticker": "MSFT",
+      "channels": [
+        "affiliation",
+        "app_demand",
+        "github_momentum",
+        "gov_contract",
+        "patent_cluster"
+      ],
+      "weighted_score": 2.05,
+      "gov_contract_usd_30d": 8148580.0,
+      "gov_contract_accel": 0.55,
+      "app_rating": 4.77,
+      "app_reviews": 19783172,
+      "patents": 149,
+      "hf_downloads_30d": 30788932.0,
+      "github_stars": 187651,
+      "congress_position_usd": 513756000.0,
+      "convergence_score": 5,
+      "trump_linked": false,
+      "affiliated": true
     },
     "RIVN": {
       "ticker": "RIVN",
@@ -718,17 +720,6 @@
       "patents": 64,
       "congress_position_usd": 15588000.0,
       "convergence_score": 2,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "BKNG": {
-      "ticker": "BKNG",
-      "channels": [
-        "lobbying"
-      ],
-      "weighted_score": 0.3,
-      "lobbying_usd": 755000.0,
-      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },

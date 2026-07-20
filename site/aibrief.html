@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>AI Daily Brief — 2026-07-19 23:54 UTC</title>
+<title>AI Daily Brief — 2026-07-20 03:20 UTC</title>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -42,14 +43,15 @@
   .brief-tab-btn.active { background:var(--link); border-color:var(--link); color:#fff; }
   .brief-tab { display:none; }
   .brief-tab.active { display:block; }
-  /* shared AI-brief body styling */
-  .ai-brief .mb-sum { font-size:15px; font-weight:600; margin:0 0 10px; }
-  .ai-brief .mb-sec { margin:10px 0; }
-  .ai-brief .mb-h { font-weight:600; color:var(--link); margin:0 0 4px; }
-  .ai-brief .mb-list { margin:4px 0 0 18px; padding:0; }
-  .ai-brief .mb-list li { margin:3px 0; }
-  .ai-brief .mb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
-  .ai-brief .mb-deg { color:var(--muted); font-size:12px; font-style:italic; margin:4px 0; }
+  /* AI-brief bodies are server-rendered by the shared macro (.aib2-*); the page's
+     .panel gives them their frame. The macro tab keeps the green brief accent; the
+     other tabs inherit the ZH-safe blue default. The literal #38c472 (== macro's
+     --isle-brief) is a FIXED hex so the brand accent never red-flips in ZH — --up
+     swaps to red under html[data-lang="zh"], so it must NOT back the accent. */
+  .panel.ai-brief[data-lens="macro"] .aib2 { --aib2-acc: #38c472; }
+  .panel.ai-brief { padding-top: 12px; }
+  /* .mb-deg retained — the cortex panel (aibrief.js) still emits it */
+  .mb-deg { color:var(--muted); font-size:12px; font-style:italic; margin:4px 0; }
   /* ── Panel A: context strip ────────────────────────────────────────────────── */
   .ctx-strip { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:flex-start; }
   .ctx-chip { display:inline-flex; align-items:center; gap:5px; background:var(--panel);
@@ -80,6 +82,189 @@
   .cortex-h { font-weight:600; color:var(--link); margin:0 0 3px; font-size:13px; }
   .cortex-list { margin:3px 0 0 16px; padding:0; font-size:13px; }
   .cortex-list li { margin:2px 0; }
+
+/* ── AI BRIEF v2 (aib2-*) — shared token spine ──────────────────────────────── */
+.aib2{
+  /* accent defaults to a stable Western blue (never red-flips in ZH); macro
+     overrides to its green brief accent on its own dialog root. */
+  --aib2-acc:var(--info,#3b82f6);
+  --aib2-mut:var(--muted,rgba(255,255,255,.55));
+  --aib2-surf:rgba(255,255,255,.035);
+  --aib2-hair:rgba(255,255,255,.09);
+  --aib2-track:rgba(255,255,255,.12);
+  /* tone palette — engine-computed key_facts + stance tints. These are SEMANTIC
+     quality tints (good/warn/bad), NOT price direction, so they use FIXED hexes and
+     must NOT bind to --up/--down (which swap red<->green under html[data-lang="zh"]).
+     This matches the sibling china chip idiom (.cnx-chip.turn = fixed green,
+     .cnx-chip.hot = fixed red) — a "good" reading stays green in EN and ZH alike. */
+  --aib2-good:#45b873;   /* == the site's canonical gain-green (fixed) */
+  --aib2-bad:#e06464;    /* == the site's canonical loss-red (fixed)   */
+  --aib2-warn:var(--warn,#f59e0b);  /* amber — does not flip in ZH */
+  --aib2-info:var(--info,#5b9bf0);  /* blue  — does not flip in ZH */
+  color:var(--text);
+}
+[data-theme="light"] .aib2{
+  --aib2-surf:rgba(0,0,0,.028);--aib2-hair:rgba(0,0,0,.09);--aib2-track:rgba(0,0,0,.12);
+  --aib2-good:#1f9a55;--aib2-bad:#cf4040;  /* light-theme fixed variants (match theme.css) */
+}
+
+/* ── 1 · header strip ───────────────────────────────────────────────────────── */
+.aib2-hdr{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;padding-bottom:15px;
+  border-bottom:1px solid color-mix(in srgb,var(--aib2-acc) 16%,var(--aib2-hair));}
+.aib2-icon{width:38px;height:38px;flex-shrink:0;border-radius:11px;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--aib2-acc) 22%,transparent),color-mix(in srgb,var(--aib2-acc) 8%,transparent));
+  border:1px solid color-mix(in srgb,var(--aib2-acc) 30%,transparent);
+  color:var(--aib2-acc);font-size:13px;font-weight:800;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;}
+.aib2-hdr-meta{flex:1;min-width:0;}
+.aib2-hdr-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:4px;}
+.aib2-hdr-sub{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.aib2-hdr-date{font-size:12px;color:var(--aib2-mut);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+.aib2-cadence{font-size:10.5px;font-weight:650;letter-spacing:.02em;
+  padding:2px 9px;border-radius:999px;
+  background:color-mix(in srgb,var(--aib2-acc) 11%,transparent);
+  border:1px solid color-mix(in srgb,var(--aib2-acc) 24%,transparent);
+  color:color-mix(in srgb,var(--aib2-acc) 82%,var(--text));}
+.aib2-badge{margin-left:auto;align-self:center;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--aib2-acc);opacity:.85;text-align:right;line-height:1.45;
+  white-space:normal;max-width:210px;flex-shrink:0;}
+[data-theme="light"] .aib2-badge{opacity:.95;}
+
+/* ── section spine — a labelled hairline naming each movement ────────────────── */
+.aib2-sec{display:flex;align-items:center;gap:10px;margin:20px 0 11px;}
+.aib2-sec:first-child{margin-top:4px;}
+.aib2-sec::after{content:"";flex:1;height:1px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--aib2-acc) 26%,var(--aib2-hair)),transparent);}
+.aib2-sec-label{font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--aib2-mut);display:inline-flex;align-items:center;gap:7px;}
+.aib2-sec-label::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--aib2-acc);}
+
+/* ── 2 · the gist (glance tick-list) ────────────────────────────────────────── */
+.aib2-gist{margin-bottom:16px;}
+.aib2-gist-list{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:9px;}
+.aib2-gist-list li{position:relative;padding-left:20px;
+  font-size:14.5px;line-height:1.55;color:var(--text);font-weight:500;}
+.aib2-gist-list li::before{content:"";position:absolute;left:2px;top:.58em;
+  width:7px;height:7px;border-radius:2px;transform:rotate(45deg);
+  background:color-mix(in srgb,var(--aib2-acc) 62%,transparent);}
+.aib2-gist-list li b{font-weight:750;color:var(--text);}
+/* first gist item = the most important thing today — a touch louder */
+.aib2-gist-list li:first-child{font-size:15px;font-weight:600;}
+
+/* STANCE PILL — the signature. Accent-tinted directive; the stance verb is bold. */
+.aib2-stance{display:flex;align-items:flex-start;gap:11px;
+  padding:13px 16px;border-radius:13px;
+  background:color-mix(in srgb,var(--aib2-acc) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--aib2-acc) 30%,transparent);
+  border-left:4px solid color-mix(in srgb,var(--aib2-acc) 72%,transparent);
+  box-shadow:0 1px 0 color-mix(in srgb,var(--aib2-acc) 8%,transparent);}
+[data-theme="light"] .aib2-stance{background:color-mix(in srgb,var(--aib2-acc) 9%,#fff);}
+.aib2-stance-mark{color:var(--aib2-acc);font-size:15px;line-height:1.4;flex-shrink:0;margin-top:1px;}
+.aib2-stance-body{font-size:15px;line-height:1.5;color:var(--text);font-weight:600;}
+.aib2-stance-body b{font-weight:800;
+  /* the stance verb gets the accent so the eye lands on the directive first */
+  color:color-mix(in srgb,var(--aib2-acc) 55%,var(--text));}
+/* tone variants — protect/stand-aside lean amber; act leans green; ignore muted */
+.aib2-stance--warn{--aib2-acc:var(--aib2-warn);}
+.aib2-stance--go{--aib2-acc:var(--aib2-good);}
+.aib2-stance--muted{--aib2-acc:var(--aib2-mut);}
+.aib2-stance--muted .aib2-stance-body b{color:var(--text);}
+
+/* v1 lead card (summary fallback when tldr absent) */
+.aib2-lead{font-size:16.5px;font-weight:600;line-height:1.62;color:var(--text);
+  padding:16px 18px;border-radius:13px;margin-bottom:16px;
+  background:color-mix(in srgb,var(--aib2-acc) 7%,transparent);
+  border:1px solid color-mix(in srgb,var(--aib2-acc) 18%,transparent);
+  border-left:3px solid color-mix(in srgb,var(--aib2-acc) 60%,transparent);}
+[data-theme="light"] .aib2-lead{background:color-mix(in srgb,var(--aib2-acc) 6%,#fff);}
+
+/* ── 3 · key readings (key_facts chip rail) ─────────────────────────────────── */
+.aib2-kf-rail{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+.aib2-kf{display:inline-flex;align-items:baseline;gap:7px;
+  padding:6px 12px;border-radius:999px;font-size:12.5px;line-height:1.3;
+  background:var(--aib2-surf);border:1px solid var(--aib2-hair);max-width:100%;}
+.aib2-kf-k{color:var(--aib2-mut);font-weight:600;white-space:nowrap;}
+.aib2-kf-v{color:var(--text);font-weight:700;min-width:0;}
+/* tone tints — the value carries the read; the chip border/wash confirms it */
+.aib2-kf--good{background:color-mix(in srgb,var(--aib2-good) 10%,var(--aib2-surf));
+  border-color:color-mix(in srgb,var(--aib2-good) 34%,transparent);}
+.aib2-kf--good .aib2-kf-v{color:color-mix(in srgb,var(--aib2-good) 72%,var(--text));}
+.aib2-kf--warn{background:color-mix(in srgb,var(--aib2-warn) 10%,var(--aib2-surf));
+  border-color:color-mix(in srgb,var(--aib2-warn) 34%,transparent);}
+.aib2-kf--warn .aib2-kf-v{color:color-mix(in srgb,var(--aib2-warn) 74%,var(--text));}
+.aib2-kf--bad{background:color-mix(in srgb,var(--aib2-bad) 11%,var(--aib2-surf));
+  border-color:color-mix(in srgb,var(--aib2-bad) 36%,transparent);}
+.aib2-kf--bad .aib2-kf-v{color:color-mix(in srgb,var(--aib2-bad) 74%,var(--text));}
+.aib2-kf--info{background:color-mix(in srgb,var(--aib2-info) 10%,var(--aib2-surf));
+  border-color:color-mix(in srgb,var(--aib2-info) 32%,transparent);}
+.aib2-kf--info .aib2-kf-v{color:color-mix(in srgb,var(--aib2-info) 78%,var(--text));}
+.aib2-kf--neutral{/* uses base surf/hair; value stays --text */}
+
+/* ── 4 · confidence meter ────────────────────────────────────────────────────── */
+.aib2-conf{display:flex;align-items:center;gap:13px;margin-bottom:4px;
+  padding:11px 14px;background:var(--aib2-surf);border:1px solid var(--aib2-hair);border-radius:11px;}
+.aib2-conf-bar{display:flex;gap:4px;align-items:center;padding:4px;border-radius:7px;background:var(--aib2-track);cursor:help;}
+.aib2-conf-seg{width:26px;height:6px;border-radius:3px;
+  background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 8%,transparent);transition:background .2s;}
+.aib2-conf-seg.on{background:var(--aib2-acc);box-shadow:none;}
+.aib2-conf-label{font-size:12.5px;font-weight:650;color:var(--text);}
+.aib2-conf-asof{font-size:11.5px;color:var(--aib2-mut);margin-left:auto;font-variant-numeric:tabular-nums;}
+
+/* ── 5 · the full read (regime prose) ───────────────────────────────────────── */
+.aib2-regime{font-size:14px;color:var(--text);line-height:1.72;margin-bottom:16px;opacity:.94;}
+
+/* ── 6/7/8/9 · cards + grid ─────────────────────────────────────────────────── */
+.aib2-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:13px;margin-bottom:12px;}
+@media(max-width:560px){.aib2-grid{grid-template-columns:1fr;}}
+.aib2-card{padding:14px 16px 15px;border-radius:12px;background:var(--aib2-surf);border:1px solid var(--aib2-hair);}
+.aib2-card--full{margin-bottom:12px;}
+.aib2-card--conflicts{border-left:3px solid var(--aib2-warn);}
+.aib2-card--tx{border-left:3px solid var(--aib2-info);}
+.aib2-card--playbook{border-left:3px solid var(--aib2-acc);}
+.aib2-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--aib2-mut);margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+.aib2-card--conflicts .aib2-eyebrow{color:color-mix(in srgb,var(--aib2-warn) 78%,var(--aib2-mut));}
+.aib2-card--tx .aib2-eyebrow{color:color-mix(in srgb,var(--aib2-info) 74%,var(--aib2-mut));}
+.aib2-card--playbook .aib2-eyebrow{color:color-mix(in srgb,var(--aib2-acc) 74%,var(--aib2-mut));}
+.aib2-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+.aib2-items li{position:relative;padding-left:14px;font-size:13px;color:var(--text);line-height:1.6;}
+.aib2-items li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;
+  background:color-mix(in srgb,currentColor 32%,transparent);}
+.aib2-card--conflicts .aib2-items li::before{background:color-mix(in srgb,var(--aib2-warn) 55%,transparent);}
+.aib2-card--tx .aib2-items li::before{background:color-mix(in srgb,var(--aib2-info) 55%,transparent);}
+.aib2-items li b,.aib2-prose b,.aib2-watch-body b{font-weight:700;color:var(--text);}
+.aib2-prose{font-size:13.5px;color:var(--text);line-height:1.72;}
+
+/* what to watch */
+.aib2-watch{list-style:none;margin:0;padding:0;}
+.aib2-watch-row{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;color:var(--text);line-height:1.6;padding:5px 0;}
+.aib2-watch-row + .aib2-watch-row{border-top:1px solid var(--aib2-hair);}
+.aib2-watch-mark{color:var(--aib2-acc);flex-shrink:0;margin-top:1px;font-size:13px;line-height:1.5;}
+
+/* upcoming catalysts */
+.aib2-cat-rail{display:flex;flex-wrap:wrap;gap:8px;}
+.aib2-cat{display:inline-flex;align-items:baseline;gap:6px;padding:5px 12px;border-radius:999px;
+  font-size:12.5px;font-weight:600;background:var(--aib2-surf);border:1px solid var(--aib2-hair);color:var(--text);}
+.aib2-cat-d{color:var(--aib2-mut);font-variant-numeric:tabular-nums;font-weight:700;}
+.aib2-cat-read{font-size:12.5px;color:var(--aib2-mut);line-height:1.55;margin-top:11px;}
+
+/* ── 10 · degraded notice ────────────────────────────────────────────────────── */
+.aib2-degraded{font-size:12px;color:var(--aib2-mut);margin:8px 0 4px;padding:9px 13px;border-radius:9px;
+  background:color-mix(in srgb,var(--aib2-warn) 9%,transparent);
+  border:1px solid color-mix(in srgb,var(--aib2-warn) 22%,transparent);
+  border-left:3px solid var(--aib2-warn);}
+
+/* ── responsive — 390px bleed guard ─────────────────────────────────────────── */
+@media(max-width:560px){
+  .aib2-hdr{flex-wrap:wrap;}
+  /* the house-law badge takes its own wrapped row (aligned under the title,
+     past the 38px icon + 14px gap) — without a flex-basis it stays on row 1
+     and clips at the panel edge on narrow phones */
+  .aib2-badge{flex-basis:calc(100% - 52px);margin-left:52px;text-align:left;max-width:none;align-self:flex-start;}
+  .aib2-conf{flex-wrap:wrap;gap:9px;}
+  .aib2-conf-asof{margin-left:0;width:100%;}
+  .aib2-kf{width:100%;justify-content:space-between;}
+}
 </style>
 </head>
 <body>
@@ -386,7 +571,7 @@
     <h1>🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></h1>
     <span class="muted"><span class="l-en">every market we cover, synthesised by AI — in one place</span><span class="l-zh">我们覆盖的每个市场，由AI综合 — 集于一处</span></span>
   </div>
-  <p class="muted sm" style="margin:10px 0 0"><span class="l-en">These are AI (LLM) syntheses of the dashboards — they narrate the regime, flag where signals conflict and test the working thesis, with US macro, the dollar, global liquidity and commodities as shared backdrop. RESEARCH CONTEXT ONLY: nothing here feeds a score, signal or allocation, and a brief can be wrong or overconfident — always verify against the underlying panels. Regenerated automatically each day after the close.</span><span class="l-zh">以下为对各看板的 AI（大模型）综合解读 — 解读周期、标注信号冲突、检验当前假设，并以美国宏观、美元、全球流动性与商品为共同背景。仅供研究参考：此处内容不参与任何评分、信号或仓位，且简报可能出错或过度自信 — 请始终对照底层面板核实。每个交易日收盘后自动更新。</span></p>
+  <p class="muted sm" style="margin:10px 0 0"><span class="l-en">These are AI (LLM) syntheses of the dashboards — they narrate the regime, flag where signals conflict and test the working thesis, with US macro, the dollar, global liquidity and commodities as shared backdrop. RESEARCH CONTEXT ONLY: nothing here feeds a score, signal or allocation, and a brief can be wrong or overconfident — always verify against the underlying panels. The macro and China briefs refresh daily after the close; the Bitcoin brief every three days. Each tab shows its own refresh cadence.</span><span class="l-zh">以下为对各看板的 AI（大模型）综合解读 — 解读周期、标注信号冲突、检验当前假设，并以美国宏观、美元、全球流动性与商品为共同背景。仅供研究参考：此处内容不参与任何评分、信号或仓位，且简报可能出错或过度自信 — 请始终对照底层面板核实。宏观与中国简报每个交易日收盘后更新；比特币简报每三天更新。每个标签页会标注各自的更新节奏。</span></p>
 </div>
 
 
@@ -512,25 +697,260 @@
 </div>
 
 
-<div class="panel ai-brief brief-tab active" data-lens="macro" data-brief-src="master_brief.json">
+
+
+
+<div class="panel ai-brief brief-tab active" data-lens="macro">
   <h2>🇺🇸 <span class="l-en">Macro · cross-asset synthesis</span><span class="l-zh">宏观 · 跨资产综合</span>
     <span class="help">?<span class="tip"><span class="l-en">AI synthesis of the macro picture as one cross-asset read — US growth/inflation regime, the dollar, global liquidity, rates, commodities and crypto. RESEARCH CONTEXT only: it narrates the regime, flags conflicting signals and tests the liquidity-rotation thesis; it never feeds a score, signal or allocation. Can be wrong — verify against the panels.</span><span class="l-zh">AI 将宏观图景作为单一跨资产解读 — 美国增长／通胀周期、美元、全球流动性、利率、商品与加密货币。仅供研究参考：它解读周期、标注信号冲突并检验流动性轮动假设，绝不参与任何评分、信号或仓位。可能出错，请对照各面板核实。</span></span></span>
   </h2>
-  <div data-brief-body class="muted sm"><span class="l-en">Loading the latest AI brief… it regenerates daily after the close.</span><span class="l-zh">正在加载最新AI简报…每个交易日收盘后更新。</span></div>
+  
+  <div class="aib2" data-lens="macro"><div class="aib2-hdr">
+    <div class="aib2-icon" aria-hidden="true">AI</div>
+    <div class="aib2-hdr-meta">
+      <div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
+      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-17</span></div>
+    </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
+  </div><div class="aib2-lead">
+    <span class="l-en">AI/semis unwind dominates as tech de-rates within a Goldilocks macro, while bond credit caution and narrow entry breadth diverge from the risk-on surface.</span>
+    <span class="l-zh">AI/半导体板块的平仓主导市场，科技股在“金发姑娘”宏观环境下估值下调，而债券信用谨慎和狭窄的入场宽度与风险偏好表面出现分化。</span>
+  </div><div class="aib2-conf">
+    <div class="aib2-conf-bar" role="img"
+         data-tip-en="Confidence Medium — how firmly the read holds, from the AI synthesis."
+         data-tip-zh="置信度 中 — 该解读的把握程度，来自 AI 综合。">
+      <span class="aib2-conf-seg on"></span>
+      <span class="aib2-conf-seg on"></span>
+      <span class="aib2-conf-seg"></span>
+    </div>
+    <span class="aib2-conf-label"><span class="l-en">Confidence: Medium</span><span class="l-zh">置信度：中</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-17</span></div>
+  <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
+  <div class="aib2-regime">
+    <span class="l-en">The US macro is in a Q1 Goldilocks regime (low recession risk, loose financial conditions) but the dominant market driver is a tech-led de-rating: semis relative strength at -2.5σ, growth vs value at -2.1σ, cap-weight vs equal-weight at -1.9σ. This unwind is being driven by rising real yields (real 10y 2.35%) and a bear-steepener that favors value over growth. The cross-asset bond read, from a leading `rates_credit` tape, signals late-cycle credit stress not yet reflected in equities: the curve is late-cycle, credit is tight but widening, and the stock-bond correlation has broken down (0.56, bonds not hedging). The `cross_asset_confirm` divergence flags a medium-severity credit caution as a leading vote, while FX remains risk-on with a strengthening USD on a US growth premium. Entry-quality breadth adds a calibration check: trend breadth is broad-up (75% above 200-day) but only 38% of fresh entries clear the buy-filter, indicating narrow leadership, not broad conviction. In the policy realm, the Fed is hawkish on hold, the FOMC tone is neutral, and the market is aligned; the policy-intel thesis frames this as a credibility-banking setup, but that desk has no scored track record. Overall, a rotation-driven sell-off in the most-loved names under a still-calm macro surface.</span>
+    <span class="l-zh">美国宏观环境处于第一季度的“金发姑娘”状态（低衰退风险、宽松金融条件），但主导市场驱动力是科技股引领的估值下调：半导体相对强弱 -2.5σ，成长股 vs 价值股 -2.1σ，市值加权 vs 等权重 -1.9σ。这一平仓是由实际收益率上升（实际10年期收益率2.35%）和利空陡化（bear-steepener）推动的，后者有利于价值股而非成长股。跨资产债券解读（来自领先的`rates_credit`指标）预示着后期周期信用压力尚未在股票中反映：曲线处于后期周期，信用紧缩但利差扩大，股债相关性已破裂（0.56，债券不再对冲）。`cross_asset_confirm`的偏离发出中等严重程度的信用谨慎信号作为领先投票，而外汇仍保持风险偏好，美元因美国增长溢价而走强。入场质量广度增加了校准检查：趋势广度广泛上涨（75%高于200日均线），但只有38%的新入场通过买入过滤器，表明领导力狭窄，而非广泛信心。政策领域，美联储鹰派按兵不动，FOMC语气中性，市场与之对齐；政策情报论将其框定为信誉积累设置，但该交易台没有评分记录。总体而言，在仍平静的宏观表面下，最受青睐的个股出现由轮动驱动的抛售。</span>
+  </div>
+  <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
+      <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
+      <ul class="aib2-items"><li><span class="l-en"><b>The `cross_asset_confirm` diverge</b>: bonds (late-cycle, credit widening) warn of stress that the equity Goldilocks and risk-on FX do not yet price. Credit is leading; equities are blind to it.</span><span class="l-zh"><b>`cross_asset_confirm`的偏离</b>：债券（后期周期、信用利差扩大）警告压力，而股票“金发姑娘”和风险偏好外汇尚未对此定价。信用领先；股票对此视而不见。</span></li><li><span class="l-en">FX risk-on label vs USD strengthening as headwind to equities and EM; the dollar is rates-driven with restrictive real yields, which leans on the same risk assets that the risk-on signal would normally favor.</span><span class="l-zh">外汇风险偏好标签与美元走强形成对比，后者对股票和新兴市场构成逆风；美元受利率驱动，实际收益率具有限制性，这压低了通常受风险偏好信号青睐的同一大类风险资产。</span></li><li><span class="l-en"><b>Entry quality narrow vs broad trend</b>: 75% above 200-day but only 32% take-quality entries, warning that participation is thin even as the tape holds up.</span><span class="l-zh"><b>入场质量狭窄 vs 广泛趋势</b>：75%高于200日均线，但只有32%的优质入场，警告尽管行情维持，参与度薄弱。</span></li></ul>
+    </div><div class="aib2-card aib2-card--tx">
+      <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
+      <ul class="aib2-items"><li><span class="l-en"><b>Rising real 10y + bear steepener</b>: headwind for long-duration (XLK, QQQ, BTC, gold, TLT), tailwind for value/financials/energy.</span><span class="l-zh"><b>真实的10年期收益率上升+熊市陡化</b>：对长久期资产（XLK、QQQ、BTC、黄金、TLT）为逆风，对价值股/金融股/能源股为顺风。</span></li><li><span class="l-en"><b>Credit canary</b>: HY OAS direction widening — if sustained, it is a leading signal for equity drawdowns; monitor EBP.</span><span class="l-zh"><b>信用金丝雀</b>：高收益债OAS方向走阔——若持续，是股票回撤的领先信号；关注EBP。</span></li><li><span class="l-en"><b>USD strength</b>: rates-driven, headwind for EM, commodities, BTC, and US equities; a dollar wrecking-ball scenario (intensity 12.1) is dormant but could reawaken if US growth premium widens further.</span><span class="l-zh"><b>美元走强</b>：由利率驱动，对新兴市场、大宗商品、BTC和美国股票构成逆风；美元破坏球情景（强度12.1）目前潜伏，但如果美国增长溢价进一步扩大，可能重新激活。</span></li><li><span class="l-en"><b>Fed hawkish on hold</b>: the real rate and yield curve posture keep term-premium-sensitive assets under pressure; the upcoming PCE cold print could ease that.</span><span class="l-zh"><b>美联储鹰派按兵不动</b>：实际利率和收益率曲线形态使期限溢价敏感资产承压；即将公布的PCE数据若偏冷可能缓解这一压力。</span></li></ul>
+    </div></div>
+  <div class="aib2-card aib2-card--full aib2-card--playbook">
+    <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
+    <div class="aib2-prose">
+      <span class="l-en">The working rotation thesis (US large-cap semis → software/growth → ex-US → crypto) is tracking in reverse: semis are leading the unwind as net liquidity shows signs of contraction globally (neural_web flows, though stale). China and HK are in stagflation with contracting liquidity, and BTC is in DISTRIBUTE with negative momentum. However, the thesis also posits that rotation would flow to software/growth next, but growth is deeply underperforming value, consistent with the rate-driven bear-steepener rather than a liquidity rotation. So the unwind sequence is on track, but it is happening within a value-favoring, real-yield-driven regime rather than a clean risk-on rotation.</span>
+      <span class="l-zh">当前的轮动假设（美国大盘半导体→软件/成长股→除美国外市场→加密货币）正反向运行：半导体引领平仓，因全球净流动性出现收缩迹象（神经网络流量，尽管滞后）。中国和香港处于滞胀状态且流动性收缩，BTC处于“派发”（DISTRIBUTE）状态且动能负面。然而，该假设也认为轮动接下来将流向软件/成长股，但成长股严重落后于价值股，这与利率驱动的利空陡化一致，而非流动性轮动。因此，平仓序列正在按计划进行，但它发生在有利于价值股、受实际收益率驱动的环境中，而非清晰的风险偏好轮动。</span>
+    </div>
+  </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
+  <div class="aib2-card aib2-card--full">
+    <ul class="aib2-watch"><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en"><b>Semis RS reversal</b>: if the -2.5σ extreme reverses, the major driver could fade.</span>
+          <span class="l-zh"><b>半导体相对强弱逆转</b>：若-2.5σ极端情况逆转，主要驱动力可能消退。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en"><b>HY OAS</b>: a gap wider above 3% would confirm the credit warning and likely force de-risking across equities.</span>
+          <span class="l-zh"><b>高收益债OAS</b>：利差扩大至3%以上将确认信用警告，并可能迫使整个股票市场去风险。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en"><b>FOMC Jul 29 and PCE Jul 30</b>: any hawkish surprise vs expected cold PCE could re-ignite rate fears and deepen the tech rout; a cold print could anchor rates and potentially pivot sentiment.</span>
+          <span class="l-zh"><b>FOMC 7月29日和PCE 7月30日</b>：任何鹰派意外与预期中的冷PCE相比，都可能重新点燃利率担忧并加剧科技股抛售；而冷数据则可能稳住利率并潜在扭转市场情绪。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en"><b>Entry quality breadth</b>: an improvement above 50% take-quality would show broad participation; a decline would signal more fragility beneath the surface.</span>
+          <span class="l-zh"><b>入场质量宽度</b>：若收质量提升至50%以上，则显示广泛参与；若下降，则表明表面之下更加脆弱。</span>
+        </span>
+      </li></ul>
+  </div>
+  <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化剂</span></span></div>
+  <div class="aib2-card aib2-card--full">
+    <div class="aib2-cat-rail"><span class="aib2-cat"><span class="aib2-cat-d num">07-29</span> FOMC rate decision</span><span class="aib2-cat"><span class="aib2-cat-d num">07-30</span> GDP (BEA estimate)</span><span class="aib2-cat"><span class="aib2-cat-d num">07-30</span> PCE / personal income (BEA)</span></div>
+    <div class="aib2-cat-read">
+      <span class="l-en">The calendar turns heavy on July 29-30 with FOMC, GDP, and PCE. The FOMC is expected to hold with a hawkish posture, aligned with the market. The PCE projection points to a cold monthly print, which could ease inflation concerns and reinforce the on-hold narrative. However, any upside surprise in inflation or a hawkish tilt in the statement could exacerbate the ongoing tech de-rating and credit caution.</span>
+      <span class="l-zh">The calendar turns heavy on July 29-30 with FOMC, GDP, and PCE. The FOMC is expected to hold with a hawkish posture, aligned with the market. The PCE projection points to a cold monthly print, which could ease inflation concerns and reinforce the on-hold narrative. However, any upside surprise in inflation or a hawkish tilt in the statement could exacerbate the ongoing tech de-rating and credit caution.</span>
+    </div></div>
 </div>
 
-<div class="panel ai-brief brief-tab" data-lens="china" data-brief-src="china_brief.json">
+  
+</div>
+
+<div class="panel ai-brief brief-tab" data-lens="china">
   <h2>🇨🇳 <span class="l-en">China & Hong Kong synthesis</span><span class="l-zh">中港综合</span>
     <span class="help">?<span class="tip"><span class="l-en">An AI-generated synthesis of the China & Hong-Kong dashboards, with US macro, the dollar, global liquidity and commodities as backdrop. RESEARCH CONTEXT only — it narrates the regime, flags where signals conflict and tests the policy/liquidity thesis (A-shares mean-revert, so leaders read as extended); it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying panels.</span><span class="l-zh">AI 对中港看板的综合分析，以美国宏观、美元、全球流动性与商品为背景。仅供研究参考——它解读周期、标注信号冲突并检验政策／流动性假设（A股均值回归，故强势股视为已拉伸），绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各底层面板核实。</span></span></span>
   </h2>
-  <div data-brief-body class="muted sm"><span class="l-en">Loading the latest AI brief… it regenerates daily after the close.</span><span class="l-zh">正在加载最新AI简报…每个交易日收盘后更新。</span></div>
+  
+  <div class="aib2" data-lens="china"><div class="aib2-hdr">
+    <div class="aib2-icon" aria-hidden="true">AI</div>
+    <div class="aib2-hdr-meta">
+      <div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · China &amp; HK synthesis</span><span class="l-zh">AI 每日简报 · 中港综合</span></div>
+      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-17</span></div>
+    </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
+  </div><div class="aib2-lead">
+    <span class="l-en">China stagflation with contracting liquidity despite PBoC easing impulse; A-shares defensive rotation with deep pullbacks offering mean-reversion setups but macro headwinds. HK faces USD outflows and extreme sector extensions, diverging from mainland.</span>
+    <span class="l-zh">中国滞胀，尽管央行有宽松意愿但流动性收缩；A股防御性轮动，大幅回调提供均值回归机会但面临宏观逆风。香港面临美元外流和极端板块分化，与大陆背离。</span>
+  </div><div class="aib2-conf">
+    <div class="aib2-conf-bar" role="img"
+         data-tip-en="Confidence Low — how firmly the read holds, from the AI synthesis."
+         data-tip-zh="置信度 低 — 该解读的把握程度，来自 AI 综合。">
+      <span class="aib2-conf-seg on"></span>
+      <span class="aib2-conf-seg"></span>
+      <span class="aib2-conf-seg"></span>
+    </div>
+    <span class="aib2-conf-label"><span class="l-en">Confidence: Low</span><span class="l-zh">置信度：低</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-17</span></div>
+  <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
+  <div class="aib2-regime">
+    <span class="l-en">China A-shares are in a Q3 Stagflation quadrant (growth_score -0.143, inflation_score 0.182, low confidence 0.081). The liquidity overlay is contracting, and the cycle tag is 'mid'. The PBoC stance is officially neutral but with an easing impulse—cumulative RRR and LPR cuts have been delivered, yet the corridor classifier hasn't flipped, and system liquidity is contracting (panel: china.liquidity_overlay, policy.impulse). Pair ratios confirm a defensive rotation: cyc/def down 10.5% over 20d, smallcap/largecap down 6%, while the inflation basket is up 1.57%. Sector relative strength shows Semiconductors as rank 1 but with a recent pullback (mom_20d -4.75%, pctile 21%) and Technology at pctile 69% with negative short-term momentum, potentially extended. Deep mean-reversion candidates include Solar & Photovoltaic, Defense & Military, and Automobiles, all at 0.4%tile of their 252d distribution, fitting the short-term reversal hypothesis (panel: china.sector_rs). Hong Kong is also labelled Q3 Stagflation (growth_score -0.25, inflation 0.0) with contracting liquidity. The peg is weak-side (outflow), and the HKD is 7.8405, near the weak edge. Global risk state is Neutral, and the Fe score is 28 (Fear). Sector RS shows an extreme outlier: Exchange & Diversified at 99.6%tile, while Internet & Tech sits at 15.5%tile and Auto & EV at 0.8%tile—indicating a stark divergence driven by global/USD flows rather than domestic dynamics (panel: hk.sector_rs, hk.peg_state, hk.fear_euphoria). The US backdrop is a Goldilocks quadrant with expanding liquidity, but a strengthening USD (DXY up, restrictive real yields) is a headwind for EM and HK via the exchange rate channel (panel: forex.dollar_desk, forex.transmission).</span>
+    <span class="l-zh">中国A股处于第三季度滞胀象限（增长得分-0.143，通胀得分0.182，低信心0.081）。流动性覆盖层收缩，周期标签为'中期'。央行立场名义上中性但有宽松倾向——累计已实施降准和LPR下调，但走廊分类器未翻转，且系统流动性收缩（面板：china.liquidity_overlay, policy.impulse）。配对比率确认防御性轮动：周期/防御20日下跌10.5%，小盘/大盘下跌6%，而通胀篮子上涨1.57%。行业相对强弱显示半导体排名第一但近期回调（20日动量-4.75%，百分位21%），科技百分位69%但短期动量负值，可能过高。深度均值回归候选包括太阳能与光伏、国防与军工、汽车，均处于252日分布的0.4%分位，符合短期反转假设（面板：china.sector_rs）。香港也被标注为第三季度滞胀（增长得分-0.25，通胀0.0），流动性收缩。联汇制度处于弱方（资金外流），港元报7.8405，接近弱方兑换保证。全球风险状态为中性，恐慌/贪婪得分28（恐惧）。行业RS显示极端异常：交易所与多元化板块处于99.6%分位，而互联网与科技处于15.5%分位，汽车与电动车处于0.8%分位——表明由全球/美元资金流而非国内动态驱动的明显分化（面板：hk.sector_rs, hk.peg_state, hk.fear_euphoria）。美国背景为金发女孩象限且流动性扩张，但美元走强（DXY上行，实际收益率限制性）通过汇率渠道对新兴市场和香港构成逆风（面板：forex.dollar_desk, forex.transmission）。</span>
+  </div>
+  <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
+      <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
+      <ul class="aib2-items"><li><span class="l-en"><b>PBoC cumulative easing (RRR/LPR cuts) vs liquidity overlay 'contracting' — easing impulse not transmitting into system liquidity, challenging the domestically-driven risk appetite thesis (panels</b>: china.liquidity_overlay, policy.impulse).</span><span class="l-zh"><b>央行累计宽松（降准/LPR下调） vs 流动性覆盖层'收缩'——宽松意愿未能传导至系统流动性，挑战了国内驱动风险偏好的论点（面板</b>：china.liquidity_overlay, policy.impulse）。</span></li><li><span class="l-en"><b>Stagflation regime with weak growth and contracting liquidity vs deep-cyclical mean-reversion candidates (Solar, Defense, Auto) at 0.4%tile — bounce setups face significant macro headwinds (panels</b>: china.quad, china.sector_rs).</span><span class="l-zh"><b>滞胀格局伴随增长疲弱和流动性收缩 vs 深度周期均值回归候选（太阳能、国防、汽车）处于0.4%分位——反弹机会面临重大宏观逆风（面板</b>：china.quad, china.sector_rs）。</span></li><li><span class="l-en"><b>HK Exchange & Diversified sector RS at 99.6%tile while Fe score is 28 (Fear) and the peg is under outflow pressure — extreme local overbought in a risk-off macro environment for HK (panels</b>: hk.sector_rs, hk.fear_euphoria, hk.peg_state).</span><span class="l-zh"><b>香港交易所与多元化板块RS处于99.6%分位，而恐慌/贪婪得分28（恐惧），联汇制度承受外流压力——在香港风险规避的宏观环境下出现极端局部超买（面板</b>：hk.sector_rs, hk.fear_euphoria, hk.peg_state）。</span></li><li><span class="l-en"><b>Offshore ETF gap (KWEB/MCHI/CQQQ) leading onshore CSI300 by +7.67% over 20d, signaling offshore optimism, yet onshore macro is stagflation with contracting liquidity — a positive gap that clashes with the domestic regime (panel</b>: china_intel.radar.divergences[0]).</span><span class="l-zh"><b>海外ETF差距（KWEB/MCHI/CQQQ）在20天内领先境内沪深300指数+7.67%，表明海外乐观情绪，但境内宏观处于滞胀且流动性收缩——这一正差距与国内体制相冲突（面板</b>：china_intel.radar.divergences[0]）。</span></li><li><span class="l-en"><b>Technology sector pctile 69% (elevated) with mom_20d -10%, but its RS is not the highest rank — the mean-reversion fade signal for leaders is ambiguous as the most extended sector is not the strongest performer (panel</b>: china.sector_rs).</span><span class="l-zh"><b>科技板块百分位69%（偏高），20日动量-10%，但其相对强度并非最高排名——领先者的均值回归衰减信号模糊，因为最扩张的板块并非最强表现者（面板</b>：china.sector_rs）。</span></li></ul>
+    </div><div class="aib2-card aib2-card--tx">
+      <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
+      <ul class="aib2-items"><li><span class="l-en"><b>PBoC easing impulse → if FR007 (1.44) feeds into interbank/corporate rates and credit impulse turns positive → brokers/property catch-up; currently stalled (panels</b>: policy.impulse, china_intel.chains, china.pair_ratios).</span><span class="l-zh"><b>央行宽松冲动→如果FR007（1.44）传导至银行间/企业利率且信贷冲动转正→券商/地产追赶；目前停滞（面板</b>：policy.impulse, china_intel.chains, china.pair_ratios）。</span></li><li><span class="l-en"><b>Strong USD / restrictive US real rates → HKD weak-side peg pressure → capital outflows from HK → HK equities (especially H-share and tech) underperform A-shares; divergence widening (panels</b>: hk.peg_state, forex.dollar_desk, hk.pair_ratios).</span><span class="l-zh"><b>强势美元/限制性美国实际利率→港币弱方联系汇率压力→资本从香港外流→香港股票（尤其是H股和科技股）跑输A股；分化扩大（面板</b>：hk.peg_state, forex.dollar_desk, hk.pair_ratios）。</span></li><li><span class="l-en"><b>US Goldilocks expanding liquidity → global risk-on → fails to lift HK due to the peg outflow channel; instead, HK Exchange sector extremely extended as a local defensive play (panels</b>: us_macro_backdrop, hk.sector_rs).</span><span class="l-zh"><b>美国金发姑娘经济扩张流动性→全球风险偏好上升→由于联系汇率流出渠道未能提振香港；相反，香港交易所板块极度扩张作为本地防御性操作（面板</b>：us_macro_backdrop, hk.sector_rs）。</span></li><li><span class="l-en"><b>Offshore ETF leadership → potential domestic A-share catch-up over ~3 months if domestic liquidity conditions improve, but currently unsupported by contracting liquidity (panel</b>: china_intel.radar.divergences[0]).</span><span class="l-zh"><b>海外ETF领先→若国内流动性条件改善，潜在境内A股追赶约3个月，但目前受流动性收缩不支持（面板</b>：china_intel.radar.divergences[0]）。</span></li></ul>
+    </div></div>
+  <div class="aib2-card aib2-card--full aib2-card--playbook">
+    <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
+    <div class="aib2-prose">
+      <span class="l-en">The working thesis holds partially: A-shares are indeed domestically driven, with PBoC easing attempts and mean-reversion setups appearing in deep pullbacks. However, the contracting liquidity overlay suggests policy transmission is blocked, so the primary domestic driver is currently absent—this is a direct challenge. HK clearly diverges from the mainland, riding global risk appetite and USD strength as expected, with extreme sector dispersion and outflow pressure proving the global- risk link.</span>
+      <span class="l-zh">工作假设部分成立：A股确实受国内驱动，央行宽松尝试和均值回归机会出现在深度回调中。然而，收缩的流动性覆盖层表明政策传导受阻，因此主要国内驱动因素目前缺失——这构成了直接挑战。香港明显与大陆背离，如预期般受全球风险偏好和美元走强推动，极端板块分化与外流压力证明了全球风险关联。</span>
+    </div>
+  </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
+  <div class="aib2-card aib2-card--full">
+    <ul class="aib2-watch"><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">LPR fix on Jul 20 – a cut or hold will signal the near-term policy path; any surprise could flip PBoC stance corridor.</span>
+          <span class="l-zh">7月20日LPR调整——降息或持平将预示近期政策路径；任何意外都可能翻转PBoC立场通道。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">PBoC stance classifier flipping from 'neutral' to easing – confirmation that easing is real for domestic liquidity.</span>
+          <span class="l-zh">PBoC立场分类器从'中性'转向宽松——确认国内流动性宽松实属真实。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">USD/CNY break above 6.80 or sharp move – would introduce a new FX headwind for A-shares.</span>
+          <span class="l-zh">美元/人民币突破6.80或剧烈波动——将为A股带来新的外汇逆风。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">HKD peg distance to 7.85 – a breach would signal acute outflow stress for HK.</span>
+          <span class="l-zh">港币挂钩距离7.85——突破将预示香港面临严重资金外流压力。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">NBS PMI on Jul 31 – if growth score improves, it would reduce the macro headwind for mean-reversion cyclicals.</span>
+          <span class="l-zh">7月31日国家统计局PMI——如果增长指数改善，将减少均值回归周期股的宏观逆风。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">Sector flow divergence for Semiconductors (negative radar signal) confirming a breakdown in the A-share leader – would support mean-reversion from recent leaders into deep laggards.</span>
+          <span class="l-zh">半导体板块资金流分化（负面雷达信号）确认A股龙头破位——将支持从近期龙头转向深度落后股的均值回归。</span>
+        </span>
+      </li></ul>
+  </div>
 </div>
 
-<div class="panel ai-brief brief-tab" data-lens="btc" data-brief-src="btc_brief.json">
+  
+</div>
+
+<div class="panel ai-brief brief-tab" data-lens="btc">
   <h2>₿ <span class="l-en">Bitcoin synthesis</span><span class="l-zh">比特币综合</span>
     <span class="help">?<span class="tip"><span class="l-en">An AI-generated synthesis of the Bitcoin Vector — cycle, valuation, leverage, on-chain activity and ETF flows, with US macro and global liquidity as backdrop (BTC as the long-duration tail of global liquidity). RESEARCH CONTEXT only — it never feeds a score, signal or allocation, and can be wrong or overconfident. Verify against the Bitcoin Vector panels.</span><span class="l-zh">AI 对比特币向量的综合分析 — 周期、估值、杠杆、链上活动与 ETF 资金流，以美国宏观与全球流动性为背景（比特币为全球流动性的长久期尾部）。仅供研究参考 — 绝不参与任何评分、信号或仓位，且可能出错或过度自信。请对照比特币向量面板核实。</span></span></span>
   </h2>
-  <div data-brief-body class="muted sm"><span class="l-en">Loading the latest AI brief… it regenerates daily after the close.</span><span class="l-zh">正在加载最新AI简报…每个交易日收盘后更新。</span></div>
+  
+  <div class="aib2" data-lens="btc"><div class="aib2-hdr">
+    <div class="aib2-icon" aria-hidden="true">AI</div>
+    <div class="aib2-hdr-meta">
+      <div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · Bitcoin synthesis</span><span class="l-zh">AI 每日简报 · 比特币综合</span></div>
+      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-18</span></div>
+    </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
+  </div><div class="aib2-lead">
+    <span class="l-en">BTC composite reads DISTRIBUTE/froth with zero allocation — valuation is cheap (MVRV‑Z 19.8 %ile, Mayer 0.89) but late‑cycle markdown, bear momentum, and crowded positioning (high OI, extreme COT net long) keep risk regime high. Global liquidity is expanding (M2 +7 % y/y, net liq ROC +3.7 %), yet it has not broken BTC’s distribution structure.</span>
+    <span class="l-zh">BTC综合指标显示DISTRIBUTE/froth，配置为零——估值便宜（MVRV‑Z 19.8百分位，Mayer 0.89），但周期末段的回调、空头动能和拥挤持仓（高未平仓合约，极端COT净多头）使风险水平居高不下。全球流动性正在扩张（M2同比+7%，流动性净变化率+3.7%），但尚未打破BTC的派发结构。</span>
+  </div><div class="aib2-conf">
+    <div class="aib2-conf-bar" role="img"
+         data-tip-en="Confidence Low — how firmly the read holds, from the AI synthesis."
+         data-tip-zh="置信度 低 — 该解读的把握程度，来自 AI 综合。">
+      <span class="aib2-conf-seg on"></span>
+      <span class="aib2-conf-seg"></span>
+      <span class="aib2-conf-seg"></span>
+    </div>
+    <span class="aib2-conf-label"><span class="l-en">Confidence: Low</span><span class="l-zh">置信度：低</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-18</span></div>
+  <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
+  <div class="aib2-regime">
+    <span class="l-en">Bitcoin sits deep in the markdown phase (78 % through), 819 days past the halving, with the next cycle pivot due in early‑October 2026. The composite system registers DISTRIBUTE/froth, overriding allocation to zero despite a Goldilocks macro backdrop (tailwind, expanding liquidity, low risk). On‑chain valuation is undemanding — MVRV‑Z in the lowest quintile, Mayer multiple below 1 — but this is being gated by bear momentum ( -0.31) and a neutral structure that hasn’t yet confirmed a trend change. Options and flows tell a split story: ETF inflows are accumulating (z +1.31), DVOL is at a 3 %ile calm, and put/call OI is tilted bullish. However, open interest is elevated (70 %ile relative to market cap), CME futures are in backwardation, and the COT report shows leveraged funds extremely net long (z 2.40) — all historically signals of a crowded, complacent market. The liquidity thesis would normally support BTC, but cycle position and leverage stress are currently vetoing that impulse.</span>
+    <span class="l-zh">比特币处于深度回调阶段（已完成78%），距减半已819天，下一周期转折点预计在2026年10月初。综合系统显示DISTRIBUTE/froth，尽管宏观背景理想（顺风、流动性扩张、低风险），但配置仍被强制归零。链上估值并不昂贵——MVRV‑Z处于最低五分位，Mayer倍数低于1——但这被空头动能（-0.31）和尚未确认趋势变化的中性结构所阻挡。期权和资金流呈现分化：ETF流入正在积累（z +1.31），DVOL处于3百分位的平静水平，看跌/看涨未平仓合约偏向看涨。然而，未平仓合约偏高（相对市值的70百分位），CME期货处于现货溢价，COT报告显示杠杆基金极度净多头（z 2.40）——历史上这都是拥挤、自满市场的信号。流动性理论通常利好BTC，但周期位置和杠杆压力目前否决了这一冲动。</span>
+  </div>
+  <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
+      <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
+      <ul class="aib2-items"><li><span class="l-en">Valuation is cheap (MVRV‑Z 0.35, 19.8 %ile; Mayer 0.89) but the composite regime is DISTRIBUTE/froth, suggesting price may still have downside or time to base.</span><span class="l-zh">估值便宜（MVRV‑Z 0.35，19.8百分位；Mayer 0.89），但综合指标状态为DISTRIBUTE/froth，表明价格可能仍有下行空间或需要时间筑底。</span></li><li><span class="l-en">ETF flows are accumulating (z +1.31) while on‑chain flows are muted (‘Low’) and stablecoin supply is contracting (stbl_growth_z -1.33); institutional demand is not yet echoed by broader crypto‑native money flow.</span><span class="l-zh">ETF资金流正在积累（z +1.31），而链上资金流低迷（‘低’），稳定币供应收缩（stbl_growth_z -1.33）；机构需求尚未得到更广泛的加密原生资金流的呼应。</span></li><li><span class="l-en">COT shows leveraged funds extremely net long (z 2.40) — a historically bearish crowding signal — yet CME basis is in backwardation, often a near‑term exhaustion signal; these two rarely coexist without a violent flush or squeeze.</span><span class="l-zh">COT显示杠杆基金极度净多头（z 2.40）——历史上看跌的拥挤信号——而CME基差处于现货溢价，通常是近期衰竭信号；这两者很少共存而不出现剧烈清除或挤压。</span></li><li><span class="l-en">Global M2 is expanding at 7 % y/y and macro is a tailwind, but BTC momentum is bear and the risk regime is ‘high_risk’; the liquidity tailwind is not being transmitted, likely because the cycle and leverage gates are shut.</span><span class="l-zh">全球M2货币供应量同比扩大7%，宏观环境构成顺风，但BTC动量偏空，风险状态为“高风险”；流动性顺风未能传导，可能因周期和杠杆通道关闭。</span></li><li><span class="l-en">Low DVOL (3 %ile) and bullish put/call OI (0.46) align with a calm, complacent market — yet hash ribbon is in capitulation and miner revenue (Puell 0.64) is depressed, reminding that underlying network stress persists.</span><span class="l-zh">低DVOL（处于3%分位）和看跌/看涨期权持仓比率（0.46）指向一个平静自满的市场——然而哈希带指标处于投降状态，矿工收入（Puell多倍数0.64）低迷，提醒潜在的网络压力依然存在。</span></li></ul>
+    </div><div class="aib2-card aib2-card--tx">
+      <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
+      <ul class="aib2-items"><li><span class="l-en">Pending cycle pivot (≈79 days to early‑October 2026) — if markdown ends on schedule, a structural turn could unlock the liquidity tailwind.</span><span class="l-zh">即将到来的周期转折点（距2026年10月初约79天）——若减记按时结束，结构性转变可能释放流动性顺风。</span></li><li><span class="l-en">COT positioning unwind — a sharp reduction in leveraged long positioning (z‑score falling) would clear the overhang and realign CME basis with spot.</span><span class="l-zh">COT持仓解除——杠杆多头持仓的急剧减少（z分数下降）将清除积压，并使CME基差与现货重新对齐。</span></li><li><span class="l-en">Stablecoin supply recovery — stbl_growth_z needs to turn positive to confirm that on‑chain liquidity is returning alongside ETF inflows.</span><span class="l-zh">稳定币供应恢复——stbl_growth_z需转正，以确认链上流动性正随ETF流入回归。</span></li><li><span class="l-en">Real yield compression — a drop in the 10‑year real rate (currently 2.35 %) would directly benefit BTC as a long‑duration asset, especially if credit remains tight.</span><span class="l-zh">实际收益率压缩——10年期实际利率（目前2.35%）下降将直接利好作为长周期资产的BTC，尤其在信贷仍趋紧的情况下。</span></li><li><span class="l-en">Momentum flip — efficiency ratio (currently 0.29) turning higher and momentum shifting positive would be the signal that the downtrend is exhausting.</span><span class="l-zh">动量反转——效率比率（目前0.29）转升且动量转为正值将是下跌趋势耗尽的信号。</span></li></ul>
+    </div></div>
+  <div class="aib2-card aib2-card--full aib2-card--playbook">
+    <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
+    <div class="aib2-prose">
+      <span class="l-en">The working thesis — BTC as a high‑beta liquidity proxy that rallies on M2 expansion — is partially tracking: global liquidity is indeed expanding (M2 +7 %, net liquidity ROC +3.7 %, macro tailwind). However, that expansion has not translated into bullish BTC momentum or a lower risk regime. Instead, BTC is in a distribution/markdown structure with bear momentum, and the system is overriding any allocation. The divergence may stem from the cycle position (late markdown, approaching a cycle pivot) and from extreme speculative positioning (COT long, high OI) that is capping upside and making any rally vulnerable to a leverage flush. In short, the liquidity hypothesis holds in principle, but the cycle‑leverage gate is currently closed, postponing the typical risk‑on response.</span>
+      <span class="l-zh">当前工作假设——比特币作为高贝塔流动性代理，随M2扩张而上涨——部分符合：全球流动性确实在扩张（M2 +7%，流动性净变化率+3.7%，宏观顺风）。然而，这一扩张并未转化为看涨的比特币动能或较低的风险水平。相反，比特币处于派发/回调结构，带有空头动能，系统正在覆盖任何配置。这种背离可能源于周期位置（回调末期，接近周期转折点）以及极端投机持仓（COT多头、高未平仓合约），这限制了上行空间，并使任何反弹都易受杠杆清算的影响。简言之，流动性假设原则上成立，但周期-杠杆之门目前关闭，推迟了典型的风险偏好反应。</span>
+    </div>
+  </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
+  <div class="aib2-card aib2-card--full">
+    <ul class="aib2-watch"><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">Cycle pivot date 2026‑10‑05 and cphase_days_left countdown — any early break of the markdown structure.</span>
+          <span class="l-zh">周期转折点日期2026‑10‑05及cphase_days_left倒计时——任何对下跌结构的提前突破。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">MVRV‑Z falling into deeply undervalued territory (below 0 or into single‑digit %ile) would shift the valuation gate, even if momentum remains bear.</span>
+          <span class="l-zh">MVRV‑Z落入深度低估区域（低于0或进入个位数百分位）将改变估值门槛，即使动量仍偏空。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">COT long positioning (z‑score) unwinding toward neutral — a drop from 2.40 would remove the crowded‑long risk.</span>
+          <span class="l-zh">COT多头持仓（z‑score）向中性回归——从2.40下降将消除多头拥挤风险。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">Funding rate spiking to extreme negative or basis flipping more deeply into backwardation, which would signal capitulation and a potential bottom.</span>
+          <span class="l-zh">资金费率飙升至极端负值或基差进一步转为深度贴水，这将标志着投降和潜在底部。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">ETF flow sustaining or accelerating (z > 1.5) while stablecoin supply stops contracting; a joint improvement would argue that institutional and native demand are aligning.</span>
+          <span class="l-zh">ETF资金流持续或加速（z > 1.5），同时稳定币供应停止收缩；两者共同改善将表明机构与原生需求正在趋于一致。</span>
+        </span>
+      </li><li class="aib2-watch-row">
+        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
+        <span class="aib2-watch-body">
+          <span class="l-en">A break above structural resistance with a higher efficiency ratio and positive momentum, which would flip the structure from neutral to bullish.</span>
+          <span class="l-zh">突破结构性阻力，效率比更高且动能正向，这将使结构从中性转为看涨。</span>
+        </span>
+      </li></ul>
+  </div>
+</div>
+
+  
 </div>
 
 
@@ -621,7 +1041,7 @@
 
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0"><span class="l-en">AI research context, not investment advice — generated by an LLM from the day's free public data and the dashboards' own outputs.</span><span class="l-zh">AI 研究背景，非投资建议 — 由大模型根据当日免费公开数据及各看板自身输出生成。</span>
-     · <span class="l-en">Page built</span><span class="l-zh">页面生成于</span> 2026-07-19 23:54 UTC</p>
+     · <span class="l-en">Page built</span><span class="l-zh">页面生成于</span> 2026-07-20 03:20 UTC</p>
 </div>
 
 <script src="theme.js"></script>
