@@ -416,7 +416,16 @@ def run(
 
         ua = er.get("unified_analysis") or {}
         meta = ua.get("meta") or {}
-        call_summary = str(ua.get("call_summary") or "").strip()
+        _cs_raw = ua.get("call_summary")
+        call_summary = str(_cs_raw or "").strip()  # raw form — kept only for a stable sha
+        # EquityDesk's call_summary is a STRUCTURED object, not prose; its readable
+        # narrative is .outlook_summary. Never surface the raw dict on the page.
+        if isinstance(_cs_raw, dict):
+            summary_prose = str(_cs_raw.get("outlook_summary") or "").strip() or None
+        elif isinstance(_cs_raw, str):
+            summary_prose = _cs_raw.strip() or None
+        else:
+            summary_prose = None
         fiscal_qtr_str = meta.get("fiscal_qtr") or ""
         quarter, year = _parse_fiscal_qtr(fiscal_qtr_str)
         call_date = str(er.get("call_date") or "").strip()
@@ -431,7 +440,7 @@ def run(
             "fiscal_qtr": fiscal_qtr_str,
             "model_used": model_used,
             "prompt_version": prompt_version,
-            "call_summary": call_summary,
+            "call_summary": summary_prose or call_summary,
             "positive_factors": _to_json_str(ua.get("positive_factors")),
             "negative_factors": _to_json_str(ua.get("negative_factors")),
             "guidance": _to_json_str(ua.get("guidance")),
@@ -505,8 +514,10 @@ def run(
             "tags": json.dumps(tags, ensure_ascii=False),
             "source_sha256": sha,
             "scored_at": call_date + "T00:00:00+00:00" if call_date else "",
-            "summary": call_summary[:2000] if call_summary else None,
+            "summary": (summary_prose or (pos_strs[0] if pos_strs else None) or None),
         }
+        if score_row["summary"]:
+            score_row["summary"] = str(score_row["summary"])[:2000]
         score_rows.append(score_row)
 
         if our_ticker in us_ov_tickers:
@@ -558,36 +569,28 @@ def run(
     log.info("Wrote %s  (%d rows)", ba_out, len(ba_df))
     print(f"  [2] {ba_out}  ({len(ba_df):,} rows)  [gitignored]")
 
-    # ── Write 3: seed scores.parquet via upsert ───────────────────────────────
-    # We need to include the "summary" column.  engine.earnings_qual.upsert_scores
-    # uses _STORE_COLUMNS which (after W5) includes "summary".
-    # We call it directly; fall back to a direct write if the import fails.
-    scores_out = root / "data" / "earnings_calls" / "scores.parquet"
-    try:
-        from engine import earnings_qual  # noqa: PLC0415
-        # Pass root so upsert_scores finds the correct path
-        n_written = earnings_qual.upsert_scores(score_rows, root=root)
-        log.info("Upserted %d score rows via earnings_qual.upsert_scores", n_written)
-        print(f"  [3] {scores_out}  ({n_written:,} rows upserted)  [gitignored]")
-    except Exception as exc:  # noqa: BLE001
-        log.warning("earnings_qual.upsert_scores failed (%s) — direct parquet write", exc)
-        # Build canonical columns for direct write
-        cols = [
-            "ticker", "quarter", "year", "call_date", "source", "model",
-            "sentiment", "performance", "confidence", "tone_word",
-            "positive_highlights", "negative_highlights", "tags",
-            "source_sha256", "scored_at", "summary",
-        ]
-        sc_df = pd.DataFrame(score_rows, columns=cols)
-        # Dedup on (ticker, quarter, year, source), keep last
-        sc_df = sc_df.drop_duplicates(
-            subset=["ticker", "quarter", "year", "source"], keep="last"
-        ).reset_index(drop=True)
-        scores_out.parent.mkdir(parents=True, exist_ok=True)
-        sc_df.to_parquet(scores_out, index=False)
-        log.info("Wrote %s directly (%d rows)", scores_out, len(sc_df))
-        print(f"  [3] {scores_out}  ({len(sc_df):,} rows)  [gitignored, direct write]")
-        stats["direct_write"] = True
+    # ── Write 3: COMMITTED earnings seed ──────────────────────────────────────
+    # The backfill is a cold-start SEED, not fresh worker output — it belongs on a
+    # committed path so every render/nightly has earnings context before the Qwen
+    # worker produces anything. engine.stage_analysis._load_earnings_scores reads
+    # this seed UNDER the live (gitignored, R2-transported) scores.parquet, which
+    # the worker overlays per ticker. Curated to exactly the columns the engine reads.
+    seed_out = root / "data" / "stage_analysis" / "backfill" / "earnings_seed.parquet"
+    seed_cols = [
+        "ticker", "quarter", "year", "call_date", "source", "model",
+        "sentiment", "performance", "confidence", "tone_word", "tags",
+        "summary", "scored_at",
+    ]
+    sc_df = pd.DataFrame(score_rows)
+    sc_df = sc_df.reindex(columns=seed_cols)
+    # Dedup on (ticker, quarter, year, source), keep last
+    sc_df = sc_df.drop_duplicates(
+        subset=["ticker", "quarter", "year", "source"], keep="last"
+    ).reset_index(drop=True)
+    seed_out.parent.mkdir(parents=True, exist_ok=True)
+    sc_df.to_parquet(seed_out, index=False)
+    log.info("Wrote %s (%d rows)", seed_out, len(sc_df))
+    print(f"  [3] {seed_out}  ({len(sc_df):,} rows)  [committed cold-start seed]")
 
     print("═══════════════════════════════════\n")
     return stats

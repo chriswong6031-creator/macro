@@ -326,7 +326,9 @@ html[data-lang="zh"] [data-tip-en]:hover::after{content:attr(data-tip-zh)}
     </svg>
     <div class="b-name">
       <div class="tk">{{ r.ticker }}</div>
-      <div class="co">{{ r.company if r.company is not none else '' }}{% if r.sector is not none %} · {{ td(r.sector) }}{% endif %}</div>
+      {%- set _co = r.company if (r.company and r.company != r.ticker) else '' -%}
+      {%- set _se = r.sector if (r.sector and r.sector != 'Unknown') else '' -%}
+      <div class="co">{% if _co and _se %}{{ _co }} · {{ td(_se) }}{% elif _co %}{{ _co }}{% elif _se %}{{ td(_se) }}{% endif %}</div>
     </div>
     <div class="b-wk">{{ wk if wk is not none else '—' }}<small>{{ t('weeks', '周') }}</small></div>
     <div class="b-plain">
