@@ -702,6 +702,207 @@ def _detach_board_track_plumbing(bt) -> tuple[dict | None, dict | None]:
     return bt, bt.pop("fwd_excess_map_21d", None)
 
 
+def _cn_track_state(bt: dict | None) -> str:
+    """Mirror the template's 3-state selector for the CN track panel:
+      • 'scored'   when the matured 21d horizon has n>=8 scored rows,
+      • 'interim'  when the unrealized interim read has n>=8,
+      • 'accruing' otherwise.
+    bt = china_standout_track.grade() output (with 'interim' attached), i.e. the same
+    dict the template consumes — keeps the ledger's `state` and the panel in lockstep."""
+    if not isinstance(bt, dict) or not bt.get("available"):
+        return "accruing"
+    h21 = (bt.get("by_horizon") or {}).get("21d") or {}
+    # scored 21d block carries hit_vs_csi300 (n>=_MIN_GRADED=8); the accruing block is
+    # {"n": <8, "note": "accruing"} — so key presence discriminates scored vs accruing.
+    if isinstance(h21, dict) and (h21.get("n") or 0) >= 8 and h21.get("hit_vs_csi300") is not None:
+        return "scored"
+    interim = bt.get("interim") or {}
+    if isinstance(interim, dict) and interim.get("available") and (interim.get("n") or 0) >= 8 \
+            and interim.get("hit_vs_csi300") is not None:
+        return "interim"
+    return "accruing"
+
+
+def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
+                    _cst) -> tuple[list[dict], int]:
+    """Row loop for emit_cn_track_ledger. The caller has already memoized
+    _cst._price_frame, so the internal reads in _fwd_excess/_interim_excess hit the
+    per-ticker memo instead of re-opening parquets (render budget)."""
+    rows_out: list[dict] = []
+    n_locked = 0
+    for _i, brow in bdf.iterrows():
+        tk = str(brow.get("ticker") or "")
+        d0s = str(brow.get("date") or "")
+        if not tk or not d0s:
+            continue
+        try:
+            d0 = pd.Timestamp(d0s)
+        except Exception:  # noqa: BLE001
+            continue
+
+        # entry / latest price for display (T+1 fill basis; memoized store read)
+        entry_px = latest_px = pct = dy = None
+        pdf = _cst._price_frame(tk)  # noqa: SLF001 — memoized by caller
+        fill = None
+        if pdf is not None:
+            fill, locked_flag, _pinned = _cst._t1_fill(pdf, d0)  # noqa: SLF001
+            if fill is not None:
+                entry_px = float(fill)
+                closes = pd.to_numeric(pdf["close"], errors="coerce").dropna()
+                fwd = closes[closes.index > d0]
+                if len(fwd) >= 1 and entry_px > 0:
+                    latest_px = float(fwd.iloc[-1])
+                    pct = (latest_px / entry_px - 1.0) * 100.0
+                    dy = int(len(fwd))
+        else:
+            locked_flag = False
+
+        # matured 21d excess (CSI300-relative), then unrealized interim mark
+        ex21, pinned = _cst._fwd_excess(tk, d0, 21, bench_ser)  # noqa: SLF001
+        matured = ex21 is not None
+        if matured:
+            x_frac = ex21
+            st = "beat" if x_frac > 0 else "lag"
+        else:
+            iex, _p2, idays = _cst._interim_excess(tk, d0, bench_ser)  # noqa: SLF001
+            x_frac = iex
+            st = "early"
+            if idays is not None:
+                dy = int(idays)
+
+        # locked-limit: the T+1 bar was unfillable (fill is None + locked flag).
+        fl: list[str] = []
+        if locked_flag:
+            fl.append("locked")
+            n_locked += 1
+
+        disp = look.get(tk, {})
+        rows_out.append({
+            "t": tk,
+            "nm": disp.get("nm"),
+            "sec": disp.get("sec"),
+            "grp": None,
+            "d": d0s,
+            "e": round(entry_px, 2) if entry_px is not None else None,
+            "l": round(latest_px, 2) if latest_px is not None else None,
+            "p": round(pct, 1) if pct is not None else None,
+            "x": round(x_frac * 100.0, 2) if x_frac is not None else None,
+            "dy": dy,
+            "st": st,
+            "m": bool(matured),
+            "rk": brow.get("board_rank") if pd.notna(brow.get("board_rank")) else None,
+            "tr": brow.get("tier") if pd.notna(brow.get("tier")) else None,
+            "fl": fl,
+        })
+    return rows_out, n_locked
+
+
+def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | None) -> bool:
+    """Emit site/factordata/cn_track_ledger.json (track_ledger/v1).
+
+    Grain: board_day × ticker from data/china_standout_track/board.parquet. For each
+    stored board row we compute the CSI300-relative excess with the SAME engine helpers
+    the panel uses (read-only, no write side-effects):
+      • matured (>=21 sessions): china_standout_track._fwd_excess(t, d0, 21, bench)
+        → st='beat'/'lag' by excess sign, m=true, x=excess*100.
+      • unmatured: china_standout_track._interim_excess(t, d0, bench) unrealized
+        mark-to-latest-close → st='early', m=false, x=excess*100 (null when no fwd bar).
+      • locked-limit T+1 rows: fl=['locked'] and EXCLUDED from summary stats
+        (matching the grader's excludes_locked_limit rule).
+
+    `bt` is grade()'s output already in memory (state selector). `buy_rows` = today's
+    ranked board (wide['buy']) used only as a name/sector display lookup. Render budget:
+    lib.store reads are UNCACHED, and _fwd_excess/_interim_excess each re-open the
+    per-ticker frame internally — so we install a per-ticker memo over
+    _cst._price_frame for the duration of the loop (try/finally restored), collapsing
+    O(rows×3) parquet reads to O(unique tickers).
+    Returns True on a successful atomic write.
+    """
+    from engine import track_ledger as _tl
+    from engine import china_standout_track as _cst
+
+    bench_dict = {"code": "510300.SS", "en": "CSI 300", "zh": "沪深300"}
+    state = _cn_track_state(bt)
+
+    # name/sector display lookup from today's ranked board (cheap, in-memory).
+    look: dict[str, dict] = {}
+    for r in (buy_rows or []):
+        tk = r.get("ticker")
+        if tk:
+            look[str(tk)] = {"nm": r.get("name"), "sec": r.get("sector")}
+
+    store_path = _cst._store_path()  # noqa: SLF001 — read-only path accessor
+    rows_out: list[dict] = []
+    n_locked = 0
+    if store_path.exists():
+        try:
+            bdf = pd.read_parquet(store_path)
+        except Exception:  # noqa: BLE001
+            bdf = pd.DataFrame()
+        if not bdf.empty:
+            bench_ser = _cst._bench_close()  # noqa: SLF001 — single read, reused below
+            _pf_orig = _cst._price_frame
+            _pf_memo: dict[str, pd.DataFrame | None] = {}
+
+            def _pf_cached(tk: str) -> pd.DataFrame | None:
+                if tk not in _pf_memo:
+                    _pf_memo[tk] = _pf_orig(tk)
+                return _pf_memo[tk]
+
+            _cst._price_frame = _pf_cached  # type: ignore[assignment]  # noqa: SLF001
+            try:
+                rows_out, n_locked = _cn_ledger_rows(bdf, bench_ser, look, _cst)
+            finally:
+                _cst._price_frame = _pf_orig  # noqa: SLF001
+                _pf_memo.clear()
+
+    # Summary: matured + interim stats over NON-locked rows (grader excludes locked).
+    scored = [r for r in rows_out if "locked" not in r["fl"] and r["x"] is not None]
+    matured_rows = [r for r in scored if r["m"]]
+    n_beat = sum(1 for r in matured_rows if r["st"] == "beat")
+    n_lag = sum(1 for r in matured_rows if r["st"] == "lag")
+    n_mat = len(matured_rows)
+    hit_matured = round(n_beat / n_mat, 3) if n_mat else None
+    _mx = [r["x"] for r in matured_rows]
+    median_excess_matured = round(float(pd.Series(_mx).median()), 2) if _mx else None
+
+    interim_rows = [r for r in scored if not r["m"]]
+    n_int = len(interim_rows)
+    n_int_ahead = sum(1 for r in interim_rows if r["x"] is not None and r["x"] > 0)
+    hit_interim = round(n_int_ahead / n_int, 3) if n_int else None
+    _ix = [r["x"] for r in interim_rows if r["x"] is not None]
+    median_excess_interim = round(float(pd.Series(_ix).median()), 2) if _ix else None
+    wl, wh = _tl.wilson_ci(n_int_ahead, n_int)
+
+    summary = {
+        "state": state,
+        # matured (final grade) block — populated once 21d picks mature
+        "n_matured": n_mat,
+        "n_beat": n_beat,
+        "n_lag": n_lag,
+        "hit_matured": hit_matured,
+        "median_excess_matured_pct": median_excess_matured,
+        # interim (unrealized mark) block — the early read the panel shows first
+        "n_interim": n_int,
+        "hit_pct": round((hit_interim or 0.0) * 100.0, 1) if hit_interim is not None else None,
+        "ci_lo_pct": round(wl * 100.0, 1) if wl is not None else None,
+        "ci_hi_pct": round(wh * 100.0, 1) if wh is not None else None,
+        "median_excess_pct": median_excess_interim,
+        "n_logged": len(rows_out),
+        "n_locked_excluded": n_locked,
+    }
+
+    as_of = None
+    if rows_out:
+        as_of = max((r["d"] for r in rows_out if r["d"]), default=None)
+
+    doc = _tl.build_shell(
+        "CN", as_of, state, bench_dict, summary, rows_out, grain="board_day",
+        survivorship={"n_locked_excluded": n_locked, "note": "locked-limit T+1 rows excluded from stats"},
+    )
+    return _tl.atomic_write(site / "factordata" / "cn_track_ledger.json", doc)
+
+
 def _find_bad_json_keys(obj, path: str = "$") -> list[str]:
     """Locate dict keys json.dumps would reject (anything not str/int/float/bool/None),
     returning JSONPath-ish strings. Diagnostic for the artifact-write guard below —
@@ -2137,6 +2338,14 @@ def main(alpha: dict | None = None) -> dict | None:
                 wide["board_track"] = _bt
                 setups["board_track"] = _bt
             setups["coverage"] = wide["coverage"]
+            # TRD popup — board_day×ticker ledger (track_ledger/v1). Additive, never
+            # fatal: reuses the board.parquet + closes the panel just read. Emitted even
+            # when _bt is unavailable (accruing state) so the popup always has a feed.
+            try:
+                _cnok = emit_cn_track_ledger(site, _bt, wide.get("buy"))
+                log.info("cn track_ledger: %s", "wrote cn_track_ledger.json" if _cnok else "write skipped")
+            except Exception as _cnle:  # noqa: BLE001 — ledger is additive; never fatal
+                log.warning("cn track_ledger emit failed (%s) — render continues", _cnle)
             log.info("china standout board-track: logged top-%d (ledger=%d, graded=%s, lane=%s, partial=%s)",
                      min(60, len(wide["buy"])), _bn, _bt.get("n_graded"), _lane,
                      wide["coverage"]["partial_session"])

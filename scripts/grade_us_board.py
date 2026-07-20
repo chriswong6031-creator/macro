@@ -98,6 +98,10 @@ RETRO_PARQUET = LEDGER_DIR / "retro_grades.parquet"
 SNAPSHOTS_JSONL = LEDGER_DIR / "snapshots.jsonl"
 TRACK_JSON = ROOT / "site" / "factordata" / "us_board_track.json"
 OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
+# TRD popup: the compact buy-lane episode ledger the Track-record dialog fetches.
+# NEW artifact — never move/rename OUTCOMES_JSON or TRACK_JSON (Prophet freshness pins
+# us_board_outcomes.json; us_board_track.json keeps key `per_horizon`).
+LEDGER_JSON = ROOT / "site" / "factordata" / "us_track_ledger.json"
 
 # SA-W5: v2 parallel lane (sibling files, ISOLATED from main lane)
 # These files NEVER touch retro_grades.parquet / us_board_track.json.
@@ -1337,6 +1341,196 @@ def emit_outcomes(boards: list[dict], names: pd.DataFrame) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# TRD popup — buy-lane episode ledger (track_ledger/v1)
+# --------------------------------------------------------------------------- #
+
+def _load_retro_excess_21() -> dict[tuple[str, str], float]:
+    """Map (as_of, ticker) -> matured 21d excess_spy (fraction) from the retro-grades
+    store, for the ledger's `x`/`m` join. Read once, cheaply; empty dict when the
+    store is absent (first run) or lacks a matured 21d row for a pair. Read-only —
+    NEVER writes retro_grades.parquet."""
+    out: dict[tuple[str, str], float] = {}
+    if not RETRO_PARQUET.exists():
+        return out
+    try:
+        df = pd.read_parquet(RETRO_PARQUET, columns=["as_of", "ticker", "horizon", "lane", "excess_spy"])
+    except Exception:  # noqa: BLE001 — try full read if the column subset is unavailable
+        try:
+            df = pd.read_parquet(RETRO_PARQUET)
+        except Exception:  # noqa: BLE001
+            return out
+    if df.empty or "excess_spy" not in df.columns:
+        return out
+    sub = df[(df["horizon"] == 21) & (df["lane"] == "buy")]
+    for _i, r in sub.iterrows():
+        ex = r.get("excess_spy")
+        if ex is None or (isinstance(ex, float) and math.isnan(ex)):
+            continue
+        key = (str(r.get("as_of")), str(r.get("ticker")))
+        out[key] = float(ex)
+    return out
+
+
+def emit_ledger(boards: list[dict], names: pd.DataFrame) -> dict:
+    """Build the compact buy-lane EPISODE ledger for the Track-record popup.
+
+    Grain: one row per buy-lane ticker EPISODE — its first_surfaced date through its
+    exit (or, if still on the current board, st='onboard'). Reuses collect_boards()
+    output + the broad closes already loaded (`names`) — no redundant store reads.
+
+    Status thresholds mirror emit_outcomes exactly: pct > +2 → up, pct < −2 → stopped,
+    else flat; current on-board names → onboard. `x` (excess vs SPY, %) and `m`
+    (matured) are joined from retro_grades.parquet's 21d buy-lane excess_spy on
+    (first_surfaced, ticker). Survivorship: names with no usable price path are counted
+    into summary/meta as n_skipped_no_price (never fabricated).
+
+    Returns the track_ledger/v1 dict (JSON-safe via engine.track_ledger.build_shell).
+    """
+    from engine import track_ledger as _tl
+
+    bench = {"code": "SPY", "en": "S&P 500", "zh": "标普500"}
+
+    if not boards:
+        return _tl.build_shell(
+            "US", str(dt.date.today()), "accruing", bench,
+            summary={"win_rate": None, "avg_pct": None, "n_resolved": 0,
+                     "n_up": 0, "n_stopped": 0, "n_flat": 0,
+                     "wilson_lo_pct": None, "wilson_hi_pct": None, "n_onboard": 0,
+                     "n_skipped_no_price": 0},
+            rows=[], grain="episode",
+            survivorship={"n_skipped_no_price": 0},
+        )
+
+    current_board = boards[-1]
+    current_as_of = current_board.get("as_of", "")
+    current_buy_tickers = {
+        r.get("ticker") for r in current_board.get("rows", [])
+        if r.get("lane") == "buy" and r.get("ticker")
+    }
+
+    # First-surfaced date + sector + latest board rank/tier per buy-lane ticker,
+    # scanning ALL boards (episode grain = full history, not a lookback window).
+    first_seen: dict[str, dict] = {}
+    last_seen: dict[str, dict] = {}
+    for b in boards:
+        as_of_str = b.get("as_of", "")
+        for r in b.get("rows", []):
+            if r.get("lane") != "buy":
+                continue
+            tk = r.get("ticker")
+            if not tk:
+                continue
+            if tk not in first_seen:
+                first_seen[tk] = {"first_surfaced": as_of_str, "sector": r.get("sector")}
+            last_seen[tk] = {"as_of": as_of_str, "sector": r.get("sector"),
+                             "rank": r.get("position"), "tier": r.get("align_tier")}
+
+    retro_x = _load_retro_excess_21()
+
+    rows_out: list[dict] = []
+    skipped_no_price: list[str] = []
+    for tk, meta in first_seen.items():
+        first_surfaced_str = meta["first_surfaced"]
+        on_board_now = tk in current_buy_tickers
+
+        # price path from the broad closes (columns=ticker, DatetimeIndex)
+        entry_px = latest_px = pct = None
+        dy = None
+        priced = False
+        if tk in names.columns:
+            ser = names[tk].dropna()
+            if not ser.empty:
+                try:
+                    first_dt = pd.Timestamp(first_surfaced_str)
+                except Exception:  # noqa: BLE001
+                    first_dt = None
+                if first_dt is not None:
+                    idx_first = ser.index.searchsorted(first_dt, side="left")
+                    if idx_first < len(ser):
+                        entry_px = float(ser.iloc[idx_first])
+                        if entry_px > 0:
+                            latest_px = float(ser.iloc[-1])
+                            pct = (latest_px / entry_px - 1.0) * 100.0
+                            dy = int(len(ser) - idx_first)
+                            priced = True
+        if not priced and not on_board_now:
+            # exited name with no usable price path — likely delisted; the very outcome
+            # the ledger must disclose, not silently drop.
+            skipped_no_price.append(tk)
+            continue
+
+        # status
+        if on_board_now:
+            st = "onboard"
+        elif pct is None:
+            st = "flat"
+        elif pct > 2.0:
+            st = "up"
+        elif pct < -2.0:
+            st = "stopped"
+        else:
+            st = "flat"
+
+        # 21d excess join (matured) on (first_surfaced, ticker)
+        x_frac = retro_x.get((first_surfaced_str, tk))
+        matured = x_frac is not None
+        x_pct = round(x_frac * 100.0, 2) if matured else None
+
+        rows_out.append({
+            "t": tk,
+            "nm": None,
+            "sec": meta.get("sector"),
+            "grp": None,
+            "d": first_surfaced_str,
+            "e": round(entry_px, 2) if entry_px is not None else None,
+            "l": round(latest_px, 2) if latest_px is not None else None,
+            "p": round(pct, 1) if pct is not None else None,
+            "x": x_pct,
+            "dy": dy,
+            "st": st,
+            "m": bool(matured),
+            "rk": last_seen.get(tk, {}).get("rank"),
+            "tr": last_seen.get(tk, {}).get("tier"),
+            "fl": [],
+        })
+
+    # Summary over RESOLVED (exited & priced) rows only — onboard names are in-flight,
+    # not part of the win/loss record. Mirrors emit_outcomes' status math.
+    resolved = [r for r in rows_out if r["st"] in ("up", "stopped", "flat")]
+    n_up = sum(1 for r in resolved if r["st"] == "up")
+    n_stopped = sum(1 for r in resolved if r["st"] == "stopped")
+    n_flat = sum(1 for r in resolved if r["st"] == "flat")
+    n_onboard = sum(1 for r in rows_out if r["st"] == "onboard")
+    denom = n_up + n_stopped
+    win_rate = round(n_up / denom, 3) if denom > 0 else None
+    _pcts = [r["p"] for r in resolved if r["p"] is not None]
+    avg_pct = round(sum(_pcts) / len(_pcts), 1) if _pcts else None
+    wl, wh = _tl.wilson_ci(n_up, denom)
+
+    summary = {
+        "win_rate": win_rate,
+        "avg_pct": avg_pct,
+        "n_resolved": len(resolved),
+        "n_up": n_up,
+        "n_stopped": n_stopped,
+        "n_flat": n_flat,
+        "wilson_lo_pct": round(wl * 100.0, 1) if wl is not None else None,
+        "wilson_hi_pct": round(wh * 100.0, 1) if wh is not None else None,
+        "n_onboard": n_onboard,
+        "n_skipped_no_price": len(skipped_no_price),
+    }
+
+    # state: scored when the resolved sample is real; else accruing (button falls back).
+    state = "scored" if (win_rate is not None and len(resolved) >= 8) else "accruing"
+
+    return _tl.build_shell(
+        "US", current_as_of, state, bench, summary, rows_out, grain="episode",
+        survivorship={"n_skipped_no_price": len(skipped_no_price),
+                      "tickers_skipped": sorted(skipped_no_price)[:15]},
+    )
+
+
+# --------------------------------------------------------------------------- #
 # SA-W5: v2 parallel grader lane
 # ISOLATION INVARIANT: all v2 functions write ONLY to V2_* paths.
 # They NEVER read or write retro_grades.parquet / snapshots.jsonl /
@@ -1620,6 +1814,22 @@ def main() -> None:
     except Exception as _oe:  # noqa: BLE001 — outcomes strip is additive; never fatal
         if not args.quiet:
             print(f"[outcomes] skipped ({_oe})")
+
+    # TRD popup — buy-lane episode ledger (track_ledger/v1). Additive, never fatal:
+    # a failure just leaves the ledger to bake next run; the popup's server-rendered
+    # cards stay current regardless (they don't depend on this JSON).
+    try:
+        from engine import track_ledger as _tl
+        ledger = emit_ledger(boards, names)
+        if _tl.atomic_write(LEDGER_JSON, ledger) and not args.quiet:
+            _lsm = ledger.get("summary", {})
+            print(f"[track_ledger] {ledger.get('meta', {}).get('n_total', 0)} episodes "
+                  f"(state={ledger.get('state')} win_rate={_lsm.get('win_rate')} "
+                  f"onboard={_lsm.get('n_onboard')} "
+                  f"skipped_no_price={_lsm.get('n_skipped_no_price')}) → {LEDGER_JSON.name}")
+    except Exception as _le:  # noqa: BLE001 — ledger is additive; never fatal
+        if not args.quiet:
+            print(f"[track_ledger] skipped ({_le})")
 
     # SA-W5: v2 parallel grader lane — additive, never fatal, never touches main stores
     try:

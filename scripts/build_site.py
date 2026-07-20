@@ -4400,6 +4400,24 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_board_outcomes.json unreadable (%s)", e)
 
+    # TRD popup — weekly win-rate sparkline for the Track-record button. Read the h5
+    # cohort win-rate series from us_track_history.json (built by build_track_record_page).
+    # Presence-gated + fail-open: absent → us_track_series stays None so the button falls
+    # back to its static tape-pulse glyph (the template Jinja-guards on none).
+    us_track_series = None
+    _uth = site / "factordata" / "us_track_history.json"
+    if _uth.exists():
+        try:
+            _uthd = json.loads(_uth.read_text())
+            _h5 = ((_uthd.get("cohort_rollup") or {}).get("horizons") or {}).get("h5") or {}
+            _series = [
+                c.get("win_rate") for c in (_h5.get("cohort_series") or [])
+                if isinstance(c, dict) and c.get("win_rate") is not None
+            ]
+            us_track_series = _series or None
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("us_track_history.json unreadable (%s)", e)
+
     # Macro news & catalysts (LEAF, additive, never fatal). Catalysts (FOMC + jobs
     # report) are keyless and always on; filtered headlines + the optional LLM brief
     # only when macro_news.enabled. News NEVER feeds any score.
@@ -4987,6 +5005,7 @@ def main() -> int:
         top_setups=top_setups,
         us_standouts=us_standouts,
         us_board_outcomes=us_board_outcomes,
+        us_track_series=us_track_series,
         market_gamma=market_gamma,
         components_confirming=confirming,
         components_contradicting=contradicting,

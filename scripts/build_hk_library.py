@@ -1505,6 +1505,29 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                 board_track = _bt
             log.info("hk standout board-ledger: logged %d rows (ledger=%d, graded=%s)",
                      len(calls), _n, (_bt or {}).get("n_graded"))
+            # TRD popup — board_day ledger (track_ledger/v1). Reuses the _bt grade dict
+            # just computed (NO second grade() call — that would re-trigger the parquet
+            # write-back). Additive, never fatal. State = board_ledger.scorecard status,
+            # 'accruing' now (grade() carries no scorecard so we pass status explicitly).
+            try:
+                from engine import track_ledger as _tl
+                _hk_look = {
+                    str(e.get("ticker")): {"nm": e.get("name") or e.get("name_zh"),
+                                           "sec": e.get("sector"),
+                                           "grp": e.get("group")}
+                    for e in (buys + watch) if e.get("ticker")
+                }
+                _hk_sc = {"status": "accruing", "first_read_est": board_ledger._est_first_read()}
+                _hk_doc = _tl.from_board_ledger_grade(
+                    "HK", _bt, _hk_sc,
+                    bench={"code": "_HSI", "en": "Hang Seng", "zh": "恒生指数"},
+                    name_lookup=_hk_look, as_of=str(as_of) if as_of else None,
+                )
+                _tl.atomic_write(site / "factordata" / "hk_track_ledger.json", _hk_doc)
+                log.info("hk track_ledger: wrote hk_track_ledger.json (%d rows)",
+                         _hk_doc.get("meta", {}).get("n_total", 0))
+            except Exception as _hkle:  # noqa: BLE001 — ledger is additive; never fatal
+                log.warning("hk track_ledger emit failed (%s) — render continues", _hkle)
         else:
             log.warning("hk standout board-ledger: append_board returned 0 (no rows written)")
             health.append({

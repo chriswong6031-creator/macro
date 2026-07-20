@@ -3152,50 +3152,57 @@
     <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Setup path: washout &rarr; base &rarr; fresh turn. Score = buy-readiness; forward grades are still accruing.</span><span class="l-zh">设置路径：洗盘 &rarr; 筑底 &rarr; 新转向。评分＝买入就绪度；前瞻成绩仍在累积。</span></p>
     </div>{# /nb-grid-section #}
 
-    {# ── BOARD TRACK RECORD (honest forward ledger) ─────────────────────────────
-       The board earns trust over time: this logs the ranked top-N each session and grades the
-       forward CSI300-relative, fill-realistic (T+1) outcome. Display-only telemetry — the whole
-       point is to hold the board accountable, so it shows the honest "accruing" state until the
-       first maturities land (~21 sessions after the ledger's first date). #}
+    {# ── BOARD TRACK RECORD — receipt chip + popup (shared partial, 2026-07-20) ──
+       The board earns trust over time: it logs the ranked top-N each session and grades the
+       forward CSI300-relative, fill-realistic (T+1) outcome. State by data maturity:
+       h21.n≥8 → 'scored' (hit vs CSI300 is the win basis; median excess is the avg basis);
+       else interim n≥8 → 'interim' (unrealized mark-to-latest); else 'accruing'. The old
+       always-open inline panel is re-homed inside the dialog. #}
     {% set bt = setups.board_track %}
     {% if bt and bt.available %}
     {% set cov = setups.coverage %}
-    <div class="nb-track" style="margin:14px 0 0;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--link) 4%,var(--panel))">
-      <div style="font-weight:700;font-size:12.5px;margin-bottom:5px">📒 {{ t('Board track record', '榜单成绩单') }}
-        <span class="note" style="text-transform:none;font-weight:400">· {{ t('does the top of this board actually beat the index?', '本榜单头部是否真的跑赢指数？') }}</span>
-        {{ help("Forward ledger for the board order. Matured picks are graded vs CSI300 from a realistic T+1 entry.", "榜单排序的前瞻账本。成熟样本按相对沪深300、可成交T+1入场打分。") }}
-      </div>
-      {% set h21 = bt.by_horizon['21d'] %}
-      {% set itm = bt.interim %}
-      {% if h21 and h21.n and h21.n >= 8 %}
-      <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:12px">
-        <span><b>{{ t('Hit vs CSI300', '跑赢沪深300') }}</b> (21d): <span class="{{ 'pos' if h21.hit_vs_csi300 >= 0.5 else 'neg' }}"><b>{{ '%.0f'|format(h21.hit_vs_csi300 * 100) }}%</b></span>{% if h21.hit_ci %} <span class="note">CI {{ '%.0f'|format(h21.hit_ci[0]*100) }}–{{ '%.0f'|format(h21.hit_ci[1]*100) }}%</span>{% endif %}</span>
-        {% if h21.median_excess is not none %}<span><b>{{ t('Median excess', '超额中位数') }}</b>: <span class="{{ 'pos' if h21.median_excess >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.median_excess * 100) }}%</span></span>{% endif %}
-        {% if h21.board_rank_ic is not none %}<span><b>{{ t('Rank-IC', '排序 IC') }}</b>: <span class="{{ 'pos' if h21.board_rank_ic <= 0 else 'neg' }}">{{ '%+.2f'|format(h21.board_rank_ic) }}</span> <span class="note">{{ t('(negative = well-ordered)', '（为负＝排序良好）') }}</span></span>{% endif %}
-        <span class="note">n={{ h21.n }}</span>
-      </div>
-      {% if h21.extended_fwd is not none and h21.not_extended_fwd is not none %}
-      <div style="font-size:11.5px;margin-top:4px" class="note">{{ t('Extended-tagged picks', '已大涨标记') }}: <span class="{{ 'pos' if h21.extended_fwd >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.extended_fwd*100) }}%</span> {{ t('vs not-extended', '对比未大涨') }} <span class="{{ 'pos' if h21.not_extended_fwd >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.not_extended_fwd*100) }}%</span> {{ t('(21d, CSI300-relative)', '（21日，相对沪深300）') }}</div>
-      {% endif %}
-      {% elif itm and itm.available and itm.n and itm.n >= 8 %}
-      {# INTERIM read: the 21d forward grade hasn't matured (first ~2026-07-29), so show an honest,
-         explicitly UNREALIZED mark-to-latest-close read instead of a black box. Very early — median
-         hold is only a session or two — so it is framed as "so far", never as a validated edge. #}
-      <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:12px">
-        <span class="note" style="text-transform:none;font-weight:700;color:var(--warn)">⏳ {{ t('Interim — unrealized, marked to latest close', '临时 —— 未实现，按最新收盘价标记') }}</span>
-        <span><b>{{ t('Beating CSI300 so far', '暂时跑赢沪深300') }}</b>: <span class="{{ 'pos' if itm.hit_vs_csi300 >= 0.5 else 'neg' }}"><b>{{ '%.0f'|format(itm.hit_vs_csi300 * 100) }}%</b></span>{% if itm.hit_ci %} <span class="note">CI {{ '%.0f'|format(itm.hit_ci[0]*100) }}–{{ '%.0f'|format(itm.hit_ci[1]*100) }}%</span>{% endif %}</span>
-        {% if itm.median_excess is not none %}<span><b>{{ t('Median excess', '超额中位数') }}</b>: <span class="{{ 'pos' if itm.median_excess >= 0 else 'neg' }}">{{ '%+.1f'|format(itm.median_excess * 100) }}%</span></span>{% endif %}
-        <span class="note">n={{ itm.n }}</span>
-      </div>
-      <div style="font-size:11px;margin-top:4px" class="note">{{ t('This is NOT the matured grade — median', '这不是成熟评分 —— 中位持有') }} {{ itm.median_days_held }} {{ t('session(s) held so far (max', '个交易日（最长') }} {{ itm.max_days_held }}{{ t('); far too early to read as an edge. First matured 21-day grades ~2026-07-29.', '）；过早，不能视作优势。首批21日成熟评分约在 2026-07-29。') }}{% if bt.dates %} <span class="l-en">Logging since {{ bt.dates[0] }} ({{ bt.n_rows }} rows).</span><span class="l-zh">自 {{ bt.dates[0] }} 起记录（{{ bt.n_rows }} 条）。</span>{% endif %}</div>
-      {% else %}
-      <div style="font-size:12px" class="note">{{ t('Accruing — no picks have matured yet. First 21-day maturities ~2026-07-29.', '累积中 —— 尚无成熟样本。首批21日成熟约在 2026-07-29。') }}{% if bt.dates %} <span class="l-en">Logging since {{ bt.dates[0] }} ({{ bt.n_rows }} rows).</span><span class="l-zh">自 {{ bt.dates[0] }} 起记录（{{ bt.n_rows }} 条）。</span>{% endif %}</div>
-      {% endif %}
-      <div style="font-size:10.5px;margin-top:5px" class="note">
-        <span class="l-en">Grading: CSI300-relative excess, fill-realistic T+1 {% if bt.grading and bt.grading.entry_basis == 't1_hl2' %}(H+L)/2 proxy{% else %}open{% endif %} entry, locked-limit days excluded, never marker-dated.</span><span class="l-zh">打分：相对沪深300 超额，可成交 T+1 {% if bt.grading and bt.grading.entry_basis == 't1_hl2' %}(最高+最低)/2 代理{% else %}开盘{% endif %}入场，剔除一字涨停日，绝不用标记日。</span>
-        {% if cov %} {% if cov.data_through %}<span class="l-en">Data through {{ cov.data_through }}.</span><span class="l-zh">数据截至 {{ cov.data_through }}。</span>{% endif %}{% if cov.partial_session %} <span class="neg"><b>{{ t('partial session — not logged', '盘中未收 —— 未记录') }}</b></span>{% endif %}{% endif %}
-      </div>
-    </div>
+    {% set h21 = bt.by_horizon['21d'] if (bt.by_horizon and '21d' in bt.by_horizon) else none %}
+    {% set itm = bt.interim %}
+    {% set _partial = (cov.partial_session if cov else none) %}
+    {% if h21 and h21.n and h21.n >= 8 %}
+      {% set _cn_state = 'scored' %}
+      {% set _cn_stats = {
+        'win_rate_pct': (h21.hit_vs_csi300 * 100)|round|int if h21.hit_vs_csi300 is not none else none,
+        'avg_pct': (h21.median_excess * 100)|round(1) if h21.median_excess is not none else none,
+        'n_resolved': h21.n, 'n_up': none, 'n_stopped': none, 'n_flat': none,
+        'wilson_lo_pct': (h21.hit_ci[0]*100)|round|int if h21.hit_ci else none,
+        'wilson_hi_pct': (h21.hit_ci[1]*100)|round|int if h21.hit_ci else none,
+        'n_calls': bt.n_rows,
+      } %}
+    {% elif itm and itm.available and itm.n and itm.n >= 8 %}
+      {% set _cn_state = 'interim' %}
+      {% set _cn_stats = {
+        'hit_pct': (itm.hit_vs_csi300 * 100)|round|int if itm.hit_vs_csi300 is not none else none,
+        'ci_lo_pct': (itm.hit_ci[0]*100)|round|int if itm.hit_ci else none,
+        'ci_hi_pct': (itm.hit_ci[1]*100)|round|int if itm.hit_ci else none,
+        'median_excess_pct': (itm.median_excess * 100)|round(1) if itm.median_excess is not none else none,
+        'n': itm.n, 'since': (bt.dates[0] if bt.dates else none),
+        'median_hold': itm.median_days_held, 'first_mature': '2026-07-29',
+        'n_calls': bt.n_rows,
+      } %}
+    {% else %}
+      {% set _cn_state = 'accruing' %}
+      {% set _cn_stats = {
+        'n_calls': bt.n_rows, 'first_write': (bt.dates[0] if bt.dates else none),
+        'first_read_est': '2026-07-29', 'n_suspended': none,
+      } %}
+    {% endif %}
+    {% set trd = {
+      'market': 'cn', 'state': _cn_state, 'stats': _cn_stats,
+      'data_url': 'factordata/cn_track_ledger.json',
+      'eyebrow_en': 'China board · vs CSI300', 'eyebrow_zh': '中国榜单 · 对比沪深300',
+      'bench_en': 'CSI300', 'bench_zh': '沪深300',
+      'series': none, 'as_of': (cov.data_through if cov else none),
+      'deep_link': none, 'up_class': 'pos', 'dn_class': 'neg',
+      'note_en': 'Grading: CSI300-relative excess, fill-realistic T+1 ' ~ ('(H+L)/2 proxy' if (bt.grading and bt.grading.entry_basis == 't1_hl2') else 'open') ~ ' entry, locked-limit days excluded.' ~ (' Today\'s session not yet logged.' if _partial else ''),
+      'note_zh': '打分：相对沪深300超额，可成交 T+1 ' ~ ('（最高+最低）/2 代理' if (bt.grading and bt.grading.entry_basis == 't1_hl2') else '开盘') ~ '入场，剔除一字涨停日。' ~ ('盘中未收——今日未记录。' if _partial else ''),
+    } %}
+    <div style="margin:14px 0 0">{% include '_track_record_dlg.html.j2' %}</div>
     {% endif %}
   </div>
   {% endif %}
