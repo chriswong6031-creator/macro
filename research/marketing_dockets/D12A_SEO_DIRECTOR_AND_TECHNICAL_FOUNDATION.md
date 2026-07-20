@@ -2,7 +2,7 @@
 
 **Department:** Beacon (Organic Search & Public Pages)
 
-**Status:** EXECUTING 2026-07-20 (Fable main-loop session). This docket records the
+**Status:** W1 SHIPPED 2026-07-20 — PR A #3140, PR C #3141 (+#3144 YAML fix, #3145 lib.seo wiring), PR D #3142, PR B #3147 all MERGED. Director ARMED (SEO_DIRECTOR_ENABLED=true); first manual run baked baseline health 56/100. Open: operator GSC verification; ticker-keyword + sitemap-index seams (below). This docket records the
 rulings and build lanes for the SEO work that D12 left unassigned: the technical
 foundation of the *existing* ~200-page core estate, the Beacon control plane in the
 admin panel, and the autonomous SEO Director loop. It does NOT touch D12's content
