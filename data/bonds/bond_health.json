@@ -41,9 +41,9 @@
       "tp_repriced_positive": true
     },
     "stress": {
-      "move": 70.87770080566406,
+      "move": 70.87999725341797,
       "move_band": "calm",
-      "move_pctile": 0.4523809523809524,
+      "move_pctile": 0.4444444444444444,
       "move_leads_vix": false,
       "sofr_iorb_bp": -2.9999999999999805,
       "repo_spike_bp": 8.000000000000007,
@@ -68,7 +68,7 @@
     "recession": 4.667860797321819,
     "drawdown": 15.68848011645603,
     "credit": 14.2,
-    "rates_vol": 20.877700805664062,
+    "rates_vol": 20.87999725341797,
     "plumbing": 8.000000000000078
   },
   "alarms": [],
@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-07-17",
-    "built": "2026-07-19T02:05:05.067243+00:00",
+    "built": "2026-07-20T04:20:35.259128+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -107,20 +107,20 @@
     "implied": {
       "now": 3.63,
       "m1": 3.65,
-      "m3": 3.76,
-      "m6": 3.93,
-      "m12": 4.04
+      "m3": 3.77,
+      "m6": 3.94,
+      "m12": 4.05
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ 联邦基金期货",
-    "implied_bp_12m": 41,
+    "implied_bp_12m": 42,
     "implied_cuts_12m": -2,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
       "m3": null,
-      "m6": 3.99,
-      "m12": 4.08
+      "m6": 4.0,
+      "m12": 4.1
     },
     "dots": [
       {
@@ -140,18 +140,18 @@
       "horizon_label": "end-2026",
       "horizon_months": 5,
       "fed_dot": 3.8,
-      "market": 3.87,
-      "gap_bp": 7,
+      "market": 3.88,
+      "gap_bp": 8,
       "lean_en": "market ≈ the Fed",
       "lean_zh": "市场与美联储基本一致"
     },
     "ntfs": 0.67,
     "curve_tp_adj": 1.15,
     "rate_exp_proxy": 0.53,
-    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.04%)",
-    "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.04%）",
-    "read_en": "At end-2026 the market implies 3.87% vs the Fed's 3.80% median dot (+7bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.67pp).",
-    "read_zh": "在end-2026，市场隐含 3.87% 对比美联储 3.80% 的中位点（+7基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.67个百分点）。",
+    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% → 4.05%)",
+    "headline_zh": "市场为未来12个月定价约加息2次（基金利率 3.63% → 4.05%）",
+    "read_en": "At end-2026 the market implies 3.88% vs the Fed's 3.80% median dot (+8bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.67pp).",
+    "read_zh": "在end-2026，市场隐含 3.88% 对比美联储 3.80% 的中位点（+8基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.67个百分点）。",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE — it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "仅供展示 / LLM 上下文。隐含路径是市场价格（期货隐含的基金利率），并非预测优势，且重新定价是被动的——它在数据和美联储之后变动，并不领先。从不评分，从不作为 MRS 项。ZQ/SR3=无需密钥的 CME 期货；点阵图=FRED FEDTARMD（FOMC SEP 中位数）。请注明 CME/FRED。"
   },
@@ -679,10 +679,10 @@
         "asof": "2026-07-16"
       },
       "em_fx_basket": {
-        "value": -1.72,
+        "value": -1.7,
         "vel_5d_z": null,
-        "vel_20d_z": 0.138,
-        "asof": "2026-07-19"
+        "vel_20d_z": 0.177,
+        "asof": "2026-07-20"
       },
       "em_equity_breadth": {
         "value": 57.1,

@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-18",
+  "as_of": "2026-07-19",
   "state": "warming",
   "k_count": 1,
   "chips": [
@@ -286,19 +286,19 @@
         "above_200d_rising": true
       }
     ],
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "narrow_top": {
     "basket_id": "XLE",
     "name": "XLE",
     "name_zh": "XLE",
     "score": 0.9996,
-    "streak_sessions": 4
+    "streak_sessions": 5
   },
   "radar_xref": {
     "state": "caution",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.17
+  "_timing_s": 2.13
 }

@@ -1,0 +1,48 @@
+{
+  "tldr": [
+    "Regime shift: Goldilocks fading as growth cools sharply and inflation warms.",
+    "AI unwind: Semis lead the selloff, growth stocks underperforming value widely.",
+    "Bonds diverge: Credit spreads widening, curve steepening — caution flag stocks ignore.",
+    "Dollar pressure: Steady greenback headwind for US equities, EM, and commodities.",
+    "What to do: Watch — don't chase"
+  ],
+  "summary": "Goldilocks is fraying as growth plunges and AI stocks sell off, while bonds warn of deeper stress.",
+  "regime_read": "The US economy is still mapped as Goldilocks, but growth has cooled to -0.07 from +0.53 just 20 days ago, while inflation has warmed from -0.68 to +0.40. The regime is transitioning, and the margin to flip is thin — a further drop in growth would push us into Reflation or Stagflation.\n\nToday's market is driven by a sharp unwind in AI and semiconductor stocks: chips are lagging the market by the widest margin in about a year, dragging growth stocks lower as rising yields favor value. The selloff is clear and concentrated.",
+  "conflicts": [
+    "Stocks vs bonds: Equities still risk-on but credit is widening and the yield curve is in a bear steepener — bonds signal late-cycle stress.",
+    "Narrow rally: 75% of stocks above their 200-day line, yet only 38% of fresh buy signals clear — leadership is thin, not broad."
+  ],
+  "transmission": [
+    "If the AI selloff deepens and credit keeps widening → broader equity weakness is likely.",
+    "If growth cools further and inflation stays elevated → stagflation risks rise, hurting growth and EM assets."
+  ],
+  "rotation_check": "Semis, the first leg of the liquidity rotation, are breaking down; money is fleeing to defensives, not rolling to software or crypto.",
+  "watch_items": [
+    "FOMC July 29: Hawkish hold would reinforce dollar and pressure risk assets.",
+    "PCE July 30 projected cold: A soft inflation print could ease rate-hike fears.",
+    "Growth score flips negative: Regime shift confirmed, favoring value over growth.",
+    "Credit spreads above 3%: HY OAS hitting that mark would be a loud caution bell."
+  ],
+  "confidence": "medium",
+  "forward_watch": [
+    {
+      "date": "2026-07-29",
+      "label": "FOMC rate decision",
+      "kind": "FOMC",
+      "note": "Fed decision with growth cooling and inflation above target; a hawkish tilt could extend dollar strength."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "GDP (BEA estimate)",
+      "kind": "GDP",
+      "note": "First look at Q2 GDP; key check on the cooling growth narrative."
+    },
+    {
+      "date": "2026-07-30",
+      "label": "PCE / personal income (BEA)",
+      "kind": "PCE",
+      "note": "Headline PCE point estimate -0.2864% month-over-month, with a cold surprise bias."
+    }
+  ],
+  "forward_read": "The July 29 FOMC meets amid cooling growth and sticky inflation, with recent oil supply issues adding price pressure. The next day's PCE is projected at a cold -0.2864% month-over-month, which could calm rate fears if confirmed. A hawkish hold or hot data would deepen the AI-driven equity unwind."
+}

@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_strength.v1",
   "artifact_id": "confluence-strength",
-  "asof": "2026-07-13",
+  "asof": "2026-07-17",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -1451,6 +1451,19 @@
       "regime_bucket": "Q1"
     },
     {
+      "subject": "NVDA",
+      "as_of": "2026-07-17",
+      "direction": 1,
+      "horizon": "63.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "radar"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
       "subject": "CB",
       "as_of": "2026-06-15",
       "direction": 1,
@@ -1512,6 +1525,6 @@
     "confluence_strength: no clusters in lobes block — no discount"
   ],
   "produced_by": "engine/neuralweb/confluence_strength.py",
-  "produced_at": "2026-07-19T03:10:39Z",
+  "produced_at": "2026-07-20T05:07:00Z",
   "authority_check": []
 }

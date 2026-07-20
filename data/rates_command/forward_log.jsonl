@@ -1,0 +1,1 @@
+{"schema": "rates_command_flag.v1", "asof_night": "2026-07-17", "net_state": "two_sided", "hawk_score": 2, "ease_score": 3, "flags": {"d1": false, "d2": false, "d3": false}, "implied_bp_12m": 42, "gap_bp": 8, "logged_at": "2026-07-20T05:17:02.247045+00:00"}

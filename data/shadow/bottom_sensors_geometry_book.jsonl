@@ -15371,3 +15371,6 @@
 {"date": "2026-07-17", "symbol": "WPM", "decline_geometry": null, "decline_herf": null, "underwater_state": null, "underwater_bars": null, "horizons": [21, 63]}
 {"date": "2026-07-17", "symbol": "FMBM", "decline_geometry": null, "decline_herf": null, "underwater_state": null, "underwater_bars": null, "horizons": [21, 63]}
 {"date": "2026-07-17", "symbol": "PMPEX", "decline_geometry": null, "decline_herf": null, "underwater_state": null, "underwater_bars": null, "horizons": [21, 63]}
+{"date": "2026-07-17", "symbol": "CBRE", "decline_geometry": "grind", "decline_herf": 0.047727, "underwater_state": "long", "underwater_bars": 116.0, "horizons": [21, 63]}
+{"date": "2026-07-17", "symbol": "ISRG", "decline_geometry": "flush", "decline_herf": 0.076862, "underwater_state": "long", "underwater_bars": 132.0, "horizons": [21, 63]}
+{"date": "2026-07-17", "symbol": "KMI", "decline_geometry": "mixed", "decline_herf": 0.051667, "underwater_state": "mid", "underwater_bars": 40.0, "horizons": [21, 63]}

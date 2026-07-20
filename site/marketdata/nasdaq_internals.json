@@ -1,9 +1,9 @@
 {
   "schema": "nasdaq_internals.v1",
-  "asof": "2026-07-19T02:38:13.317815+00:00",
+  "asof": "2026-07-20T04:50:42.796068+00:00",
   "benchmark": "QQQ",
-  "watermark_en": "Current Nasdaq-100 membership (as of 2026-07-19); historical composition approximated. Descriptive, display-only.",
-  "watermark_zh": "当前纳斯达克100成分股（截至 2026-07-19）；历史成分经近似处理。描述性展示，仅供参考。",
+  "watermark_en": "Current Nasdaq-100 membership (as of 2026-07-20); historical composition approximated. Descriptive, display-only.",
+  "watermark_zh": "当前纳斯达克100成分股（截至 2026-07-20）；历史成分经近似处理。描述性展示，仅供参考。",
   "ew_vs_qqq": {
     "spread_20d": -0.6923,
     "spread_60d": 4.5249,
@@ -23,7 +23,7 @@
       "dispersion_20d": 10.2535,
       "state": "weakening",
       "state_candidate": "weakening",
-      "state_days": 7
+      "state_days": 8
     },
     {
       "id": "ai_capex_spenders",
@@ -37,7 +37,7 @@
       "dispersion_20d": 7.5584,
       "state": "improving",
       "state_candidate": "improving",
-      "state_days": 7
+      "state_days": 8
     },
     {
       "id": "edge_device",
@@ -51,7 +51,7 @@
       "dispersion_20d": 22.7051,
       "state": "weakening",
       "state_candidate": "weakening",
-      "state_days": 3
+      "state_days": 4
     },
     {
       "id": "software_enterprise",
@@ -65,7 +65,7 @@
       "dispersion_20d": 19.4356,
       "state": "improving",
       "state_candidate": "improving",
-      "state_days": 5
+      "state_days": 6
     },
     {
       "id": "cyber",
@@ -79,7 +79,7 @@
       "dispersion_20d": 6.1644,
       "state": "leading",
       "state_candidate": "leading",
-      "state_days": 5
+      "state_days": 6
     },
     {
       "id": "digital_services_media",
@@ -93,7 +93,7 @@
       "dispersion_20d": 8.8303,
       "state": "improving",
       "state_candidate": "improving",
-      "state_days": 7
+      "state_days": 8
     },
     {
       "id": "megacap_quality",
@@ -107,7 +107,7 @@
       "dispersion_20d": 7.6153,
       "state": "improving",
       "state_candidate": "improving",
-      "state_days": 7
+      "state_days": 8
     }
   ],
   "divergences": [

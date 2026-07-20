@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-18",
+  "date": "2026-07-20",
   "regime": "risk-on trends",
   "breadth": 0.38,
   "favored": [
@@ -10,7 +10,7 @@
     "dollar"
   ],
   "correlation": "concentrated",
-  "asof": "2026-07-18",
+  "asof": "2026-07-20",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
@@ -177,19 +177,19 @@
         "pair": "copper_gold",
         "ratio": 0.002,
         "trend": "mid",
-        "pctile": 66.0
+        "pctile": 72.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 71.607,
+        "ratio": 70.583,
         "trend": "mid",
-        "pctile": 31.0
+        "pctile": 30.0
       },
       {
         "pair": "oil_gold",
         "ratio": 0.021,
         "trend": "mid",
-        "pctile": 55.0
+        "pctile": 57.0
       },
       {
         "pair": "stocks_gold",
@@ -338,8 +338,8 @@
       "unstable_n": 0,
       "fx_stress": {
         "dominant": null,
-        "top_key": "dollar_wrecking_ball",
-        "top_val": 12.1
+        "top_key": "em_crisis_capital_flight",
+        "top_val": 27.8
       }
     },
     "shadow": {

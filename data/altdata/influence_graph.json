@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-19T03:12:03.626603+00:00",
+  "generated_utc": "2026-07-20T05:08:20.216038+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,11 +749,12 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.05,
+      "alt_score": 7,
+      "alt_weighted": 2.4,
       "alt_channels": [
         "affiliation",
         "github_momentum",
+        "hf_model_momentum",
         "lobbying",
         "patent_cluster",
         "retail_buzz",
@@ -799,11 +800,10 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.15,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "special_situation"
       ],
       "top_holder": {
@@ -846,12 +846,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.4,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
       "alt_channels": [
         "affiliation",
-        "special_situation",
-        "trump"
+        "special_situation"
       ],
       "top_holder": {
         "owner": "BEZOS JEFFREY P",
@@ -1090,12 +1089,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.65,
+      "alt_score": 3,
+      "alt_weighted": 1.3,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "hf_model_momentum",
         "special_situation"
       ],
       "top_holder": {
@@ -1125,10 +1123,10 @@
       "n_actors": 2,
       "alt_corroborated": true,
       "alt_score": 4,
-      "alt_weighted": 1.85,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
-        "gov_contract_accel",
+        "gov_contract",
         "lobbying",
         "retail_buzz"
       ],
@@ -1743,7 +1741,7 @@
       "company": "Dominari Holdings Inc.",
       "ticker": "DOMH",
       "items": "4.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/12239/000121390026072650/ea0296086-8k_dominari.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/12239/000121390026072650/ea029608601ex16-1.htm"
     },
     {
       "date": "2026-06-26",
@@ -1751,7 +1749,7 @@
       "company": "Dominari Holdings Inc.",
       "ticker": "DOMH",
       "items": "4.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/12239/000121390026072650/ea029608601ex16-1.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/12239/000121390026072650/ea0296086-8k_dominari.htm"
     }
   ]
 }

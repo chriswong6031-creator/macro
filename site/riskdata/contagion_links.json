@@ -1,6 +1,6 @@
 {
   "schema": "contagion_links.v1",
-  "built": "2026-07-19T02:43:44.343058+00:00",
+  "built": "2026-07-20T04:56:12.191478+00:00",
   "params": {
     "structural_version": "structural.v1",
     "dy_window": 150,
@@ -477,9 +477,9 @@
     },
     "kr": {
       "sigma": 1.0,
-      "dd21": 0.2517,
-      "ret10": -0.1082,
-      "as_of": "2026-07-16"
+      "dd21": 0.2831,
+      "ret10": -0.1922,
+      "as_of": "2026-07-20"
     },
     "jp": {
       "sigma": 1.0,
@@ -489,9 +489,9 @@
     },
     "tw": {
       "sigma": 1.0,
-      "dd21": 0.1062,
-      "ret10": -0.0871,
-      "as_of": "2026-07-17"
+      "dd21": 0.1107,
+      "ret10": -0.0924,
+      "as_of": "2026-07-20"
     },
     "in": {
       "sigma": 0.0393,
@@ -500,10 +500,10 @@
       "as_of": "2026-07-17"
     },
     "au": {
-      "sigma": 0.077,
-      "dd21": 0.0054,
-      "ret10": -0.0054,
-      "as_of": "2026-07-17"
+      "sigma": 0.051,
+      "dd21": 0.0051,
+      "ret10": -0.0036,
+      "as_of": "2026-07-20"
     },
     "gb": {
       "sigma": 0.1051,
@@ -520,7 +520,7 @@
   },
   "pressure": {
     "us": {
-      "raw": 0.4924,
+      "raw": 0.4889,
       "pct": 0.9107,
       "level": "high",
       "line_en": "Pressure from abroad: HIGH — Taiwan's selloff is the main source",
@@ -531,8 +531,8 @@
           "name_en": "Taiwan",
           "name_zh": "台湾",
           "weight": 0.1259,
-          "dd21": 0.1062,
-          "ret10": -0.0871,
+          "dd21": 0.1107,
+          "ret10": -0.0924,
           "sigma": 1.0,
           "contribution": 0.1259
         },
@@ -562,7 +562,7 @@
       "incumbent_as_of": "2026-07-17"
     },
     "cn": {
-      "raw": 0.3344,
+      "raw": 0.3321,
       "pct": 0.7738,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -583,8 +583,8 @@
           "name_en": "Taiwan",
           "name_zh": "台湾",
           "weight": 0.094,
-          "dd21": 0.1062,
-          "ret10": -0.0871,
+          "dd21": 0.1107,
+          "ret10": -0.0924,
           "sigma": 1.0,
           "contribution": 0.094
         },
@@ -593,8 +593,8 @@
           "name_en": "South Korea",
           "name_zh": "韩国",
           "weight": 0.0534,
-          "dd21": 0.2517,
-          "ret10": -0.1082,
+          "dd21": 0.2831,
+          "ret10": -0.1922,
           "sigma": 1.0,
           "contribution": 0.0534
         }
@@ -604,7 +604,7 @@
       "incumbent_as_of": "2026-07-16"
     },
     "hk": {
-      "raw": 0.5012,
+      "raw": 0.498,
       "pct": 0.9226,
       "level": "high",
       "line_en": "Pressure from abroad: HIGH — China's selloff is the main source",
@@ -635,8 +635,8 @@
           "name_en": "South Korea",
           "name_zh": "韩国",
           "weight": 0.0877,
-          "dd21": 0.2517,
-          "ret10": -0.1082,
+          "dd21": 0.2831,
+          "ret10": -0.1922,
           "sigma": 1.0,
           "contribution": 0.0877
         }
@@ -646,7 +646,7 @@
       "incumbent_as_of": "2026-07-16"
     },
     "ca": {
-      "raw": 0.4418,
+      "raw": 0.4367,
       "pct": 0.881,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — China's weakness is the main source",
@@ -677,8 +677,8 @@
           "name_en": "Taiwan",
           "name_zh": "台湾",
           "weight": 0.0686,
-          "dd21": 0.1062,
-          "ret10": -0.0871,
+          "dd21": 0.1107,
+          "ret10": -0.0924,
           "sigma": 1.0,
           "contribution": 0.0686
         }
@@ -688,7 +688,7 @@
       "incumbent_as_of": "2026-07-17"
     },
     "kr": {
-      "raw": 0.5266,
+      "raw": 0.5247,
       "pct": 0.9107,
       "level": "high",
       "line_en": "Pressure from abroad: HIGH — Japan's selloff is the main source",
@@ -709,8 +709,8 @@
           "name_en": "Taiwan",
           "name_zh": "台湾",
           "weight": 0.1719,
-          "dd21": 0.1062,
-          "ret10": -0.0871,
+          "dd21": 0.1107,
+          "ret10": -0.0924,
           "sigma": 1.0,
           "contribution": 0.1719
         },
@@ -725,12 +725,12 @@
           "contribution": 0.0914
         }
       ],
-      "shadow_state": "caution",
-      "incumbent_state": "watch",
-      "incumbent_as_of": "2026-07-16"
+      "shadow_state": "calm",
+      "incumbent_state": "calm",
+      "incumbent_as_of": "2026-07-20"
     },
     "jp": {
-      "raw": 0.4963,
+      "raw": 0.493,
       "pct": 0.9048,
       "level": "high",
       "line_en": "Pressure from abroad: HIGH — South Korea's selloff is the main source",
@@ -741,8 +741,8 @@
           "name_en": "South Korea",
           "name_zh": "韩国",
           "weight": 0.2122,
-          "dd21": 0.2517,
-          "ret10": -0.1082,
+          "dd21": 0.2831,
+          "ret10": -0.1922,
           "sigma": 1.0,
           "contribution": 0.2122
         },
@@ -751,8 +751,8 @@
           "name_en": "Taiwan",
           "name_zh": "台湾",
           "weight": 0.1391,
-          "dd21": 0.1062,
-          "ret10": -0.0871,
+          "dd21": 0.1107,
+          "ret10": -0.0924,
           "sigma": 1.0,
           "contribution": 0.1391
         },
@@ -772,7 +772,7 @@
       "incumbent_as_of": "2026-07-17"
     },
     "tw": {
-      "raw": 0.5676,
+      "raw": 0.565,
       "pct": 0.9286,
       "level": "high",
       "line_en": "Pressure from abroad: HIGH — South Korea's selloff is the main source",
@@ -783,8 +783,8 @@
           "name_en": "South Korea",
           "name_zh": "韩国",
           "weight": 0.2515,
-          "dd21": 0.2517,
-          "ret10": -0.1082,
+          "dd21": 0.2831,
+          "ret10": -0.1922,
           "sigma": 1.0,
           "contribution": 0.2515
         },
@@ -811,10 +811,10 @@
       ],
       "shadow_state": "risk-off",
       "incumbent_state": "risk-off",
-      "incumbent_as_of": "2026-07-17"
+      "incumbent_as_of": "2026-07-20"
     },
     "in": {
-      "raw": 0.4177,
+      "raw": 0.4136,
       "pct": 0.8591,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — China's weakness is the main source",
@@ -845,8 +845,8 @@
           "name_en": "South Korea",
           "name_zh": "韩国",
           "weight": 0.0593,
-          "dd21": 0.2517,
-          "ret10": -0.1082,
+          "dd21": 0.2831,
+          "ret10": -0.1922,
           "sigma": 1.0,
           "contribution": 0.0593
         }
@@ -887,18 +887,18 @@
           "name_en": "South Korea",
           "name_zh": "韩国",
           "weight": 0.0989,
-          "dd21": 0.2517,
-          "ret10": -0.1082,
+          "dd21": 0.2831,
+          "ret10": -0.1922,
           "sigma": 1.0,
           "contribution": 0.0989
         }
       ],
       "shadow_state": "caution",
       "incumbent_state": "watch",
-      "incumbent_as_of": "2026-07-17"
+      "incumbent_as_of": "2026-07-20"
     },
     "gb": {
-      "raw": 0.4727,
+      "raw": 0.4688,
       "pct": 0.8889,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -919,8 +919,8 @@
           "name_en": "South Korea",
           "name_zh": "韩国",
           "weight": 0.0954,
-          "dd21": 0.2517,
-          "ret10": -0.1082,
+          "dd21": 0.2831,
+          "ret10": -0.1922,
           "sigma": 1.0,
           "contribution": 0.0954
         },
@@ -929,8 +929,8 @@
           "name_en": "Taiwan",
           "name_zh": "台湾",
           "weight": 0.0758,
-          "dd21": 0.1062,
-          "ret10": -0.0871,
+          "dd21": 0.1107,
+          "ret10": -0.0924,
           "sigma": 1.0,
           "contribution": 0.0758
         }
@@ -940,7 +940,7 @@
       "incumbent_as_of": "2026-07-17"
     },
     "ez": {
-      "raw": 0.4286,
+      "raw": 0.4265,
       "pct": 0.869,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -961,8 +961,8 @@
           "name_en": "South Korea",
           "name_zh": "韩国",
           "weight": 0.1075,
-          "dd21": 0.2517,
-          "ret10": -0.1082,
+          "dd21": 0.2831,
+          "ret10": -0.1922,
           "sigma": 1.0,
           "contribution": 0.1075
         },
@@ -983,5 +983,5 @@
     }
   },
   "gaps": [],
-  "timing_sec": 0.38
+  "timing_sec": 0.34
 }

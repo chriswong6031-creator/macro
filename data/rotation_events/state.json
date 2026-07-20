@@ -6,7 +6,7 @@
    "from_leg": "ai_semis",
    "to_leg": "mag7",
    "started": "2026-07-02",
-   "lapse_count": 2,
+   "lapse_count": 3,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-22",

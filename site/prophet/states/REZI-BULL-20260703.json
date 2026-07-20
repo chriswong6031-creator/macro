@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "REZI-BULL-20260703",
-  "asof": "2026-07-18",
+  "asof": "2026-07-19",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 76.7,
-  "raw_confidence": 77.5,
-  "delta_vs_base": 16.7,
+  "management_confidence": 76.8,
+  "raw_confidence": 76.9,
+  "delta_vs_base": 16.8,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
     "progress": 48.2,
-    "pace": 100.0,
+    "pace": 97.5,
     "retention": 50.0,
     "overlay": 53.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.949,
     "dist_to_t1_r": 0.551,
     "dist_to_t2_r": 2.051,
-    "horizon_pct_used": 33.3,
+    "horizon_pct_used": 35.6,
     "p1": 0.6323,
     "p2": 0.3162,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-11",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 15,
-  "tau": 0.3333
+  "days_elapsed": 16,
+  "tau": 0.3556
 }

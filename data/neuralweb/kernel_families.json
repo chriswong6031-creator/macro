@@ -19,9 +19,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 55,
-          "mean": -0.006601,
-          "wilson_ci_low": 0.313732
+          "n_eff": 52,
+          "mean": -0.006372,
+          "wilson_ci_low": 0.315948
         },
         "63d": {
           "n_eff": 155,
@@ -46,7 +46,7 @@
       },
       "staleness": {
         "date_last": "2026-07-07",
-        "days_since_last_fire": 11
+        "days_since_last_fire": 12
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -99,7 +99,7 @@
       },
       "staleness": {
         "date_last": "2026-07-09",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -152,7 +152,7 @@
       },
       "staleness": {
         "date_last": "2026-07-08",
-        "days_since_last_fire": 10
+        "days_since_last_fire": 11
       },
       "armed": true,
       "armed_reason": "armed: pooled beats equal-weight on held-out tail",
@@ -199,7 +199,7 @@
       },
       "staleness": {
         "date_last": "2026-07-16",
-        "days_since_last_fire": 2
+        "days_since_last_fire": 3
       },
       "armed": false,
       "armed_reason": "accruing: 10/12 effective events",
@@ -246,7 +246,7 @@
       },
       "staleness": {
         "date_last": "2026-07-08",
-        "days_since_last_fire": 10
+        "days_since_last_fire": 11
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -299,7 +299,7 @@
       },
       "staleness": {
         "date_last": "2026-07-02",
-        "days_since_last_fire": 16
+        "days_since_last_fire": 17
       },
       "armed": false,
       "armed_reason": "accruing: 10/12 effective events",
@@ -325,9 +325,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 2216,
-          "mean": -0.000336,
-          "wilson_ci_low": 0.488664
+          "n_eff": 2073,
+          "mean": 0.000607,
+          "wilson_ci_low": 0.489335
         },
         "63d": {
           "n_eff": 3136,
@@ -352,7 +352,7 @@
       },
       "staleness": {
         "date_last": "2026-07-07",
-        "days_since_last_fire": 11
+        "days_since_last_fire": 12
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -399,7 +399,7 @@
       },
       "staleness": {
         "date_last": "2026-07-04",
-        "days_since_last_fire": 14
+        "days_since_last_fire": 15
       },
       "armed": false,
       "armed_reason": "accruing: 1/12 effective events",
@@ -470,7 +470,7 @@
       },
       "staleness": {
         "date_last": "2026-07-09",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
       "armed": true,
       "armed_reason": "armed: pooled beats equal-weight on held-out tail",
@@ -523,7 +523,7 @@
       },
       "staleness": {
         "date_last": "2026-07-09",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
       "armed": false,
       "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
@@ -570,7 +570,7 @@
       },
       "staleness": {
         "date_last": "2026-07-09",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
       "armed": false,
       "armed_reason": "accruing: 2/12 effective events",
@@ -578,10 +578,10 @@
       "regime_coverage": 1.0
     }
   },
-  "generated_from": "sha256:76ab2e8b2a76812a3ec0924d4c5c28f775a380e3821d08f3af320c19b1c45a5c",
+  "generated_from": "sha256:e59eb436511c96eed124dbb2fcbee3e29df1e64f6b6eda42ed0692556a3288cb",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-07-19T03:10:32Z",
-  "inputs_hash": "sha256:4a591607fa7bc3db42f830accc8716e526971eaa11f5da807a40b6eeb15e6037",
+  "produced_at": "2026-07-20T05:06:54Z",
+  "inputs_hash": "sha256:04d80707ca476893d0d705b4c3b88fe356df65cd84ec834fbeebf788140b30d4",
   "tier": "infrastructure"
 }

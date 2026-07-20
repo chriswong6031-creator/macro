@@ -5,7 +5,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "memory.dram_cycle.v1": {
     "version": 1,
@@ -13,7 +13,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "housing.bubble_peak.v1": {
     "version": 1,
@@ -21,7 +21,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "business.cycle_trough.v1": {
     "version": 1,
@@ -29,7 +29,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "oil.regime_shift.v1": {
     "version": 1,
@@ -37,7 +37,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "copper.trough_in.v1": {
     "version": 1,
@@ -45,7 +45,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "uranium.supply_squeeze.v1": {
     "version": 1,
@@ -53,7 +53,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "gold.bull_intact.v1": {
     "version": 1,
@@ -61,7 +61,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "bitcoin.cycle_position.v1": {
     "version": 1,
@@ -69,7 +69,7 @@
     "fired_on": "2026-07-02",
     "latched": true,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "credit.spread_regime.v1": {
     "version": 1,
@@ -77,7 +77,7 @@
     "fired_on": "2026-07-05",
     "latched": true,
     "current_leg": true,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "shipping.bdi_cycle.v1": {
     "version": 1,
@@ -85,7 +85,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "lithium.deficit_thesis.v1": {
     "version": 1,
@@ -93,7 +93,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "agriculture.commodity_upcycle.v1": {
     "version": 1,
@@ -101,7 +101,7 @@
     "fired_on": "2026-07-02",
     "latched": true,
     "current_leg": true,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "vol.regime_shift.v1": {
     "version": 1,
@@ -109,7 +109,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "biotech.upcycle.v1": {
     "version": 1,
@@ -117,7 +117,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "long-bonds.bear_steepener.v1": {
     "version": 1,
@@ -125,7 +125,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "dollar.bear_cycle.v1": {
     "version": 1,
@@ -133,7 +133,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "natural-gas.summer_squeeze.v1": {
     "version": 1,
@@ -141,7 +141,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "iron-ore.china_demand.v1": {
     "version": 1,
@@ -149,7 +149,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "silver.gold-silver_ratio.v1": {
     "version": 1,
@@ -157,7 +157,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "em-equities.upcycle.v1": {
     "version": 1,
@@ -165,7 +165,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "japan.reflation_cycle.v1": {
     "version": 1,
@@ -173,7 +173,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": false,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "pgms.platinum_premium.v1": {
     "version": 1,
@@ -181,7 +181,7 @@
     "fired_on": "2026-07-02",
     "latched": true,
     "current_leg": true,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "spx.bull_cycle.v1": {
     "version": 1,
@@ -189,7 +189,7 @@
     "fired_on": null,
     "latched": false,
     "current_leg": null,
-    "as_of": "2026-07-18"
+    "as_of": "2026-07-19"
   },
   "archetype_checks": {
     "xlf:credit.spread_regime.v1": {

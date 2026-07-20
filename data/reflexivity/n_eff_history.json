@@ -1,7 +1,7 @@
 {
   "schema": "reflexivity_n_eff_history.v1",
   "as_of": "2026-07-17",
-  "generated_utc": "2026-07-19T02:01:39Z",
+  "generated_utc": "2026-07-20T04:17:19Z",
   "note": "Rolling N_eff history for the reflexivity overlay. Single-writer: scripts/build_reflexivity_overlay.py (RUL-P10). Accrual substrate for Codex BOOK-1 'N_eff by regime' (~2027 verdict).",
   "history": [
     {

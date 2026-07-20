@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-19",
+  "as_of": "2026-07-20",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -28,7 +28,7 @@
       "family": "equity-leadership",
       "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "direction_en": "AI/semis unwind — tech-led de-rating",
       "direction_zh": "AI/半导体回吐 — 科技主导的回调",
       "confidence_ceiling": "context_only",
@@ -38,7 +38,7 @@
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
@@ -58,7 +58,7 @@
         },
         {
           "node_id": "leg_ai_semis_0",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "semis RS",
@@ -78,7 +78,7 @@
         },
         {
           "node_id": "leg_ai_semis_1",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "growth vs value",
@@ -98,7 +98,7 @@
         },
         {
           "node_id": "leg_ai_semis_2",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "cap-weight vs equal-weight",
@@ -160,7 +160,7 @@
       "family": "inflation",
       "driver": "oil_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "direction_en": "oil spiking — energy leads, breakevens up",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -170,7 +170,7 @@
       "nodes": [
         {
           "node_id": "driver_oil_shock",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "oil_shock",
@@ -190,7 +190,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order1",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -210,7 +210,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order2",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -230,7 +230,7 @@
         },
         {
           "node_id": "transmission_sticky_inflation_order3",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -293,7 +293,7 @@
       "family": "rates",
       "driver": "real_rate_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "direction_en": "real yields rising — restrictive, gold & duration hit",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -303,7 +303,7 @@
       "nodes": [
         {
           "node_id": "driver_real_rate_shock",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "real_rate_shock",
@@ -323,7 +323,7 @@
         },
         {
           "node_id": "transmission_real_rate_order1",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -343,7 +343,7 @@
         },
         {
           "node_id": "transmission_real_rate_order2",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",
@@ -363,7 +363,7 @@
         },
         {
           "node_id": "transmission_real_rate_order3",
-          "as_of": "2026-07-19",
+          "as_of": "2026-07-20",
           "domain": "transmission",
           "source_artifact": "data/transmission/latest.json",
           "entity": "transmission channel",

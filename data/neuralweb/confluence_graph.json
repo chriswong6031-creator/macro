@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-07-18",
+  "asof": "2026-07-19",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -11,7 +11,7 @@
       "type": "engine",
       "label": "altdata",
       "meta": {
-        "n_spine_rows": 689
+        "n_spine_rows": 728
       }
     },
     {
@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 16
+        "n_spine_rows": 8
       }
     },
     {
@@ -59,7 +59,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 1402
+        "n_spine_rows": 1428
       }
     },
     {
@@ -67,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 1402
+        "n_spine_rows": 1428
       }
     },
     {
@@ -91,7 +91,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 662
+        "n_spine_rows": 736
       }
     },
     {
@@ -99,7 +99,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 118
+        "n_spine_rows": 129
       }
     },
     {
@@ -131,7 +131,7 @@
       "type": "engine",
       "label": "policy",
       "meta": {
-        "n_spine_rows": 22
+        "n_spine_rows": 25
       }
     },
     {
@@ -139,7 +139,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 6021
+        "n_spine_rows": 6283
       }
     },
     {
@@ -155,7 +155,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 70
+        "n_spine_rows": 74
       }
     },
     {
@@ -171,7 +171,7 @@
       "type": "engine",
       "label": "stock_personality",
       "meta": {
-        "n_spine_rows": 1702
+        "n_spine_rows": 1704
       }
     },
     {
@@ -179,7 +179,7 @@
       "type": "engine",
       "label": "tech_signals",
       "meta": {
-        "n_spine_rows": 64
+        "n_spine_rows": 71
       }
     },
     {
@@ -203,7 +203,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 5020
+        "n_spine_rows": 5330
       }
     },
     {
@@ -211,7 +211,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 5020
+        "n_spine_rows": 5330
       }
     },
     {
@@ -1476,6 +1476,15 @@
       }
     },
     {
+      "id": "thesis:2026-07-17-radar-industrial_distribution",
+      "type": "thesis",
+      "label": "2026-07-17-radar-industrial_distribution",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
       "id": "macro:fx_dollar",
       "type": "macro",
       "label": "FX / Dollar",
@@ -1484,15 +1493,15 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "up",
-        "asof": "2026-07-17",
+        "asof": "2026-07-19",
         "display_only": true,
         "source_lobe": "fx_dollar",
-        "smile_regime": null,
-        "dollar_day_flag": null,
+        "smile_regime": "rates-driven",
+        "dollar_day_flag": false,
         "regime_radar_dominant": null,
-        "stance_word": null,
+        "stance_word": "Watch — don't chase",
         "dominant_scenario": null,
-        "days_in_regime": null
+        "days_in_regime": 91
       }
     },
     {
@@ -1592,10 +1601,10 @@
       "meta": {
         "subtype": "cross_asset_flows",
         "label_zh": "跨资产流",
-        "regime": "mixed / no clear trend",
+        "regime": "risk-on trends",
         "correlation_verdict": "concentrated",
-        "state_text": "mixed / no clear trend",
-        "asof": "2026-07-17",
+        "state_text": "risk-on trends",
+        "asof": "2026-07-18",
         "display_only": true,
         "source_lobe": "cross_asset_flows"
       }
@@ -1669,6 +1678,20 @@
         "dispersion_note": "2 distinct quads across US/China/HK/Canada",
         "display_only": true,
         "source_lobe": "global_regimes"
+      }
+    },
+    {
+      "id": "macro:market_structure",
+      "type": "macro",
+      "label": "Market Structure",
+      "meta": {
+        "subtype": "market_structure",
+        "regime": "short",
+        "agreement": "split",
+        "cor1m_regime": "dispersion",
+        "asof": "2026-07-17",
+        "display_only": true,
+        "source_lobe": "world_state.market_structure"
       }
     }
   ],
@@ -12604,6 +12627,66 @@
       "note": "structural: data/transmission/latest.json consumed by scripts/build_macro_snapshot.py"
     },
     {
+      "src": "module:scripts/build_rates_command.py",
+      "dst": "artifact:rates-command-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_rates_command.py writes data/rates_command/latest.json"
+    },
+    {
+      "src": "artifact:rates-command-latest",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/rates_command/latest.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "artifact:rates-command-latest",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/rates_command/latest.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "module:scripts/build_stage_analysis.py",
+      "dst": "artifact:stage-analysis-context-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stage_analysis.py writes data/stage_analysis/context/latest.json"
+    },
+    {
+      "src": "artifact:stage-analysis-context-latest",
+      "dst": "module:engine/neuralweb/world_state.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/stage_analysis/context/latest.json consumed by engine/neuralweb/world_state.py"
+    },
+    {
+      "src": "artifact:stage-analysis-context-latest",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/stage_analysis/context/latest.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
       "src": "module:scripts/build_special_situations.py",
       "dst": "artifact:special-sits-context-latest",
       "edge_type": "feeds",
@@ -15611,7 +15694,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=note a=11 ticker-level demand-vs-supply divergences b=n_divergences=11, top tickers=['NVDA', 'PFE', 'RBRK', 'LLY',"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=25 ticker-level demand-vs-supply divergences b=n_divergences=25, top tickers=['NVDA', 'C', 'HOOD', 'JPM', '"
     },
     {
       "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
@@ -15758,7 +15841,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.379 verdict=headwind source_lobe=rates_transmission asof=2026-07-17"
+      "note": "rates headwind: asset=XLK net=-0.37 verdict=headwind source_lobe=rates_transmission asof=2026-07-17"
     },
     {
       "src": "macro:rates_transmission",
@@ -15768,7 +15851,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLF net=-0.353 verdict=headwind source_lobe=rates_transmission asof=2026-07-17"
+      "note": "rates headwind: asset=XLF net=-0.347 verdict=headwind source_lobe=rates_transmission asof=2026-07-17"
     },
     {
       "src": "macro:fx_dollar",
@@ -15794,8 +15877,7 @@
   "contradiction_summary": {
     "n": 2,
     "by_severity": {
-      "note": 1,
-      "tension": 1
+      "tension": 2
     },
     "top_pair_ids": [
       "briefing-divergences",
@@ -15807,16 +15889,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "11 ticker-level demand-vs-supply divergences"
+        "reading": "25 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=11, top tickers=['NVDA', 'PFE', 'RBRK', 'LLY', 'ABBV']"
+        "reading": "n_divergences=25, top tickers=['NVDA', 'C', 'HOOD', 'JPM', 'ARES']"
       },
       "kind": "directional-opposition",
-      "severity": "note",
-      "as_of": "2026-07-19",
-      "note": "11 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA, PFE, RBRK, LLY, ABBV.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "severity": "tension",
+      "as_of": "2026-07-20",
+      "note": "25 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: NVDA, C, HOOD, JPM, ARES.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     },
     {
@@ -15853,7 +15935,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-19T03:10:39Z",
-  "inputs_hash": "sha256:dac589dd6daa92e70c9bd5b548156dc54bdd3b1af7a477c72ac2106f94f5487a",
+  "produced_at": "2026-07-20T05:07:00Z",
+  "inputs_hash": "sha256:76c028f6829b2ae87fd45e8588fe225b96ff98517d4b09e7e6f9a652b943cbf8",
   "tier": "display"
 }

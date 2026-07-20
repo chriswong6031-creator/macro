@@ -1,17 +1,17 @@
 {
   "schema": "market_structure_context.v1",
   "asof": "2026-07-17",
-  "built_at": "2026-07-19T02:22:24.565834+00:00",
+  "built_at": "2026-07-20T04:37:33.566288+00:00",
   "is_context_only": true,
   "display_only": true,
   "gamma": {
     "regime": "short",
-    "net_gex_bn": -13.356731,
-    "net_gex_pctile": 18.5,
-    "gamma_flip": 7487.638416,
+    "net_gex_bn": -12.366768,
+    "net_gex_pctile": 21.4,
+    "gamma_flip": 7475.422145,
     "spot": 7457.69,
-    "dist_to_flip_pct": -0.4,
-    "days_in_regime": 2,
+    "dist_to_flip_pct": -0.24,
+    "days_in_regime": 3,
     "series_start": "2026-06-14",
     "history": [
       {
@@ -201,6 +201,13 @@
         "net_gex_bn": -13.356731,
         "regime": "short",
         "flip": 7487.638416,
+        "spot": 7457.69
+      },
+      {
+        "date": "2026-07-19",
+        "net_gex_bn": -12.366768,
+        "regime": "short",
+        "flip": 7475.422145,
         "spot": 7457.69
       }
     ]

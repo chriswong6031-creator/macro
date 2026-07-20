@@ -1920,3 +1920,4 @@
 {"date": "2026-07-17", "ticker": "WYNN", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-17", "ticker": "AAMI", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-17", "ticker": "MAN", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-17", "ticker": "CUBE", "score": 35.0, "percentile": 35.0, "regime": "mixed", "horizons": [21, 63, 126]}

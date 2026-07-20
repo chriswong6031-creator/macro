@@ -1,5 +1,5 @@
 {
- "generated": "2026-07-19T03:08:55.337584+00:00",
+ "generated": "2026-07-20T05:05:29.108259+00:00",
  "empty": true,
  "note": "SA-W5 v2 parallel lane (dual-gate+rotation-priority board). Lanes: v2_entry_open (aliased to 'buy' for precision@k comparability), v2_setting_up. lane_mapping applied in track only \u2014 raw parquet/snapshots retain original lane names. ISOLATED from main board track \u2014 never included in us_board_track.json aggregates.",
  "survivorship": {

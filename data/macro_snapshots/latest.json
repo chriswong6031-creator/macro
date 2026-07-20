@@ -1,7 +1,7 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-07-19",
-  "oldest_component_asof": "2026-07-16",
+  "asof": "2026-07-20",
+  "oldest_component_asof": "2026-07-17",
   "macro_context_id": "e63016827069d12e",
   "labels": {
     "us": {
@@ -101,20 +101,20 @@
     "data/regime/latest.json": "2026-07-17",
     "data/market_state/latest.json": "2026-07-17",
     "data/transmission/latest.json": "2026-07-17",
-    "data/forex/latest.json": "2026-07-19",
+    "data/forex/latest.json": "2026-07-20",
     "data/bonds/bond_health.json": "2026-07-17",
-    "data/commodity/latest.json": "2026-07-17",
+    "data/commodity/latest.json": "2026-07-19",
     "data/china_regime/latest.json": "2026-07-17",
     "data/hk_regime/latest.json": "2026-07-17",
     "data/canada_regime/latest.json": "2026-07-17",
-    "data/dispersion/regime.json": "2026-07-18",
-    "data/intl_regime/AU_history.parquet": "2026-07-17",
+    "data/dispersion/regime.json": "2026-07-19",
+    "data/intl_regime/AU_history.parquet": "2026-07-20",
     "data/intl_regime/EZ_history.parquet": "2026-07-17",
     "data/intl_regime/GB_history.parquet": "2026-07-17",
     "data/intl_regime/IN_history.parquet": "2026-07-17",
     "data/intl_regime/JP_history.parquet": "2026-07-17",
-    "data/intl_regime/KR_history.parquet": "2026-07-16",
-    "data/intl_regime/TW_history.parquet": "2026-07-17"
+    "data/intl_regime/KR_history.parquet": "2026-07-20",
+    "data/intl_regime/TW_history.parquet": "2026-07-20"
   },
   "gaps": [],
   "display_only": true

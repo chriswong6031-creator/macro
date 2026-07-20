@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-19",
-  "generated_at": "2026-07-19T03:21:42Z",
+  "as_of": "2026-07-20",
+  "generated_at": "2026-07-20T05:19:25Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -21,9 +21,9 @@
     ]
   },
   "n_theses": 18,
-  "n_falsifier_fired": 6,
-  "n_theses_with_fired": 5,
-  "n_ok": 13,
+  "n_falsifier_fired": 7,
+  "n_theses_with_fired": 6,
+  "n_ok": 12,
   "stale_legs": [],
   "theses": [
     {
@@ -554,10 +554,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "thesis_id": "fintech_payments.v1",
-      "content_hash": "sha256:1c3657d108c5d99dede6703b6be0525c861a9b3c5ca49feceb8857485ba6bf6b",
-      "prev_content_hash": "sha256:395114b59dd6b3210e323b1e42ffe0442a1d36c34dac0272a85d8a9f993e038f",
+      "content_hash": "sha256:396f0c2900b633d41909ba320a485b69b4a11977596d7503bf666499e1155b4b",
+      "prev_content_hash": "sha256:1c3657d108c5d99dede6703b6be0525c861a9b3c5ca49feceb8857485ba6bf6b",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -611,7 +611,7 @@
           "rule_en": "If revision_breadth for fintech_payments falls negative, earnings consensus is cutting; stablecoin disruption may be larger than the on-ramp toll revenue offset.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.298"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.323"
         },
         {
           "id": "finpay_f2",
@@ -892,10 +892,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "thesis_id": "defense_aerospace.v1",
-      "content_hash": "sha256:ec07ada1d93e33d2c4331b2ac6ba51693ff9a5f8a98486aaacaac4a8f6247922",
-      "prev_content_hash": "sha256:3cfd3d399e4590ef8c1b8a7d7c60d5edbdd45ef3c0f14cc504876456b5e18f4f",
+      "content_hash": "sha256:ec8590d1f6c3156a12c08147ac07692c0fb841d316618529204fc4cde330db8c",
+      "prev_content_hash": "sha256:ec07ada1d93e33d2c4331b2ac6ba51693ff9a5f8a98486aaacaac4a8f6247922",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -951,9 +951,9 @@
         {
           "id": "def_f1",
           "rule_en": "If revision_breadth for defense_aerospace falls below 0.0, budget headwinds or program cancellations are spreading through earnings revisions.\n",
-          "state": "ARMED",
-          "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.08"
+          "state": "FIRED",
+          "fired": true,
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=-0.136"
         },
         {
           "id": "def_f2",
@@ -971,11 +971,11 @@
         }
       ],
       "falsifier_summary": {
-        "n_fired": 0,
-        "n_armed": 2,
+        "n_fired": 1,
+        "n_armed": 1,
         "n_data_missing": 0,
         "n_qualitative": 1,
-        "any_fired": false
+        "any_fired": true
       }
     },
     {
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-19T03:21:42Z",
-  "inputs_hash": "sha256:6821f4d88c97f1481d7d08b42ab1d8466feccd6a554e8e09f34c2c1787a3613e",
+  "produced_at": "2026-07-20T05:19:25Z",
+  "inputs_hash": "sha256:679ac23c06e059b2e36a54aeffa442d905c00350c59506f41d2c522f1ab44f9d",
   "tier": "display"
 }
