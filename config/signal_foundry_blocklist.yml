@@ -893,12 +893,23 @@ entries:
   - id: BL-G066
     match:
       any_of:
+        - 'stage.{0,30}stage.{0,30}rate'
+    reason: >
+      KILLED (construction-scoped) — PSF-H1/H2 FAIL on the primary
+      month-block bootstrap DIFFERENCE CI (B−A and C−B straddle 0 at
+      effective n≈49–54 monthly blocks), negative (win_B−win_A) delta
+      persisted at
+    source: 'PSF-H1/H2, `PROPHET_STAGE_FUSION_PREREG.md` §5; `research/reports/PROPHET_STAGE_FUSION_RESULTS.md`'
+
+  - id: BL-G067
+    match:
+      any_of:
         - 'ticker.{0,30}cluster.{0,30}bootstrap'
     reason: >
       FORBIDDEN estimator — anti-conservative, effective N = months
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
 
-  - id: BL-G067
+  - id: BL-G068
     match:
       any_of:
         - 'factor.{0,30}apparatus.{0,30}applied'
@@ -907,7 +918,7 @@ entries:
       absolute)
     source: 'Oracle reversion metric reframe (#1458)'
 
-  - id: BL-G068
+  - id: BL-G069
     match:
       any_of:
         - 'pooled.{0,30}inference.{0,30}across'
@@ -915,7 +926,7 @@ entries:
       FORBIDDEN without era split
     source: 'DT-R16 era-split law (#1751)'
 
-  - id: BL-G069
+  - id: BL-G070
     match:
       any_of:
         - 'closing.{0,30}factor.{0,30}family'
@@ -923,7 +934,7 @@ entries:
       INCOMPLETE — diagnose mechanism + pre-registered pairlets first
     source: 'Factor-kill interaction feedback law'
 
-  - id: BL-G070
+  - id: BL-G071
     match:
       any_of:
         - 'estimator.{0,30}shortcuts'
@@ -931,7 +942,7 @@ entries:
       Constrained per R1-M estimator law
     source: 'Nontech-bottom program'
 
-  - id: BL-G071
+  - id: BL-G072
     match:
       any_of:
         - 'ontology.{0,30}acceptance'
@@ -939,7 +950,7 @@ entries:
       HOLD — peak gate IQR 48.8 > 25
     source: 'Open PR #1639 (do not accidentally revive)'
 
-  - id: BL-G072
+  - id: BL-G073
     match:
       any_of:
         - 'theta.{0,30}tape'
@@ -947,7 +958,7 @@ entries:
       SUSPENDED
     source: 'Final3-lobes program (2026-07-06)'
 
-  - id: BL-G073
+  - id: BL-G074
     match:
       any_of:
         - 'disp.{0,30}gate'
@@ -955,7 +966,7 @@ entries:
       DEFER ×2-replicated
     source: 'Final3-lobes program (#1696)'
 
-  - id: BL-G074
+  - id: BL-G075
     match:
       any_of:
         - 'price.{0,30}memory.{0,30}trials'
@@ -964,7 +975,7 @@ entries:
       60% floor at execution)
     source: 'PM0 prereg (#1761) + EI-PM0 run (2026-07-10)'
 
-  - id: BL-G075
+  - id: BL-G076
     match:
       any_of:
         - 'g1'
@@ -972,7 +983,7 @@ entries:
       DEFERRED
     source: 'Long-hold thesis program (#1507/#1588)'
 
-  - id: BL-G076
+  - id: BL-G077
     match:
       any_of:
         - 'options'
@@ -980,7 +991,7 @@ entries:
       PARKED until preconditions (1)+(2)
     source: 'Options→NW masterplan'
 
-  - id: BL-G077
+  - id: BL-G078
     match:
       any_of:
         - 'codeowners.{0,30}branch.{0,30}protection'
@@ -988,7 +999,7 @@ entries:
       DEFERRED to RF codegen lane scope
     source: 'ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md`'
 
-  - id: BL-G078
+  - id: BL-G079
     match:
       any_of:
         - 'ticker.{0,30}multi.{0,30}label'
@@ -997,7 +1008,7 @@ entries:
       revenue-geography ingestion + own adjudication
     source: 'TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G079
+  - id: BL-G080
     match:
       any_of:
         - 'public.{0,30}breakaway.{0,30}desk'
@@ -1006,7 +1017,7 @@ entries:
       its own wave
     source: '`WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8'
 
-  - id: BL-G080
+  - id: BL-G081
     match:
       any_of:
         - 'winner.{0,30}autopsy.{0,30}short'
@@ -1015,7 +1026,7 @@ entries:
       settlement date)
     source: 'WA-R (docket adjudication), aligns NEXTL-U19'
 
-  - id: BL-G081
+  - id: BL-G082
     match:
       any_of:
         - 'full.{0,30}graph.{0,30}causal'
@@ -1025,7 +1036,7 @@ entries:
       clock
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G082
+  - id: BL-G083
     match:
       any_of:
         - 'dedicated.{0,30}machine.{0,30}registration'
