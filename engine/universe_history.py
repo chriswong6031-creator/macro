@@ -31,7 +31,8 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-GROUPS = {"breadth": "sp500", "midcap_breadth": "sp400", "smallcap_breadth": "sp600"}
+GROUPS = {"breadth": "sp500", "midcap_breadth": "sp400", "smallcap_breadth": "sp600",
+          "russell_breadth": "r2000"}
 LEDGER_COLS = ["ticker", "group", "name", "sector", "first_seen", "last_seen", "active"]
 
 

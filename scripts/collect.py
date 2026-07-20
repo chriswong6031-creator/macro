@@ -122,6 +122,7 @@ def all_adapters() -> dict:
         ("breadth", "collectors.breadth", "BreadthAdapter"),
         ("smallcap_breadth", "collectors.smallcap_breadth", "SmallCapBreadthAdapter"),
         ("midcap_breadth", "collectors.midcap_breadth", "MidCap400BreadthAdapter"),
+        ("russell_breadth", "collectors.russell_breadth", "RussellBreadthAdapter"),  # R2k breadth (Finviz idx_rut; 2y closes; ~1,900 names)
         ("cot", "collectors.cot", "CotAdapter"),
         ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
@@ -500,6 +501,42 @@ def main() -> int:
     results = []
     timings: dict[str, float] = {}
 
+    # Russell 2000 Finviz constituent pre-fetch — runs before the serial adapter loop so
+    # RussellBreadthAdapter always has a fresh idx_rut.json on the same run. Additive,
+    # time-boxed (Finviz screener ~60-90s for ~2,000 rows), never fatal. Skipped when the
+    # JSON is already fresh today (avoids a redundant network fetch on re-runs). The
+    # us_scope block also refreshes rut (for subsector membership) later in the run;
+    # this earlier call guarantees the adapter sees the JSON even on first-night.
+    if "russell_breadth" in registry and us_scope:
+        try:
+            import json as _rj
+            from datetime import datetime as _dt, timezone as _tz
+            from scripts.fetch_finviz_screener import fetch as _rut_fetch, INDEX_FILTER as _RUT_IF, OUT_DIR as _RUT_OUTDIR
+            _rut_path = config.data_dir() / _RUT_OUTDIR / "idx_rut.json"
+            _rut_stale = True
+            _rut_n = 0
+            _rut_age = float("inf")
+            if _rut_path.exists():
+                try:
+                    _rut_payload = _rj.loads(_rut_path.read_text())
+                    _rut_n = _rut_payload.get("n", 0) or 0
+                    _as_of_str = _rut_payload.get("as_of", "")
+                    _rut_as_of = _dt.strptime(_as_of_str[:16], "%Y-%m-%d %H:%M").replace(tzinfo=_tz.utc)
+                    _rut_age = (_dt.now(_tz.utc) - _rut_as_of).total_seconds() / 86400.0
+                    _rut_stale = _rut_age > 1 or _rut_n < 1600
+                except Exception:  # noqa: BLE001
+                    _rut_stale = True
+            if _rut_stale:
+                log.info("=== pre-fetching Finviz idx_rut (Russell 2000 constituents for breadth) ===")
+                _rut_out = _rut_fetch(_RUT_IF["rut"])
+                _rut_path.parent.mkdir(parents=True, exist_ok=True)
+                _rut_path.write_text(_rj.dumps(_rut_out, indent=0, separators=(",", ":")))
+                log.info("idx_rut pre-fetch: %d rows written", _rut_out.get("n", 0))
+            else:
+                log.info("idx_rut fresh (%d rows, %.1fd old) — skip pre-fetch", _rut_n, _rut_age)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("idx_rut pre-fetch failed (russell_breadth will use cached constituents): %s", e)
+
     # SERIAL phase — everything that is NOT a proven-independent pure-REST source stays
     # here, in registry order, exactly as before: the akshare adapters (segfault under
     # threads), the yfinance pullers (*_prices/*_universe/breadth — already parallelise
@@ -668,6 +705,10 @@ def main() -> int:
                 import json as _json
                 flt = INDEX_FILTER[idx]
                 log.info("=== refreshing Finviz %s classification ===", flt)
+                _fv_out = config.data_dir() / OUT_DIR / f"{flt}.json"
+                if _fv_out.exists() and (time.time() - _fv_out.stat().st_mtime) < 7200:
+                    log.info("finviz %s fetched <2h ago (rut pre-fetch) — skip duplicate scrape", flt)
+                    continue
                 payload = _fv_fetch(flt)
                 out = config.data_dir() / OUT_DIR / f"{flt}.json"
                 out.parent.mkdir(parents=True, exist_ok=True)

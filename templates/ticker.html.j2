@@ -501,6 +501,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
         {% elif hero.mktcap_label_en %}<span class="chip6">{{ t(hero.mktcap_label_en, hero.mktcap_label_zh) }}</span>{% endif %}
         {% if hero.arch_label_en %}<span class="chip6">{{ t(hero.arch_label_en, hero.arch_label_zh) }}</span>{% endif %}
         {% if hero.sector %}<span class="chip6">{{ hero.sector }}</span>{% endif %}
+        {% if hero.index_chips %}{% for c in hero.index_chips %}<span class="chip6">{{ t(c.en, c.zh) }}</span>{% endfor %}{% endif %}
       </div>
       {% endif %}
     </div>
@@ -1058,8 +1059,8 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 <!-- ═ CTA band ═ -->
 <section class="mod cta-band rv">
   <div class="cc">
-    <h2>{{ t('Every S&P 1500 name, read nightly.', '标普1500全覆盖，每晚更新解读。') }}</h2>
-    <p>{{ t('Signals, options positioning, smart-money moves and factor DNA — the same engine that wrote this page covers 1,500 stocks.', '信号、期权持仓、聪明钱动向与因子基因 — 撰写本页的引擎覆盖1500只股票。') }}</p>
+    <h2>{{ t('The whole US universe — S&P 1500 and Russell 2000 — read nightly.', '覆盖标普1500与罗素2000全部成分股 — 每晚更新解读。') }}</h2>
+    <p>{{ t('Signals, options positioning, smart-money moves and factor DNA — the same engine that wrote this page covers 2,700+ US stocks.', '信号、期权持仓、聪明钱动向与因子基因 — 撰写本页的引擎覆盖2700多只美股。') }}</p>
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;">
     <a class="gbtn gbtn-cta" href="index.html" style="padding:10px 20px;font-size:13.5px;">{{ t('Browse all stocks', '浏览所有股票') }}</a>

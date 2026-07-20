@@ -1832,6 +1832,15 @@ midcap_breadth:
   ma_windows: [50, 200]
   nhnl_window: 252
 
+# Russell 2000 — extends the dossier universe from S&P 1500 to ∪ Russell 2000
+# (+~1,273 net-new names). Constituents sourced from Finviz idx_rut screener
+# (data/finviz_screener/idx_rut.json) rather than Wikipedia (no free table).
+# 2-year closes window (vs 1100d for sp600) for cost control on ~1,900 names.
+russell_breadth:
+  lookback_days_live: 730
+  ma_windows: [50, 200]
+  nhnl_window: 252
+
 stock_search:
   enabled: true
   # Extra symbols searchable beyond the index universes (S&P 1500 + ETFs). Now

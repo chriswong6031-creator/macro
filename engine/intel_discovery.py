@@ -391,7 +391,7 @@ def _read_ownership_regime() -> dict | None:
 # avoid) — never surfaced as a long discovery.
 _RECON_CAP = 0.55
 _RECON_FRESH_DAYS = 15           # only names added within the last ~3 trading weeks
-_INDEX_TIER = {"sp500": 1.0, "sp400": 0.72, "sp600": 0.55}
+_INDEX_TIER = {"sp500": 1.0, "sp400": 0.72, "sp600": 0.55, "r2000": 0.45}
 
 
 def scan_index_reconstitution(changes: list | None, gate: dict | None = None,
