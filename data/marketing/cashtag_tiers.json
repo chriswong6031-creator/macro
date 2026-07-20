@@ -1,0 +1,6755 @@
+{
+  "schema": "marketing.cashtag_tiers/v1",
+  "schema_version": 1,
+  "produced_by": "engine/marketing/radar_internal.py",
+  "produced_at": "2026-07-20T05:40:57Z",
+  "tier": "display",
+  "as_of": "2026-07-17",
+  "universe_n": 520,
+  "tiers": {
+    "T1": [
+      "AAPL",
+      "AMAT",
+      "AMC",
+      "AMD",
+      "AMZN",
+      "AVGO",
+      "BRK-B",
+      "COIN",
+      "CSCO",
+      "GME",
+      "GOOG",
+      "GOOGL",
+      "HOOD",
+      "INTC",
+      "JNJ",
+      "JPM",
+      "LLY",
+      "MA",
+      "META",
+      "MSFT",
+      "MSTR",
+      "MU",
+      "NFLX",
+      "NVDA",
+      "PLTR",
+      "SMCI",
+      "TSLA",
+      "V"
+    ],
+    "T2": [
+      "A",
+      "ABBV",
+      "ABT",
+      "ACN",
+      "ADBE",
+      "ADI",
+      "ADM",
+      "ADP",
+      "AIG",
+      "ALL",
+      "AMGN",
+      "ANET",
+      "APA",
+      "APH",
+      "APP",
+      "APTV",
+      "AXON",
+      "BAC",
+      "BAX",
+      "BKNG",
+      "BLDR",
+      "BLK",
+      "BMY",
+      "BNY",
+      "BSX",
+      "C",
+      "CASY",
+      "CAT",
+      "CB",
+      "CCI",
+      "CDNS",
+      "CDW",
+      "CFG",
+      "CHRW",
+      "CIEN",
+      "CME",
+      "CNC",
+      "COHR",
+      "COP",
+      "COST",
+      "CRWD",
+      "CSX",
+      "CTAS",
+      "CTSH",
+      "CVNA",
+      "CVX",
+      "DELL",
+      "DG",
+      "DHI",
+      "DHR",
+      "DIS",
+      "DPZ",
+      "EFX",
+      "ELV",
+      "EOG",
+      "ERIE",
+      "ETN",
+      "EW",
+      "EXPD",
+      "FANG",
+      "FAST",
+      "FCX",
+      "FITB",
+      "FLEX",
+      "FOX",
+      "FOXA",
+      "FSLR",
+      "GD",
+      "GDDY",
+      "GE",
+      "GEHC",
+      "GEV",
+      "GL",
+      "GLW",
+      "GM",
+      "GNRC",
+      "GPN",
+      "GS",
+      "HAL",
+      "HAS",
+      "HCA",
+      "HD",
+      "HII",
+      "HLT",
+      "HPE",
+      "HUM",
+      "IBKR",
+      "IBM",
+      "INTU",
+      "IR",
+      "ISRG",
+      "IT",
+      "JBHT",
+      "JBL",
+      "KEY",
+      "KLAC",
+      "KMI",
+      "KO",
+      "LII",
+      "LIN",
+      "LITE",
+      "LOW",
+      "LRCX",
+      "LUV",
+      "LVS",
+      "LYB",
+      "MCD",
+      "MCHP",
+      "MCO",
+      "MMM",
+      "MNST",
+      "MPC",
+      "MRK",
+      "MRNA",
+      "MRVL",
+      "MS",
+      "MSCI",
+      "MTB",
+      "NEE",
+      "NEM",
+      "NOW",
+      "NRG",
+      "NTRS",
+      "NVR",
+      "NXPI",
+      "OMC",
+      "ON",
+      "ORCL",
+      "ORLY",
+      "OTIS",
+      "PANW",
+      "PAYX",
+      "PEP",
+      "PFE",
+      "PG",
+      "PGR",
+      "PHM",
+      "PKG",
+      "PLD",
+      "PM",
+      "PNC",
+      "PNR",
+      "PSKY",
+      "PSX",
+      "PYPL",
+      "Q",
+      "QCOM",
+      "RF",
+      "RJF",
+      "ROL",
+      "ROP",
+      "SCHW",
+      "SNA",
+      "SNDK",
+      "SNPS",
+      "SOLV",
+      "STLD",
+      "STT",
+      "STX",
+      "SYK",
+      "T",
+      "TDG",
+      "TDY",
+      "TEL",
+      "TER",
+      "TFC",
+      "TMO",
+      "TMUS",
+      "TRV",
+      "TXN",
+      "UAL",
+      "UBER",
+      "UNH",
+      "UNP",
+      "URI",
+      "USB",
+      "VLO",
+      "VRSK",
+      "VRT",
+      "VTR",
+      "VTRS",
+      "VZ",
+      "WDC",
+      "WELL",
+      "WFC",
+      "WMT",
+      "WRB",
+      "XOM",
+      "YUM"
+    ],
+    "T3": [
+      "ABNB",
+      "ACGL",
+      "ADSK",
+      "AEE",
+      "AEP",
+      "AES",
+      "AFL",
+      "AIZ",
+      "AJG",
+      "AKAM",
+      "ALAB",
+      "ALB",
+      "ALGN",
+      "ALLE",
+      "ALNY",
+      "AMCR",
+      "AME",
+      "AMP",
+      "AMT",
+      "AON",
+      "AOS",
+      "APD",
+      "APO",
+      "ARE",
+      "ARES",
+      "ARM",
+      "ASML",
+      "ATO",
+      "AVB",
+      "AVY",
+      "AWK",
+      "AXP",
+      "AZO",
+      "BA",
+      "BALL",
+      "BBY",
+      "BDX",
+      "BEN",
+      "BF-B",
+      "BG",
+      "BIIB",
+      "BKR",
+      "BR",
+      "BRO",
+      "BX",
+      "BXP",
+      "CAH",
+      "CARR",
+      "CBOE",
+      "CBRE",
+      "CCEP",
+      "CCL",
+      "CEG",
+      "CF",
+      "CHD",
+      "CHTR",
+      "CI",
+      "CINF",
+      "CL",
+      "CLX",
+      "CMCSA",
+      "CMG",
+      "CMI",
+      "CMS",
+      "CNP",
+      "COF",
+      "COO",
+      "COR",
+      "CPAY",
+      "CPRT",
+      "CPT",
+      "CRH",
+      "CRL",
+      "CRM",
+      "CRWV",
+      "CSGP",
+      "CTVA",
+      "CVS",
+      "D",
+      "DAL",
+      "DASH",
+      "DD",
+      "DDOG",
+      "DE",
+      "DECK",
+      "DGX",
+      "DLR",
+      "DLTR",
+      "DOC",
+      "DOV",
+      "DOW",
+      "DRI",
+      "DTE",
+      "DUK",
+      "DVA",
+      "DVN",
+      "DXCM",
+      "EA",
+      "EBAY",
+      "ECHO",
+      "ECL",
+      "ED",
+      "EG",
+      "EIX",
+      "EL",
+      "EME",
+      "EMR",
+      "EQIX",
+      "EQR",
+      "EQT",
+      "ES",
+      "ESS",
+      "ETR",
+      "EVRG",
+      "EXC",
+      "EXE",
+      "EXPE",
+      "EXR",
+      "F",
+      "FDS",
+      "FDX",
+      "FDXF",
+      "FE",
+      "FER",
+      "FFIV",
+      "FI",
+      "FICO",
+      "FIS",
+      "FIX",
+      "FRT",
+      "FTNT",
+      "FTV",
+      "GEN",
+      "GILD",
+      "GIS",
+      "GPC",
+      "GRMN",
+      "GWW",
+      "HBAN",
+      "HIG",
+      "HON",
+      "HONA",
+      "HPQ",
+      "HRL",
+      "HSIC",
+      "HST",
+      "HSY",
+      "HUBB",
+      "HWM",
+      "ICE",
+      "IDXX",
+      "IEX",
+      "IFF",
+      "INCY",
+      "INVH",
+      "IP",
+      "IQV",
+      "IRM",
+      "ITW",
+      "IVZ",
+      "J",
+      "JCI",
+      "JKHY",
+      "KDP",
+      "KEYS",
+      "KHC",
+      "KIM",
+      "KKR",
+      "KMB",
+      "KR",
+      "KVUE",
+      "L",
+      "LDOS",
+      "LEN",
+      "LH",
+      "LHX",
+      "LMT",
+      "LNT",
+      "LULU",
+      "LYV",
+      "MAA",
+      "MAR",
+      "MAS",
+      "MCK",
+      "MDLZ",
+      "MDT",
+      "MELI",
+      "MET",
+      "MGM",
+      "MKC",
+      "MLM",
+      "MMC",
+      "MO",
+      "MOS",
+      "MPWR",
+      "MSI",
+      "MTD",
+      "NBIS",
+      "NCLH",
+      "NDAQ",
+      "NDSN",
+      "NI",
+      "NKE",
+      "NOC",
+      "NSC",
+      "NTAP",
+      "NUE",
+      "NWS",
+      "NWSA",
+      "O",
+      "ODFL",
+      "OKE",
+      "OXY",
+      "PCAR",
+      "PCG",
+      "PDD",
+      "PEG",
+      "PFG",
+      "PH",
+      "PNW",
+      "PODD",
+      "PPG",
+      "PPL",
+      "PRU",
+      "PSA",
+      "PTC",
+      "PWR",
+      "RCL",
+      "REG",
+      "REGN",
+      "RKLB",
+      "RL",
+      "RMD",
+      "ROK",
+      "ROST",
+      "RSG",
+      "RTX",
+      "RVTY",
+      "SBAC",
+      "SBUX",
+      "SHOP",
+      "SHW",
+      "SJM",
+      "SLB",
+      "SO",
+      "SPCX",
+      "SPG",
+      "SPGI",
+      "SRE",
+      "STE",
+      "STZ",
+      "SW",
+      "SWK",
+      "SWKS",
+      "SYF",
+      "SYY",
+      "TAP",
+      "TECH",
+      "TGT",
+      "TJX",
+      "TKO",
+      "TPL",
+      "TPR",
+      "TRGP",
+      "TRI",
+      "TRMB",
+      "TROW",
+      "TSCO",
+      "TSN",
+      "TT",
+      "TTD",
+      "TTWO",
+      "TXT",
+      "TYL",
+      "UDR",
+      "UHS",
+      "ULTA",
+      "UPS",
+      "VEEV",
+      "VICI",
+      "VLTO",
+      "VMC",
+      "VRSN",
+      "VRTX",
+      "VST",
+      "WAB",
+      "WAT",
+      "WBD",
+      "WDAY",
+      "WEC",
+      "WM",
+      "WMB",
+      "WSM",
+      "WST",
+      "WTW",
+      "WY",
+      "WYNN",
+      "XEL",
+      "XYL",
+      "XYZ",
+      "ZBH",
+      "ZBRA",
+      "ZTS"
+    ]
+  },
+  "tickers": {
+    "A": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -3.41,
+        "pct_1w": -2.11,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "AAPL": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 3.720981,
+        "pct_1d": 0.14,
+        "pct_1w": 5.84,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 21147.53460319824
+      }
+    },
+    "ABBV": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.767021,
+        "pct_1d": 0.04,
+        "pct_1w": 3.31,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 1748.9571137512207
+      }
+    },
+    "ABNB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.146005,
+        "pct_1d": -1.23,
+        "pct_1w": -1.78,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 800.4813065719604
+      }
+    },
+    "ABT": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.293243,
+        "pct_1d": 1.87,
+        "pct_1w": 7.95,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": 2004.8509140769959
+      }
+    },
+    "ACGL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 1.31,
+        "pct_1w": 0.29,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "ACN": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -0.72,
+        "pct_1w": 6.17,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "ADBE": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.82,
+        "pct_1w": 6.09,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "ADI": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.344435,
+        "pct_1d": -1.36,
+        "pct_1w": -5.13,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 1379.1101221801757
+      }
+    },
+    "ADM": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.148588,
+        "pct_1d": 3.49,
+        "pct_1w": 6.83,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 371.9899566078186
+      }
+    },
+    "ADP": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.177766,
+        "pct_1d": -0.5,
+        "pct_1w": 5.52,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 683.051477432251
+      }
+    },
+    "ADSK": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.59,
+        "pct_1w": 4.75,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "AEE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06025,
+        "pct_1d": -1.37,
+        "pct_1w": -1.23,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 225.13021615905762
+      }
+    },
+    "AEP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.139123,
+        "pct_1d": -0.74,
+        "pct_1w": -2.43,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 569.7612493682861
+      }
+    },
+    "AES": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -0.2,
+        "pct_1w": -0.07,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "AFL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 1.38,
+        "pct_1w": 2.3,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "AIG": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 3.17,
+        "pct_1w": 1.68,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "AIZ": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 0.51,
+        "pct_1w": -0.74,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "AJG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -0.79,
+        "pct_1w": 0.32,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "AKAM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 1.16,
+        "pct_1w": -4.75,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "ALAB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "ALB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.023029,
+        "pct_1d": 1.1,
+        "pct_1w": -4.18,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "ALGN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.92,
+        "pct_1w": -1.5,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "ALL": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 3.32,
+        "pct_1w": -0.68,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "ALLE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.61,
+        "pct_1w": 0.45,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "ALNY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "AMAT": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 0.827186,
+        "pct_1d": -5.57,
+        "pct_1w": -12.09,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 5454.809165423584
+      }
+    },
+    "AMC": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "AMCR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.263567,
+        "pct_1d": -2.01,
+        "pct_1w": 1.76,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 271.021911529541
+      }
+    },
+    "AMD": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 1.182469,
+        "pct_1d": -1.03,
+        "pct_1w": -11.14,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 15898.62690517578
+      }
+    },
+    "AME": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.13,
+        "pct_1w": 1.29,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "AMGN": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.342117,
+        "pct_1d": -1.42,
+        "pct_1w": 0.8,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 1048.065601449585
+      }
+    },
+    "AMP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.0,
+        "pct_1w": 4.17,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "AMT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.123302,
+        "pct_1d": 0.67,
+        "pct_1w": 0.87,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 484.60296904296877
+      }
+    },
+    "AMZN": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 2.208081,
+        "pct_1d": -1.06,
+        "pct_1w": 0.77,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 10757.347959098815
+      }
+    },
+    "ANET": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.03,
+        "pct_1w": -9.81,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "AON": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -0.39,
+        "pct_1w": 2.88,
+        "earnings_in_days": 7,
+        "dollar_vol_musd": null
+      }
+    },
+    "AOS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.78,
+        "pct_1w": -2.63,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "APA": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.017612,
+        "pct_1d": 2.74,
+        "pct_1w": 5.32,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "APD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.10976,
+        "pct_1d": -0.56,
+        "pct_1w": -1.31,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 268.866385559082
+      }
+    },
+    "APH": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.349859,
+        "pct_1d": -1.27,
+        "pct_1w": -4.94,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 1012.7073395599365
+      }
+    },
+    "APO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.33,
+        "pct_1w": 0.11,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "APP": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -2.29,
+        "pct_1w": -16.26,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "APTV": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -3.02,
+        "pct_1w": -5.12,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "ARE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": 0.16,
+        "pct_1w": 4.89,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": null
+      }
+    },
+    "ARES": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 0.2,
+        "pct_1w": 3.18,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": null
+      }
+    },
+    "ARM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "ASML": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "ATO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.057238,
+        "pct_1d": -0.2,
+        "pct_1w": 0.84,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 263.53496513671877
+      }
+    },
+    "AVB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.064239,
+        "pct_1d": -1.52,
+        "pct_1w": 0.36,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 195.24467176208495
+      }
+    },
+    "AVGO": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 1.347906,
+        "pct_1d": -0.97,
+        "pct_1w": -7.29,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 8616.79098298645
+      }
+    },
+    "AVY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -1.63,
+        "pct_1w": -0.19,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "AWK": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": 0.58,
+        "pct_1w": 3.38,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "AXON": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -5.81,
+        "pct_1w": -9.81,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": null
+      }
+    },
+    "AXP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.341394,
+        "pct_1d": -1.72,
+        "pct_1w": 1.36,
+        "earnings_in_days": 7,
+        "dollar_vol_musd": 940.6825361572265
+      }
+    },
+    "AZO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.11851,
+        "pct_1d": -0.51,
+        "pct_1w": -0.85,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 490.1721865722656
+      }
+    },
+    "BA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.293362,
+        "pct_1d": -0.14,
+        "pct_1w": -3.71,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 902.7571318511963
+      }
+    },
+    "BAC": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.711238,
+        "pct_1d": -0.36,
+        "pct_1w": 2.68,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": 2759.729487618637
+      }
+    },
+    "BALL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -0.7,
+        "pct_1w": 1.65,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "BAX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -3.17,
+        "pct_1w": -0.04,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "BBY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": 0.14,
+        "pct_1w": 3.15,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "BDX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.1,
+        "pct_1w": 4.1,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "BEN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.1,
+        "pct_1w": -2.6,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": null
+      }
+    },
+    "BF-B": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -1.46,
+        "pct_1w": -2.25,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "BG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": 2.87,
+        "pct_1w": 4.22,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "BIIB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.4,
+        "pct_1w": 3.43,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "BKNG": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.337517,
+        "pct_1d": -1.59,
+        "pct_1w": 1.84,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 1307.2057153015137
+      }
+    },
+    "BKR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.116985,
+        "pct_1d": -1.04,
+        "pct_1w": -2.8,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 648.5444338436126
+      }
+    },
+    "BLDR": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -5.04,
+        "pct_1w": -1.89,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "BLK": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.278805,
+        "pct_1d": -1.37,
+        "pct_1w": 3.48,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": 815.9441628417969
+      }
+    },
+    "BMY": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.210457,
+        "pct_1d": 0.38,
+        "pct_1w": 5.49,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 744.6845685783386
+      }
+    },
+    "BNY": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.196302,
+        "pct_1d": -2.32,
+        "pct_1w": 3.43,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": 835.2873929565429
+      }
+    },
+    "BR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -2.06,
+        "pct_1w": 1.65,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "BRK-B": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 1.603129,
+        "pct_1d": -0.45,
+        "pct_1w": -0.57,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 2743.2541914642334
+      }
+    },
+    "BRO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -0.13,
+        "pct_1w": 2.5,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": null
+      }
+    },
+    "BSX": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.32,
+        "pct_1w": -1.65,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "BX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.169275,
+        "pct_1d": -1.6,
+        "pct_1w": 3.1,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 609.7771855957031
+      }
+    },
+    "BXP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": -1.13,
+        "pct_1w": 4.53,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "C": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.398293,
+        "pct_1d": -1.78,
+        "pct_1w": -8.12,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": 2029.4643695755005
+      }
+    },
+    "CAH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.09,
+        "pct_1w": -3.09,
+        "earnings_in_days": 25,
+        "dollar_vol_musd": null
+      }
+    },
+    "CARR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.94,
+        "pct_1w": -0.94,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "CASY": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.18298,
+        "pct_1d": 3.88,
+        "pct_1w": 4.79,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 285.915134375
+      }
+    },
+    "CAT": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.701349,
+        "pct_1d": 0.35,
+        "pct_1w": -7.57,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 2971.82537890625
+      }
+    },
+    "CB": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.220484,
+        "pct_1d": 2.46,
+        "pct_1w": 1.24,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 1051.268042932129
+      }
+    },
+    "CBOE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.61,
+        "pct_1w": 1.99,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": null
+      }
+    },
+    "CBRE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.099536,
+        "pct_1d": -1.9,
+        "pct_1w": 1.02,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 210.7634020385742
+      }
+    },
+    "CCEP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "CCI": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.081182,
+        "pct_1d": 0.56,
+        "pct_1w": -0.62,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 232.30060862731935
+      }
+    },
+    "CCL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -1.68,
+        "pct_1w": -1.57,
+        "earnings_in_days": 24,
+        "dollar_vol_musd": null
+      }
+    },
+    "CDNS": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -9.47,
+        "pct_1w": -14.07,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": null
+      }
+    },
+    "CDW": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -0.82,
+        "pct_1w": -7.72,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "CEG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.154733,
+        "pct_1d": 0.25,
+        "pct_1w": 0.4,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 584.3838045867919
+      }
+    },
+    "CF": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.023029,
+        "pct_1d": 2.33,
+        "pct_1w": 3.85,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "CFG": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.7,
+        "pct_1w": 2.91,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": null
+      }
+    },
+    "CHD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -1.06,
+        "pct_1w": 1.77,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": null
+      }
+    },
+    "CHRW": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 1.34,
+        "pct_1w": 7.75,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "CHTR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.190019,
+        "pct_1d": -1.47,
+        "pct_1w": 0.49,
+        "earnings_in_days": 7,
+        "dollar_vol_musd": 259.0879043701172
+      }
+    },
+    "CI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.127671,
+        "pct_1d": -0.84,
+        "pct_1w": -4.09,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 853.8349020324707
+      }
+    },
+    "CIEN": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -3.7,
+        "pct_1w": -18.73,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "CINF": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 2.55,
+        "pct_1w": 0.84,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": null
+      }
+    },
+    "CL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.275949,
+        "pct_1d": -1.16,
+        "pct_1w": 0.8,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": 389.18640005111695
+      }
+    },
+    "CLX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -2.42,
+        "pct_1w": -0.25,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "CMCSA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.411708,
+        "pct_1d": -1.29,
+        "pct_1w": 0.93,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 954.4405627304077
+      }
+    },
+    "CME": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -0.5,
+        "pct_1w": 1.99,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "CMG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": 0.7,
+        "pct_1w": -2.3,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "CMI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.155424,
+        "pct_1d": 0.1,
+        "pct_1w": -4.06,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 728.1781700683593
+      }
+    },
+    "CMS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -0.99,
+        "pct_1w": -2.32,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "CNC": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": 3.99,
+        "pct_1w": -1.35,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "CNP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.054499,
+        "pct_1d": -0.48,
+        "pct_1w": -0.94,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 264.7750765571594
+      }
+    },
+    "COF": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.233286,
+        "pct_1d": -1.84,
+        "pct_1w": 3.23,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 800.000163305664
+      }
+    },
+    "COHR": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.23,
+        "pct_1w": -14.45,
+        "earnings_in_days": 26,
+        "dollar_vol_musd": null
+      }
+    },
+    "COIN": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.1,
+        "pct_1w": -1.23,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "COO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.9,
+        "pct_1w": 1.43,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "COP": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.191226,
+        "pct_1d": 1.66,
+        "pct_1w": 5.2,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 670.1243436515808
+      }
+    },
+    "COR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.03,
+        "pct_1w": 1.47,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "COST": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.522417,
+        "pct_1d": -0.5,
+        "pct_1w": 2.69,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 2359.0433387573244
+      }
+    },
+    "CPAY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.62,
+        "pct_1w": 3.44,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "CPRT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.4,
+        "pct_1w": 0.33,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "CPT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": -1.4,
+        "pct_1w": 0.01,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "CRH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.107654,
+        "pct_1d": -2.53,
+        "pct_1w": -1.71,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 315.7894303817749
+      }
+    },
+    "CRL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -2.1,
+        "pct_1w": -3.88,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "CRM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.11,
+        "pct_1w": 4.56,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "CRWD": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.385116,
+        "pct_1d": -0.33,
+        "pct_1w": 8.49,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 1846.2409126464843
+      }
+    },
+    "CRWV": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "CSCO": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 0.805489,
+        "pct_1d": 2.08,
+        "pct_1w": -7.72,
+        "earnings_in_days": 26,
+        "dollar_vol_musd": 3185.3535154724123
+      }
+    },
+    "CSGP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": -1.94,
+        "pct_1w": 4.9,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "CSX": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.164166,
+        "pct_1d": -0.28,
+        "pct_1w": 2.71,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 885.734675
+      }
+    },
+    "CTAS": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.87,
+        "pct_1w": 13.81,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": null
+      }
+    },
+    "CTSH": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.47,
+        "pct_1w": 5.17,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "CTVA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.118653,
+        "pct_1d": 0.75,
+        "pct_1w": 1.89,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 330.264641545105
+      }
+    },
+    "CVNA": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.119458,
+        "pct_1d": -4.7,
+        "pct_1w": 2.29,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 540.8075105895996
+      }
+    },
+    "CVS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.231403,
+        "pct_1d": 0.91,
+        "pct_1w": 3.19,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 710.0650450653076
+      }
+    },
+    "CVX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.478869,
+        "pct_1d": 1.91,
+        "pct_1w": 6.22,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": 1321.7410784423828
+      }
+    },
+    "D": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.121322,
+        "pct_1d": -0.91,
+        "pct_1w": 1.37,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": 319.1329961128235
+      }
+    },
+    "DAL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.92,
+        "pct_1w": -3.68,
+        "earnings_in_days": 8,
+        "dollar_vol_musd": null
+      }
+    },
+    "DASH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.474615,
+        "pct_1d": -1.19,
+        "pct_1w": -4.0,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 471.7482644363403
+      }
+    },
+    "DD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.057572,
+        "pct_1d": 0.74,
+        "pct_1w": 0.45,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 177.48694219207763
+      }
+    },
+    "DDOG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.38,
+        "pct_1w": 0.45,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "DE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.261306,
+        "pct_1d": -0.29,
+        "pct_1w": 1.77,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 560.3305588378906
+      }
+    },
+    "DECK": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -2.33,
+        "pct_1w": 0.47,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "DELL": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 1.27,
+        "pct_1w": -8.88,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "DG": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.103776,
+        "pct_1d": -1.11,
+        "pct_1w": 5.74,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 370.119975
+      }
+    },
+    "DGX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": 0.61,
+        "pct_1w": 1.56,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "DHI": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -3.26,
+        "pct_1w": -1.44,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": null
+      }
+    },
+    "DHR": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.220431,
+        "pct_1d": -0.58,
+        "pct_1w": 2.4,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 1012.0771080917358
+      }
+    },
+    "DIS": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.418426,
+        "pct_1d": -2.05,
+        "pct_1w": 2.14,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 1024.7047857894897
+      }
+    },
+    "DLR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.105183,
+        "pct_1d": 0.16,
+        "pct_1w": -3.62,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 450.575256652832
+      }
+    },
+    "DLTR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -1.95,
+        "pct_1w": 0.82,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "DOC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": 0.81,
+        "pct_1w": 3.97,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "DOV": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.53,
+        "pct_1w": -0.53,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "DOW": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.066231,
+        "pct_1d": 2.12,
+        "pct_1w": 3.07,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 255.4569606513977
+      }
+    },
+    "DPZ": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -2.27,
+        "pct_1w": 7.59,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": null
+      }
+    },
+    "DRI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -1.33,
+        "pct_1w": -2.8,
+        "earnings_in_days": 22,
+        "dollar_vol_musd": null
+      }
+    },
+    "DTE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.059429,
+        "pct_1d": -0.48,
+        "pct_1w": -1.38,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 172.2856968383789
+      }
+    },
+    "DUK": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.188967,
+        "pct_1d": -0.87,
+        "pct_1w": -0.37,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 611.0488904418945
+      }
+    },
+    "DVA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": 1.26,
+        "pct_1w": 1.79,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "DVN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.103487,
+        "pct_1d": 1.86,
+        "pct_1w": 3.79,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 441.0744574264526
+      }
+    },
+    "DXCM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.71,
+        "pct_1w": 2.25,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "EA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.419386,
+        "pct_1d": 0.51,
+        "pct_1w": 1.21,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 811.325796295166
+      }
+    },
+    "EBAY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": 1.04,
+        "pct_1w": -4.39,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 351.3488906562805
+      }
+    },
+    "ECHO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.212092,
+        "pct_1d": 0.5,
+        "pct_1w": -4.17,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 540.1964
+      }
+    },
+    "ECL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.109526,
+        "pct_1d": -1.04,
+        "pct_1w": -0.54,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 321.1208941955566
+      }
+    },
+    "ED": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.079695,
+        "pct_1d": -0.02,
+        "pct_1w": 1.12,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 275.272795728302
+      }
+    },
+    "EFX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.41,
+        "pct_1w": 6.39,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "EG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 2.51,
+        "pct_1w": 3.24,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "EIX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.057785,
+        "pct_1d": -0.54,
+        "pct_1w": 3.23,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 192.8096241783142
+      }
+    },
+    "EL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -0.86,
+        "pct_1w": -0.64,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "ELV": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137645,
+        "pct_1d": 0.07,
+        "pct_1w": -10.36,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": 718.1620998046875
+      }
+    },
+    "EME": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.78,
+        "pct_1w": -4.76,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "EMR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 0.33,
+        "pct_1w": 0.48,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "EOG": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.141411,
+        "pct_1d": 1.78,
+        "pct_1w": 5.09,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 593.1475864120483
+      }
+    },
+    "EQIX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.15601,
+        "pct_1d": 1.08,
+        "pct_1w": -2.97,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 579.258
+      }
+    },
+    "EQR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.056474,
+        "pct_1d": -1.43,
+        "pct_1w": 0.45,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 160.1835
+      }
+    },
+    "EQT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.064278,
+        "pct_1d": 0.32,
+        "pct_1w": 1.45,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 274.3195636013031
+      }
+    },
+    "ERIE": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 0.61,
+        "pct_1w": -9.73,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "ES": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -0.56,
+        "pct_1w": -0.27,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "ESS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.045179,
+        "pct_1d": -1.51,
+        "pct_1w": -0.21,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 123.32352691650391
+      }
+    },
+    "ETN": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.267134,
+        "pct_1d": 0.94,
+        "pct_1w": -1.79,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 1059.4934861328124
+      }
+    },
+    "ETR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.101056,
+        "pct_1d": -1.42,
+        "pct_1w": -1.57,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 520.5529461799622
+      }
+    },
+    "EVRG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -1.12,
+        "pct_1w": -0.14,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "EW": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -2.4,
+        "pct_1w": -7.03,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "EXC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.092018,
+        "pct_1d": -1.13,
+        "pct_1w": -1.15,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 286.5529336029053
+      }
+    },
+    "EXE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.04403,
+        "pct_1d": -0.06,
+        "pct_1w": 1.01,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 512.1674790382385
+      }
+    },
+    "EXPD": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 0.46,
+        "pct_1w": 6.27,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "EXPE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -0.8,
+        "pct_1w": -0.76,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "EXR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.075064,
+        "pct_1d": -1.44,
+        "pct_1w": 2.92,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 124.97296308898926
+      }
+    },
+    "F": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.130835,
+        "pct_1d": 0.28,
+        "pct_1w": 1.64,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 646.695136196518
+      }
+    },
+    "FANG": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.076812,
+        "pct_1d": 2.85,
+        "pct_1w": 6.63,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 394.1499644668579
+      }
+    },
+    "FAST": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.53,
+        "pct_1w": -2.15,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": null
+      }
+    },
+    "FCX": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.115377,
+        "pct_1d": -0.31,
+        "pct_1w": -4.87,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 1191.6117158016204
+      }
+    },
+    "FDS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.67,
+        "pct_1w": 4.44,
+        "earnings_in_days": 16,
+        "dollar_vol_musd": null
+      }
+    },
+    "FDX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.64,
+        "pct_1w": -0.54,
+        "earnings_in_days": 24,
+        "dollar_vol_musd": null
+      }
+    },
+    "FDXF": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.11,
+        "pct_1w": 1.83,
+        "earnings_in_days": 22,
+        "dollar_vol_musd": null
+      }
+    },
+    "FE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -1.18,
+        "pct_1w": 1.27,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "FER": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "FFIV": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 1.41,
+        "pct_1w": -4.95,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "FI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "FICO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 1.28,
+        "pct_1w": 0.5,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "FIS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.67,
+        "pct_1w": -0.17,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "FITB": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.29,
+        "pct_1w": 1.65,
+        "earnings_in_days": 0,
+        "dollar_vol_musd": null
+      }
+    },
+    "FIX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.39,
+        "pct_1w": -4.67,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "FLEX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.54,
+        "pct_1w": -12.19,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "FOX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.055662,
+        "pct_1d": 1.08,
+        "pct_1w": 5.91,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "FOXA": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.192898,
+        "pct_1d": 1.43,
+        "pct_1w": 6.47,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 401.91101654968264
+      }
+    },
+    "FRT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": 0.53,
+        "pct_1w": 4.2,
+        "earnings_in_days": 14,
+        "dollar_vol_musd": null
+      }
+    },
+    "FSLR": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.03,
+        "pct_1w": -6.95,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "FTNT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.52,
+        "pct_1w": 2.6,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "FTV": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.07,
+        "pct_1w": -0.68,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "GD": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.162223,
+        "pct_1d": -0.07,
+        "pct_1w": -1.73,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 471.450660824585
+      }
+    },
+    "GDDY": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.93,
+        "pct_1w": 6.11,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "GE": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.62558,
+        "pct_1d": 0.9,
+        "pct_1w": -2.91,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": 1951.6688918731688
+      }
+    },
+    "GEHC": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -4.0,
+        "pct_1w": -2.52,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "GEN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.0,
+        "pct_1w": 3.2,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "GEV": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.482785,
+        "pct_1d": 2.09,
+        "pct_1w": -3.09,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 3472.888607788086
+      }
+    },
+    "GILD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.288256,
+        "pct_1d": -1.48,
+        "pct_1w": 3.43,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 926.7602675750733
+      }
+    },
+    "GIS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -1.89,
+        "pct_1w": 4.83,
+        "earnings_in_days": 16,
+        "dollar_vol_musd": null
+      }
+    },
+    "GL": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 0.11,
+        "pct_1w": 3.14,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "GLW": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -2.39,
+        "pct_1w": -19.01,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "GM": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.164966,
+        "pct_1d": -2.12,
+        "pct_1w": -2.29,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": 443.2674952217102
+      }
+    },
+    "GME": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "GNRC": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.22,
+        "pct_1w": -8.13,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "GOOG": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 0.809021,
+        "pct_1d": -2.17,
+        "pct_1w": -2.51,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 7611.8363206176755
+      }
+    },
+    "GOOGL": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 1.005758,
+        "pct_1d": -2.17,
+        "pct_1w": -2.91,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 10378.583032186889
+      }
+    },
+    "GPC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -0.67,
+        "pct_1w": -0.64,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "GPN": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -3.32,
+        "pct_1w": 2.34,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "GRMN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -0.57,
+        "pct_1w": 2.65,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "GS": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.573257,
+        "pct_1d": -2.76,
+        "pct_1w": 0.95,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": 2302.7925326660156
+      }
+    },
+    "GWW": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.5,
+        "pct_1w": 1.4,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "HAL": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.061064,
+        "pct_1d": 0.51,
+        "pct_1w": 2.41,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": 303.501316519165
+      }
+    },
+    "HAS": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -0.66,
+        "pct_1w": 3.28,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "HBAN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.67,
+        "pct_1w": 2.13,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "HCA": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -3.77,
+        "pct_1w": -8.71,
+        "earnings_in_days": 7,
+        "dollar_vol_musd": null
+      }
+    },
+    "HD": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.545147,
+        "pct_1d": -2.63,
+        "pct_1w": -1.29,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 1502.346236352539
+      }
+    },
+    "HIG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 2.64,
+        "pct_1w": 1.07,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": null
+      }
+    },
+    "HII": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.71,
+        "pct_1w": -5.93,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "HLT": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.173499,
+        "pct_1d": -0.58,
+        "pct_1w": -4.22,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 642.3508266418457
+      }
+    },
+    "HON": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.58,
+        "pct_1w": -0.62,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 882.1234207489014
+      }
+    },
+    "HONA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 1.56,
+        "pct_1w": -4.13,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "HOOD": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -5.72,
+        "pct_1w": -10.73,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 2896.328021575928
+      }
+    },
+    "HPE": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 1.53,
+        "pct_1w": -5.6,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "HPQ": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 2.9,
+        "pct_1w": 2.56,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "HRL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -1.24,
+        "pct_1w": 3.9,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "HSIC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.5,
+        "pct_1w": 4.05,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "HST": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": 1.14,
+        "pct_1w": 3.28,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "HSY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.096111,
+        "pct_1d": -1.89,
+        "pct_1w": -1.29,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 188.11630599060058
+      }
+    },
+    "HUBB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 1.38,
+        "pct_1w": -0.46,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "HUM": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": 3.5,
+        "pct_1w": 1.98,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "HWM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.188451,
+        "pct_1d": 0.46,
+        "pct_1w": 0.58,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 561.6961588989258
+      }
+    },
+    "IBKR": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.82,
+        "pct_1w": -3.78,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": null
+      }
+    },
+    "IBM": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.382404,
+        "pct_1d": -2.91,
+        "pct_1w": -26.04,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 2793.39915894928
+      }
+    },
+    "ICE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.49,
+        "pct_1w": 3.25,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "IDXX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.5,
+        "pct_1w": 0.69,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": null
+      }
+    },
+    "IEX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.76,
+        "pct_1w": 1.25,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "IFF": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062018,
+        "pct_1d": 0.77,
+        "pct_1w": 0.86,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 131.14921488189697
+      }
+    },
+    "INCY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": 0.51,
+        "pct_1w": 0.46,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "INTC": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 0.851595,
+        "pct_1d": -2.0,
+        "pct_1w": -13.47,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 12013.227187724304
+      }
+    },
+    "INTU": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.26,
+        "pct_1w": 5.87,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "INVH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": -0.99,
+        "pct_1w": 1.76,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "IP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.254086,
+        "pct_1d": -0.82,
+        "pct_1w": -0.98,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 139.96358911743164
+      }
+    },
+    "IQV": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -2.01,
+        "pct_1w": -0.76,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "IR": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -3.0,
+        "pct_1w": 4.3,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "IRM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.085653,
+        "pct_1d": 1.78,
+        "pct_1w": 1.9,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 260.65348135757444
+      }
+    },
+    "ISRG": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.243372,
+        "pct_1d": -14.15,
+        "pct_1w": -15.08,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 3990.6374151306154
+      }
+    },
+    "IT": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.89,
+        "pct_1w": 5.22,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "ITW": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.45,
+        "pct_1w": 2.69,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "IVZ": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.21,
+        "pct_1w": 2.24,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "J": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.42,
+        "pct_1w": 4.7,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "JBHT": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.35,
+        "pct_1w": 4.09,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": null
+      }
+    },
+    "JBL": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.97,
+        "pct_1w": -8.86,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "JCI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.57,
+        "pct_1w": -1.65,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 444.31193090362547
+      }
+    },
+    "JKHY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.41,
+        "pct_1w": 0.9,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "JNJ": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 1.026352,
+        "pct_1d": 1.23,
+        "pct_1w": -1.53,
+        "earnings_in_days": 2,
+        "dollar_vol_musd": 2572.556395742798
+      }
+    },
+    "JPM": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 1.630156,
+        "pct_1d": -0.6,
+        "pct_1w": 1.38,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": 3154.868066452026
+      }
+    },
+    "KDP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.158612,
+        "pct_1d": -1.5,
+        "pct_1w": -2.4,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 335.80623834228516
+      }
+    },
+    "KEY": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.83,
+        "pct_1w": 1.07,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": null
+      }
+    },
+    "KEYS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 1.0,
+        "pct_1w": -1.91,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "KHC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -1.33,
+        "pct_1w": 4.14,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "KIM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.041414,
+        "pct_1d": 0.35,
+        "pct_1w": 4.98,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 97.7096991394043
+      }
+    },
+    "KKR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.76,
+        "pct_1w": 4.13,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "KLAC": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.531569,
+        "pct_1d": -3.02,
+        "pct_1w": -8.11,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 2777.642725
+      }
+    },
+    "KMB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.134437,
+        "pct_1d": -0.59,
+        "pct_1w": -3.61,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": 372.36643975601197
+      }
+    },
+    "KMI": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.132733,
+        "pct_1d": -0.74,
+        "pct_1w": 0.56,
+        "earnings_in_days": 2,
+        "dollar_vol_musd": 275.0861735023499
+      }
+    },
+    "KO": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.409207,
+        "pct_1d": -3.96,
+        "pct_1w": -2.31,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 2682.2717957092286
+      }
+    },
+    "KR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.123234,
+        "pct_1d": 0.36,
+        "pct_1w": -2.84,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 368.76022408676147
+      }
+    },
+    "KVUE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.135616,
+        "pct_1d": -0.21,
+        "pct_1w": -2.57,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 556.3265625823975
+      }
+    },
+    "L": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 0.49,
+        "pct_1w": -0.47,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": null
+      }
+    },
+    "LDOS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.67,
+        "pct_1w": -0.5,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "LEN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -2.91,
+        "pct_1w": -0.45,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "LH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": 0.5,
+        "pct_1w": 2.37,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "LHX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.85,
+        "pct_1w": -3.01,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "LII": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.62,
+        "pct_1w": -1.47,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "LIN": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.330217,
+        "pct_1d": -1.44,
+        "pct_1w": -3.13,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": 1427.16209453125
+      }
+    },
+    "LITE": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 3.77,
+        "pct_1w": -8.63,
+        "earnings_in_days": 25,
+        "dollar_vol_musd": null
+      }
+    },
+    "LLY": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 1.577929,
+        "pct_1d": 0.85,
+        "pct_1w": -0.8,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 3250.098763623047
+      }
+    },
+    "LMT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.18068,
+        "pct_1d": -0.92,
+        "pct_1w": -2.76,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 648.1220890045166
+      }
+    },
+    "LNT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -1.23,
+        "pct_1w": -2.07,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "LOW": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.285372,
+        "pct_1d": -3.44,
+        "pct_1w": -1.37,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 725.3784811523437
+      }
+    },
+    "LRCX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.745823,
+        "pct_1d": -2.39,
+        "pct_1w": -10.57,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 4009.393933782959
+      }
+    },
+    "LULU": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -2.07,
+        "pct_1w": -2.46,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "LUV": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.73,
+        "pct_1w": -0.72,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "LVS": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -0.74,
+        "pct_1w": -2.85,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "LYB": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.023029,
+        "pct_1d": 2.37,
+        "pct_1w": 5.0,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": null
+      }
+    },
+    "LYV": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.407869,
+        "pct_1d": 0.21,
+        "pct_1w": 0.24,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 226.44643153381347
+      }
+    },
+    "MA": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 0.789474,
+        "pct_1d": -1.44,
+        "pct_1w": 3.2,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 1751.2616813476563
+      }
+    },
+    "MAA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": -1.41,
+        "pct_1w": -0.55,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "MAR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.191512,
+        "pct_1d": -1.32,
+        "pct_1w": -2.62,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 675.8959019775391
+      }
+    },
+    "MAS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.86,
+        "pct_1w": 1.04,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "MCD": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.398194,
+        "pct_1d": -2.1,
+        "pct_1w": -2.51,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 1011.1138667266846
+      }
+    },
+    "MCHP": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -0.88,
+        "pct_1w": -8.61,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "MCK": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.172555,
+        "pct_1d": 0.01,
+        "pct_1w": 4.4,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 941.1788703857422
+      }
+    },
+    "MCO": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.57,
+        "pct_1w": 4.84,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "MDLZ": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.252364,
+        "pct_1d": -0.68,
+        "pct_1w": 3.69,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 628.0682
+      }
+    },
+    "MDT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.182529,
+        "pct_1d": -0.43,
+        "pct_1w": -0.8,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 766.0556519012451
+      }
+    },
+    "MELI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "MET": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 0.32,
+        "pct_1w": 2.56,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "META": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 1.820537,
+        "pct_1d": -2.79,
+        "pct_1w": -3.47,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 14354.148613989259
+      }
+    },
+    "MGM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -1.64,
+        "pct_1w": -1.6,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "MKC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -2.27,
+        "pct_1w": -1.43,
+        "earnings_in_days": 22,
+        "dollar_vol_musd": null
+      }
+    },
+    "MLM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.106484,
+        "pct_1d": -2.49,
+        "pct_1w": -2.62,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 247.7083888244629
+      }
+    },
+    "MMC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "MMM": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.19,
+        "pct_1w": 1.47,
+        "earnings_in_days": 0,
+        "dollar_vol_musd": 1038.8393052062988
+      }
+    },
+    "MNST": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.265336,
+        "pct_1d": -2.44,
+        "pct_1w": 0.11,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 1048.48575
+      }
+    },
+    "MO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.263567,
+        "pct_1d": 1.62,
+        "pct_1w": 3.37,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 638.7328831199646
+      }
+    },
+    "MOS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.023029,
+        "pct_1d": -1.78,
+        "pct_1w": 2.88,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "MPC": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.160051,
+        "pct_1d": 2.21,
+        "pct_1w": 10.17,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 668.7139330566406
+      }
+    },
+    "MPWR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.49,
+        "pct_1w": -3.01,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "MRK": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.537613,
+        "pct_1d": -0.1,
+        "pct_1w": 3.21,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 1717.31025
+      }
+    },
+    "MRNA": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -2.11,
+        "pct_1w": -9.45,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": null
+      }
+    },
+    "MRVL": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.2,
+        "pct_1w": -19.99,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 5532.375199954224
+      }
+    },
+    "MS": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.463727,
+        "pct_1d": -1.31,
+        "pct_1w": -3.05,
+        "earnings_in_days": 2,
+        "dollar_vol_musd": 1691.91205
+      }
+    },
+    "MSCI": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.35,
+        "pct_1w": 3.96,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": null
+      }
+    },
+    "MSFT": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 2.264591,
+        "pct_1d": -1.82,
+        "pct_1w": 2.26,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 13000.116587774659
+      }
+    },
+    "MSI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -0.21,
+        "pct_1w": -2.26,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "MSTR": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "MTB": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.89,
+        "pct_1w": 2.85,
+        "earnings_in_days": 2,
+        "dollar_vol_musd": null
+      }
+    },
+    "MTD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.88,
+        "pct_1w": 1.07,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "MU": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 1.008896,
+        "pct_1d": -0.5,
+        "pct_1w": -13.31,
+        "earnings_in_days": 23,
+        "dollar_vol_musd": 53461.09890871582
+      }
+    },
+    "NBIS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "NCLH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -0.76,
+        "pct_1w": -0.76,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "NDAQ": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.77,
+        "pct_1w": 4.04,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "NDSN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.49,
+        "pct_1w": 0.83,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "NEE": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.358215,
+        "pct_1d": -0.62,
+        "pct_1w": 0.95,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 839.1689088394165
+      }
+    },
+    "NEM": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.132929,
+        "pct_1d": -1.24,
+        "pct_1w": -5.87,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 951.8694576156616
+      }
+    },
+    "NFLX": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 0.417466,
+        "pct_1d": -7.26,
+        "pct_1w": -6.02,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": 9785.273246899415
+      }
+    },
+    "NI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -0.63,
+        "pct_1w": -1.96,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "NKE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.126095,
+        "pct_1d": -1.82,
+        "pct_1w": -1.37,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 692.0862534542084
+      }
+    },
+    "NOC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 0.56,
+        "pct_1w": -3.35,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "NOW": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -0.74,
+        "pct_1w": -4.15,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "NRG": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -2.74,
+        "pct_1w": -8.05,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 274.61404784545897
+      }
+    },
+    "NSC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 0.62,
+        "pct_1w": 3.88,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "NTAP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 2.62,
+        "pct_1w": -2.95,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "NTRS": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.04,
+        "pct_1w": 0.62,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "NUE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.095953,
+        "pct_1d": 0.4,
+        "pct_1w": 4.06,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": 353.5190019119263
+      }
+    },
+    "NVDA": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 3.818616,
+        "pct_1d": -2.21,
+        "pct_1w": -3.86,
+        "earnings_in_days": 40,
+        "dollar_vol_musd": 29211.514907354736
+      }
+    },
+    "NVR": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -3.15,
+        "pct_1w": 0.16,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "NWS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.055662,
+        "pct_1d": -0.37,
+        "pct_1w": 4.82,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "NWSA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.178503,
+        "pct_1d": -0.89,
+        "pct_1w": 3.87,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 76.46532882080078
+      }
+    },
+    "NXPI": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.53,
+        "pct_1w": -8.8,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "O": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.110125,
+        "pct_1d": -0.06,
+        "pct_1w": 3.79,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 430.25593200531006
+      }
+    },
+    "ODFL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.4,
+        "pct_1w": 2.73,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "OKE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.122128,
+        "pct_1d": 0.56,
+        "pct_1w": 4.0,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 314.82571669921873
+      }
+    },
+    "OMC": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.407869,
+        "pct_1d": -2.9,
+        "pct_1w": -0.24,
+        "earnings_in_days": 4,
+        "dollar_vol_musd": 262.19802376937866
+      }
+    },
+    "ON": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -0.85,
+        "pct_1w": -8.95,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": null
+      }
+    },
+    "ORCL": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.39054,
+        "pct_1d": 1.77,
+        "pct_1w": -10.12,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 5037.56505593872
+      }
+    },
+    "ORLY": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.168758,
+        "pct_1d": -0.23,
+        "pct_1w": -0.27,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 539.0602441177368
+      }
+    },
+    "OTIS": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.07,
+        "pct_1w": 0.49,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "OXY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.081311,
+        "pct_1d": 2.26,
+        "pct_1w": 3.72,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 434.1016988296509
+      }
+    },
+    "PANW": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.534281,
+        "pct_1d": 1.32,
+        "pct_1w": 10.05,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 2796.9865828857423
+      }
+    },
+    "PAYX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.27,
+        "pct_1w": 6.37,
+        "earnings_in_days": 23,
+        "dollar_vol_musd": null
+      }
+    },
+    "PCAR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.37,
+        "pct_1w": 1.31,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "PCG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.074217,
+        "pct_1d": -1.2,
+        "pct_1w": 0.87,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 244.10461169891357
+      }
+    },
+    "PDD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "PEG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.076134,
+        "pct_1d": -1.12,
+        "pct_1w": -2.37,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 232.4755661956787
+      }
+    },
+    "PEP": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.254722,
+        "pct_1d": -1.66,
+        "pct_1w": -0.19,
+        "earnings_in_days": 8,
+        "dollar_vol_musd": 1176.0233501220703
+      }
+    },
+    "PFE": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.24437,
+        "pct_1d": -0.36,
+        "pct_1w": 3.64,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 1142.450305204773
+      }
+    },
+    "PFG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 0.73,
+        "pct_1w": 1.53,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": null
+      }
+    },
+    "PG": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.439278,
+        "pct_1d": -1.0,
+        "pct_1w": 2.0,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 1336.621721923828
+      }
+    },
+    "PGR": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.213371,
+        "pct_1d": 1.04,
+        "pct_1w": -9.87,
+        "earnings_in_days": 2,
+        "dollar_vol_musd": 795.8246383209229
+      }
+    },
+    "PH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.209822,
+        "pct_1d": -0.54,
+        "pct_1w": -0.84,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 563.5377649902343
+      }
+    },
+    "PHM": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -2.28,
+        "pct_1w": 1.07,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "PKG": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.262619,
+        "pct_1d": -0.41,
+        "pct_1w": 1.88,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 149.88732171020507
+      }
+    },
+    "PLD": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.219308,
+        "pct_1d": -0.18,
+        "pct_1w": 6.33,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": 721.6732086532593
+      }
+    },
+    "PLTR": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 0.57225,
+        "pct_1d": -1.53,
+        "pct_1w": 4.41,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 4215.151449475097
+      }
+    },
+    "PM": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.368522,
+        "pct_1d": 1.65,
+        "pct_1w": 6.25,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 1004.0363217712402
+      }
+    },
+    "PNC": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.182077,
+        "pct_1d": -0.92,
+        "pct_1w": 0.38,
+        "earnings_in_days": 2,
+        "dollar_vol_musd": 554.2691213378906
+      }
+    },
+    "PNR": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -4.93,
+        "pct_1w": -18.03,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "PNW": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -1.43,
+        "pct_1w": -0.36,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "PODD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.23,
+        "pct_1w": 1.72,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "PPG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.082847,
+        "pct_1d": -1.11,
+        "pct_1w": 0.51,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 161.98027284240723
+      }
+    },
+    "PPL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.0218,
+        "pct_1d": -1.46,
+        "pct_1w": 0.2,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "PRU": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 0.69,
+        "pct_1w": 3.21,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "PSA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.104242,
+        "pct_1d": -1.99,
+        "pct_1w": -0.79,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 341.0024971618652
+      }
+    },
+    "PSKY": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.055662,
+        "pct_1d": -4.27,
+        "pct_1w": -7.01,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "PSX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.156838,
+        "pct_1d": 2.75,
+        "pct_1w": 9.82,
+        "earnings_in_days": 7,
+        "dollar_vol_musd": 488.6653794418335
+      }
+    },
+    "PTC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -2.35,
+        "pct_1w": -0.3,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "PWR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.164166,
+        "pct_1d": -0.39,
+        "pct_1w": -4.56,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 770.0121388916016
+      }
+    },
+    "PYPL": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -0.3,
+        "pct_1w": 22.11,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "Q": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.65,
+        "pct_1w": -5.18,
+        "earnings_in_days": 25,
+        "dollar_vol_musd": null
+      }
+    },
+    "QCOM": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.65,
+        "pct_1w": -9.19,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 1335.4696258544923
+      }
+    },
+    "RCL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.172551,
+        "pct_1d": -2.38,
+        "pct_1w": 0.56,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 676.4507878570556
+      }
+    },
+    "REG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": 0.36,
+        "pct_1w": 3.84,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "REGN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.33,
+        "pct_1w": 1.83,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": null
+      }
+    },
+    "RF": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -2.31,
+        "pct_1w": 2.03,
+        "earnings_in_days": 0,
+        "dollar_vol_musd": null
+      }
+    },
+    "RJF": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -0.79,
+        "pct_1w": 0.14,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "RKLB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "RL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -1.97,
+        "pct_1w": -3.66,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "RMD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.86,
+        "pct_1w": -2.39,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "ROK": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.46,
+        "pct_1w": -2.18,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "ROL": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -0.77,
+        "pct_1w": 1.44,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "ROP": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.29,
+        "pct_1w": 2.03,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": null
+      }
+    },
+    "ROST": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.176343,
+        "pct_1d": 0.32,
+        "pct_1w": 4.75,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 473.4335476150513
+      }
+    },
+    "RSG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.98,
+        "pct_1w": 1.42,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "RTX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.454614,
+        "pct_1d": -0.44,
+        "pct_1w": -1.24,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 812.858082925415
+      }
+    },
+    "RVTY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.33,
+        "pct_1w": -1.84,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": null
+      }
+    },
+    "SBAC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.046356,
+        "pct_1d": 0.35,
+        "pct_1w": -2.28,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 114.70071450805663
+      }
+    },
+    "SBUX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.291061,
+        "pct_1d": -2.66,
+        "pct_1w": -0.49,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 805.1946046943665
+      }
+    },
+    "SCHW": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.297297,
+        "pct_1d": -1.21,
+        "pct_1w": -1.51,
+        "earnings_in_days": 0,
+        "dollar_vol_musd": 844.1666997070313
+      }
+    },
+    "SHOP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "SHW": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.113505,
+        "pct_1d": -2.02,
+        "pct_1w": -0.8,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 551.8797361999511
+      }
+    },
+    "SJM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -1.72,
+        "pct_1w": 0.37,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "SLB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137876,
+        "pct_1d": -0.19,
+        "pct_1w": -1.61,
+        "earnings_in_days": 7,
+        "dollar_vol_musd": 607.3927616958619
+      }
+    },
+    "SMCI": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -2.03,
+        "pct_1w": -14.59,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "SNA": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.96,
+        "pct_1w": 2.25,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": null
+      }
+    },
+    "SNDK": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.387828,
+        "pct_1d": -3.99,
+        "pct_1w": -29.29,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 26727.752418395998
+      }
+    },
+    "SNPS": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -7.85,
+        "pct_1w": -13.74,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "SO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.208137,
+        "pct_1d": -0.8,
+        "pct_1w": -0.32,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 469.46687503356935
+      }
+    },
+    "SOLV": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.48,
+        "pct_1w": 6.01,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "SPCX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "SPG": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.116243,
+        "pct_1d": 0.09,
+        "pct_1w": 4.54,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 321.9867257034302
+      }
+    },
+    "SPGI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.246088,
+        "pct_1d": -1.43,
+        "pct_1w": 4.72,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 791.224193572998
+      }
+    },
+    "SRE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.11694,
+        "pct_1d": -0.97,
+        "pct_1w": -2.07,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 304.2036
+      }
+    },
+    "STE": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.49,
+        "pct_1w": 0.85,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "STLD": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.0894,
+        "pct_1d": 0.23,
+        "pct_1w": 3.1,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": 191.25766653900146
+      }
+    },
+    "STT": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.7,
+        "pct_1w": 1.27,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": null
+      }
+    },
+    "STX": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 5.66,
+        "pct_1w": -13.48,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 3897.3171025634765
+      }
+    },
+    "STZ": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -2.1,
+        "pct_1w": -0.89,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": null
+      }
+    },
+    "SW": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.297698,
+        "pct_1d": -1.05,
+        "pct_1w": 0.16,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 211.00089636611938
+      }
+    },
+    "SWK": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.25,
+        "pct_1w": 2.21,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "SWKS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 2.98,
+        "pct_1w": -1.71,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "SYF": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -0.89,
+        "pct_1w": 1.63,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": null
+      }
+    },
+    "SYK": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d"
+      ],
+      "proxies": {
+        "mcap_weight": 0.194498,
+        "pct_1d": -3.42,
+        "pct_1w": -3.01,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 786.7842269897461
+      }
+    },
+    "SYY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.14623,
+        "pct_1d": -0.68,
+        "pct_1w": -2.55,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 285.53106553344725
+      }
+    },
+    "T": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.416507,
+        "pct_1d": -0.77,
+        "pct_1w": 3.22,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 1729.8753746408463
+      }
+    },
+    "TAP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -2.03,
+        "pct_1w": 4.49,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "TDG": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -1.35,
+        "pct_1w": -5.96,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "TDY": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.74,
+        "pct_1w": 0.14,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "TECH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": 0.49,
+        "pct_1w": 1.15,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "TEL": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.37,
+        "pct_1w": 1.47,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "TER": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.02,
+        "pct_1w": -10.36,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "TFC": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.41,
+        "pct_1w": 1.61,
+        "earnings_in_days": 0,
+        "dollar_vol_musd": null
+      }
+    },
+    "TGT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.236444,
+        "pct_1d": -0.44,
+        "pct_1w": 3.3,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 724.2169116638183
+      }
+    },
+    "TJX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.380181,
+        "pct_1d": -0.21,
+        "pct_1w": 2.06,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 955.3196955245971
+      }
+    },
+    "TKO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.197697,
+        "pct_1d": 0.19,
+        "pct_1w": 0.4,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 193.97921911621094
+      }
+    },
+    "TMO": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.344112,
+        "pct_1d": -1.97,
+        "pct_1w": 1.03,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 785.940451171875
+      }
+    },
+    "TMUS": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.458733,
+        "pct_1d": -0.22,
+        "pct_1w": 2.57,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 881.3101234558105
+      }
+    },
+    "TPL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.050137,
+        "pct_1d": -0.08,
+        "pct_1w": 4.49,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 132.64987389526368
+      }
+    },
+    "TPR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -1.89,
+        "pct_1w": 0.52,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "TRGP": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.125341,
+        "pct_1d": 0.94,
+        "pct_1w": 3.5,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 322.63056817626955
+      }
+    },
+    "TRI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": null,
+        "pct_1d": null,
+        "pct_1w": null,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "TRMB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -1.92,
+        "pct_1w": -0.19,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": null
+      }
+    },
+    "TROW": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.28,
+        "pct_1w": -1.01,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": null
+      }
+    },
+    "TRV": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 9.22,
+        "pct_1w": 8.87,
+        "earnings_in_days": 0,
+        "dollar_vol_musd": null
+      }
+    },
+    "TSCO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -1.61,
+        "pct_1w": 0.26,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "TSLA": {
+      "tier": "T1",
+      "reasons": [
+        "always_list"
+      ],
+      "proxies": {
+        "mcap_weight": 1.730248,
+        "pct_1d": -2.61,
+        "pct_1w": -6.6,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": 11926.804249313354
+      }
+    },
+    "TSN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.038444,
+        "pct_1d": -0.1,
+        "pct_1w": -0.1,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": null
+      }
+    },
+    "TT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.182623,
+        "pct_1d": -1.06,
+        "pct_1w": -2.03,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 907.2494132080078
+      }
+    },
+    "TTD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.139155,
+        "pct_1d": -2.77,
+        "pct_1w": -4.81,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 253.66612908210755
+      }
+    },
+    "TTWO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.401152,
+        "pct_1d": -1.21,
+        "pct_1w": -2.68,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 558.5884507141113
+      }
+    },
+    "TXN": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.490887,
+        "pct_1d": -2.47,
+        "pct_1w": -8.81,
+        "earnings_in_days": 11,
+        "dollar_vol_musd": 2173.917397909546
+      }
+    },
+    "TXT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 0.93,
+        "pct_1w": 0.63,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "TYL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 1.04,
+        "pct_1w": 3.24,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "UAL": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.86,
+        "pct_1w": -8.4,
+        "earnings_in_days": 2,
+        "dollar_vol_musd": null
+      }
+    },
+    "UBER": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.729551,
+        "pct_1d": -2.13,
+        "pct_1w": -2.79,
+        "earnings_in_days": 19,
+        "dollar_vol_musd": 1326.4744812400818
+      }
+    },
+    "UDR": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.016566,
+        "pct_1d": -1.65,
+        "pct_1w": 0.43,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "UHS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.55,
+        "pct_1w": -2.83,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": null
+      }
+    },
+    "ULTA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": 0.15,
+        "pct_1w": 2.21,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "UNH": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.656307,
+        "pct_1d": 0.64,
+        "pct_1w": 0.35,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": 4563.977777774048
+      }
+    },
+    "UNP": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.308904,
+        "pct_1d": 0.78,
+        "pct_1w": 5.15,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 1062.09965
+      }
+    },
+    "UPS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": 0.46,
+        "pct_1w": 4.67,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "URI": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.48,
+        "pct_1w": -4.59,
+        "earnings_in_days": 5,
+        "dollar_vol_musd": null
+      }
+    },
+    "USB": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.176387,
+        "pct_1d": -1.36,
+        "pct_1w": 1.17,
+        "earnings_in_days": 1,
+        "dollar_vol_musd": 830.9665899673462
+      }
+    },
+    "V": {
+      "tier": "T1",
+      "reasons": [
+        "megacap_weight"
+      ],
+      "proxies": {
+        "mcap_weight": 1.073969,
+        "pct_1d": -1.8,
+        "pct_1w": 2.75,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": 2652.949565936279
+      }
+    },
+    "VEEV": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.01,
+        "pct_1w": 2.77,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "VICI": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.070122,
+        "pct_1d": -1.03,
+        "pct_1w": 3.31,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 220.49253988666536
+      }
+    },
+    "VLO": {
+      "tier": "T2",
+      "reasons": [
+        "move_1d",
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.152981,
+        "pct_1d": 3.13,
+        "pct_1w": 10.32,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 816.8876488983154
+      }
+    },
+    "VLTO": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.42,
+        "pct_1w": 1.2,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": null
+      }
+    },
+    "VMC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.10976,
+        "pct_1d": -1.75,
+        "pct_1w": -2.34,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 198.89002473754883
+      }
+    },
+    "VRSK": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.4,
+        "pct_1w": 8.25,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": null
+      }
+    },
+    "VRSN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.89,
+        "pct_1w": 2.8,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "VRT": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.196222,
+        "pct_1d": -1.55,
+        "pct_1w": -9.19,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 1756.413033190918
+      }
+    },
+    "VRTX": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.210457,
+        "pct_1d": -0.08,
+        "pct_1w": 0.05,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 761.5477554290771
+      }
+    },
+    "VST": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.09284,
+        "pct_1d": 1.89,
+        "pct_1w": -2.15,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 690.1691548400879
+      }
+    },
+    "VTR": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.109183,
+        "pct_1d": 1.12,
+        "pct_1w": 6.0,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 337.96447463378905
+      }
+    },
+    "VTRS": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.23,
+        "pct_1w": 6.27,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "VZ": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.411708,
+        "pct_1d": -0.66,
+        "pct_1w": 3.49,
+        "earnings_in_days": 7,
+        "dollar_vol_musd": 1351.786930731964
+      }
+    },
+    "WAB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -0.69,
+        "pct_1w": 0.33,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "WAT": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -2.44,
+        "pct_1w": -1.98,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": null
+      }
+    },
+    "WBD": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.416507,
+        "pct_1d": -1.54,
+        "pct_1w": 1.05,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": 755.1276335849763
+      }
+    },
+    "WDAY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": -0.45,
+        "pct_1w": 4.2,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "WDC": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 2.23,
+        "pct_1w": -18.09,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 2643.473506915283
+      }
+    },
+    "WEC": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.071753,
+        "pct_1d": -1.0,
+        "pct_1w": -1.4,
+        "earnings_in_days": 12,
+        "dollar_vol_musd": 229.48840691070558
+      }
+    },
+    "WELL": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.267311,
+        "pct_1d": 0.73,
+        "pct_1w": 5.03,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": 679.2513
+      }
+    },
+    "WFC": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.477952,
+        "pct_1d": -0.64,
+        "pct_1w": 0.4,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": 1991.9114196250916
+      }
+    },
+    "WM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.155424,
+        "pct_1d": -1.21,
+        "pct_1w": 2.56,
+        "earnings_in_days": 10,
+        "dollar_vol_musd": 516.6942157287598
+      }
+    },
+    "WMB": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.135626,
+        "pct_1d": -1.81,
+        "pct_1w": -2.19,
+        "earnings_in_days": 17,
+        "dollar_vol_musd": 653.426861542511
+      }
+    },
+    "WMT": {
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.627372,
+        "pct_1d": -0.62,
+        "pct_1w": 0.3,
+        "earnings_in_days": null,
+        "dollar_vol_musd": 3230.0216996002196
+      }
+    },
+    "WRB": {
+      "tier": "T2",
+      "reasons": [
+        "earnings_window"
+      ],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": 2.45,
+        "pct_1w": -0.8,
+        "earnings_in_days": 3,
+        "dollar_vol_musd": null
+      }
+    },
+    "WSM": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": 0.35,
+        "pct_1w": 3.35,
+        "earnings_in_days": null,
+        "dollar_vol_musd": null
+      }
+    },
+    "WST": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -1.16,
+        "pct_1w": 1.28,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": null
+      }
+    },
+    "WTW": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -0.31,
+        "pct_1w": 1.31,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "WY": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.04165,
+        "pct_1d": 0.16,
+        "pct_1w": 4.43,
+        "earnings_in_days": 6,
+        "dollar_vol_musd": 151.53677158374785
+      }
+    },
+    "WYNN": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -1.5,
+        "pct_1w": -3.14,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "XEL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.095853,
+        "pct_1d": -1.51,
+        "pct_1w": -1.61,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": 440.5290832260132
+      }
+    },
+    "XOM": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w",
+        "dollar_volume"
+      ],
+      "proxies": {
+        "mcap_weight": 0.649205,
+        "pct_1d": 0.97,
+        "pct_1w": 6.11,
+        "earnings_in_days": 21,
+        "dollar_vol_musd": 2802.1977716064453
+      }
+    },
+    "XYL": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.062169,
+        "pct_1d": -2.01,
+        "pct_1w": 1.29,
+        "earnings_in_days": 13,
+        "dollar_vol_musd": null
+      }
+    },
+    "XYZ": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.06771,
+        "pct_1d": -1.94,
+        "pct_1w": 3.42,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "YUM": {
+      "tier": "T2",
+      "reasons": [
+        "move_1w"
+      ],
+      "proxies": {
+        "mcap_weight": 0.047404,
+        "pct_1d": -2.75,
+        "pct_1w": -9.55,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "ZBH": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -2.81,
+        "pct_1w": -0.24,
+        "earnings_in_days": 20,
+        "dollar_vol_musd": null
+      }
+    },
+    "ZBRA": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.137774,
+        "pct_1d": 0.89,
+        "pct_1w": -1.88,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    },
+    "ZTS": {
+      "tier": "T3",
+      "reasons": [],
+      "proxies": {
+        "mcap_weight": 0.051068,
+        "pct_1d": -0.46,
+        "pct_1w": 1.32,
+        "earnings_in_days": 18,
+        "dollar_vol_musd": null
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-07-19",
+  "as_of": "2026-07-20",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 3,
+    "opportunity_queue_depth": 26,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1494,31 +1494,31 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 3,
-      "scored": 3,
+      "open": 26,
+      "scored": 25,
       "newest": [
         {
-          "id": "seed-opp-001",
-          "problem_or_desire": "Why did yields spike 20bp today and who are the winners/losers?",
-          "expected_value": 0.7,
-          "score": 6e-06,
-          "half_life_class": "breaking_event",
-          "status": "open"
-        },
-        {
-          "id": "seed-opp-002",
-          "problem_or_desire": "How exposed is my portfolio to the current rate regime?",
-          "expected_value": 0.6,
-          "score": 0.473077,
-          "half_life_class": "evergreen_comparison",
-          "status": "open"
-        },
-        {
-          "id": "seed-opp-003",
-          "problem_or_desire": "Semis sector rotation: who is leading and who is lagging?",
+          "id": "radar-earnings-AAL-2026-07-20",
+          "problem_or_desire": "$AAL: earnings 2026-07-23",
           "expected_value": 0.5,
-          "score": 0.277167,
-          "half_life_class": "weekly_signal",
+          "score": 0.424319,
+          "half_life_class": "earnings_follow_up",
+          "status": "open"
+        },
+        {
+          "id": "radar-earnings-ACI-2026-07-20",
+          "problem_or_desire": "$ACI: earnings 2026-07-21",
+          "expected_value": 0.5,
+          "score": 0.424319,
+          "half_life_class": "earnings_follow_up",
+          "status": "open"
+        },
+        {
+          "id": "radar-earnings-ADT-2026-07-20",
+          "problem_or_desire": "$ADT: earnings 2026-07-23",
+          "expected_value": 0.5,
+          "score": 0.424319,
+          "half_life_class": "earnings_follow_up",
           "status": "open"
         }
       ]
@@ -1780,7 +1780,7 @@
     "charts": 5,
     "accounts": 6,
     "state": "present",
-    "as_of": "2026-07-19"
+    "as_of": "2026-07-20"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -1790,7 +1790,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-19T09:16:14Z",
-  "inputs_hash": "sha256:726938aea880190326c0cef3aff5176867ff159b74a0dedf4a9be4230368255d",
+  "produced_at": "2026-07-20T05:40:58Z",
+  "inputs_hash": "sha256:e436518a7e97ef19ef2c5fda7fdfd6e2eb7ca369dbe9476c138013be7ccc28a5",
   "tier": "display"
 }

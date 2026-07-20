@@ -1,0 +1,1271 @@
+{
+  "schema_version": 1,
+  "produced_by": "sentinel",
+  "produced_at": "2026-07-20T05:40:57Z",
+  "as_of": "2026-07-20",
+  "plan_status": "pass",
+  "publish_enabled": false,
+  "auditor_strict": true,
+  "counts": {
+    "items": 112,
+    "passed": 12,
+    "quarantined": 100,
+    "quarantined_policy": 10,
+    "quarantined_overflow": 90,
+    "warnings": 0,
+    "exceptions_applied": 0
+  },
+  "reasons_histogram": {
+    "cadence_cap_daily": 90,
+    "near_dup": 10
+  },
+  "quarantined": [
+    {
+      "id": "post-flagship-003",
+      "account": "flagship",
+      "slot": "D1-EOD",
+      "type": "watchlist",
+      "cashtag": "$INTU",
+      "headline": "On our radar this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-004",
+      "account": "flagship",
+      "slot": "D2-AM",
+      "type": "chart",
+      "cashtag": "$PI",
+      "headline": "$PI | chart context this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-005",
+      "account": "flagship",
+      "slot": "D2-PM",
+      "type": "education",
+      "cashtag": "",
+      "headline": "What 'conviction' actually means at the desk",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-008",
+      "account": "flagship",
+      "slot": "D3-PM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Macro backdrop: what the data shows",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-010",
+      "account": "flagship",
+      "slot": "D4-AM",
+      "type": "watchlist",
+      "cashtag": "",
+      "headline": "On our radar this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-011",
+      "account": "flagship",
+      "slot": "D4-PM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "What the macro is saying right now",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-012",
+      "account": "flagship",
+      "slot": "D4-EOD",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "The macro read this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-013",
+      "account": "flagship",
+      "slot": "D5-AM",
+      "type": "education",
+      "cashtag": "",
+      "headline": "Why invalidation matters more than the target",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-014",
+      "account": "flagship",
+      "slot": "D5-PM",
+      "type": "watchlist",
+      "cashtag": "$INTU",
+      "headline": "Under observation this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-015",
+      "account": "flagship",
+      "slot": "D5-EOD",
+      "type": "chart",
+      "cashtag": "$PI",
+      "headline": "PI price context | 144.40 is the line",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-016",
+      "account": "flagship",
+      "slot": "D6-AM",
+      "type": "event",
+      "cashtag": "",
+      "headline": "Market event: our read",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-017",
+      "account": "flagship",
+      "slot": "D6-PM",
+      "type": "watchlist",
+      "cashtag": "$BA",
+      "headline": "Radar names | context first",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-018",
+      "account": "flagship",
+      "slot": "D6-EOD",
+      "type": "watchlist",
+      "cashtag": "$PLTR",
+      "headline": "Radar names | context first",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-019",
+      "account": "flagship",
+      "slot": "D7-AM",
+      "type": "watchlist",
+      "cashtag": "$STEP",
+      "headline": "On our radar this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-020",
+      "account": "flagship",
+      "slot": "D7-PM",
+      "type": "watchlist",
+      "cashtag": "$MOS",
+      "headline": "Radar names | context first",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-flagship-021",
+      "account": "flagship",
+      "slot": "D7-EOD",
+      "type": "watchlist",
+      "cashtag": "$GPI",
+      "headline": "On our radar this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-conf-flagship-001",
+      "account": "flagship",
+      "slot": "CONF-01",
+      "type": "signal",
+      "cashtag": "$VST",
+      "headline": "$VST just triggered a setup that's historically worked 86% of the time",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-conf-flagship-002",
+      "account": "flagship",
+      "slot": "CONF-02",
+      "type": "signal",
+      "cashtag": "$XEL",
+      "headline": "$XEL just triggered a setup that's historically worked 70% of the time",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-conf-flagship-003",
+      "account": "flagship",
+      "slot": "CONF-03",
+      "type": "signal",
+      "cashtag": "$IBM",
+      "headline": "$IBM just triggered a setup that's historically worked 67% of the time",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-conf-flagship-004",
+      "account": "flagship",
+      "slot": "CONF-04",
+      "type": "signal",
+      "cashtag": "$WMT",
+      "headline": "$WMT just triggered a setup that's historically worked 66% of the time",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme-003",
+      "account": "flagship",
+      "slot": "THEME-03",
+      "type": "theme_list",
+      "cashtag": "$DSP",
+      "headline": "Social Media selling off — -2.8% avg today",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-004",
+      "account": "receipts",
+      "slot": "D2-AM",
+      "type": "chart",
+      "cashtag": "$EFX",
+      "headline": "EFX — chart update",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-005",
+      "account": "receipts",
+      "slot": "D2-PM",
+      "type": "watchlist",
+      "cashtag": "$BA",
+      "headline": "Watch list | no position",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-007",
+      "account": "receipts",
+      "slot": "D3-AM",
+      "type": "education",
+      "cashtag": "",
+      "headline": "How we track our calls",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-008",
+      "account": "receipts",
+      "slot": "D3-PM",
+      "type": "watchlist",
+      "cashtag": "$ENOV",
+      "headline": "Radar: names we're monitoring",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-009",
+      "account": "receipts",
+      "slot": "D3-EOD",
+      "type": "chart",
+      "cashtag": "$SONO",
+      "headline": "SONO — chart update",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-010",
+      "account": "receipts",
+      "slot": "D4-AM",
+      "type": "chart",
+      "cashtag": "$CUBI",
+      "headline": "$CUBI | what the tape shows",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-011",
+      "account": "receipts",
+      "slot": "D4-PM",
+      "type": "watchlist",
+      "cashtag": "",
+      "headline": "Watch list | no position",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-012",
+      "account": "receipts",
+      "slot": "D4-EOD",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Macro: what the data shows",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-013",
+      "account": "receipts",
+      "slot": "D5-AM",
+      "type": "watchlist",
+      "cashtag": "$FDS",
+      "headline": "Watch list | no position",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-014",
+      "account": "receipts",
+      "slot": "D5-PM",
+      "type": "watchlist",
+      "cashtag": "$LKFN",
+      "headline": "Watchlist update | not triggered",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-015",
+      "account": "receipts",
+      "slot": "D5-EOD",
+      "type": "watchlist",
+      "cashtag": "$CRM",
+      "headline": "Under watch | positions not open",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-018",
+      "account": "receipts",
+      "slot": "D6-EOD",
+      "type": "watchlist",
+      "cashtag": "$CVI",
+      "headline": "Watchlist update | not triggered",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-019",
+      "account": "receipts",
+      "slot": "D7-AM",
+      "type": "watchlist",
+      "cashtag": "$PLTR",
+      "headline": "Watch list | no position",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-020",
+      "account": "receipts",
+      "slot": "D7-PM",
+      "type": "chart",
+      "cashtag": "$ADBE",
+      "headline": "$ADBE — one chart, no spin",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-receipts-021",
+      "account": "receipts",
+      "slot": "D7-EOD",
+      "type": "event",
+      "cashtag": "",
+      "headline": "Event reaction | numbers first",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-mover-001",
+      "account": "receipts",
+      "slot": "MOVER-01",
+      "type": "mover",
+      "cashtag": "$ISRG",
+      "headline": "$ISRG -14.2% today",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-003",
+      "account": "theme_desk",
+      "slot": "D1-EOD",
+      "type": "watchlist",
+      "cashtag": "$PI",
+      "headline": "Vertical watch list this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-004",
+      "account": "theme_desk",
+      "slot": "D2-AM",
+      "type": "chart",
+      "cashtag": "$GPI",
+      "headline": "$GPI | sector price context",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-005",
+      "account": "theme_desk",
+      "slot": "D2-PM",
+      "type": "event",
+      "cashtag": "",
+      "headline": "Event impact on our sector",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-006",
+      "account": "theme_desk",
+      "slot": "D2-EOD",
+      "type": "chart",
+      "cashtag": "$SONO",
+      "headline": "$SONO | sector price context",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-008",
+      "account": "theme_desk",
+      "slot": "D3-PM",
+      "type": "event",
+      "cashtag": "",
+      "headline": "How this event hits our theme",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-010",
+      "account": "theme_desk",
+      "slot": "D4-AM",
+      "type": "watchlist",
+      "cashtag": "$CRM",
+      "headline": "What's near entry in the sector",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-012",
+      "account": "theme_desk",
+      "slot": "D4-EOD",
+      "type": "watchlist",
+      "cashtag": "",
+      "headline": "Vertical watch list this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-013",
+      "account": "theme_desk",
+      "slot": "D5-AM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Macro note for the vertical",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-flagship-012"
+      ]
+    },
+    {
+      "id": "post-theme_desk-014",
+      "account": "theme_desk",
+      "slot": "D5-PM",
+      "type": "watchlist",
+      "cashtag": "$PI",
+      "headline": "What's near entry in the sector",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-016",
+      "account": "theme_desk",
+      "slot": "D6-AM",
+      "type": "watchlist",
+      "cashtag": "$FDS",
+      "headline": "Specialist watch: setups in progress",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-017",
+      "account": "theme_desk",
+      "slot": "D6-PM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "How macro is affecting our sector",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-flagship-011"
+      ]
+    },
+    {
+      "id": "post-theme_desk-018",
+      "account": "theme_desk",
+      "slot": "D6-EOD",
+      "type": "event",
+      "cashtag": "",
+      "headline": "Sector event reaction",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-019",
+      "account": "theme_desk",
+      "slot": "D7-AM",
+      "type": "watchlist",
+      "cashtag": "$SBUX",
+      "headline": "Vertical watch list this week",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-020",
+      "account": "theme_desk",
+      "slot": "D7-PM",
+      "type": "watchlist",
+      "cashtag": "$PLTR",
+      "headline": "Sector radar | watching not acting",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme_desk-021",
+      "account": "theme_desk",
+      "slot": "D7-EOD",
+      "type": "education",
+      "cashtag": "",
+      "headline": "The factor that moves this vertical",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme-004",
+      "account": "theme_desk",
+      "slot": "THEME-04",
+      "type": "theme_list",
+      "cashtag": "$BKKT",
+      "headline": "Crypto & Blockchain selling off — -1.9% avg today",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-004",
+      "account": "research_a",
+      "slot": "D2-AM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Breaking down the macro backdrop",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-flagship-012"
+      ]
+    },
+    {
+      "id": "post-research_a-006",
+      "account": "research_a",
+      "slot": "D2-EOD",
+      "type": "watchlist",
+      "cashtag": "$CVI",
+      "headline": "The watch list: how we filter",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-007",
+      "account": "research_a",
+      "slot": "D3-AM",
+      "type": "watchlist",
+      "cashtag": "$REZI",
+      "headline": "On our radar | here's what we're waiting for",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-008",
+      "account": "research_a",
+      "slot": "D3-PM",
+      "type": "education",
+      "cashtag": "",
+      "headline": "Plain English: what is a 'setup'?",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-009",
+      "account": "research_a",
+      "slot": "D3-EOD",
+      "type": "education",
+      "cashtag": "",
+      "headline": "Why the 'what would change this' line matters",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-010",
+      "account": "research_a",
+      "slot": "D4-AM",
+      "type": "education",
+      "cashtag": "",
+      "headline": "Here's the part most people miss",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-011",
+      "account": "research_a",
+      "slot": "D4-PM",
+      "type": "chart",
+      "cashtag": "$PAHC",
+      "headline": "Chart breakdown: PAHC",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-012",
+      "account": "research_a",
+      "slot": "D4-EOD",
+      "type": "watchlist",
+      "cashtag": "$ARES",
+      "headline": "The watch list: how we filter",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-013",
+      "account": "research_a",
+      "slot": "D5-AM",
+      "type": "education",
+      "cashtag": "",
+      "headline": "What 'tracking publicly' actually means",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-014",
+      "account": "research_a",
+      "slot": "D5-PM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Macro 101: what this regime means",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-015",
+      "account": "research_a",
+      "slot": "D5-EOD",
+      "type": "watchlist",
+      "cashtag": "$ADBE",
+      "headline": "What goes on a watch list — and why",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-016",
+      "account": "research_a",
+      "slot": "D6-AM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Plain-English macro update",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-017",
+      "account": "research_a",
+      "slot": "D6-PM",
+      "type": "watchlist",
+      "cashtag": "$CVI",
+      "headline": "On our radar | here's what we're waiting for",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-019",
+      "account": "research_a",
+      "slot": "D7-AM",
+      "type": "watchlist",
+      "cashtag": "$ENOV",
+      "headline": "What goes on a watch list — and why",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-020",
+      "account": "research_a",
+      "slot": "D7-PM",
+      "type": "event",
+      "cashtag": "",
+      "headline": "What today's event means — plain English",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_a-021",
+      "account": "research_a",
+      "slot": "D7-EOD",
+      "type": "watchlist",
+      "cashtag": "",
+      "headline": "What goes on a watch list — and why",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-mover-002",
+      "account": "research_a",
+      "slot": "MOVER-02",
+      "type": "mover",
+      "cashtag": "$CDNS",
+      "headline": "$CDNS -9.5% today",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-mover-001"
+      ]
+    },
+    {
+      "id": "post-research_b-004",
+      "account": "research_b",
+      "slot": "D2-AM",
+      "type": "chart",
+      "cashtag": "$FBRT",
+      "headline": "$FBRT | chart update",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-005",
+      "account": "research_b",
+      "slot": "D2-PM",
+      "type": "watchlist",
+      "cashtag": "$CVI",
+      "headline": "Watching | not acting",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-006",
+      "account": "research_b",
+      "slot": "D2-EOD",
+      "type": "watchlist",
+      "cashtag": "$LKFN",
+      "headline": "Quick radar | watching these",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-007",
+      "account": "research_b",
+      "slot": "D3-AM",
+      "type": "watchlist",
+      "cashtag": "$CUBI",
+      "headline": "Watch list update",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-008",
+      "account": "research_b",
+      "slot": "D3-PM",
+      "type": "watchlist",
+      "cashtag": "$REZI",
+      "headline": "Quick radar | watching these",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-009",
+      "account": "research_b",
+      "slot": "D3-EOD",
+      "type": "watchlist",
+      "cashtag": "$PAHC",
+      "headline": "Watch list update",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-010",
+      "account": "research_b",
+      "slot": "D4-AM",
+      "type": "event",
+      "cashtag": "",
+      "headline": "Reaction: what just happened",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-theme_desk-018"
+      ]
+    },
+    {
+      "id": "post-research_b-012",
+      "account": "research_b",
+      "slot": "D4-EOD",
+      "type": "watchlist",
+      "cashtag": "",
+      "headline": "Quick radar | watching these",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-receipts-011"
+      ]
+    },
+    {
+      "id": "post-research_b-014",
+      "account": "research_b",
+      "slot": "D5-PM",
+      "type": "watchlist",
+      "cashtag": "$EFX",
+      "headline": "Radar check | names close to entry",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-015",
+      "account": "research_b",
+      "slot": "D5-EOD",
+      "type": "event",
+      "cashtag": "",
+      "headline": "Event | quick read",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-flagship-016"
+      ]
+    },
+    {
+      "id": "post-research_b-017",
+      "account": "research_b",
+      "slot": "D6-PM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Fast macro read",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-019",
+      "account": "research_b",
+      "slot": "D7-AM",
+      "type": "watchlist",
+      "cashtag": "$REZI",
+      "headline": "Watching | not acting",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-021",
+      "account": "research_b",
+      "slot": "D7-EOD",
+      "type": "chart",
+      "cashtag": "$ADBE",
+      "headline": "ADBE chart | quick look",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme-005",
+      "account": "research_b",
+      "slot": "THEME-05",
+      "type": "theme_list",
+      "cashtag": "$AFRM",
+      "headline": "FinTech selling off — -1.5% avg today",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-005",
+      "account": "research_c",
+      "slot": "D2-PM",
+      "type": "watchlist",
+      "cashtag": "$REZI",
+      "headline": "Watch list | the rhymes in progress",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-006",
+      "account": "research_c",
+      "slot": "D2-EOD",
+      "type": "chart",
+      "cashtag": "$STEP",
+      "headline": "STEP chart | precedent matters",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-007",
+      "account": "research_c",
+      "slot": "D3-AM",
+      "type": "watchlist",
+      "cashtag": "",
+      "headline": "Pattern watch list | not triggered",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-receipts-011"
+      ]
+    },
+    {
+      "id": "post-research_c-008",
+      "account": "research_c",
+      "slot": "D3-PM",
+      "type": "watchlist",
+      "cashtag": "$PI",
+      "headline": "Pattern watch list | not triggered",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-009",
+      "account": "research_c",
+      "slot": "D3-EOD",
+      "type": "watchlist",
+      "cashtag": "$EFX",
+      "headline": "Historical watch: patterns in progress",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-010",
+      "account": "research_c",
+      "slot": "D4-AM",
+      "type": "watchlist",
+      "cashtag": "",
+      "headline": "Historical watch: patterns in progress",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-receipts-011"
+      ]
+    },
+    {
+      "id": "post-research_c-011",
+      "account": "research_c",
+      "slot": "D4-PM",
+      "type": "education",
+      "cashtag": "",
+      "headline": "When history rhymes: a primer",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-012",
+      "account": "research_c",
+      "slot": "D4-EOD",
+      "type": "watchlist",
+      "cashtag": "",
+      "headline": "Watch list | the rhymes in progress",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-013",
+      "account": "research_c",
+      "slot": "D5-AM",
+      "type": "chart",
+      "cashtag": "$PAHC",
+      "headline": "PAHC chart | precedent matters",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-014",
+      "account": "research_c",
+      "slot": "D5-PM",
+      "type": "chart",
+      "cashtag": "$INTU",
+      "headline": "INTU chart | precedent matters",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-015",
+      "account": "research_c",
+      "slot": "D5-EOD",
+      "type": "chart",
+      "cashtag": "$ARES",
+      "headline": "ARES chart | precedent matters",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-017",
+      "account": "research_c",
+      "slot": "D6-PM",
+      "type": "watchlist",
+      "cashtag": "$FBRT",
+      "headline": "Historical watch: patterns in progress",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-019",
+      "account": "research_c",
+      "slot": "D7-AM",
+      "type": "watchlist",
+      "cashtag": "$CUBI",
+      "headline": "Watch list | the rhymes in progress",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-020",
+      "account": "research_c",
+      "slot": "D7-PM",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Macro analogue: what the data rhymes with",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_c-021",
+      "account": "research_c",
+      "slot": "D7-EOD",
+      "type": "watchlist",
+      "cashtag": "$ADBE",
+      "headline": "Watch list | the rhymes in progress",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-theme-006",
+      "account": "research_c",
+      "slot": "THEME-06",
+      "type": "theme_list",
+      "cashtag": "$NFLX",
+      "headline": "Digital Entertainment selling off — -1.5% avg today",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-theme-005"
+      ]
+    }
+  ],
+  "checks": {
+    "near_dup": {
+      "pairs_checked": 4622,
+      "hits": 10,
+      "shared_media_hits": 0
+    },
+    "cadence": {
+      "cadence_cap_daily_hits": 90,
+      "cashtag_cap_hits": 0,
+      "slot_collision_hits": 0,
+      "reply_cap_hits": 0
+    },
+    "lexicon": {
+      "hits": 0
+    },
+    "disclosure": {
+      "hits": 0
+    },
+    "cherry_pick": {
+      "status": "run",
+      "loss_tickers_in_window": [
+        "QCOM"
+      ],
+      "cherry_pick_detected": false
+    },
+    "stale_receipts": {
+      "age_days": 4,
+      "max": 7
+    },
+    "kill_switch": {
+      "env": false,
+      "accounts_disabled": []
+    },
+    "media_cap": {
+      "max_media_posts_per_account_per_day": 1,
+      "hits": 0
+    },
+    "cashtag_breadth": {
+      "max_cashtags_per_post": 3,
+      "hits": 0
+    },
+    "link_rule": {
+      "links_allowed": false,
+      "hits": 0
+    }
+  },
+  "notes": []
+}

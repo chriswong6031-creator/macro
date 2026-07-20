@@ -1,0 +1,37 @@
+{
+  "schema": "marketing.radar_plan_history/v1",
+  "plans": [
+    {
+      "as_of": "2026-07-20",
+      "tickers": [
+        "ADBE",
+        "ARES",
+        "BA",
+        "CDNS",
+        "CRM",
+        "CUBI",
+        "CVI",
+        "EFX",
+        "ENOV",
+        "FBRT",
+        "FDS",
+        "GPI",
+        "IBM",
+        "INTU",
+        "ISRG",
+        "LKFN",
+        "MOS",
+        "PAHC",
+        "PI",
+        "PLTR",
+        "REZI",
+        "SBUX",
+        "SONO",
+        "STEP",
+        "VST",
+        "WMT",
+        "XEL"
+      ]
+    }
+  ]
+}
