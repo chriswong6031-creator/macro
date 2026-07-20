@@ -44,6 +44,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import ipaddress
 import json
 import os
 import subprocess
@@ -123,6 +124,18 @@ _MM_EVENT_TYPES = {
     "pageview", "route", "ticker_view", "search", "terminal_jump",
     "click", "scroll", "session_start", "heartbeat", "exit",
 }
+
+
+def _mm_is_loggable_ip(ip: str) -> bool:
+    """True only for a globally-routable public visitor IP. Loopback/private/link-local/
+    unspecified/'unknown' are same-box or non-visitor traffic and are never logged, mirroring
+    the `_routable` filter in scripts/geo_enrich.py so what we log is what geo-enrich can place."""
+    if not ip or ip == "unknown":
+        return False
+    try:
+        return ipaddress.ip_address(ip).is_global
+    except ValueError:
+        return False
 
 
 def _mm_client_ip(request: Request) -> str:
@@ -357,8 +370,12 @@ async def collect(request: Request, background: BackgroundTasks) -> Response:
     # Registered visitors: pull the shared Supabase session token off the cookie and
     # attribute the batch to their verified user (done inside the background task so
     # the beacon still returns immediately; anonymous visitors are unaffected).
-    access_token = _mm_supabase_access_token(request)
-    background.add_task(_mm_analytics_insert, rows, access_token)
+    # Loopback / private / unspecified client IPs (same-box health checks, SSR, uptime
+    # probes) are not real visitors — skip the insert so they never land as phantom
+    # '(unknown)'-geo rows that geo-enrich can't resolve.
+    if rows and _mm_is_loggable_ip(ip):
+        access_token = _mm_supabase_access_token(request)
+        background.add_task(_mm_analytics_insert, rows, access_token)
 
     resp = Response(status_code=204, headers={"cache-control": "no-store"})
     if mint:

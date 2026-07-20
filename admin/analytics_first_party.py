@@ -301,6 +301,34 @@ def _days(v, default: int = 7) -> int:
         return default
 
 
+def _minutes(v, default_min: int) -> int:
+    """Window in MINUTES, clamped to [1 minute, 365 days]. Powers the sub-day time presets."""
+    try:
+        return max(1, min(365 * 1440, int(float(v))))
+    except (TypeError, ValueError):
+        return default_min
+
+
+def _win(minutes, days, default_min: int) -> int:
+    """Effective window in MINUTES. `minutes` wins (sub-day presets); else the legacy `days`
+    param (x 1440); else `default_min`. Lets old ?days= callers and new ?minutes= callers coexist."""
+    if minutes is not None and str(minutes).strip() != "":
+        return _minutes(minutes, default_min)
+    if days is not None and str(days).strip() != "":
+        return _days(days) * 1440
+    return default_min
+
+
+def _bucket(m: int) -> tuple:
+    """(date_trunc unit, to_char fmt) for a time series over an m-minute window — chosen so the
+    chart has a readable point count. Unit is whitelisted (minute/hour/day) so it's injection-safe."""
+    if m <= 180:
+        return ("minute", "HH24:MI")      # <= 3h
+    if m <= 4320:
+        return ("hour", "MM-DD HH24:MI")  # <= 3d
+    return ("day", "YYYY-MM-DD")
+
+
 def _limit(v, default: int = 50, hi: int = 500) -> int:
     try:
         return max(1, min(hi, int(v)))
@@ -318,8 +346,10 @@ def _guard(fn):
 
 
 # ---------- surfaces ----------
-def overview(days=7) -> dict:
-    d = _days(days)
+def overview(days=7, minutes=None) -> dict:
+    m = _win(minutes, days, 10080)
+    trunc, fmt = _bucket(m)
+    dt = f"date_trunc('{trunc}', e.created_at)"
     def run():
         # 'visitors' counts PEOPLE (canonical identity), not raw cookies. The operator's own
         # hidden cookies (excluded) AND crawlers (bots) are dropped so the headline counts
@@ -333,7 +363,7 @@ def overview(days=7) -> dict:
             "count(*) filter (where e.type='ticker_view')::int as ticker_views, "
             "count(*) filter (where e.type='search')::int as searches "
             "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{d} days' {human}") or [{}])[0]
+            f"where e.created_at > now() - interval '{m} minutes' {human}") or [{}])[0]
         alltime = (_query(_cte(include_ident=True) +
             f"select count(*)::int as events, {_CANON_VISITORS} "
             "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
@@ -342,63 +372,64 @@ def overview(days=7) -> dict:
         bots = (_query(_cte() +
             "select count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
             "from public.analytics_events e "
-            f"where e.created_at > now() - interval '{d} days' and {_not_excluded('e')} "
+            f"where e.created_at > now() - interval '{m} minutes' and {_not_excluded('e')} "
             "and e.visitor_id in (select visitor_id from bots)") or [{}])[0]
         by_site = _query(_cte(include_ident=True) +
             f"select e.site, count(*)::int as events, {_CANON_VISITORS} "
             "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{d} days' {human} "
+            f"where e.created_at > now() - interval '{m} minutes' {human} "
             "group by e.site order by events desc") or []
         daily = _query(_cte(include_ident=True) +
-            "select to_char(date_trunc('day', e.created_at),'YYYY-MM-DD') as day, "
+            f"select to_char({dt},'{fmt}') as day, "
             f"{_CANON_VISITORS}, count(*)::int as events "
             "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{d} days' {human} "
-            "group by 1 order by 1") or []
-        return {"days": d, "window": win, "alltime": alltime, "bots": bots,
+            f"where e.created_at > now() - interval '{m} minutes' {human} "
+            f"group by {dt} order by {dt}") or []
+        return {"days": round(m / 1440, 2), "minutes": m, "window": win, "alltime": alltime, "bots": bots,
                 "by_site": by_site, "daily": daily}
     return _guard(run)
 
 
-def pages(days=7, limit=25) -> dict:
-    d, n = _days(days), _limit(limit, 25)
+def pages(days=7, limit=25, minutes=None) -> dict:
+    m, n = _win(minutes, days, 10080), _limit(limit, 25)
     def run():
         rows = _query(_cte() +
             "select site, coalesce(path,'(none)') as path, "
             "count(*) filter (where type in ('pageview','route'))::int as views, "
             "count(distinct visitor_id)::int as visitors, "
             "round(avg(dwell_ms) filter (where dwell_ms is not null))::int as avg_dwell_ms "
-            f"from public.analytics_events where created_at > now() - interval '{d} days' "
+            f"from public.analytics_events where created_at > now() - interval '{m} minutes' "
             f"and {_not_excluded('')} and {_not_a_bot('')} "
             "group by 1,2 order by views desc nulls last "
             f"limit {n}") or []
-        return {"days": d, "pages": rows}
+        return {"days": round(m / 1440, 2), "minutes": m, "pages": rows}
     return _guard(run)
 
 
-def geo(days=30, limit=200) -> dict:
-    d, n = _days(days, 30), _limit(limit, 200)
+def geo(days=30, limit=200, minutes=None) -> dict:
+    m, n = _win(minutes, days, 43200), _limit(limit, 200)
     def run():
         countries = _query(_cte() +
             "select coalesce(g.country,'(unknown)') as country, g.country_code, "
             "count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
             "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
-            f"where e.created_at > now() - interval '{d} days' and {_not_excluded('e')} and {_not_a_bot('e')} "
+            f"where e.created_at > now() - interval '{m} minutes' and {_not_excluded('e')} and {_not_a_bot('e')} "
             "group by 1,2 order by visitors desc nulls last") or []
         cities = _query(_cte() +
             "select g.city, g.region, g.country_code, g.lat, g.lon, "
             "count(distinct e.visitor_id)::int as visitors "
             "from public.analytics_events e join public.ip_geo g on g.ip = e.ip "
-            f"where e.created_at > now() - interval '{d} days' and g.city is not null "
+            f"where e.created_at > now() - interval '{m} minutes' and g.city is not null "
             f"and {_not_excluded('e')} and {_not_a_bot('e')} "
             "group by 1,2,3,4,5 order by visitors desc "
             f"limit {n}") or []
-        return {"days": d, "countries": countries, "cities": cities}
+        return {"days": round(m / 1440, 2), "minutes": m, "countries": countries, "cities": cities}
     return _guard(run)
 
 
-def sessions(limit=100, q="", include_bots=False) -> dict:
+def sessions(limit=100, q="", include_bots=False, minutes=None, days=None) -> dict:
     n = _limit(limit, 100, 2000)
+    m = _win(minutes, days, 43200)
     qq = _sanitize_q(q)
     # Filter clauses, applied AFTER the geo join and BEFORE the limit so they see full history.
     conds = []
@@ -420,6 +451,7 @@ def sessions(limit=100, q="", include_bots=False) -> dict:
             "  (array_agg(ip order by created_at))[1] as ip, "
             "  max(case when visitor_id in (select visitor_id from bots) then 1 else 0 end) as is_bot "
             f"  from public.analytics_events where session_id is not null and {_not_excluded('')} "
+            f"  and created_at > now() - interval '{m} minutes' "
             "  group by session_id) s "
             "left join public.ip_geo g on g.ip = s.ip "
             f"{where}"
@@ -428,7 +460,7 @@ def sessions(limit=100, q="", include_bots=False) -> dict:
     return _guard(run)
 
 
-def visitors(limit=250, q="", include_bots=False) -> dict:
+def visitors(limit=250, q="", include_bots=False, minutes=None, days=None) -> dict:
     """One row per PERSON — the 'Frequent Visitors' list.
 
     Identity resolution: any anonymous cookie (mm_aid) that ever appears on a signed-in
@@ -437,6 +469,7 @@ def visitors(limit=250, q="", include_bots=False) -> dict:
     anonymous visitors stay keyed by their mm_aid. `identities` = how many cookies merged.
     Ordered by session count."""
     n = _limit(limit, 250, 2000)
+    m = _win(minutes, days, 43200)
     qq = _sanitize_q(q)
     # Filters, applied AFTER the user+geo joins and BEFORE the limit so they see the whole roster.
     conds = []
@@ -464,7 +497,8 @@ def visitors(limit=250, q="", include_bots=False) -> dict:
             "    coalesce(i.uid, e.visitor_id) as canon "
             "  from public.analytics_events e "
             "  left join ident i on i.visitor_id = e.visitor_id "
-            f"  where e.visitor_id is not null and {_not_excluded('e')}"
+            f"  where e.visitor_id is not null and {_not_excluded('e')} "
+            f"    and e.created_at > now() - interval '{m} minutes'"
             ") "
             "select v.canon as visitor_id, (v.uid is not null) as is_user, u.email, "
             "  v.events, v.sessions, v.identities, v.ips, v.last_ip, v.is_bot, "
@@ -504,44 +538,44 @@ def session(session_id: str) -> dict:
     return _guard(run)
 
 
-def flow(days=7, limit=40) -> dict:
-    d, n = _days(days), _limit(limit, 40, 200)
+def flow(days=7, limit=40, minutes=None) -> dict:
+    m, n = _win(minutes, days, 10080), _limit(limit, 40, 200)
     def run():
         rows = _query(
             "with " + _excluded_cte() + ", " + _bot_cte() + ", ev as (select session_id, path, "
             "  lag(path) over (partition by session_id order by id) as prev "
             "  from public.analytics_events "
             f"  where type in ('pageview','route') and path is not null and {_not_excluded('')} and {_not_a_bot('')} "
-            f"    and created_at > now() - interval '{d} days') "
+            f"    and created_at > now() - interval '{m} minutes') "
             "select prev as from_path, path as to_path, count(*)::int as n "
             "from ev where prev is not null and prev <> path "
             "group by 1,2 order by n desc "
             f"limit {n}") or []
-        return {"days": d, "edges": rows}
+        return {"days": round(m / 1440, 2), "minutes": m, "edges": rows}
     return _guard(run)
 
 
-def terminal(days=7, limit=25) -> dict:
-    d, n = _days(days), _limit(limit, 25)
+def terminal(days=7, limit=25, minutes=None) -> dict:
+    m, n = _win(minutes, days, 10080), _limit(limit, 25)
     def run():
         no_bot_search = "(anon_id is null or anon_id not in (select visitor_id from bots))"
         searches = _query(_cte() +
             "select symbol as ticker, count(*)::int as searches, "
             "count(distinct coalesce(user_id::text, anon_id, ip))::int as visitors "
-            f"from public.search_events where created_at > now() - interval '{d} days' "
+            f"from public.search_events where created_at > now() - interval '{m} minutes' "
             f"and {_not_excluded_search()} and {no_bot_search} "
             f"group by 1 order by searches desc limit {n}") or []
         views = _query(_cte() +
             "select ticker, count(*)::int as views, count(distinct visitor_id)::int as visitors "
             "from public.analytics_events where type='ticker_view' and ticker is not null "
-            f"and created_at > now() - interval '{d} days' and {_not_excluded('')} and {_not_a_bot('')} "
+            f"and created_at > now() - interval '{m} minutes' and {_not_excluded('')} and {_not_a_bot('')} "
             f"group by 1 order by views desc limit {n}") or []
         totals = (_query(_cte() +
             "select (select count(*)::int from public.search_events "
-            f"  where created_at > now() - interval '{d} days' and {_not_excluded_search()} and {no_bot_search}) as search_total, "
+            f"  where created_at > now() - interval '{m} minutes' and {_not_excluded_search()} and {no_bot_search}) as search_total, "
             "(select count(*)::int from public.analytics_events where type='ticker_view' "
-            f"  and created_at > now() - interval '{d} days' and {_not_excluded('')} and {_not_a_bot('')}) as view_total") or [{}])[0]
-        return {"days": d, "top_searches": searches, "top_views": views, "totals": totals}
+            f"  and created_at > now() - interval '{m} minutes' and {_not_excluded('')} and {_not_a_bot('')}) as view_total") or [{}])[0]
+        return {"days": round(m / 1440, 2), "minutes": m, "top_searches": searches, "top_views": views, "totals": totals}
     return _guard(run)
 
 
