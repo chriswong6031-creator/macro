@@ -1,5 +1,0 @@
-{
-  "regime_context": "Flow detectors are display-only with no validated forward edge; the dominant absorption cluster shows co-movement among Industrials, Financials, Real Estate, and Consumer Discretionary, with Industrials holding the best relative strength and a confirmed stage. The VIX regime is dormant, no relief snap is active, and fear is not rebuilding.",
-  "theses": [],
-  "confidence": "low"
-}

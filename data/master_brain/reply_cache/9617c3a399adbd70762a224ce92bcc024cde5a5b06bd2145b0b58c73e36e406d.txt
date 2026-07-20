@@ -1,1 +1,0 @@
-{"lean":"unclear","confidence":"low","checks":{"catalyst":"FOMC statement headline is vague; no policy shift, rate change, or hard data surprise is indicated, making the catalyst untested and likely verbal/routine.","premium":"

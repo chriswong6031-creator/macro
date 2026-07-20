@@ -1,6 +1,0 @@
-{
-  "regime_context": "The detector shows AI Compute & Optics as the clear trending leader, with Semiconductors a durable challenger; both are trending, unleveraged, and rotation is narrowing. However, the absolute-trend gate provided no drawdown benefit historically in this mean-reverting A-share market, and the track record is empty. The state therefore does not support a high-conviction directional lean – any view would be heavily speculative.",
-  "theses": [],
-  "emerging_watch": "Potential leadership handoff to Semiconductors: watch for Semiconductors' score to exceed AI Compute & Optics' for 3 consecutive days, which would confirm a new leader. Kill-criterion: AI Compute & Optics re-extends its lead to >0.5 for 2 days.",
-  "confidence": "low"
-}

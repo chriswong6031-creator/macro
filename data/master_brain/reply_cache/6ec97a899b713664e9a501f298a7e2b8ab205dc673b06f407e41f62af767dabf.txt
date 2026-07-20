@@ -1,5 +1,0 @@
-{
-  "regime_context": "Flow detector is display-only (rank-IC ~0, guardrails forbid directional inference). Regime snap is dormant with fear rebuilding but capped, offering no relief signal. Base-rate analysis confirms no validated forward edge.",
-  "theses": [],
-  "confidence": "low"
-}

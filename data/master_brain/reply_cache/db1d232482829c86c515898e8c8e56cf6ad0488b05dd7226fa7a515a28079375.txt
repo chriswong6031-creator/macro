@@ -1,5 +1,0 @@
-{
-  "regime_context": "Flow detector is display-only with no validated forward edge; VIX at 16.6 (pctile 0.378) and regime snap dormant, fear rebuilding but no extreme. Cross-group cluster shows Consumer Discretionary, Real Estate, Industrials, and Financials co-moving, with Information Technology cooling. All sector directional flags are false and cohesion gates low – the system describes current concentration without implying future returns.",
-  "theses": [],
-  "confidence": "low"
-}
