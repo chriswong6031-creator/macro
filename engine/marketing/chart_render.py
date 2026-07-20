@@ -585,6 +585,7 @@ def _brand_bar(
     descriptor: str | None = None,
     show_url: bool = True,
     show_button: bool = True,
+    tagline: str | None = "AI stock signals",
     button_label: str = "Start free 14-day trial",
     copyright_text: str = "© 2026 Mastermind",
     band_h: int = 46,
@@ -662,6 +663,22 @@ def _brand_bar(
             f'letter-spacing="0.3">mastermind-x.com</text>'
         )
         x += 152.0 * s
+        # The what-we-do tag: rides the URL so anyone seeing the image knows
+        # what the product IS. Brighter than the descriptor whisper, quieter
+        # than the URL; suppressed with it on the sober card form.
+        if tagline:
+            x += 11.0 * s
+            bar += (
+                f'<circle cx="{x:.1f}" cy="{cy:.1f}" r="{_num(1.5, "1.5", ".2f")}" '
+                f'fill="#3a4466"/>'
+            )
+            x += 11.0 * s
+            bar += (
+                f'<text x="{x:.1f}" y="{cy + 4 * s:.1f}" fill="#93a7cc" '
+                f'font-size="{_num(11, "11")}" font-weight="700" font-family="sans-serif" '
+                f'letter-spacing="1.4">{_xesc(tagline.upper())}</text>'
+            )
+            x += (len(tagline) * 8.4 + 16) * s
     if descriptor:
         if show_url:
             x += 11.0 * s
