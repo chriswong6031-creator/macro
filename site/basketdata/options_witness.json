@@ -1,7 +1,7 @@
 {
   "schema": "theme_options_witness.v1",
-  "as_of": "2026-07-19",
-  "generated_at": "2026-07-19T01:23:17.485968+00:00",
+  "as_of": "2026-07-20",
+  "generated_at": "2026-07-20T03:39:13.430817+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -21,92 +21,92 @@
     "n_themes_suppressed": 3,
     "store_present": true,
     "store_path": "/Users/chriswong/theta-ops-wt/data/thetadata_eod",
-    "as_of": "2026-07-19"
+    "as_of": "2026-07-20"
   },
   "themes": {
     "ai_semiconductors": {
       "theme_id": "ai_semiconductors",
       "name_en": "AI Semiconductors",
       "name_zh": "AI半导体",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 26,
       "leg_a_call_oi_hhi": {
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.036,
-        "value_z252": -0.759,
+        "value": 0.0356,
+        "value_z252": -0.805,
         "band": "normal",
         "stale": false,
-        "note_en": "Coverage: 26/26 members. Strike concentration (median): 0.036 (z -0.76). Call bets spread across many strikes — no crowding sign.",
-        "note_zh": "覆盖：26/26 个成员。行权价集中度（中位数）：0.036（z -0.76）。看涨押注分散于多个行权价——无拥挤迹象。"
+        "note_en": "Coverage: 26/26 members. Strike concentration (median): 0.036 (z -0.81). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：26/26 个成员。行权价集中度（中位数）：0.036（z -0.81）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.9181,
-        "value_z252": -0.238,
-        "pcr_5d_chg": -0.0026,
+        "value": 0.923,
+        "value_z252": -0.007,
+        "pcr_5d_chg": -0.0096,
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": false,
-        "note_en": "Coverage: 26/26 members. Put/call open-interest ratio: 0.92 (z -0.24). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
-        "note_zh": "覆盖：26/26 个成员。看跌/看涨持仓比：0.92（z -0.24）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
+        "note_en": "Coverage: 26/26 members. Put/call open-interest ratio: 0.92 (z -0.01). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：26/26 个成员。看跌/看涨持仓比：0.92（z -0.01）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.1365,
-        "value_z252": 0.419,
+        "value": 0.1306,
+        "value_z252": 0.375,
         "band": "normal",
         "stale": false,
-        "note_en": "Coverage: 26/26 members. Options priced vs recent actual swings (median): +13.7% (z +0.42). Options priced near their usual level.",
-        "note_zh": "覆盖：26/26 个成员。期权定价相对近期实际波动（中位数）：+13.7%（z +0.42）。期权定价接近正常水平。"
+        "note_en": "Coverage: 26/26 members. Options priced vs recent actual swings (median): +13.1% (z +0.37). Options priced near their usual level.",
+        "note_zh": "覆盖：26/26 个成员。期权定价相对近期实际波动（中位数）：+13.1%（z +0.37）。期权定价接近正常水平。"
       }
     },
     "memory_storage": {
       "theme_id": "memory_storage",
       "name_en": "Memory, HBM & Storage",
       "name_zh": "存储与HBM",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 4,
       "leg_a_call_oi_hhi": {
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": 0.0106,
-        "value_z252": -1.076,
+        "value": 0.0107,
+        "value_z252": -1.07,
         "band": "normal",
         "stale": false,
-        "note_en": "Coverage: 4/4 members. Strike concentration (median): 0.011 (z -1.08). Call bets spread across many strikes — no crowding sign.",
-        "note_zh": "覆盖：4/4 个成员。行权价集中度（中位数）：0.011（z -1.08）。看涨押注分散于多个行权价——无拥挤迹象。"
+        "note_en": "Coverage: 4/4 members. Strike concentration (median): 0.011 (z -1.07). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：4/4 个成员。行权价集中度（中位数）：0.011（z -1.07）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": 1.2896,
-        "value_z252": 1.132,
-        "pcr_5d_chg": -0.0447,
+        "value": 1.2869,
+        "value_z252": 1.103,
+        "pcr_5d_chg": -0.058,
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": false,
-        "note_en": "Coverage: 4/4 members. Put/call open-interest ratio: 1.29 (z +1.13). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
-        "note_zh": "覆盖：4/4 个成员。看跌/看涨持仓比：1.29（z +1.13）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
+        "note_en": "Coverage: 4/4 members. Put/call open-interest ratio: 1.29 (z +1.10). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：4/4 个成员。看跌/看涨持仓比：1.29（z +1.10）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": -0.0697,
-        "value_z252": -0.781,
+        "value": -0.0861,
+        "value_z252": -0.873,
         "band": "normal",
         "stale": false,
-        "note_en": "Coverage: 4/4 members. Options priced vs recent actual swings (median): -7.0% (z -0.78). Options priced near their usual level.",
-        "note_zh": "覆盖：4/4 个成员。期权定价相对近期实际波动（中位数）：-7.0%（z -0.78）。期权定价接近正常水平。"
+        "note_en": "Coverage: 4/4 members. Options priced vs recent actual swings (median): -8.6% (z -0.87). Options priced near their usual level.",
+        "note_zh": "覆盖：4/4 个成员。期权定价相对近期实际波动（中位数）：-8.6%（z -0.87）。期权定价接近正常水平。"
       }
     },
     "semicap_equipment": {
       "theme_id": "semicap_equipment",
       "name_en": "Semiconductor Equipment (WFE)",
       "name_zh": "半导体设备（WFE）",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 16,
       "leg_a_call_oi_hhi": {
         "coverage_count": 16,
@@ -145,7 +145,7 @@
       "theme_id": "data_center_power",
       "name_en": "Data Center Power & Cooling",
       "name_zh": "数据中心电力与冷却",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 18,
       "leg_a_call_oi_hhi": {
         "coverage_count": 18,
@@ -184,7 +184,7 @@
       "theme_id": "nuclear_power",
       "name_en": "Nuclear & SMR Power",
       "name_zh": "核能与小型模块堆",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 19,
       "leg_a_call_oi_hhi": {
         "coverage_count": 18,
@@ -223,7 +223,7 @@
       "theme_id": "grid_electrification",
       "name_en": "Grid & Electrification",
       "name_zh": "电网与电气化",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 24,
       "leg_a_call_oi_hhi": {
         "coverage_count": 24,
@@ -262,7 +262,7 @@
       "theme_id": "cybersecurity",
       "name_en": "Cybersecurity",
       "name_zh": "网络安全",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 10,
       "leg_a_call_oi_hhi": {
         "coverage_count": 10,
@@ -301,7 +301,7 @@
       "theme_id": "defense_aerospace",
       "name_en": "Defense & Aerospace",
       "name_zh": "国防与航空航天",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 21,
       "leg_a_call_oi_hhi": {
         "coverage_count": 21,
@@ -340,7 +340,7 @@
       "theme_id": "robotics_automation",
       "name_en": "Robotics & Automation",
       "name_zh": "机器人与自动化",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 12,
       "leg_a_call_oi_hhi": {
         "coverage_count": 12,
@@ -379,7 +379,7 @@
       "theme_id": "glp1_obesity",
       "name_en": "GLP-1 / Obesity",
       "name_zh": "GLP-1与肥胖",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 14,
       "leg_a_call_oi_hhi": {
         "coverage_count": 13,
@@ -418,46 +418,46 @@
       "theme_id": "fintech_payments",
       "name_en": "Fintech & Payments",
       "name_zh": "金融科技与支付",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 21,
       "leg_a_call_oi_hhi": {
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.0848,
-        "value_z252": 1.023,
+        "value": 0.0798,
+        "value_z252": 0.521,
         "band": "rising",
         "stale": false,
-        "note_en": "Coverage: 21/21 members. Strike concentration (median): 0.085 (z +1.02). Call bets tilting toward fewer strikes.",
-        "note_zh": "覆盖：21/21 个成员。行权价集中度（中位数）：0.085（z +1.02）。看涨押注趋向集中于较少行权价。"
+        "note_en": "Coverage: 21/21 members. Strike concentration (median): 0.080 (z +0.52). Call bets tilting toward fewer strikes.",
+        "note_zh": "覆盖：21/21 个成员。行权价集中度（中位数）：0.080（z +0.52）。看涨押注趋向集中于较少行权价。"
       },
       "leg_b_pcr": {
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.5129,
-        "value_z252": -1.899,
-        "pcr_5d_chg": -0.0614,
-        "pcr_collapse_into_strength": false,
+        "value": 0.4658,
+        "value_z252": -2.714,
+        "pcr_5d_chg": -0.1065,
+        "pcr_collapse_into_strength": true,
         "band": "complacency",
         "stale": false,
-        "note_en": "Coverage: 21/21 members. Put/call open-interest ratio: 0.51 (z -1.90). Hedges coming off into strength: no. Positioning: put protection unusually low — complacency hazard.",
-        "note_zh": "覆盖：21/21 个成员。看跌/看涨持仓比：0.51（z -1.90）。对冲盘在强势中撤离：否。仓位状态：看跌保护异常偏低——自满风险。"
+        "note_en": "Coverage: 21/21 members. Put/call open-interest ratio: 0.47 (z -2.71). Hedges coming off into strength: yes. Positioning: put protection unusually low — complacency hazard.",
+        "note_zh": "覆盖：21/21 个成员。看跌/看涨持仓比：0.47（z -2.71）。对冲盘在强势中撤离：是。仓位状态：看跌保护异常偏低——自满风险。"
       },
       "leg_c_iv_premium": {
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.6316,
-        "value_z252": 1.879,
+        "value": 0.6148,
+        "value_z252": 1.818,
         "band": "elevated",
         "stale": false,
-        "note_en": "Coverage: 21/21 members. Options priced vs recent actual swings (median): +63.2% (z +1.88). Options priced far above recent actual swings — event-premium hazard.",
-        "note_zh": "覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：+63.2%（z +1.88）。期权定价远高于近期实际波动——事件溢价风险。"
+        "note_en": "Coverage: 21/21 members. Options priced vs recent actual swings (median): +61.5% (z +1.82). Options priced far above recent actual swings — event-premium hazard.",
+        "note_zh": "覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：+61.5%（z +1.82）。期权定价远高于近期实际波动——事件溢价风险。"
       }
     },
     "space_satellite": {
       "theme_id": "space_satellite",
       "name_en": "Space & Satellites",
       "name_zh": "太空与卫星",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 15,
       "leg_a_call_oi_hhi": {
         "coverage_count": 3,
@@ -496,7 +496,7 @@
       "theme_id": "rare_earth_critical_min",
       "name_en": "Rare Earth & Critical Minerals",
       "name_zh": "稀土与关键矿产",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 11,
       "leg_a_call_oi_hhi": {
         "coverage_count": 7,
@@ -535,7 +535,7 @@
       "theme_id": "copper_steel_electrify",
       "name_en": "Copper, Steel & Electrification",
       "name_zh": "铜、钢铁与电气化",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 16,
       "leg_a_call_oi_hhi": {
         "coverage_count": 16,
@@ -613,7 +613,7 @@
       "theme_id": "medical_devices",
       "name_en": "Medical Devices",
       "name_zh": "医疗器械",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-20",
       "n_members": 9,
       "leg_a_call_oi_hhi": {
         "coverage_count": 9,
