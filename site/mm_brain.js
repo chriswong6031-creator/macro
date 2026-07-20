@@ -191,7 +191,6 @@
     background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));box-shadow:0 6px 18px -6px color-mix(in srgb,var(--mmb-info) 75%,transparent)}
   .mmb-send:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
   .mmb-send svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}
-  .mmb-foot{text-align:center;font:400 10.5px/1.4 var(--mmb-font);color:var(--mmb-muted);padding:8px 20px 2px}
   /* signed-out */
   .mmb-gate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 22px;gap:14px}
   .mmb-gate .mmb-orb{width:64px;height:64px}.mmb-gate .mmb-orb svg{width:30px;height:30px}
@@ -201,7 +200,10 @@
   .mmb-signin{margin-top:6px;padding:12px 26px;border:none;border-radius:12px;cursor:pointer;color:#fff;font:700 14px/1 var(--mmb-font);
     background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));box-shadow:0 10px 28px -8px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
   @media(max-width:560px){#mmb-panel,#mmb-panel.max,#mmb-panel.mmb-top{right:0;left:0;bottom:0;top:auto;transform:translateY(20px);width:100vw;height:88vh;border-radius:20px 20px 0 0}
-    #mmb-panel.open{transform:none} .mmb-cards,#mmb-panel.max .mmb-cards{grid-template-columns:1fr}}
+    #mmb-panel.open{transform:none} .mmb-cards,#mmb-panel.max .mmb-cards{grid-template-columns:1fr}
+    /* mobile is compact-only: no large mode (the overlay isn't responsive there) */
+    .mmb-icon[data-act="max"]{display:none!important}
+    #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{display:none}}
   /* follow-up suggestion chips (rendered under the latest reply) */
   .mmb-sugg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
   .mmb-sug{font:12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted));background:color-mix(in srgb,#fff 4%,transparent);border:1px solid var(--mmb-line);border-radius:12px;padding:7px 12px;text-align:left;cursor:pointer;max-width:100%;transition:border-color .13s,background .13s,color .13s}
@@ -277,7 +279,6 @@
               '<button class="mmb-tbtn" data-act="voice" title="Voice">' + ic('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4"/>') + '</button>' +
               '<button class="mmb-send" id="mmb-send" disabled>' + ic('<path d="M5 12h14M13 6l6 6-6 6"/>') + '</button>' +
             '</div></div>' +
-          '<div class="mmb-foot">' + L('Research context — not investment advice. Grounded in the dashboard’s calibrated signals.', '研究参考，非投资建议。基于看板的校准信号。') + '</div>' +
         '</div>' +
       '</div>' +
     '</div></div>');
@@ -528,12 +529,12 @@
   function autosize() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 150) + 'px'; }
 
   /* ── widget mechanics ── */
-  /* dashboard (br) opens straight to the big overlay; the Terminal (top) drops down
-     compact from its own launcher — the expand button still offers the overlay. */
-  function open() { refreshCtx(); scrim.classList.add('open'); panel.classList.add('open'); if (ANCHOR === 'top') panel.classList.add('mmb-top'); else panel.classList.add('max'); if (launch) launch.classList.add('mmb-hide'); if (authed) { loadThreads(); loadQuotas(); } setTimeout(function () { ta.focus(); }, 260); }
+  /* Always open COMPACT (operator order): dashboard = corner chatbox, Terminal = top
+     drop-down. The expand button offers the large overlay — desktop only. */
+  function open() { refreshCtx(); scrim.classList.add('open'); panel.classList.add('open'); if (ANCHOR === 'top') panel.classList.add('mmb-top'); if (launch) launch.classList.add('mmb-hide'); if (authed) { loadThreads(); loadQuotas(); } setTimeout(function () { ta.focus(); }, 260); }
   function close() { if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; streaming = false; } scrim.classList.remove('open'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
   function toggle() { panel.classList.contains('open') ? close() : open(); }
-  function toggleMax() { var max = panel.classList.toggle('max'); panel.classList.remove('show-side'); if (max) panel.classList.remove('mmb-top'); else if (ANCHOR === 'top') panel.classList.add('mmb-top'); }
+  function toggleMax() { if (window.innerWidth <= 560) return; /* mobile is compact-only */ var max = panel.classList.toggle('max'); panel.classList.remove('show-side'); if (max) panel.classList.remove('mmb-top'); else if (ANCHOR === 'top') panel.classList.add('mmb-top'); }
   function toggleSide() { panel.classList.toggle('show-side'); }
   function newChat() { threadId = null; pendingImages = []; renderThumbs(); root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
 
@@ -690,5 +691,5 @@
   boot();
   initExplain();
 
-  window.MMBrain = { open: open, close: close, toggle: toggle, explain: explain, expand: function () { panel.classList.contains('open') || open(); panel.classList.add('max'); }, mounted: true };
+  window.MMBrain = { open: open, close: close, toggle: toggle, explain: explain, expand: function () { panel.classList.contains('open') || open(); if (window.innerWidth > 560) panel.classList.add('max'); }, mounted: true };
 })();
