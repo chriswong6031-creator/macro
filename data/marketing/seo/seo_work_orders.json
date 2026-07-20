@@ -1,0 +1,267 @@
+{
+  "schema": "seo_work_orders.v1",
+  "as_of": "2026-07-20T13:14:30Z",
+  "orders": [
+    {
+      "id": "broken_internal_link",
+      "priority": 1,
+      "title": "Fix broken internal .html links",
+      "class": "broken_internal_link",
+      "severity": "high",
+      "pages": [
+        "advanced.html",
+        "ai_desk.html",
+        "aibrief.html",
+        "alerts.html",
+        "allocation.html",
+        "allocation_canada.html",
+        "allocation_china.html",
+        "allocation_hk.html",
+        "alt_data.html",
+        "anticipation.html"
+      ],
+      "pages_count": 241,
+      "suggested_fix": "Fix broken internal .html links",
+      "falsifiable_check": "Crawl internal links: zero 404s expected"
+    },
+    {
+      "id": "missing_canonical",
+      "priority": 2,
+      "title": "Add rel=canonical to all public pages",
+      "class": "missing_canonical",
+      "severity": "high",
+      "pages": [
+        "advanced.html",
+        "ai_desk.html",
+        "aibrief.html",
+        "alerts.html",
+        "allocation.html",
+        "allocation_canada.html",
+        "allocation_china.html",
+        "allocation_hk.html",
+        "alt_data.html",
+        "anticipation.html"
+      ],
+      "pages_count": 213,
+      "suggested_fix": "Add rel=canonical to all public pages",
+      "falsifiable_check": "Check page in browser: view-source should show rel=canonical in <head>"
+    },
+    {
+      "id": "missing_description",
+      "priority": 3,
+      "title": "Add meta description to all core pages",
+      "class": "missing_description",
+      "severity": "high",
+      "pages": [
+        "advanced.html",
+        "ai_desk.html",
+        "aibrief.html",
+        "alerts.html",
+        "allocation.html",
+        "allocation_canada.html",
+        "allocation_china.html",
+        "allocation_hk.html",
+        "alt_data.html",
+        "anticipation.html"
+      ],
+      "pages_count": 202,
+      "suggested_fix": "Add meta description to all core pages",
+      "falsifiable_check": "grep 'name=.description' in page source — should be present"
+    },
+    {
+      "id": "canonical_non_www",
+      "priority": 4,
+      "title": "Migrate canonical tags from non-www to www host",
+      "class": "canonical_non_www",
+      "severity": "high",
+      "pages": [
+        "bonds.html",
+        "canada.html",
+        "canada_stocks.html",
+        "china.html",
+        "china_mechanics.html",
+        "china_stocks.html",
+        "commodities.html",
+        "cycle.html",
+        "forex.html",
+        "hk.html"
+      ],
+      "pages_count": 18,
+      "suggested_fix": "Migrate canonical tags from non-www to www host",
+      "falsifiable_check": "After migration: grep canonical in site/ — zero non-www hits"
+    },
+    {
+      "id": "duplicate_title",
+      "priority": 5,
+      "title": "Make titles unique across pages",
+      "class": "duplicate_title",
+      "severity": "high",
+      "pages": [
+        "canada.html",
+        "intl.html"
+      ],
+      "pages_count": 2,
+      "suggested_fix": "Make titles unique across pages",
+      "falsifiable_check": "Run duplicate-title check: zero duplicates expected"
+    },
+    {
+      "id": "canonical_not_self",
+      "priority": 6,
+      "title": "Ensure canonical href matches the page's own URL",
+      "class": "canonical_not_self",
+      "severity": "high",
+      "pages": [
+        "canada_stocks.html"
+      ],
+      "pages_count": 1,
+      "suggested_fix": "Ensure canonical href matches the page's own URL",
+      "falsifiable_check": "Load page; canonical URL in <head> should match page URL"
+    },
+    {
+      "id": "missing_title",
+      "priority": 7,
+      "title": "Add <title> element to pages",
+      "class": "missing_title",
+      "severity": "high",
+      "pages": [
+        "validation_timeline.html"
+      ],
+      "pages_count": 1,
+      "suggested_fix": "Add <title> element to pages",
+      "falsifiable_check": "grep '<title' on each affected page — should return a non-empty match"
+    },
+    {
+      "id": "sitemap_duplicates",
+      "priority": 8,
+      "title": "Remove duplicate <loc> entries from sitemap",
+      "class": "sitemap_duplicates",
+      "severity": "high",
+      "pages": [
+        "sitemap.xml"
+      ],
+      "pages_count": 1,
+      "suggested_fix": "Remove duplicate <loc> entries from sitemap",
+      "falsifiable_check": "sitemap.xml: each URL appears exactly once"
+    },
+    {
+      "id": "missing_og",
+      "priority": 9,
+      "title": "Add og:title, og:description, og:image to all pages",
+      "class": "missing_og",
+      "severity": "medium",
+      "pages": [
+        "advanced.html",
+        "ai_desk.html",
+        "aibrief.html",
+        "alerts.html",
+        "allocation.html",
+        "allocation_canada.html",
+        "allocation_china.html",
+        "allocation_hk.html",
+        "alt_data.html",
+        "anticipation.html"
+      ],
+      "pages_count": 213,
+      "suggested_fix": "Add og:title, og:description, og:image to all pages",
+      "falsifiable_check": "Open Graph debugger or grep meta property=og: — all three present"
+    },
+    {
+      "id": "missing_from_sitemap",
+      "priority": 10,
+      "title": "Add public pages to sitemap",
+      "class": "missing_from_sitemap",
+      "severity": "medium",
+      "pages": [
+        "canada_stock.html",
+        "china_stocks_lab.html",
+        "coming-soon.html",
+        "hk_stocks_lab.html",
+        "index.html",
+        "intl_stock.html",
+        "mastermind.html",
+        "qa_bottom_sensors.html",
+        "status.html",
+        "stock.html"
+      ],
+      "pages_count": 15,
+      "suggested_fix": "Add public pages to sitemap",
+      "falsifiable_check": "Run sitemap audit: zero public pages missing"
+    },
+    {
+      "id": "desc_length",
+      "priority": 11,
+      "title": "Adjust description length to 50-170 chars",
+      "class": "desc_length",
+      "severity": "medium",
+      "pages": [
+        "china_mechanics.html",
+        "country_cycles.html",
+        "index.html",
+        "markets.html",
+        "sector_central.html",
+        "sector_cycles.html",
+        "sector_cycles_china.html",
+        "transmission.html"
+      ],
+      "pages_count": 8,
+      "suggested_fix": "Adjust description length to 50-170 chars",
+      "falsifiable_check": "Measure len(desc) for each page; assert 50 <= len <= 170"
+    },
+    {
+      "id": "title_length",
+      "priority": 12,
+      "title": "Adjust title length to 15-70 chars",
+      "class": "title_length",
+      "severity": "medium",
+      "pages": [
+        "cn_reversal_sleeve.html",
+        "stage_analysis.html",
+        "fund_duquesne.html"
+      ],
+      "pages_count": 3,
+      "suggested_fix": "Adjust title length to 15-70 chars",
+      "falsifiable_check": "Measure len(title) for each page; assert 15 <= len <= 70"
+    },
+    {
+      "id": "missing_lang",
+      "priority": 13,
+      "title": "Add lang attribute to <html> element",
+      "class": "missing_lang",
+      "severity": "medium",
+      "pages": [
+        "validation_timeline.html",
+        "calibration.html"
+      ],
+      "pages_count": 2,
+      "suggested_fix": "Add lang attribute to <html> element",
+      "falsifiable_check": "grep '<html' in page — should include lang= attribute"
+    },
+    {
+      "id": "duplicate_description",
+      "priority": 14,
+      "title": "Make meta descriptions unique across pages",
+      "class": "duplicate_description",
+      "severity": "medium",
+      "pages": [
+        "canada.html"
+      ],
+      "pages_count": 1,
+      "suggested_fix": "Make meta descriptions unique across pages",
+      "falsifiable_check": "Run duplicate-desc check: zero duplicates expected"
+    },
+    {
+      "id": "page_weight",
+      "priority": 15,
+      "title": "Reduce HTML page weight to <2.5 MB",
+      "class": "page_weight",
+      "severity": "low",
+      "pages": [
+        "baskets_china_ths.html",
+        "special_situations.html"
+      ],
+      "pages_count": 2,
+      "suggested_fix": "Reduce HTML page weight to <2.5 MB",
+      "falsifiable_check": "wc -c site/<page>.html < 2621440 bytes"
+    }
+  ]
+}

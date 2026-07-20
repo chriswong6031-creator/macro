@@ -1,0 +1,64 @@
+{
+  "schema": "seo_scorecard.v1",
+  "as_of": "2026-07-20T13:14:30Z",
+  "health_score": 56,
+  "issue_counts_by_severity": {
+    "critical": 0,
+    "high": 569,
+    "medium": 352,
+    "low": 2
+  },
+  "deltas_vs_prior": null,
+  "families_summary": {
+    "core": {
+      "pages": 125,
+      "with_canonical": 19,
+      "with_desc": 30,
+      "with_og": 19,
+      "with_jsonld": 1,
+      "in_sitemap": 110
+    },
+    "fund": {
+      "pages": 52,
+      "with_canonical": 0,
+      "with_desc": 0,
+      "with_og": 0,
+      "with_jsonld": 0,
+      "in_sitemap": 52
+    },
+    "strategy": {
+      "pages": 46,
+      "with_canonical": 0,
+      "with_desc": 0,
+      "with_og": 0,
+      "with_jsonld": 0,
+      "in_sitemap": 46
+    },
+    "report": {
+      "pages": 6,
+      "with_canonical": 0,
+      "with_desc": 0,
+      "with_og": 0,
+      "with_jsonld": 0,
+      "in_sitemap": 6
+    },
+    "utility": {
+      "pages": 3,
+      "with_canonical": 0,
+      "with_desc": 0,
+      "with_og": 0,
+      "with_jsonld": 0,
+      "in_sitemap": 0
+    },
+    "stocks": {
+      "pages": 1459,
+      "sampled": 25,
+      "with_canonical": 25,
+      "with_title": 25,
+      "with_desc": 25,
+      "with_og": null,
+      "with_jsonld": null,
+      "in_sitemap": null
+    }
+  }
+}
