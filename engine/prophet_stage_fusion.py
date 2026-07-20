@@ -684,6 +684,393 @@ def block_bootstrap_diff_ci(fires: list[Fire], arm_hi: str, arm_lo: str,
 
 
 # --------------------------------------------------------------------------- #
+# PSQ — generalized continuous-statistic paired bootstrap (§4, PSQ prereg).   #
+# --------------------------------------------------------------------------- #
+# PSQ pre-registration: research/PROPHET_STAGE_QUALITY_PREREG.md
+# Registered 2026-07-20. Do NOT edit PSQ falsifier thresholds without an amendment row.
+
+PSQ_N_BOOT = 10_000          # §4 n_boot
+PSQ_SEED = 20260720          # §4 fixed seed
+PSQ_MIN_MONTHS = 24          # §4 degenerate guard: < 24 distinct months → NO VERDICT
+PSQ_EC_FLOOR_PP = 0.015      # §5 H1 economic floor: < +1.5pp (0.015 in fwd_ret units)
+
+# PSQ § return units: fwd_ret_126 is stored as a decimal fraction (0.047 = 4.7%).
+# The economic floor of +1.5pp = 0.015. This is the committed constant.
+PSQ_H1_ECON_FLOOR = PSQ_EC_FLOOR_PP  # alias for readability
+
+
+def _month_stat_values(fires: list[Fire], arm: str, stat_fn,
+                       ec_gate: float) -> dict[str, list[float]]:
+    """{ "YYYY-MM" -> [per-fire stat values] } for matured members of one arm.
+
+    stat_fn(fire) -> float | None — evaluated once per fire; None values are excluded from
+    the month's list (a month with all-None fires drops from the bootstrap).
+    Uses matured_15_126 only (PSQ is clean15_126-only; called on that param).
+    """
+    members = [f for f in fires if f.in_arm(arm, ec_gate) and f.matured_15_126]
+    by_month: dict[str, list[float]] = {}
+    for f in members:
+        v = stat_fn(f)
+        if v is None or not np.isfinite(v):
+            continue
+        key = f"{f.date.year}-{f.date.month:02d}"
+        by_month.setdefault(key, []).append(float(v))
+    return by_month
+
+
+def block_bootstrap_stat_diff_ci(
+    fires: list[Fire],
+    arm_hi: str,
+    arm_lo: str,
+    stat_fn,
+    stat_name: str,
+    ec_gate: float = EC_SENT_GATE,
+    n_boot: int = PSQ_N_BOOT,
+    seed: int = PSQ_SEED,
+) -> dict[str, Any]:
+    """PSQ §4 — month-block PAIRED bootstrap of a continuous per-fire statistic difference.
+
+    Generalises the PSF win-rate bootstrap (``block_bootstrap_diff_ci``) to arbitrary
+    per-fire continuous statistics.  Preserves the PSF paired-by-block property: the SAME
+    drawn month set feeds BOTH arms per replicate so that within-month cross-arm correlation
+    (the common market factor) is preserved exactly.
+
+    Args:
+        fires:     all matured fires (matured_15_126 flag gates membership).
+        arm_hi:    the arm whose stat is subtracted FROM  (e.g. "C").
+        arm_lo:    the arm being subtracted  (e.g. "A").
+        stat_fn:   callable(Fire) -> float | None.  Returns the per-fire statistic value;
+                   None / non-finite values are silently excluded from the month's pool.
+        stat_name: human-readable label for the log / result dict.
+        ec_gate:   EC gate sentinel (mirrors EC_SENT_GATE default).
+        n_boot:    number of bootstrap replicates (PSQ §4: 10,000).
+        seed:      fixed RNG seed (PSQ §4: 20260720).
+
+    Returns dict with keys:
+        stat_name, arm_hi, arm_lo,
+        n_fires_hi, n_fires_lo,   (matured arm members with non-null stat)
+        n_months,                  (union of months present in either arm)
+        point_hi, point_lo, diff_point,  (full-sample arm medians + difference)
+        boot_mean, boot_se,
+        ci95: [lo, hi],            (2.5 / 97.5 percentile)
+        lower_gt_0, upper_lt_0,   (convenience flags for falsifiers)
+        no_verdict: bool           (True if n_months < PSQ_MIN_MONTHS)
+    """
+    by_month_hi = _month_stat_values(fires, arm_hi, stat_fn, ec_gate)
+    by_month_lo = _month_stat_values(fires, arm_lo, stat_fn, ec_gate)
+    months = sorted(set(by_month_hi) | set(by_month_lo))
+    n_months = len(months)
+
+    # Point estimates over ALL months (no resampling).
+    def _all_vals(by_month: dict[str, list[float]]) -> list[float]:
+        out: list[float] = []
+        for v in by_month.values():
+            out.extend(v)
+        return out
+
+    vals_hi = _all_vals(by_month_hi)
+    vals_lo = _all_vals(by_month_lo)
+    point_hi = float(np.median(vals_hi)) if vals_hi else None
+    point_lo = float(np.median(vals_lo)) if vals_lo else None
+    diff_point = (point_hi - point_lo) if (point_hi is not None and point_lo is not None) else None
+
+    base: dict[str, Any] = {
+        "stat_name": stat_name,
+        "arm_hi": arm_hi,
+        "arm_lo": arm_lo,
+        "n_fires_hi": len(vals_hi),
+        "n_fires_lo": len(vals_lo),
+        "n_months": n_months,
+        "point_hi": point_hi,
+        "point_lo": point_lo,
+        "diff_point": diff_point,
+    }
+
+    if n_months < PSQ_MIN_MONTHS:
+        base.update({"boot_mean": None, "boot_se": None,
+                     "ci95": [None, None],
+                     "lower_gt_0": False, "upper_lt_0": False,
+                     "no_verdict": True,
+                     "note": f"DEGENERATE: only {n_months} distinct months (< {PSQ_MIN_MONTHS} gate) — NO VERDICT"})
+        return base
+
+    # Paired-by-block bootstrap.
+    rng = np.random.default_rng(seed)
+    month_arr = np.array(months, dtype=object)
+    boots = np.empty(n_boot)
+    boots[:] = np.nan
+
+    def _replicate_stat(by_month: dict[str, list[float]], pick: np.ndarray) -> float | None:
+        pool: list[float] = []
+        for j in pick:
+            pool.extend(by_month.get(month_arr[j], []))
+        return float(np.median(pool)) if pool else None
+
+    for i in range(n_boot):
+        pick = rng.integers(0, n_months, size=n_months)   # resample WITH replacement
+        s_hi = _replicate_stat(by_month_hi, pick)          # SAME months for both arms
+        s_lo = _replicate_stat(by_month_lo, pick)
+        if s_hi is not None and s_lo is not None:
+            boots[i] = s_hi - s_lo
+
+    boots = boots[np.isfinite(boots)]
+    if boots.size == 0:
+        base.update({"boot_mean": None, "boot_se": None,
+                     "ci95": [None, None],
+                     "lower_gt_0": False, "upper_lt_0": False,
+                     "no_verdict": True,
+                     "note": "ALL bootstrap replicates degenerate (no finite differences)"})
+        return base
+
+    lo = float(np.percentile(boots, 2.5))
+    hi_ci = float(np.percentile(boots, 97.5))
+    base.update({
+        "boot_mean": float(np.mean(boots)),
+        "boot_se": float(np.std(boots, ddof=1)) if boots.size > 1 else None,
+        "ci95": [lo, hi_ci],
+        "lower_gt_0": bool(lo > 0.0),
+        "upper_lt_0": bool(hi_ci < 0.0),
+        "no_verdict": False,
+    })
+    return base
+
+
+# PSQ convenience stat callables (for H1/H2/H3).
+
+def _stat_fwd_ret_126(f: Fire) -> float | None:
+    return f.fwd.get("fwd_ret_126")
+
+
+def _stat_ea_126(f: Fire) -> float | None:
+    """Excursion asymmetry: fwd_mfe_126 + fwd_mdd_126 (MFE >= 0, MDD <= 0)."""
+    mfe = f.fwd.get("fwd_mfe_126")
+    mdd = f.fwd.get("fwd_mdd_126")
+    if mfe is None or mdd is None:
+        return None
+    if not np.isfinite(mfe) or not np.isfinite(mdd):
+        return None
+    return float(mfe) + float(mdd)
+
+
+def _stat_stopped_flag(f: Fire) -> float | None:
+    """1.0 if STOPPED under clean15_126, 0.0 if other terminal state. None if unmatured."""
+    if not f.matured_15_126:
+        return None
+    return 1.0 if f.state_15_126 == grading.TerminalState.STOPPED else 0.0
+
+
+# --------------------------------------------------------------------------- #
+# PSQ falsifier verdicts (§5, PSQ prereg).                                      #
+# --------------------------------------------------------------------------- #
+def psq_falsifier_verdicts(fires: list[Fire], ec_gate: float = EC_SENT_GATE) -> dict[str, Any]:
+    """PSQ §5 pre-registered falsifier tests for the quality-tilt hypotheses.
+
+    Operates on matured_15_126 fires only (PSQ uses the clean15_126 positional ruler
+    exclusively; clean8_21 is out of scope per PSQ prereg §3).
+
+    Returns:
+        PSQ_H1 (PRIMARY)   — median fwd_ret_126 C−A, bootstrap CI, economic floor check.
+        PSQ_H2 (secondary) — median EA C−A, bootstrap CI.
+        PSQ_H3 (secondary) — median STOPPED fraction C−A (lower = better for C).
+        decompositions     — B−A and C−B for H1 stat (no verdicts).
+        KILL_PSQ           — kill predicate per prereg §5.
+        regime_leg         — H1 point diff per PSF regime partition + n_dates.
+    """
+    # --- H1: median fwd_ret_126, C vs A (PRIMARY) ---
+    h1_ca = block_bootstrap_stat_diff_ci(fires, "C", "A", _stat_fwd_ret_126,
+                                          "median_fwd_ret_126", ec_gate)
+    # Decompositions (B−A and C−B): printed, no verdicts.
+    h1_ba = block_bootstrap_stat_diff_ci(fires, "B", "A", _stat_fwd_ret_126,
+                                          "median_fwd_ret_126(B-A decom)", ec_gate)
+    h1_cb = block_bootstrap_stat_diff_ci(fires, "C", "B", _stat_fwd_ret_126,
+                                          "median_fwd_ret_126(C-B decom)", ec_gate)
+
+    # H1 FAIL conditions per prereg §5:
+    # (a) CI lower bound <= 0  OR  (b) full-sample point diff < +1.5pp (economic floor).
+    h1_no_verdict = h1_ca.get("no_verdict", True)
+    h1_ci_lo = h1_ca["ci95"][0]
+    h1_diff = h1_ca["diff_point"]
+    if h1_no_verdict:
+        h1_verdict = "NO-VERDICT"
+        h1_fail_reason = "insufficient months"
+    elif h1_ci_lo is None or h1_diff is None:
+        h1_verdict = "NO-VERDICT"
+        h1_fail_reason = "degenerate bootstrap"
+    elif h1_ci_lo <= 0:
+        h1_verdict = "FAIL"
+        h1_fail_reason = f"CI lower bound {h1_ci_lo:.4f} <= 0"
+    elif h1_diff < PSQ_H1_ECON_FLOOR:
+        h1_verdict = "FAIL"
+        h1_fail_reason = f"point diff {h1_diff:.4f} < economic floor {PSQ_H1_ECON_FLOOR} (+1.5pp)"
+    else:
+        h1_verdict = "PASS"
+        h1_fail_reason = None
+
+    # --- H2: median EA C−A (secondary) ---
+    h2_ca = block_bootstrap_stat_diff_ci(fires, "C", "A", _stat_ea_126,
+                                          "median_EA_126", ec_gate)
+    h2_no_verdict = h2_ca.get("no_verdict", True)
+    h2_ci_lo = h2_ca["ci95"][0]
+    if h2_no_verdict:
+        h2_verdict = "NO-VERDICT"
+    elif h2_ci_lo is None:
+        h2_verdict = "NO-VERDICT"
+    elif h2_ci_lo <= 0:
+        h2_verdict = "FAIL"
+    else:
+        h2_verdict = "PASS"
+
+    # --- H3: STOPPED fraction C−A (secondary; lower C = better; H3 FAILs if CI UPPER >= 0) ---
+    # Sign convention: C_stopped_frac - A_stopped_frac; negative = C better.
+    # H3 FAILS iff the CI UPPER bound >= 0 (i.e., cannot rule out C being >= A in stop rate).
+    h3_ca = block_bootstrap_stat_diff_ci(fires, "C", "A", _stat_stopped_flag,
+                                          "stopped_fraction", ec_gate)
+    h3_no_verdict = h3_ca.get("no_verdict", True)
+    h3_ci_hi = h3_ca["ci95"][1]
+    if h3_no_verdict:
+        h3_verdict = "NO-VERDICT"
+    elif h3_ci_hi is None:
+        h3_verdict = "NO-VERDICT"
+    elif h3_ci_hi >= 0:
+        h3_verdict = "FAIL"
+    else:
+        h3_verdict = "PASS"
+
+    # --- KILL predicate ---
+    # KILL iff H1 full-sample point diff <= 0  OR  negative in >= 2 regimes at n_dates >= 50.
+    regime_leg: dict[str, dict] = {}
+    kill_regimes: list[str] = []
+    for reg_name in REGIMES:
+        sub = [f for f in fires if _regime_of(f.date) == reg_name and f.matured_15_126]
+        # n_dates in this regime across all matured A-arm fires (the control denominator).
+        n_dates_regime = len({f.date.normalize() for f in sub if f.in_arm("A", ec_gate)})
+        # point diff per prereged §5 KILL rule.
+        vals_c = [_stat_fwd_ret_126(f) for f in sub if f.in_arm("C", ec_gate)
+                  and _stat_fwd_ret_126(f) is not None]
+        vals_a = [_stat_fwd_ret_126(f) for f in sub if f.in_arm("A", ec_gate)
+                  and _stat_fwd_ret_126(f) is not None]
+        pt_c = float(np.median(vals_c)) if vals_c else None
+        pt_a = float(np.median(vals_a)) if vals_a else None
+        reg_diff = (pt_c - pt_a) if (pt_c is not None and pt_a is not None) else None
+        regime_leg[reg_name] = {
+            "n_dates": n_dates_regime,
+            "n_fires_C": len(vals_c),
+            "n_fires_A": len(vals_a),
+            "median_fwd_ret_C": pt_c,
+            "median_fwd_ret_A": pt_a,
+            "diff_point": reg_diff,
+        }
+        if reg_diff is not None and reg_diff < 0 and n_dates_regime >= 50:
+            kill_regimes.append(reg_name)
+
+    kill_overall = (h1_diff is not None and h1_diff <= 0) or (len(kill_regimes) >= 2)
+
+    # --- H1 de-overlapped robustness ---
+    deov = de_overlap_fires(fires)
+    h1_deov = block_bootstrap_stat_diff_ci(deov, "C", "A", _stat_fwd_ret_126,
+                                            "median_fwd_ret_126_deoverlapped", ec_gate)
+
+    return {
+        "spec": "research/PROPHET_STAGE_QUALITY_PREREG.md",
+        "param": "clean15_126",
+        "n_matured_A": len([f for f in fires if f.in_arm("A", ec_gate) and f.matured_15_126]),
+        "n_matured_C": len([f for f in fires if f.in_arm("C", ec_gate) and f.matured_15_126]),
+        "PSQ_H1": {
+            "verdict": h1_verdict,
+            "fail_reason": h1_fail_reason,
+            "primary_stat": "median_fwd_ret_126 C−A, month-block paired bootstrap",
+            "bootstrap": h1_ca,
+            "economic_floor_pp": PSQ_H1_ECON_FLOOR,
+            "note": ("PRIMARY promotion-bearing falsifier. FAILs if CI-lower <= 0 OR point "
+                     f"diff < +{PSQ_H1_ECON_FLOOR*100:.1f}pp. Only one comparison (C vs A). "
+                     "NOTE (same-sample): the point estimates were known before registration; "
+                     "only the CI machinery and pass lines were not — see PSQ prereg §0."),
+        },
+        "PSQ_H1_decompositions": {
+            "note": "B−A and C−B decompositions: PRINTED, no verdicts (prereg §2).",
+            "B_minus_A": h1_ba,
+            "C_minus_B": h1_cb,
+        },
+        "PSQ_H1_deoverlapped": {
+            "note": ("Robustness: H1 statistic on the de-overlapped fire subset (one fire per "
+                     "name per non-overlapping 126-bar window, per PSF §FIX-4 logic). "
+                     "Supporting only — no verdict change."),
+            "n_fires_deoverlapped": len(deov),
+            "bootstrap": h1_deov,
+        },
+        "PSQ_H2": {
+            "verdict": h2_verdict,
+            "primary_stat": "median EA (fwd_mfe_126 + fwd_mdd_126) C−A, month-block paired bootstrap",
+            "bootstrap": h2_ca,
+            "note": ("SECONDARY only — no promotion power, no kill power. EA = MFE + MDD "
+                     "(MFE >= 0, MDD <= 0). FAILs iff CI-lower <= 0."),
+        },
+        "PSQ_H3": {
+            "verdict": h3_verdict,
+            "primary_stat": "stopped_fraction C−A (lower C = better), month-block paired bootstrap",
+            "bootstrap": h3_ca,
+            "note": ("SECONDARY only — no promotion power, no kill power. FAILs iff CI-upper >= 0 "
+                     "(cannot rule out C having >= A stopped rate). C−A difference: negative = C better."),
+        },
+        "KILL_PSQ": {
+            "triggered": kill_overall,
+            "kill_reason_overall_nonpositive": (h1_diff is not None and h1_diff <= 0),
+            "kill_reason_regime_negative": kill_regimes,
+            "note": ("KILL iff H1 full-sample point diff <= 0, OR negative in >= 2 regimes at "
+                     "n_dates >= 50. KILL appends a row to DO_NOT_REBUILD §2 (construction-scoped: "
+                     "'Stage-2∩EC as a return-quality/hold tilt on the T1/T2 timing entry'). "
+                     "A KILL does NOT touch the forward shadow and does NOT delete Stage/EC "
+                     "display surfaces."),
+        },
+        "regime_leg": {
+            "note": "H1 point diff per PSF regime partition. Sign flips printed, no verdict change alone.",
+            "regimes": regime_leg,
+        },
+    }
+
+
+# --------------------------------------------------------------------------- #
+# PSQ per-fire dump (§4 reproducibility artifact).                              #
+# --------------------------------------------------------------------------- #
+def build_psq_fires_table(fires: list[Fire], ec_gate: float = EC_SENT_GATE) -> pd.DataFrame:
+    """Matured-fires dump table for PSQ §4 reproducibility artifact.
+
+    Columns: ticker, entry_date, arm_A, arm_B, arm_B_fresh, arm_C,
+             fwd_ret_126, fwd_mfe_126, fwd_mdd_126,
+             ea_126 (= fwd_mfe_126 + fwd_mdd_126),
+             terminal_state_15_126, stopped_flag,
+             entry_month (YYYY-MM), regime.
+    Only matured_15_126 fires are included (forward window is complete).
+    """
+    rows = []
+    for f in fires:
+        if not f.matured_15_126:
+            continue
+        mfe = f.fwd.get("fwd_mfe_126")
+        mdd = f.fwd.get("fwd_mdd_126")
+        ea = (float(mfe) + float(mdd)) if (mfe is not None and mdd is not None) else None
+        rows.append({
+            "ticker": f.ticker,
+            "entry_date": f.date,
+            "arm_A": True,
+            "arm_B": f.in_arm("B", ec_gate),
+            "arm_B_fresh": f.in_arm("B_fresh", ec_gate),
+            "arm_C": f.in_arm("C", ec_gate),
+            "fwd_ret_126": f.fwd.get("fwd_ret_126"),
+            "fwd_mfe_126": mfe,
+            "fwd_mdd_126": mdd,
+            "ea_126": ea,
+            "terminal_state_15_126": str(f.state_15_126) if f.state_15_126 is not None else None,
+            "stopped_flag": 1 if f.state_15_126 == grading.TerminalState.STOPPED else 0,
+            "entry_month": f"{f.date.year}-{f.date.month:02d}",
+            "regime": _regime_of(f.date),
+        })
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows)
+
+
+# --------------------------------------------------------------------------- #
 # Falsifier verdicts (§5) — PSF-H1 / PSF-H2 / PSF-H3.                           #
 # --------------------------------------------------------------------------- #
 def falsifier_verdicts(fires: list[Fire], param: str = "clean15_126",
@@ -1176,4 +1563,6 @@ def assemble_results(fires: list[Fire], *, n_universe: int, n_with_prices: int,
             "falsifiers": falsifier_verdicts(fires, param, ec_gate),
             "deoverlap_robustness": deoverlap_robustness(fires, param, ec_gate),  # FIX-4
         }
+    # PSQ quality-tilt falsifiers (clean15_126 only, per PSQ prereg §3).
+    out["psq"] = psq_falsifier_verdicts(fires, ec_gate)
     return out

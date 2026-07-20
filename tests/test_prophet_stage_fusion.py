@@ -440,3 +440,239 @@ def test_fire_multiplicity_disclosure():
     assert fm["n_fires"] == 5
     assert fm["max_fires_per_name"] == 4
     assert fm["mean_fires_per_name"] == pytest.approx(2.5)
+
+
+# ===========================================================================  #
+# PSQ tests (Prophet × Stage QUALITY re-grade, PSQ prereg §4-§5)               #
+# ===========================================================================  #
+
+def _psq_fire(ticker, date, ret126, mfe126, mdd126, stage=2, weeks=5, ec=26.0,
+              win=True, stopped=False):
+    """Build a synthetic matured_15_126 Fire with explicit forward metrics for PSQ tests."""
+    f = psf.Fire(ticker, pd.Timestamp(date), "T1/T2", stage=stage,
+                 weeks_in_stage=weeks, ec_sent=ec)
+    if win:
+        f.state_15_126 = grading.TerminalState.CLEAN_LIFTOFF
+    elif stopped:
+        f.state_15_126 = grading.TerminalState.STOPPED
+    else:
+        f.state_15_126 = grading.TerminalState.CUSHIONED
+    f.matured_15_126 = True
+    f.state_8_21 = f.state_15_126
+    f.matured_8_21 = True
+    f._liftoff_bar_clean15_126 = 30 if win else None
+    f.bars_to_mfe_peak_126 = 60 if win else 20
+    f.fwd = {
+        "fwd_ret_126": float(ret126),
+        "fwd_mfe_126": float(mfe126),
+        "fwd_mdd_126": float(mdd126),
+        "fwd_ret_63": float(ret126) / 2,
+    }
+    return f
+
+
+# --------------------------------------------------------------------------- #
+# PSQ-T1: synthetic fires with known median shift — CI excludes zero           #
+# --------------------------------------------------------------------------- #
+def _month_date(m: int) -> str:
+    """Return a date string for sequential month index m (1-based, up to 60)."""
+    year = 2022 + (m - 1) // 12
+    mon = ((m - 1) % 12) + 1
+    return f"{year}-{mon:02d}-15"
+
+
+def test_block_bootstrap_stat_diff_ci_known_shift():
+    """C has a consistently higher fwd_ret_126 than A. With 24+ months and a clear shift,
+    the CI lower bound must be > 0 (CI excludes zero).
+
+    Uses 30 months × 5 fires per arm.  A fires: ret=0.01 (1%), C fires: ret=0.06 (6%).
+    True diff = +0.05 (5pp).  Bootstrap CI must exclude 0.
+    """
+    fires = []
+    for m in range(1, 31):          # 30 months → > 24 month gate
+        date = _month_date(m)
+        for k in range(5):
+            # Arm A only (stage != 2, so not in C).
+            fires.append(_psq_fire(f"A_{m}_{k}", date, ret126=0.01, mfe126=0.08, mdd126=-0.03,
+                                   stage=4, ec=None, win=True))
+            # Arm C (stage==2, ec>=24).
+            fires.append(_psq_fire(f"C_{m}_{k}", date, ret126=0.06, mfe126=0.12, mdd126=-0.01,
+                                   stage=2, ec=26.0, win=True))
+
+    bd = psf.block_bootstrap_stat_diff_ci(
+        fires, "C", "A", psf._stat_fwd_ret_126, "test_median_ret",
+        n_boot=2000, seed=42
+    )
+    assert bd["no_verdict"] is False
+    assert bd["n_months"] >= 24
+    # Arm A pools all fires (stage-2 and stage-4) → median per month = median(0.01, 0.06) = 0.035.
+    # Arm C is stage-2 only → median per month = 0.06.  diff_point ~ 0.06 - 0.035 = 0.025.
+    assert bd["diff_point"] == pytest.approx(0.025, abs=0.005)
+    # CI must exclude zero (lower > 0): the shift is consistent across ALL months.
+    assert bd["lower_gt_0"] is True, f"Expected CI lower > 0, got ci95={bd['ci95']}"
+    assert bd["ci95"][0] > 0.0
+
+
+# --------------------------------------------------------------------------- #
+# PSQ-T2: paired-months property — identical arms → diff CI centered on 0      #
+# --------------------------------------------------------------------------- #
+def test_block_bootstrap_stat_diff_ci_identical_arms():
+    """When arm_hi and arm_lo are the same fires (C = A, no Stage-2 filter applied to A),
+    the difference must be zero and the CI must contain zero.
+
+    We pass the same fire set for both arms by using a stat_fn that ignores arm membership
+    and directly compare C−A where ALL fires are in both arms.
+    """
+    fires = []
+    for m in range(1, 30):
+        date = _month_date(m)
+        for k in range(5):
+            # All fires are Stage-2 with EC, so arm_C == arm_A for any stat over Stage-2.
+            fires.append(_psq_fire(f"X_{m}_{k}", date, ret126=0.04, mfe126=0.10, mdd126=-0.02,
+                                   stage=2, ec=26.0, win=True))
+
+    # C and A are the same fires (all are stage-2∩EC, so arm A and arm C have the same pool).
+    # However arm A (all fires) = arm C here because all fires are in C.
+    # The diff must be 0 and CI must contain 0.
+    bd = psf.block_bootstrap_stat_diff_ci(
+        fires, "C", "A", psf._stat_fwd_ret_126, "identical_arms_test",
+        n_boot=2000, seed=99
+    )
+    assert bd["no_verdict"] is False
+    # diff_point must be 0 (same pool).
+    assert bd["diff_point"] == pytest.approx(0.0, abs=1e-9)
+    # CI must contain 0.
+    lo, hi = bd["ci95"]
+    assert lo <= 0.0 <= hi, f"CI must straddle 0 for identical arms, got [{lo}, {hi}]"
+
+
+# --------------------------------------------------------------------------- #
+# PSQ-T3: degenerate-month guard (< 24 months → no_verdict)                   #
+# --------------------------------------------------------------------------- #
+def test_block_bootstrap_stat_diff_ci_degenerate_month_guard():
+    """With fewer than PSQ_MIN_MONTHS (24) distinct months, must return no_verdict=True."""
+    fires = []
+    for m in range(1, 20):    # only 19 months — below the 24-month gate
+        date = _month_date(m)
+        fires.append(_psq_fire(f"G_{m}", date, ret126=0.05, mfe126=0.10, mdd126=-0.02,
+                               stage=2, ec=26.0, win=True))
+        fires.append(_psq_fire(f"H_{m}", date, ret126=0.02, mfe126=0.06, mdd126=-0.04,
+                               stage=4, ec=None, win=True))
+
+    bd = psf.block_bootstrap_stat_diff_ci(
+        fires, "C", "A", psf._stat_fwd_ret_126, "degenerate_test",
+        n_boot=500, seed=7
+    )
+    assert bd["no_verdict"] is True, (
+        f"Expected no_verdict=True with {bd['n_months']} months, got no_verdict={bd['no_verdict']}"
+    )
+    assert bd["ci95"] == [None, None]
+
+
+# --------------------------------------------------------------------------- #
+# PSQ-T4: EA arithmetic correctness (_stat_ea_126)                             #
+# --------------------------------------------------------------------------- #
+def test_psq_ea_arithmetic():
+    """EA = fwd_mfe_126 + fwd_mdd_126.  Verify the stat callable returns the correct sum."""
+    f = _psq_fire("EA_TEST", "2023-03-01", ret126=0.03, mfe126=0.15, mdd126=-0.08,
+                  stage=2, ec=26.0, win=True)
+    ea = psf._stat_ea_126(f)
+    assert ea == pytest.approx(0.15 + (-0.08), abs=1e-9)
+
+    # None mfe → None.
+    f2 = _psq_fire("EA_NONE", "2023-03-02", ret126=0.01, mfe126=0.10, mdd126=-0.05,
+                   stage=2, ec=26.0, win=True)
+    f2.fwd = {"fwd_ret_126": 0.01, "fwd_mdd_126": -0.05}  # mfe missing
+    assert psf._stat_ea_126(f2) is None
+
+    # Both zero → 0.0.
+    f3 = _psq_fire("EA_ZERO", "2023-03-03", ret126=0.0, mfe126=0.0, mdd126=0.0,
+                   stage=2, ec=26.0, win=True)
+    assert psf._stat_ea_126(f3) == pytest.approx(0.0, abs=1e-9)
+
+
+# --------------------------------------------------------------------------- #
+# PSQ-T5: psq_falsifier_verdicts wiring (full dict keys)                       #
+# --------------------------------------------------------------------------- #
+def test_psq_falsifier_verdicts_keys():
+    """psq_falsifier_verdicts must return the expected top-level keys."""
+    # Minimal fire set to exercise all code paths without triggering degenerate guards.
+    fires = []
+    for m in range(1, 26):    # 25 months (above the 24-month gate)
+        date = _month_date(m)
+        fires.append(_psq_fire(f"C_{m}", date, ret126=0.05, mfe126=0.10, mdd126=-0.02,
+                               stage=2, ec=26.0, win=True))
+        fires.append(_psq_fire(f"A_{m}", date, ret126=0.02, mfe126=0.06, mdd126=-0.04,
+                               stage=4, ec=None, win=True))
+
+    result = psf.psq_falsifier_verdicts(fires)
+    assert "PSQ_H1" in result
+    assert "PSQ_H1_decompositions" in result
+    assert "PSQ_H1_deoverlapped" in result
+    assert "PSQ_H2" in result
+    assert "PSQ_H3" in result
+    assert "KILL_PSQ" in result
+    assert "regime_leg" in result
+    # Each hypothesis must have a verdict key.
+    for key in ("PSQ_H1", "PSQ_H2", "PSQ_H3"):
+        assert result[key]["verdict"] in ("PASS", "FAIL", "NO-VERDICT"), (
+            f"{key} verdict={result[key]['verdict']!r} not in {{PASS, FAIL, NO-VERDICT}}"
+        )
+    # KILL must be a bool.
+    assert isinstance(result["KILL_PSQ"]["triggered"], bool)
+
+
+# --------------------------------------------------------------------------- #
+# PSQ-T6: stopped_flag stat — 1 for STOPPED, 0 for others                     #
+# --------------------------------------------------------------------------- #
+def test_psq_stopped_flag_stat():
+    """_stat_stopped_flag returns 1.0 for STOPPED, 0.0 for CLEAN_LIFTOFF, None if not matured."""
+    f_stop = _psq_fire("S1", "2023-01-10", ret126=-0.15, mfe126=0.02, mdd126=-0.18,
+                        stage=2, ec=26.0, win=False, stopped=True)
+    assert psf._stat_stopped_flag(f_stop) == pytest.approx(1.0)
+
+    f_win = _psq_fire("W1", "2023-01-11", ret126=0.10, mfe126=0.18, mdd126=-0.03,
+                       stage=2, ec=26.0, win=True)
+    assert psf._stat_stopped_flag(f_win) == pytest.approx(0.0)
+
+    f_unmat = psf.Fire("U1", pd.Timestamp("2023-01-12"), "T1/T2", 2, 4, 26.0)
+    # matured_15_126 not set (defaults False).
+    assert psf._stat_stopped_flag(f_unmat) is None
+
+
+# --------------------------------------------------------------------------- #
+# PSQ-T7: build_psq_fires_table columns and row counts                          #
+# --------------------------------------------------------------------------- #
+def test_build_psq_fires_table(tmp_path):
+    """build_psq_fires_table must include only matured fires and have the right columns."""
+    fires = []
+    # 5 matured (arm C: stage2+ec), 3 matured (arm A only: stage4), 2 unmatured.
+    for i in range(5):
+        fires.append(_psq_fire(f"C{i}", f"2023-0{i+1}-10", ret126=0.05, mfe126=0.10, mdd126=-0.02,
+                               stage=2, ec=26.0, win=True))
+    for i in range(3):
+        f = _psq_fire(f"A{i}", f"2023-0{i+1}-15", ret126=0.01, mfe126=0.04, mdd126=-0.05,
+                      stage=4, ec=None, win=True)
+        fires.append(f)
+    for i in range(2):
+        f = psf.Fire(f"U{i}", pd.Timestamp(f"2023-0{i+1}-20"), "T1/T2", 2, 5, 26.0)
+        # matured_15_126 = False → excluded.
+        fires.append(f)
+
+    tbl = psf.build_psq_fires_table(fires)
+    # Only 8 matured.
+    assert len(tbl) == 8
+    required_cols = {"ticker", "entry_date", "arm_A", "arm_B", "arm_B_fresh", "arm_C",
+                     "fwd_ret_126", "fwd_mfe_126", "fwd_mdd_126", "ea_126",
+                     "terminal_state_15_126", "stopped_flag", "entry_month", "regime"}
+    assert required_cols.issubset(set(tbl.columns))
+    # All arm_A must be True.
+    assert tbl["arm_A"].all()
+    # Stage-2+ec fires have arm_C=True.
+    c_rows = tbl[tbl["ticker"].str.startswith("C")]
+    assert c_rows["arm_C"].all()
+    # Stage-4 fires have arm_C=False.
+    a_rows = tbl[tbl["ticker"].str.startswith("A")]
+    assert (~a_rows["arm_C"]).all()
+    # EA arithmetic check.
+    assert (tbl["ea_126"] == tbl["fwd_mfe_126"] + tbl["fwd_mdd_126"]).all()
