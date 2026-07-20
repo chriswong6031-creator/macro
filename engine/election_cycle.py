@@ -79,30 +79,35 @@ _BAND_NUDGE = 4.0       # points to subtract from the watch + caution thresholds
 _GROSS_MULT = 0.97
 
 # ---- honest stat strings (baked from the backtest so the chip can't overclaim) -------------
-_STAT_EN = ("Midterm Apr–Oct drawdowns averaged −15% vs −10% otherwise (n=8, suggestive not "
-            "significant, p≈0.09; the worst years on record are non-midterm).")
-_STAT_ZH = ("中期选举年 4–10 月最大回撤平均约 −15%（其余年份约 −10%；n=8，仅具提示性、未达显著，"
-            "p≈0.09；史上最深回撤多发生在非中期年）。")
-_SLICE_EN = ("Edge is narrow: while the tape is still healthy (S&P above its 200-day), this "
-             "window has flagged ≥5% pullbacks at ~1.25× the base rate — early warning, sized "
-             "not triggered.")
-_SLICE_ZH = ("优势有限：当大盘仍健康（标普高于 200 日线）时，该窗口的 ≥5% 回撤概率约为常态的 1.25 倍——"
-             "用于提前预警与降低仓位，而非触发买卖。")
-_CAVEAT_EN = ("Calendar context only — it modulates sizing/sensitivity, never originates an "
-              "alert. The Dollar-Milkshake direction (firmer dollar in midterm H2) is actually "
-              "reversed in history; trust the radar's measured dollar/rate/CNH legs, not the year.")
-_CAVEAT_ZH = ("仅为日历背景——只调节仓位/灵敏度，绝不独立触发警报。历史上「美元里程碑」方向（中期下半年美元更强）"
-              "实际相反；请相信雷达已验证的美元/利率/离岸人民币因子，而非年份本身。")
+# Voice: Lens content law (memory hover-popup-doctrine, 2026-07-19) — these strings land in
+# hover explainers, so they must read as plain words. The machine receipt (n=8, p≈0.088,
+# d=-0.53, the DXY numbers) stays in THIS FILE's docstring and in the tip's receipt line —
+# never in body copy.
+_STAT_EN = ("Midterm-year drops between April and October have run deeper than usual — though "
+            "the pattern is loose, and the worst crashes on record came in other years.")
+_STAT_ZH = ("中期选举年 4–10 月的回撤历来比平常更深——但规律并不严格，史上最深的下跌都发生在其他年份。")
+_SLICE_EN = ("The one measured edge: while the market still looks healthy (S&P above its "
+             "200-day average), pullbacks have come about 1.25× as often in this window — an "
+             "early heads-up for position size, never a trigger.")
+_SLICE_ZH = ("唯一可量化的优势：当大盘仍健康（标普高于 200 日均线）时，该窗口出现回撤的频率约为平常的 "
+             "1.25 倍——仅作提前提醒、用于仓位，绝非买卖触发。")
+_CAVEAT_EN = ("Calendar context only — it gently adjusts position size and alert sensitivity, "
+              "and can never raise an alarm by itself. And ignore the folk story that the "
+              "dollar firms up in midterm second halves: history shows the opposite, so trust "
+              "the measured dollar and rate gauges, not the year.")
+_CAVEAT_ZH = ("仅为日历背景——只轻微调整仓位与预警灵敏度，绝不单独拉响警报。至于「中期下半年美元走强」"
+              "的坊间说法：历史恰好相反，请相信实测的美元与利率指标，而非年份本身。")
 
 # ---- sector rotation (display-only) ----------------------------------------
 # Midterm Jul-Dec, full-history (n=6) sectors: defensives held / improved, cyclicals faded.
 # Mostly ordinary defensive-H2 seasonality, so this is a cosmetic tilt, never a signal.
 _FAVOR = (("XLV", "Health Care", "医疗保健"), ("XLP", "Staples", "必需消费"), ("XLU", "Utilities", "公用事业"))
 _AVOID = (("XLE", "Energy", "能源"), ("XLY", "Discretionary", "可选消费"))
-_SECTOR_EN = ("Midterm H2 tilt: defensives (XLV/XLP/XLU) have held while cyclicals (XLE/XLY) "
-              "faded — but most of this is ordinary H2 seasonality (n=6), not a midterm effect.")
-_SECTOR_ZH = ("中期下半年倾向：防御板块（XLV/XLP/XLU）相对抗跌、周期板块（XLE/XLY）走弱——但其中多为普通的"
-              "下半年季节性（n=6），并非中期专属效应。")
+_SECTOR_EN = ("In past midterm second halves, defensives (health care, staples, utilities) "
+              "held up while energy and discretionary lagged — mostly ordinary second-half "
+              "seasonality, not a midterm effect.")
+_SECTOR_ZH = ("历次中期选举年下半年，防御板块（医疗、必需消费、公用事业）相对抗跌，能源与可选消费走弱——"
+              "多为普通的下半年季节性，并非中期专属效应。")
 
 
 # ---- helpers ---------------------------------------------------------------

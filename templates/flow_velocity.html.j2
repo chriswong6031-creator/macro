@@ -263,10 +263,10 @@ tr.flash>td{animation:rowflash 1.5s ease both}
 /* ── ? method tip trigger ── */
 .qm{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--grid);background:var(--card);color:var(--muted);font-size:11px;font-weight:700;cursor:help;flex:none;user-select:none}
 .qm:hover{color:var(--blue);border-color:var(--blue)}
-/* body-appended [data-tip-en] popover (wired in theme.js) — this page doesn't ship
-   theme.css, so its box style is restated here with the page's own tokens */
+/* body-appended [data-tip-en] popover: the Lens card (theme.js) injects its OWN CSS
+   (#lens-style) with fallback chains that cover this page's --card/--grid tokens, so
+   no box restatement is needed here — only the trigger affordance. */
 [data-tip-en]{cursor:help}
-.i18n-tip-pop{display:none;position:fixed;z-index:12500;max-width:min(320px,calc(100vw - 24px));padding:7px 10px;border-radius:8px;background:var(--card);border:1px solid var(--grid);box-shadow:0 4px 16px rgba(0,0,0,.18);font-size:11px;font-weight:500;line-height:1.5;color:var(--text);text-align:left;white-space:normal}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:1000px}
 .foot b{color:var(--muted)}
 @media (prefers-reduced-motion: reduce){.vbar-fill,.mrow.show td,tr.flash>td,.pchip[data-goto]{animation:none;transition:none}}
