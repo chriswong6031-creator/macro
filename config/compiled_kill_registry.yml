@@ -396,6 +396,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Stage-2 (and Stage-2∩EC) as a WIN-RATE gate or ranking bonus on the T1/T2 confluence timing entry'
+    verdict: 'KILLED (construction-scoped) — PSF-H1/H2 FAIL on the primary month-block bootstrap DIFFERENCE CI (B−A and C−B straddle 0 at effective n≈49–54 monthly blocks), negative (win_B−win_A) delta persisted at n_dates≥50 across ≥2 regimes → KILL per `PROPHET_STAGE_FUSION_PREREG.md` §5. Closes THIS SPECIFIC CONSTRUCTION ONLY (Stage/EC as a win-rate authority on the timing entry). **RETAINED as display-tier confluence context** — the return-distribution right-shift + (conditional) hold tilt is real and powers the Stage Analysis product; Stage/EC never deleted. **LEFT OPEN:** (i) the live-Prophet forward-shadow (definitive on-Prophet test, different signal, matures ~Dec 2026); (ii) Stage-2 as a return-quality / hold tilt rather than a win-rate gate'
+    source: 'PSF-H1/H2, `PROPHET_STAGE_FUSION_PREREG.md` §5; `research/reports/PROPHET_STAGE_FUSION_RESULTS.md`'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
