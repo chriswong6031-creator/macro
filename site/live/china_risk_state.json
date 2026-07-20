@@ -1,16 +1,16 @@
 {
   "schema": "china_risk_state.v1",
-  "built": "2026-07-20 04:32:50 UTC",
+  "built": "2026-07-20 07:53:10 UTC",
   "session": {
     "cn": {
       "region": "cn",
       "open": false,
-      "local_time": "2026-07-20 12:32 CST"
+      "local_time": "2026-07-20 15:53 CST"
     },
     "hk": {
       "region": "hk",
-      "open": false,
-      "local_time": "2026-07-20 12:32 HKT"
+      "open": true,
+      "local_time": "2026-07-20 15:53 HKT"
     }
   },
   "live_active": true,
@@ -20,8 +20,17 @@
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-17",
-  "n_live_symbols": 3,
-  "movers": [],
+  "n_live_symbols": 4,
+  "movers": [
+    {
+      "sym": "HSI",
+      "chg_pct": 2.23
+    },
+    {
+      "sym": "CNH",
+      "chg_pct": -0.08
+    }
+  ],
   "display": {
     "verdict": "RISK_OFF",
     "label_en": "Risk-off",
