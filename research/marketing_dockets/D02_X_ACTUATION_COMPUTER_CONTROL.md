@@ -1,6 +1,6 @@
 # MKT-D02 — X Actuation: Outbox Contract + Computer-Control Posting Loop
 
-**Department:** Broadcast (distribution) · **Priority: P0** · **Status: W0 SHIPPED #3056 (2026-07-19) — outbox contract (`engine/marketing/outbox.py`) + governor wiring behind `MARKETING_OUTBOX_ENABLED` + admin Outbox review page + `--dry-run` actuator + 54 tests; W1 blocked on operator accounts/host**
+**Department:** Broadcast (distribution) · **Priority: P0** · **Status: W0 SHIPPED #3056 (2026-07-19) — outbox contract (`engine/marketing/outbox.py`) + governor wiring behind `MARKETING_OUTBOX_ENABLED` + admin Outbox review page + `--dry-run` actuator + 54 tests. W0 QUALITY PASS #3098 (2026-07-19, opus-only, supersedes #3071) — Sentinel cap authority (defer to D08, never hardcode) + single-pass `fold_state` + `apply_decisions` retry law + advisory flock + operator-grade UX (bulk approve/hold, slot meters, decision log, non-destructive in-place refresh + media cache); 135 tests. W1 blocked on operator accounts/host.**
 **Strategy doc (read it):** `research/MARKETING_LOBE_GUERRILLA_GROWTH_AND_OPERATIONS_BY_FABLE.md` (multi-account doctrine, computer-control posture) and `research/MARKETING_ZERO_FOLLOWER_TRACTION_PLAYBOOK_BY_FABLE.md` (what to post from zero followers).
 
 ## Why
