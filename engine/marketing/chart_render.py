@@ -1738,21 +1738,26 @@ def render_earnings_card(
     eps_label, eps_color, eps_surp = _classify(eps_actual, eps_est)
     has_rev = rev_actual is not None and rev_est is not None
 
-    # ── Helper: wide chip (BEAT/MISS/INLINE) with surprise % below ──────────
+    # ── Helper: one-line verdict chip — "BEAT +8.4%" together. Single line
+    # buys the vertical room that lets every stat font run larger, and the
+    # explicit sans-serif kills the serif fallback the old chip shipped with.
     def _stat_chip(label: str, color: str, surp: float, cx: float, cy: float) -> str:
-        cw, ch = 72, 26
         sign = "+" if surp >= 0 else ""
         surp_text = f"{sign}{surp:.1f}%"
+        cw = int(len(label) * 10.2 + len(surp_text) * 8.4) + 40
+        ch = 34
+        label_w = len(label) * 10.2
+        left = cx - (label_w + 10 + len(surp_text) * 8.4) / 2.0
         return (
             f'<rect x="{cx - cw / 2:.1f}" y="{cy - ch / 2:.1f}" '
-            f'width="{cw}" height="{ch}" rx="5" fill="{color}" fill-opacity="0.18" '
-            f'stroke="{color}" stroke-width="1.2"/>'
-            f'<text x="{cx:.1f}" y="{cy + 5:.1f}" fill="{color}" '
-            f'font-size="12" font-weight="bold" text-anchor="middle">'
-            f'{_xesc(label)}</text>'
-            f'<text x="{cx:.1f}" y="{cy + 22:.1f}" fill="{color}" '
-            f'font-size="10" text-anchor="middle" opacity="0.85">'
-            f'{_xesc(surp_text)}</text>'
+            f'width="{cw}" height="{ch}" rx="8" fill="{color}" fill-opacity="0.18" '
+            f'stroke="{color}" stroke-width="1.4"/>'
+            f'<text x="{left:.1f}" y="{cy + 6:.1f}" fill="{color}" '
+            f'font-size="17" font-weight="800" font-family="sans-serif" '
+            f'letter-spacing="1">{_xesc(label)}</text>'
+            f'<text x="{left + label_w + 10:.1f}" y="{cy + 6:.1f}" fill="{color}" '
+            f'font-size="15" font-weight="600" font-family="sans-serif" '
+            f'opacity="0.88">{_xesc(surp_text)}</text>'
         )
 
     def _fmt_rev(v: float) -> str:
@@ -1853,44 +1858,44 @@ def render_earnings_card(
 
         stat_svg = (
             # ── EPS column ──
-            f'<text x="{col_l:.1f}" y="{stat_top + 16:.1f}" fill="#6b7a99" '
-            f'font-size="11" text-anchor="middle" letter-spacing="2" '
+            f'<text x="{col_l:.1f}" y="{stat_top + 18:.1f}" fill="#7d8aa5" '
+            f'font-size="14" text-anchor="middle" letter-spacing="2.5" '
             f'font-family="sans-serif">EPS</text>'
-            f'<text x="{col_l:.1f}" y="{stat_top + 54:.1f}" fill="#ffffff" '
-            f'font-size="34" font-weight="bold" text-anchor="middle" '
+            f'<text x="{col_l:.1f}" y="{stat_top + 60:.1f}" fill="#ffffff" '
+            f'font-size="40" font-weight="bold" text-anchor="middle" '
             f'font-family="sans-serif">{_xesc(f"${eps_actual:.2f}")}</text>'
-            f'<text x="{col_l:.1f}" y="{stat_top + 76:.1f}" fill="#6b7a99" '
-            f'font-size="12" text-anchor="middle" font-family="sans-serif">'
+            f'<text x="{col_l:.1f}" y="{stat_top + 86:.1f}" fill="#8899bb" '
+            f'font-size="15" text-anchor="middle" font-family="sans-serif">'
             f'Est: {_xesc(f"${eps_est:.2f}")}</text>'
-        ) + _stat_chip(eps_label, eps_color, eps_surp, col_l, stat_top + 108) + (
+        ) + _stat_chip(eps_label, eps_color, eps_surp, col_l, stat_top + 114) + (
             # ── Vertical divider ──
             f'<line x1="{center_x:.1f}" y1="{stat_top:.1f}" '
-            f'x2="{center_x:.1f}" y2="{stat_top + 140:.1f}" '
+            f'x2="{center_x:.1f}" y2="{stat_top + 134:.1f}" '
             f'stroke="#232A3D" stroke-width="1"/>'
             # ── Revenue column ──
-            f'<text x="{col_r:.1f}" y="{stat_top + 16:.1f}" fill="#6b7a99" '
-            f'font-size="11" text-anchor="middle" letter-spacing="2" '
+            f'<text x="{col_r:.1f}" y="{stat_top + 18:.1f}" fill="#7d8aa5" '
+            f'font-size="14" text-anchor="middle" letter-spacing="2.5" '
             f'font-family="sans-serif">REVENUE</text>'
-            f'<text x="{col_r:.1f}" y="{stat_top + 54:.1f}" fill="#ffffff" '
-            f'font-size="34" font-weight="bold" text-anchor="middle" '
+            f'<text x="{col_r:.1f}" y="{stat_top + 60:.1f}" fill="#ffffff" '
+            f'font-size="40" font-weight="bold" text-anchor="middle" '
             f'font-family="sans-serif">{_xesc(_fmt_rev(rev_actual))}</text>'
-            f'<text x="{col_r:.1f}" y="{stat_top + 76:.1f}" fill="#6b7a99" '
-            f'font-size="12" text-anchor="middle" font-family="sans-serif">'
+            f'<text x="{col_r:.1f}" y="{stat_top + 86:.1f}" fill="#8899bb" '
+            f'font-size="15" text-anchor="middle" font-family="sans-serif">'
             f'Est: {_xesc(_fmt_rev(rev_est))}</text>'
-        ) + _stat_chip(rev_label, rev_color, rev_surp, col_r, stat_top + 108)
+        ) + _stat_chip(rev_label, rev_color, rev_surp, col_r, stat_top + 114)
     else:
         # EPS-only: centered single column
         stat_svg = (
-            f'<text x="{center_x:.1f}" y="{stat_top + 16:.1f}" fill="#6b7a99" '
-            f'font-size="11" text-anchor="middle" letter-spacing="2" '
+            f'<text x="{center_x:.1f}" y="{stat_top + 18:.1f}" fill="#7d8aa5" '
+            f'font-size="14" text-anchor="middle" letter-spacing="2.5" '
             f'font-family="sans-serif">EARNINGS PER SHARE</text>'
-            f'<text x="{center_x:.1f}" y="{stat_top + 62:.1f}" fill="#ffffff" '
-            f'font-size="44" font-weight="bold" text-anchor="middle" '
+            f'<text x="{center_x:.1f}" y="{stat_top + 66:.1f}" fill="#ffffff" '
+            f'font-size="48" font-weight="bold" text-anchor="middle" '
             f'font-family="sans-serif">{_xesc(f"${eps_actual:.2f}")}</text>'
-            f'<text x="{center_x:.1f}" y="{stat_top + 86:.1f}" fill="#6b7a99" '
-            f'font-size="13" text-anchor="middle" font-family="sans-serif">'
+            f'<text x="{center_x:.1f}" y="{stat_top + 92:.1f}" fill="#8899bb" '
+            f'font-size="16" text-anchor="middle" font-family="sans-serif">'
             f'vs. Est {_xesc(f"${eps_est:.2f}")}</text>'
-        ) + _stat_chip(eps_label, eps_color, eps_surp, center_x, stat_top + 116)
+        ) + _stat_chip(eps_label, eps_color, eps_surp, center_x, stat_top + 120)
 
     # ── Footer: brand bar (Source attribution rides the copyright line) ──────
     ec_bar_defs, footer_svg = _brand_bar(
