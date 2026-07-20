@@ -40,7 +40,8 @@
 #       sleep BACKOFF_S before exiting so a stale THETA_API_KEY does not
 #       hammer the ThetaData auth endpoint 1440x/day.
 #   (e) Terminal output appends to ~/theta/terminal_v3.log (stamped per launch).
-#       NEVER echo THETA_API_KEY.
+#       NEVER echo THETA_API_KEY. It reaches the JVM as the THETADATA_API_KEY
+#       env var, never as --api-key argv (argv is world-readable via ps).
 #
 # Install (once):
 #   cp scripts/launchd/com.macro.theta-terminal.plist ~/Library/LaunchAgents/
@@ -176,7 +177,9 @@ mkfifo "${FIFO}" || { echo "[$(stamp)] theta_terminal_keepalive: mkfifo failed";
 exec 9<>"${FIFO}"
 rm -f "${FIFO}"
 t0=$(date +%s)
-java -jar "${JAR_PATH}" --api-key "${THETA_API_KEY}" <&9 >> "${TERM_LOG}" 2>&1 &
+# Key via THETADATA_API_KEY env (shell prefix, java-process-scoped) — NEVER the
+# --api-key flag: argv is world-readable via ps (same fix as run_theta_terminal.sh).
+THETADATA_API_KEY="${THETA_API_KEY}" java -jar "${JAR_PATH}" <&9 >> "${TERM_LOG}" 2>&1 &
 JAVA_PID=$!
 
 # Zombie watchdog: probe every WATCH_INTERVAL_S while java lives (java liveness
