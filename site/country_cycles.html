@@ -7,7 +7,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Country Cycle Intelligence — Mastermind</title>
-<meta name="description" content="Every country and region on one cycle clock — each line a USD-listed country ETF (iShares MSCI single-country family + regional blocs), rebased &amp; log so all share an axis. Auto-detected peaks &amp; troughs, the phase each market sits in (topping · expanding · rolling over · bottoming), a next-turn projection, and relative strength vs the US (SPY).">
+
+<meta name="description" content="Country stock markets ranked by cycle position — who is basing, who is trending, who is topping — across major world markets, updated weekly.">
+<link rel="canonical" href="https://www.mastermind-x.com/country_cycles.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Country Cycles — Mastermind">
+<meta property="og:description" content="Country stock markets ranked by cycle position — who is basing, who is trending, who is topping — across major world markets, updated weekly.">
+<meta property="og:url" content="https://www.mastermind-x.com/country_cycles.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Country Cycles — Mastermind">
+<meta name="twitter:description" content="Country stock markets ranked by cycle position — who is basing, who is trending, who is topping — across major world markets, updated weekly.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="theme.css?v=de86232e">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css?v=53d45064">
@@ -325,7 +340,7 @@
   <div class="cyc-cards" id="sc-cards"></div>
 </div>
 
-<script src="country_cycles_data.js?v=1a0d1fd1" defer></script>
+<script src="country_cycles_data.js?v=0f2061b7" defer></script>
 <script src="mm_charts.js?v=4"></script>
 <script src="sector_cycles.js?v=bee7c0ec" defer></script>
 <script>try{document.getElementById('sc-asof').textContent=(window.SECTOR_CYCLES&&window.SECTOR_CYCLES.meta||{}).asOf||'';}catch(e){}</script>

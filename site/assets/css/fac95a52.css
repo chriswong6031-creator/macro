@@ -1,0 +1,574 @@
+
+/* =====================================================================
+   STAGE PALETTE — page-local accents, derived from theme tokens.
+   These NEVER redefine core tokens; they only name the four stages so the
+   arc, chips and bands share one ramp. Each is verified legible on --panel
+   in dark AND light (light overrides below).
+   ===================================================================== */
+:root{
+  --s1:#7f97b3;              /* base — steel / dormant */
+  --s2:var(--up);           /* advance — green */
+  --s3:#d9a441;             /* top — amber / ripe */
+  --s4:var(--down);         /* decline — red */
+  --font-display:'Space Grotesk',Inter,-apple-system,'Segoe UI',sans-serif;
+  --hair:color-mix(in srgb,var(--text) 8%,transparent);
+  /* sentence-level secondary copy — clears the 7:1 body gate in BOTH themes
+     (dark 8.26:1 / light 8.73:1 on the worst panel). --muted stays reserved
+     for true labels / eyebrows / captions (short, non-sentence). */
+  --muted-strong:color-mix(in srgb,var(--text) 55%,var(--muted));
+}
+html[data-theme="light"]{
+  --s1:#5b7391; --s3:#a8791c;  /* darker steel/amber so chips clear 4.5:1 on white */
+}
+*,*::before,*::after{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);
+  font:14px/1.5 Inter,-apple-system,'Segoe UI',Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+a{color:var(--link);text-decoration:none}
+.tnum{font-variant-numeric:tabular-nums}
+.mut{color:var(--muted)}
+.wrap{max-width:1440px;margin:0 auto;padding:0 26px 96px;position:relative;z-index:1}
+@media(max-width:640px){.wrap{padding:0 14px 72px}}
+
+/* ── ambient wash (very restrained; static on reduced-motion) ── */
+.aura{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.aura::before{content:"";position:absolute;top:-220px;left:4%;width:820px;height:560px;
+  border-radius:50%;filter:blur(110px);
+  background:radial-gradient(ellipse,color-mix(in srgb,var(--up) 9%,transparent) 0%,transparent 70%)}
+.aura::after{content:"";position:absolute;bottom:-120px;right:-60px;width:680px;height:520px;
+  border-radius:50%;filter:blur(110px);
+  background:radial-gradient(ellipse,color-mix(in srgb,var(--info) 8%,transparent) 0%,transparent 70%)}
+[data-theme="light"] .aura::before,[data-theme="light"] .aura::after{opacity:.5}
+
+/* ── page header row ── */
+.pghead{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+  flex-wrap:wrap;margin:6px 0 4px}
+.kick{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 6px}
+.pghead h1{margin:0;font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--text);
+  font-family:var(--font-display)}
+.pghead .sub{margin:5px 0 0;font-size:13px;color:var(--muted-strong);max-width:52ch;line-height:1.55}
+.asof{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
+.asof b{color:var(--text);font-weight:700}
+
+/* =====================================================================
+   HERO — the stage arc (signature). An idealised Weinstein cycle with the
+   whole universe scattered as density dots, four count-stations, one stance.
+   ===================================================================== */
+.hero{position:relative;margin:20px 0 8px;border:1px solid var(--line);border-radius:20px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 92%,transparent),var(--panel2));
+  overflow:hidden;padding:26px 28px 22px}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:26px;align-items:center}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
+.arc-wrap{position:relative;width:100%}
+.arc-wrap svg{display:block;width:100%;height:auto}
+.arc-stance-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 8px}
+.arc-state{font-size:30px;font-weight:800;letter-spacing:-.025em;line-height:1.08;margin:0 0 8px;
+  font-family:var(--font-display)}
+/* the big weather word — coloured to the dominant stage. The colour is set on
+   --accent-c so light mode can darken it (the raw token is pale on white). It
+   is 30px display text, so 3:1 is the WCAG floor, but we clear ~6:1 anyway. */
+.arc-state .accent{color:var(--accent-c,var(--s2))}
+.arc-state .accent.s3{--accent-c:var(--s3)}
+.arc-state .accent.s4{--accent-c:var(--s4)}
+html[data-theme="light"] .arc-state .accent{color:color-mix(in srgb,var(--accent-c,var(--s2)) 65%,var(--text))}
+.arc-stance{font-size:14.5px;color:var(--text);line-height:1.55;margin:0 0 14px;max-width:40ch}
+.arc-stance .em{color:var(--muted-strong)}
+.stancepill{display:inline-flex;align-items:center;gap:7px;padding:6px 15px;border-radius:999px;
+  font-size:13px;font-weight:700;border:1px solid var(--line)}
+.stancepill.act{color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+  background:color-mix(in srgb,var(--up) 12%,transparent)}
+.stancepill.watch{color:var(--s3);border-color:color-mix(in srgb,var(--s3) 45%,var(--line));
+  background:color-mix(in srgb,var(--s3) 12%,transparent)}
+.stancepill.stand{color:var(--muted)}
+.stancepill .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+
+/* count stations under the arc */
+.stations{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.stn{position:relative;padding:11px 12px 12px;border-radius:13px;border:1px solid var(--line);
+  background:var(--panel);overflow:hidden}
+.stn::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--sc,var(--muted))}
+.stn .num{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1;letter-spacing:-.02em;
+  color:var(--text)}
+.stn .lab{display:block;font-size:11.5px;font-weight:600;margin-top:5px;color:var(--sc,var(--muted))}
+.stn .sub{display:block;font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35}
+.stn.s1{--sc:var(--s1)} .stn.s2{--sc:var(--s2)} .stn.s3{--sc:var(--s3)} .stn.s4{--sc:var(--s4)}
+.stn .roman{position:absolute;right:9px;top:7px;font-family:var(--font-display);font-size:12px;
+  font-weight:700;color:var(--sc);opacity:.6}
+
+/* =====================================================================
+   TAB BAR + CONTROLS
+   ===================================================================== */
+.tabbar{display:flex;gap:3px;margin:22px 0 0;padding:4px;border-radius:14px;
+  border:1px solid var(--line);background:var(--panel2);overflow-x:auto;scrollbar-width:none}
+.tabbar::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:10px;
+  font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;
+  white-space:nowrap;transition:color .16s,background .16s}
+.tab:hover{color:var(--text)}
+.tab[aria-selected="true"]{color:var(--text);background:var(--panel);
+  box-shadow:0 1px 0 color-mix(in srgb,var(--text) 6%,transparent),0 6px 18px -12px rgba(0,0,0,.5)}
+.tab .tnum{font-family:var(--font-display);font-size:12px;font-weight:700;color:var(--muted);
+  border:1px solid var(--line);border-radius:6px;padding:0 5px;line-height:16px}
+.tab[aria-selected="true"] .tnum{color:var(--info);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.tab:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:2px}
+
+.controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:16px 0 4px}
+.seg{display:inline-flex;padding:3px;border-radius:10px;border:1px solid var(--line);background:var(--panel2)}
+.seg button{border:none;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;
+  padding:5px 12px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--text);
+  box-shadow:0 1px 0 color-mix(in srgb,var(--text) 6%,transparent)}
+.seg button:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:1px}
+.ctl-lab{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.searchbox{display:inline-flex;align-items:center;gap:7px;flex:1 1 200px;min-width:170px;max-width:320px;
+  padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+.searchbox input{flex:1;border:none;background:transparent;color:var(--text);font-size:13px;outline:none}
+.searchbox input::placeholder{color:var(--muted)}
+.searchbox svg{flex:0 0 auto;opacity:.7}
+
+/* =====================================================================
+   SURFACE PANELS
+   ===================================================================== */
+.surface{margin-top:18px}
+.surface[hidden]{display:none}
+
+/* filter bar */
+.filterbar{display:flex;flex-wrap:wrap;gap:9px 12px;align-items:flex-end;padding:14px 16px;
+  border:1px solid var(--line);border-radius:14px;background:var(--panel2);margin-bottom:12px}
+.filt{display:flex;flex-direction:column;gap:4px}
+.filt label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.filt select,.filt input{background:var(--panel);border:1px solid var(--line);color:var(--text);
+  border-radius:8px;padding:5px 8px;font-size:12.5px;font-family:inherit;min-width:78px}
+.filt input[type="number"]{width:74px}
+.filt select:focus,.filt input:focus{outline:2px solid color-mix(in srgb,var(--info) 60%,transparent);
+  outline-offset:0;border-color:color-mix(in srgb,var(--info) 45%,var(--line))}
+.fb-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;font-size:12.5px;
+  font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.btn:hover{border-color:color-mix(in srgb,var(--info) 45%,var(--line));color:var(--text)}
+.btn.ghost{background:transparent;color:var(--muted)}
+.btn:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:2px}
+.showing{font-size:12px;color:var(--muted-strong)}
+.showing b{color:var(--text);font-weight:700}
+
+/* table */
+.tbl-scroll{position:relative;border:1px solid var(--line);border-radius:14px;overflow:auto;
+  background:var(--panel);max-height:74vh}
+table.screener{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px;font-size:12.5px}
+.screener thead th{position:sticky;top:0;z-index:3;background:var(--panel2);color:var(--muted);
+  font-weight:700;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;text-align:left;
+  padding:11px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.screener thead th:hover{color:var(--text)}
+.screener thead th .caret{opacity:0;font-size:9px;margin-left:3px;color:var(--info)}
+.screener thead th[data-dir] .caret{opacity:1}
+.screener thead th.num{text-align:right}
+.screener thead th.sticky-l,.screener td.sticky-l{position:sticky;left:0;z-index:2;background:var(--panel)}
+.screener thead th.sticky-l{z-index:4;background:var(--panel2)}
+.screener tbody td{padding:9px 10px;border-bottom:1px solid var(--hair);vertical-align:middle;
+  white-space:nowrap;color:var(--text)}
+.screener tbody tr:hover td{background:color-mix(in srgb,var(--info) 5%,transparent)}
+.screener tbody tr:hover td.sticky-l{background:color-mix(in srgb,var(--info) 7%,var(--panel))}
+.screener td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tk{font-weight:700;color:var(--text);font-family:var(--font-display);letter-spacing:-.01em}
+.tk[data-tip-en]{cursor:help;border-bottom:1px dotted color-mix(in srgb,var(--text) 30%,transparent)}
+.nm{color:var(--muted);max-width:190px;overflow:hidden;text-overflow:ellipsis;display:inline-block;
+  vertical-align:bottom}
+.ind{color:var(--muted);font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;
+  display:inline-block;vertical-align:bottom}
+.exp-btn{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;
+  padding:2px 4px;line-height:1;transition:transform .18s,color .16s}
+.exp-btn:hover{color:var(--text)}
+tr.open .exp-btn{transform:rotate(90deg);color:var(--info)}
+.exp-btn:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:1px;border-radius:4px}
+
+/* score chips — shared ramp. --c set inline per band. */
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:2px 8px;
+  border-radius:7px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;
+  color:color-mix(in srgb,var(--c) 88%,var(--text));
+  background:color-mix(in srgb,var(--c) 15%,transparent);
+  border:1px solid color-mix(in srgb,var(--c) 34%,transparent);cursor:help}
+.chip.c-up{--c:var(--up)} .chip.c-dn{--c:var(--down)} .chip.c-amb{--c:var(--s3)}
+.chip.c-steel{--c:var(--s1)} .chip.c-info{--c:var(--info)} .chip.c-mut{--c:var(--muted)}
+.chip.plain{background:none;border:none;color:var(--muted);font-weight:600;min-width:0;padding:0}
+.delta{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.delta.up{color:var(--up)} .delta.dn{color:var(--down)} .delta.flat{color:var(--muted)}
+
+/* stage chip (the star of the row) */
+.stagechip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 8px;border-radius:8px;
+  font-size:11.5px;font-weight:700;border:1px solid color-mix(in srgb,var(--sc) 40%,transparent);
+  background:color-mix(in srgb,var(--sc) 14%,transparent);
+  color:color-mix(in srgb,var(--sc) 90%,var(--text));cursor:help;white-space:nowrap}
+.stagechip .glyph{width:16px;height:12px;flex:0 0 auto}
+.stagechip.st1{--sc:var(--s1)} .stagechip.st2{--sc:var(--s2)} .stagechip.st3{--sc:var(--s3)} .stagechip.st4{--sc:var(--s4)}
+.freshdot{width:6px;height:6px;border-radius:50%;background:var(--up);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent);display:inline-block;margin-left:1px}
+
+/* tag pills in table */
+.tagcell{display:inline-flex;gap:4px;flex-wrap:nowrap}
+.tagpill{font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:999px;
+  border:1px solid var(--line);color:var(--muted);background:var(--panel2);white-space:nowrap}
+.tagpill.pos{color:var(--up);border-color:color-mix(in srgb,var(--up) 35%,var(--line))}
+.tagpill.neg{color:var(--down);border-color:color-mix(in srgb,var(--down) 35%,var(--line))}
+.tagmore{font-size:10.5px;color:var(--muted)}
+/* seed-provenance chip on EU/Asia rows sourced from the EquityDesk backfill
+   (no live non-US price feed yet). Muted amber, cursor:help → hover receipt. */
+.seedtag{display:inline-block;margin-left:5px;font-size:9.5px;font-weight:700;letter-spacing:.04em;
+  padding:1px 6px;border-radius:5px;vertical-align:middle;cursor:help;
+  border:1px solid color-mix(in srgb,var(--s3) 34%,var(--line));
+  color:color-mix(in srgb,var(--s3) 78%,var(--text));
+  background:color-mix(in srgb,var(--s3) 10%,transparent)}
+html[data-theme="light"] .seedtag{color:color-mix(in srgb,var(--s3) 55%,var(--text))}
+.addbtn{border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:7px;
+  width:24px;height:24px;font-size:15px;line-height:1;cursor:pointer;padding:0}
+.addbtn:hover{color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
+.addbtn.on{color:var(--up);border-color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
+
+/* row-expand panel */
+tr.detail-row td{padding:0;background:var(--panel2);border-bottom:1px solid var(--line)}
+.detail{display:grid;grid-template-columns:minmax(300px,1.4fr) 1fr;gap:20px;padding:18px 20px}
+@media(max-width:820px){.detail{grid-template-columns:1fr}}
+.detail h4{margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted)}
+.stagechart{width:100%;height:150px;display:block;border-radius:10px;
+  background:color-mix(in srgb,var(--bg) 60%,var(--panel));border:1px solid var(--line)}
+.chart-note{font-size:11px;color:var(--muted-strong);margin:6px 0 0;line-height:1.5}
+.detail .facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.fact{font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:5px 9px}
+.fact b{color:var(--text);font-weight:700}
+.ec-block{font-size:12.5px;line-height:1.55}
+.ec-hi{margin:6px 0;padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel)}
+.ec-hi.pos{border-left:3px solid var(--up)}
+.ec-hi.neg{border-left:3px solid var(--down)}
+.ec-hi .lab{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px}
+
+/* ── data tooltip (Tier-2 home) ── */
+[data-tip-en]{position:relative}
+[data-tip-en]::after{content:attr(data-tip-en);position:absolute;bottom:calc(100% + 8px);left:50%;
+  transform:translateX(-50%) translateY(4px);min-width:170px;max-width:270px;white-space:normal;
+  background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;
+  padding:9px 12px;font-size:11.5px;font-weight:500;line-height:1.5;text-transform:none;letter-spacing:0;
+  box-shadow:0 12px 34px -14px rgba(0,0,0,.6);opacity:0;pointer-events:none;z-index:60;
+  transition:opacity .14s,transform .14s}
+html[data-lang="zh"] [data-tip-en]::after{content:attr(data-tip-zh)}
+[data-tip-en]:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(hover:none){[data-tip-en]::after{display:none}}
+
+/* ── warm-up / empty states ── */
+.empty{border:1px dashed var(--line);border-radius:16px;background:var(--panel2);
+  padding:44px 30px;text-align:center;color:var(--muted)}
+.empty .ico{font-size:30px;margin-bottom:10px;opacity:.8}
+.empty h3{margin:0 0 6px;font-size:16px;font-weight:700;color:var(--text)}
+.empty p{margin:0 auto;max-width:44ch;font-size:13px;line-height:1.6;color:var(--muted-strong)}
+.empty.soon .ico{filter:grayscale(.2)}
+.warmnote{display:inline-block;margin-top:14px;font-size:11.5px;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.spinner{width:26px;height:26px;border-radius:50%;border:2.5px solid var(--line);
+  border-top-color:var(--info);animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* section provenance footer — real honesty sentences, so body-tier contrast */
+.provfoot{margin-top:14px;font-size:11.5px;color:var(--muted-strong);line-height:1.55}
+.provfoot .rec{cursor:help;border-bottom:1px dotted var(--muted-strong)}
+
+/* =====================================================================
+   INDUSTRIES + STAGE BOARD — surfaces built on the same system as the
+   screener. No second visual language: reuse .seg, .chip, .stagechip,
+   table.screener, .provfoot. New here = the rank-ramp heatmap grid and the
+   stage-2/stage-4 diverging bar. Every colour is a theme token or a stage
+   accent (--s1..--s4); never a literal text colour.
+   ===================================================================== */
+
+/* inner sub-tab bar (lighter than the main .tabbar) */
+.subtabs{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin:2px 0 4px}
+.subseg{display:inline-flex;gap:2px;padding:3px;border-radius:11px;border:1px solid var(--line);
+  background:var(--panel2);overflow-x:auto;scrollbar-width:none}
+.subseg::-webkit-scrollbar{display:none}
+.subseg button{flex:0 0 auto;border:none;background:transparent;color:var(--muted);font-size:12.5px;
+  font-weight:600;padding:6px 13px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  transition:color .16s,background .16s}
+.subseg button:hover{color:var(--text)}
+.subseg button[aria-pressed="true"]{background:var(--panel);color:var(--text);
+  box-shadow:0 1px 0 color-mix(in srgb,var(--text) 6%,transparent)}
+.subseg button:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:1px}
+.subcap{font-size:12.5px;color:var(--muted-strong);line-height:1.5;margin:0 0 12px;max-width:64ch}
+.subcap b{color:var(--text);font-weight:700}
+
+/* state chip for flows (BASING/LEADING/BREAKING/…) — plain words, colour-coded */
+.statechip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:7px;
+  font-size:11px;font-weight:700;white-space:nowrap;cursor:help;
+  border:1px solid color-mix(in srgb,var(--sc) 40%,transparent);
+  background:color-mix(in srgb,var(--sc) 13%,transparent);
+  color:color-mix(in srgb,var(--sc) 90%,var(--text))}
+.statechip .dot{width:6px;height:6px;border-radius:50%;background:var(--sc)}
+.statechip.st-basing{--sc:var(--info)} .statechip.st-leading{--sc:var(--s2)}
+.statechip.st-breaking{--sc:var(--s4)} .statechip.st-distributing{--sc:var(--s3)}
+.statechip.st-neutral{--sc:var(--muted)}
+.turnpill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.03em;padding:1px 7px;
+  border-radius:999px;border:1px solid color-mix(in srgb,var(--s2) 40%,var(--line));
+  color:var(--s2);background:color-mix(in srgb,var(--s2) 10%,transparent);white-space:nowrap}
+.turnpill.roll{color:var(--s4);border-color:color-mix(in srgb,var(--s4) 40%,var(--line));
+  background:color-mix(in srgb,var(--s4) 10%,transparent)}
+.dashcell{color:var(--muted);opacity:.5}
+
+/* a numeric cell whose background is a green→red ramp (--rc set inline) */
+.rampcell{position:relative;text-align:right;font-variant-numeric:tabular-nums;
+  color:color-mix(in srgb,var(--rc,var(--muted)) 80%,var(--text))}
+.rampcell::before{content:"";position:absolute;inset:3px 4px;border-radius:6px;z-index:0;
+  background:color-mix(in srgb,var(--rc,transparent) 20%,transparent)}
+.rampcell>span{position:relative;z-index:1}
+
+/* the stage-2 vs stage-4 diverging bar (flows signature mini-viz) */
+.divbar{display:inline-grid;grid-template-columns:1fr 1fr;align-items:center;width:96px;height:16px;
+  border-radius:5px;overflow:hidden;background:color-mix(in srgb,var(--text) 5%,transparent);
+  border:1px solid var(--hair);cursor:help;vertical-align:middle}
+.divbar i{display:block;height:100%}
+.divbar .s4{justify-self:end;background:color-mix(in srgb,var(--s4) 55%,transparent);
+  border-right:1px solid color-mix(in srgb,var(--text) 22%,transparent)}
+.divbar .s2{justify-self:start;background:color-mix(in srgb,var(--s2) 55%,transparent)}
+
+/* heatmap grid — dense integer-rank cells on a smooth green→red ramp */
+.heatscroll{position:relative;border:1px solid var(--line);border-radius:14px;overflow:auto;
+  background:var(--panel);max-height:78vh}
+table.heat{border-collapse:separate;border-spacing:0;font-size:11px;font-variant-numeric:tabular-nums}
+.heat thead th{position:sticky;top:0;z-index:3;background:var(--panel2);color:var(--muted);
+  font-weight:700;font-size:10px;letter-spacing:.02em;padding:8px 6px;text-align:center;
+  border-bottom:1px solid var(--line);white-space:nowrap;min-width:38px}
+.heat thead th.hind,.heat tbody th.hind{position:sticky;left:0;z-index:2;text-align:left;
+  background:var(--panel);min-width:210px;max-width:240px;white-space:normal;line-height:1.3;
+  padding:8px 12px;border-right:1px solid var(--line);font-weight:600;color:var(--text);font-size:11.5px}
+.heat thead th.hind{z-index:5;background:var(--panel2);color:var(--muted);vertical-align:bottom}
+.heat tbody th.hind{font-weight:600}
+.heat tbody td{padding:0;text-align:center;height:26px;position:relative}
+.heat tbody td .hc{display:flex;align-items:center;justify-content:center;height:100%;margin:1px;
+  border-radius:5px;font-weight:700;color:var(--text);cursor:default}
+.heat tbody td.na .hc{color:var(--muted);opacity:.4;background:transparent}
+.heat tbody tr:hover th.hind{background:color-mix(in srgb,var(--info) 8%,var(--panel))}
+.heatlegend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 0;font-size:11.5px;
+  color:var(--muted)}
+.heatlegend .grad{width:150px;height:10px;border-radius:5px;
+  background:linear-gradient(90deg,var(--s2),var(--s3),var(--s4))}
+.heatlegend .grad.rev{background:linear-gradient(90deg,var(--s4),var(--s3),var(--s2))}
+
+/* stage board — a card-lite list that reuses screener chips */
+.boardhead{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  margin:2px 0 12px}
+.boardnote{font-size:11.5px;color:var(--muted-strong);line-height:1.5;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel2);padding:9px 13px;max-width:70ch}
+.boardnote b{color:var(--text);font-weight:700}
+.gatechip{display:inline-flex;align-items:center;padding:1px 7px;border-radius:6px;font-size:10.5px;
+  font-weight:700;border:1px solid color-mix(in srgb,var(--info) 38%,var(--line));color:var(--info);
+  background:color-mix(in srgb,var(--info) 10%,transparent);cursor:help}
+.gatechip.t1{border-color:color-mix(in srgb,var(--s2) 42%,var(--line));color:var(--s2);
+  background:color-mix(in srgb,var(--s2) 11%,transparent)}
+.evchip{font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+.rschip{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.rschip.up{color:var(--up)} .rschip.dn{color:var(--down)} .rschip.flat{color:var(--muted)}
+
+/* =====================================================================
+   EARNINGS CALLS · ALT-DATA · RESEARCH — same visual system as above.
+   No second language: reuse .subtabs/.subseg, .chip, .stagechip, .tagpill,
+   table.screener, .empty, .provfoot, [data-tip-*], the stage accents.
+   New here: the two-part earnings tone/result score block, the transcript
+   reader drawer (the "I can't view the transcripts" fix), the alt-data
+   source columns, and the research thesis cards. Colour is always a theme
+   token or a stage accent — never a literal text colour.
+   ===================================================================== */
+
+/* two-part earnings score: tone (0–100) over result (0–10), stacked + colour */
+.ecscore{display:inline-flex;flex-direction:column;gap:2px;min-width:56px;vertical-align:middle;cursor:help}
+.ecscore .bar{position:relative;height:5px;border-radius:3px;background:color-mix(in srgb,var(--text) 8%,transparent);overflow:hidden}
+.ecscore .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ec,var(--muted))}
+.ecscore .duo{display:flex;align-items:baseline;gap:5px;font-variant-numeric:tabular-nums;line-height:1}
+.ecscore .tone{font-size:13px;font-weight:700;color:color-mix(in srgb,var(--ec,var(--muted)) 88%,var(--text))}
+.ecscore .perf{font-size:10.5px;font-weight:600;color:var(--muted)}
+.ecscore.up{--ec:var(--up)} .ecscore.mid{--ec:var(--info)} .ecscore.dn{--ec:var(--down)} .ecscore.amb{--ec:var(--s3)}
+
+/* tone word chip */
+.toneword{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;
+  border:1px solid color-mix(in srgb,var(--ec,var(--muted)) 40%,transparent);
+  background:color-mix(in srgb,var(--ec,var(--muted)) 12%,transparent);
+  color:color-mix(in srgb,var(--ec,var(--muted)) 90%,var(--text))}
+.toneword.up{--ec:var(--up)} .toneword.mid{--ec:var(--info)} .toneword.dn{--ec:var(--down)} .toneword.amb{--ec:var(--s3)}
+
+/* highlight-count mini pills in the calls table (green / red) */
+.hicount{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+  font-variant-numeric:tabular-nums}
+.hicount.pos{color:var(--up)} .hicount.neg{color:var(--down)}
+.hicount .g{width:7px;height:7px;border-radius:2px;background:currentColor;opacity:.85}
+.callrow{cursor:pointer}
+.callrow:hover .tk{color:var(--info)}
+.readcue{font-size:10.5px;color:var(--muted);opacity:0;transition:opacity .14s}
+.callrow:hover .readcue{opacity:1}
+
+/* ── the transcript reader drawer (signature of this lane) ── */
+.reader-scrim{position:fixed;inset:0;z-index:80;background:color-mix(in srgb,var(--bg) 72%,transparent);
+  backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s}
+.reader-scrim.open{opacity:1;pointer-events:auto}
+.reader{position:fixed;top:0;right:0;bottom:0;z-index:81;width:min(560px,94vw);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 94%,transparent),var(--panel2));
+  border-left:1px solid var(--line);box-shadow:-30px 0 80px -40px rgba(0,0,0,.7);
+  transform:translateX(102%);transition:transform .26s cubic-bezier(.2,.7,.2,1);
+  display:flex;flex-direction:column;overflow:hidden}
+.reader.open{transform:none}
+@media(prefers-reduced-motion:reduce){.reader,.reader-scrim{transition:none}}
+.reader-head{position:relative;padding:20px 22px 16px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.reader-head .co{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.reader-head h3{margin:0;font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--text);font-family:var(--font-display)}
+.reader-head .meta{margin:6px 0 0;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px 12px}
+.reader-head .meta b{color:var(--text);font-weight:700}
+.reader-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:9px;
+  border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:17px;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center}
+.reader-close:hover{color:var(--text);border-color:color-mix(in srgb,var(--info) 45%,var(--line))}
+.reader-close:focus-visible{outline:2px solid color-mix(in srgb,var(--info) 70%,transparent);outline-offset:2px}
+/* tone gauge in the reader header */
+.tonegauge{display:flex;align-items:center;gap:12px;margin-top:14px}
+.tonegauge .track{position:relative;flex:1;height:8px;border-radius:5px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--down) 55%,transparent),
+    color-mix(in srgb,var(--s3) 45%,transparent),color-mix(in srgb,var(--up) 55%,transparent))}
+.tonegauge .track .pin{position:absolute;top:50%;width:3px;height:16px;border-radius:2px;background:var(--text);
+  transform:translate(-50%,-50%);box-shadow:0 0 0 2px var(--panel)}
+.tonegauge .val{font-family:var(--font-display);font-size:20px;font-weight:700;line-height:1;
+  font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--ec,var(--muted)) 88%,var(--text))}
+.tonegauge .val small{font-size:11px;font-weight:600;color:var(--muted)}
+.reader-body{flex:1;overflow-y:auto;padding:18px 22px 40px;scrollbar-width:thin}
+.reader-sec{margin:0 0 20px}
+.reader-sec h4{margin:0 0 9px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);display:flex;align-items:center;gap:7px}
+.reader-sec h4::after{content:"";flex:1;height:1px;background:var(--hair)}
+.hlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.hlist li{position:relative;padding:9px 12px 9px 13px;border-radius:10px;font-size:13px;line-height:1.55;
+  color:var(--text);border:1px solid var(--line);background:var(--panel)}
+.hlist.pos li{border-left:3px solid var(--up)}
+.hlist.neg li{border-left:3px solid var(--down)}
+.hlist li .n{font-family:var(--font-display);font-weight:700;font-size:11px;margin-right:6px;
+  color:var(--muted)}
+.hlist.pos li .n{color:var(--up)} .hlist.neg li .n{color:var(--down)}
+.quoteblock{margin:0;padding:14px 16px 14px 18px;border-radius:12px;position:relative;
+  border:1px solid var(--line);background:color-mix(in srgb,var(--info) 6%,var(--panel));
+  border-left:3px solid var(--info);font-size:14px;line-height:1.6;color:var(--text);font-style:italic}
+.quoteblock::before{content:"\201C";position:absolute;top:2px;left:8px;font-size:34px;line-height:1;
+  color:color-mix(in srgb,var(--info) 40%,transparent);font-family:Georgia,serif}
+.quoteblock .qtxt{display:block;padding-left:14px}
+.readertags{display:flex;flex-wrap:wrap;gap:6px}
+.reader-empty{padding:14px 16px;border:1px dashed var(--line);border-radius:11px;background:var(--panel2);
+  font-size:12.5px;color:var(--muted-strong);line-height:1.55}
+
+/* ── alt-data: four source columns, each a compact trending list ── */
+.altwrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:4px}
+@media(max-width:1080px){.altwrap{grid-template-columns:1fr}}
+.altcol{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;
+  display:flex;flex-direction:column}
+.altcol-head{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--line);
+  background:var(--panel2)}
+.altcol-head .ico{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.altcol-head .nm{font-size:14px;font-weight:700;color:var(--text)}
+.altcol-head .cnt{font-size:11.5px;color:var(--muted)}
+.altcol-head .seedflag{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;
+  border-radius:999px;border:1px solid color-mix(in srgb,var(--s3) 40%,var(--line));color:var(--s3);
+  background:color-mix(in srgb,var(--s3) 10%,transparent);cursor:help}
+.altcol-head .liveflag{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;
+  border-radius:999px;border:1px solid color-mix(in srgb,var(--up) 34%,var(--line));color:var(--up);
+  background:color-mix(in srgb,var(--up) 9%,transparent);cursor:help}
+.altlist{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px;
+  max-height:520px;overflow-y:auto;scrollbar-width:thin}
+.altitem{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:9px 10px;border-radius:11px;
+  cursor:help;transition:background .14s}
+.altitem:hover{background:color-mix(in srgb,var(--info) 6%,transparent)}
+.altitem .top{grid-column:1;display:flex;align-items:center;gap:7px;min-width:0}
+.altitem .topic{font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.altitem .typ{font-size:10px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:5px;
+  padding:0 5px;white-space:nowrap;flex:0 0 auto}
+.altitem .yoy{grid-column:2;grid-row:1;align-self:center;font-family:var(--font-display);font-size:12.5px;
+  font-weight:700;font-variant-numeric:tabular-nums;color:var(--up);white-space:nowrap}
+.altitem .yoy.dn{color:var(--down)}
+.altitem .match{grid-column:1;display:flex;align-items:center;gap:6px;min-width:0;margin-top:1px}
+.altitem .match .arrow{color:var(--muted);font-size:11px}
+.altitem .mtk{font-size:11px;font-weight:700;font-family:var(--font-display);color:var(--info);flex:0 0 auto}
+.altitem .mco{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.altitem .add2{grid-column:2;grid-row:2;justify-self:end;align-self:center}
+
+/* ── research: thesis cards with model badges + expand ── */
+.reswrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-top:4px}
+.rescard{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:15px 16px 14px;
+  display:flex;flex-direction:column;gap:8px;transition:border-color .16s}
+.rescard:hover{border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.rescard-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.rescard .tk{font-size:15px}
+.rescard .cnm{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  flex:1;min-width:0}
+.modelbadges{display:inline-flex;gap:4px;flex:0 0 auto}
+.mbadge{font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:6px;
+  border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:help}
+.mbadge.g{color:var(--info);border-color:color-mix(in srgb,var(--info) 38%,var(--line))}
+.mbadge.o{color:var(--s2);border-color:color-mix(in srgb,var(--s2) 38%,var(--line))}
+.mbadge.c{color:var(--s3);border-color:color-mix(in srgb,var(--s3) 38%,var(--line))}
+.rescard .thesis{font-size:12.5px;line-height:1.6;color:var(--text);margin:0;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.rescard.open .thesis{-webkit-line-clamp:unset;overflow:visible}
+.rescard-foot{display:flex;align-items:center;gap:10px;margin-top:auto}
+.rescard .more{border:none;background:none;color:var(--info);font-size:11.5px;font-weight:600;cursor:pointer;
+  padding:0}
+.rescard .more:hover{text-decoration:underline}
+.rescard .rlink{font-size:11.5px;color:var(--link);font-weight:600}
+.rescount{font-size:12px;color:var(--muted-strong);margin:2px 0 12px}
+.rescount b{color:var(--text);font-weight:700}
+
+/* =====================================================================
+   LIGHT-MODE CONTRAST GATE (spec §1: chips ≥ 4.5:1, light mode MUST pass).
+   In light mode the --up/--down/--info/--s* tokens are pale-on-white, so any
+   chip that renders a colour token AS TEXT (color-mix(--c 88–90%, --text))
+   falls to ~3.2–4.5:1. We rebalance every such family to a 55% colour / 45%
+   --text share on white — measured worst case is chip "up" 5.89:1, stagechip
+   S2 5.97:1, statechip Leading 6.04:1, tagpill pos 6.18:1. The chip
+   BACKGROUND fill (color-mix(--c 14–15%, transparent)) is unchanged, so the
+   accent colour still reads; only the text darkens. Dark mode is untouched
+   (already ≥ 4.5:1). Verified with the contrast harness in the PR notes.
+   ===================================================================== */
+/* score chips + stage chip + flow state chip + tone word + earnings-tone
+   numeral + setup gate chip — all share the "colour-as-text" recipe */
+html[data-theme="light"] .chip{color:color-mix(in srgb,var(--c) 55%,var(--text))}
+html[data-theme="light"] .stagechip{color:color-mix(in srgb,var(--sc) 55%,var(--text))}
+html[data-theme="light"] .statechip{color:color-mix(in srgb,var(--sc) 55%,var(--text))}
+html[data-theme="light"] .toneword{color:color-mix(in srgb,var(--ec) 55%,var(--text))}
+html[data-theme="light"] .ecscore .tone{color:color-mix(in srgb,var(--ec) 55%,var(--text))}
+html[data-theme="light"] .gatechip{color:color-mix(in srgb,var(--info) 55%,var(--text))}
+html[data-theme="light"] .gatechip.t1{color:color-mix(in srgb,var(--s2) 55%,var(--text))}
+html[data-theme="light"] .turnpill{color:color-mix(in srgb,var(--s2) 55%,var(--text))}
+html[data-theme="light"] .turnpill.roll{color:color-mix(in srgb,var(--s4) 55%,var(--text))}
+/* semantic green/red TEXT that sits on the panel with no chip bg
+   (deltas, relative-strength cells, highlight counts) */
+html[data-theme="light"] .delta.up,html[data-theme="light"] .rschip.up{color:color-mix(in srgb,var(--up) 55%,var(--text))}
+html[data-theme="light"] .delta.dn,html[data-theme="light"] .rschip.dn{color:color-mix(in srgb,var(--down) 60%,var(--text))}
+html[data-theme="light"] .hicount.pos{color:color-mix(in srgb,var(--up) 55%,var(--text))}
+html[data-theme="light"] .hicount.neg{color:color-mix(in srgb,var(--down) 60%,var(--text))}
+/* tag pills + model badges: colour token on the pale --panel2 fill */
+html[data-theme="light"] .tagpill.pos{color:color-mix(in srgb,var(--up) 55%,var(--text))}
+html[data-theme="light"] .tagpill.neg{color:color-mix(in srgb,var(--down) 55%,var(--text))}
+html[data-theme="light"] .mbadge.g{color:color-mix(in srgb,var(--info) 55%,var(--text))}
+html[data-theme="light"] .mbadge.o{color:color-mix(in srgb,var(--s2) 55%,var(--text))}
+html[data-theme="light"] .mbadge.c{color:color-mix(in srgb,var(--s3) 55%,var(--text))}
+/* hero stance pill — the Tier-1 signature; the colour token as text is pale on
+   the light tinted fill, so darken to the 55% share (act 5.46:1 / watch 5.72:1) */
+html[data-theme="light"] .stancepill.act{color:color-mix(in srgb,var(--up) 55%,var(--text))}
+html[data-theme="light"] .stancepill.watch{color:color-mix(in srgb,var(--s3) 55%,var(--text))}
+/* hero station labels are coloured to their stage token (11.5px, so must clear
+   4.5:1) — darken on white to the 65% share (worst = Advancing/green 5.98:1) */
+html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)) 65%,var(--text))}
+
+/* page-load stagger + reduced motion */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.rise{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+.rise.d1{animation-delay:.05s}.rise.d2{animation-delay:.12s}.rise.d3{animation-delay:.2s}
+@media(prefers-reduced-motion:reduce){
+  .rise{animation:none}
+  .spinner{animation:none}
+}
