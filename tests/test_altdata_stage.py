@@ -218,3 +218,137 @@ def test_registration_line_present_in_collect():
     assert '"collectors.google_trends", "GoogleTrendsAdapter"' in src
     # registered in the slow/altdata shard next to stocktwits
     assert '"google_trends"' in src
+
+
+# ============================================================
+# Alt-data trending builder (SGA-2 §E — altdata_trending.json)
+# ============================================================
+
+def _seed_dir(root: Path) -> Path:
+    d = root / "stage_analysis" / "backfill"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _write_seed(root: Path, fname: str, rows: list[dict]) -> None:
+    pd.DataFrame(rows).to_parquet(_seed_dir(root) / fname)
+
+
+def _seed_all_sources(root: Path) -> None:
+    """Minimal but complete four-source seed: one matched topic + trend row each."""
+    _write_seed(root, "altdata_gt.parquet", [
+        {"google_query": "iphone", "request_name": "iPhone", "matching_date": "2026-06-01",
+         "ticker": "AAPL", "company_name": "Apple Inc.",
+         "explanation": "Maker of the iPhone flagship product line."},
+    ])
+    _write_seed(root, "trending_gt.parquet", [
+        {"google_query": "iphone", "request_name": "iPhone", "request_type": "Product",
+         "description_by_llm": "Apple's flagship smartphone.", "period": "2026-06-01",
+         "index_growth_yoy_w1": 120.5, "gt_index_growth_change_w1": 15.0},
+    ])
+    _write_seed(root, "altdata_reddit.parquet", [
+        {"subreddit": "wallstreetbets", "classifier": "finance", "matching_date": "2026-06-01",
+         "ticker": "GME", "company_name": "GameStop Corp.",
+         "explanation": "Frequently discussed meme stock on this subreddit."},
+    ])
+    _write_seed(root, "top_growing_subreddits.parquet", [
+        {"subreddit": "wallstreetbets", "tag_classification": "finance", "as_of_date": "2026-06-01",
+         "subreddit_description": "Options and momentum trading community.",
+         "subscriber_yoy_growth_pct": 0.42, "subscriber_yoy_growth_pct_2w_ago": 0.40},
+    ])
+    _write_seed(root, "altdata_wiki.parquet", [
+        {"wikipage": "Nvidia", "classifier": "technology", "matching_date": "2026-06-01",
+         "ticker": "NVDA", "company_name": "NVIDIA Corp.",
+         "explanation": "The Wikipedia page for the GPU maker itself."},
+    ])
+    _write_seed(root, "wiki_top_pages.parquet", [
+        {"wikipage": "Nvidia", "classifier": "technology", "period": "2026-06-01",
+         "page_description": "GPU and AI accelerator company.",
+         "momentum": 88.4, "momentum_absolute": 1200.0},
+    ])
+    _write_seed(root, "altdata_tiktok.parquet", [
+        {"hashtag": "stanley", "classifier": "product", "matching_date": "2026-06-01",
+         "ticker": "HELE", "company_name": "Helen of Troy Ltd.",
+         "explanation": "Owns consumer brands trending on the platform."},
+    ])
+    _write_seed(root, "top_growing_tiktok.parquet", [
+        {"main_hashtag": "stanley", "short_classification_by_chatgpt": "product",
+         "description_by_chatgpt": "Viral drinkware trend.", "created_date": "2026-06-01",
+         "current_value": 100, "value_1y_ago": 25, "grid_current": 5, "grid_1w_ago": 3},
+    ])
+
+
+def test_trending_per_source_projection(tmp_path):
+    """Each of the four sources projects to a topic list with the contract fields."""
+    _seed_all_sources(tmp_path)
+    art = A.build_altdata_trending(root=tmp_path)
+    assert art["schema"] == "altdata_trending.v1"
+    assert set(art["sources"]) == {"google", "reddit", "wikipedia", "tiktok"}
+    g = art["sources"]["google"]["topics"]
+    assert len(g) == 1
+    row = g[0]
+    assert set(row) >= {"topic", "yoy_pct", "chg_2w_pct", "type", "description",
+                        "matched_ticker", "matched_company", "explanation"}
+    assert row["matched_ticker"] == "AAPL"
+    assert row["yoy_pct"] == 120.5           # gt yoy passed straight through
+    assert row["chg_2w_pct"] == 15.0
+    # reddit yoy fraction scaled to percent; 2w change derived
+    rd = art["sources"]["reddit"]["topics"][0]
+    assert rd["yoy_pct"] == 42.0             # 0.42 * 100
+    assert rd["chg_2w_pct"] == 2.0           # (0.42 - 0.40) * 100
+    # tiktok yoy derived from current vs 1y-ago index
+    tt = art["sources"]["tiktok"]["topics"][0]
+    assert tt["yoy_pct"] == 300.0            # (100-25)/25 * 100
+
+
+def test_trending_match_and_explanation_preserved(tmp_path):
+    """The topic->ticker match + LLM explanation survive into the artifact + rollup."""
+    _seed_all_sources(tmp_path)
+    art = A.build_altdata_trending(root=tmp_path)
+    nv = art["sources"]["wikipedia"]["topics"][0]
+    assert nv["matched_ticker"] == "NVDA"
+    assert nv["matched_company"] == "NVIDIA Corp."
+    assert "GPU maker" in nv["explanation"]
+    # per-ticker rollup records which source mentioned it, with the explanation
+    roll = art["by_ticker"]["NVDA"]
+    assert roll["sources"] == ["wikipedia"]
+    assert roll["topics"][0]["explanation"] == nv["explanation"]
+
+
+def test_trending_tiktok_seed_only_flag(tmp_path):
+    """TikTok is flagged seed_only (no lawful live source); others are live."""
+    _seed_all_sources(tmp_path)
+    art = A.build_altdata_trending(root=tmp_path)
+    assert art["sources"]["tiktok"]["seed_only"] is True
+    assert art["sources"]["tiktok"]["live"] is False
+    for src in ("google", "reddit", "wikipedia"):
+        assert art["sources"][src]["seed_only"] is False
+        assert art["sources"][src]["live"] is True
+    # display-tier discipline on the artifact envelope
+    assert art["is_context_only"] is True and art["display_only"] is True
+
+
+def test_trending_missing_seeds_fail_open(tmp_path):
+    """No seed dir at all -> full four-source scaffold, empty lists, no crash, writes."""
+    art = A.build_altdata_trending(root=tmp_path)
+    assert set(art["sources"]) == {"google", "reddit", "wikipedia", "tiktok"}
+    for src in art["sources"].values():
+        assert src["topics"] == []
+    assert art["by_ticker"] == {}
+    # tiktok flag holds even with no data
+    assert art["sources"]["tiktok"]["seed_only"] is True
+    # artifact still committed to disk
+    assert (tmp_path / "stage_analysis" / "altdata_trending.json").exists()
+
+
+def test_trending_missing_ticker_row_dropped(tmp_path):
+    """A matched row with no ticker is skipped (ticker-linked surface only)."""
+    _write_seed(tmp_path, "altdata_gt.parquet", [
+        {"google_query": "orphan", "request_name": "Orphan", "matching_date": "2026-06-01",
+         "ticker": None, "company_name": None, "explanation": "no ticker match"},
+        {"google_query": "iphone", "request_name": "iPhone", "matching_date": "2026-06-01",
+         "ticker": "AAPL", "company_name": "Apple Inc.", "explanation": "the iPhone maker"},
+    ])
+    art = A.build_altdata_trending(root=tmp_path)
+    tickers = [r["matched_ticker"] for r in art["sources"]["google"]["topics"]]
+    assert tickers == ["AAPL"]           # the ticker-less orphan row is dropped

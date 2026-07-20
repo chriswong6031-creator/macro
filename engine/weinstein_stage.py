@@ -33,6 +33,50 @@ from engine.cycles import _w_fri_completed
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# SGA-2 (v2) constants — ATR extension, SATA composite, stage_detailed taxonomy.
+# These reproduce the EquityDesk yardstick columns (atr_ext, sata_score,
+# stage_detailed) from OUR OHLCV. Everything is DISPLAY-TIER / context-only.
+#
+# Calibration provenance (data/stage_analysis/backfill/stage_daily.parquet,
+# 6,536 rows): atr_ext == (close - sma_30w) / atr_14w reproduced at r=1.0,
+# MAE ~8e-10 on our reconstructed weekly ATR. sata_score is their proprietary
+# 0-10 quality integer; strongest drivers are atr_ext (r=.85), mansfield_rs
+# (r=.75) and the stage. We reproduce it with a deterministic trend-quality
+# composite quantile-mapped to their 0-10 marginal (Spearman ~.92 on their own
+# features; see tests for the reproduce-from-our-OHLCV calibration).
+#
+# HONESTY on the two DIFFERENT agreement metrics (do NOT foreground only the
+# strong ones): the COARSE stage_flag (1..4) reproduces at ~73% agreement, but
+# the FINE stage_detailed TOP-LABEL agreement is only ~0.40 — their taxonomy has
+# ~16 labels (e.g. 2B_steady_trend, 3B_rs_divergence, 3X_catch_down_above_ma) to
+# our 9, so many of our reads land on a neighbouring detailed label with the same
+# coarse stage. The screener/board calibration.note discloses BOTH, not just the
+# SATA/atr_ext strengths.
+# ---------------------------------------------------------------------------
+ATR_WEEKS = 14                # 14-week ATR (Wilder TR, simple mean of weekly TR)
+
+# SATA composite weights (fit offline to stage_daily; do not change without a
+# re-fit against the seed table and a test update).
+_SATA_STAGE_BASE = {2: 6.5, 1: 4.0, 3: 3.2, 4: 1.6, 0: 0.4}
+_SATA_W_ATR_EXT = 0.7         # atr_ext (clipped ±6) weight
+_SATA_W_MANSFIELD = 0.01      # mansfield_rs (clipped ±60) weight
+_SATA_W_STAGE = 0.6           # stage-base weight
+_SATA_ATR_CLIP = 6.0
+_SATA_MRS_CLIP = 60.0
+# Quantile cutpoints mapping the continuous composite -> integer 0..10, fit to
+# reproduce the EquityDesk sata_score marginal distribution. cut[k] is the
+# upper edge of bucket k (a composite <= cut[k] and > cut[k-1] scores k).
+_SATA_CUTS = (-1.072, -0.180, 0.448, 1.347, 3.948,
+              4.444, 4.830, 5.236, 6.476, 8.177)
+
+# stage_detailed decision thresholds (fit to the per-label feature profiles in
+# stage_daily: median atr_ext / weeks / mansfield_rs per label).
+_SD_S2_STRONG_ATR = 1.9       # 2A/2D strong-extension floor (their medians ~2.1-2.4)
+_SD_S2_CATCH_ATR = 0.9        # 2X_catch low-extension ceiling (their median ~0.46)
+_SD_S3_BLOWOFF_ATR = -0.8     # 3C blowoff: rolled below the line with weak RS
+_SD_S4_STEADY_WEEKS = 7       # 4B steady-decline minimum age (else 4X fallback)
+
+# ---------------------------------------------------------------------------
 # SGA-R1 pinned constants (amend only via a ruling in the masterplan).
 # ---------------------------------------------------------------------------
 MA_WEEKS = 30                 # 30-week SMA of the weekly close (the Weinstein line)
@@ -74,6 +118,13 @@ def _empty_result(too_young: bool = True, n_weeks: int = 0) -> dict:
         "arc_pos": 0.0,
         "too_young": bool(too_young),
         "history": [],
+        # SGA-2 yardstick fields (null on the too-young path).
+        "atr_14w": None,
+        "atr_ext": None,
+        "atr_pct_price": None,
+        "sata_score": None,
+        "sata_change_1w": None,
+        "stage_detailed": None,
     }
 
 
@@ -170,6 +221,133 @@ def weekly_frame(close: pd.Series,
         "vol_30w": vol_30w,
         "vol_ratio": vol_ratio,
     })
+
+
+def weekly_atr14(high: pd.Series | None,
+                 low: pd.Series | None,
+                 close: pd.Series,
+                 index: pd.DatetimeIndex) -> pd.Series:
+    """14-week ATR (Wilder True Range, simple mean) aligned to `index`.
+
+    Reproduces the EquityDesk `atr_14w` column (r=1.0 on our reconstruction):
+    weekly TR = max(H-L, |H-Cprev|, |L-Cprev|) on W-FRI-resampled OHLC, then a
+    simple 14-week rolling mean. If high/low are missing we fall back to a
+    close-only TR (|Cprev - C|) so the field is still populated (degraded but
+    monotone). Fail-open: returns an all-NaN Series aligned to `index` on any
+    error, so extension fields simply null out rather than crashing a build.
+    """
+    nan = pd.Series(np.nan, index=index)
+    try:
+        c = pd.Series(close).dropna()
+        if c.empty:
+            return nan
+        if not isinstance(c.index, pd.DatetimeIndex):
+            c.index = pd.to_datetime(c.index)
+        c = c[~c.index.duplicated(keep="last")].sort_index()
+        last_obs = c.index.max()
+        wc = c.resample("W-FRI").last()
+
+        if high is not None and low is not None and len(high) and len(low):
+            h = pd.Series(high).dropna()
+            lo = pd.Series(low).dropna()
+            if not isinstance(h.index, pd.DatetimeIndex):
+                h.index = pd.to_datetime(h.index)
+            if not isinstance(lo.index, pd.DatetimeIndex):
+                lo.index = pd.to_datetime(lo.index)
+            h = h[~h.index.duplicated(keep="last")].sort_index()
+            lo = lo[~lo.index.duplicated(keep="last")].sort_index()
+            wh = h.resample("W-FRI").max()
+            wl = lo.resample("W-FRI").min()
+        else:
+            # Close-only degraded TR: treat each weekly close as its own H/L.
+            wh = wc
+            wl = wc
+
+        prev_c = wc.shift(1)
+        tr = pd.concat(
+            [wh - wl, (wh - prev_c).abs(), (wl - prev_c).abs()], axis=1
+        ).max(axis=1)
+        tr = tr[tr.index <= last_obs]
+        atr = tr.rolling(ATR_WEEKS, min_periods=ATR_WEEKS).mean()
+        return atr.reindex(index)
+    except Exception:  # noqa: BLE001 — extension fields are context-only
+        return nan
+
+
+def _sata_from(stage: int | None, atr_ext: float | None,
+               mansfield_rs: float | None) -> int | None:
+    """Deterministic 0-10 SATA reproduction (calibrated to EquityDesk).
+
+    Composite = stage-base + w·atr_ext(clipped) + w·mansfield_rs(clipped), then
+    quantile-mapped through _SATA_CUTS to their 0-10 marginal. Fail-open: a null
+    atr_ext OR mansfield falls back to 0 for that term so a partial record still
+    scores; a null stage returns None (not stageable -> no SATA).
+    """
+    if stage in (None, 0):
+        return None
+    base = _SATA_STAGE_BASE.get(int(stage), 3.0) * _SATA_W_STAGE
+    ae = 0.0
+    if atr_ext is not None and np.isfinite(atr_ext):
+        ae = float(np.clip(atr_ext, -_SATA_ATR_CLIP, _SATA_ATR_CLIP)) * _SATA_W_ATR_EXT
+    mrs = 0.0
+    if mansfield_rs is not None and np.isfinite(mansfield_rs):
+        mrs = float(np.clip(mansfield_rs, -_SATA_MRS_CLIP, _SATA_MRS_CLIP)) * _SATA_W_MANSFIELD
+    comp = base + ae + mrs
+    for k, cut in enumerate(_SATA_CUTS):
+        if comp <= cut:
+            return k
+    return 10
+
+
+def _stage_detailed(stage: int | None, weeks: int, atr_ext: float | None,
+                    mansfield_rs: float | None, event: str | None,
+                    fresh: bool) -> str | None:
+    """Map (stage, events, extension, RS, age) onto the EquityDesk 9-label
+    stage_detailed taxonomy. Fail-open: an unstageable name -> None.
+
+    Labels (their exact strings):
+      1X_fallback_base, 2A_strong_breakout, 2D_extended_run,
+      2X_catch_price_above_ma, 2X_fallback_bullish, 3A_sideways_exhaustion,
+      3C_volatility_blowoff, 4B_steady_decline, 4X_fallback_bearish.
+    """
+    if stage in (None, 0):
+        return None
+    ae = atr_ext if (atr_ext is not None and np.isfinite(atr_ext)) else 0.0
+    mrs = mansfield_rs if (mansfield_rs is not None and np.isfinite(mansfield_rs)) else 0.0
+
+    if stage == 1:
+        return "1X_fallback_base"
+
+    if stage == 2:
+        # Fresh breakout week on volume -> 2A_strong_breakout.
+        if event == "breakout":
+            return "2A_strong_breakout"
+        # Fresh recapture / low-extension, weak-to-neutral RS name that has just
+        # reclaimed the line -> 2X_catch_price_above_ma ("2X Catch"). Their
+        # catch cohort: atr_ext median ~0.46, mansfield_rs median ~-6.
+        if ae <= _SD_S2_CATCH_ATR and mrs <= 5.0:
+            return "2X_catch_price_above_ma"
+        # Strongly extended above the line: young + RS-strong reads as a fresh
+        # strong breakout (2A); otherwise it is an aged extended run (2D).
+        if ae >= _SD_S2_STRONG_ATR:
+            if fresh and mrs >= 10.0:
+                return "2A_strong_breakout"
+            return "2D_extended_run"
+        # Established, still above the line -> 2X_fallback_bullish ("2X Bullish").
+        return "2X_fallback_bullish"
+
+    if stage == 3:
+        # Rolled below with weak RS / negative extension = volatility blowoff.
+        if ae <= _SD_S3_BLOWOFF_ATR or mrs <= -25.0:
+            return "3C_volatility_blowoff"
+        return "3A_sideways_exhaustion"
+
+    # stage == 4: aged, steeply-below-the-line decline is a "steady decline"
+    # (4B); everything else falls back to the deep-bear default (4X, the
+    # dominant class ~2,888/3,197 of their stage-4 names).
+    if weeks >= _SD_S4_STEADY_WEEKS and ae <= -1.8:
+        return "4B_steady_decline"
+    return "4X_fallback_bearish"
 
 
 def _classify_row(wclose: float, ma30: float, slope: float,
@@ -290,12 +468,16 @@ def _last_val(series: pd.Series) -> float | None:
 
 def classify(close: pd.Series,
              volume: pd.Series | None,
-             bench_close: pd.Series) -> dict:
+             bench_close: pd.Series,
+             high: pd.Series | None = None,
+             low: pd.Series | None = None) -> dict:
     """Classify a name's CURRENT Weinstein stage (last completed week).
 
-    Returns the last-bar dict per SGA-R1 / masterplan §2. Fail-open: a short
-    or unusable series returns a too-young dict; missing volume nulls the vol
-    fields and skips volume-dependent events.
+    Returns the last-bar dict per SGA-R1 / masterplan §2, EXTENDED (SGA-2) with
+    the EquityDesk yardstick fields: atr_14w, atr_ext, atr_pct_price, sata_score,
+    sata_change_1w, stage_detailed. Fail-open: a short or unusable series returns
+    a too-young dict; missing volume nulls the vol fields; missing high/low falls
+    back to a close-only ATR (the extension fields degrade, never crash).
     """
     wf = weekly_frame(close, volume, bench_close)
     if wf.empty or len(wf) < MIN_COMPLETED_WEEKS:
@@ -322,6 +504,17 @@ def classify(close: pd.Series,
     mansfield = _last_val(wf["mansfield_rs"])
     vol_ratio = _last_val(wf["vol_ratio"])
 
+    # --- SGA-2 extension fields (atr_14w / atr_ext / atr_pct_price) ---
+    atr = weekly_atr14(high, low, close, wf.index)
+    atr_14w = _last_val(atr)
+    atr_ext = None
+    atr_pct_price = None
+    if (atr_14w is not None and atr_14w > 0
+            and wclose is not None and ma30 is not None):
+        atr_ext = (wclose - ma30) / atr_14w
+        if wclose != 0:
+            atr_pct_price = atr_14w / wclose
+
     # trailing (iso_week_date, stage) for the last HISTORY_WEEKS weeks
     idx = wf.index
     hist_start = max(0, len(wf) - HISTORY_WEEKS)
@@ -331,6 +524,27 @@ def classify(close: pd.Series,
     ]
 
     fresh = bool(stage == 2 and wis <= 10)
+
+    # --- SGA-2 SATA + stage_detailed (+ 1-week SATA change) ---
+    sata = _sata_from(stage, atr_ext, mansfield)
+    sata_change_1w = None
+    if sata is not None and last >= 1:
+        # SATA one week ago: recompute from the prior completed week's fields.
+        prev = last - 1
+        prev_stage = stages[prev]
+        p_ma = wf["ma30"].to_numpy(dtype=float)[prev]
+        p_wc = wf["wclose"].to_numpy(dtype=float)[prev]
+        p_atr = atr.to_numpy(dtype=float)[prev] if len(atr) > prev else np.nan
+        p_ext = None
+        if np.isfinite(p_atr) and p_atr > 0 and np.isfinite(p_wc) and np.isfinite(p_ma):
+            p_ext = (p_wc - p_ma) / p_atr
+        p_mrs = wf["mansfield_rs"].to_numpy(dtype=float)[prev]
+        p_mrs = float(p_mrs) if np.isfinite(p_mrs) else None
+        prev_sata = _sata_from(prev_stage, p_ext, p_mrs)
+        if prev_sata is not None:
+            sata_change_1w = sata - prev_sata
+
+    stage_detailed = _stage_detailed(stage, wis, atr_ext, mansfield, event, fresh)
 
     return {
         "stage": int(stage),
@@ -346,6 +560,13 @@ def classify(close: pd.Series,
         "arc_pos": _arc_pos(stage, wis),
         "too_young": False,
         "history": history,
+        # SGA-2 EquityDesk yardstick fields (display-tier / context-only):
+        "atr_14w": round(atr_14w, 4) if atr_14w is not None else None,
+        "atr_ext": round(atr_ext, 4) if atr_ext is not None else None,
+        "atr_pct_price": round(atr_pct_price, 5) if atr_pct_price is not None else None,
+        "sata_score": sata,
+        "sata_change_1w": sata_change_1w,
+        "stage_detailed": stage_detailed,
     }
 
 

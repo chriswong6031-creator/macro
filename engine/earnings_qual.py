@@ -64,6 +64,11 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+# Shared advice scrubber (SAME rules as engine/stage_research.py) — every piece
+# of user-facing free text on the Earnings-Calls surfaces routes through it so no
+# "buy / sell / accumulate / price target / go long" language reaches the page.
+from engine._text_scrub import scrub_advice as _scrub_advice_text  # noqa: E402
+
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
@@ -990,6 +995,722 @@ def score_new(
     return written
 
 
+# =========================================================================== #
+# SGA-2 W2 — Earnings-season / industry-heatmap / comparison / table surfaces
+# =========================================================================== #
+# These read the committed EquityDesk backfill seed
+# (data/stage_analysis/backfill/earnings_calls.parquet — one row per
+# company-quarter, full history 2019→now — and ec_industry.parquet) and, going
+# forward, our own scores.parquet.  They emit the four Earnings-Calls surfaces
+# the Stage-Analysis hub renders (masterplan §1 surface D + §2 engines #4/#5):
+#
+#   ec_industry_heatmap() -> data/stage_analysis/ec_industry.json
+#       weekly per-GICS-industry {companies_with_fresh_ec, avg sent/perf/combined}
+#       matched to their earnings_call_gics_industry_weekly.
+#   earnings_season(q)    -> data/stage_analysis/earnings_season.json
+#       per fiscal quarter Raisers (Δcombined > +5 QoQ) vs Decliners (< -5),
+#       with per-industry allocation counts + level1/level2 tag-frequency cloud.
+#   earnings_comparison() -> data/stage_analysis/earnings_compare.json
+#       per ticker current-quarter combined+tags vs prior-quarter → delta_combined.
+#   earnings_table()      -> data/stage_analysis/earnings_table.json
+#       the per-call display rows (cap latest ~500; full set via R2/detail later).
+#
+# EPISTEMICS (SGA-R5): every artifact carries is_context_only + display_only.
+# These are CONTEXT signals — the LLM earnings scores never gate, rank, or size.
+# FAIL-OPEN: a missing / unreadable seed yields an empty-but-valid artifact; no
+# path here can crash a build.  Atomic JSON writes (tmp + os.replace).
+# --------------------------------------------------------------------------- #
+
+# Calibration constant: reproducing their weekly "fresh EC" window.  Their
+# earnings_call_gics_industry_weekly counts, per Friday week, the companies whose
+# most-recent call falls inside a trailing window.  120 days is the window.
+#
+# MEASURED (region-aggregated (week, industry) join vs their table, ~1,900 rows;
+# see tests/test_earnings_seasons.py::test_ec_industry_calibration):
+#   - avg_earnings_call_combined tracks THEIRS at r ≈ 0.97 — the genuine fidelity
+#     metric (the per-industry combined read is faithful).
+#   - companies_with_fresh_ec count MAE ≈ 3.9 — NOT the ~1.0 previously claimed.
+#     Our seed does not carry their per-region split, so we sum a name's fresh EC
+#     across regions where their table splits it; that inflates our counts vs a
+#     single-region cell. The count is a coarse volume proxy, not a matched read.
+_EC_FRESH_WINDOW_DAYS = 120
+
+# Season split thresholds (their Raisers Δ>5 / Decliners Δ<-5 on combined).
+_SEASON_RAISER_DELTA = 5.0
+_SEASON_DECLINER_DELTA = -5.0
+
+_EARNINGS_TABLE_CAP = 500
+# earnings_compare.json artifact budget: the full universe (~3.2k names) is ~2.5MB,
+# over the ~1.2MB page budget. Cap to the top-N largest |delta_combined| movers
+# (the most informative rows; the full set stays in the backfill / R2 detail lane).
+_EARNINGS_COMPARE_CAP = 1500
+
+
+def _sa_data_root(root: Path | None = None) -> Path:
+    r = Path(root) if root is not None else _REPO_ROOT
+    return r / "data" / "stage_analysis"
+
+
+def _backfill_earnings_path(root: Path | None = None) -> Path:
+    return _sa_data_root(root) / "backfill" / "earnings_calls.parquet"
+
+
+def _atomic_write_json(path: Path, obj: Any) -> None:
+    """Write JSON via tmp-then-rename (atomic on POSIX).  Never partial."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + f".tmp.{os.getpid()}")
+    try:
+        tmp.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, path)
+    finally:
+        if tmp.exists():
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+
+
+def _json_safe(obj: Any) -> Any:
+    """Coerce numpy / NaN scalars to plain JSON-safe Python (recursive)."""
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, (bool, str, int)) or obj is None:
+        return obj
+    if isinstance(obj, float):
+        return None if (obj != obj or obj in (float("inf"), float("-inf"))) else obj
+    try:
+        import numpy as np  # noqa: PLC0415
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            f = float(obj)
+            return None if (f != f) else f
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        f = float(obj)
+        return None if (f != f) else f
+    except Exception:  # noqa: BLE001
+        return str(obj)
+
+
+def _context_envelope(surface: str, extra: dict | None = None) -> dict:
+    """Shared display-tier envelope — every artifact stamps these (SGA-R5)."""
+    env = {
+        "surface": surface,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "is_context_only": True,   # SGA-R5 — never gates / ranks / sizes
+        "display_only": True,
+        "source": "equitydesk_backfill_seed + our earnings scores",
+    }
+    if extra:
+        env.update(extra)
+    return env
+
+
+def _scrub_tag_list(tags: list[str]) -> list[str]:
+    """Advice-scrub each tag string (shared scrubber), dropping any that scrub to
+    empty. Tags reach a user surface, so they get the same treatment as free
+    text — even though the pinned taxonomy is advice-free, seed level1/level2
+    tags are free-form and untrusted."""
+    out: list[str] = []
+    for t in tags:
+        s = _scrub_advice_text(t)
+        if s:
+            out.append(s)
+    return out
+
+
+def _parse_tag_list(raw: Any) -> list[str]:
+    """Coerce a tags cell (JSON-string, list, or None) into a list[str]."""
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return [str(t) for t in raw if isinstance(t, (str, int, float)) and str(t).strip()]
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return []
+        try:
+            v = json.loads(s)
+            if isinstance(v, list):
+                return [str(t) for t in v if str(t).strip()]
+        except Exception:  # noqa: BLE001
+            # comma-separated fallback
+            return [t.strip() for t in s.split(",") if t.strip()]
+    return []
+
+
+def load_backfill_earnings(root: Path | None = None):
+    """Load the committed EquityDesk earnings backfill as a normalized frame.
+
+    Returns a DataFrame with a coerced ``call_dt`` (datetime) and a canonical
+    ``calendar_quarter`` (e.g. ``2026Q2``) plus parsed tag lists.  Empty (with
+    the expected columns) when the seed is absent / unreadable — fail-open.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    cols = [
+        "document_ticker", "company_ticker", "company_name", "fiscal_quarter",
+        "fiscal_year", "call_date", "gics_sector", "gics_industry_group",
+        "gics_industry", "gics_subindustry", "earnings_call_sent",
+        "earnings_call_perf", "earnings_call_combined", "earnings_call_pop",
+        "positive_highlights", "negative_highlights", "key_quote",
+        "level1_tags", "level2_tags", "file_path",
+    ]
+    p = _backfill_earnings_path(root)
+    if not p.exists():
+        return pd.DataFrame(columns=cols + ["call_dt", "calendar_quarter", "ticker"])
+    try:
+        df = pd.read_parquet(p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("earnings_qual: backfill earnings unreadable (%s) — empty", exc)
+        return pd.DataFrame(columns=cols + ["call_dt", "calendar_quarter", "ticker"])
+    if df.empty:
+        return df
+
+    df = df.copy()
+    df["call_dt"] = pd.to_datetime(df.get("call_date"), errors="coerce")
+    # Canonical, dirty-value-proof quarter key: the CALENDAR quarter of the call
+    # (their fiscal_year has occasional dirty entries like 2925; call_date is the
+    # trustworthy anchor and aligns for the vast majority of names).
+    q = df["call_dt"].dt.quarter
+    y = df["call_dt"].dt.year
+    df["calendar_quarter"] = (
+        y.astype("Int64").astype(str) + "Q" + q.astype("Int64").astype(str)
+    )
+    df.loc[df["call_dt"].isna(), "calendar_quarter"] = None
+    # A stable per-name key (bare symbol without the ' US' region suffix).
+    tk = df.get("company_ticker")
+    if tk is None:
+        tk = df.get("document_ticker")
+    df["ticker"] = (
+        tk.astype(str).str.split().str[0].str.upper()
+        if tk is not None else ""
+    )
+    return df
+
+
+def _latest_quarters(df, n: int = 4) -> list[str]:
+    """The latest `n` calendar-quarter keys present, ordered newest→oldest,
+    restricted to quarters with a non-trivial call count (avoids a barely-begun
+    quarter dominating)."""
+    import pandas as pd  # noqa: PLC0415
+    if df.empty or "calendar_quarter" not in df.columns:
+        return []
+    counts = df["calendar_quarter"].dropna().value_counts()
+    # sortable key: (year, q)
+    def _key(qk: str):
+        try:
+            yy, qq = qk.split("Q")
+            return (int(yy), int(qq))
+        except Exception:  # noqa: BLE001
+            return (0, 0)
+    ordered = sorted(counts.index, key=_key, reverse=True)
+    return ordered[:n]
+
+
+# --------------------------------------------------------------------------- #
+# Surface #1 — EC industry heatmap (weekly per-GICS-industry)
+# --------------------------------------------------------------------------- #
+def ec_industry_heatmap(
+    root: Path | None = None,
+    *,
+    weeks: int = 26,
+    window_days: int = _EC_FRESH_WINDOW_DAYS,
+    write: bool = True,
+) -> dict:
+    """Weekly per-GICS-industry earnings-call heatmap.
+
+    For each Friday week over the trailing `weeks`, and each GICS industry, count
+    the companies whose MOST-RECENT call falls inside a `window_days` trailing
+    window and average their EC sent / perf / combined.  Mirrors their
+    ``earnings_call_gics_industry_weekly`` (MEASURED vs their table: combined
+    r≈0.97 — faithful; count MAE≈3.9 — a coarse volume proxy, not a matched read,
+    because our seed lacks their per-region split.  See ::test_ec_industry_calibration).
+
+    Emits data/stage_analysis/ec_industry.json.  Fail-open + display-tier.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    df = load_backfill_earnings(root)
+    weeks_out: list[dict] = []
+    industries: set[str] = set()
+
+    if not df.empty:
+        d = df.dropna(subset=["call_dt", "gics_industry"]).copy()
+        d = d[d["gics_industry"].astype(str).str.strip() != ""]
+        if not d.empty:
+            last = d["call_dt"].max()
+            # Anchor weeks on Fridays (their as_of convention: weekday == 4).
+            # Round the latest call UP to its week-ending Friday so a call landing
+            # Mon–Fri is captured by that week (rounding down would orphan it).
+            last_fri = last + pd.Timedelta(days=(4 - last.weekday()) % 7)
+            fridays = [last_fri - pd.Timedelta(weeks=w) for w in range(weeks)]
+            fridays = [f for f in fridays if pd.notna(f)]
+            for fri in sorted(fridays):
+                lo = fri - pd.Timedelta(days=window_days)
+                win = d[(d["call_dt"] <= fri) & (d["call_dt"] > lo)]
+                if win.empty:
+                    continue
+                # Latest call per company inside the window.
+                latest = (
+                    win.sort_values("call_dt")
+                    .groupby("ticker", as_index=False)
+                    .tail(1)
+                )
+                g = latest.groupby("gics_industry").agg(
+                    companies_with_fresh_ec=("ticker", "nunique"),
+                    avg_earnings_call_sent=("earnings_call_sent", "mean"),
+                    avg_earnings_call_perf=("earnings_call_perf", "mean"),
+                    avg_earnings_call_combined=("earnings_call_combined", "mean"),
+                )
+                for ind, r in g.iterrows():
+                    industries.add(str(ind))
+                    weeks_out.append({
+                        "week": fri.date().isoformat(),
+                        "as_of_date": fri.date().isoformat(),
+                        "gics_industry": str(ind),
+                        "companies_with_fresh_ec": int(r["companies_with_fresh_ec"]),
+                        "avg_earnings_call_sent": round(float(r["avg_earnings_call_sent"]), 3),
+                        "avg_earnings_call_perf": round(float(r["avg_earnings_call_perf"]), 3),
+                        "avg_earnings_call_combined": round(float(r["avg_earnings_call_combined"]), 3),
+                    })
+
+    out = _context_envelope("ec_industry_heatmap", {
+        "window_days": int(window_days),
+        "n_weeks": len({r["week"] for r in weeks_out}),
+        "n_industries": len(industries),
+        "rows": _json_safe(weeks_out),
+    })
+    if write:
+        _atomic_write_json(_sa_data_root(root) / "ec_industry.json", out)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Surface #1b — EC industry heatmap GRID (per-region, matrix form)
+# --------------------------------------------------------------------------- #
+# The `ec_industry_heatmap` above emits a long-format list (one row per
+# week×industry cell) from earnings_calls.parquet, which has NO region split.
+# This grid form reads the EquityDesk seed ec_industry.parquet directly — it
+# carries their per-region GICS-industry weekly aggregates
+# (avg_earnings_call_combined + companies_with_fresh_ec) — and reshapes them
+# into the matrix the Industries surface renders as a heatmap: rows = GICS
+# industries, columns = trailing Friday weeks (most-recent first), cells =
+# {combined, count}. DISPLAY-TIER / CONTEXT-ONLY.
+
+_EC_GRID_REGIONS = ("USA", "EUROPE", "ASIA")
+
+
+def _ec_industry_seed_path(root: Path | None = None) -> Path:
+    return _sa_data_root(root) / "backfill" / "ec_industry.parquet"
+
+
+def ec_industry_heatmap_grid(
+    root: Path | None = None,
+    *,
+    weeks: int = 26,
+    max_rows: int = 90,
+    write: bool = True,
+) -> dict:
+    """Per-region EC combined-sentiment grid from the EquityDesk seed.
+
+    Returns a display-tier envelope with ``regions`` = {region: {
+        weeks:[Friday dates, most-recent first],
+        rows:[{industry, cells:[{combined, count}|null per week]}],
+        n_industries, n_weeks}}. Rows are ordered by the most-recent week's
+    combined score (highest first). ``cells[]`` is aligned to ``weeks[]`` with
+    ``null`` where an industry has no fresh-EC read that week. Fail-open: a
+    missing/unreadable seed yields empty ``regions`` (page shows a warm state).
+
+    Emits data/stage_analysis/ec_industry_heatmap.json.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    regions_out: dict[str, dict] = {}
+    p = _ec_industry_seed_path(root)
+    if p.exists():
+        try:
+            df = pd.read_parquet(
+                p, columns=["as_of_date", "region", "gics_industry_name",
+                            "companies_with_fresh_ec",
+                            "avg_earnings_call_combined"])
+        except Exception as exc:  # noqa: BLE001
+            log.warning("::warning:: earnings_qual: ec grid seed unreadable (%s)", exc)
+            df = pd.DataFrame()
+        if not df.empty:
+            try:
+                df = df.assign(dt_=pd.to_datetime(df["as_of_date"], errors="coerce"))
+                df = df.dropna(subset=["dt_", "gics_industry_name"])
+                for reg in _EC_GRID_REGIONS:
+                    sub = df[df["region"] == reg]
+                    if sub.empty:
+                        continue
+                    grid = _ec_grid_region(sub, weeks=weeks, max_rows=max_rows)
+                    if grid is not None:
+                        regions_out[reg] = grid
+            except Exception as exc:  # noqa: BLE001
+                log.warning("::warning:: earnings_qual: ec grid build failed (%s)", exc)
+
+    out = _context_envelope("ec_industry_heatmap_grid", {
+        "n_regions": len(regions_out),
+        "regions": _json_safe(regions_out),
+    })
+    if write:
+        _atomic_write_json(_sa_data_root(root) / "ec_industry_heatmap.json", out)
+    return out
+
+
+def _ec_grid_region(sub, *, weeks: int, max_rows: int) -> dict | None:
+    """Build one region's EC grid. `sub` = rows for a single region."""
+    import pandas as pd  # noqa: PLC0415
+
+    all_weeks = sorted(sub["dt_"].dropna().unique())
+    if not all_weeks:
+        return None
+    keep = all_weeks[-weeks:]
+    week_labels = [pd.Timestamp(w).date().isoformat() for w in reversed(keep)]
+    keep_set = set(keep)
+    win = sub[sub["dt_"].isin(keep_set)].sort_values("dt_")
+
+    # {industry: {week: {combined, count}}} — last write wins on dup cells.
+    cells_by_ind: dict[str, dict] = {}
+    for row in win.itertuples():
+        ind = str(row.gics_industry_name).strip()
+        if not ind or ind.lower() == "nan":
+            continue
+        wk = pd.Timestamp(row.dt_).date().isoformat()
+        combined = row.avg_earnings_call_combined
+        try:
+            combined = None if combined != combined else round(float(combined), 2)
+        except (TypeError, ValueError):
+            combined = None
+        try:
+            count = int(row.companies_with_fresh_ec)
+        except (TypeError, ValueError):
+            count = 0
+        cells_by_ind.setdefault(ind, {})[wk] = {"combined": combined, "count": count}
+
+    if not cells_by_ind:
+        return None
+
+    latest = week_labels[0]
+
+    def _sort_key(ind: str):
+        cell = cells_by_ind[ind].get(latest)
+        if cell is not None and cell.get("combined") is not None:
+            return (0, -cell["combined"])
+        # Industries missing the latest week fall to the bottom, ordered by the
+        # most recent combined they DO have.
+        best = None
+        for wk in week_labels:
+            c = cells_by_ind[ind].get(wk)
+            if c and c.get("combined") is not None:
+                best = c["combined"]
+                break
+        return (1, -(best if best is not None else -1e9))
+
+    ordered = sorted(cells_by_ind.keys(), key=_sort_key)[:max_rows]
+    rows = [{
+        "industry": ind,
+        "cells": [cells_by_ind[ind].get(wk) for wk in week_labels],
+    } for ind in ordered]
+
+    return {
+        "weeks": week_labels,
+        "rows": rows,
+        "n_industries": len(rows),
+        "n_weeks": len(week_labels),
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Surface #2 — Earnings season (per fiscal quarter Raisers / Decliners)
+# --------------------------------------------------------------------------- #
+def _tag_frequency(rows, col: str, top: int = 25) -> list[dict]:
+    """Tag-frequency cloud for a set of call rows on a tag column."""
+    from collections import Counter
+    c: Counter = Counter()
+    for _, r in rows.iterrows():
+        for t in _parse_tag_list(r.get(col)):
+            c[t] += 1
+    return [{"tag": t, "count": int(n)} for t, n in c.most_common(top)]
+
+
+def _industry_allocation(rows, top: int = 20) -> list[dict]:
+    """Per-industry count allocation for a set of call rows."""
+    if rows.empty:
+        return []
+    g = rows.groupby("gics_industry").size().sort_values(ascending=False)
+    return [{"gics_industry": str(k), "count": int(v)} for k, v in g.head(top).items()]
+
+
+def earnings_season(
+    quarter: str | None = None,
+    root: Path | None = None,
+    *,
+    n_quarters: int = 4,
+    write: bool = True,
+) -> dict:
+    """Per fiscal (calendar-anchored) quarter, split names into Raisers vs
+    Decliners by QoQ change in combined score.
+
+    A name is a Raiser when its combined rose > +5 vs its immediately-prior call,
+    a Decliner when it fell < -5 (their thresholds).  Each side carries an
+    industry-allocation count list and a level1/level2 tag-frequency cloud.
+
+    `quarter` restricts output to a single quarter key (e.g. ``2026Q2``); when
+    None, the latest `n_quarters` are emitted.  Writes earnings_season.json.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    df = load_backfill_earnings(root)
+    quarters_out: list[dict] = []
+
+    if not df.empty:
+        d = df.dropna(subset=["call_dt", "calendar_quarter"]).copy()
+        d = d[pd.to_numeric(d["earnings_call_combined"], errors="coerce").notna()]
+        if not d.empty:
+            # Prior combined = the same ticker's immediately-prior call.
+            d = d.sort_values("call_dt")
+            d["prev_combined"] = (
+                d.groupby("ticker")["earnings_call_combined"].shift(1)
+            )
+            d["delta_combined"] = (
+                pd.to_numeric(d["earnings_call_combined"], errors="coerce")
+                - pd.to_numeric(d["prev_combined"], errors="coerce")
+            )
+            want = [quarter] if quarter else _latest_quarters(d, n_quarters)
+            for qk in want:
+                qd = d[d["calendar_quarter"] == qk]
+                if qd.empty:
+                    continue
+                scored = qd.dropna(subset=["delta_combined"])
+                raisers = scored[scored["delta_combined"] > _SEASON_RAISER_DELTA]
+                decliners = scored[scored["delta_combined"] < _SEASON_DECLINER_DELTA]
+                quarters_out.append({
+                    "quarter": qk,
+                    "n_calls": int(len(qd)),
+                    "n_scored_qoq": int(len(scored)),
+                    "raisers": {
+                        "count": int(len(raisers)),
+                        "median_delta": round(float(raisers["delta_combined"].median()), 3)
+                        if len(raisers) else None,
+                        "industry_allocation": _industry_allocation(raisers),
+                        "level1_tags": _tag_frequency(raisers, "level1_tags"),
+                        "level2_tags": _tag_frequency(raisers, "level2_tags"),
+                    },
+                    "decliners": {
+                        "count": int(len(decliners)),
+                        "median_delta": round(float(decliners["delta_combined"].median()), 3)
+                        if len(decliners) else None,
+                        "industry_allocation": _industry_allocation(decliners),
+                        "level1_tags": _tag_frequency(decliners, "level1_tags"),
+                        "level2_tags": _tag_frequency(decliners, "level2_tags"),
+                    },
+                })
+
+    out = _context_envelope("earnings_season", {
+        "n_quarters": len(quarters_out),
+        "quarters": _json_safe(quarters_out),
+    })
+    if write:
+        _atomic_write_json(_sa_data_root(root) / "earnings_season.json", out)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Surface #3 — Earnings comparison (per ticker current vs prior quarter)
+# --------------------------------------------------------------------------- #
+def earnings_comparison(
+    root: Path | None = None,
+    *,
+    cap: int = _EARNINGS_COMPARE_CAP,
+    write: bool = True,
+) -> dict:
+    """Per ticker: current-quarter combined + tags vs prior-quarter combined +
+    tags → ``delta_combined``.  One row per name (its two most-recent calls).
+
+    Capped to the top `cap` rows by |delta_combined| (largest movers — the most
+    informative; the full set stays in the backfill / R2 detail lane) so the
+    artifact fits the ~1.2MB page budget.
+
+    Emits earnings_compare.json.  Fail-open + display-tier.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    df = load_backfill_earnings(root)
+    rows_out: list[dict] = []
+    n_full = 0
+    n_scored = 0
+
+    if not df.empty:
+        d = df.dropna(subset=["call_dt"]).copy()
+        d = d.sort_values("call_dt")
+        for tk, grp in d.groupby("ticker"):
+            if len(grp) < 2:
+                continue
+            cur = grp.iloc[-1]
+            prev = grp.iloc[-2]
+            cur_comb = pd.to_numeric(pd.Series([cur.get("earnings_call_combined")]),
+                                     errors="coerce").iloc[0]
+            prev_comb = pd.to_numeric(pd.Series([prev.get("earnings_call_combined")]),
+                                      errors="coerce").iloc[0]
+            if pd.isna(cur_comb) or pd.isna(prev_comb):
+                continue
+            # FIX 2 — a stored combined of exactly 0 is an UNSCORED / missing-call
+            # placeholder, NOT a true tone reading. MEASURED on the seed: 2,330
+            # rows carry combined==0 yet 2,297 of them have a NON-ZERO sent and
+            # 2,328 a non-zero perf (internally inconsistent with a real blend,
+            # and 0 is the clamp floor — scored calls populate 1..41). Pairing an
+            # unscored 0 against a scored ~35-40 manufactured the false ±35 "tone
+            # swings" that dominated the top of the Raisers/Decliners ranking
+            # (BTU, CMPO, RBLX, ARE, BSX, … all 0-vs-35). We keep such rows
+            # VIEWABLE (the delta is still emitted) but mark them unscored so the
+            # page can EXCLUDE them from the top swing ranking. `both_scored` is
+            # the ranking gate; the sort below floors unscored pairs to the bottom.
+            cur_scored = float(cur_comb) != 0.0
+            prev_scored = float(prev_comb) != 0.0
+            both_scored = cur_scored and prev_scored
+            # Tags reach a user surface — advice-scrub via the shared scrubber.
+            cur_tags = _scrub_tag_list(_parse_tag_list(cur.get("level1_tags")))
+            prev_tags = _scrub_tag_list(_parse_tag_list(prev.get("level1_tags")))
+            new_tags = [t for t in cur_tags if t not in set(prev_tags)]
+            dropped_tags = [t for t in prev_tags if t not in set(cur_tags)]
+            rows_out.append({
+                "ticker": str(tk),
+                "company_name": str(cur.get("company_name") or ""),
+                "gics_industry": str(cur.get("gics_industry") or ""),
+                "current_quarter": cur.get("calendar_quarter"),
+                "current_date": cur["call_dt"].date().isoformat(),
+                "current_combined": round(float(cur_comb), 3),
+                "current_scored": cur_scored,
+                "current_tags": cur_tags,
+                "prior_quarter": prev.get("calendar_quarter"),
+                "prior_date": prev["call_dt"].date().isoformat(),
+                "prior_combined": round(float(prev_comb), 3),
+                "prior_scored": prev_scored,
+                "prior_tags": prev_tags,
+                "delta_combined": round(float(cur_comb) - float(prev_comb), 3),
+                # True iff BOTH quarters are genuinely scored — the swing-ranking
+                # gate. A False here means the delta straddles an unscored quarter
+                # and must NOT lead the biggest-tone-swings list.
+                "both_scored": both_scored,
+                "new_tags": new_tags,
+                "dropped_tags": dropped_tags,
+            })
+        n_full = len(rows_out)
+        n_scored = sum(1 for r in rows_out if r["both_scored"])
+        # Cap to the top-N largest ABSOLUTE movers, but ONLY the both-scored pairs
+        # compete for the top of the swing ranking (unscored-straddling pairs are
+        # floored so they can never masquerade as the biggest tone swing). Within
+        # each group we still sort by |delta|; the scored block leads. After the
+        # cap, present signed-descending for the page's Raisers-first default.
+        rows_out.sort(key=lambda r: (not r["both_scored"], -abs(r["delta_combined"])))
+        rows_out = rows_out[:cap]
+        rows_out.sort(key=lambda r: (not r["both_scored"], -r["delta_combined"]))
+
+    out = _context_envelope("earnings_comparison", {
+        "n_rows": len(rows_out),
+        "n_total": n_full,
+        "n_scored": n_scored,       # both-quarters-scored pairs (rank-eligible)
+        "cap": int(cap),
+        "unscored_note": (
+            "A stored combined of 0 marks an UNSCORED / missing earnings call, "
+            "not a true zero. Pairs where either quarter is unscored carry "
+            "both_scored=false and are excluded from the biggest-tone-swings "
+            "ranking (still viewable, floored below the scored pairs)."
+        ),
+        "rows": _json_safe(rows_out),
+    })
+    if write:
+        _atomic_write_json(_sa_data_root(root) / "earnings_compare.json", out)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Surface #4 — Earnings table (per-call display rows, latest ~500)
+# --------------------------------------------------------------------------- #
+def earnings_table(
+    root: Path | None = None,
+    *,
+    cap: int = _EARNINGS_TABLE_CAP,
+    write: bool = True,
+) -> dict:
+    """Per-call display rows: ticker, industry, date, ec_sent, ec_perf, tags,
+    positive/negative highlights, slide file_path.  Latest `cap` calls by date
+    (the full history stays in the backfill / R2 for the detail lane).
+
+    Emits earnings_table.json.  Fail-open + display-tier.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    df = load_backfill_earnings(root)
+    rows_out: list[dict] = []
+
+    if not df.empty:
+        d = df.dropna(subset=["call_dt"]).sort_values("call_dt", ascending=False)
+        d = d.head(int(cap))
+        for _, r in d.iterrows():
+            fp = r.get("file_path")
+            fp = None if (fp is None or (isinstance(fp, float) and fp != fp)) else str(fp)
+            rows_out.append({
+                "ticker": str(r.get("ticker") or ""),
+                "company_name": str(r.get("company_name") or ""),
+                "gics_industry": str(r.get("gics_industry") or ""),
+                "gics_sector": str(r.get("gics_sector") or ""),
+                "call_date": r["call_dt"].date().isoformat(),
+                "quarter": r.get("calendar_quarter"),
+                "ec_sent": _json_safe(r.get("earnings_call_sent")),
+                "ec_perf": _json_safe(r.get("earnings_call_perf")),
+                "ec_combined": _json_safe(r.get("earnings_call_combined")),
+                "level1_tags": _scrub_tag_list(_parse_tag_list(r.get("level1_tags"))),
+                "level2_tags": _scrub_tag_list(_parse_tag_list(r.get("level2_tags"))),
+                # Free-text highlights + quote reach a user surface — advice-scrub
+                # them through the SAME scrubber as stage_research (item 9).
+                "positive_highlights": _scrub_advice_text(
+                    str(r.get("positive_highlights") or "") or None),
+                "negative_highlights": _scrub_advice_text(
+                    str(r.get("negative_highlights") or "") or None),
+                "key_quote": _scrub_advice_text(
+                    str(r.get("key_quote") or "") or None),
+                "file_path": fp,
+            })
+
+    out = _context_envelope("earnings_table", {
+        "n_rows": len(rows_out),
+        "cap": int(cap),
+        "rows": _json_safe(rows_out),
+    })
+    if write:
+        _atomic_write_json(_sa_data_root(root) / "earnings_table.json", out)
+    return out
+
+
+def build_all_earnings_surfaces(root: Path | None = None) -> dict:
+    """Build + write all four Earnings-Calls surface artifacts.  Fail-open:
+    a failure in one surface logs ::warning:: and does not abort the others."""
+    results: dict[str, Any] = {}
+    for name, fn in (
+        ("ec_industry", ec_industry_heatmap),
+        ("ec_industry_grid", ec_industry_heatmap_grid),
+        ("earnings_season", earnings_season),
+        ("earnings_compare", earnings_comparison),
+        ("earnings_table", earnings_table),
+    ):
+        try:
+            results[name] = fn(root=root)  # type: ignore[operator]
+        except Exception as exc:  # noqa: BLE001
+            log.warning("::warning:: earnings_qual: surface %s failed (%s)", name, exc)
+            results[name] = {"error": str(exc)}
+    return results
+
+
 # --------------------------------------------------------------------------- #
 # CLI (cold-start / ops convenience — NOT wired into the render path)
 # --------------------------------------------------------------------------- #
@@ -997,11 +1718,19 @@ def main(argv: list[str] | None = None) -> int:
     import argparse
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
-    ap = argparse.ArgumentParser(description="Score un-scored earnings text.")
+    ap = argparse.ArgumentParser(description="Score earnings text / build surfaces.")
     ap.add_argument("--root", default=None, help="repo root override")
     ap.add_argument("--source", default="auto", choices=["auto", "transcript", "8k"])
     ap.add_argument("--limit", type=int, default=8)
+    ap.add_argument("--surfaces", action="store_true",
+                    help="Build the four Earnings-Calls surface artifacts and exit.")
     args = ap.parse_args(argv)
+    if args.surfaces:
+        res = build_all_earnings_surfaces(root=args.root)
+        for name, r in res.items():
+            n = r.get("n_rows") or r.get("n_quarters") or r.get("n_weeks") or "?"
+            print(f"{name}: {n} rows")
+        return 0
     n = score_new(root=args.root, source=args.source, limit=args.limit)
     print(f"scored {n} new earnings row(s)")
     return 0

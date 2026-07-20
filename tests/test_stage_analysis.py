@@ -27,13 +27,19 @@ def _fake_stage_map() -> dict[str, dict]:
         # ticker: (stage, weeks, fresh, slope, pct_vs_ma30, mrs, vol_ratio, event, arc, n_weeks)
         "NVDA": dict(stage=2, weeks_in_stage=6, fresh=True, ma30_slope_pct5w=3.4,
                      pct_vs_ma30=8.9, mansfield_rs=12.0, vol_ratio=1.72,
-                     event="breakout", arc_pos=0.31, n_weeks=200),
+                     event="breakout", arc_pos=0.31, n_weeks=200,
+                     atr_14w=6.0, atr_ext=2.4, atr_pct_price=0.045, sata_score=9,
+                     sata_change_1w=1, stage_detailed="2A_strong_breakout"),
         "AVGO": dict(stage=2, weeks_in_stage=9, fresh=True, ma30_slope_pct5w=2.1,
                      pct_vs_ma30=5.3, mansfield_rs=6.0, vol_ratio=1.31,
-                     event="trendline_recapture", arc_pos=0.38, n_weeks=200),
+                     event="trendline_recapture", arc_pos=0.38, n_weeks=200,
+                     atr_14w=5.0, atr_ext=0.6, atr_pct_price=0.04, sata_score=6,
+                     sata_change_1w=0, stage_detailed="2X_catch_price_above_ma"),
         "COST": dict(stage=2, weeks_in_stage=22, fresh=False, ma30_slope_pct5w=1.0,
                      pct_vs_ma30=4.1, mansfield_rs=2.0, vol_ratio=0.98,
-                     event=None, arc_pos=0.46, n_weeks=200),
+                     event=None, arc_pos=0.46, n_weeks=200,
+                     atr_14w=8.0, atr_ext=1.4, atr_pct_price=0.03, sata_score=7,
+                     sata_change_1w=-1, stage_detailed="2X_fallback_bullish"),
         "WMT": dict(stage=2, weeks_in_stage=40, fresh=False, ma30_slope_pct5w=0.9,
                     pct_vs_ma30=28.0, mansfield_rs=-1.0, vol_ratio=0.9,
                     event=None, arc_pos=0.49, n_weeks=200),
@@ -148,6 +154,138 @@ def test_schema_completeness_vs_fixture(env):
     assert set(contract["top_stage2"][0].keys()) == fx_row_keys
     fx_earn_keys = set(fixture["top_stage2"][0]["earnings"].keys())
     assert set(contract["top_stage2"][0]["earnings"].keys()) == fx_earn_keys
+
+
+# ---------------------------------------------------------------------------
+# 1b. SGA-2 flagship artifacts: screener.json + stage_board_{daily,weekly}.
+# ---------------------------------------------------------------------------
+def test_screener_and_boards_emitted(env):
+    dr, _ = env
+    sa.build_context_feed(root=dr, asof="2026-07-17")
+
+    screener = dr / "stage_analysis" / "screener.json"
+    board_d = dr / "stage_analysis" / "stage_board_daily.json"
+    board_w = dr / "stage_analysis" / "stage_board_weekly.json"
+    assert screener.exists() and board_d.exists() and board_w.exists()
+
+    sc = json.loads(screener.read_text())
+    assert sc["schema"] == "stage_screener.v1"
+    assert sc["is_context_only"] is True and sc["display_only"] is True
+    assert sc["surface"] == "A"
+    assert sc["n"] == len(sc["rows"]) > 0
+
+    # Column parity for surface A (masterplan §1).
+    row = sc["rows"][0]
+    for col in ("ticker", "name", "sector", "region", "source",
+                "industry_percentile", "sata_score", "sata_change_1w", "stage",
+                "stage_detailed", "stage_label", "weeks_in_stage", "atr_ext",
+                "atr_pct_price", "mansfield_rs", "ec_sent", "ec_perf", "rating"):
+        assert col in row, f"screener row missing {col}"
+    # FIX 1a: every live-classified row is US-listed → region "USA", source "live"
+    # (no overview seed present in this env, so no EU/ASIA seed rows appended).
+    assert all(r["region"] == "USA" and r["source"] == "live" for r in sc["rows"])
+    assert sc["counts"]["by_region"]["USA"]["seed"] == 0
+
+    # Stage-2 names sort first; the freshest Stage-2 leads.
+    assert row["stage"] == 2
+    # NVDA (fresh 2A) should outrank the non-fresh Stage-2 names.
+    tickers = [r["ticker"] for r in sc["rows"]]
+    assert tickers[0] in ("NVDA", "AVGO")
+
+    # UI stage labels reproduce the two flagship chips.
+    labels = {r["ticker"]: r["stage_label"] for r in sc["rows"]}
+    assert labels.get("AVGO") == "2X Catch"
+    assert labels.get("COST") == "2X Bullish"
+
+    bd = json.loads(board_d.read_text())
+    bw = json.loads(board_w.read_text())
+    assert bd["schema"] == "stage_board_daily.v1" and bd["variant"] == "daily"
+    assert bw["schema"] == "stage_board_weekly.v1" and bw["variant"] == "weekly"
+    assert bd["is_context_only"] is True and bw["is_context_only"] is True
+
+
+# ---------------------------------------------------------------------------
+# 1c. FIX 1b — EU / ASIA seed rows appended so the region toggle is 3-region.
+# ---------------------------------------------------------------------------
+def _write_overview_seed(dr, rows):
+    """Write a tiny EquityDesk overview seed at the lane's expected path."""
+    cols = ["ticker", "region", "name_ui", "gics_sector", "gics_industry",
+            "industry_percentile", "sata_score", "sata_change_1w", "stage_flag",
+            "stage_detailed", "weeks_in_stage", "atr_ext", "atr_14w", "close",
+            "earnings_call_sent", "earnings_call_perf", "combined_rating",
+            "mansfield_rs", "level1_tags"]
+    p = dr / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows, columns=cols).to_parquet(p)
+
+
+def _ov_row(ticker, region, rating, **over):
+    base = dict(ticker=ticker, region=region, name_ui=f"{ticker} Co",
+                gics_sector="Financials", gics_industry="Banks",
+                industry_percentile=90.0, sata_score=8, sata_change_1w=0.0,
+                stage_flag=2, stage_detailed="2X_fallback_bullish",
+                weeks_in_stage=6, atr_ext=1.5, atr_14w=2.0, close=40.0,
+                earnings_call_sent=20.0, earnings_call_perf=10.0,
+                combined_rating=rating, mansfield_rs=5.0,
+                level1_tags='["loan_growth", "AI"]')
+    base.update(over)
+    return base
+
+
+def test_region_toggle_seed_rows_appended(env):
+    """FIX 1b: EU + ASIA seed rows are appended (source='seed') alongside the
+    live US rows (source='live'); counts.by_region discloses live/seed/available."""
+    dr, _ = env
+    _write_overview_seed(dr, [
+        _ov_row("BBVA.MC", "EUROPE", 87),
+        _ov_row("SAP.DE", "EUROPE", 80),
+        _ov_row("0700.HK", "ASIA", 85),
+        _ov_row("BADCLASS", "USA", 99),   # USA rows in the seed are NOT appended
+    ])
+    sa.build_context_feed(root=dr, asof="2026-07-17")
+    sc = json.loads((dr / "stage_analysis" / "screener.json").read_text())
+
+    by_src = {}
+    for r in sc["rows"]:
+        by_src.setdefault((r["region"], r["source"]), []).append(r["ticker"])
+    # Live US rows present, seed EU/ASIA rows appended, no USA-seed leak.
+    assert by_src.get(("USA", "live"))            # our classifier's US names
+    assert set(by_src.get(("EUROPE", "seed"), [])) == {"BBVA.MC", "SAP.DE"}
+    assert set(by_src.get(("ASIA", "seed"), [])) == {"0700.HK"}
+    assert ("USA", "seed") not in by_src
+    # Seed rows carry the mapped schema (industry, atr_pct_price, rating).
+    eu = next(r for r in sc["rows"] if r["ticker"] == "BBVA.MC")
+    assert eu["industry"] == "Banks" and eu["rating"] == 87
+    assert eu["atr_pct_price"] == round(2.0 / 40.0, 5)   # atr_14w / close
+    assert eu["stage_label"] == "2X Bullish"
+    # counts.by_region disclosure.
+    br = sc["counts"]["by_region"]
+    assert br["EUROPE"]["seed"] == 2 and br["EUROPE"]["live"] == 0
+    assert br["ASIA"]["seed"] == 1
+    assert br["USA"]["live"] > 0 and br["USA"]["seed"] == 0
+
+
+def test_seed_region_cap_disclosed(env):
+    """FIX 1b: a region over the per-region cap is truncated by rating and the
+    uncapped `available` count is disclosed."""
+    dr, _ = env
+    # 3 ASIA rows; cap to 2 to prove truncation keeps the top-rated.
+    monkeypatch_cap = sa._SEED_REGION_CAP
+    try:
+        sa._SEED_REGION_CAP = 2
+        _write_overview_seed(dr, [
+            _ov_row("A.HK", "ASIA", 50),
+            _ov_row("B.HK", "ASIA", 90),   # top-rated → kept
+            _ov_row("C.HK", "ASIA", 70),   # → kept
+        ])
+        sa.build_context_feed(root=dr, asof="2026-07-17")
+        sc = json.loads((dr / "stage_analysis" / "screener.json").read_text())
+        seed = {r["ticker"] for r in sc["rows"] if r["source"] == "seed"}
+        assert seed == {"B.HK", "C.HK"}           # A.HK (lowest rating) dropped
+        br = sc["counts"]["by_region"]["ASIA"]
+        assert br["available"] == 3 and br["seed"] == 2 and br["cap"] == 2
+    finally:
+        sa._SEED_REGION_CAP = monkeypatch_cap
 
 
 # ---------------------------------------------------------------------------

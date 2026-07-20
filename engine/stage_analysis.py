@@ -69,6 +69,10 @@ EXTENSION_THRESH = 15.0      # % from ma30 where the penalty starts
 TOP_STAGE2_CAP = 60
 WARNINGS_CAP = 20
 CHANGES_CAP = 80
+# SGA-2 flagship screener / stage-board row cap (surface A/B). The full universe
+# (~2.7k names) at ~20 compact fields/row is well under 1 MB; keep an explicit
+# cap so a runaway universe can never blow the artifact budget.
+SCREENER_CAP = 3000
 
 # Earnings tone thresholds (masterplan §2).
 TONE_UP = 0.3
@@ -197,10 +201,12 @@ def build_universe(root: Path | None = None) -> dict[str, dict]:
 # Per-ticker price loader (SGA-R3 — baskets/ohlcv preferred, deep store fallback)
 # ---------------------------------------------------------------------------
 def _load_prices(ticker: str, dr: Path):
-    """Return (close, volume) daily series for a ticker, or (None, None).
+    """Return (close, volume, high, low) daily series for a ticker, or Nones.
 
     Prefers baskets/ohlcv (full adjusted series per masterplan trap §7); falls
-    back to data/stocks/. Fail-open on any read error.
+    back to data/stocks/. High/low power the SGA-2 14-week ATR (atr_ext); they
+    are None when absent (classify degrades to a close-only ATR). Fail-open on
+    any read error.
     """
     import pandas as pd
 
@@ -217,10 +223,12 @@ def _load_prices(ticker: str, dr: Path):
             continue
         close = df["close"].dropna()
         vol = df["volume"].dropna() if "volume" in df.columns else pd.Series(dtype="float64")
+        high = df["high"].dropna() if "high" in df.columns else None
+        low = df["low"].dropna() if "low" in df.columns else None
         if len(close) == 0:
             continue
-        return close, vol
-    return None, None
+        return close, vol, high, low
+    return None, None, None, None
 
 
 def _load_bench_close(dr: Path):
@@ -247,19 +255,27 @@ def _load_bench_close(dr: Path):
 # ---------------------------------------------------------------------------
 # classify shim (calls the sibling-lane weinstein_stage.classify)
 # ---------------------------------------------------------------------------
-def _classify(close, volume, bench_close) -> dict | None:
+def _classify(close, volume, bench_close, high=None, low=None) -> dict | None:
     """Call engine.weinstein_stage.classify, fail-open to None.
 
     Kept as a thin indirection so tests can monkeypatch this symbol (or the
     underlying module) and the suite runs standalone before the sibling lane
-    lands weinstein_stage.py.
+    lands weinstein_stage.py. high/low feed the SGA-2 14-week ATR; they are
+    optional (a classify build without them degrades the extension fields).
     """
     try:
         from engine import weinstein_stage  # noqa: PLC0415
     except Exception:  # noqa: BLE001 — module not built yet in this lane
         return None
     try:
-        return weinstein_stage.classify(close, volume, bench_close)
+        return weinstein_stage.classify(close, volume, bench_close, high, low)
+    except TypeError:
+        # A monkeypatched/older classify without the high/low params — retry.
+        try:
+            return weinstein_stage.classify(close, volume, bench_close)
+        except Exception as e:  # noqa: BLE001
+            log.warning("stage_analysis: classify raised (%s)", e)
+            return None
     except Exception as e:  # noqa: BLE001 — a single bad name never breaks the fan-out
         log.warning("stage_analysis: classify raised (%s)", e)
         return None
@@ -283,10 +299,10 @@ def _classify_one(ticker: str) -> tuple[str, dict | None]:
     bench = _SHARED.get("bench")
     if dr is None:
         return ticker, None
-    close, vol = _load_prices(ticker, dr)
+    close, vol, high, low = _load_prices(ticker, dr)
     if close is None:
         return ticker, None
-    res = _classify(close, vol, bench)
+    res = _classify(close, vol, bench, high, low)
     return ticker, res
 
 
@@ -370,6 +386,37 @@ def _load_gate_tiers(repo_root: Path) -> dict[str, str]:
         tier = v.get("tier_cascade")
         if tier in ("T1", "T2", "T3"):
             out[str(tk).strip().upper()] = tier
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Industry-percentile join (SGA-2 — from the industry-ranks lane, fail-open)
+# ---------------------------------------------------------------------------
+def _load_industry_pctile(dr: Path) -> dict[str, float]:
+    """Read data/stage_analysis/industry_name_pctile.json -> {TICKER: pct}.
+
+    Produced by the sibling industry-ranks lane (engine/stage_industry.py):
+    the name's RS-strength percentile within its GICS industry (0..100). This
+    is the flagship "Ind %ile" column. Read-only, fail-open: an absent /
+    unreadable / malformed artifact -> {} (the column simply nulls out).
+    """
+    p = dr / "stage_analysis" / "industry_name_pctile.json"
+    if not p.exists():
+        return {}
+    try:
+        d = json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("stage_analysis: industry_name_pctile.json unreadable (%s)", e)
+        return {}
+    pcts = (d or {}).get("percentiles")
+    if not isinstance(pcts, dict):
+        return {}
+    out: dict[str, float] = {}
+    for tk, v in pcts.items():
+        try:
+            out[str(tk).strip().upper()] = float(v)
+        except (TypeError, ValueError):
+            continue
     return out
 
 
@@ -800,11 +847,19 @@ def _json_safe(obj: Any) -> Any:
 # ---------------------------------------------------------------------------
 # Atomic write
 # ---------------------------------------------------------------------------
-def _atomic_write_json(path: Path, obj: Any) -> None:
-    """Write JSON via tmp-then-rename (atomic on POSIX)."""
+def _atomic_write_json(path: Path, obj: Any, compact: bool = False) -> None:
+    """Write JSON via tmp-then-rename (atomic on POSIX).
+
+    compact=True drops indentation and inter-token whitespace (separators
+    (",", ":")) — used for the large screener/board tables so the artifact
+    stays well under the 1 MB budget; the small context feed stays pretty.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False))
+    if compact:
+        tmp.write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")))
+    else:
+        tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False))
     os.replace(tmp, path)
 
 
@@ -879,6 +934,388 @@ def append_forward_ledger(contract: dict, root: Path | None = None) -> int:
 
 
 # ---------------------------------------------------------------------------
+# SGA-2 screener / stage-board projection (surface A + B, masterplan §1)
+# ---------------------------------------------------------------------------
+# UI stage labels (masterplan §1): the two flagship Stage-2 chips.
+#   2X_fallback_bullish     -> "2X Bullish"  (established uptrend)
+#   2X_catch_price_above_ma -> "2X Catch"    (fresh recapture / early entry)
+_STAGE_UI_LABEL = {
+    "1X_fallback_base": "1X Base",
+    "2A_strong_breakout": "2A Breakout",
+    "2D_extended_run": "2D Extended",
+    "2X_catch_price_above_ma": "2X Catch",
+    "2X_fallback_bullish": "2X Bullish",
+    "3A_sideways_exhaustion": "3A Topping",
+    "3C_volatility_blowoff": "3C Blowoff",
+    "4B_steady_decline": "4B Decline",
+    "4X_fallback_bearish": "4X Bearish",
+}
+
+
+def _stage_ui_label(stage_detailed: str | None, stage: int | None) -> str | None:
+    """Plain UI chip for the stage column. Falls back to a bare stage word when
+    stage_detailed is absent (name stageable but detail-mapping declined)."""
+    if stage_detailed and stage_detailed in _STAGE_UI_LABEL:
+        return _STAGE_UI_LABEL[stage_detailed]
+    return {1: "Stage 1", 2: "Stage 2", 3: "Stage 3", 4: "Stage 4"}.get(stage)
+
+
+# ---------------------------------------------------------------------------
+# FIX 1b — EU / ASIA seed screener rows (from the committed EquityDesk overview)
+# ---------------------------------------------------------------------------
+# Our live engine only classifies US-listed OHLCV, so the flagship region toggle
+# (N.America / Europe / Asia) had ZERO rows for EU / Asia. EquityDesk covers all
+# three regions and we carry their EU (799) + Asia (3,171) rows in the committed
+# overview seed. We APPEND them to the screener/board — mapped to our column
+# schema, carrying THEIR scores — tagged source="seed" so the UI can flag them as
+# "EquityDesk seed" (our live US rows carry source="live"). This makes the
+# transfer genuinely 3-region: US = our live engine, EU/Asia = their seed until we
+# wire non-US OHLCV. DISPLAY-TIER / CONTEXT-ONLY — a seed row is never a signal,
+# gate, or sizing input (SGA-R5), same as every other row on these surfaces.
+#
+# Per-region cap by their combined_rating (their overall quality rank), so a
+# runaway region can never blow the ~1.3MB screener budget. The cap + the full
+# per-region counts are disclosed in the artifact's `counts` block.
+#
+# BUDGET MATH (measured): the live US screener is already ~1.09MB at ~2.7k rows,
+# and a non-US seed row costs ~475 B (long international company names dominate,
+# not the numbers). Headroom to ~1.3MB is ~250KB → ~500 seed rows. We keep the
+# top 250 per region by combined_rating (the highest-quality names — exactly what
+# a screener surfaces first) so the ONE screener.json stays under budget. The
+# uncapped per-region availability is disclosed in `counts.by_region`. EU=799 and
+# ASIA=3,171 upstream; the full non-US set stays in the committed overview seed /
+# R2 detail lane. Seed `tags` are trimmed to 4 (the full tag set lives on the
+# Earnings-Calls surfaces + earnings_table.json).
+_SEED_REGION_CAP = 250           # per non-US region (first-pass cap; see math above)
+_SEED_TAGS_KEEP = 4              # trim seed level1 tags to keep the row compact
+_SEED_SCREENER_REGIONS = ("EUROPE", "ASIA")
+# Hard ceiling for screener.json (task budget ~1.3MB). The live US block alone is
+# ~1.18MB, so after the per-region cap we still BYTE-TRIM the seed rows (dropping
+# the lowest-rated first, balanced across regions) until the whole artifact fits.
+# This keeps the ONE screener.json under budget no matter how the US block grows.
+# The trim measures against a live-only base that is a few hundred bytes SMALLER
+# than the final contract (it lacks the surface/by_region/cadence envelope added
+# later), so we hold back a safety margin to guarantee the on-disk file fits.
+_SCREENER_BYTE_MARGIN = 4096
+_SCREENER_BYTE_CEILING = int(1.3 * 1024 * 1024) - _SCREENER_BYTE_MARGIN
+
+# EquityDesk stage_flag (int 1..4) → coarse stage; their stage_detailed strings
+# reuse our _STAGE_UI_LABEL taxonomy (same W5 label set), so the UI chip is shared.
+_OVERVIEW_COLS = [
+    "ticker", "region", "name_ui", "gics_sector", "gics_industry",
+    "industry_percentile", "sata_score", "sata_change_1w", "stage_flag",
+    "stage_detailed", "weeks_in_stage", "atr_ext", "atr_14w", "close",
+    "earnings_call_sent", "earnings_call_perf", "combined_rating",
+    "mansfield_rs", "level1_tags",
+]
+
+
+def _num(v):
+    """Coerce a possibly-NaN/None seed cell to a float, else None."""
+    try:
+        import pandas as pd  # noqa: PLC0415
+        if v is None or (isinstance(v, float) and v != v) or pd.isna(v):
+            return None
+    except Exception:  # noqa: BLE001
+        if v is None:
+            return None
+    try:
+        f = float(v)
+        return None if f != f else f
+    except (TypeError, ValueError):
+        return None
+
+
+def _seed_screener_rows(root: Path | None = None) -> tuple[list[dict], dict]:
+    """Build EU + ASIA screener rows from the committed EquityDesk overview seed.
+
+    Returns (rows, region_meta) where region_meta = {region: {available, kept}}
+    for the artifact's counts disclosure. Rows carry source="seed" and match the
+    _screener_row column schema. Fail-open: a missing/unreadable seed yields
+    ([], {}) so the US-only board still renders.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    dr = _data_root(root)
+    p = dr / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    if not p.exists():
+        return [], {}
+    try:
+        ov = pd.read_parquet(p, columns=_OVERVIEW_COLS)
+    except Exception as e:  # noqa: BLE001 — fail-open; US-only board still ships
+        log.warning("stage_analysis: overview seed unreadable (%s) — no EU/ASIA rows", e)
+        return [], {}
+
+    rows: list[dict] = []
+    region_meta: dict[str, dict] = {}
+    for region in _SEED_SCREENER_REGIONS:
+        sub = ov[ov["region"] == region]
+        available = int(len(sub))
+        if available == 0:
+            continue
+        # Rank by their combined_rating (overall quality) desc, cap per region.
+        sub = sub.sort_values("combined_rating", ascending=False, na_position="last")
+        if available > _SEED_REGION_CAP:
+            sub = sub.head(_SEED_REGION_CAP)
+        region_meta[region] = {"available": available, "kept": int(len(sub))}
+        for _, r in sub.iterrows():
+            tk = str(r.get("ticker") or "").strip().upper()
+            if not tk:
+                continue
+            stage_flag = r.get("stage_flag")
+            try:
+                stage = int(stage_flag) if stage_flag is not None and not pd.isna(stage_flag) else None
+            except (TypeError, ValueError):
+                stage = None
+            if stage == 0:
+                stage = None
+            weeks = _num(r.get("weeks_in_stage"))
+            stage_det = r.get("stage_detailed")
+            stage_det = None if (stage_det is None or pd.isna(stage_det)) else str(stage_det)
+            # atr_pct_price = 14w ATR / close (their atr_14w is an absolute band).
+            atr14 = _num(r.get("atr_14w"))
+            close = _num(r.get("close"))
+            atr_pct = (atr14 / close) if (atr14 is not None and close not in (None, 0)) else None
+            sata = _num(r.get("sata_score"))
+            sata_chg = _num(r.get("sata_change_1w"))
+            ind_pct = _num(r.get("industry_percentile"))
+            rating = _num(r.get("combined_rating"))
+            tags = _parse_tag_list(r.get("level1_tags"))[:_SEED_TAGS_KEEP]
+            rows.append({
+                "ticker": tk,
+                "name": (str(r.get("name_ui")).strip()
+                         if r.get("name_ui") is not None and not pd.isna(r.get("name_ui")) else tk),
+                "sector": (str(r.get("gics_sector")).strip()
+                           if r.get("gics_sector") is not None and not pd.isna(r.get("gics_sector"))
+                           and str(r.get("gics_sector")).strip().lower() != "nan" else "Unknown"),
+                "region": region,
+                "source": "seed",
+                "industry": (str(r.get("gics_industry")).strip()
+                             if r.get("gics_industry") is not None and not pd.isna(r.get("gics_industry"))
+                             and str(r.get("gics_industry")).strip().lower() != "nan" else None),
+                "industry_percentile": round(ind_pct, 1) if ind_pct is not None else None,
+                "sata_score": int(sata) if sata is not None else None,
+                "sata_change_1w": round(sata_chg, 2) if sata_chg is not None else None,
+                "stage": stage,
+                "stage_detailed": stage_det,
+                "stage_label": _stage_ui_label(stage_det, stage),
+                "weeks_in_stage": int(weeks) if weeks is not None else None,
+                # A seed row is "fresh" on the same rule our engine uses: fresh
+                # Stage-2 with <= FRESH_MAX_WEEKS completed weeks (SGA-R1).
+                "fresh": bool(stage == 2 and weeks is not None and weeks <= FRESH_MAX_WEEKS),
+                "atr_ext": round(_num(r.get("atr_ext")), 3) if _num(r.get("atr_ext")) is not None else None,
+                "atr_pct_price": round(atr_pct, 5) if atr_pct is not None else None,
+                "mansfield_rs": round(_num(r.get("mansfield_rs")), 2) if _num(r.get("mansfield_rs")) is not None else None,
+                "ec_sent": _num(r.get("earnings_call_sent")),
+                "ec_perf": _num(r.get("earnings_call_perf")),
+                "rating": int(rating) if rating is not None else None,
+                "gate_tier": None,     # our confluence gate is US-only
+                "event": None,
+                "blackout": False,
+                "tags": tags,
+            })
+    return rows, region_meta
+
+
+def _byte_trim_seed_rows(base_contract: dict, seed_rows: list[dict],
+                         ceiling: int) -> tuple[list[dict], dict]:
+    """Drop the lowest-rated seed rows (balanced across regions) until the
+    serialized contract fits `ceiling` bytes. Returns (kept_seed_rows, kept_by_region).
+
+    The live rows are already in base_contract["rows"]; we only trim the SEED tail
+    so the US block is never touched. Balanced round-robin removal by region keeps
+    each region proportionally represented rather than starving one. Fail-open: if
+    measurement raises, returns the input unchanged.
+    """
+    try:
+        def _size(rows: list[dict]) -> int:
+            c = dict(base_contract)
+            c["rows"] = base_contract["rows"] + rows
+            return len(json.dumps(_json_safe(c), ensure_ascii=False,
+                                  separators=(",", ":")).encode("utf-8"))
+
+        kept = list(seed_rows)
+        if _size(kept) <= ceiling:
+            by_region = _count_by_region(kept)
+            return kept, by_region
+
+        # Bucket per region, lowest-rated LAST so we pop the weakest first.
+        buckets: dict[str, list[dict]] = {}
+        for r in kept:
+            buckets.setdefault(r["region"], []).append(r)
+        for reg in buckets:
+            buckets[reg].sort(key=lambda x: (x.get("rating") or 0))  # weakest first
+        regions_cycle = [r for r in _SEED_SCREENER_REGIONS if r in buckets]
+
+        # Round-robin pop the weakest from the largest-remaining region until it fits.
+        while _size([r for b in buckets.values() for r in b]) > ceiling:
+            # pick the region with the most rows remaining (keep balance)
+            regions_cycle.sort(key=lambda reg: len(buckets.get(reg, [])), reverse=True)
+            popped = False
+            for reg in regions_cycle:
+                if buckets.get(reg):
+                    buckets[reg].pop(0)   # remove weakest
+                    popped = True
+                    break
+            if not popped:
+                break
+        kept = [r for b in buckets.values() for r in b]
+        return kept, _count_by_region(kept)
+    except Exception as e:  # noqa: BLE001 — never break the build on a size trim
+        log.warning("::warning:: stage_analysis: seed byte-trim failed (%s)", e)
+        return seed_rows, _count_by_region(seed_rows)
+
+
+def _count_by_region(rows: list[dict]) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for r in rows:
+        out[r["region"]] = out.get(r["region"], 0) + 1
+    return out
+
+
+def _parse_tag_list(raw: Any) -> list[str]:
+    """Coerce a seed tags cell (JSON-string / list / None) into a list[str].
+    Mirrors earnings_qual._parse_tag_list; kept local so this module has no
+    cross-engine import."""
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return [str(t) for t in raw if str(t).strip()]
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return []
+        try:
+            v = json.loads(s)
+            if isinstance(v, list):
+                return [str(t) for t in v if str(t).strip()]
+        except Exception:  # noqa: BLE001
+            return [t.strip() for t in s.split(",") if t.strip()]
+    return []
+
+
+def _screener_row(r: dict) -> dict:
+    """Project a full record onto the flagship screener/board row (surface A).
+
+    Column parity with EquityDesk Overview (masterplan §1): Ticker · Name ·
+    Industry(sector) · Ind %ile · SATA · Δ SATA · Stage(2X Bullish/2X Catch) ·
+    Weeks · ATR Ext · ATR % Price · EC Sent/Perf · Rating · Mansfield RS + Δ.
+    Every field is display-tier / context-only.
+    """
+    earn = r.get("earnings") or {}
+    return {
+        "ticker": r["ticker"],
+        "name": r["company"],
+        "sector": r["sector"],
+        # FIX 1a: our live-classified universe is US-listed OHLCV, so every live
+        # row is region "USA" with source "live". EU/ASIA rows are appended from
+        # the EquityDesk seed (source "seed") by _seed_screener_rows() below.
+        "region": r.get("region") or "USA",
+        "source": r.get("source") or "live",
+        "industry": r.get("industry"),         # seed carries GICS industry; live nulls
+        "industry_percentile": r.get("industry_percentile"),
+        "sata_score": r.get("sata_score"),
+        "sata_change_1w": r.get("sata_change_1w"),
+        "stage": r["stage"],
+        "stage_detailed": r.get("stage_detailed"),
+        "stage_label": _stage_ui_label(r.get("stage_detailed"), r.get("stage")),
+        "weeks_in_stage": r["weeks_in_stage"],
+        "fresh": r["fresh"],
+        "atr_ext": r.get("atr_ext"),
+        "atr_pct_price": r.get("atr_pct_price"),
+        "mansfield_rs": r.get("mansfield_rs"),
+        "ec_sent": earn.get("sentiment"),
+        "ec_perf": earn.get("performance"),
+        "rating": r.get("sga_score"),          # our 0..100 combined-rating analogue
+        "gate_tier": r.get("gate_tier"),
+        "event": r.get("event"),
+        "blackout": r.get("blackout"),
+        "tags": earn.get("tags") or [],
+    }
+
+
+# Honest calibration note shared by the screener + both boards (item 7): discloses
+# the WEAK stage_detailed top-label agreement, not only the strong SATA/atr_ext.
+_CALIBRATION_NOTE = (
+    "Reproduced from our OHLCV vs the EquityDesk seed (display-tier only): "
+    "atr_ext r≈1.0, SATA Spearman≈0.92, coarse stage (1–4) agree≈73%. The fine "
+    "stage_detailed top-label agrees only ≈0.40 (their ~16 labels vs our 9) — a "
+    "read may land on a neighbouring detailed label with the same coarse stage."
+)
+# Daily board cadence disclosure (item 14): the classifier is weekly-native, so
+# the daily board currently mirrors the weekly stage read.
+_DAILY_CADENCE_NOTE = (
+    "This daily board currently mirrors the weekly stage read — the classifier "
+    "is weekly-native (completed Friday bars); there is no separate daily-cadence "
+    "stage machine yet, so the daily and weekly boards share the same stages."
+)
+
+
+def _stage_board_contract(schema_tag: str, asof: str, built: str,
+                          recs: list[dict], counts_full: dict,
+                          market: dict, cadence_note: str | None = None,
+                          seed_rows: list[dict] | None = None,
+                          region_counts: dict | None = None) -> dict:
+    """Assemble one stage-board contract (daily or weekly variant).
+
+    Rows sorted fresh-first then by rating (sga_score) so the board leads with
+    the freshest, highest-quality Stage-2 names — matching the EquityDesk
+    Trending Stocks default order. Non-stage-2 names still ship (filterable
+    client-side) but sink below the Stage-2 block.
+
+    seed_rows: pre-built EU/ASIA rows from the EquityDesk overview seed (FIX 1b),
+    already in _screener_row shape with source="seed"; appended AFTER the live US
+    rows so the region toggle is genuinely 3-region. region_counts: the per-region
+    live/seed disclosure attached to the contract's `counts`.
+
+    cadence_note: an extra plain-word disclosure appended to calibration (the
+    daily board passes _DAILY_CADENCE_NOTE — item 14 honesty).
+    """
+    rows = [_screener_row(r) for r in recs]
+    if seed_rows:
+        rows = rows + list(seed_rows)
+    # Sort. `source` leads the key so the LIVE US engine (our flagship) always
+    # heads the default/unfiltered view — the seed `rating` (EquityDesk
+    # combined_rating, mean≈78) and our live `rating` (sga_score, mean≈23) are on
+    # DIFFERENT 0-100 scales, so interleaving them by rating would bury every US
+    # name under the seed block. The region toggle is the primary filter; within
+    # each region the existing stage/fresh/rating order is preserved. Stage may be
+    # None on a seed row → treated as non-Stage-2 (sinks below within its block).
+    rows.sort(key=lambda x: (
+        x.get("source") != "live",             # live US block first
+        x.get("stage") != 2,                   # Stage 2 first
+        not x.get("fresh"),                    # fresh first within Stage 2
+        -(x.get("rating") or 0),               # then by rating (within same scale)
+        x["ticker"],
+    ))
+    calibration = {
+        "target": "EquityDesk stage_daily.parquet (seed yardstick)",
+        "note": _CALIBRATION_NOTE,
+    }
+    if cadence_note:
+        calibration["cadence_note"] = cadence_note
+    # Per-region live/seed counts for the toggle (FIX 1b disclosure). Computed
+    # from the assembled rows so it always matches what actually shipped.
+    counts_out = dict(counts_full)
+    if region_counts is not None:
+        counts_out["by_region"] = region_counts
+    return {
+        "schema": schema_tag,
+        "asof": asof,
+        "built": built,
+        "is_context_only": True,
+        "display_only": True,
+        "disclaimer": ("Context only — stage classification display, "
+                       "never a signal or sizing input."),
+        "calibration": calibration,
+        "counts": counts_out,
+        "market": market,
+        "rows": rows,
+        "n": len(rows),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Main entrypoint
 # ---------------------------------------------------------------------------
 def build_context_feed(root: Path | None = None,
@@ -902,6 +1339,7 @@ def build_context_feed(root: Path | None = None,
     # --- side inputs (all fail-open) ---
     gate_tiers = _load_gate_tiers(rr)
     earnings_map = _load_earnings_scores(dr)
+    industry_pctile = _load_industry_pctile(dr)
 
     # earnings-blackout assess needs a date object.
     try:
@@ -995,6 +1433,15 @@ def build_context_feed(root: Path | None = None,
             "event": res.get("event"),
             "gate_tier": gate_tier,
             "arc_pos": None if res.get("arc_pos") is None else round(float(res["arc_pos"]), 4),
+            # SGA-2 EquityDesk yardstick fields (display-tier / context-only).
+            "atr_14w": None if res.get("atr_14w") is None else round(float(res["atr_14w"]), 4),
+            "atr_ext": None if res.get("atr_ext") is None else round(float(res["atr_ext"]), 3),
+            "atr_pct_price": None if res.get("atr_pct_price") is None else round(float(res["atr_pct_price"]), 5),
+            "sata_score": res.get("sata_score"),
+            "sata_change_1w": res.get("sata_change_1w"),
+            "stage_detailed": res.get("stage_detailed"),
+            # Ind %ile joined from the industry-ranks lane (null if absent).
+            "industry_percentile": industry_pctile.get(tk),
         }
         rec["sga_score"] = _compute_sga_score(rec, slope_pctile, gate_tier)
 
@@ -1113,6 +1560,85 @@ def build_context_feed(root: Path | None = None,
     except Exception as e:  # noqa: BLE001 — write failure must not break a build
         log.warning("::warning:: stage_analysis: failed to write %s (%s)", outpath, e)
 
+    # --- SGA-2 flagship artifacts: screener.json + stage_board_{daily,weekly} ---
+    # Surface A (Screener) is the full combined table; surfaces B are the daily /
+    # weekly stage boards. Our classifier is weekly-native (completed W-FRI bars),
+    # so both variants derive from the same weekly stage read — the daily variant
+    # carries the freshest daily-close position, the weekly variant is the pure
+    # weekly-resampled view (documented in each contract's calibration.note).
+    # Capped, ranked, display-tier; fail-open per file.
+    #
+    # FIX 1b: our live rows are all US ("USA"/"live"); APPEND the EU + ASIA rows
+    # from the EquityDesk overview seed ("seed") so the region toggle is genuinely
+    # 3-region. Built once, shared across the screener + both boards.
+    try:
+        seed_rows, seed_meta = _seed_screener_rows(root)
+    except Exception as e:  # noqa: BLE001 — fail-open; US-only board still ships
+        log.warning("::warning:: stage_analysis: seed screener rows failed (%s)", e)
+        seed_rows, seed_meta = [], {}
+    n_live = len(recs[:SCREENER_CAP] if len(recs) > SCREENER_CAP else recs)
+
+    # BYTE-TRIM the seed rows against the screener's ~1.3MB ceiling: the live US
+    # block alone is ~1.18MB, so after the per-region cap we still drop the
+    # lowest-rated seed rows (balanced across regions) until the ONE screener.json
+    # fits. Measured against a live-only base so the US block is never touched.
+    live_rows = [_screener_row(r) for r in
+                 (recs[:SCREENER_CAP] if len(recs) > SCREENER_CAP else recs)]
+    _base_for_trim = {
+        "schema": "stage_screener.v1", "asof": asof, "built": built,
+        "is_context_only": True, "display_only": True, "surface": "A",
+        "calibration": {"target": "EquityDesk stage_daily.parquet (seed yardstick)",
+                        "note": _CALIBRATION_NOTE},
+        "counts": counts_full, "market": market, "rows": live_rows,
+    }
+    seed_rows, kept_by_region = _byte_trim_seed_rows(
+        _base_for_trim, seed_rows, _SCREENER_BYTE_CEILING)
+
+    region_counts = {
+        "USA": {"live": n_live, "seed": 0, "cap": None},
+    }
+    for reg, m in (seed_meta or {}).items():
+        kept = kept_by_region.get(reg, 0)
+        available = m.get("available")
+        region_counts[reg] = {
+            "live": 0,
+            "seed": kept,
+            "available": available,
+            # Disclose the binding cap: either the per-region cap or the tighter
+            # byte-trim, whichever actually limited the kept count.
+            "cap": kept if (available is not None and kept < available) else None,
+        }
+
+    try:
+        capped = recs[:SCREENER_CAP] if len(recs) > SCREENER_CAP else recs
+        screener = _stage_board_contract(
+            "stage_screener.v1", asof, built, capped, counts_full, market,
+            seed_rows=seed_rows, region_counts=region_counts)
+        screener["surface"] = "A"
+        _atomic_write_json(
+            dr / "stage_analysis" / "screener.json", _json_safe(screener),
+            compact=True)
+    except Exception as e:  # noqa: BLE001
+        log.warning("::warning:: stage_analysis: failed to write screener.json (%s)", e)
+
+    for variant, fname in (("daily", "stage_board_daily.json"),
+                           ("weekly", "stage_board_weekly.json")):
+        try:
+            capped = recs[:SCREENER_CAP] if len(recs) > SCREENER_CAP else recs
+            # The daily board mirrors the weekly stage read (weekly-native
+            # classifier) — disclose it honestly in the daily contract (item 14).
+            cadence = _DAILY_CADENCE_NOTE if variant == "daily" else None
+            board = _stage_board_contract(
+                f"stage_board_{variant}.v1", asof, built, capped,
+                counts_full, market, cadence_note=cadence,
+                seed_rows=seed_rows, region_counts=region_counts)
+            board["variant"] = variant
+            _atomic_write_json(
+                dr / "stage_analysis" / fname, _json_safe(board),
+                compact=True)
+        except Exception as e:  # noqa: BLE001
+            log.warning("::warning:: stage_analysis: failed to write %s (%s)", fname, e)
+
     return contract
 
 
@@ -1137,4 +1663,12 @@ def _top_row(r: dict) -> dict:
         "earnings": r["earnings"],
         "why": r["why"],
         "why_zh": r["why_zh"],
+        # SGA-2 yardstick fields.
+        "atr_14w": r.get("atr_14w"),
+        "atr_ext": r.get("atr_ext"),
+        "atr_pct_price": r.get("atr_pct_price"),
+        "sata_score": r.get("sata_score"),
+        "sata_change_1w": r.get("sata_change_1w"),
+        "stage_detailed": r.get("stage_detailed"),
+        "industry_percentile": r.get("industry_percentile"),
     }

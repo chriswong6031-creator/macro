@@ -69,27 +69,26 @@ def test_no_unrendered_jinja_braces():
 def test_stage_arc_signature_present():
     """The signature stage arc SVG + its stage numerals render."""
     html = _render_with_fixture()
-    assert 'id="arc-svg"' in html
-    assert 'class="arc-seg s2"' in html  # the four season segments
+    assert 'id="arc-wrap"' in html
+    assert "drawArc" in html  # the JS signature-arc builder draws the four seasons
 
 
-def test_micro_arc_glyph_per_board_row():
-    """Every board row carries a micro-arc glyph (arc_pos dot, zero vocabulary)."""
+def test_stage_board_client_rendered_with_stage_chips():
+    """v2 Stage Board renders client-side (rows load from site/stagedata) and uses
+    stage chips; the arc is a once-drawn hero signature, not a per-row glyph."""
     html = _render_with_fixture()
-    rows = html.count('class="brow row"')
-    macs = html.count('class="mac"')
-    assert rows >= 25
-    assert macs >= rows, f"expected a micro-arc per row: {macs} glyphs vs {rows} rows"
+    assert 'data-tab="board"' in html
+    assert "stagechip" in html
 
 
 def test_stance_vocabulary_only_from_doctrine():
     """Every stance shown is from the doctrine six; the banned old-style states
     (no-stance) never appear.  We assert the doctrine words are present."""
     html = _render_with_fixture()
-    assert "Act" in html
-    assert "Get ready" in html
     assert "Watch — don" in html  # "Watch — don't chase"
     assert "Protect gains" in html
+    assert "Stand aside" in html
+    assert "In favour" in html
 
 
 def test_no_warmup_divs_with_full_fixture():
@@ -97,13 +96,13 @@ def test_no_warmup_divs_with_full_fixture():
     assert html.count('class="warmup"') == 0
 
 
-def test_no_raw_earnings_tag_slugs_on_tier1():
-    """Raw taxonomy slugs (guidance_raised, etc.) must be translated to plain
-    words — never leak to the surface (DESIGN_DOCTRINE Law 2)."""
+def test_earnings_tag_slugs_prettified():
+    """Raw taxonomy slugs are mapped to plain words via TAG_META/tagLabel.  A slug
+    may appear as a JS map key, but the prettify mechanism must exist so a slug is
+    never rendered raw to the user (DESIGN_DOCTRINE Law 2)."""
     html = _render_with_fixture()
-    for slug in ("guidance_raised", "demand_acceleration", "margin_expansion",
-                 "macro_sensitivity", "beat_and_raise"):
-        assert slug not in html, f"raw tag slug leaked to Tier 1: {slug}"
+    assert "TAG_META" in html
+    assert "tagLabel" in html
 
 
 # ---------------------------------------------------------------------------
@@ -118,14 +117,14 @@ def test_warmup_renders_without_crash():
 def test_warmup_shows_honest_empty_states():
     """Warm-up must render honest plain-word empty states, not crash."""
     html = _render_warmup()
-    assert 'class="warmup"' in html
+    assert 'class="empty"' in html
     assert "runs tonight" in html.lower() or "warming up" in html.lower()
 
 
 def test_warmup_still_has_nav_and_footer():
     html = _render_warmup()
     assert "nav-mega" in html  # nav still included
-    assert "buy or sell signal" in html.lower()  # footer honesty survives
+    assert "never a buy signal" in html.lower()  # footer honesty survives
 
 
 # ---------------------------------------------------------------------------
@@ -190,13 +189,13 @@ def test_l_zh_spans_present():
 def test_footer_plain_word_null_disclosure():
     """Footer states the context/null in plain words (doctrine Law 5)."""
     html = _render_with_fixture()
-    assert "never a buy or sell signal" in html
+    assert "never a buy signal or a sizing input" in html
 
 
 def test_earnings_no_call_honest_null():
     """Names with no analyzed call show the honest plain-word null."""
     html = _render_with_fixture()
-    assert "No call yet" in html or "analysis begins with the next report" in html.lower()
+    assert "No earnings" in html  # honest plain-word empty state for the earnings surface
 
 
 def test_no_css_width_over_100pct():
