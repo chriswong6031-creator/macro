@@ -3930,3 +3930,180 @@ tr.lab-cell-floor td { opacity: .72; }
   .sent-flag-id { margin-left: 0; width: 100%; }
 }
 
+/* ==========================================================================
+   BEACON SEO — control plane. Reuses the panel's tokens; band-* maps a health
+   verdict onto the shared status colors so every surface reads the same green.
+   ========================================================================== */
+.band-ok   { color: var(--ok);   }
+.band-warn { color: var(--warn); }
+.band-bad  { color: var(--bad);  }
+.band-mut  { color: var(--muted); }
+.band-ok-c { color: var(--ok); }
+
+.mkt-seo-lede {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.55;
+  max-width: 70ch;
+  margin: 2px 0 14px;
+}
+
+/* ---- Hero: banded verdict + severity + director controls ---- */
+.mkt-seo-hero {
+  display: grid;
+  grid-template-columns: minmax(190px, 240px) 1fr auto;
+  gap: 20px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+}
+.mkt-seo-hero.band-ok   { border-left-color: var(--ok);   }
+.mkt-seo-hero.band-warn { border-left-color: var(--warn); }
+.mkt-seo-hero.band-bad  { border-left-color: var(--bad);  }
+.mkt-seo-hero.band-mut  { border-left-color: var(--border); }
+
+.mkt-seo-hero-word {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.05;
+}
+.mkt-seo-hero.band-ok   .mkt-seo-hero-word { color: var(--ok);   }
+.mkt-seo-hero.band-warn .mkt-seo-hero-word { color: var(--warn); }
+.mkt-seo-hero.band-bad  .mkt-seo-hero-word { color: var(--bad);  }
+.mkt-seo-hero.band-mut  .mkt-seo-hero-word { color: var(--muted); }
+
+.mkt-seo-hero-score {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.mkt-seo-hero-of { font-size: 12px; font-weight: 500; color: var(--faint); letter-spacing: 0; }
+.mkt-seo-hero-asof { font-size: 11.5px; color: var(--faint); margin-top: 4px; }
+.mkt-seo-delta { font-size: 13px; font-weight: 600; }
+.mkt-seo-delta.up   { color: var(--ok);  }
+.mkt-seo-delta.down { color: var(--bad); }
+
+.mkt-seo-hero-sev-lab { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.mkt-seo-hero-sev-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+.mkt-seo-sevpill { text-transform: capitalize; }
+
+.mkt-seo-hero-dir { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.mkt-seo-dir-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.mkt-seo-dir-chip { white-space: nowrap; }
+.mkt-seo-dir-note { max-width: 220px; text-align: right; margin-top: 2px; }
+
+/* ---- Trend: sparkline + severity dot-strip ---- */
+.mkt-seo-trend { padding: 14px 16px; }
+.mkt-seo-trend-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.mkt-seo-trend-lab { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.mkt-seo-spark { width: 100%; height: 96px; display: block; }
+.mkt-seo-spark-guide { stroke: var(--grid); stroke-width: 1; stroke-dasharray: 3 4; }
+.mkt-seo-spark-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.mkt-seo-spark-line.band-ok   { stroke: var(--ok);   }
+.mkt-seo-spark-line.band-warn { stroke: var(--warn); }
+.mkt-seo-spark-line.band-bad  { stroke: var(--bad);  }
+.mkt-seo-spark-line.band-mut  { stroke: var(--accent); }
+.mkt-seo-spark-area { stroke: none; opacity: .12; }
+.mkt-seo-spark-area.band-ok   { fill: var(--ok);   }
+.mkt-seo-spark-area.band-warn { fill: var(--warn); }
+.mkt-seo-spark-area.band-bad  { fill: var(--bad);  }
+.mkt-seo-spark-area.band-mut  { fill: var(--accent); }
+.mkt-seo-spark-end { stroke: var(--surface); stroke-width: 2; }
+.mkt-seo-spark-end.band-ok   { fill: var(--ok);   }
+.mkt-seo-spark-end.band-warn { fill: var(--warn); }
+.mkt-seo-spark-end.band-bad  { fill: var(--bad);  }
+.mkt-seo-spark-end.band-mut  { fill: var(--accent); }
+
+.mkt-seo-strip-lab { margin: 10px 0 5px; }
+.mkt-seo-strip { display: flex; gap: 3px; align-items: flex-end; min-height: 16px; }
+.mkt-seo-strip-col { display: flex; flex-direction: column-reverse; gap: 2px; flex: 1 1 0; min-width: 3px; max-width: 22px; }
+.mkt-seo-strip-cell { height: 5px; border-radius: 1px; display: block; }
+.mkt-seo-strip-cell.sev-critical { background: var(--bad); }
+.mkt-seo-strip-cell.sev-high     { background: color-mix(in srgb, var(--bad) 70%, var(--warn)); }
+.mkt-seo-strip-cell.sev-medium   { background: var(--warn); }
+.mkt-seo-strip-cell.sev-low      { background: var(--faint); }
+.mkt-seo-strip-cell.sev-none     { background: var(--ok); opacity: .5; height: 4px; }
+.mkt-seo-trend-single { display: flex; flex-direction: column; gap: 4px; }
+
+/* ---- Census table ---- */
+.mkt-seo-legend { margin-bottom: 8px; }
+.mkt-seo-census th { color: var(--muted); font-weight: 600; }
+.mkt-seo-census th.r, .mkt-seo-census td.r { text-align: right; }
+.mkt-seo-fam { font-weight: 600; }
+.mkt-seo-cov { font-variant-numeric: tabular-nums; font-weight: 600; }
+.mkt-seo-cov.band-ok   { color: var(--ok);   }
+.mkt-seo-cov.band-warn { color: var(--warn); }
+.mkt-seo-cov.band-bad  { color: var(--bad);  }
+.mkt-seo-cov.band-mut  { color: var(--faint); }
+
+/* ---- Sitemap + crawl infra grid ---- */
+.mkt-seo-sm-grid { grid-template-columns: 1.4fr 1fr; gap: 14px; }
+.mkt-seo-sm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.mkt-seo-sm-head h3 { margin: 0; }
+.mkt-seo-clean { color: var(--ok); font-weight: 500; }
+.mkt-seo-list { margin: 6px 0; }
+.mkt-seo-list > summary {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; cursor: pointer; padding: 5px 0;
+  font-size: 12.5px; color: var(--text); list-style: none;
+}
+.mkt-seo-list > summary::-webkit-details-marker { display: none; }
+.mkt-seo-list > summary:hover { color: var(--accent-cyan); }
+.mkt-seo-list-n { font-size: 11px; }
+.mkt-seo-list-body { display: flex; flex-direction: column; gap: 3px; padding: 4px 0 6px; }
+.mkt-seo-url { font-size: 11px; color: var(--muted); word-break: break-all; display: block; }
+.mkt-seo-url.sm { font-size: 10.5px; display: inline-block; margin-right: 6px; }
+.mkt-seo-list-more { margin-top: 2px; }
+
+/* ---- Work orders ---- */
+.mkt-seo-orders { display: flex; flex-direction: column; gap: 10px; }
+.mkt-seo-order { border-left: 3px solid var(--border); }
+.mkt-seo-order.sev-critical, .mkt-seo-order.sev-high { border-left-color: var(--bad); }
+.mkt-seo-order.sev-medium { border-left-color: var(--warn); }
+.mkt-seo-order.sev-low { border-left-color: var(--faint); }
+.mkt-seo-order-head { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.mkt-seo-order-title { font-weight: 600; font-size: 13.5px; flex: 1; }
+.mkt-seo-order-prio { font-variant-numeric: tabular-nums; }
+.mkt-seo-order-fix, .mkt-seo-order-check, .mkt-seo-order-pages {
+  font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 3px;
+}
+.mkt-seo-order-k {
+  display: inline-block; min-width: 42px; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--faint); font-weight: 600; margin-right: 4px;
+}
+.mkt-seo-order-check code { font-size: 11px; color: var(--accent-cyan); word-break: break-word; }
+
+/* ---- Search Console slot (unknown ≠ zero) ---- */
+.mkt-seo-gsc { border-style: dashed; }
+.mkt-seo-gsc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mkt-seo-gsc-chip { white-space: nowrap; }
+.mkt-seo-gsc-txt { font-size: 12.5px; color: var(--muted); }
+.mkt-seo-gsc-hint { margin-top: 6px; }
+
+/* ---- Day-0 accruing ---- */
+.mkt-seo-day0 { text-align: center; padding: 30px 20px; }
+.mkt-seo-day0-mark { font-size: 30px; color: var(--faint); }
+.mkt-seo-day0-txt { font-size: 15px; font-weight: 600; margin-top: 8px; }
+.mkt-seo-day0-sub { font-size: 12.5px; color: var(--muted); max-width: 52ch; margin: 6px auto 0; line-height: 1.5; }
+.mkt-seo-day0-ctl { display: flex; justify-content: center; margin-top: 14px; }
+.mkt-seo-day0-ctl .mkt-seo-dir-note { text-align: center; max-width: 40ch; }
+
+/* ---- Narrow ---- */
+@media (max-width: 760px) {
+  .mkt-seo-hero { grid-template-columns: 1fr; gap: 14px; }
+  .mkt-seo-hero-dir { align-items: flex-start; }
+  .mkt-seo-dir-row { justify-content: flex-start; }
+  .mkt-seo-dir-note { text-align: left; max-width: none; }
+  .mkt-seo-sm-grid { grid-template-columns: 1fr; }
+}
+

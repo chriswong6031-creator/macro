@@ -39,6 +39,20 @@ _LAB_N_FLOOR = 20
 _RADAR_REL = Path("data/marketing/radar_report.json")
 _TIERS_REL = Path("data/marketing/cashtag_tiers.json")
 
+# Beacon SEO control plane (data/marketing/seo/, built by a parallel engine lane).
+_SEO_AUDIT_REL       = Path("data/marketing/seo/seo_audit.json")
+_SEO_ORDERS_REL      = Path("data/marketing/seo/seo_work_orders.json")
+_SEO_SCORECARD_REL   = Path("data/marketing/seo/seo_scorecard.json")
+_SEO_HISTORY_REL     = Path("data/marketing/seo/seo_history.jsonl")
+
+# GitHub Actions repo variable that arms/disarms the nightly SEO Director run.
+_SEO_DIRECTOR_VAR = "SEO_DIRECTOR_ENABLED"
+
+_SEO_ACCRUING_NOTE = (
+    "No audit yet — the first crawl runs Sunday 15:00 UTC (seo-director.yml) "
+    "or on demand via Run audit now. This page fills in once it lands."
+)
+
 _ACCRUING_NOTE = (
     "marketing_state.json not yet written — "
     "accruing after first nightly governor run."
@@ -709,6 +723,121 @@ def sentinel(root=None) -> dict:
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.sentinel failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def _seo_director_state() -> dict:
+    """Read the SEO Director on/off state from the GitHub Actions repo variable.
+
+    Returns {"enabled": true|false|null, "note": str|None}. This is the honest-
+    unknown contract (docket §11.1: unknown ≠ zero) — when there is no GitHub
+    token the state is UNKNOWN (null), never rendered as "off". Fully fail-soft:
+    a missing token, an import error, or a network failure all degrade to
+    enabled:null with a plain-word note rather than raising.
+    """
+    try:
+        from admin import github_api  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return {"enabled": None,
+                "note": "GitHub API unavailable — director state can't be read here."}
+    try:
+        if not github_api.token():
+            return {"enabled": None,
+                    "note": "No GitHub token configured — the director's on/off "
+                            "state is unknown from here (not the same as off)."}
+        raw = github_api.get_repo_variable(_SEO_DIRECTOR_VAR)
+        if raw is None:
+            # Variable never set: the workflow gate is `vars.SEO_DIRECTOR_ENABLED
+            # == 'true'`, so unset means scheduled runs stay DARK (D12A R5 —
+            # opt-in, mirrors CODEX_MODE). Manual "Run now" still works.
+            return {"enabled": False,
+                    "note": f"{_SEO_DIRECTOR_VAR} not set — scheduled runs off "
+                            "(manual runs still work). Toggle on to arm the "
+                            "weekly loop."}
+        return {"enabled": str(raw).strip().lower() == "true", "note": None}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("seo director state read failed: %s", exc)
+        return {"enabled": None,
+                "note": "Couldn't reach GitHub to read director state — try again."}
+
+
+def seo(root=None) -> dict:
+    """Beacon SEO control plane — the operator's window on site SEO health.
+
+    Reads four committed artifacts from data/marketing/seo/ (all fail-soft):
+      - seo_audit.json       — health score, per-family census, sitemap + crawl
+      - seo_work_orders.json — priority-ordered, falsifiable fix tickets
+      - seo_scorecard.json   — score + severity counts + deltas vs prior run
+      - seo_history.jsonl    — score + issue trend, one line per audit
+
+    Also reads the SEO_DIRECTOR_ENABLED GitHub Actions variable for the nightly
+    director's on/off state (network read, fully fail-soft — null when unknown).
+
+    When the audit itself is absent (no crawl has run) returns ok:True with
+    available:False and a plain-word accruing note, so the page renders an
+    honest day-0 state — never an error, never a fake-healthy zero.
+
+    Search Console is deliberately reported as an explicit unavailable state
+    (search_console.connected:false) rather than zeroed: unknown ≠ zero.
+
+    Response keys: ok, available, note?, as_of, health_score, census, sitemap,
+    crawl_infra, issues, work_orders, scorecard, history, director,
+    search_console.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        audit     = _read_json(repo / _SEO_AUDIT_REL)
+        orders    = _read_json(repo / _SEO_ORDERS_REL)
+        scorecard = _read_json(repo / _SEO_SCORECARD_REL)
+        history   = _read_jsonl(repo / _SEO_HISTORY_REL)
+        director  = _seo_director_state()
+
+        # Search Console is a future integration — always reported as an
+        # explicit unavailable slot, never as healthy zero (docket §11.1).
+        search_console = {
+            "connected": False,
+            "note": "Search Console credentials not configured — data unavailable.",
+            "hint": "Add a Search Console service account to surface clicks, "
+                    "impressions, and index coverage here.",
+        }
+
+        if audit is None:
+            # No crawl has run. Still surface anything that exists (history,
+            # scorecard) so the trend can start filling before the first full audit.
+            return {
+                "ok": True,
+                "available": False,
+                "note": _SEO_ACCRUING_NOTE,
+                "as_of": None,
+                "health_score": None,
+                "census": None,
+                "sitemap": None,
+                "crawl_infra": None,
+                "issues": [],
+                "work_orders": (orders or {}).get("orders") or [],
+                "scorecard": scorecard,
+                "history": history,
+                "director": director,
+                "search_console": search_console,
+            }
+
+        return {
+            "ok": True,
+            "available": True,
+            "as_of": audit.get("as_of"),
+            "health_score": audit.get("health_score"),
+            "census": audit.get("census"),
+            "sitemap": audit.get("sitemap"),
+            "crawl_infra": audit.get("crawl_infra"),
+            "issues": audit.get("issues") or [],
+            "work_orders": (orders or {}).get("orders") or [],
+            "scorecard": scorecard,
+            "history": history,
+            "director": director,
+            "search_console": search_console,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.seo failed: %s", exc)
         return {"ok": False, "error": str(exc)}
 
 

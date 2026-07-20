@@ -442,6 +442,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.sentinel())
             if path == "/api/marketing/radar":
                 return self._json(marketing.radar())
+            if path == "/api/marketing/seo":
+                return self._json(marketing.seo())
             if path == "/api/marketing/department":
                 dept_id = (q.get("id") or [None])[0]
                 return self._json(marketing.department(dept_id=dept_id))
@@ -950,6 +952,32 @@ class Handler(BaseHTTPRequestHandler):
                                                 "check GH_TOKEN has Variables write permission.",
                                        "set": set_results}, 500)
                 return self._json({"ok": True, "set": set_results})
+
+            if path == "/api/marketing/seo/run":
+                if not b.get("confirm"):
+                    return self._json({"ok": False, "error": "confirm required"}, 400)
+                if not github_api.token():
+                    return self._json({"ok": False,
+                                       "error": "No GitHub token configured. Set GH_TOKEN in "
+                                                "/etc/macro-admin.env (needs Actions write) "
+                                                "to dispatch the SEO audit workflow."}, 503)
+                result = github_api.dispatch(workflow="seo-director.yml", ref="main")
+                return self._json(result)
+
+            if path == "/api/marketing/seo/toggle":
+                if not github_api.token():
+                    return self._json({"ok": False,
+                                       "error": "No GitHub token configured. Set GH_TOKEN in "
+                                                "/etc/macro-admin.env (needs Variables read/write) "
+                                                "to arm or pause the SEO director."}, 503)
+                enabled = bool(b.get("enabled"))
+                new_value = "true" if enabled else "false"
+                ok = github_api.set_repo_variable("SEO_DIRECTOR_ENABLED", new_value)
+                if not ok:
+                    return self._json({"ok": False,
+                                       "error": "Failed to update SEO_DIRECTOR_ENABLED — check that "
+                                                "GH_TOKEN has Variables write permission."}, 500)
+                return self._json({"ok": True, "enabled": enabled, "variable_value": new_value})
 
             if path == "/api/codex/run":
                 if not b.get("confirm"):
