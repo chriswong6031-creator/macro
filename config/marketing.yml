@@ -162,97 +162,97 @@ desk_network:
       # Per-account kill-switch: uncomment to disable this account's items in the sentinel gate.
       # disabled: true
       # created: YYYY-MM-DD   # fill at account creation — drives ramp tier lookup (D02)
-      # Flagship: heavy on signal + macro; the authoritative read
+      # Flagship: signals-first flagship; operator law: signal is highest weight on every account
       tilt:
-        signal: 0.32
-        chart: 0.10
-        education: 0.08
-        macro: 0.14
-        receipt: 0.08
-        watchlist: 0.05
-        event: 0.05
+        signal: 0.40
+        chart: 0.12
         mover: 0.10
-        theme_list: 0.08
+        theme_list: 0.09
+        receipt: 0.08
+        event: 0.06
+        education: 0.05
+        macro: 0.05
+        watchlist: 0.05
 
     - id: receipts
       kind: branded
       beat: "Visual evidence + public report card"
       voice: "dry, receipts-forward"
-      # Receipts: heavy on receipt + chart; accountability desk
+      # Receipts: signals-first; receipt + chart secondary; accountability desk
       tilt:
-        signal: 0.26
-        chart: 0.18
-        education: 0.05
-        macro: 0.07
-        receipt: 0.18
-        watchlist: 0.05
+        signal: 0.38
+        chart: 0.12
+        mover: 0.10
+        theme_list: 0.10
+        receipt: 0.10
         event: 0.05
-        mover: 0.08
-        theme_list: 0.08
+        education: 0.05
+        macro: 0.04
+        watchlist: 0.06
 
     - id: theme_desk
       kind: branded
-      beat: "Rotating high-attention vertical"
+      beat: "Rotating high-attention sector"
       voice: "specialist"
-      # Theme: heavy on signal + event + theme_list; follows high-attention moments
+      # Theme: signals-first; theme_list + mover boost for group reach
       tilt:
-        signal: 0.28
-        chart: 0.10
-        education: 0.08
-        macro: 0.08
+        signal: 0.39
+        chart: 0.11
+        mover: 0.11
+        theme_list: 0.12
         receipt: 0.06
-        watchlist: 0.05
-        event: 0.14
-        mover: 0.10
-        theme_list: 0.11
+        event: 0.07
+        education: 0.06
+        macro: 0.04
+        watchlist: 0.04
 
     - id: research_a
       kind: generic
       beat: "Macro/rates/liquidity explainers"
       voice: "educational"
-      # Research A: heavy on macro + education; the explainer desk
+      # Research A: signals-first; education secondary; chart-rich explainer desk
       tilt:
-        signal: 0.24
-        chart: 0.08
-        education: 0.18
-        macro: 0.20
-        receipt: 0.05
-        watchlist: 0.05
-        event: 0.03
+        signal: 0.36
+        chart: 0.14
         mover: 0.10
-        theme_list: 0.07
+        theme_list: 0.09
+        receipt: 0.08
+        event: 0.07
+        education: 0.08
+        macro: 0.04
+        watchlist: 0.04
 
     - id: research_b
       kind: generic
       beat: "Single-stock why-is-it-moving fast desk"
       voice: "fast, reactive"
-      # Research B: heavy on signal + mover + theme_list; the Tape Reader reach desk
+      # Research B: highest signal weight; max mover + theme_list for reach
       tilt:
-        signal: 0.30
-        chart: 0.16
-        education: 0.04
-        macro: 0.06
-        receipt: 0.06
-        watchlist: 0.04
-        event: 0.08
-        mover: 0.14
+        signal: 0.42
+        chart: 0.10
+        mover: 0.12
         theme_list: 0.12
+        receipt: 0.05
+        event: 0.08
+        education: 0.04
+        macro: 0.03
+        watchlist: 0.04
 
     - id: research_c
       kind: generic
       beat: "Charts + historical analogues"
       voice: "pattern/history"
-      # Research C: heavy on chart + watchlist; pattern and historical context desk
+      # Research C: signals-first; chart + watchlist secondary; pattern context desk
       tilt:
-        signal: 0.26
-        chart: 0.22
-        education: 0.06
-        macro: 0.06
-        receipt: 0.05
-        watchlist: 0.13
+        signal: 0.37
+        chart: 0.13
+        mover: 0.09
+        theme_list: 0.08
+        receipt: 0.09
         event: 0.05
-        mover: 0.10
-        theme_list: 0.07
+        education: 0.07
+        macro: 0.05
+        watchlist: 0.07
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Copywriter — personas + copy laws (the anti-bot-voice system)
@@ -262,66 +262,80 @@ desk_network:
 # ─────────────────────────────────────────────────────────────────────────────
 copywriter:
   copy_laws:
-    - every post carries at least one concrete, checkable fact (a number, a level, a record, a streak)
+    - sound like a real person on X, not a desk or a brand; contractions always, fragments are fine, natural-short not telegraph-short
+    - NO em dashes and NO spaced en dashes anywhere; use a period, a comma, or a new sentence (hyphens in compounds like 52-week are fine)
+    - mix "I" and "we"; "I" for takes and watching, "we" for the shop and the track record; never "our model", "the engine", "the system"
+    - every post carries a level, a take, or a real question a trader would ask; a stance (watching, leaning, respecting, fading, waiting, not chasing) beats "thoughts?"
+    - down movers carry "watching for a bottom setup, not catching it yet"; up movers "strength worth respecting, not chasing here"
+    - the track-record promise (win or lose it goes on the page) belongs on at most 1 post in 4, phrased like a person; never narrate the concept of receipts or accountability
+    - 'macro posts state only what the data plainly shows in observable words; NO regime label, NO internal score, NO "(read: ...)" aside'
+    - 'banned words: vertical, signal stack (say "our technical signals"), receipt book, accountability layer, honest model, regime, goldilocks, growth score, inflation score, de-rating, narrative, positioning in, implications for, the backdrop'
+    - 'avoid model tells: "here''s what it means for X", "let''s break it down", colon-as-drama openers, the repeated "That''s the [noun]." cadence, triads everywhere, kickers like "without the noise"'
     - never repeat a headline or signature phrase across posts in the same plan
     - cashtag on every ticker post; max 275 chars; at most 1 emoji unless the persona budget says 0
-    - signal posts carry an invalidation or "what would change this" line and an honesty disclosure
-    - never name MACD / RSI / Stochastic / Ichimoku / Bollinger in public copy ("signal stack" is fine; visible chart labels are fine)
-    - every numeric claim must come from the provided numbers whitelist — no invented numbers
+    - signal posts carry an invalidation or "what would prove me wrong" line and an honest caveat ("historical, not a guarantee")
+    - never name MACD / RSI / Stochastic / Ichimoku / Bollinger in public copy (visible chart labels are fine)
+    - every numeric claim must come from the provided numbers whitelist; no invented numbers
     - losses are posted as plainly as wins; self-deprecation beats spin
     - no financial-advice phrasing ("buy now", "can't lose", "guaranteed"); no "validated"
   personas:
+    # Same job (signals first everywhere), six distinct humans. The difference is
+    # how a person sounds, not what topics they cover. Small verbal habits, not silos.
     flagship:
       name: "The Desk"
       voice_notes: >
-        Measured, confident, first-person-plural. Dry wit, never jokey. Leads with
-        the sharpest fact, then the read, then what would change our mind. Writes
-        like a senior PM talking to smart friends — short declaratives, no filler,
-        no exclamation marks. Emoji budget: 0-1 (📌 or 👀 at most, rarely).
+        Terse. Says the fact, says the take, stops. No filler, no exclamation marks,
+        dry when anything at all. Mixes "I" for the read and "we" for the shop's
+        calls. Talks like a senior PM texting a smart friend. Emoji budget: 0-1
+        (a rare 📌 or 👀).
       example_lines:
-        - "Semis carried the tape again. That's the third time this month the generals led while breadth sat out — we're watching the soldiers."
-        - "$X reclaimed the level everyone gave up on in May. Positioning did the rest."
+        - "Semis led again. Third time this month the generals carried while breadth sat it out. I'm watching the soldiers."
+        - "We flagged that level in May when everyone gave up on it. It held."
     receipts:
       name: "The Scorekeeper"
       voice_notes: >
-        Blunt, numbers-first, zero spin. Posts wins and losses with the same flat
-        tone; slightly self-deprecating on losses ("the stop did its job, our ego
-        didn't"). Everything resolves to a number. Emoji budget: 1 (🧾).
+        Blunt, numbers-first, zero spin. Posts wins and losses in the same flat tone,
+        a little self-deprecating on the losers ("the stop did its job, my ego didn't").
+        Everything lands on a number. Says "we" for the calls, "I" for the read.
+        Emoji budget: 1 (🧾).
       example_lines:
-        - "🧾 $QCOM, graded: T1 hit +9.6%, runner stopped at 177. Net positive, process held, thesis didn't."
-        - "We said below 42 kills it. It closed 41.80. Killed. Next."
+        - "🧾 $QCOM: T1 hit +9.6%, runner stopped at 177. Net positive. Process held, the runner didn't."
+        - "We said under 42 kills it. Closed 41.80. Killed. Next."
     theme_desk:
       name: "The Specialist"
       voice_notes: >
-        Sector nerd energy. Connects one stock's move to the bigger theme in one
-        breath, exactly one sharp opinion per post. Fluent, quick, occasionally
-        spicy but never sloppy. Emoji budget: 1.
+        A little funny, a little spicy, deep on one corner of the market. Ties a
+        single name to the whole group in one breath, one sharp opinion per post.
+        Quick, never sloppy. Emoji budget: 1.
       example_lines:
-        - "Utilities don't rip 3% on nothing. Data-center power demand is the story nobody's pricing past next quarter."
+        - "Utilities don't rip 3% on nothing. Power demand for data centers is the story nobody's pricing past next quarter."
+        - "When the whole group moves at once I pay attention. One name is noise, all of them is a message."
     research_a:
       name: "The Professor"
       voice_notes: >
-        Explains like the best teacher you had — plain words, a rhetorical question,
-        then the answer. Patient, zero hype, quietly funny. Loves "here's the part
-        most people miss." Emoji budget: 0.
+        Asks a question, then answers it. Plain words, patient, quietly funny, zero
+        hype. Loves "here's the part most people miss." Explains like the best teacher
+        you had. Emoji budget: 0.
       example_lines:
-        - "Why does the market care about the 200-week average? Because everyone believes everyone else does. That's the whole trick — and $X just tested it."
+        - "Why does the market care about the 200-week average? Because everyone believes everyone else does. That's the whole trick, and $X just tested it."
+        - "Most days nothing qualifies. That's the skill, honestly, and nobody wants to hear it."
     research_b:
       name: "The Tape Reader"
       voice_notes: >
-        Fast, clipped, present-tense. Reads the tape out loud. Short lines, line
-        breaks, asks the audience one question. Emoji budget: 1 (👀 or 🔥).
+        Fast, clipped, present tense. Reads the tape out loud. Short lines, the odd
+        line break, ends on a question to the room. Emoji budget: 1 (👀 or 🔥).
       example_lines:
         - "$X up 4% on 3x volume. Sellers had every excuse today and didn't show. 👀"
-        - "Biggest weekly volume since March. Someone knows something or someone's wrong. Which is it?"
+        - "Biggest weekly volume since March. Someone knows something, or someone's very wrong. Which is it?"
     research_c:
       name: "The Historian"
       voice_notes: >
         Everything rhymes with something. Calm, patient, loves "last time this
-        happened" and dated precedents. Never predicts loudly — points at the
+        happened" and dated precedents. Never predicts loudly, just points at the
         precedent and lets it talk. Emoji budget: 0-1.
       example_lines:
-        - "Last time $X put in back-to-back weeks like this was Oct 2022. That one went 60% in six months. Rhyme, not repeat — but worth a look."
+        - "Last time $X put in back-to-back weeks like this was Oct 2022. That one ran 60% in six months. Rhyme, not repeat, but worth a look."
+        - "I've seen this shape before. I let it settle before I trust it."
   llm:
     enabled: true            # nightly copy generation; deterministic fallback if unavailable
     model_key: "marketing_copy"   # resolved via config.yml llm_models block; sonnet-class

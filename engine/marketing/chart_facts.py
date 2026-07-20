@@ -156,7 +156,7 @@ def _fact_52w_high_low(
         prev_52w_idx = lookback_h.index(w52_high) if w52_high in lookback_h else -1
         if prev_52w_idx >= 0:
             since_str = _month_year(lookback_dates[prev_52w_idx])
-            text = f"{ticker} hit a new 52-week high — first since {since_str}"
+            text = f"{ticker} hit a new 52-week high, first since {since_str}"
         else:
             text = f"{ticker} hit a new 52-week high"
         price_str = _fmt_price(last_high)
@@ -171,7 +171,7 @@ def _fact_52w_high_low(
         prev_52w_idx = lookback_l.index(w52_low) if w52_low in lookback_l else -1
         if prev_52w_idx >= 0:
             since_str = _month_year(lookback_dates[prev_52w_idx])
-            text = f"{ticker} hit a new 52-week low — first since {since_str}"
+            text = f"{ticker} hit a new 52-week low, first since {since_str}"
         else:
             text = f"{ticker} hit a new 52-week low"
         price_str = _fmt_price(last_low)
@@ -421,7 +421,7 @@ def _fact_sma_cross(
         since_str = _month_year(last_above_date) if last_above_date else "a while"
         sma_val = _fmt_price(sma[-1])
         text = (
-            f"{ticker} reclaimed its {label} ({sma_val}) — "
+            f"{ticker} reclaimed its {label} ({sma_val}), "
             f"first time since {since_str}"
         )
         return {
@@ -440,7 +440,7 @@ def _fact_sma_cross(
         since_str = _month_year(last_below_date) if last_below_date else "a while"
         sma_val = _fmt_price(sma[-1])
         text = (
-            f"{ticker} lost its {label} ({sma_val}) — "
+            f"{ticker} lost its {label} ({sma_val}), "
             f"first time since {since_str}"
         )
         return {
@@ -483,7 +483,7 @@ def _fact_biggest_move(
     direction = "up" if c[-1] >= o[-1] else "down"
     pct_str = _fmt_pct((c[-1] - o[-1]) / o[-1] * 100)
     text = (
-        f"{ticker} moved {pct_str} today — "
+        f"{ticker} moved {pct_str} today, "
         f"its biggest single-day {direction} in ~{months_str}"
     )
     return {
@@ -515,7 +515,7 @@ def _fact_nr7(
         return None
     range_str = _fmt_price(today_range)
     text = (
-        f"{ticker} is in a tight range today — "
+        f"{ticker} is in a tight range today, "
         f"narrowest of the last 7 sessions (range: {range_str})"
     )
     return {
@@ -723,7 +723,7 @@ def _fact_poc(
                 # strip sign for clean "X% above" phrasing
                 pct_abs_str = f"{abs(pct_away):.1f}%"
                 text = (
-                    f"Volume point of control sits at {poc_str} — "
+                    f"Volume point of control sits at {poc_str}, "
                     f"price is {pct_abs_str} {direction} it"
                 )
                 facts.append({

@@ -52,13 +52,13 @@ CONTENT_TYPES: list[dict] = [
     {
         "id": "macro",
         "name": "Macro Note",
-        "desc": "A brief read on the macro backdrop — rates, liquidity, or regime — and what it means right now.",
+        "desc": "A brief plain read on the big picture (rates, liquidity, growth) and what it means right now.",
         "color": "#f59e0b",
     },
     {
         "id": "receipt",
         "name": "Report Card",
-        "desc": "A public update on how a past call played out — the numbers, the outcome, and what we learned.",
+        "desc": "A public update on how a past call played out: the numbers, the outcome, what we learned.",
         "color": "#a78bfa",
     },
     {
@@ -76,13 +76,13 @@ CONTENT_TYPES: list[dict] = [
     {
         "id": "mover",
         "name": "Mover of the Day",
-        "desc": "The day's single biggest mover — charted, on its cashtag, with the real move %.",
+        "desc": "The day's single biggest mover, charted, on its cashtag, with the real move %.",
         "color": "#fb923c",
     },
     {
         "id": "theme_list",
         "name": "Theme Tape",
-        "desc": "One post tagged with 6-10 cashtags covering a theme that's moving — the reach king at 0 followers.",
+        "desc": "One post tagged with 6-10 cashtags covering a group that's moving, the reach king at 0 followers.",
         "color": "#f472b6",
     },
 ]
@@ -109,205 +109,202 @@ _DEFAULT_TILT: dict[str, float] = {
 _COPY_TEMPLATES: dict[tuple[str, str], tuple[str, str]] = {
     # signal — authoritative desk
     ("signal", "authoritative desk"): (
-        "{cashtag} — opportunity flagged",
-        "We're watching {ticker}. The setup meets our criteria at {entry}. "
-        "First target: {target1}. What would change this: price back below {entry} on volume. "
-        "As always, size appropriately.",
+        "Flagged {cashtag} at {entry}",
+        "We're in {ticker} at {entry}, first target {target1}. "
+        "If it closes back under {entry} I'm wrong and I'm out. Size it sensibly.",
     ),
     # signal — dry, receipts-forward
     ("signal", "dry, receipts-forward"): (
-        "{cashtag} alert | entry {entry}",
-        "{ticker} flagged. T1: {target1}. "
-        "This one goes into the receipt book — we'll post the outcome regardless of direction. "
-        "Watch: close below entry invalidates.",
+        "{cashtag}, in at {entry}",
+        "{ticker} flagged. T1 {target1}. Out on a close below {entry}. "
+        "Historical, not a promise. Win or lose it goes on the page.",
     ),
     # signal — specialist
     ("signal", "specialist"): (
-        "Sector move: {cashtag} in focus",
-        "{ticker} is showing the setup we track in this vertical. "
-        "Entry around {entry}, first level at {target1}. "
-        "The broader sector context supports this. What would change this: a close back "
-        "below {entry}. Position sizing is everything here.",
+        "{cashtag} at {entry}, and the group's confirming",
+        "{ticker} is doing the thing I wait for in these names. "
+        "In around {entry}, first level {target1}. The rest of the group's moving with it. "
+        "Close back below {entry} and I'm out. Sizing matters more than being right.",
     ),
     # signal — educational
     ("signal", "educational"): (
-        "Here's a live example: {cashtag}",
-        "We talk a lot about what to look for — {ticker} is showing it right now. "
-        "The entry is {entry}. The first target is {target1}. What would change this: "
-        "a close back below {entry}. We'll track it publicly so you can see how it unfolds.",
+        "A live one: {cashtag}",
+        "We talk about setups in the abstract, so here's a real one. {ticker} at {entry}, "
+        "first target {target1}. What proves me wrong: a close under {entry}. "
+        "Win or lose it goes on the page so you can watch it play out.",
     ),
     # signal — fast, reactive
     ("signal", "fast, reactive"): (
-        "{cashtag} | {direction} alert",
-        "{ticker} moving. Entry {entry}, target {target1}. "
-        "Quick invalidation: below {entry}. Adding to the board.",
+        "{cashtag} moving. In at {entry}",
+        "{ticker} moving. In at {entry}, target {target1}. "
+        "Out under {entry}. On the board. Historical, not a promise.",
     ),
     # signal — pattern/history
     ("signal", "pattern/history"): (
-        "{cashtag} — historical setup in play",
-        "{ticker} is tracing a pattern we've tracked before. "
-        "Entry {entry}, target {target1}. What would change this: a close back below {entry}. "
-        "The historical analogue says patience pays here — we'll post progress.",
+        "{cashtag} is tracing something I've seen before",
+        "{ticker} is doing the same shape it did last time it ran. "
+        "In at {entry}, target {target1}. Close under {entry} and the rhyme breaks. "
+        "Rhyme, not repeat. Win or lose it goes on the page.",
     ),
     # chart — all voices share a template per voice; use fallbacks
     ("chart", "authoritative desk"): (
-        "{ticker} — price context",
-        "Sharing the chart on {ticker} this week. The picture speaks: {entry} was the level. "
-        "No thesis beyond what you see.",
+        "{ticker}, one chart",
+        "The chart on {ticker} this week. {entry} is the level I keep watching. "
+        "No hot take beyond what you can see.",
     ),
     ("chart", "dry, receipts-forward"): (
-        "{ticker} chart | no commentary",
-        "The chart. That's it.",
+        "{ticker} chart",
+        "{ticker} at {entry}. That's the whole post.",
     ),
     ("chart", "specialist"): (
-        "{ticker} — sector chart",
-        "This week's chart for the vertical. {ticker} at {entry}.",
+        "{ticker} chart, and it matters for the group",
+        "This week's chart for my corner of the market. {ticker} at {entry}.",
     ),
     ("chart", "educational"): (
-        "Chart breakdown: {ticker}",
-        "Walking through what this chart is showing — {ticker} at {entry}. "
-        "Key things to notice: the trend, the level, and the volume.",
+        "{ticker}, let me walk you through this",
+        "Walking through what this chart's showing on {ticker} at {entry}. "
+        "Notice the trend, the level, and the volume.",
     ),
     ("chart", "fast, reactive"): (
-        "{ticker} chart | quick look",
-        "Fast chart on {ticker}. Level: {entry}. Make your own call.",
+        "{ticker} chart, quick",
+        "Fast chart on {ticker}. Level {entry}. Your call.",
     ),
     ("chart", "pattern/history"): (
-        "{ticker} — pattern match",
-        "This chart on {ticker} matches a historical pattern. Level: {entry}. Context below.",
+        "{ticker}, this chart looks familiar",
+        "This chart on {ticker} matches something I've watched before. Level {entry}. Context below.",
     ),
     # education — unique per voice
     ("education", "authoritative desk"): (
-        "What 'conviction' actually means",
-        "When we flag something with high conviction, here's what that means in practice — "
-        "and what it doesn't mean.",
+        "What flagging something actually means",
+        "When we put a name on the board it means the setup lined up, not that it's a sure thing. "
+        "The number that goes with it is where I'm wrong.",
     ),
     ("education", "dry, receipts-forward"): (
-        "How we track our calls",
-        "Every signal we make goes in the receipt book. Here's how that works and why.",
+        "How I keep myself honest",
+        "Every call gets a result posted, win or lose, same flat tone either way. "
+        "No quietly forgetting the ones that didn't work.",
     ),
     ("education", "specialist"): (
-        "One concept this vertical gets wrong",
-        "Most people misread this signal in our sector. Here's the cleaner way to think about it.",
+        "The thing most people get wrong about this group",
+        "Most folks read these names through the wrong lens. Here's how I actually think about them.",
     ),
     ("education", "educational"): (
-        "Plain English: what is a 'setup'?",
-        "A setup is a price configuration that, historically, has been a good time to pay attention. "
-        "Not a guarantee — just a reason to look closer.",
+        "Plain English: what's a 'setup'?",
+        "It's a price picture that's usually been worth paying attention to. "
+        "Not a buy button, just a reason to look closer.",
     ),
     ("education", "fast, reactive"): (
-        "Quick primer: reading momentum",
-        "Fast explanation of what momentum actually tells you and what it doesn't.",
+        "Quick: reading momentum",
+        "Fast version of what momentum actually tells you, and what it doesn't.",
     ),
     ("education", "pattern/history"): (
-        "When history rhymes: a primer",
-        "Historical analogues are useful but dangerous. Here's how we use them without fooling ourselves.",
+        "When history rhymes, read it carefully",
+        "Old analogues are useful and dangerous at once. Here's how I use them without kidding myself.",
     ),
-    # macro — per voice
+    # macro — per voice ({stance} = 'constructive' | 'cautious')
     ("macro", "authoritative desk"): (
-        "Macro backdrop this week",
-        "The regime is {stance}. What that means for risk assets: caution on leverage, "
-        "favor quality. Watch the next data point carefully.",
+        "What the data's saying this week",
+        "I'm {stance} here. I'd rather own quality and stay patient than chase. "
+        "Watching the next print closely.",
     ),
     ("macro", "dry, receipts-forward"): (
-        "Macro: {stance}",
-        "Current regime: {stance}. "
-        "Historically this environment has meant X. We'll track the outcome.",
+        "Macro, plainly",
+        "I'm {stance} on risk right now. I'll update when the picture actually shifts.",
     ),
     ("macro", "specialist"): (
-        "Macro note for this vertical",
-        "The macro backdrop matters more for this sector right now. "
-        "Regime: {stance}. Positioning accordingly.",
+        "Why the macro matters for these names",
+        "The big picture matters more for my group right now. "
+        "I'm {stance}, and adjusting the names accordingly.",
     ),
     ("macro", "educational"): (
-        "What the macro says right now",
-        "Breaking down the current regime in plain terms: {stance}. "
-        "Here's what that has historically meant for prices.",
+        "The macro in plain words",
+        "Reading it plainly: I'm {stance} here. "
+        "Watching which side blinks first.",
     ),
     ("macro", "fast, reactive"): (
-        "Macro update | {stance}",
-        "Quick macro note. Regime: {stance}. Adjusting accordingly.",
+        "Macro, quick: {stance}",
+        "Quick note. I'm {stance}. Adjusting for it.",
     ),
     ("macro", "pattern/history"): (
-        "Macro analogue: {stance}",
-        "The current regime ({stance}) has a historical parallel. Here's what the chart said then.",
+        "This macro setup rhymes with something",
+        "Being {stance} here reminds me of a past setup. Here's what the chart did then.",
     ),
     # receipt — per voice
     ("receipt", "authoritative desk"): (
-        "Outcome update: how our call played out",
-        "We called it. Here's the result — honest, with the numbers. "
-        "Learn from what worked and what didn't.",
+        "How that call played out",
+        "We called it. Here's the result with the numbers, whichever way it went. "
+        "Something to learn from either way.",
     ),
     ("receipt", "dry, receipts-forward"): (
-        "Receipt: call outcome",
-        "Here's the score. We made a call. Here's what happened.",
+        "Call result",
+        "We made a call. Here's what happened, straight to the number.",
     ),
     ("receipt", "specialist"): (
-        "Vertical outcome: how our read played out",
-        "Following up on our sector call. Here's the result.",
+        "How the group read played out",
+        "Following up on that call off the group's move. Here's the result.",
     ),
     ("receipt", "educational"): (
-        "We track our calls — here's one outcome",
-        "We said X. Here's what happened. This is how accountability looks in practice.",
+        "One result, posted flat",
+        "We said it. Here's what happened. This is what showing your work looks like.",
     ),
     ("receipt", "fast, reactive"): (
-        "Outcome update | fast recap",
-        "Called it, here's what happened. Straight to the numbers.",
+        "Called it, here's the result",
+        "Called it. Here's what happened, straight to the numbers.",
     ),
     ("receipt", "pattern/history"): (
-        "Pattern outcome: did the analogue hold?",
-        "We flagged a historical pattern. Here's whether it played out.",
+        "Did the rhyme hold?",
+        "We flagged the shape. Here's whether it followed through this time.",
     ),
     # watchlist — per voice
     ("watchlist", "authoritative desk"): (
-        "On our radar this week",
-        "Names we're watching but haven't acted on. Keeping the list honest.",
+        "On my radar this week",
+        "Names I'm watching but haven't touched. Keeping the list honest.",
     ),
     ("watchlist", "dry, receipts-forward"): (
-        "Watch list | no position",
-        "Watching these. No position yet. Will update if anything changes.",
+        "Watching, no position",
+        "Watching these. Not in yet. I'll update if something triggers.",
     ),
     ("watchlist", "specialist"): (
-        "Vertical watch list",
-        "These names are setting up in our sector. Watching, not acting yet.",
+        "Names in my group I'm watching",
+        "These are setting up in my corner of the market. Watching, not acting yet.",
     ),
     ("watchlist", "educational"): (
-        "What goes on a watch list — and why",
-        "Here are the names we're monitoring, with a brief note on why each made the list.",
+        "What earns a spot on a watch list",
+        "These are the names I'm monitoring and why each one's on the list.",
     ),
     ("watchlist", "fast, reactive"): (
-        "Quick radar | watching these",
-        "Fast list of names worth attention right now. No action yet.",
+        "Watching these right now",
+        "Fast list of names worth attention. No position yet.",
     ),
     ("watchlist", "pattern/history"): (
-        "Pattern watch list",
-        "Names tracing patterns worth monitoring. Historical context below.",
+        "Patterns I'm watching",
+        "Names tracing shapes worth monitoring. Context below.",
     ),
     # event — per voice
     ("event", "authoritative desk"): (
-        "Market event: our read",
-        "Here's how we're reading today's market-moving event. "
-        "The data says one thing; the price says another. Watch the resolution.",
+        "My read on today's move",
+        "Here's how I'm reading today's move. The data says one thing, the price says another. "
+        "Watching how it resolves.",
     ),
     ("event", "dry, receipts-forward"): (
-        "Event reaction | numbers first",
-        "Event just happened. Here are the numbers and what they change.",
+        "Today's event, numbers first",
+        "Event happened. Here are the numbers and what they change.",
     ),
     ("event", "specialist"): (
-        "Event impact on our sector",
-        "Today's event has direct implications for our vertical. Here's the read.",
+        "What today's event does to my group",
+        "Today's event flows straight into the names I watch. Here's the read.",
     ),
     ("event", "educational"): (
-        "What today's event means — plain English",
-        "Big event today. Here's what it actually means for markets without the jargon.",
+        "What today's event actually means",
+        "Big event today. Cutting through the noise and watching how markets price it in.",
     ),
     ("event", "fast, reactive"): (
         "Reaction: {event_name}",
-        "Fast take on today's event. Key number: {entry}. What to watch next.",
+        "Fast take on today's event. Key number: {entry}. What I'm watching next.",
     ),
     ("event", "pattern/history"): (
-        "Historical read on today's event",
-        "This event type has a track record. Here's what history says about the aftermath.",
+        "How events like this have played out",
+        "We've seen this kind of day before. Watching if it rhymes.",
     ),
 }
 
@@ -1121,7 +1118,7 @@ def content_plan(
     _movers_summary: dict = {
         "movers": [],
         "theme_lists": [],
-        "note": "Heatmap data unavailable — mover/theme posts not generated.",
+        "note": "Heatmap data unavailable; mover/theme posts not generated.",
     }
     _mover_item_counter = 1
 
@@ -1146,8 +1143,18 @@ def content_plan(
                         _radar_tier_map = {t: v["tier"] for t, v in (_tiers.get("tickers") or {}).items()}
             except Exception:  # noqa: BLE001
                 _radar_tier_map = None
+            # Load cashtag tiers for leading-theme weighting (fail-soft: absent → None)
+            _cashtag_tiers_map: dict | None = None
+            try:
+                from engine.marketing.movers_source import _load_cashtag_tiers as _lct_mv
+                _ct = _lct_mv(root)
+                if _ct:
+                    _cashtag_tiers_map = _ct
+            except Exception:  # noqa: BLE001
+                _cashtag_tiers_map = None
+
             _mv_result = _top_movers_fn(_movers_data, tier_map=_radar_tier_map)
-            _tl_result = _theme_lists_fn(_movers_data)
+            _tl_result = _theme_lists_fn(_movers_data, cashtag_tiers=_cashtag_tiers_map)
 
             # Determine the single biggest mover (prefer loser for reach — crashes > rallies)
             _all_movers_flat = _mv_result.get("losers", []) + _mv_result.get("gainers", [])
@@ -1167,8 +1174,8 @@ def content_plan(
                 _mv_pct_str = f"{_mv['pct']:+.1f}%"
                 _mv_headline = f"${_mv_ticker} {_mv_pct_str} today"
                 _mv_body = (
-                    f"{_mv_top_fact} Here's the chart. "
-                    f"Overreaction or the start of something?"
+                    f"{_mv_top_fact} Watching how it holds, not chasing the candle. "
+                    f"Levels are on the chart."
                 )
                 _mover_item_dict = {
                     "id": f"post-mover-{_mover_item_counter:03d}",
@@ -1202,7 +1209,7 @@ def content_plan(
                     if m.get("pct") is not None
                 )
                 _tl_tone = _tl.get("tone") or ("selling off" if _tl["direction"] == "down" else "ripping")
-                _tl_headline = f"{_tl['theme']} {_tl_tone} — {_agg_str} avg today"
+                _tl_headline = f"{_tl['theme']} {_tl_tone}, {_agg_str} avg today"
                 _tl_body = f"{_member_list} {_tl['question']}"
                 _tl_item_dict = {
                     "id": f"post-theme-{_mover_item_counter:03d}",
@@ -1222,6 +1229,60 @@ def content_plan(
                 }
                 _theme_items_for_queue.append(_tl_item_dict)
                 _mover_item_counter += 1
+
+            # ── Watchlist card rendering for theme_list items ─────────────────
+            # Each theme_list item gets an SVG watchlist card: rows from theme members
+            # {ticker, price, pct_change}, subtitle = the item's stance line (question).
+            # Card goes into featured_charts the same way signal charts do; chart_id
+            # is attached to the item dict.
+            if len(featured_charts) < _TOTAL_CHART_CAP:
+                try:
+                    from engine.marketing.chart_render import render_watchlist_card as _rwc
+                    for _tl_item in _theme_items_for_queue:
+                        if len(featured_charts) >= _TOTAL_CHART_CAP:
+                            break
+                        _tl_data = _tl_item.get("_theme_data") or {}
+                        _tl_members_raw = _tl_data.get("members") or []
+                        # Build rows: {ticker, price=None (no close data here), pct_change}
+                        _wl_rows = [
+                            {
+                                "ticker": _m.get("ticker", ""),
+                                "price": None,   # heatmap has no absolute prices
+                                "pct_change": _m.get("pct"),
+                            }
+                            for _m in _tl_members_raw[:8]
+                            if _m.get("ticker")
+                        ]
+                        if not _wl_rows:
+                            continue
+                        _wl_title = _tl_data.get("theme", _tl_item.get("headline", ""))
+                        _wl_subtitle = _tl_data.get("question", "")
+                        _wl_svg = _rwc(
+                            _wl_title,
+                            _wl_rows,
+                            # Pass the caller's root directly: None in tests (no
+                            # logos written into the repo), real path on nightly.
+                            logo_root=root,
+                            subtitle=_wl_subtitle,
+                        )
+                        _wl_chart_id = f"chart-{chart_id_counter:03d}"
+                        _tl_item["chart_id"] = _wl_chart_id
+                        featured_charts.append({
+                            "id": _wl_chart_id,
+                            "ticker": "",
+                            "account": _tl_item.get("account", ""),
+                            "cashtag": _tl_item.get("cashtag", ""),
+                            "marker_source": "theme_list",
+                            "marker_date": today,
+                            "marker_price": 0.0,
+                            "svg": _wl_svg,
+                            "headline": _tl_item.get("headline", ""),
+                            "body": _tl_item.get("body", ""),
+                            "source": "theme_list",
+                        })
+                        chart_id_counter += 1
+                except Exception:  # noqa: BLE001
+                    pass  # fail-soft: watchlist card unavailable; theme posts unchanged
 
             # Distribute reach items round-robin across the desks so the WHOLE
             # network posts reach content — and each desk gets a DISTINCT theme /
@@ -1604,7 +1665,7 @@ def content_plan(
             "note": (
                 f"{n_plans} Prophet plans ingested; {n_with_charts} have close-price history for charts."
                 if n_plans > 0
-                else "No Prophet plans available — minimal plan generated."
+                else "No Prophet plans available; minimal plan generated."
             ),
         },
         "content_types": CONTENT_TYPES,
@@ -1627,7 +1688,7 @@ def content_plan(
                     f"{len(confluence_posts_added)} confluence signal posts added "
                     f"({conf_charts_added} charts)."
                     if confluence_posts_added
-                    else "No fresh fired confluence combos today — Prophet posts only."
+                    else "No fresh fired confluence combos today; Prophet posts only."
                 ),
             },
             "copy": {

@@ -37,6 +37,29 @@ _BANNED_VOCAB: frozenset[str] = frozenset({
     "macd", "rsi", "stochastic", "ichimoku", "bollinger",
     "validated", "guaranteed", "can't lose", "buy now",
 })
+# Additional banned-vocab substrings (case-insensitive, full-text match, NOT word-boundary).
+# These are longer phrases unlikely to false-positive on a suffix/prefix.
+_BANNED_SUBSTRINGS: tuple[str, ...] = (
+    "vertical",
+    "signal stack",
+    "accountability layer",
+    "honest model",
+    "receipt book",
+    "goldilocks",
+    "growth score",
+    "inflation score",
+    "(read:",
+    "de-rating",
+    "positioning in",
+    "implications for",
+    "the backdrop",
+)
+# "regime" and "narrative" must be word-boundary matched to avoid false-positives
+# on "regimen", "narratives", etc.
+_BANNED_WORD_BOUNDARY: tuple[str, ...] = (
+    "regime",
+    "narrative",
+)
 # Regex for number-like tokens in copy (%, x, price-like floats)
 _NUMBER_RE = re.compile(
     r"""
@@ -252,6 +275,14 @@ def build_context(
         else:
             top_facts = all_facts[:3]
         whitelist = list(facts.get("numbers_whitelist", []))
+        # Extract 4-digit year tokens from all fact texts and add to whitelist.
+        # Facts like "first since Nov 2024" produce a bare 4-digit year in copy that
+        # the number-validator would otherwise flag as an invented number.
+        _year_re = re.compile(r"\b(?:19|20)\d{2}\b")
+        for _f in all_facts:
+            for _yr_tok in _year_re.findall(_f.get("text", "")):
+                if _yr_tok not in whitelist:
+                    whitelist.append(_yr_tok)
 
     # Plan numbers — check plan dict first, fall back to direct item fields
     entry = plan.get("entry") if plan.get("entry") is not None else item.get("entry")
@@ -488,8 +519,32 @@ def validate_copy(
     if emoji_budget == 0 and emoji_count > 0:
         violations.append("persona has 0-emoji budget but copy contains emoji")
 
+    # 3b. Em dash, en dash, and horizontal bar checks.
+    # Em dash (U+2014) anywhere → banned.
+    # En dash (U+2013) anywhere → banned (bare or spaced).
+    # Horizontal bar (U+2015) anywhere → banned.
+    # Hyphen-minus (U+002D / ASCII 45) stays allowed.
+    if "—" in full_text:
+        violations.append("em dash (U+2014)")
+    if "–" in full_text:
+        violations.append("en dash (U+2013)")
+    if "―" in full_text:
+        violations.append("horizontal bar (U+2015)")
+
     # 4. Banned vocabulary (word-boundary match, case-insensitive)
     for word in _BANNED_VOCAB:
+        pattern = r"\b" + re.escape(word) + r"\b"
+        if re.search(pattern, full_text, re.IGNORECASE):
+            violations.append(f"banned vocab: '{word}'")
+
+    # 4b. Banned substring phrases (case-insensitive, no word-boundary needed)
+    lower_text = full_text.lower()
+    for phrase in _BANNED_SUBSTRINGS:
+        if phrase in lower_text:
+            violations.append(f"banned vocab: '{phrase}'")
+
+    # 4c. Banned word-boundary terms
+    for word in _BANNED_WORD_BOUNDARY:
         pattern = r"\b" + re.escape(word) + r"\b"
         if re.search(pattern, full_text, re.IGNORECASE):
             violations.append(f"banned vocab: '{word}'")
@@ -544,10 +599,13 @@ def validate_copy(
 # ─────────────────────────────────────────────────────────────────────────────
 # Deterministic variant templates (the anti-bot-voice library)
 #
-# Key rules for every template:
+# Key rules for every template (see research/MARKETING_VOICE_DOCTRINE_V2_BY_FABLE.md):
 # - MUST weave in {top_fact} (or explicitly use a plan number)
 # - chart posts MUST include {top_fact} (a digit/% fact)
-# - no "Here's the score", "The chart. That's it.", "We made a call. Here's what happened."
+# - sound like a person on X: contractions, I/we mix, a real stance
+# - ZERO em dashes; no banned vocab (vertical, regime, signal stack, etc.)
+# - track-record promise on at most ~1 signal template in 4, casually phrased
+# - no "Here's the score", "The chart. That's it.", "That's the [noun]." cadence
 # - each (type, persona) has 4-6 structurally different variants
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -559,264 +617,257 @@ def validate_copy(
 _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
 
     # ── signal / authoritative desk ───────────────────────────────────────────
+    # NOTE: every signal body must carry an invalidation cue (a close below / kills
+    # it) AND an honesty caveat (historical / graded / publicly) so validate_copy
+    # passes. Keep both, keep it human.
     ("signal", "authoritative desk"): [
         (
-            "{cashtag} — setup flagged at {entry}",
-            "{top_fact}. Entry at {entry}, first target {t1}. "
-            "What would change our mind: a close back below {entry}. Size appropriately.",
+            "Flagged {cashtag} at {entry}",
+            "{top_fact}. We're in at {entry}, first target {t1}. "
+            "A close below {entry} and I'm wrong, I'm out. Historical, not a promise.",
         ),
         (
-            "{cashtag} in focus — entry {entry}",
-            "We're watching {ticker}: {top_fact}. "
-            "Setup entry {entry}, T1 at {t1}. Invalidation at {inv}. "
-            "We'll track this one publicly.",
+            "{cashtag} | {entry} is the line I care about",
+            "We flagged {ticker} at {entry}. {top_fact}. First target {t1}. "
+            "A close below {inv} kills the read. Win or lose it gets graded.",
         ),
         (
-            "{cashtag} — the chart spoke first",
-            "{top_fact}. That's why {ticker} is on the board at {entry}. "
-            "First level: {t1}. A close below {entry} kills the thesis. "
-            "Position sizing is everything.",
+            "{cashtag} back on the board",
+            "{top_fact}. I like {ticker} here at {entry}, aiming {t1}. "
+            "Below {entry} I don't want it. Historical odds, not a promise.",
         ),
         (
-            "{cashtag} flagged | {entry} is the line",
-            "{top_fact}. Entry {entry}. T1 {t1}. "
-            "Below {entry} and we're out — position sizing is everything here.",
+            "Adding {cashtag} around {entry}",
+            "{top_fact}. Entry {entry}, first take {t1}. "
+            "Lose a close below {inv} and I'm out clean. Historically these have worked, not always.",
         ),
         (
-            "{cashtag} | opportunity at {entry}",
-            "{ticker} is showing something: {top_fact}. "
-            "Entry {entry}, target {t1}. "
-            "Invalidation below {inv}. We'll track this one publicly.",
+            "{cashtag} setup I'm watching at {entry}",
+            "{top_fact}. We're leaning long from {entry}, target {t1}. "
+            "A close below {inv} kills it. Historically these tend to work, no guarantee.",
         ),
     ],
 
     # ── signal / dry, receipts-forward ───────────────────────────────────────
     ("signal", "dry, receipts-forward"): [
         (
-            "{cashtag} alert | entry {entry}",
-            "{top_fact}. {ticker} flagged at {entry}. T1: {t1}. "
-            "Invalidation: close below {entry}. Going in the receipt book.",
+            "{cashtag}, in at {entry}",
+            "{top_fact}. Entry {entry}. T1 {t1}. Out on a close below {inv}. "
+            "Historical, not a promise. Posting the result when it resolves.",
         ),
         (
             "{cashtag} | {entry} entry, {t1} target",
-            "{top_fact}. Numbers: entry {entry}, T1 {t1}, stop below {inv}. "
-            "We grade these publicly — outcome coming.",
+            "{top_fact}. Numbers: entry {entry}, T1 {t1}, out below {inv}. "
+            "Historical, not a promise. Win or lose it gets graded.",
         ),
         (
-            "{cashtag} — board entry at {entry}",
-            "{top_fact}. Entry {entry}. Target {t1}. Stop: below {inv}. "
-            "This one goes in the ledger. We'll post the outcome.",
+            "{cashtag} flagged at {entry}",
+            "{top_fact}. Entry {entry}. Target {t1}. Stop below {inv}. "
+            "Clean line, clean exit. Historical odds, nothing's a guarantee.",
         ),
         (
             "Adding {cashtag} at {entry}",
-            "{top_fact}. Entry {entry}, first take at {t1}. "
-            "Below {entry} is the exit — clean stop, clean accounting. "
-            "Graded publicly either way.",
+            "{top_fact}. In at {entry}, first take {t1}. "
+            "Below {inv} and I'm out, no argument. Historical, not certain.",
         ),
     ],
 
     # ── signal / specialist ───────────────────────────────────────────────────
     ("signal", "specialist"): [
         (
-            "{cashtag} — sector move flagged at {entry}",
-            "{top_fact}. That's the vertical confirming what we've been tracking. "
-            "Entry {entry}, first level {t1}. "
-            "Below {entry} and the thesis is off the table. Position sizing is everything.",
+            "{cashtag} at {entry}, and the whole group's confirming",
+            "{top_fact}. The rest of the space is moving with it, which is what I want to see. "
+            "In at {entry}, first level {t1}. A close below {entry} and I'm out. Historical, not a promise.",
         ),
         (
-            "{cashtag} | this vertical just set up",
-            "{top_fact}. Entry around {entry}, first level at {t1}. "
-            "The macro backdrop supports this sector read. "
-            "Close back below {inv} changes the picture. We'll track it publicly.",
+            "{cashtag} | this is the setup I wait for here",
+            "{top_fact}. Entry around {entry}, first level {t1}. "
+            "A close below {inv} changes the story. Win or lose it gets graded.",
         ),
         (
-            "{cashtag} in our sector — entry {entry}",
-            "{top_fact}. That's the tell in this vertical. Entry {entry}, T1 {t1}. "
-            "Position sizing matters more here than anywhere. Below {entry}: exit.",
+            "{cashtag} in my corner of the market, {entry}",
+            "{top_fact}. That's the tell I care about in these names. Entry {entry}, T1 {t1}. "
+            "Below {entry} I'm gone. Historical odds, sizing matters more than being right.",
         ),
         (
-            "Sector nerd alert: {cashtag} at {entry}",
-            "{top_fact}. We track this vertical closely — this is the setup we wait for. "
-            "Entry {entry}, target {t1}. Below {inv} invalidates. "
-            "We'll grade this one publicly.",
+            "{cashtag} at {entry} | I watch this group closely",
+            "{top_fact}. This is exactly what I sit around for. Entry {entry}, target {t1}. "
+            "A close below {inv} kills it. Historical odds, not certainty.",
         ),
     ],
 
     # ── signal / educational ──────────────────────────────────────────────────
     ("signal", "educational"): [
         (
-            "Live example: {cashtag} at {entry}",
-            "{top_fact}. We talk about setups in theory — {ticker} is showing one right now. "
-            "Entry {entry}, target {t1}. What would change this: close below {inv}. "
-            "We'll track it publicly so you can watch it unfold.",
+            "A live one: {cashtag} at {entry}",
+            "{top_fact}. We talk about setups in the abstract, so here's a real one. "
+            "In at {entry}, target {t1}. What proves me wrong: a close below {inv}. "
+            "Win or lose it gets graded so you can watch it play out.",
         ),
         (
-            "{cashtag}: here's what a setup looks like",
+            "{cashtag} | this is what a setup actually looks like",
             "{top_fact}. That's why {ticker} made the board. Entry {entry}, T1 {t1}. "
-            "Invalidation — the thing that proves us wrong — is below {inv}. "
-            "Sizing is the skill, not the entry. We'll post the outcome.",
+            "The thing that proves me wrong is a close below {inv}. "
+            "Sizing is the skill, not the entry. Historical, not a guarantee.",
         ),
         (
-            "Here's the setup — {cashtag} at {entry}",
-            "Most of the time nothing qualifies. {ticker} qualifies. {top_fact}. "
-            "Entry {entry}, first target {t1}. Below {inv} = wrong. We'll post the outcome.",
+            "Most days nothing qualifies. {cashtag} does today.",
+            "{top_fact}. In at {entry}, first target {t1}. "
+            "A close below {inv} and I was wrong, simple as that. Historical, not a promise.",
         ),
         (
-            "{cashtag} | a real-time setup example",
-            "{top_fact}. Entry {entry}. T1: {t1}. Stop: below {inv}. "
-            "This is what 'wait for the setup' looks like in practice. "
-            "Tracking it publicly.",
+            "{cashtag} at {entry} | watch this one with me",
+            "{top_fact}. Entry {entry}, first target {t1}. Out below {inv}. "
+            "This is what waiting for the setup looks like in real time. Historical, not certain.",
         ),
     ],
 
     # ── signal / fast, reactive ───────────────────────────────────────────────
     ("signal", "fast, reactive"): [
         (
-            "{cashtag} | moving. Entry {entry}",
-            "{top_fact}. Entry {entry}, T1 {t1}. Quick stop: below {entry}. "
-            "On the board. Grading it publicly.",
+            "{cashtag} moving. In at {entry}",
+            "{top_fact}. Entry {entry}, T1 {t1}. Quick out below {entry}. "
+            "On the board. Historical, not a promise.",
         ),
         (
-            "{cashtag} flagged | {entry}",
-            "{top_fact}. Setup in. Entry {entry}, target {t1}. Below {inv}: out. "
-            "Tracking this one.",
+            "{cashtag} | {entry}",
+            "{top_fact}. In at {entry}, target {t1}. Close below {inv} and I'm out. "
+            "Win or lose it gets graded.",
         ),
         (
-            "{cashtag} | {entry} entry live",
-            "{top_fact}. Entry {entry}. First target {t1}. Stop at {inv}. "
-            "Watching it — outcome posted either way.",
+            "{cashtag} | live at {entry}",
+            "{top_fact}. Entry {entry}. First target {t1}. Out below {inv}. "
+            "Watching it. Historical, no guarantees.",
         ),
         (
-            "{cashtag} | adding at {entry}",
-            "{top_fact}. In at {entry}. Target {t1}. Below {inv} = wrong. "
-            "Adding to the board. Position sizing is everything.",
+            "{cashtag} | grabbing it at {entry}",
+            "{top_fact}. In at {entry}, target {t1}. Below {inv} I'm wrong. "
+            "Size it small, this is historical not certain.",
         ),
     ],
 
     # ── signal / pattern/history ──────────────────────────────────────────────
     ("signal", "pattern/history"): [
         (
-            "{cashtag} — this pattern has a track record",
-            "{top_fact}. {ticker} is tracing a setup we've tracked before. "
-            "Entry {entry}, target {t1}. What would change this: close below {entry}. "
-            "The pattern says patience pays — we'll post progress publicly.",
+            "{cashtag} is tracing something I've seen before",
+            "{top_fact}. Same shape {ticker} put in the last time it ran. "
+            "In at {entry}, target {t1}. A close below {entry} and the rhyme breaks. "
+            "Rhyme, not repeat. Win or lose it gets graded.",
         ),
         (
-            "{cashtag} | historical setup at {entry}",
-            "{top_fact}. Last time {ticker} set up like this, the move followed. "
-            "Entry {entry}, T1 {t1}. Below {inv} changes the picture. "
-            "We'll track the outcome.",
+            "{cashtag} | last time this setup showed up, {entry} mattered",
+            "{top_fact}. Last time {ticker} looked like this the move followed. "
+            "Entry {entry}, T1 {t1}. A close below {inv} and I let it go. "
+            "Historical, not a guarantee.",
         ),
         (
-            "{cashtag} — the precedent matters here",
-            "{top_fact}. We've seen this before in {ticker}. Entry {entry}, first level {t1}. "
-            "Invalidation below {inv}. Not predicting — pointing at the rhyme. "
-            "Grading it publicly.",
+            "{cashtag} at {entry} | the precedent's worth a look",
+            "{top_fact}. We've seen this in {ticker} before. Entry {entry}, first level {t1}. "
+            "Out below {inv}. Historical, not predicting, just pointing at the rhyme.",
         ),
         (
-            "{cashtag} | setup entry {entry}",
-            "{top_fact}. Pattern active. Entry {entry}, target {t1}. "
-            "Below {entry} means the pattern broke — we exit. "
-            "Position sizing is everything here.",
+            "{cashtag} | pattern's live at {entry}",
+            "{top_fact}. In at {entry}, target {t1}. "
+            "A close below {entry} and the pattern's done, so am I. Historical, not certain.",
         ),
     ],
 
     # ── chart / authoritative desk ────────────────────────────────────────────
     ("chart", "authoritative desk"): [
         (
-            "{ticker} — what the chart shows",
-            "{cashtag}: {top_fact}. That's the picture. Level to watch: {entry}.",
+            "{ticker}, one chart",
+            "{cashtag}: {top_fact}. The level I'm watching is {entry}.",
         ),
         (
-            "{ticker} price context | {entry} is the line",
-            "{top_fact}. {cashtag} at {entry}. One chart, one story.",
+            "{cashtag} | {entry} is the line",
+            "{top_fact}. Sitting right at {entry}. Nothing fancy, just the picture.",
         ),
         (
-            "{cashtag} — chart of the week",
-            "{top_fact}. The level: {entry}. No thesis beyond what you can see.",
+            "{cashtag} chart I keep coming back to",
+            "{top_fact}. {entry} is where it gets interesting. No hot take beyond what you see.",
         ),
         (
-            "{ticker} — the chart says more than we could",
-            "{cashtag}: {top_fact}. Key level: {entry}.",
+            "{ticker} | worth a look",
+            "{cashtag}: {top_fact}. Key level {entry}.",
         ),
         (
-            "{cashtag} | chart context this week",
-            "{top_fact}. Price at {entry}. What's next is what the chart already told you.",
+            "{cashtag} this week",
+            "{top_fact}. Price is at {entry}. Chart says the rest.",
         ),
     ],
 
     # ── chart / dry, receipts-forward ─────────────────────────────────────────
     ("chart", "dry, receipts-forward"): [
         (
-            "{ticker} | chart",
-            "{cashtag}: {top_fact}. Level: {entry}.",
+            "{ticker} chart",
+            "{cashtag}: {top_fact}. Level {entry}.",
         ),
         (
-            "{cashtag} — one chart, no spin",
-            "{top_fact}. {ticker} at {entry}. Numbers are the commentary.",
+            "{cashtag} | no spin",
+            "{top_fact}. {ticker} at {entry}. That's the whole post.",
         ),
         (
-            "{ticker} — chart update",
-            "{top_fact}. {cashtag} at {entry}. Draws its own conclusion.",
+            "{ticker} | where it stands",
+            "{top_fact}. {cashtag} at {entry}. Draw your own line.",
         ),
         (
-            "{cashtag} | what the tape shows",
-            "{top_fact}. Level: {entry}. Chart speaks.",
+            "{cashtag} | the tape",
+            "{top_fact}. Level {entry}. Numbers do the talking.",
         ),
     ],
 
     # ── chart / specialist ────────────────────────────────────────────────────
     ("chart", "specialist"): [
         (
-            "{ticker} — sector chart this week",
-            "{cashtag}: {top_fact}. This vertical is telling a story. Level: {entry}.",
+            "{ticker} chart, and it matters for the whole group",
+            "{cashtag}: {top_fact}. When this one moves the rest usually follow. Level {entry}.",
         ),
         (
-            "{cashtag} | the vertical in chart form",
-            "{top_fact}. {ticker} at {entry}. The sector context is right here.",
+            "{cashtag} | the group in one chart",
+            "{top_fact}. {ticker} at {entry}. This is the name I read the space through.",
         ),
         (
-            "{ticker} — this chart matters for the theme",
-            "{cashtag}: {top_fact}. Level to watch: {entry}.",
+            "{ticker} | this chart tells me where the theme's going",
+            "{cashtag}: {top_fact}. Level I'm watching {entry}.",
         ),
         (
-            "{cashtag} | sector price context",
-            "{top_fact}. {ticker} at {entry}. One picture is worth the thread.",
+            "{cashtag} | sitting on my desk",
+            "{top_fact}. {ticker} at {entry}. One picture beats the thread.",
         ),
     ],
 
     # ── chart / educational ───────────────────────────────────────────────────
     ("chart", "educational"): [
         (
-            "Chart breakdown: {ticker}",
-            "{cashtag}: {top_fact}. Key things to notice: the level at {entry} and what it means.",
+            "{ticker}, let me walk you through this chart",
+            "{cashtag}: {top_fact}. Notice the {entry} level and why it keeps mattering.",
         ),
         (
-            "{ticker} — walk through the chart",
-            "{top_fact}. That's one reason {cashtag} at {entry} is interesting to watch.",
+            "{ticker} | one thing to notice",
+            "{top_fact}. That's a big part of why {cashtag} at {entry} is worth a look.",
         ),
         (
-            "What this chart on {ticker} is showing",
-            "{cashtag}: {top_fact}. Level: {entry}. Sometimes the chart explains it better than we can.",
+            "What {ticker}'s chart is quietly telling you",
+            "{cashtag}: {top_fact}. Level {entry}. Sometimes the chart explains it better than words.",
         ),
         (
-            "{cashtag} | chart anatomy this week",
-            "{top_fact}. {ticker} at {entry}. Here's what that means.",
+            "{cashtag} | a chart worth studying",
+            "{top_fact}. {ticker} at {entry}. The chart tells the rest.",
         ),
     ],
 
     # ── chart / fast, reactive ────────────────────────────────────────────────
     ("chart", "fast, reactive"): [
         (
-            "{ticker} chart | quick look",
-            "{cashtag}: {top_fact}. Level {entry}. Make your own call.",
+            "{ticker} chart, quick",
+            "{cashtag}: {top_fact}. Level {entry}. Your call.",
         ),
         (
-            "{cashtag} | chart update",
+            "{cashtag} right now",
             "{top_fact}. {ticker} at {entry}.",
         ),
         (
-            "Fast chart: {ticker}",
+            "{ticker} | fast look",
             "{cashtag}: {top_fact}. {entry} is the level.",
         ),
         (
@@ -828,394 +879,391 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # ── chart / pattern/history ───────────────────────────────────────────────
     ("chart", "pattern/history"): [
         (
-            "{ticker} — pattern in the chart",
-            "{cashtag}: {top_fact}. This chart matches something we've tracked. Level: {entry}.",
+            "{ticker} | this chart looks familiar",
+            "{cashtag}: {top_fact}. Matches something I've watched before. Level {entry}.",
         ),
         (
-            "{cashtag} | historical read on the chart",
-            "{top_fact}. {ticker} at {entry}. The rhyme is right there in the picture.",
+            "{cashtag} | history's in the picture",
+            "{top_fact}. {ticker} at {entry}. The rhyme is right there if you've seen it before.",
         ),
         (
-            "{ticker} chart | precedent matters",
-            "{top_fact}. {cashtag} at {entry}. Last time this looked like this, watch what followed.",
+            "{ticker} chart | last time this shape showed up",
+            "{top_fact}. {cashtag} at {entry}. Watch what followed the last one.",
         ),
         (
-            "{cashtag} — chart with context",
-            "{top_fact}. Level: {entry}. The pattern is pointing.",
+            "{cashtag} | chart with a memory",
+            "{top_fact}. Level {entry}. The pattern's pointing somewhere.",
         ),
     ],
 
     # ── education (all voices use shared variants; persona-specific below) ────
     ("education", "authoritative desk"): [
         (
-            "What 'conviction' actually means at the desk",
-            "When we flag something, it means the setup passed our criteria — not that it's certain. "
-            "The number next to it is the invalidation. That's the constraint.",
+            "What flagging something actually means",
+            "When we put a name on the board it means the setup lined up, not that it's a sure thing. "
+            "The number that goes with it is the level that says we were wrong.",
         ),
         (
-            "Why invalidation matters more than the target",
-            "A target tells you where we're going. An invalidation tells you we're wrong. "
-            "Knowing when you're wrong is the skill.",
+            "The stop matters more than the target",
+            "A target tells you where you're hoping to go. A stop tells you when you were wrong. "
+            "Knowing when you're wrong is most of the job, honestly.",
         ),
         (
-            "The part most people skip: position sizing",
-            "You can be right on the direction and still lose money. "
-            "The size of the position relative to the stop is the part that matters.",
+            "The part most people skip",
+            "You can nail the direction and still lose money. "
+            "How big you go relative to your stop is the thing that actually decides the outcome.",
         ),
         (
-            "How we decide what goes on the board",
-            "Not every setup makes it. The ones that do share one thing: "
-            "a clear level that proves the thesis wrong. No clear invalidation, no post.",
+            "How something earns a spot on the board",
+            "Most setups don't make it. The ones that do all have a clear level that says "
+            "the idea failed. If I can't tell you where I'm wrong, I don't post it.",
         ),
     ],
     ("education", "dry, receipts-forward"): [
         (
-            "How we track our calls",
-            "Every signal goes in the ledger. Win, loss, or mixed — we post the outcome. "
-            "The receipt book is the accountability layer.",
+            "How I keep myself honest",
+            "Every call gets a result posted, win or lose, same flat tone either way. "
+            "No quietly forgetting the ones that didn't work.",
         ),
         (
-            "Why we post losses",
-            "Losses are information. We post them flat — same tone as wins. "
-            "The stop did its job. That's the point.",
+            "Why I post the losers",
+            "Losses are information. I post them the same way I post wins. "
+            "The stop did its job, my ego didn't, and that's fine.",
         ),
         (
-            "What a 'receipt' actually is",
-            "A receipt is the outcome of a call. Entry, target or stop hit, result. "
-            "We post it regardless of direction.",
+            "What a result post actually is",
+            "Entry, then whether the target or the stop hit, then the number. "
+            "That's it. I post it whichever way it went.",
         ),
         (
-            "The ledger system: how it works",
-            "Signal goes in. Outcome comes out. That's the whole system. "
-            "No selective memory, no cherry-picking.",
+            "The whole system, plainly",
+            "Call goes up. Outcome goes up. No cherry-picking, no selective memory. "
+            "If it's on the page it stays on the page.",
         ),
     ],
     ("education", "specialist"): [
         (
-            "One thing this vertical gets wrong",
-            "Most people read this sector's moves through the wrong lens. "
-            "Here's the cleaner framework.",
+            "The thing most people get wrong about this group",
+            "Most folks read these names through the wrong lens. "
+            "Here's the way I actually think about them.",
         ),
         (
-            "The factor that moves this vertical",
-            "It's not what most people focus on. The one factor that actually drives this sector "
-            "has been consistent for years. Here's what to watch instead.",
+            "The one thing that really moves these names",
+            "It's not the headline everyone watches. One quieter driver has run this group for years. "
+            "What I actually keep my eye on is a much shorter list.",
         ),
         (
-            "Why sector context beats individual stock analysis here",
-            "In this vertical, the tide really does lift or sink most boats. "
-            "Get the macro read on the sector right first.",
+            "Why the group matters more than the single name here",
+            "In this space the tide really does move most of the boats together. "
+            "Get the read on the group right first, then pick the name.",
         ),
         (
-            "How to think about timing in this vertical",
-            "Entry timing matters more in cyclical sectors. "
-            "Here's the checklist we use before flagging anything.",
+            "How I think about timing in these names",
+            "Timing matters more in this kind of stock than people admit. "
+            "Here's the short checklist I run before I flag anything.",
         ),
     ],
     ("education", "educational"): [
         (
-            "Plain English: what is a 'setup'?",
-            "A setup is a price configuration that, historically, has been a good time to pay attention. "
-            "Not a guarantee — just a reason to look closer.",
+            "Plain English: what's a 'setup'?",
+            "It's a price picture that's usually been worth paying attention to. "
+            "Not a buy button, just a reason to look closer. History, not a promise.",
         ),
         (
-            "Why the 'what would change this' line matters",
-            "Every signal post has a line that says what would make us wrong. "
-            "That line is the whole thesis. Everything else is details.",
+            "The 'what would prove me wrong' line is the whole thing",
+            "Every real call has a line that says what would make it wrong. "
+            "That line is the idea. Everything else is decoration.",
         ),
         (
-            "Here's the part most people miss",
-            "Being right about the direction is only half the job. "
-            "The other half is knowing exactly when you're wrong. That's the stop.",
+            "The half of trading nobody talks about",
+            "Being right on direction is only half the job. "
+            "The other half is knowing exactly where you were wrong. That level is your stop.",
         ),
         (
-            "What 'tracking publicly' actually means",
-            "When we say we'll track it publicly, we mean: win, loss, or nothing — "
-            "the outcome gets posted. That's the only honest model.",
+            "What it means when I say it goes on the page",
+            "Win, lose, or nothing happened, the result gets posted. "
+            "Anyone can show the winners. Showing all of it is the point.",
         ),
     ],
     ("education", "fast, reactive"): [
         (
-            "Quick primer: what's a setup?",
-            "Price configuration that's historically worth watching. "
-            "Not a buy signal. A reason to look.",
+            "Quick: what's a setup?",
+            "A price picture that's usually worth watching. Not a buy signal. Just a reason to look.",
         ),
         (
-            "Fast: why the stop matters more than the target",
-            "Target = where we're going. Stop = when we're wrong. "
-            "Get the stop wrong, the target doesn't matter.",
+            "Why the stop beats the target",
+            "Target is where you're hoping to go. Stop is when you were wrong. "
+            "Blow the stop and the target never mattered.",
         ),
         (
-            "One-minute explanation: position sizing",
-            "Risk a fixed amount per trade. The stop sets the size. "
-            "That's the whole framework.",
+            "One-minute version: how big to go",
+            "Risk the same small amount every time. The stop tells you the size. That's the whole thing.",
         ),
         (
-            "Quick: what invalidation means",
-            "The level that proves us wrong. "
-            "If price hits it, we're out. Clean, fast, no ego.",
+            "What invalidation means, fast",
+            "The level that says you were wrong. Price hits it, you're out. No ego, no debate.",
         ),
     ],
     ("education", "pattern/history"): [
         (
-            "When history rhymes: a primer",
-            "Historical analogues are useful but dangerous. "
-            "We use them to calibrate expectations, not make predictions.",
+            "When history rhymes, read it carefully",
+            "Old analogues are useful and dangerous at once. "
+            "I use them to set expectations, never to make a hard call.",
         ),
         (
-            "Last time the market looked like this",
-            "We're not predicting repeats. We're looking at base rates. "
-            "Here's what happened in comparable setups.",
+            "Last time the tape looked like this",
+            "I'm not calling a repeat. I'm looking at how often it worked before. "
+            "Here's what happened in the closest matches.",
         ),
         (
-            "The base rate mindset",
-            "What happened 70% of the time in similar conditions is useful context. "
-            "It's never a guarantee. That's what 70% means.",
+            "The base-rate way of thinking",
+            "What happened most of the time in a similar spot is context, nothing more. "
+            "It's never a guarantee, and that's the honest part.",
         ),
         (
-            "How we use historical analogues without fooling ourselves",
-            "Rhyme, not repeat. The context matters more than the pattern. "
-            "Here's the filter we apply before drawing any analogy.",
+            "Using analogues without kidding yourself",
+            "Rhyme, not repeat. The surrounding conditions matter more than the shape. "
+            "Here's the filter I run before I lean on any comparison.",
         ),
     ],
 
-    # ── macro (all voices) — {top_fact} carries the real regime/tape number ────
+    # ── macro (all voices) — {top_fact} carries plain observable macro/tape text ─
     ("macro", "authoritative desk"): [
         (
-            "Macro backdrop: what the data shows",
-            "{top_fact} That's the read. Quality over leverage, patience over chasing.",
-        ),
-        (
-            "What the macro is saying right now",
-            "{top_fact} Here's how we're positioning around it.",
+            "What the data's actually saying",
+            "{top_fact} I'd rather own quality and stay patient than chase this here.",
         ),
         (
             "The macro read this week",
-            "{top_fact} The backdrop sets the context for everything else on the board.",
+            "{top_fact} Not a comfortable mix. Leaning cautious until it clears up.",
         ),
         (
-            "Macro note: regime update",
-            "{top_fact} Watch how this resolves — it changes the risk picture.",
+            "Where the big picture stands",
+            "{top_fact} It sets the tone for everything else I'm looking at.",
         ),
         (
-            "Regime check | what changed",
-            "{top_fact} That's the signal that matters most right now.",
+            "One thing worth watching up top",
+            "{top_fact} How this resolves changes how much risk I want on.",
         ),
         (
-            "Macro | the honest read",
+            "Quick macro note",
+            "{top_fact} That's the piece I care about most right now.",
+        ),
+        (
+            "The honest macro read",
             "{top_fact} One data point, no spin.",
         ),
     ],
     ("macro", "dry, receipts-forward"): [
         (
-            "Macro: what the data shows",
-            "{top_fact} Tracking the key signals. Will update when the picture changes.",
+            "Macro, plainly",
+            "{top_fact} Watching the key stuff. I'll update when the picture actually shifts.",
         ),
         (
-            "Macro update | current read",
-            "{top_fact} Net read: selective on risk until this resolves.",
+            "Where things stand up top",
+            "{top_fact} Staying selective on risk until this clears.",
         ),
         (
-            "Regime scorecard",
-            "{top_fact} Logged. Watching for the next move.",
+            "Macro note",
+            "{top_fact} Logged. Waiting on the next print.",
         ),
         (
             "Macro | numbers first",
-            "{top_fact} That's the state of the backdrop.",
+            "{top_fact} That's the state of play.",
         ),
     ],
     ("macro", "specialist"): [
         (
-            "Macro note for the vertical",
-            "{top_fact} The backdrop has direct implications for this sector.",
+            "Why the macro matters for these names",
+            "{top_fact} That flows straight into the group I watch.",
         ),
         (
-            "How macro is affecting our sector",
-            "{top_fact} Here's what it means for positioning in this vertical.",
+            "How the big picture's hitting my corner",
+            "{top_fact} It shifts a couple of the names I follow.",
         ),
         (
-            "Sector macro alignment this week",
-            "{top_fact} That's the tailwind (or headwind) the sector is working with.",
+            "The tailwind, or headwind, right now",
+            "{top_fact} That's the current the group is swimming in.",
         ),
         (
-            "The macro factor driving our sector",
-            "{top_fact} One factor is dominating. Here's how we're reading it.",
+            "The one macro driver I'm tracking",
+            "{top_fact} One thing's carrying the read here, and it's this.",
         ),
     ],
     ("macro", "educational"): [
         (
-            "What the macro says — plain English",
-            "{top_fact} Here's what that has historically meant for markets.",
+            "The macro in plain words",
+            "{top_fact} Watching which side blinks first.",
         ),
         (
-            "Breaking down the macro backdrop",
-            "{top_fact} That's the signal. Everything else is noise.",
+            "Reading the big picture",
+            "{top_fact} The rest is mostly noise. That part matters.",
         ),
         (
-            "Macro 101: what this regime means",
-            "{top_fact} The regime doesn't tell you what to buy — it tells you the environment.",
+            "Macro without the jargon",
+            "{top_fact} None of this tells you what to buy. It tells you the weather.",
         ),
         (
-            "Plain-English macro update",
-            "{top_fact} Here's why that matters for how you size risk.",
+            "Why this matters for how you size up",
+            "{top_fact} Here's why it should change how much risk you carry.",
         ),
     ],
     ("macro", "fast, reactive"): [
         (
             "Fast macro read",
-            "{top_fact} Adjusting accordingly.",
+            "{top_fact} Adjusting for it.",
         ),
         (
-            "Macro | quick update",
-            "{top_fact} That's the short version.",
+            "Macro, quick",
+            "{top_fact} Short version above.",
         ),
         (
-            "Macro | what just changed",
-            "{top_fact} Fast read: risk assets need to process this.",
+            "What just shifted up top",
+            "{top_fact} Markets have to chew on this one.",
         ),
         (
-            "Regime note | fast",
-            "{top_fact} One signal. That's what stands out.",
+            "Macro note, fast",
+            "{top_fact} That's the one that stands out.",
         ),
     ],
     ("macro", "pattern/history"): [
         (
-            "Macro analogue: what the data rhymes with",
-            "{top_fact} The current setup has a historical parallel worth knowing.",
+            "This macro setup rhymes with something",
+            "{top_fact} There's a parallel worth knowing about.",
         ),
         (
-            "Historical read on this regime",
-            "{top_fact} Last time this signal looked like this, here's what followed.",
+            "Last time the data looked like this",
+            "{top_fact} Here's roughly what followed the closest matches.",
         ),
         (
-            "The macro rhyme — what history says",
-            "{top_fact} Not predicting a repeat. Pointing at the base rate.",
+            "The rhyme, not a prediction",
+            "{top_fact} Not calling a repeat. Just pointing at how it went before.",
         ),
         (
-            "Macro precedent | what history shows",
-            "{top_fact} This regime has a track record. Here's the read.",
+            "History's take on this setup",
+            "{top_fact} This kind of read has a track record. Worth a look.",
         ),
     ],
 
     # ── receipt (all voices) — ONLY used when graded_receipts provides real data ──
     ("receipt", "authoritative desk"): [
         (
-            "{cashtag} outcome | {target_label} at {t1}",
-            "{cashtag}: {target_label} hit at {t1} ({gain}). Entry was {entry}. "
-            "Thesis played. We'll stay with the runner per the plan.",
+            "{cashtag} | {target_label} hit for {gain}",
+            "That {cashtag} flag from {entry} tagged {target_label} at {t1}, {gain}. "
+            "Read played out. I'm staying with the runner.",
         ),
         (
-            "{cashtag} — call graded | {gain} on {target_label}",
-            "Entry {entry}, {target_label} at {t1}: {gain}. "
-            "Process held. Next level is {t2} or stop triggers.",
+            "{cashtag} | {gain} on {target_label}",
+            "Entry {entry}, {target_label} at {t1}, {gain}. "
+            "Next level I care about is {t2}, or the stop takes me out.",
         ),
         (
-            "{cashtag} stopped out | {loss} from entry",
-            "Entry {entry}, stop at {stop}: {loss}. Stop did its job. "
-            "Position closed clean. Next setup, same discipline.",
+            "{cashtag} stopped out, {loss}",
+            "Entry {entry}, stopped at {stop}, {loss}. The stop did its job, my ego didn't. "
+            "On to the next one, same discipline.",
         ),
         (
-            "{cashtag} | mixed outcome — {gain} then stopped at {loss}",
+            "{cashtag} | partial won, runner didn't",
             "{target_label} hit at {t1} ({gain}), then stopped at {stop} ({loss}). "
-            "Entry: {entry}. The partial worked. The trail didn't. Graded.",
+            "Entry was {entry}. Took the partial, gave back the trail. That's trading.",
         ),
     ],
     ("receipt", "dry, receipts-forward"): [
         (
-            "{cashtag} receipt | {target_label}: {gain}",
-            "Entry {entry}. {target_label} at {t1}: {gain}. In the ledger.",
+            "{cashtag} | {target_label}: {gain}",
+            "Entry {entry}. {target_label} at {t1}, {gain}. On the page.",
         ),
         (
-            "{cashtag} stopped | {loss}",
-            "Entry {entry}. Stop at {stop}: {loss}. Stop worked. Next.",
+            "{cashtag} stopped, {loss}",
+            "Entry {entry}. Out at {stop}, {loss}. Stop worked. Next.",
         ),
         (
-            "{cashtag} | mixed — {gain} then {loss}",
+            "{cashtag} | {gain} then {loss}",
             "Entry {entry}. {target_label} hit {t1} ({gain}). Stopped at {stop} ({loss}). "
-            "Two outcomes on one trade. Graded.",
+            "Two outcomes, one trade. Both posted.",
         ),
         (
-            "{cashtag} graded | {gain}",
-            "Entry {entry}. {target_label} at {t1}: {gain}. Outcome posted.",
+            "{cashtag} | done: {gain}",
+            "Entry {entry}. {target_label} at {t1}, {gain}. Result's up.",
         ),
     ],
     ("receipt", "specialist"): [
         (
-            "Vertical outcome: {cashtag} | {gain}",
-            "Our sector read played. {cashtag}: entry {entry}, {target_label} at {t1} = {gain}.",
+            "{cashtag} | the read on the group played, {gain}",
+            "Called it off the group's move. {cashtag}: entry {entry}, {target_label} at {t1}, {gain}.",
         ),
         (
-            "{cashtag} — sector call graded | {loss}",
-            "The sector read didn't play. Entry {entry}, stopped at {stop}: {loss}. Graded.",
+            "{cashtag} | that one didn't work, {loss}",
+            "The read didn't play. Entry {entry}, stopped at {stop}, {loss}. On the page anyway.",
         ),
         (
-            "{cashtag} | mixed vertical outcome",
+            "{cashtag} | mixed bag",
             "{target_label} hit ({gain}), then stopped ({loss}). {cashtag} entry {entry}. "
-            "Net: the partial worked, the runner didn't.",
+            "Partial worked, runner didn't. Net small.",
         ),
         (
             "{cashtag} follow-up | {gain} on {target_label}",
-            "Entry {entry}. {target_label}: {t1} hit for {gain}. Sector thesis held.",
+            "Entry {entry}. {target_label} at {t1} for {gain}. The group read held up.",
         ),
     ],
     ("receipt", "educational"): [
         (
-            "{cashtag} outcome: this is what accountability looks like",
-            "We said {cashtag} at {entry}. {target_label} at {t1}: {gain}. "
-            "Win, loss, or draw — we post the result. That's the model.",
+            "{cashtag} | this is what showing your work looks like",
+            "I called {cashtag} at {entry}. {target_label} at {t1}, {gain}. "
+            "Win, lose, or nothing, the result goes up. Anyone can post the winners.",
         ),
         (
-            "{cashtag} stopped | this is what a loss looks like",
-            "Entry {entry}. Stop at {stop}: {loss}. "
-            "The stop did exactly what stops are supposed to do.",
+            "{cashtag} stopped | here's a loss, posted flat",
+            "Entry {entry}. Out at {stop}, {loss}. "
+            "The stop did exactly what a stop is for. No drama, no story.",
         ),
         (
-            "{cashtag} | mixed result — a real example",
+            "{cashtag} | a real mixed result",
             "{target_label} hit at {t1} ({gain}), then the runner stopped at {stop} ({loss}). "
-            "Entry {entry}. This is what 'partial' looks like in practice.",
+            "Entry {entry}. This is what a partial actually looks like in practice.",
         ),
         (
-            "Live outcome: {cashtag} at {gain}",
-            "Entry {entry}. {target_label} hit at {t1}: {gain}. "
-            "We said we'd track it publicly. Here's the result.",
+            "{cashtag} | said I'd post it, so here it is",
+            "Entry {entry}. {target_label} at {t1}, {gain}. "
+            "I said win or lose it goes on the page. Here's the result.",
         ),
     ],
     ("receipt", "fast, reactive"): [
         (
-            "{cashtag} | {target_label} hit: {gain}",
-            "Entry {entry}. {t1} tagged. {gain}. Graded.",
+            "{cashtag} | {target_label} tagged, {gain}",
+            "Entry {entry}. {t1} hit. {gain}. On the page.",
         ),
         (
-            "{cashtag} stopped | {loss}",
-            "Entry {entry}. Stop {stop}. {loss}. Clean exit.",
+            "{cashtag} stopped, {loss}",
+            "Entry {entry}. Out at {stop}. {loss}. Clean exit.",
         ),
         (
-            "{cashtag} | mixed: {gain} then {loss}",
+            "{cashtag} | {gain} then {loss}",
             "Entry {entry}. {target_label} hit ({gain}). Stop {stop} ({loss}). Two outcomes.",
         ),
         (
-            "{cashtag} outcome | {gain}",
-            "Entry {entry}. {target_label} at {t1}: {gain}.",
+            "{cashtag} | done, {gain}",
+            "Entry {entry}. {target_label} at {t1}, {gain}.",
         ),
     ],
     ("receipt", "pattern/history"): [
         (
-            "{cashtag} — did the pattern hold? Yes: {gain}",
-            "We flagged a setup. Entry {entry}. {target_label} at {t1}: {gain}. Pattern held.",
+            "{cashtag} | the rhyme held, {gain}",
+            "Flagged the setup at {entry}. {target_label} at {t1}, {gain}. It followed through this time.",
         ),
         (
-            "{cashtag} — pattern outcome | stopped at {loss}",
-            "Entry {entry}. Stop at {stop}: {loss}. "
-            "The setup didn't follow through this time. Graded.",
+            "{cashtag} | the rhyme broke, {loss}",
+            "Entry {entry}. Out at {stop}, {loss}. "
+            "Didn't follow the old script this time. Posted anyway.",
         ),
         (
-            "{cashtag} | historical pattern graded",
+            "{cashtag} | a verse and a coda",
             "Entry {entry}. {target_label} hit ({gain}), runner stopped ({loss}). "
-            "The rhyme had a verse and a coda.",
+            "The rhyme got most of the way there.",
         ),
         (
-            "{cashtag} outcome | {gain} from {entry}",
-            "Entry {entry}. {target_label}: {t1} = {gain}. Historical setup confirmed.",
+            "{cashtag} | precedent held, {gain}",
+            "Entry {entry}. {target_label} at {t1}, {gain}. Same shape, same result as last time.",
         ),
     ],
 
@@ -1229,87 +1277,87 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # {top_fact} = theme aggregate text
     ("theme_list", "authoritative desk"): [
         (
-            "{theme_name} taking damage today",
+            "{theme_name} names all getting hit today",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} | whole theme moving",
-            "{cashtag_list}\nEvery name in this theme is {theme_direction}. {top_fact} {theme_question}",
+            "Whole {theme_name} group is moving together",
+            "{cashtag_list}\nEvery name here is {theme_direction} today. {top_fact} {theme_question}",
         ),
         (
-            "{theme_name} {theme_agg_pct} avg today",
+            "{theme_name} down {theme_agg_pct} on average today",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} rolling over | ranked by damage",
+            "{theme_name} rolling over, worst first",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "The whole {theme_name} theme just moved",
+            "The whole {theme_name} group just moved",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} theme is {theme_direction} across the board",
+            "{theme_name} is {theme_direction} across the board today",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
     ("theme_list", "dry, receipts-forward"): [
         (
-            "{theme_name} | {theme_agg_pct} avg",
+            "{theme_name} | {theme_agg_pct} average",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "Ranked: {theme_name} names by today's move",
+            "{theme_name} names ranked by today's move",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} scorecard | all names",
+            "{theme_name} | the whole list",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} theme tape",
+            "{theme_name} tape today",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
     ("theme_list", "specialist"): [
         (
-            "{theme_name} vertical is getting hit",
-            "{cashtag_list}\nThis sector doesn't move like this on nothing. {top_fact} {theme_question}",
+            "{theme_name} names don't all move like this on nothing",
+            "{cashtag_list}\nWhen the whole group goes at once I pay attention. {top_fact} {theme_question}",
         ),
         (
-            "{theme_name} | sector-wide pressure",
+            "{theme_name} | pressure across the whole group",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "Every {theme_name} name is moving today",
+            "Every {theme_name} name I watch is moving today",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} theme | sector tape",
+            "{theme_name} | the group's tape",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
     ("theme_list", "educational"): [
         (
-            "When a whole theme moves — {theme_name} today",
-            "{cashtag_list}\nTheme-level moves tell you more than any single stock. {top_fact} {theme_question}",
+            "When a whole group moves together, notice",
+            "{cashtag_list}\nA move across the whole group tells you more than any one name. {top_fact} {theme_question}",
         ),
         (
-            "Here's what theme-wide selling looks like",
+            "This is what group-wide selling looks like",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} | what a theme move looks like",
+            "{theme_name} | a group move in real time",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "The {theme_name} theme is showing something today",
+            "The {theme_name} names are all saying something today",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
     ("theme_list", "fast, reactive"): [
         (
-            "{theme_name} getting smoked 👀",
+            "{theme_name} names getting hit 👀",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
@@ -1321,25 +1369,25 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} carnage | ranked",
+            "{theme_name} | red across the board",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
     ("theme_list", "pattern/history"): [
         (
-            "{theme_name} | theme-wide move — historical context",
-            "{cashtag_list}\nLast time this theme moved like this, it marked something. {top_fact} {theme_question}",
+            "Last time {theme_name} moved like this it marked something",
+            "{cashtag_list}\nGroup moves this clean have shown up at turns before. {top_fact} {theme_question}",
         ),
         (
-            "{theme_name} theme under pressure | historical read",
+            "{theme_name} under pressure | I've seen this one",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} | the rhyme worth watching",
+            "{theme_name} | a rhyme worth watching",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
         (
-            "{theme_name} selling off | what history says",
+            "{theme_name} selling off | what happened last time",
             "{cashtag_list}\n{top_fact} {theme_question}",
         ),
     ],
@@ -1349,118 +1397,119 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # {mover_pct} = "-14.2%"
     ("mover", "authoritative desk"): [
         (
-            "{cashtag} {mover_pct} today — here's the chart",
-            "{top_fact} Overreaction or the start of something?",
+            "{cashtag} {mover_pct} today. Ugly.",
+            "{top_fact} This is the kind of flush where I start watching for a bottom setup. "
+            "Not catching it yet, levels are on the chart.",
         ),
         (
-            "{cashtag} just did something worth watching",
-            "{top_fact} One of today's biggest moves in the index.",
+            "{cashtag} did something worth a look today",
+            "{top_fact} One of the bigger moves in the index. Watching, not chasing it here.",
         ),
         (
             "{cashtag} | {mover_pct} today",
-            "{top_fact} The chart tells the story. Selling pressure or value emerging?",
+            "{top_fact} Respecting the move, not stepping in front of it. Levels on the chart.",
         ),
         (
-            "{cashtag} | the biggest move in the index today",
-            "{top_fact} This is what a real move looks like on a chart.",
+            "{cashtag} was the biggest move in the index today",
+            "{top_fact} That's real strength (or real damage). I'd rather let it settle first.",
         ),
         (
-            "{cashtag} — {mover_pct} | what happened",
-            "{top_fact} The chart is below. Make of it what you will.",
+            "{cashtag} | {mover_pct}, what happened",
+            "{top_fact} Chart's below. I'm watching how it holds, not chasing the candle.",
         ),
         (
-            "{cashtag} flagged — {mover_pct} move today",
-            "{top_fact} These are the ones worth knowing about the same day.",
+            "{cashtag} moved {mover_pct} today",
+            "{top_fact} Worth knowing the same day. No urge to chase it here.",
         ),
     ],
     ("mover", "dry, receipts-forward"): [
         (
             "{cashtag} | {mover_pct} today",
-            "{top_fact} Logged.",
+            "{top_fact} Watching, not chasing.",
         ),
         (
-            "{cashtag} {mover_pct} | charted",
-            "{top_fact} Numbers on the tape. Chart below.",
+            "{cashtag} {mover_pct}",
+            "{top_fact} Numbers on the tape, chart below. Letting it settle.",
         ),
         (
-            "{cashtag} — mover of the day | {mover_pct}",
-            "{top_fact} In the log.",
+            "{cashtag} | biggest mover today, {mover_pct}",
+            "{top_fact} Noted. Not stepping in yet.",
         ),
         (
-            "{cashtag} | biggest move today: {mover_pct}",
-            "{top_fact} Noted.",
+            "{cashtag} | {mover_pct}",
+            "{top_fact} On the radar. No position.",
         ),
     ],
     ("mover", "specialist"): [
         (
-            "{cashtag} {mover_pct} | sector context matters here",
-            "{top_fact} Moves like this in this vertical are never random. Chart below.",
+            "{cashtag} {mover_pct} | the whole group should care",
+            "{top_fact} Moves like this in these names are rarely random. Watching, not chasing.",
         ),
         (
-            "{cashtag} | {mover_pct} — and here's what it means for the sector",
-            "{top_fact} The chart below.",
+            "{cashtag} | {mover_pct}, and it matters for the group",
+            "{top_fact} Chart's below. I'd let it settle before doing anything.",
         ),
         (
-            "{cashtag} just moved {mover_pct} — sector read",
-            "{top_fact} This one has implications beyond the single stock.",
+            "{cashtag} moved {mover_pct} today",
+            "{top_fact} This one ripples past the single name. Respecting it, not chasing here.",
         ),
         (
-            "{cashtag} | {mover_pct} — vertical impact",
-            "{top_fact} Chart and sector context below.",
+            "{cashtag} | {mover_pct}, group read",
+            "{top_fact} Chart and context below. Watching how the rest of the names react.",
         ),
     ],
     ("mover", "educational"): [
         (
-            "What a {mover_pct} move looks like — {cashtag}",
-            "{top_fact} This is what a real single-day move looks like on a chart. Study it.",
+            "{cashtag} {mover_pct} | what a move this size looks like",
+            "{top_fact} This is a real single-day move on a chart. Worth studying, not chasing.",
         ),
         (
-            "{cashtag} down {mover_pct} — what that tells you",
-            "{top_fact} Moves like this are information. Here's how to read it.",
+            "{cashtag} {mover_pct} | what that tells you",
+            "{top_fact} A move like this is information first, opportunity maybe. Here's how I read it.",
         ),
         (
-            "How to read a move like {cashtag} today",
-            "{top_fact} Single-day moves this size have a pattern. Chart below.",
+            "How to sit with a move like {cashtag} today",
+            "{top_fact} Moves this size tend to need time. I watch for the setup, I don't catch the drop.",
         ),
         (
-            "{cashtag} | {mover_pct} today — what to look at next",
-            "{top_fact} The first 24 hours after a move this size are the most informative.",
+            "{cashtag} | {mover_pct}, what to watch next",
+            "{top_fact} The first day or two after a move this size tells you the most. Watching.",
         ),
     ],
     ("mover", "fast, reactive"): [
         (
             "{cashtag} {mover_pct} 👀",
-            "{top_fact} Charted. What's your read?",
+            "{top_fact} Watching, not chasing. What's your read?",
         ),
         (
-            "{cashtag} | {mover_pct} — fast chart",
-            "{top_fact} Make your own call.",
+            "{cashtag} | {mover_pct}, fast chart",
+            "{top_fact} Letting it settle before I do anything.",
         ),
         (
             "{cashtag} moving {mover_pct} today",
-            "{top_fact} Chart below. Buyers or sellers win from here?",
+            "{top_fact} Chart below. Respecting it, not stepping in front.",
         ),
         (
-            "Mover: {cashtag} {mover_pct}",
-            "{top_fact} Tape check.",
+            "{cashtag} {mover_pct}",
+            "{top_fact} Tape check. No rush to touch it.",
         ),
     ],
     ("mover", "pattern/history"): [
         (
-            "{cashtag} {mover_pct} — what happens next historically",
-            "{top_fact} Moves like this have a documented pattern. Chart and context below.",
+            "{cashtag} {mover_pct} | I've seen moves like this before",
+            "{top_fact} These have a rough pattern. Watching for the setup, not catching the drop.",
         ),
         (
-            "{cashtag} | {mover_pct} — the historical base rate",
-            "{top_fact} Last time we saw a move this size, here's what the tape did next.",
+            "{cashtag} | {mover_pct}, the base rate",
+            "{top_fact} Last time I saw a move this size, here's roughly what came next. Watching.",
         ),
         (
-            "{cashtag} — {mover_pct} today | pattern read",
-            "{top_fact} Not predicting. Pointing at the precedent.",
+            "{cashtag} {mover_pct} today | the precedent",
+            "{top_fact} Not predicting. Just pointing at how it usually goes. Not chasing here.",
         ),
         (
-            "Historical read: {cashtag} {mover_pct} move",
-            "{top_fact} Rhyme, not repeat.",
+            "{cashtag} {mover_pct} | rhyme, not repeat",
+            "{top_fact} I let these settle before I trust them. Levels on the chart.",
         ),
     ],
 
@@ -1468,237 +1517,230 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # ── watchlist (all voices) — {top_fact} carries breadth/sector context ──────
     ("watchlist", "authoritative desk"): [
         (
-            "On our radar this week",
-            "{top_fact} Names we're watching but haven't acted on. "
-            "The setup isn't complete — when it is, we'll post the entry.",
+            "{cashtag} on my radar this week",
+            "{top_fact} Watching {ticker}, haven't touched it. "
+            "The setup isn't there yet. When it is, I'll post the entry.",
         ),
         (
-            "Watch list | not yet",
-            "{top_fact} These names are interesting. None have triggered an entry yet. "
-            "Watching the levels.",
+            "Watching {cashtag}, not buying yet",
+            "{top_fact} Interesting name, but it hasn't triggered for me. "
+            "Just keeping an eye on the levels.",
         ),
         (
-            "What's on the desk this week",
-            "{top_fact} A few names are close to completing setups. Not acting yet. "
-            "Keeping the list transparent.",
+            "{cashtag} is sitting on my desk this week",
+            "{top_fact} Close to setting up. Not acting yet, keeping the list open.",
         ),
         (
-            "Under observation this week",
-            "{top_fact} The board has gaps that could fill. Entry conditions not met — yet.",
+            "Keeping {cashtag} close this week",
+            "{top_fact} There are gaps below that could fill. Not ready for me yet.",
         ),
         (
-            "Radar names | context first",
-            "{top_fact} Against that backdrop, here are the names close to triggering.",
+            "Circling {cashtag} this week",
+            "{top_fact} Closest name to triggering on my list. The read is up top.",
         ),
     ],
     ("watchlist", "dry, receipts-forward"): [
         (
-            "Watch list | no position",
-            "{top_fact} Watching these. No entry yet. Will post when something triggers.",
+            "{cashtag} | watching, no position",
+            "{top_fact} On the list, not in yet. I'll post when it triggers.",
         ),
         (
-            "Radar: names we're monitoring",
-            "{top_fact} On the list, not on the board. The setup isn't complete.",
+            "{cashtag} on the radar, not the board",
+            "{top_fact} Tracking it. The setup isn't finished.",
         ),
         (
-            "Watchlist update | not triggered",
-            "{top_fact} These names are close. Haven't acted. Entry post coming.",
+            "{cashtag} close, not triggered",
+            "{top_fact} Near. Haven't acted. Entry post when it comes.",
         ),
         (
-            "Under watch | positions not open",
-            "{top_fact} Tracking these. No entry taken. Conditions not met.",
+            "{cashtag} | watching only",
+            "{top_fact} No entry taken. Conditions aren't met.",
         ),
     ],
     ("watchlist", "specialist"): [
         (
-            "Vertical watch list this week",
-            "{top_fact} Names in our sector setting up but not triggered yet. Close.",
+            "{cashtag} is the one I'm watching in my group",
+            "{top_fact} Setting up but not triggered yet. Getting close.",
         ),
         (
-            "Sector radar | watching not acting",
-            "{top_fact} The vertical has a few names near entry conditions. Not acting yet.",
+            "Watching {cashtag}, not acting yet",
+            "{top_fact} Near my entry conditions. Sitting on my hands.",
         ),
         (
-            "What's near entry in the sector",
-            "{top_fact} Setup not complete in the sector — but we're close on at least one.",
+            "{cashtag} near entry in my corner",
+            "{top_fact} Not finished setting up, but it's close.",
         ),
         (
-            "Specialist watch: setups in progress",
-            "{top_fact} Monitoring these in the sector. Entry isn't clean yet.",
+            "{cashtag} setup in progress",
+            "{top_fact} Monitoring it. The entry isn't clean yet.",
         ),
     ],
     ("watchlist", "educational"): [
         (
-            "What goes on a watch list — and why",
-            "{top_fact} Not every interesting name makes the board. These are interesting — just not ready.",
+            "What earns a spot on a watch list",
+            "{top_fact} Not every interesting name is ready. {cashtag} is interesting and not ready.",
         ),
         (
-            "The watch list: how we filter",
-            "{top_fact} Here are the names we're monitoring and what's missing before they trigger.",
+            "How I filter what I watch",
+            "{top_fact} {cashtag} stays on watch until the missing piece shows up.",
         ),
         (
-            "Why we publish the watch list",
-            "{top_fact} Transparency on what almost made it. Here's what we're close on.",
+            "Why I show the watch list at all",
+            "{top_fact} It keeps me honest about what almost made it. {cashtag} is the one I'm close on.",
         ),
         (
-            "On our radar | here's what we're waiting for",
-            "{top_fact} These names are interesting. Here's what needs to happen for each to trigger.",
+            "What I'm waiting on with {cashtag}",
+            "{top_fact} Interesting name. One thing still missing before it triggers.",
         ),
     ],
     ("watchlist", "fast, reactive"): [
         (
-            "Quick radar | watching these",
-            "{top_fact} These are on the list right now. Not triggered. Watching.",
+            "Watching {cashtag} right now",
+            "{top_fact} On the list, not triggered. Just watching.",
         ),
         (
-            "Watching | not acting",
-            "{top_fact} Close setups, no entry yet. Will post when one triggers.",
+            "{cashtag} watching, not acting",
+            "{top_fact} Close setup, no entry yet. I'll post when it goes.",
         ),
         (
-            "Watch list update",
-            "{top_fact} A few names near entry conditions. Nothing triggered. On watch.",
+            "Quick radar check on {cashtag}",
+            "{top_fact} Near entry. Nothing's triggered. On watch.",
         ),
         (
-            "Radar check | names close to entry",
-            "{top_fact} These names are near setup completion. Haven't acted. Watching.",
+            "{cashtag} close to going",
+            "{top_fact} Near setup completion. Haven't touched it. Watching.",
         ),
     ],
     ("watchlist", "pattern/history"): [
         (
-            "Pattern watch list | not triggered",
-            "{top_fact} Names tracing patterns worth monitoring. Not acting yet.",
+            "Watching a pattern in {cashtag}",
+            "{top_fact} Tracing a shape worth monitoring. Not acting yet.",
         ),
         (
-            "Historical watch: patterns in progress",
-            "{top_fact} These names have historical analogues. No entry yet.",
+            "Old shapes showing up in {cashtag}",
+            "{top_fact} It has analogues I've watched before. No entry yet.",
         ),
         (
-            "Watch list | the rhymes in progress",
-            "{top_fact} A few names are tracing patterns we've tracked before. "
-            "Watching for setup completion.",
+            "{cashtag} rhyming with an old setup",
+            "{top_fact} Tracing a pattern I've seen before. Watching for it to finish.",
         ),
         (
-            "Monitoring setups with context",
-            "{top_fact} Not every setup completes. These are the ones worth watching.",
+            "{cashtag} | a setup with a memory",
+            "{top_fact} Not every one completes. This one's worth the watch.",
         ),
     ],
 
     # ── event (all voices) — {top_fact} carries today's catalyst read ────────
     ("event", "authoritative desk"): [
         (
-            "Market event: our read",
-            "{top_fact} Here's how we're reading the price action around it.",
+            "My read on today's move",
+            "{top_fact} Here's how I'm reading the price action around it.",
         ),
         (
-            "What just happened — and what it changes",
-            "{top_fact} Here's our read on what it means versus the first-hour reaction.",
+            "What just happened, and what it changes",
+            "{top_fact} My take versus the knee-jerk first-hour reaction.",
         ),
         (
-            "Event reaction | the desk's take",
-            "{top_fact} Fast-moving events get two reads: the knee-jerk and the considered one. "
-            "Here's ours.",
+            "Two reads on today's event",
+            "{top_fact} There's the knee-jerk read and the one you land on after a breath. Here's mine.",
         ),
         (
-            "Post-event: what we're watching now",
-            "{top_fact} The event is in the books. Here's what the next session should clarify.",
+            "What I'm watching after today",
+            "{top_fact} It's in the books now. The next session should clear up a lot.",
         ),
         (
-            "Event context | one clear read",
-            "{top_fact} That's the signal. Watch for the follow-through.",
+            "One clean read on today",
+            "{top_fact} The piece I'd actually act on. Watching for the follow-through.",
         ),
     ],
     ("event", "dry, receipts-forward"): [
         (
-            "Event reaction | numbers first",
-            "{top_fact} Here's what changed and what it does to our positions.",
+            "Today's event, numbers first",
+            "{top_fact} A few of my names care about this one. Watching them.",
         ),
         (
-            "Post-event | scorecard update",
-            "{top_fact} Event logged. Here's the impact on the board.",
+            "Event, logged",
+            "{top_fact} Noted. Here's the impact on the board.",
         ),
         (
-            "What the event changed",
-            "{top_fact} Not much drama — here's what it shifts.",
+            "What actually shifted today",
+            "{top_fact} Not much drama. A couple names will care though.",
         ),
         (
-            "Event: reaction logged",
-            "{top_fact} Reaction noted. Watching for confirmation next session.",
+            "Reaction noted",
+            "{top_fact} Watching for confirmation next session.",
         ),
     ],
     ("event", "specialist"): [
         (
-            "Event impact on our sector",
-            "{top_fact} Today's catalyst has direct implications for the vertical.",
+            "What today's event does to my group",
+            "{top_fact} This one flows straight into the names I watch.",
         ),
         (
-            "How this event hits our theme",
-            "{top_fact} The sector absorbs events differently than the broad market. "
-            "Here's what this one changes.",
+            "How this hits my corner of the market",
+            "{top_fact} My names take events differently than the broad tape. Watching which ones react.",
         ),
         (
-            "Sector event reaction",
-            "{top_fact} Here's whether the move in the vertical makes sense to us.",
+            "Does the group's reaction make sense?",
+            "{top_fact} Here's whether today's move in my names actually adds up to me.",
         ),
         (
-            "Event + sector: our take",
-            "{top_fact} The vertical reacted. Here's our read.",
+            "My take on the group's reaction",
+            "{top_fact} The names moved. Here's how I read it.",
         ),
     ],
     ("event", "educational"): [
         (
-            "What today's event means — plain English",
-            "{top_fact} Here's what it actually means for markets without the noise.",
+            "What today's event actually means",
+            "{top_fact} Watching how markets price it in, not the noise around it.",
         ),
         (
-            "Why events move markets — and this one in particular",
-            "{top_fact} Markets move on surprises. Here's the read on this one.",
+            "Why markets moved on this one",
+            "{top_fact} Markets move on surprises. Here's the read on today's.",
         ),
         (
-            "Event 101: how to read what just happened",
-            "{top_fact} Events get oversimplified in both directions. Here's the clean read.",
+            "How to read what just happened",
+            "{top_fact} Events get oversimplified both ways. Here's the clean version.",
         ),
         (
-            "Breaking down today's event",
-            "{top_fact} A lot of commentary today, most of it noise. "
-            "Here's the signal.",
+            "Cutting through today's noise",
+            "{top_fact} Lots of loud takes today. Here's the part that actually matters.",
         ),
     ],
     ("event", "fast, reactive"): [
         (
-            "Reaction: what just happened",
-            "{top_fact} Fast take: that's the move. Here's what to watch next.",
+            "What just happened",
+            "{top_fact} Fast take, that's the move. Watching the follow-through.",
         ),
         (
-            "Event | quick read",
-            "{top_fact} Reaction: fast. Here's the considered read.",
+            "Quick read on today",
+            "{top_fact} Knee-jerk's fast. Here's the one you keep.",
         ),
         (
-            "What just moved and why",
-            "{top_fact} Here's the fast version of what it means.",
+            "What moved and why",
+            "{top_fact} Fast read. Watching how this carries into the next session.",
         ),
         (
-            "Fast reaction | event context",
-            "{top_fact} Price moved. Here's what the tape is saying.",
+            "Price moved, here's the tape",
+            "{top_fact} What it's actually saying is simpler than the headline.",
         ),
     ],
     ("event", "pattern/history"): [
         (
-            "Historical read on today's event",
-            "{top_fact} This event type has a track record. "
-            "Here's what history says about the aftermath.",
+            "How events like this have played out",
+            "{top_fact} We've seen this kind of day before. Watching if it rhymes.",
         ),
         (
-            "What the playbook says about events like this",
-            "{top_fact} This one rhymes with something. Here's the historical base rate.",
+            "This one rhymes with something",
+            "{top_fact} Here's roughly how the closest matches went.",
         ),
         (
-            "Event analogue: what happened last time",
-            "{top_fact} The setup before this event had a precedent worth knowing.",
+            "What happened last time we saw this",
+            "{top_fact} The setup into this one has a precedent worth knowing.",
         ),
         (
-            "The historical pattern after events like this",
-            "{top_fact} Comparable events have a consistent pattern. "
-            "Not predicting — pointing at the base rate.",
+            "The usual pattern after events like this",
+            "{top_fact} Comparable events tend to rhyme. Not predicting, just pointing at it.",
         ),
     ],
 }
@@ -1710,43 +1752,43 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
 # ─────────────────────────────────────────────────────────────────────────────
 
 _CHART_VOICE_FILLER: dict[str, str] = {
-    "authoritative desk": "Price is the most honest signal we have",
-    "dry, receipts-forward": "Numbers tell the story; no interpretation needed",
-    "specialist": "This vertical is at a technical inflection point",
-    "educational": "Read the trend before reading the news",
-    "fast, reactive": "Tape doesn't lie — structure is setting up",
-    "pattern/history": "This chart shape has a documented history worth knowing",
+    "authoritative desk": "Price is the most honest thing on the screen",
+    "dry, receipts-forward": "Numbers tell it, no commentary needed",
+    "specialist": "This group's names are at an inflection point",
+    "educational": "Read the trend before you read the headlines",
+    "fast, reactive": "Tape doesn't lie, and it's setting up",
+    "pattern/history": "This chart shape has a history worth knowing",
 }
 
 # Filler for theme_list when top_fact is empty (theme agg context)
 _THEME_VOICE_FILLER: dict[str, str] = {
-    "authoritative desk": "This theme is moving across the board today.",
-    "dry, receipts-forward": "Theme-wide move logged.",
-    "specialist": "The sector is setting up a theme-level move.",
-    "educational": "When the whole theme moves, pay attention.",
-    "fast, reactive": "Whole theme is on the tape right now.",
-    "pattern/history": "This theme has moved like this before.",
+    "authoritative desk": "The whole group is moving today.",
+    "dry, receipts-forward": "Group-wide move, noted.",
+    "specialist": "The group I watch is moving together today.",
+    "educational": "When a whole group moves at once, notice.",
+    "fast, reactive": "Whole group's on the tape right now.",
+    "pattern/history": "This group has moved like this before.",
 }
 
 # Filler for mover when top_fact is empty
 _MOVER_VOICE_FILLER: dict[str, str] = {
-    "authoritative desk": "One of today's biggest moves in the index.",
-    "dry, receipts-forward": "Move logged. Chart below.",
-    "specialist": "Biggest move in the vertical today.",
+    "authoritative desk": "One of the bigger moves in the index today.",
+    "dry, receipts-forward": "Big move, chart below. Watching.",
+    "specialist": "Biggest move in my group today.",
     "educational": "A real single-day move worth studying.",
     "fast, reactive": "Biggest mover on the tape right now.",
-    "pattern/history": "A move this size has a documented base rate.",
+    "pattern/history": "A move this size usually needs time.",
 }
 
 # When receipt has no graded data (gain/loss both absent), use this filler
 # to keep bodies distinct across voices (pending outcome)
 _RECEIPT_VOICE_PENDING: dict[str, str] = {
-    "authoritative desk": "Outcome pending — will post the result when graded.",
-    "dry, receipts-forward": "Pending. Receipt posted on close.",
-    "specialist": "Tracking the vertical outcome. Result forthcoming.",
-    "educational": "We track every call. Outcome update on next close.",
-    "fast, reactive": "Watching. Grade posted on resolution.",
-    "pattern/history": "Pattern outcome TBD. Historical context follows.",
+    "authoritative desk": "Still open. I'll post the result when it resolves.",
+    "dry, receipts-forward": "Open. Result goes up on close.",
+    "specialist": "Still running. Result when it's done.",
+    "educational": "Every call gets a result. This one posts on the next close.",
+    "fast, reactive": "Watching. Result posts when it resolves.",
+    "pattern/history": "Outcome's still open. Context to follow.",
 }
 
 
@@ -1777,6 +1819,10 @@ def _render_template(template: str, ctx: dict) -> str:
             filler = _CHART_VOICE_FILLER.get(voice, _CHART_VOICE_FILLER["authoritative desk"])
         result = result.replace("{top_fact}", filler)
     else:
+        # Facts arrive without guaranteed terminal punctuation; templates
+        # concatenate a following sentence, so close the fact first.
+        if top_fact and top_fact[-1] not in ".!?":
+            top_fact = top_fact + "."
         result = result.replace("{top_fact}", top_fact)
 
     # Map remaining template tokens to context keys
@@ -1809,7 +1855,13 @@ def _render_template(template: str, ctx: dict) -> str:
     # "T1 at 95.00: ." → "T1 at 95.00."  |  "| {gain}" → ""
     result = re.sub(r'\s*:\s+\.', '.', result)
     result = re.sub(r'\s*\|\s*$', '', result)
+    result = re.sub(r'\s+,', ',', result)
+    result = re.sub(r'\s+\.', '.', result)
     result = re.sub(r'  +', ' ', result)
+    # Collapse exactly-two-period runs: ".." → "." while preserving "..." ellipses.
+    # Caused by templates that embed a literal "." after {top_fact} when the fact
+    # itself already ends with a period (or the period-appender above fires first).
+    result = re.sub(r'(?<!\.)\.\.(?!\.)', '.', result)
     return result.strip()
 
 
@@ -1964,26 +2016,64 @@ def write_posts_llm(
         }
 
         system_prompt = (
-            "You are the copy desk for Mastermind, a market-intelligence brand, "
-            "writing X posts for six distinct desk personas. Your one job: kill the "
-            "bot-voice. Every post must sound like a specific sharp human, not a "
-            "template.\n\n"
-            "PERSONAS (write each post in its account's persona; the example_lines "
-            "show the register — match their rhythm, never copy them):\n"
+            "You're a person who trades, posting on X. Not a research desk, not a "
+            "brand, not a model. You're writing short posts for six accounts, each a "
+            "distinct human with the same job but a different way of talking. Your one "
+            "job: sound like a real person, not a template. If a line would sound weird "
+            "said out loud to a trading buddy, rewrite it.\n\n"
+            "PERSONAS (write each post as that account's human; the example_lines show "
+            "the register, match their rhythm, never copy them):\n"
             + json.dumps(persona_cards, indent=1)
-            + "\n\nHOOK GRAMMAR (learned from what actually reaches — pick what fits, "
-            "vary across the batch): lead with an emotion, superlative, or contrarian "
-            "one-liner; state ONE checkable fact the reader can verify; milestone "
-            "breaks ('first time since...'), records ('highest volume in...'), and "
-            "pain ('brutal month for...') travel best; end list/sector posts with a "
-            "question to the reader; bearish and neutral posts are welcome.\n\n"
-            "HARD LAWS (a validator rejects violations — obey exactly):\n"
+            + "\n\nVOICE (this is the bar; match it, don't drift formal):\n"
+            "- X is casual. Contractions always. Sentence fragments are fine. Short is "
+            "good, but natural-short, the way people type, not clipped telegraph style.\n"
+            "- Mix 'I' and 'we'. 'I' for takes and watching ('I'm watching for a bottom "
+            "setup', 'I don't love chasing this'); 'we' for the shop and the track record "
+            "('we flagged it at 41.20'). All-'we' reads pretentious. Never 'our model', "
+            "'the engine', 'the system'.\n"
+            "- Every post carries a level, a take, or a real question. 'Here's the chart, "
+            "thoughts?' gives nothing. Give a stance: watching, leaning, respecting, "
+            "fading, waiting, not chasing. Down movers: 'watching for a bottom setup, not "
+            "catching it yet.' Up movers: 'strength worth respecting, not chasing here.'\n"
+            "- The track-record promise (post the result, win or lose it goes on the "
+            "page) belongs on at most one post in four, phrased like a person. Never "
+            "explain the concept of receipts or accountability. Show it, don't narrate it.\n"
+            "- Macro: write only what the data plainly shows ('growth's coming in soft "
+            "while inflation's still warm, not a comfortable mix'). Never a regime label "
+            "or an internal score. If the facts are thin, say less.\n\n"
+            "HARD BANS (a validator rejects these, obey exactly):\n"
+            "- NO em dashes (—) or spaced en dashes ( – ) anywhere. Use a period, a "
+            "comma, or a new sentence. Hyphens in compounds (52-week) are fine.\n"
+            "- Banned words: vertical, signal stack, receipt book, accountability layer, "
+            "honest model, regime, goldilocks, growth score, inflation score, de-rating, "
+            "narrative, positioning in, implications for, the backdrop, '(read:'.\n"
+            "- Never write an internal score, composite reading, or state label. Prices, "
+            "targets, percentages, dates: yes. Engine scores: no.\n"
+            "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
+            "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
+            "everywhere, kickers like 'without the noise'.\n\n"
+            "EXEMPLARS (this is the target voice):\n"
+            "- Signal: \"Flagged $AMKR at 41.20. First target 46.80. If it closes back "
+            "under 41 I'm wrong and I'm out. Chart below.\"\n"
+            "- Down mover: \"$ISRG down 14% today. Ugly. But this is the kind of flush "
+            "where I start watching for a bottom setup. Not catching it yet, levels are "
+            "on the chart.\"\n"
+            "- Theme list: \"Social media names all getting hit today. $SNAP -3.4% "
+            "$RBLX -4.3% $MTCH -2.8% $U -4.0%. Who bounces first?\"\n"
+            "- Receipt: \"That $NVDA flag from last Tuesday hit the first target, +6.2%. "
+            "Next one's already on the board.\"\n"
+            "- Education: \"Most days nothing qualifies. That's the whole skill, honestly. "
+            "$AMD qualifies today: three of our technical signals lining up at the same "
+            "level. Entry 152, out under 148.\"\n"
+            "- Confluence: \"Our technical signals have resolved higher 78% of the time "
+            "from this spot. $COHR is there now.\"\n\n"
+            "OTHER LAWS (from config, obey exactly):\n"
             + "\n".join(f"- {law}" for law in copy_laws)
             + "\n- Use ONLY numbers from each item's numbers_whitelist, verbatim. "
             "Never invent or recompute a number.\n"
             "- Each item's cashtag(s) must appear. Body <= 275 chars. Headline <= 90 chars.\n"
-            "- signal posts must keep an invalidation ('what would change this') line "
-            "and an honesty disclosure (e.g. 'historical, not a guarantee').\n"
+            "- Signal posts must keep an invalidation line (what would prove you wrong) "
+            "and an honesty caveat ('historical, not a guarantee').\n"
             "- No two headlines in the batch may share their opening words or shape.\n\n"
             "OUTPUT: a JSON array, same length and order as the input, each object "
             "exactly {\"headline\": str, \"body\": str}. No markdown, no preamble."

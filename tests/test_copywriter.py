@@ -617,6 +617,252 @@ def test_graded_receipts_empty_plans():
     assert graded_receipts(None) == []
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Task 1: em-dash and banned-vocab enforcement
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_validate_em_dash_in_headline():
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "education", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("Growth is slowing — watch rates", "Body text here.", ctx)
+    em_v = [v for v in violations if "em dash" in v.lower() or "u+2014" in v.lower()]
+    assert em_v, f"Expected em-dash violation, got: {violations}"
+
+
+def test_validate_en_dash_in_body():
+    """Bare en dash (U+2013) anywhere in copy must be flagged."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "education", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("Headline", "Growth is strong – but watch rates.", ctx)
+    dash_v = [v for v in violations if "en dash" in v.lower() or "u+2013" in v.lower()]
+    assert dash_v, f"Expected en-dash violation, got: {violations}"
+
+
+def test_validate_horizontal_bar_in_body():
+    """Horizontal bar (U+2015) anywhere in copy must be flagged."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "education", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("Headline", "Growth ― a clean read.", ctx)
+    bar_v = [v for v in violations if "horizontal bar" in v.lower() or "u+2015" in v.lower()]
+    assert bar_v, f"Expected horizontal-bar violation, got: {violations}"
+
+
+def test_validate_hyphen_minus_allowed():
+    """Hyphen-minus (ASCII 45) in compounds like '52-week' must NOT be flagged."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "education", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("Headline", "Hit a 52-week low. High-yield pressure.", ctx)
+    dash_v = [v for v in violations if "dash" in v.lower() or "bar" in v.lower()]
+    assert not dash_v, f"Hyphen-minus should be allowed, got: {dash_v}"
+
+
+def test_validate_banned_vertical():
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "education", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("The vertical shift", "We track the vertical.", ctx)
+    assert any("vertical" in v for v in violations), f"Expected banned vocab 'vertical': {violations}"
+
+
+def test_validate_banned_regime_word_boundary():
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "macro", "emoji_budget": 0, "numbers_whitelist": []}
+    # "regime" standalone → banned; "regimen" must NOT be banned
+    violations_regime = validate_copy("New regime here", "The regime is shifting.", ctx)
+    assert any("regime" in v for v in violations_regime), f"Expected 'regime' violation: {violations_regime}"
+
+    violations_regimen = validate_copy("Diet regimen", "Following a regimen.", ctx)
+    regime_v = [v for v in violations_regimen if "banned vocab: 'regime'" in v]
+    assert not regime_v, f"'regimen' should not trigger 'regime' ban: {violations_regimen}"
+
+
+def test_validate_banned_goldilocks():
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "macro", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("Goldilocks scenario", "This is a goldilocks setup.", ctx)
+    assert any("goldilocks" in v.lower() for v in violations), f"Expected 'goldilocks' violation: {violations}"
+
+
+def test_validate_banned_de_rating():
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "macro", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("De-rating risk", "Equity de-rating is in play.", ctx)
+    assert any("de-rating" in v.lower() for v in violations), f"Expected 'de-rating' violation: {violations}"
+
+
+def test_validate_banned_positioning_in():
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "macro", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("Positioning in Tech", "Positioning in semis is crowded.", ctx)
+    assert any("positioning in" in v.lower() for v in violations), (
+        f"Expected 'positioning in' violation: {violations}"
+    )
+
+
+def test_validate_banned_implications_for():
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "macro", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("Implications for rates", "implications for growth here.", ctx)
+    assert any("implications for" in v.lower() for v in violations), (
+        f"Expected 'implications for' violation: {violations}"
+    )
+
+
+def test_validate_banned_the_backdrop():
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "macro", "emoji_budget": 0, "numbers_whitelist": []}
+    violations = validate_copy("The backdrop shifts", "Against the backdrop of rising rates.", ctx)
+    assert any("the backdrop" in v.lower() for v in violations), (
+        f"Expected 'the backdrop' violation: {violations}"
+    )
+
+
+def test_validate_banned_narrative_word_boundary():
+    """'narrative' standalone → banned; 'narratives' also caught; 'narrator' is fine."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "macro", "emoji_budget": 0, "numbers_whitelist": []}
+    violations_narrative = validate_copy("The narrative is shifting", "A key narrative.", ctx)
+    assert any("narrative" in v.lower() for v in violations_narrative), (
+        f"Expected 'narrative' violation: {violations_narrative}"
+    )
+    # Verify word-boundary: 'narrator' should NOT fire the 'narrative' ban
+    violations_narrator = validate_copy("The narrator speaks", "A skilled narrator.", ctx)
+    narrative_v = [v for v in violations_narrator if "banned vocab: 'narrative'" in v]
+    assert not narrative_v, f"'narrator' should not trigger 'narrative' ban: {violations_narrator}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Task 2: year-whitelist regression
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_year_in_fact_text_auto_whitelisted():
+    """4-digit year in a fact text must not trigger the numbers validator."""
+    from engine.marketing.copywriter import build_context, validate_copy
+    item = {"ticker": "SPY", "type": "macro", "account": "flagship"}
+    facts = {
+        "facts": [{"id": "test", "text": "SPY reached levels not seen since Nov 2024",
+                   "salience": 8, "numbers": ["2024"]}],
+        "numbers_whitelist": [],
+    }
+    ctx = build_context(item, facts=facts)
+    assert "2024" in ctx["numbers_whitelist"], "Year 2024 should be auto-extracted into whitelist"
+    violations = validate_copy("SPY test", "SPY reached levels not seen since Nov 2024", ctx)
+    number_v = [v for v in violations if "2024" in v]
+    assert not number_v, f"Year '2024' should not be flagged as invented number: {violations}"
+
+
+def test_year_whitelist_covers_multiple_years():
+    """Multiple years in fact texts are all extracted."""
+    from engine.marketing.copywriter import build_context
+    item = {"ticker": "", "type": "macro", "account": "flagship"}
+    facts = {
+        "facts": [
+            {"id": "a", "text": "First since Jan 2022", "salience": 5},
+            {"id": "b", "text": "Similar to the 2023 cycle", "salience": 4},
+        ],
+        "numbers_whitelist": [],
+    }
+    ctx = build_context(item, facts=facts)
+    wl = ctx["numbers_whitelist"]
+    assert "2022" in wl, f"'2022' should be in whitelist: {wl}"
+    assert "2023" in wl, f"'2023' should be in whitelist: {wl}"
+
+
+# ── Double-period regression (_render_template) ──────────────────────────────
+
+def test_render_template_fact_ending_period_plus_template_period_collapses():
+    """fact ends in '.' + template '{top_fact}. Next.' → body has single periods only."""
+    from engine.marketing.copywriter import _render_template
+    ctx = {
+        "top_fact_text": "AMD fell 6.2% today.",  # already ends with period
+        "voice": "authoritative desk",
+        "type": "mover",
+        "cashtag": "$AMD",
+        "ticker": "AMD",
+        "entry_str": "",
+        "t1_str": "",
+        "t2_str": "",
+        "inv_str": "",
+        "direction": "BEAR",
+        "gain_pct_str": "",
+        "loss_pct_str": "",
+        "stop_str": "",
+        "target_label": "T1",
+        "win_rate_str": "",
+        "cashtag_list": "",
+        "theme_name": "",
+        "theme_direction": "",
+        "theme_agg_pct": "",
+        "theme_question": "",
+        "mover_pct": "",
+    }
+    result = _render_template("{top_fact}. Watching, not chasing.", ctx)
+    assert ".." not in result, f"Double period found in: {result!r}"
+    assert "AMD fell 6.2% today. Watching" in result, f"Unexpected result: {result!r}"
+
+
+def test_render_template_fact_without_period_gets_period_no_double():
+    """fact without terminal '.' gets one appended; template '{top_fact} Next.' is clean."""
+    from engine.marketing.copywriter import _render_template
+    ctx = {
+        "top_fact_text": "AMD fell 6.2% today",  # no trailing period
+        "voice": "authoritative desk",
+        "type": "mover",
+        "cashtag": "$AMD",
+        "ticker": "AMD",
+        "entry_str": "",
+        "t1_str": "",
+        "t2_str": "",
+        "inv_str": "",
+        "direction": "BEAR",
+        "gain_pct_str": "",
+        "loss_pct_str": "",
+        "stop_str": "",
+        "target_label": "T1",
+        "win_rate_str": "",
+        "cashtag_list": "",
+        "theme_name": "",
+        "theme_direction": "",
+        "theme_agg_pct": "",
+        "theme_question": "",
+        "mover_pct": "",
+    }
+    result = _render_template("{top_fact} Watching, not chasing.", ctx)
+    assert ".." not in result, f"Double period found in: {result!r}"
+    assert "today." in result, f"Period not appended: {result!r}"
+
+
+def test_render_template_ellipsis_preserved():
+    """'...' ellipsis in fact text must survive unchanged (not collapsed to '.')."""
+    from engine.marketing.copywriter import _render_template
+    ctx = {
+        "top_fact_text": "AMD fell 6.2%...",  # ends with ellipsis
+        "voice": "authoritative desk",
+        "type": "mover",
+        "cashtag": "$AMD",
+        "ticker": "AMD",
+        "entry_str": "",
+        "t1_str": "",
+        "t2_str": "",
+        "inv_str": "",
+        "direction": "BEAR",
+        "gain_pct_str": "",
+        "loss_pct_str": "",
+        "stop_str": "",
+        "target_label": "T1",
+        "win_rate_str": "",
+        "cashtag_list": "",
+        "theme_name": "",
+        "theme_direction": "",
+        "theme_agg_pct": "",
+        "theme_question": "",
+        "mover_pct": "",
+    }
+    result = _render_template("{top_fact} Watching.", ctx)
+    assert "..." in result, f"Ellipsis was collapsed: {result!r}"
+    # The ellipsis itself is 3 periods and should remain untouched
+    assert result.count("...") >= 1, f"Ellipsis count changed: {result!r}"
+
+
 # ── LLM copy lane (mocked — never a live call in tests) ──────────────────────
 
 def _llm_ctx():
@@ -646,7 +892,7 @@ def test_llm_lane_good_output_ships_as_llm(monkeypatch):
     monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
     monkeypatch.setattr(la, "build_providers", lambda *a, **k: [{"name": "mock"}])
     good = _j.dumps([{"headline": "$ISRG just got smoked",
-                      "body": "$ISRG cratered -14.2% today — worst move in the whole index. Overreaction? 👀"}])
+                      "body": "$ISRG cratered -14.2% today, worst move in the whole index. Overreaction? 👀"}])
     monkeypatch.setattr(la, "make_call", lambda p, d, context="": (good, None, "mock"))
     out = cw.write_posts_llm([_llm_ctx()], {"llm": {"enabled": True, "model_key": "marketing_copy"},
                                             "personas": {}, "copy_laws": []})

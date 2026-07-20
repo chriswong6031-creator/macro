@@ -18,7 +18,8 @@ from pathlib import Path
 from typing import Any
 
 # Words that must NEVER appear in public-facing copy (the hook model rule from §1).
-# We keep indicator names out of the public post body — "signal stack" is the public term.
+# We keep indicator names out of the public post body; the public phrasing is
+# "our technical signals" (per MARKETING_VOICE_DOCTRINE_V2 §9), never "signal stack".
 _FORBIDDEN_INDICATOR_WORDS = frozenset({
     "macd", "rsi", "stochastic", "ema", "sma", "bollinger", "atr",
     "adx", "dmi", "obv", "cmf", "vwap", "ichimoku", "keltner",
@@ -202,12 +203,12 @@ def fired_combo_signals(
 def win_rate_hook(sig: dict) -> tuple[str, str]:
     """Build a reach-optimized, HONEST, plain-word (headline, body) for a fired combo.
 
-    Rules (from playbook §1 + §3):
+    Rules (from playbook §1 + §3 and MARKETING_VOICE_DOCTRINE_V2 §9):
     - WIN-RATE number is the hook.
-    - No raw indicator names in PUBLIC copy ("signal stack", never "MACD"/"RSI"/etc).
+    - No raw indicator names in PUBLIC copy ("our technical signals", never "MACD"/"RSI"/etc).
     - Carry a cashtag ($TICKER).
     - Include honest disclosure ("historical, not a guarantee").
-    - We'll grade this one publicly (receipts culture).
+    - Sound like a person on X: contractions, no em dashes, plain framing.
     """
     ticker = sig.get("ticker", "")
     cashtag = f"${ticker}" if ticker else ""
@@ -238,18 +239,19 @@ def win_rate_hook(sig: dict) -> tuple[str, str]:
     win_rate_str = f"{win_rate:.0f}%"
 
     headline = (
-        f"{cashtag} just triggered a setup that's historically worked "
-        f"{win_rate_str} of the time"
+        f"Our technical signals have resolved {direction_word} {win_rate_str} of the "
+        f"time from this spot. {cashtag} is there now."
     )
 
-    # Body: win-rate stat named, historical framing, disclosure, cashtag, grade pledge
+    # Body: win-rate stat named, historical framing, disclosure, cashtag.
+    # Plain-word, first-person-plural for the track record, no em dashes.
     body = (
-        f"This signal stack has resolved {direction_word} {win_rate_str} of the time at "
-        f"the ~1-month mark {span_phrase} "
-        f"({n_fires} historical fires"
+        f"When these signals line up on {cashtag} they've gone {direction_word} "
+        f"{win_rate_str} of the time about a month out {span_phrase} "
+        f"({n_fires} times"
         + (f", {fires_last3y} in the last 3 years" if fires_last3y else "")
         + "). "
-        f"Historical, not a guarantee — we'll grade this one publicly. {cashtag}"
+        f"Historical odds, not a promise. Chart below."
     )
 
     return headline, body
