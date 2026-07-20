@@ -553,6 +553,110 @@ def test_zh_lists_includes_tldr():
     assert "tldr" in mb._ZH_LISTS
 
 
+# --------------------------------------------------------------------------- #
+# empty_reply retry — a degraded/rate-limited endpoint can return a 200 with no
+# text (the China lens went blank this way on 2026-07-20 while macro succeeded
+# seconds earlier). _call_model must re-call before giving up. Patch the shared
+# waterfall (engine.llm_auth.make_call, imported locally inside _call_model) plus
+# mb._client (so we clear the client-is-None guard).
+# --------------------------------------------------------------------------- #
+class _SeedCapClient:
+    """Minimal Anthropic-shaped client: records the seed kwarg, always returns
+    an empty completion (no text blocks) so _do_call reports 'empty_reply'."""
+
+    def __init__(self, seen_seeds):
+        self._seen = seen_seeds
+        self.messages = self
+
+    def create(self, **kw):
+        self._seen.append(kw.get("seed"))
+
+        class _Resp:
+            stop_reason = "end_turn"
+            content = []          # no text blocks → empty_reply
+
+        return _Resp()
+
+
+def test_call_model_retries_empty_reply():
+    """A transient empty reply is retried and the recovered text is returned."""
+    from engine import llm_auth
+    orig_client, orig_make = mb._client, llm_auth.make_call
+    calls = {"n": 0}
+    mb._client = lambda cfg: object()          # non-None → we reach make_call
+
+    def fake_make_call(providers, call_fn, *, context=""):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return (None, "empty_reply", "deepseek")   # first call blanks
+        return ("recovered brief", None, "deepseek")   # retry succeeds
+    llm_auth.make_call = fake_make_call
+    try:
+        text, reason = mb._call_model("sys", "user", {"empty_reply_retries": 2})
+        assert text == "recovered brief" and reason is None
+        assert calls["n"] == 2                          # one retry was enough
+    finally:
+        mb._client, llm_auth.make_call = orig_client, orig_make
+
+
+def test_call_model_empty_reply_gives_up_after_retries():
+    """When every attempt blanks, _call_model degrades to (None, 'empty_reply')
+    after exactly 1 primary + N retries (default N=2)."""
+    from engine import llm_auth
+    orig_client, orig_make = mb._client, llm_auth.make_call
+    calls = {"n": 0}
+    mb._client = lambda cfg: object()
+
+    def fake_make_call(providers, call_fn, *, context=""):
+        calls["n"] += 1
+        return (None, "empty_reply", "deepseek")
+    llm_auth.make_call = fake_make_call
+    try:
+        text, reason = mb._call_model("sys", "user", {"empty_reply_retries": 2})
+        assert text is None and reason == "empty_reply"
+        assert calls["n"] == 3                          # 1 primary + 2 retries
+    finally:
+        mb._client, llm_auth.make_call = orig_client, orig_make
+
+
+def test_call_model_retry_nudges_seed():
+    """Primary attempt keeps seed=0 (determinism); each retry nudges the seed so a
+    deterministically-empty completion can differ."""
+    from engine import llm_auth
+    orig_client, orig_make = mb._client, llm_auth.make_call
+    seeds: list = []
+    mb._client = lambda cfg: object()
+
+    def fake_make_call(providers, call_fn, *, context=""):
+        return call_fn(_SeedCapClient(seeds), "deepseek-v4-pro")
+    llm_auth.make_call = fake_make_call
+    try:
+        text, reason = mb._call_model("sys", "user", {"empty_reply_retries": 2})
+        assert text is None and reason == "empty_reply"
+        assert seeds == [0, 1, 2]                        # deterministic, then nudged
+    finally:
+        mb._client, llm_auth.make_call = orig_client, orig_make
+
+
+def test_call_model_no_retry_on_truncation():
+    """A 'truncated' reply carries real (capped) content — it must NOT be retried."""
+    from engine import llm_auth
+    orig_client, orig_make = mb._client, llm_auth.make_call
+    calls = {"n": 0}
+    mb._client = lambda cfg: object()
+
+    def fake_make_call(providers, call_fn, *, context=""):
+        calls["n"] += 1
+        return ("partial brief", "truncated", "deepseek")
+    llm_auth.make_call = fake_make_call
+    try:
+        text, reason = mb._call_model("sys", "user", {})
+        assert text == "partial brief" and reason == "truncated"
+        assert calls["n"] == 1                           # no retry on real content
+    finally:
+        mb._client, llm_auth.make_call = orig_client, orig_make
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

@@ -1546,33 +1546,61 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     # cached here would dodge the style lint on the next same-day run).
     max_tokens = int(cfg.get("max_tokens", 4000))
 
-    def _do_call(_client, _model: str):
-        kw: dict = {
-            "model": _model,
-            "max_tokens": max_tokens,
-            "system": system,
-            "messages": [{"role": "user", "content": user}],
-            # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
-        }
-        try:
-            kw["seed"] = 0
-            resp = _client.messages.create(**kw)
-        except TypeError:
-            del kw["seed"]
-            resp = _client.messages.create(**kw)
-        sr = getattr(resp, "stop_reason", None)
-        if sr == "refusal":
-            return None, "stop_refusal", resp
-        text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-        if not text:
-            return None, "empty_reply", resp
-        return text, ("truncated" if sr == "max_tokens" else None), resp
+    def _make_do_call(_seed: int | None):
+        def _do_call(_client, _model: str):
+            kw: dict = {
+                "model": _model,
+                "max_tokens": max_tokens,
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+                # temperature removed — rejected (400) on opus-4.7+ per Anthropic API
+            }
+            try:
+                if _seed is not None:
+                    kw["seed"] = _seed
+                resp = _client.messages.create(**kw)
+            except TypeError:
+                kw.pop("seed", None)
+                resp = _client.messages.create(**kw)
+            sr = getattr(resp, "stop_reason", None)
+            if sr == "refusal":
+                return None, "stop_refusal", resp
+            text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+            if not text:
+                return None, "empty_reply", resp
+            return text, ("truncated" if sr == "max_tokens" else None), resp
+        return _do_call
 
-    try:
-        text, reason, _ = llm_auth.make_call(providers, _do_call, context="master_brain")
-    except Exception as e:  # noqa: BLE001 — degrade, never raise
-        log.warning("master_brain model call failed (%s)", e)
-        return None, "llm_error"
+    # Transient-failure retry (empty / refusal reply). A degraded or rate-limited
+    # endpoint can return a 200 with no text content — the China lens hit exactly
+    # this on 2026-07-20 while the macro lens (called seconds earlier) succeeded,
+    # leaving china_brief.json blank until the next nightly run. A bounded re-call
+    # recovers the SAME-run brief. Attempt 0 keeps seed=0 so the determinism
+    # contract holds for the normal (successful) path; retries nudge the seed so a
+    # deterministically-empty completion can differ. NOT retried: "truncated" (real
+    # content, merely capped) and every make_call waterfall reason (auth / rate-limit
+    # already walked the provider list, and the provider is now marked dead). This
+    # function never touches the reply cache — synthesize() owns it, keyed on
+    # (model, system, user) — so the seed nudge cannot poison or dodge the cache.
+    _RETRYABLE = {"empty_reply", "stop_refusal"}
+    max_attempts = max(1, int(cfg.get("empty_reply_retries", 2)) + 1)
+
+    text: str | None = None
+    reason: str | None = None
+    for attempt in range(max_attempts):
+        seed = 0 if attempt == 0 else attempt   # primary deterministic; retries vary
+        try:
+            text, reason, _ = llm_auth.make_call(
+                providers, _make_do_call(seed), context="master_brain")
+        except Exception as e:  # noqa: BLE001 — degrade, never raise
+            log.warning("master_brain model call failed (%s)", e)
+            return None, "llm_error"
+        if text is not None or reason not in _RETRYABLE:
+            break
+        if attempt + 1 < max_attempts:
+            log.warning(
+                "master_brain: '%s' on attempt %d/%d — retrying (seed=%d)",
+                reason, attempt + 1, max_attempts, attempt + 1)
     return text, reason
 
 
