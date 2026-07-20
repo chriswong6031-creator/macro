@@ -156,11 +156,12 @@ const ICONS = {
   marketing_sentinel:    NAV_ICO('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4"/>'),
   marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
   marketing_radar:       NAV_ICO('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.4-6.4"/><circle cx="16.2" cy="7.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15" r="1" fill="currentColor" stroke="none"/>'),
+  marketing_seo:         NAV_ICO('<circle cx="11" cy="11" r="7"/><path d="M16 16l4.5 4.5"/><path d="M8 11.5l2 2 4-4.5"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -5716,6 +5717,371 @@ function radarCadenceBlock(cad) {
        ${cad.source ? `<div class="note muted">Would read from: ${esc(cad.source)}</div>` : ""}`;
   return `<div class="section">Competitor cadence</div>
     <div class="grid"><div class="card">${body}</div></div>`;
+}
+
+/* ==========================================================================
+   BEACON SEO — the operator's control plane for site SEO health.
+   Glance-first: a banded health verdict up top, then trend, census, sitemap,
+   work orders, and the honest "not connected" Search Console slot.
+   ========================================================================== */
+
+/* Band a 0–100 health score into a plain-word stance + status class.
+   The number is the receipt; the word is what the operator reads first. */
+function seoBand(score) {
+  if (score == null) return { word: "Not measured", cls: "mut", stat: "s-mut" };
+  const s = Number(score);
+  if (s >= 85) return { word: "Healthy",     cls: "ok",   stat: "s-ok"   };
+  if (s >= 70) return { word: "Holding",     cls: "ok",   stat: "s-ok"   };
+  if (s >= 50) return { word: "Fixable",     cls: "warn", stat: "s-warn" };
+  return         { word: "Needs work",  cls: "bad",  stat: "s-bad"  };
+}
+const SEO_SEV = [   /* order = display order; drives pills + the trend dot-strip */
+  ["critical", "s-bad",  "critical"],
+  ["high",     "s-bad",  "high"],
+  ["medium",   "s-warn", "medium"],
+  ["low",      "s-mut",  "low"],
+];
+function seoPct(n, d) { return (d && d > 0) ? Math.round((100 * n) / d) : null; }
+function seoCovCls(pct) { return pct == null ? "mut" : pct >= 90 ? "ok" : pct >= 60 ? "warn" : "bad"; }
+
+RENDER.marketing_seo = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/seo");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("SEO panel unavailable", (d && d.error) || "panel error"); return; }
+
+  const dir = d.director || { enabled: null, note: null };
+  const hist = d.history || [];
+
+  /* ---- Day-0: no audit has run. Honest accruing state, not an error. ---- */
+  if (!d.available) {
+    v.innerHTML = `<div class="section">SEO — Beacon control plane</div>
+      <div class="mkt-seo-lede">Beacon crawls every rendered page, scores the site's technical SEO,
+        and writes falsifiable fix tickets. It reports and recommends — it never edits the site itself.</div>
+      <div class="card mkt-seo-day0">
+        <div class="mkt-seo-day0-mark">◍</div>
+        <div class="mkt-seo-day0-txt">No audit yet</div>
+        <div class="mkt-seo-day0-sub">${esc(d.note || "The first crawl hasn't run on this machine.")}</div>
+        <div class="mkt-seo-day0-ctl" id="seoDay0Ctl"></div>
+      </div>
+      ${seoTrendBlock(hist)}
+      ${seoSearchConsoleBlock(d.search_console)}`;
+    seoWireControls(v, dir, "seoDay0Ctl");
+    return;
+  }
+
+  const score = d.health_score;
+  const band  = seoBand(score);
+  const sc    = d.scorecard || {};
+  const counts = (sc.issue_counts_by_severity) || seoCountIssues(d.issues);
+  const deltas = sc.deltas_vs_prior || null;
+
+  /* ---------- 1 · HERO — banded verdict + director controls ---------- */
+  const sevPills = SEO_SEV.map(([k, cls]) => {
+    const n = counts[k] != null ? counts[k] : 0;
+    return `<span class="statpill ${n > 0 ? cls : "s-mut"} mkt-seo-sevpill">${n} ${k}</span>`;
+  }).join("");
+  let scoreDelta = "";
+  if (deltas && deltas.health_score != null) {
+    const dv = Number(deltas.health_score);
+    if (dv !== 0) {
+      const up = dv > 0;
+      scoreDelta = `<span class="mkt-seo-delta ${up ? "up" : "down"}" title="change since the previous audit">${up ? "▲" : "▼"} ${Math.abs(dv)}</span>`;
+    }
+  }
+  const hero = `<div class="mkt-seo-hero band-${band.cls}">
+    <div class="mkt-seo-hero-dial">
+      <div class="mkt-seo-hero-word">${esc(band.word)}</div>
+      <div class="mkt-seo-hero-score">${score != null ? Number(score) : "—"}${scoreDelta}<span class="mkt-seo-hero-of">/100 health</span></div>
+      <div class="mkt-seo-hero-asof">as of ${esc(d.as_of || "—")}</div>
+    </div>
+    <div class="mkt-seo-hero-sev">
+      <div class="mkt-seo-hero-sev-lab">Open issues by severity</div>
+      <div class="mkt-seo-hero-sev-pills">${sevPills}</div>
+    </div>
+    <div class="mkt-seo-hero-dir" id="seoDirCtl"></div>
+  </div>`;
+
+  /* ---------- assemble ---------- */
+  v.innerHTML = `<div class="section">SEO — Beacon control plane
+      <span class="cnt">${(d.census && d.census.total_pages != null) ? `${d.census.total_pages} pages crawled` : ""}</span>
+    </div>
+    <div class="mkt-seo-lede">Beacon crawls every rendered page, scores the site's technical SEO, and writes
+      falsifiable fix tickets. It reports and recommends — it never edits the site itself.</div>
+    ${hero}
+    ${seoTrendBlock(hist)}
+    ${seoCensusBlock(d.census)}
+    ${seoSitemapBlock(d.sitemap, d.crawl_infra)}
+    ${seoOrdersBlock(d.work_orders)}
+    ${seoSearchConsoleBlock(d.search_console)}`;
+
+  seoWireControls(v, dir, "seoDirCtl");
+};
+
+/* Count issues by severity from the raw issue list (scorecard fallback). */
+function seoCountIssues(issues) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 };
+  (issues || []).forEach(i => { const s = i.severity; if (s in c) c[s]++; });
+  return c;
+}
+
+/* Director toggle + Run-audit control. Rendered into a slot id; wires POSTs.
+   Honest-unknown: when the director state is null we say so, never show "off". */
+function seoWireControls(root, dir, slotId) {
+  const slot = root.querySelector("#" + slotId);
+  if (!slot) return;
+  const hasToken = dir.enabled !== null || !(dir.note || "").toLowerCase().includes("no github token");
+  const known = dir.enabled !== null;
+  const on = dir.enabled === true;
+
+  const stateChip = !known
+    ? `<span class="statpill s-mut mkt-seo-dir-chip" title="${esc(dir.note || "state unknown")}">Director: unknown</span>`
+    : `<span class="statpill ${on ? "s-ok" : "s-mut"} mkt-seo-dir-chip">Director: ${on ? "armed" : "paused"}</span>`;
+
+  const toggleLabel = on ? "Pause director" : "Arm director";
+  const toggleDisabled = !hasToken;
+  const runDisabled = !hasToken;
+  const noteHtml = (!hasToken)
+    ? `<div class="mkt-seo-dir-note sub muted">Connect a GitHub token (Actions + Variables) to control the director from here.</div>`
+    : (dir.note ? `<div class="mkt-seo-dir-note sub muted">${esc(dir.note)}</div>` : "");
+
+  slot.innerHTML = `<div class="mkt-seo-dir-row">
+      ${stateChip}
+      <button class="btn sm mkt-seo-dir-toggle" id="seoToggleBtn"${toggleDisabled ? " disabled title='GitHub token required'" : ""}>${toggleLabel}</button>
+      <button class="btn sm primary" id="seoRunBtn"${runDisabled ? " disabled title='GitHub token required'" : ""}>Run audit now</button>
+    </div>${noteHtml}`;
+
+  const tBtn = slot.querySelector("#seoToggleBtn");
+  if (tBtn && !toggleDisabled) {
+    tBtn.onclick = async () => {
+      const next = !on;
+      const msg = next
+        ? "Arm the SEO director? It will run the nightly crawl on its schedule."
+        : "Pause the SEO director? The scheduled crawl stops; Run audit now still works.";
+      if (!window.confirm(msg)) return;
+      tBtn.disabled = true;
+      const r = await post("/api/marketing/seo/toggle", { enabled: next });
+      if (r && r.ok) { toast(next ? "SEO director armed." : "SEO director paused."); RENDER.marketing_seo(); }
+      else { toast((r && r.error) || "Toggle failed", true); tBtn.disabled = false; }
+    };
+  }
+  const rBtn = slot.querySelector("#seoRunBtn");
+  if (rBtn && !runDisabled) {
+    rBtn.onclick = async () => {
+      if (!window.confirm("Run an SEO audit now? This dispatches seo-director.yml on GitHub Actions.")) return;
+      rBtn.disabled = true; rBtn.textContent = "dispatching…";
+      const r = await post("/api/marketing/seo/run", { confirm: true });
+      if (r && r.ok) { toast("Audit dispatched — results land after the run completes."); }
+      else { toast((r && r.error) || "Dispatch failed", true); }
+      rBtn.disabled = false; rBtn.textContent = "Run audit now";
+    };
+  }
+}
+
+/* Trend — health-score sparkline + a severity dot-strip underneath.
+   Signature element: a compact "flight recorder" drawn as inline SVG, no lib. */
+function seoTrendBlock(hist) {
+  const head = `<div class="section">Trend <span class="cnt">${hist.length} audit${hist.length !== 1 ? "s" : ""}</span></div>`;
+  if (!hist.length) {
+    return head + nwEmpty("No history yet", "The trend line starts drawing after the second audit lands.");
+  }
+  if (hist.length < 2) {
+    const h0 = hist[0] || {};
+    return head + `<div class="card mkt-seo-trend-single">
+      <div class="big band-ok-c">${h0.health_score != null ? Number(h0.health_score) : "—"}<span class="sub"> first reading</span></div>
+      <div class="sub muted">One audit on record (${esc(h0.as_of || "—")}). The line fills in from the next run.</div>
+    </div>`;
+  }
+
+  const W = 640, H = 96, PAD = 8;
+  const scores = hist.map(h => (h.health_score != null ? Number(h.health_score) : null));
+  const n = scores.length;
+  const xAt = i => PAD + (i * (W - 2 * PAD)) / (n - 1);
+  const yAt = s => (H - PAD) - ((Math.max(0, Math.min(100, s)) / 100) * (H - 2 * PAD));
+  let dpath = "", started = false, area = "";
+  scores.forEach((s, i) => {
+    if (s == null) { started = false; return; }
+    const cmd = started ? "L" : "M";
+    dpath += `${cmd}${xAt(i).toFixed(1)} ${yAt(s).toFixed(1)} `;
+    started = true;
+  });
+  const firstI = scores.findIndex(s => s != null);
+  const lastI  = (() => { for (let i = n - 1; i >= 0; i--) if (scores[i] != null) return i; return -1; })();
+  if (firstI >= 0 && lastI >= 0) {
+    area = `M${xAt(firstI).toFixed(1)} ${(H - PAD).toFixed(1)} `
+      + scores.map((s, i) => s == null ? "" : `L${xAt(i).toFixed(1)} ${yAt(s).toFixed(1)} `).join("")
+      + `L${xAt(lastI).toFixed(1)} ${(H - PAD).toFixed(1)} Z`;
+  }
+  const lastS = scores[lastI];
+  const endBand = seoBand(lastS);
+  const endDot = firstI >= 0 ? `<circle cx="${xAt(lastI).toFixed(1)}" cy="${yAt(lastS).toFixed(1)}" r="3.5" class="mkt-seo-spark-end band-${endBand.cls}"/>` : "";
+
+  /* Severity dot-strip: one column per audit, stacked count squares by severity. */
+  const strip = hist.map((h, i) => {
+    const iss = h.issues || {};
+    const cells = SEO_SEV.map(([k]) => {
+      const cnt = Number(iss[k] || 0);
+      return cnt > 0 ? `<span class="mkt-seo-strip-cell sev-${k}" title="${cnt} ${k}"></span>` : "";
+    }).filter(Boolean).join("");
+    return `<div class="mkt-seo-strip-col" title="${esc(h.as_of || "")}">${cells || `<span class="mkt-seo-strip-cell sev-none" title="no open issues"></span>`}</div>`;
+  }).join("");
+
+  return head + `<div class="card mkt-seo-trend">
+    <div class="mkt-seo-trend-head">
+      <span class="mkt-seo-trend-lab">Health score</span>
+      <span class="mkt-seo-trend-range sub muted">${esc(hist[0].as_of || "")} → ${esc(hist[n - 1].as_of || "")}</span>
+    </div>
+    <svg class="mkt-seo-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Health score over time">
+      <line x1="${PAD}" y1="${yAt(85).toFixed(1)}" x2="${W - PAD}" y2="${yAt(85).toFixed(1)}" class="mkt-seo-spark-guide"/>
+      <line x1="${PAD}" y1="${yAt(50).toFixed(1)}" x2="${W - PAD}" y2="${yAt(50).toFixed(1)}" class="mkt-seo-spark-guide"/>
+      ${area ? `<path d="${area}" class="mkt-seo-spark-area band-${endBand.cls}"/>` : ""}
+      <path d="${dpath.trim()}" class="mkt-seo-spark-line band-${endBand.cls}"/>
+      ${endDot}
+    </svg>
+    <div class="mkt-seo-strip-lab sub muted">Open issues per audit</div>
+    <div class="mkt-seo-strip">${strip}</div>
+  </div>`;
+}
+
+/* Census by family — one row per family, coverage % across the five signals. */
+const SEO_COV_COLS = [
+  ["with_canonical", "Canonical"],
+  ["with_desc",      "Meta desc"],
+  ["with_og",        "Open Graph"],
+  ["with_jsonld",    "JSON-LD"],
+  ["in_sitemap",     "In sitemap"],
+];
+function seoCensusBlock(census) {
+  const head = `<div class="section">Coverage by family</div>`;
+  const byFam = census && census.by_family;
+  if (!byFam || !Object.keys(byFam).length) {
+    return head + nwEmpty("No census yet", "Per-family coverage fills in with the first full crawl.");
+  }
+  const fams = Object.keys(byFam).sort();
+  const rows = fams.map(fam => {
+    const f = byFam[fam] || {};
+    const pages = Number(f.pages || 0);
+    const cells = SEO_COV_COLS.map(([key]) => {
+      const pct = seoPct(Number(f[key] || 0), pages);
+      const cls = seoCovCls(pct);
+      return `<td class="r"><span class="mkt-seo-cov band-${cls}">${pct == null ? "—" : pct + "%"}</span></td>`;
+    }).join("");
+    return `<tr>
+      <td><span class="mkt-seo-fam">${esc(fam)}</span></td>
+      <td class="r sub">${pages}</td>
+      ${cells}
+    </tr>`;
+  }).join("");
+  return head + `<div class="mkt-seo-legend sub muted">Share of each family's pages carrying the signal. Green ≥ 90%, amber ≥ 60%, red below.</div>
+    <table class="mkt-seo-census"><thead><tr>
+      <th>Family</th><th class="r">Pages</th>${SEO_COV_COLS.map(([, lab]) => `<th class="r">${lab}</th>`).join("")}
+    </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* Sitemap + crawl infra — counts, host check, collapsible orphan/missing lists. */
+function seoSitemapBlock(sm, infra) {
+  const head = `<div class="section">Sitemap &amp; crawl infrastructure</div>`;
+  if (!sm && !infra) {
+    return head + nwEmpty("No sitemap read yet", "Sitemap and robots checks run on the first crawl.");
+  }
+  const s = sm || {};
+  const kv = (label, val, tip) => `<div class="kv"><span${tip ? ` title="${esc(tip)}"` : ""}>${label}</span><b>${val}</b></div>`;
+  const hostChip = s.host_ok == null
+    ? `<span class="statpill s-mut">host: unknown</span>`
+    : s.host_ok
+      ? `<span class="statpill s-ok">host OK</span>`
+      : `<span class="statpill s-bad" title="${Number(s.bad_host_count || 0)} URLs on the wrong host">host mismatch${s.bad_host_count ? ` · ${s.bad_host_count}` : ""}</span>`;
+
+  const smCard = `<div class="card mkt-seo-sm-card">
+    <div class="mkt-seo-sm-head"><h3>Sitemap</h3>${hostChip}</div>
+    ${kv("Total URLs", s.total_urls != null ? s.total_urls : "—")}
+    ${kv("Core", s.core != null ? s.core : "—")}
+    ${kv("Stocks", s.stocks != null ? s.stocks : "—")}
+    ${seoList("Orphans in sitemap", s.orphans_in_sitemap, "URLs listed in the sitemap that nothing links to.")}
+    ${seoList("Missing from sitemap", s.missing_from_sitemap, "Live pages that never made it into the sitemap.")}
+    ${seoList("Duplicates", s.duplicates, "URLs listed more than once.")}
+  </div>`;
+
+  const inf = infra || {};
+  const okChip = (v, on, off) => v == null
+    ? `<span class="statpill s-mut">unknown</span>`
+    : v ? `<span class="statpill s-ok">${on}</span>` : `<span class="statpill s-bad">${off}</span>`;
+  const bfAge = inf.brand_facts_age_days;
+  const bfChip = inf.brand_facts_present == null
+    ? `<span class="statpill s-mut">unknown</span>`
+    : !inf.brand_facts_present
+      ? `<span class="statpill s-bad">missing</span>`
+      : bfAge != null && bfAge > 90
+        ? `<span class="statpill s-warn" title="${bfAge} days old (engine SLA: 90d)">stale · ${bfAge}d</span>`
+        : `<span class="statpill s-ok">present${bfAge != null ? ` · ${bfAge}d` : ""}</span>`;
+  const infraCard = `<div class="card mkt-seo-infra-card">
+    <h3>Crawl infrastructure</h3>
+    <div class="kv"><span title="robots.txt reachable and valid">robots.txt</span>${okChip(inf.robots_ok, "OK", "problem")}</div>
+    <div class="kv"><span title="robots.txt points at the sitemap on the right host">Sitemap host in robots</span>${okChip(inf.robots_sitemap_host_ok, "OK", "mismatch")}</div>
+    <div class="kv"><span title="llms.txt for AI crawlers">llms.txt</span>${okChip(inf.llms_txt_present, "present", "missing")}</div>
+    <div class="kv"><span title="brand facts file for AI citation">brand facts</span>${bfChip}</div>
+  </div>`;
+
+  return head + `<div class="grid mkt-seo-sm-grid">${smCard}${infraCard}</div>`;
+}
+
+/* Collapsible capped list (cap 20 + "N more"). Empty → a quiet "clean" line. */
+function seoList(label, arr, tip) {
+  const a = arr || [];
+  if (!a.length) return `<div class="kv"><span${tip ? ` title="${esc(tip)}"` : ""}>${label}</span><b class="mkt-seo-clean">none</b></div>`;
+  const CAP = 20;
+  const shown = a.slice(0, CAP);
+  const more = a.length - shown.length;
+  return `<details class="mkt-seo-list">
+    <summary><span>${label}</span><span class="statpill s-warn mkt-seo-list-n">${a.length}</span></summary>
+    <div class="mkt-seo-list-body">
+      ${shown.map(u => `<code class="mkt-seo-url">${esc(u)}</code>`).join("")}
+      ${more > 0 ? `<div class="sub muted mkt-seo-list-more">…and ${more} more</div>` : ""}
+    </div>
+  </details>`;
+}
+
+/* Work orders — priority-ordered fix tickets, each falsifiable. */
+function seoOrdersBlock(orders) {
+  const list = orders || [];
+  const head = `<div class="section">Work orders <span class="cnt">${list.length} open</span></div>`;
+  if (!list.length) {
+    return head + nwEmpty("No open work orders", "When the audit finds a fixable issue it writes a ticket here — with the exact check that proves the fix.");
+  }
+  const sevCls = { critical: "s-bad", high: "s-bad", medium: "s-warn", low: "s-mut" };
+  const cards = list.map(o => {
+    const sev = (o.severity || "low").toLowerCase();
+    const pages = o.pages || [];
+    const pageChips = pages.slice(0, 6).map(p => `<code class="mkt-seo-url sm">${esc(p)}</code>`).join("");
+    const morePages = pages.length > 6 ? `<span class="sub muted"> +${pages.length - 6} more</span>` : "";
+    return `<div class="card mkt-seo-order sev-${sev}">
+      <div class="mkt-seo-order-head">
+        <span class="statpill ${sevCls[sev] || "s-mut"}">${esc(sev)}</span>
+        <span class="mkt-seo-order-title">${esc(o.title || o.class || "Untitled")}</span>
+        ${o.priority != null ? `<span class="mkt-seo-order-prio sub muted" title="priority">#${esc(String(o.priority))}</span>` : ""}
+      </div>
+      ${o.suggested_fix ? `<div class="mkt-seo-order-fix"><span class="mkt-seo-order-k">Fix</span> ${esc(o.suggested_fix)}</div>` : ""}
+      ${o.falsifiable_check ? `<div class="mkt-seo-order-check"><span class="mkt-seo-order-k">Proof</span> <code>${esc(o.falsifiable_check)}</code></div>` : ""}
+      ${pages.length ? `<div class="mkt-seo-order-pages"><span class="mkt-seo-order-k">Pages</span> ${pageChips}${morePages}</div>` : ""}
+    </div>`;
+  }).join("");
+  return head + `<div class="mkt-seo-orders">${cards}</div>`;
+}
+
+/* Search Console slot — always an explicit unavailable state (unknown ≠ zero). */
+function seoSearchConsoleBlock(sc) {
+  const head = `<div class="section">Search Console</div>`;
+  const s = sc || {};
+  if (s.connected) {
+    return head + `<div class="card"><div class="sub">Connected.</div></div>`;
+  }
+  return head + `<div class="card mkt-seo-gsc">
+    <div class="mkt-seo-gsc-row">
+      <span class="statpill s-mut mkt-seo-gsc-chip">Not connected</span>
+      <span class="mkt-seo-gsc-txt">${esc(s.note || "Search Console credentials not configured — data unavailable.")}</span>
+    </div>
+    ${s.hint ? `<div class="sub muted mkt-seo-gsc-hint">${esc(s.hint)}</div>` : ""}
+  </div>`;
 }
 
 /* ---- MASTERMIND AI (bot proxy) — W-AI ------------------------------------ */
