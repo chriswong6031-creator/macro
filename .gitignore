@@ -4,6 +4,10 @@ __pycache__/
 *.pyc
 .DS_Store
 .env
+# Operator analytics self-exclusion hide-list — holds personal emails / home location.
+# Kept OUT of git (the .example.json template documents the schema). The admin service
+# reads it via ANALYTICS_EXCLUSIONS; recommended location is /var/lib/macro-admin/.
+admin/analytics_exclusions.json
 # VPS deploy artifact: Caddy's served root is an atomic rsync mirror of site/,
 # living OUTSIDE the git work-tree so `git reset --hard` can't expose a partial
 # file (app/deploy/update.sh + Caddyfile). Box-only; never committed.

@@ -528,9 +528,11 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/analytics/fp/geo":
                 return self._json(analytics_first_party.geo(days=(q.get("days") or ["30"])[0], limit=(q.get("limit") or ["200"])[0]))
             if path == "/api/analytics/fp/sessions":
-                return self._json(analytics_first_party.sessions(limit=(q.get("limit") or ["40"])[0]))
+                return self._json(analytics_first_party.sessions(
+                    limit=(q.get("limit") or ["100"])[0], q=(q.get("q") or [""])[0]))
             if path == "/api/analytics/fp/visitors":
-                return self._json(analytics_first_party.visitors(limit=(q.get("limit") or ["100"])[0]))
+                return self._json(analytics_first_party.visitors(
+                    limit=(q.get("limit") or ["250"])[0], q=(q.get("q") or [""])[0]))
             if path == "/api/analytics/fp/session":
                 return self._json(analytics_first_party.session((q.get("id") or [""])[0]))
             if path == "/api/analytics/fp/flow":

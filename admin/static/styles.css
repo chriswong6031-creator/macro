@@ -1730,6 +1730,11 @@ tr.lab-cell-floor td { opacity: .72; }
 .an-spacer { flex: 1 1 auto; }
 .an-live { font-size: 12px; }
 .an-days { font: inherit; font-size: 12.5px; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 5px 8px; cursor: pointer; }
+/* Filter + row-cap toolbar on the Visitors / Sessions tables. */
+.an-tbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.an-q { flex: 1 1 260px; min-width: 190px; max-width: 440px; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 7px 11px; font-family: var(--sans); font-size: 13px; transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+.an-q::placeholder { color: var(--muted); }
+.an-rows { font: inherit; font-size: 12.5px; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 5px 8px; cursor: pointer; }
 
 .an-brow { display: grid; grid-template-columns: minmax(120px, 42%) 1fr auto; align-items: center; gap: 10px; padding: 4px 0; }
 .an-blabel { font-size: 12.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }

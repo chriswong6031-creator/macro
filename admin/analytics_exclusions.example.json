@@ -1,0 +1,9 @@
+{
+  "_comment": "TEMPLATE — do NOT put real personal data here (this file is committed). Operator self-exclusion for first-party analytics: any visitor matching a registered email below, OR ever seen on an IP that geolocates to a listed location, is hidden from every analytics surface (counts, Visitors/Sessions tables, geo map, flow, terminal) along with the other cookies linked to them by shared device fingerprint or routable IP. Loopback IPs (::1/127.0.0.1) are NOT used for linking. To activate: copy this to an UNTRACKED file on the admin host — recommended /var/lib/macro-admin/analytics_exclusions.json — fill in real values, and point ANALYTICS_EXCLUSIONS at it in the admin service env (same idiom as SITE_GATE_STATE). See admin/analytics_first_party.py:_load_exclusions.",
+  "emails": [
+    "you@example.com"
+  ],
+  "locations": [
+    { "city": "YourCity", "region": "YourRegion", "country_code": "CA" }
+  ]
+}
