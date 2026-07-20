@@ -61,37 +61,42 @@ def test_load_exclusions_reads_and_normalises(tmp_path, monkeypatch):
 
 def test_load_exclusions_missing_file_is_empty(tmp_path, monkeypatch):
     monkeypatch.setattr(a, "_EXCL_PATH", tmp_path / "nope.json")
-    assert a._load_exclusions() == {"emails": [], "locations": []}   # fail-safe: nothing hidden
+    # fail-safe: nothing hidden/relabelled
+    assert a._load_exclusions() == {"emails": [], "locations": [], "ips": [], "bots": {}, "geo_overrides": []}
 
 
 def test_excluded_cte_contains_emails_and_location(monkeypatch):
     monkeypatch.setattr(a, "_load_exclusions", lambda: {
         "emails": ["me@x.com"],
         "locations": [{"city": "Richmond", "region": "British Columbia", "country_code": "CA"}],
+        "ips": [], "bots": {}, "geo_overrides": [],
     })
     cte = a._excluded_cte()
     assert "'me@x.com'" in cte
     assert "lower(g.city) = lower('Richmond')" in cte
     assert "upper(g.country_code) = upper('CA')" in cte
-    # the five named CTEs are all present and the link hop is loopback-guarded
-    for name in ("excl_users as", "excl_geo_ips as", "excl_seed as", "excl_link as", "excluded as"):
+    # the named CTEs are all present and the link hop is loopback-guarded
+    for name in ("excl_users as", "excl_geo_ips as", "excl_ips as", "excl_seed as", "excl_link as", "excluded as"):
         assert name in cte
     assert "'::1'" in cte
 
 
 def test_excluded_cte_empty_config_is_valid_and_matches_nothing(monkeypatch):
-    monkeypatch.setattr(a, "_load_exclusions", lambda: {"emails": [], "locations": []})
+    monkeypatch.setattr(a, "_load_exclusions",
+                        lambda: {"emails": [], "locations": [], "ips": [], "bots": {}, "geo_overrides": []})
     cte = a._excluded_cte()
     assert "auth.users where false" in cte
     assert "ip_geo where false" in cte
+    assert "as ip where false" in cte      # empty excl_ips
 
 
 # ---- surface functions: SQL generation (network monkeypatched) -------------
-def _capture(monkeypatch):
-    seen = {}
+def _capture(monkeypatch, ret=None):
+    seen = {"all": []}
     def fake_query(sql):
         seen["sql"] = sql
-        return []
+        seen["all"].append(sql)
+        return list(ret) if ret is not None else []
     monkeypatch.setattr(a, "status", lambda: {"configured": True})
     monkeypatch.setattr(a, "_query", fake_query)
     return seen
@@ -137,6 +142,101 @@ def test_overview_and_realtime_filter_excluded(monkeypatch):
 def test_terminal_filters_search_events_by_operator(monkeypatch):
     seen = _capture(monkeypatch)
     a.terminal(days=7)
-    sql = seen["sql"]
-    assert "anon_id not in (select visitor_id from excluded)" in sql
-    assert "user_id not in (select id from excl_users)" in sql
+    joined = " ".join(seen["all"])
+    assert "anon_id not in (select visitor_id from excluded)" in joined
+    assert "user_id not in (select id from excl_users)" in joined
+
+
+# ---- IP self-exclusion -----------------------------------------------------
+def test_clean_ips_keeps_only_ip_chars():
+    assert a._clean_ips(["50.92.196.43", " 170.124.173.16 ", "2001:db8::1", "junk!!", ""]) == \
+        ["50.92.196.43", "170.124.173.16", "2001:db8::1"]
+
+
+def test_ips_seed_the_excluded_set(monkeypatch):
+    monkeypatch.setattr(a, "_load_exclusions", lambda: {
+        "emails": [], "locations": [], "ips": ["50.92.196.43", "170.124.173.16"],
+        "bots": {}, "geo_overrides": [],
+    })
+    cte = a._excluded_cte()
+    assert "excl_ips as (select unnest(array['50.92.196.43','170.124.173.16']::text[]) as ip)" in cte
+    assert "e.ip in (select ip from excl_ips)" in cte      # seeded
+
+
+# ---- crawler / bot detection ----------------------------------------------
+def test_bot_cte_signals_and_config_extension(monkeypatch):
+    monkeypatch.setattr(a, "_load_exclusions", lambda: {
+        "emails": [], "locations": [], "ips": [],
+        "bots": {"ips": ["34.122.147.229"], "ua_pattern": "MyScanner", "org_pattern": "acme labs"},
+        "geo_overrides": [],
+    })
+    cte = a._bot_cte()
+    assert "'34.122.147.229'" in cte                        # config bot IP
+    assert "e.ua ~*" in cte and "Googlebot" in cte and "MyScanner" in cte   # default + extension
+    assert "g.is_hosting is true and coalesce(g.is_vpn, false) = false" in cte  # datacenter-not-VPN
+    assert "g.org ~*" in cte and "meta platforms" in cte and "acme labs" in cte
+
+
+def test_not_a_bot_predicate_null_safe():
+    assert a._not_a_bot("e") == "(e.visitor_id is null or e.visitor_id not in (select visitor_id from bots))"
+
+
+def test_geo_override_prefix_is_exempt_from_bot_detection(monkeypatch):
+    # A manually relabelled prefix (a real VPN user) must never be auto-flagged as a bot.
+    monkeypatch.setattr(a, "_load_exclusions", lambda: {
+        "emails": [], "locations": [], "ips": [], "bots": {},
+        "geo_overrides": [{"ip_prefix": "191.40.", "country_code": "HK"}],
+    })
+    cte = a._bot_cte()
+    assert "and not (e.ip like '191.40.%')" in cte
+
+
+def test_visitors_and_sessions_hide_bots_by_default(monkeypatch):
+    seen = _capture(monkeypatch)
+    a.visitors()
+    assert "v.is_bot = 0" in seen["sql"] and "bots as (" in seen["sql"]
+    a.sessions()
+    assert "s.is_bot = 0" in seen["sql"]
+
+
+def test_include_bots_reveals_them(monkeypatch):
+    seen = _capture(monkeypatch)
+    out = a.visitors(include_bots=True)
+    assert out["include_bots"] is True
+    assert "is_bot = 0" not in seen["sql"]                  # not filtered
+    assert "as is_bot" in seen["sql"]                       # still labelled
+    a.sessions(include_bots=True)
+    assert "s.is_bot = 0" not in seen["sql"]
+
+
+def test_overview_reports_bot_count_and_humans_only(monkeypatch):
+    seen = _capture(monkeypatch)
+    a.overview(days=7)
+    joined = " ".join(seen["all"])
+    assert "not in (select visitor_id from bots)" in joined                     # humans-only counts
+    assert "e.visitor_id in (select visitor_id from bots)" in joined            # bots counted separately
+
+
+# ---- geo overrides ---------------------------------------------------------
+def test_apply_geo_overrides_relabels_by_prefix(monkeypatch):
+    monkeypatch.setattr(a, "_load_exclusions", lambda: {
+        "emails": [], "locations": [], "ips": [], "bots": {},
+        "geo_overrides": [{"ip_prefix": "191.40.", "city": "Hong Kong", "region": "Hong Kong", "country_code": "HK"}],
+    })
+    rows = [
+        {"ip": "191.40.7.49", "city": "Frankfurt am Main", "region": "Hesse", "country_code": "DE"},
+        {"ip": "8.8.8.8", "city": "Mountain View", "region": "California", "country_code": "US"},
+    ]
+    out = a._apply_geo_overrides(rows)
+    assert out[0]["city"] == "Hong Kong" and out[0]["country_code"] == "HK"     # relabelled
+    assert out[1]["city"] == "Mountain View"                                    # untouched
+
+
+def test_apply_geo_overrides_custom_key(monkeypatch):
+    monkeypatch.setattr(a, "_load_exclusions", lambda: {
+        "emails": [], "locations": [], "ips": [], "bots": {},
+        "geo_overrides": [{"ip_prefix": "191.40.", "country_code": "HK"}],
+    })
+    rows = [{"last_ip": "191.40.9.9", "country_code": "DE"}]
+    a._apply_geo_overrides(rows, "last_ip")
+    assert rows[0]["country_code"] == "HK"
