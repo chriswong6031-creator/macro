@@ -15,7 +15,7 @@ Canonical host: https://www.mastermind-x.com/
 NOTE: The live site currently uses https://mastermind-x.com/ (no www) in
 sitemap.xml, robots.txt, and page canonical tags.  The spec's "www" host is
 the target canonical; issues are flagged accordingly so operators can migrate.
-TODO: unify via lib.seo.SITE_BASE once lib/seo.py is available.
+Both host constants are imported from lib.seo (single source of truth).
 
 Page families (by filename):
   stocks    — site/stocks/**
@@ -55,19 +55,19 @@ log = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-# NOTE: parallel lane lib/seo.py will define SITE_BASE; import it when ready.
 # R1: the canonical host is the www form. The apex (non-www) form is our CURRENT deployed
 # host and a KNOWN in-flight migration target — it is tracked as a DISTINCT, counted
 # HIGH-severity issue class (apex_host / canonical_non_www), never silently accepted as
 # canonical. A genuinely foreign host stays CRITICAL. See _is_www_host / _is_apex_host /
 # _is_own_host — host CORRECTNESS is judged there, not by treating apex as "valid".
+# _SITE_BASE_ALT is the apex host; used only to distinguish OUR apex from a foreign
+# host (file-existence / path extraction), never to certify it as canonical.
 try:  # single source of truth (lib/seo.py, PR A / D12A R1)
     from lib.seo import SITE_BASE
+    from lib.seo import _APEX_HOST as _SITE_BASE_ALT
 except Exception:  # pragma: no cover — lib layout changes must not kill the Director
     SITE_BASE = "https://www.mastermind-x.com/"
-# Current deployed apex host (no www). Used only to distinguish OUR apex from a foreign
-# host (file-existence / path extraction). Does NOT certify the host as canonical.
-_SITE_BASE_ALT = "https://mastermind-x.com/"
+    _SITE_BASE_ALT = "https://mastermind-x.com/"
 
 _STOCKS_SAMPLE_N = 25          # evenly-spaced sample from site/stocks/
 _MAX_ISSUES = 200              # cap issues list
