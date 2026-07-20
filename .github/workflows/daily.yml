@@ -1019,6 +1019,26 @@ jobs:
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_prophet::rc=$rc (non-fatal — prophet artifacts degrade gracefully)"; fi
           exit 0
+      - name: Prophet × Stage forward-shadow (tag actual entries + nightly grade advance)
+        # AFTER "Prophet nightly": reads site/prophet/{index.json,plans/*.json} + data/prophet/ledger.jsonl
+        # (just refreshed). Tags every Prophet entry with its PIT stage-at-entry + last-EC (idempotent,
+        # PIT-fixed at entry), advances matured grades (nightly is the SOLE advancer — COLLECT_LANE=nightly
+        # gate), writes data/prophet_stage_shadow/summary.json (display-only). This is the DEFINITIVE
+        # on-Prophet test the fusion backtest left open (research/PROPHET_STAGE_FUSION_PREREG.md §6; the
+        # win-rate-gate construction itself is KILLED — this NEVER gates/ranks/alters Prophet, forward
+        # accrual only, first 126d cohort ~Dec 2026). Ledger gitignored; summary.json committed by
+        # "commit engine outputs". Seconds; non-fatal.
+        continue-on-error: true
+        env:
+          COLLECT_LANE: nightly
+        run: |
+          set +e
+          echo "::group::build_prophet_stage_shadow (tag + grade + summarize)"
+          python -m scripts.build_prophet_stage_shadow > "$RUNNER_TEMP/prophet_stage_shadow.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/prophet_stage_shadow.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_prophet_stage_shadow::rc=$rc (non-fatal)"; fi
+          exit 0
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
         # The ~22 builders between build_site and the landing hub split into mutually
         # INDEPENDENT clusters (each internally ordered by its own data deps). They used

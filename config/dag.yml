@@ -438,6 +438,13 @@ lanes:
       - id: build_prophet
         module: scripts.build_prophet
         note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
+      - id: build_prophet_stage_shadow
+        module: scripts.build_prophet_stage_shadow
+        note: >
+          Prophet × Stage forward-shadow — tag actual Prophet entries (PIT stage-at-entry + last-EC,
+          idempotent) + nightly-gated grade advance + display summary. Forward-accrual ONLY (the
+          definitive on-Prophet test the fusion backtest left open); NEVER gates/ranks Prophet
+          (win-rate-gate construction is KILLED). Non-fatal; runs after build_prophet.
       # parallel band
       - id: band
         cluster:

@@ -439,3 +439,8 @@ data/marketing/breaking/
 data/stage_analysis/backfill/
 # Forward ledger: nightly is the SOLE advancer (house law) — never commit from a worktree.
 data/stage_analysis/forward_ledger.jsonl
+
+# Prophet × Stage forward-shadow (live-Prophet on-Prophet accrual): the tag+grade
+# ledger is a FORWARD LEDGER — nightly is the SOLE grade advancer (house law), never
+# commit from a worktree. summary.json is a small display artifact and IS committed.
+data/prophet_stage_shadow/ledger.jsonl

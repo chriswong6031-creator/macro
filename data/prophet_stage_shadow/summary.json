@@ -1,0 +1,75 @@
+{
+  "schema": "prophet_stage_shadow.v1",
+  "is_context_only": true,
+  "display_only": true,
+  "authority_tier": "display",
+  "generated_asof": "2026-07-20",
+  "generated_utc": "2026-07-20T22:09:35.789665+00:00",
+  "spec": "research/PROPHET_STAGE_FUSION_PREREG.md",
+  "accrual_disclaimer": "accruing \u2014 first 126-day cohort matures ~2026-12; n is tiny until then; NOT yet decisive. The 2022-26 backtest on the T-cascade confluence proxy found no CI-clean win-rate edge (a quality right-shift only) \u2014 this forward-shadow is the definitive on-Prophet check, tagging Prophet's ACTUAL entries from go-live. Display / shadow tier only: it NEVER gates, ranks, or alters any Prophet decision.",
+  "n_entries": 38,
+  "n_tagged": 35,
+  "n_stageable": 35,
+  "n_matured": {
+    "21": 4,
+    "63": 2,
+    "126": 0,
+    "clean15_126": 0,
+    "clean8_21": 4
+  },
+  "split": {
+    "stage2": {
+      "n": 9,
+      "clean15_126": {
+        "n_matured": 0,
+        "n_win": 0,
+        "win_rate": null
+      },
+      "clean8_21": {
+        "n_matured": 1,
+        "n_win": 0,
+        "win_rate": 0.0
+      }
+    },
+    "rest": {
+      "n": 26,
+      "clean15_126": {
+        "n_matured": 0,
+        "n_win": 0,
+        "win_rate": null
+      },
+      "clean8_21": {
+        "n_matured": 3,
+        "n_win": 1,
+        "win_rate": 0.3333333333333333
+      }
+    },
+    "fresh_stage2": {
+      "n": 4,
+      "clean15_126": {
+        "n_matured": 0,
+        "n_win": 0,
+        "win_rate": null
+      },
+      "clean8_21": {
+        "n_matured": 0,
+        "n_win": 0,
+        "win_rate": null
+      }
+    },
+    "positive_ec": {
+      "n": 9,
+      "clean15_126": {
+        "n_matured": 0,
+        "n_win": 0,
+        "win_rate": null
+      },
+      "clean8_21": {
+        "n_matured": 1,
+        "n_win": 1,
+        "win_rate": 1.0
+      }
+    }
+  },
+  "note": "The Stage-2-vs-rest / fresh-Stage-2 / positive-EC outcome split on ACTUAL Prophet entries. win = CLEAN_LIFTOFF (same ruler as the backtest). win_rate is null until an entry matures \u2014 nulls printed, not hidden. This layer is context/measurement only: it NEVER gates, ranks, or alters any Prophet decision (the fusion win-rate-gate is killed per DO_NOT_REBUILD)."
+}
