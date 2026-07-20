@@ -67,6 +67,16 @@ _RULING_PATHS = {
 }
 _GOV_PATHS = _KILL_REGISTRY_PATHS | _RULING_PATHS
 
+# Path substrings that identify adjudication and masterplan documents.
+# In adjudication mode (Strategy D), we boost these by term overlap so that
+# collision-replay queries surface the relevant masterplan alongside registry rows.
+_ADJUDICATION_PATH_SUBSTRINGS = (
+    "_MASTERPLAN_BY_FABLE",
+    "_ADJUDICATION_BY_FABLE",
+    "_CODEX_ADJUDICATION",
+    "_RATIFIED",
+)
+
 
 def _row_to_result(row: sqlite3.Row, project_key: str, rank: int, why: str) -> dict:
     return {
@@ -216,6 +226,59 @@ def _search_identifiers(
 
 
 # ---------------------------------------------------------------------------
+# Strategy D: adjudication masterplan boost (adjudication mode only)
+# ---------------------------------------------------------------------------
+
+
+def _search_adjudication_docs(
+    conn: sqlite3.Connection,
+    query_tokens: set[str],
+    project_key: str,
+) -> list[dict]:
+    """
+    In adjudication mode, surface masterplan and adjudication docs by term overlap.
+
+    Kill-registry Strategy A surfaces the registry verdict rows, but the collision
+    check also needs the *masterplan* that covers the topic (the adjudication's
+    required_sources include both DO_NOT_REBUILD and the relevant masterplan).
+
+    Rule: fetch all chunks from documents whose path contains a masterplan/adjudication
+    path substring, rank by query-token overlap, return top matches.
+    This is deterministic and rule-level — no per-query hardcoding.
+    """
+    # Build a LIKE condition covering all adjudication path substrings
+    like_clauses = " OR ".join(
+        f"d.path LIKE ?" for _ in _ADJUDICATION_PATH_SUBSTRINGS
+    )
+    like_params = [f"%{s}%" for s in _ADJUDICATION_PATH_SUBSTRINGS]
+
+    rows = conn.execute(
+        f"""
+        SELECT c.chunk_id, c.document_id, c.locator, c.heading_path, c.symbol,
+               d.source_uri, d.path, d.authority_class, d.visibility, d.status,
+               c.text
+        FROM chunks c
+        JOIN documents d ON d.document_id = c.document_id
+        WHERE ({like_clauses})
+          AND d.tombstoned = 0
+        """,
+        like_params,
+    ).fetchall()
+
+    scored = []
+    for row in rows:
+        score = _term_overlap(query_tokens, row["text"])
+        if score > 0:
+            scored.append((score, row))
+
+    scored.sort(key=lambda x: -x[0])
+    results = []
+    for rank, (_, row) in enumerate(scored[:30]):  # cap to top-30 per query
+        results.append(_row_to_result(row, project_key, rank + 1, "adjudication_doc"))
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
 
@@ -272,11 +335,29 @@ def structured_search(
                 if r["chunk_id"] not in seen_ids:
                     seen_ids.add(r["chunk_id"])
                     all_results.append(r)
+
+            # (d) adjudication masterplan boost — adjudication mode only.
+            # Surfaces the relevant masterplan/adjudication doc alongside registry
+            # rows for collision-replay queries (CTX-051..CTX-066 class).
+            # Rule-level: any research/* path containing _MASTERPLAN_BY_FABLE or
+            # _ADJUDICATION_BY_FABLE, ranked by term overlap with the query.
+            if mode == "adjudication":
+                for r in _search_adjudication_docs(conn, query_tokens, project_key):
+                    if r["chunk_id"] not in seen_ids:
+                        seen_ids.add(r["chunk_id"])
+                        all_results.append(r)
         finally:
             conn.close()
 
-    # Re-rank: kill registry first (governance modes), governance second, identifier third
-    priority = {"kill_registry": 0, "governance_doc": 1, "exact_identifier": 2}
+    # Re-rank: kill registry first (governance modes), governance second,
+    # adjudication_doc third (boost masterplans in adjudication mode),
+    # identifier fourth
+    priority = {
+        "kill_registry": 0,
+        "governance_doc": 1,
+        "adjudication_doc": 2,
+        "exact_identifier": 3,
+    }
     all_results.sort(key=lambda r: (priority.get(r["why"], 9), r["rank"]))
     for i, r in enumerate(all_results):
         r["rank"] = i + 1

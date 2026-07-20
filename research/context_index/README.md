@@ -2,10 +2,29 @@
 
 ## Version
 
-v1.4 — question set frozen 2026-07-18, 96 questions (CTX-001..CTX-096); rows unchanged
-since v1.3, grading rule amended per CXI-R17.
+v1.5 — question set extended 2026-07-20, 104 questions (CTX-001..CTX-104); 8 new
+comprehension rows (CTX-097..CTX-104) per CXI-R18 site-semantics glossary charter.
+Prior rows and grading rules unchanged.
 
 ### Amendment log
+
+- **v1.5 (2026-07-20, CXI-R18 — site-semantics glossary + comprehension family):** 8 new
+  comprehension rows (CTX-097..CTX-104) appended covering the four highest-traffic pages
+  (macro.html, us_stocks.html, china.html, china_stocks.html). Row CTX-097 = verbatim CSI300
+  track record strip question. New `docs/site_semantics/` source added to
+  `config/context_index.yml` (id=site-semantics, A3, markdown_sections chunker). New
+  `comprehension` family added (count=8). No existing rows altered. Global row count: 96→104.
+  **CXI-R21 regold (same pass, adjudicated):** as authored, each comprehension row required
+  the glossary page AND the computing engine file jointly in top-10 — over-strict by the
+  CXI-R17 defect class: the glossary entry alone answers a "what does this mean" question
+  (its Computed-by line cites the engine source; `context_open` follows the citation).
+  Regolded: glossary page = required, engine files = acceptable. Run v5 after regold:
+  comprehension 8/8 = 100%; global 56.6% / replay 57.1% / governance 70.0% — gates still
+  FAIL, printed. Negative controls 0/10 stay the open problem: the no-answer score floor
+  is INERT at this corpus state (negative-control fused scores overlap active-query scores;
+  a distinctive-term rule caused false nulls on real code queries and was removed) — next
+  candidates are an IDF-rarity term rule or the CXI-R9-gated semantic lane, with this
+  documented miss class as its entry evidence.
 
 - **v1.4 (2026-07-18, adjudicated, CXI-R17 — grading semantics fix pass; one row
   regold):** the v1.2 grading-rule wording ("the labeled `required_status` is returned …
@@ -117,7 +136,7 @@ not required in top-10.
 
 Promotion gates (from research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md CXI-R5/CXI-R6/CXI-R16):
 
-- Global: >=90% Recall@10 across all 96 rows (shared-visibility rows only for the baseline run).
+- Global: >=90% Recall@10 across all 104 rows (shared-visibility rows only for the baseline run).
 - Adjudication-replay family: >=90% Recall@10 on rows with `family: adjudication_replay`.
 - Governance precision: >=95% precision on A0/A1 governance answers (A0 = CLAUDE.md; A1 = configs/ruling-graph/kill-registry).
 - Cross-repo block (CTX-082..CTX-096): evaluated separately with Terminal and Mastermind projects opted-in; reported as a distinct family block in the eval report (CXI-R16).
@@ -146,6 +165,7 @@ records a new version tag; prior runs remain unchanged.
 | `operations` | 1 | Operational question |
 | `adjudication_replay` | 16 | Does the repo already cover this proposed work? |
 | `negative_control` | 13 | Negative controls (no_answer expected) |
+| `comprehension` | 8 | User-facing stat/panel explanation — what does X mean and how is it computed? |
 
 v1.2 cross-repo note: rows CTX-082..CTX-096 reference Terminal (charting-app) and
 Mastermind paths using the stored source_uri scheme `repo://<project-key>/<relpath>`

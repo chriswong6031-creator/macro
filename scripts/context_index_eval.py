@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-CXI-2 eval harness — runs all 96 benchmark rows against the REAL indexes.
+CXI-2 eval harness — runs all 104 benchmark rows against the REAL indexes.
 
 Usage:
   python3 scripts/context_index_eval.py
   python3 scripts/context_index_eval.py --include-private
   python3 scripts/context_index_eval.py --output research/context_index/BENCHMARK_RESULTS.md
 
-Grading (per README v1.4, CXI-R17):
+Grading (per README v1.5, CXI-R17):
   - A row PASSES Recall@10 when every required_source appears in the top-10 result
     source paths (match on path OR source_uri, tolerate repo:// prefix differences).
   - no_answer rows pass when packet.no_answer_reason is set OR zero results.
@@ -251,6 +251,11 @@ def run_eval(include_private: bool = False, output_path: Optional[Path] = None) 
         else:
             project_db_map = shared_map
 
+        # Prod-parity: adjudication mode uses gitinfo + neighbor expansion,
+        # matching CLI behavior (CXI-R6 / Amendment 2 eval prod-parity rule).
+        # Other modes skip gitinfo for eval speed.
+        is_adjudication = mode == "adjudication"
+
         t0 = time.monotonic()
         try:
             packet = build_packet(
@@ -260,8 +265,8 @@ def run_eval(include_private: bool = False, output_path: Optional[Path] = None) 
                 repo_root_map=repo_root_map,
                 mode=mode,
                 token_budget=TOKEN_BUDGET_DEFAULT,
-                include_gitinfo=False,  # skip git for speed during eval
-                expand_neighbors=False,
+                include_gitinfo=is_adjudication,
+                expand_neighbors=is_adjudication,
             )
         except Exception as e:
             # Mark as ERROR — not an honest no_answer; grade_row will fail it
