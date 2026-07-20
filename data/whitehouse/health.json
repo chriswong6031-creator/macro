@@ -1,41 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-20T22:16:07.876336+00:00",
-  "posts_seen": 14,
+  "as_of": "2026-07-20T23:19:24.581468+00:00",
+  "posts_seen": 1,
   "seen_total": 47,
-  "evaluated": 5,
-  "activated": 1,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-20-imposing-additional-duties-to-offset-canadian-discrimination-against-the-commerc",
-      "importance": null,
-      "activated": false,
-      "degraded_reason": "truncated"
-    },
-    {
-      "id": "wh-2026-07-20-imposing-additional-duties-to-offset-canadian-discrimination-against-the-commerc",
-      "importance": 65,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-20-imposing-additional-duties-to-offset-canadian-discrimination-against-the-commerc",
-      "importance": 25,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-20-fact-sheet-president-donald-j-trump-imposes-additional-tariffs-on-canada",
-      "importance": null,
-      "activated": false,
-      "degraded_reason": "truncated"
-    },
-    {
-      "id": "wh-2026-07-20-made-in-america-week-2026",
-      "importance": 5,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }
