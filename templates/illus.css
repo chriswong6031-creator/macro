@@ -1,0 +1,243 @@
+/* ilx / "Signal Ink" — house illustration format (see lib/illus.py, docs/ILLUSTRATIONS.md).
+   Layout + reveal choreography. Colors come from the page: the SVG uses currentColor
+   (accent set as color: on .ilx via inline style) and theme vars (--up/--down), so a
+   dark/light flip or the ZH --up/--down swap flows through with no re-render. */
+
+.ilx {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: var(--ilx-h, 190px);
+  margin: 0;
+  color: var(--info);                 /* fallback accent; overridden inline per chart */
+  font-variant-numeric: tabular-nums;
+}
+.ilx svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;                  /* end-dot glow + labels aren't clipped */
+}
+
+/* ── the ink ─────────────────────────────────────────────────────────────── */
+.ilx-path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;  /* keep 1.6px true despite the x-stretch */
+}
+.ilx-up   { stroke: var(--up); }
+.ilx-down { stroke: var(--down); }
+
+.ilx-area { stroke: none; }
+
+/* dual-tint waterline (baseline kind) + drawdown top rule */
+.ilx-water {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: .55;
+  vector-effect: non-scaling-stroke;
+}
+.ilx-water-top { stroke: var(--down); opacity: .5; }
+
+/* reference level (e.g. climate neutral 100) */
+.ilx-ref {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: .4;
+  vector-effect: non-scaling-stroke;
+}
+
+/* soft band zones (fear/euphoria gauge) */
+.ilx-band { opacity: .5; }
+
+/* end-of-series dot — the settle point */
+.ilx-dot {
+  fill: currentColor;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, currentColor 62%, transparent));
+}
+.ilx-dot-up   { fill: var(--up);   filter: drop-shadow(0 0 4px color-mix(in srgb, var(--up)   62%, transparent)); }
+.ilx-dot-down { fill: var(--down); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--down) 62%, transparent)); }
+
+/* ── bars ────────────────────────────────────────────────────────────────── */
+.ilx-bar { fill: currentColor; opacity: .82; }
+.ilx-bar-up   { fill: var(--up);   opacity: .85; }
+.ilx-bar-down { fill: var(--down); opacity: .85; }
+
+/* ── HTML labels (page font; SVG carries no <text>) ──────────────────────── */
+.ilx-d {
+  position: absolute;
+  bottom: 1px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--muted);
+  opacity: .78;
+  letter-spacing: .01em;
+  pointer-events: none;
+}
+.ilx-d0 { left: 1px; }
+.ilx-d1 { right: 1px; }
+
+.ilx-tag {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 1px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: currentColor;
+  background: color-mix(in srgb, currentColor 12%, var(--panel));
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+.ilx-tag .ilx-u { font-size: 9.5px; font-weight: 600; opacity: .82; }
+
+.ilx-reflab {
+  position: absolute;
+  left: 3px;                          /* left-anchored so it never collides with the
+                                         right-anchored end-value tag */
+  transform: translateY(-50%);
+  padding: 0 3px;
+  font-size: 9.5px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 78%, transparent);
+  border-radius: 3px;
+  opacity: .7;
+  pointer-events: none;
+}
+
+.ilx-bandlab {
+  position: absolute;
+  left: 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  opacity: .62;
+  pointer-events: none;
+}
+.ilx-bandlab-top    { top: 3px; }
+.ilx-bandlab-bottom { bottom: 14px; }
+
+/* multi end-chips (name each line — no legend box) */
+.ilx-chips {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 3px 8px;
+  pointer-events: none;
+}
+.ilx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ilx-chip::before {
+  content: "";
+  width: 8px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--dot, var(--info));
+}
+
+/* ── honest null ─────────────────────────────────────────────────────────── */
+.ilx-null { display: flex; align-items: center; justify-content: center; }
+.ilx-null svg { position: absolute; inset: 0; opacity: .5; }
+.ilx-hair { stroke: var(--line); stroke-width: 1; stroke-dasharray: 4 5; }
+.ilx-empty {
+  position: relative;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: .8;
+}
+
+/* ── reveal choreography ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  /* start states (before .ilx-in) */
+  .ilx-path {
+    stroke-dasharray: var(--ilx-len, 600);
+    stroke-dashoffset: var(--ilx-len, 600);
+  }
+  .ilx-area, .ilx-water, .ilx-ref, .ilx-band, .ilx-tag, .ilx-d,
+  .ilx-reflab, .ilx-bandlab, .ilx-chips { opacity: 0; }
+  .ilx-dot { transform: scale(0); transform-box: fill-box; transform-origin: center; }
+  /* bars scale up from the baseline edge of their own box (fill-box makes the origin
+     local to the rect): above-baseline bars grow from their bottom edge, below-baseline
+     bars from their top edge — both edges sit on the waterline. */
+  .ilx-bar {
+    transform: scaleY(0);
+    transform-box: fill-box;
+    transform-origin: center bottom;
+  }
+  .ilx-bar-down { transform-origin: center top; }
+
+  /* the draw — ink laid down left→right */
+  .ilx-in .ilx-path {
+    animation: ilx-draw 950ms cubic-bezier(.33, .62, .26, 1) 120ms forwards;
+  }
+  .ilx-in .ilx-path.ilx-m {
+    animation-delay: calc(120ms + var(--i, 0) * 90ms);
+  }
+  @keyframes ilx-draw { to { stroke-dashoffset: 0; } }
+
+  /* the veil settles under the ink */
+  .ilx-in .ilx-area {
+    animation: ilx-fade 600ms ease 550ms forwards;
+  }
+  .ilx-in .ilx-water, .ilx-in .ilx-ref, .ilx-in .ilx-band {
+    animation: ilx-fade 500ms ease 300ms forwards;
+  }
+  @keyframes ilx-fade { to { opacity: 1; } }
+  /* bands + waterline hold their intrinsic opacity (set on the element) via to:1 →
+     override the element's non-1 opacity by re-declaring in the final state */
+  .ilx-in .ilx-band  { animation-name: ilx-fade-band; }
+  .ilx-in .ilx-water { animation-name: ilx-fade-water; }
+  .ilx-in .ilx-ref   { animation-name: ilx-fade-ref; }
+  @keyframes ilx-fade-band  { to { opacity: .5; } }
+  @keyframes ilx-fade-water { to { opacity: .55; } }
+  @keyframes ilx-fade-ref   { to { opacity: .4; } }
+
+  /* the settle point lands with an overshoot + STATIC glow (no looping pulse —
+     settled data must not fake liveness) */
+  .ilx-in .ilx-dot {
+    animation: ilx-pop 500ms cubic-bezier(.34, 1.28, .5, 1) 900ms forwards;
+  }
+  .ilx-in .ilx-dot.ilx-m { animation-delay: calc(900ms + var(--i, 0) * 90ms); }
+  @keyframes ilx-pop { to { transform: scale(1); } }
+
+  /* bars rise from the baseline, gently staggered (cap total ≤ ~700ms) */
+  .ilx-in .ilx-bar {
+    animation: ilx-rise 480ms cubic-bezier(.22, .9, .26, 1.02) forwards;
+    animation-delay: calc(120ms + var(--i, 0) * 9ms);
+  }
+  @keyframes ilx-rise { to { transform: scaleY(1); } }
+
+  /* labels fade in after the draw */
+  .ilx-in .ilx-tag, .ilx-in .ilx-d, .ilx-in .ilx-reflab,
+  .ilx-in .ilx-bandlab, .ilx-in .ilx-chips {
+    animation: ilx-fade 400ms ease 780ms forwards;
+  }
+}
+
+/* reduced motion + no-JS: everything at its final resting state, no transitions.
+   (These declarations also serve as the base when .ilx-in never arrives.) */
+@media (prefers-reduced-motion: reduce) {
+  .ilx-path { stroke-dashoffset: 0 !important; }
+  .ilx-dot  { transform: scale(1) !important; }
+  .ilx-bar  { transform: scaleY(1) !important; }
+}

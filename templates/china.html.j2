@@ -18,7 +18,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-{% if mode != 'stocks' %}{% include '_plotly_head.html.j2' %}{% endif %}
+<link rel="stylesheet" href="illus.css">
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -942,10 +942,8 @@
   body.page-china .cnx-fscore{text-align:right;font-weight:700}
   body.page-china .cnx-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px}
   @media (max-width:980px){body.page-china .cnx-cols2{grid-template-columns:minmax(0,1fr)}}
-  /* Plotly charts render at a fixed intrinsic width (~700px) that overflows the narrower
-     dialog columns; minmax(0,1fr) above lets the column shrink, and this keeps the chart
-     inside it. JS calls Plotly.Plots.resize() on dialog open so the SVG redraws to fit. */
-  body.page-china .cnx-dlg-body :is(.js-plotly-plot,.plotly-graph-div,.plotly){max-width:100%!important}
+  /* ilx / Signal-Ink charts stretch to the column width intrinsically (illus.css);
+     no per-chart resize needed. */
   /* wide tables (rotation, RRR history…) scroll within the dialog on narrow screens
      instead of overflowing the panel. */
   body.page-china .cnx-dlg-body .cnx-mt{display:block;max-width:100%;overflow-x:auto}
@@ -3611,17 +3609,10 @@ window.__CHART_SWAP__ = {
       try{MMHeatmap.mountScorecard('cn-hm-embed','marketdata/china_heatmap.json');}
       catch(e){_hmMounted=false;}
     }
-    /* Plotly charts render at a fixed width that overflows the narrower dialog columns.
-       Once the panel is laid out (after the entrance animation), resize each chart so its
-       SVG redraws to the column width. */
-    setTimeout(function(){
-      if(window.Plotly&&Plotly.Plots){
-        el.querySelectorAll('.js-plotly-plot').forEach(function(g){try{
-          var host=g.parentElement,w=host?host.clientWidth:0;
-          if(Plotly.relayout&&w>10){Plotly.relayout(g,{width:w});}else{Plotly.Plots.resize(g);}
-        }catch(e){}});
-      }
-    },380);
+    /* Replay the ilx / Signal-Ink charts in this dialog. They're already laid out
+       (stretch to their column via illus.css); ilxReveal restarts the ink draw once
+       the panel entrance has settled, so every open re-animates. */
+    if(window.ilxReveal){setTimeout(function(){ilxReveal(el);},340);}
   }
   function cnxCloseDlg(){
     document.querySelectorAll('.cnx-dlg.open').forEach(function(el){
@@ -3679,6 +3670,7 @@ window.__CHART_SWAP__ = {
 {%- endif %}
 <script src="theme.js"></script>
 <script src="china_risk_state_live.js"></script>
+<script defer src="illus.js"></script>
 <script src="chart_i18n.js"></script>
 <script src="mtf.js"></script>
 <script src="tablesort.js"></script>

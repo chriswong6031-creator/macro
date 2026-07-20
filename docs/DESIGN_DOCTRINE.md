@@ -112,6 +112,12 @@ spin words on tape rows (giveback / dead-cat / bounce — banned by adversarial 
   (LIVE · 15-MIN DELAYED / SETTLED CLOSE), one as-of, full display names (wrap, never
   truncate), honest shared-scale bars, flow demoted to data-tips, one merged footnote.
 - **`?` help tip on the panel h2** (MTF table): the sanctioned Tier 2 home for mechanics.
+- **ilx / Signal Ink illustrations** (2026-07-20, operator-ordered): ALL illustrative/display
+  time-series charting on user-facing surfaces uses the shared format — `lib/illus.py`
+  (SSR SVG) + `illus.css`/`illus.js` (draw-on-reveal ink, waterline dual-tint for
+  zero-anchored series, honest null slots, theme/ZH-swap via CSS vars). Never Plotly on
+  dashboards. Real trading charts (candles, interactive Tier-3 study pages) stay on the
+  charting stack. Full contract: `docs/ILLUSTRATIONS.md`.
 - **Vetoed idioms — do not clone:** the old ftr-tape band (raw slugs, rank numbers,
   pill spam, "Live" over settled data, fake magnitude bars, stacked disclaimers) —
   ported off `baskets` / `allocation` / `basket_detail` in #2232; the `.dtp` idiom is

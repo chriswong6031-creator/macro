@@ -24,14 +24,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import plotly.graph_objects as go  # noqa: E402
 
-from lib import config, site_assets, store  # noqa: E402
+from lib import config, illus, site_assets, store  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_canada")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js", "stockview.js", "stocktable.js", "heatmap.js")
+          "charts.js", "tablesort.js", "stockview.js", "stocktable.js", "heatmap.js",
+          "illus.css", "illus.js")
 
 
 def _range_selector() -> dict:
@@ -95,25 +96,70 @@ def _chart_axes(hist: pd.DataFrame, days: int = 3650) -> str:
     return _chart_html(fig)
 
 
+def _ilx_axes(hist: pd.DataFrame, days: int = 1825) -> str:
+    """Growth & inflation regime scores as an ilx / Signal-Ink multi-line fragment.
+    Both scores oscillate around 0 (above = expanding/heating, below = contracting/
+    cooling). Growth = var(--info), Inflation = var(--orange). Used on canada.html
+    dialogs (the Plotly `_chart_axes` is retained for canada_history.html)."""
+    if hist is None or hist.empty:
+        return ""
+    cut = hist.index.max() - pd.Timedelta(days=days)
+    sub = hist.loc[cut:]
+
+    def _ser(col: str) -> list:
+        s = sub[col].dropna() if col in sub.columns else pd.Series(dtype=float)
+        return [{"d": d.strftime("%Y-%m-%d"), "v": round(float(v), 3)} for d, v in s.items()]
+
+    specs = [("Growth", "增长", "var(--info)", "growth_score"),
+             ("Inflation", "通胀", "var(--orange)", "inflation_score")]
+    out = []
+    for le, lz, color, col in specs:
+        rows = _ser(col)
+        if not rows:
+            continue
+        out.append({"label_en": le, "label_zh": lz, "color": color,
+                    "dates": [r["d"] for r in rows], "vals": [r["v"] for r in rows]})
+    if len(out) < 2:
+        return ""
+    return illus.illus(out, kind="multi", height=200, value_fmt="{:+.2f}",
+                       baseline=0, aria_en="Canada growth and inflation regime scores over time")
+
+
+def _ilx_series(df, cut) -> dict | None:
+    """Trim a single-column macro DataFrame to `cut` -> ilx {dates, vals} (or None)."""
+    if df is None or df.empty:
+        return None
+    s = df[df.index >= cut].iloc[:, 0].dropna()
+    if s.empty:
+        return None
+    return {"dates": [d.strftime("%Y-%m-%d") for d in s.index],
+            "vals": [round(float(v), 2) for v in s]}
+
+
 def _chart_curve(days: int = 2600) -> str:
-    """BoC policy rate + GoC 2y/10y yields over ~10y (the rate-path / curve panel)."""
+    """BoC policy rate + GoC 2y/10y yields over ~10y, as an ilx / Signal-Ink
+    multi-line fragment (no Plotly). The policy rate is the anchor (brightest,
+    var(--text)); its daily series already carries the flat-then-25bp-step shape,
+    so the straight-segment ilx polyline draws the steps faithfully."""
     pr, g2, g10 = (store.read("canada_macro", c) for c in ("policy_rate", "goc_2y", "goc_10y"))
     if g2 is None or g10 is None:
         return ""
-    fig = go.Figure()
-    series = [("policy_rate", pr, "#c08bd8", "BoC policy"),
-              ("goc_2y", g2, "#3f9fd8", "GoC 2y"),
-              ("goc_10y", g10, "#5fbf7f", "GoC 10y")]
     cut = g10.index.max() - pd.Timedelta(days=days)
-    for col, df, color, label in series:
-        if df is None or df.empty:
+    specs = [
+        ("BoC policy rate", "央行利率", "var(--text)", pr),
+        ("GoC 2y", "2年期", "var(--info)", g2),
+        ("GoC 10y", "10年期", "#a070e8", g10),
+    ]
+    out = []
+    for le, lz, color, df in specs:
+        ser = _ilx_series(df, cut)
+        if ser is None:
             continue
-        s = df[df.index >= cut].iloc[:, 0].dropna()
-        fig.add_trace(go.Scatter(x=s.index, y=s, name=label, line={"color": color, "width": 1.4}))
-    fig.update_layout(**PLOT_LAYOUT, showlegend=True)
-    fig.update_xaxes(rangeselector=_range_selector())
-    fig.update_layout(margin={"l": 45, "r": 15, "t": 44, "b": 30}, legend={"orientation": "h", "y": 1.14})
-    return _chart_html(fig)
+        out.append({"label_en": le, "label_zh": lz, "color": color, **ser})
+    if len(out) < 2:
+        return ""
+    return illus.illus(out, kind="multi", height=200, value_fmt="{:,.2f}",
+                       aria_en="BoC policy rate and Government of Canada 2-year and 10-year yields")
 
 
 def canada_regime_timeline(hist: pd.DataFrame) -> dict:
@@ -783,7 +829,7 @@ def main() -> int:
             (site / "canada_regime_timeline.json").write_text(
                 json.dumps(canada_regime_timeline(hist), separators=(",", ":")))
             vm["lifespan_rows"] = _lifespan_rows(hist["quad"])
-            vm["axes_chart"] = _chart_axes(hist, days=1825)
+            vm["axes_chart"] = _ilx_axes(hist, days=1825)
 
         # residual-alpha leg (per-stock signal + alpha-led leaders)
         alpha = None
