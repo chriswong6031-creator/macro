@@ -18,8 +18,12 @@ rendered twice with the same vm — mode='macro' (macro.html) and mode='stocks'
 The standout-board fixture row carries a `dossier` dict (action / why_now /
 no_buy_reasons / stale_flags / authority_level) matching the Buy Decision Packet
 producer shape (PR #1784, build_stock_library join) — a non-empty
-`no_buy_reasons` list is what catches the 'extract' filter crash.  Do not trim
-these keys.
+`no_buy_reasons` list is what caught the 'extract' filter crash.  Do not trim
+these keys.  NOTE (PR #3012, 2026-07-19): the dossier/details markup is now
+gated `mode != 'stocks'` while the board itself is `mode != 'macro'`, so the
+dossier renders in NEITHER mode — the fixture now proves intentional absence
+(see test_stocks_mode_dossier_block_intentionally_absent) instead of reaching
+the markup.
 """
 from __future__ import annotations
 
@@ -228,28 +232,43 @@ def test_stocks_mode_renders_without_exception():
 
 def test_stocks_mode_renders_standout_card_body():
     """The board-row loop body actually ran — this is where the template-crash
-    class lives (per-card chips, dossier, expander).  An empty board would let
-    a broken card body pass silently."""
+    class lives (per-card chips; the dossier/expander legs were removed from
+    stocks mode by #3012).  An empty board would let a broken card body pass
+    silently."""
     html = _render("stocks")
     assert "ACME" in html
     assert "ZEUS" in html  # ungrouped lane=None card renders too
 
 
-def test_stocks_mode_renders_dossier_block():
-    """The dossier fixture actually reaches the Buy Decision Packet markup
-    (merged with #1784) — the not-now reason-code mapping is the exact spot the
-    original 'extract' filter crash lived.  If this markup is ever removed on
-    purpose, drop this test with it; if it goes ABSENT unexpectedly, the fixture
-    has silently stopped covering the dossier path."""
+def test_stocks_mode_dossier_block_intentionally_absent():
+    """Supersedes test_stocks_mode_renders_dossier_block (the presence form)
+    after PR #3012 — the removal its docstring warned about happened ON PURPOSE.
+
+    Archaeology: the standout board renders only in stocks mode (the whole
+    section sits under `mode != 'macro'`, ~L12886 — macro.html lost its Prophet
+    cards to the macro-v2 grid).  PR #3012 (operator request 2026-07-19) then
+    gated the Details dropdown + .nb-more panel — which contains the Buy
+    Decision Packet dossier — behind `mode != 'stocks'`.  build_site.py renders
+    only mode in {macro, stocks}, so the dossier markup is now unreachable in
+    BOTH modes; #3012's "retained on macro.html" premise was wrong.
+
+    This test pins the intentional absence: even a buy row carrying a FULL
+    dossier (the ACME fixture — see test_fixture_row_carries_dossier_contract)
+    must not emit the dossier or dropdown markup on stocks.  If the Buy
+    Decision Packet is ever re-homed, flip these assertions back to presence
+    so the 'extract'-filter crash class (#1784) is covered again."""
     html = _render("stocks")
-    assert "nb-dossier" in html
-    assert "Not now:" in html  # non-empty no_buy_reasons rendered via the code map
+    assert "ACME" in html  # board rendered — absence assertions are not vacuous
+    assert "nb-dossier" not in html
+    assert '<button class="nb-more-btn"' not in html  # dropdown toggle gone too
 
 
 def test_fixture_row_carries_dossier_contract():
     """Pin the dossier fixture shape (Buy Decision Packet, PR #1784): a
-    non-empty no_buy_reasons list is what exercises the reason-code mapping —
-    trimming these keys would silently stop covering the dossier markup."""
+    non-empty no_buy_reasons list is what exercised the reason-code mapping.
+    Post-#3012 the markup no longer renders (see the absence test above), but
+    the fixture stays full-shape: it keeps the producer contract documented and
+    makes the absence assertion meaningful (dossier in, no dossier markup out)."""
     dossier = _base_vm()["us_standouts"]["buy"][0]["dossier"]
     for key in ("action", "no_buy_reasons", "stale_flags", "authority_level"):
         assert dossier.get(key), f"dossier fixture lost its {key!r} leg"

@@ -13586,8 +13586,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           {% endif %}
           {# --- Details dropdown (button + panel) — REMOVED on us_stocks.html (mode=='stocks')
-             per operator request 2026-07-19; retained on macro.html. Gate wraps BOTH the
-             toggle button and the .nb-more panel so no dead/unreachable markup ships on stocks. #}
+             per operator request 2026-07-19 (#3012). Gate wraps BOTH the toggle button and the
+             .nb-more panel so no dead/unreachable markup ships on stocks.
+             CORRECTION (2026-07-19): #3012's "retained on macro.html" premise was wrong — the
+             enclosing standout board is itself gated mode != 'macro' (~L12886) and build_site.py
+             renders only mode in {macro, stocks}, so this whole block (incl. the #1784 Buy
+             Decision Packet dossier) is currently UNREACHABLE in BOTH modes. Kept as dormant
+             markup pending an operator call: re-home the dossier or delete the block. Pinned by
+             tests/test_dashboard_template_render.py (intentional-absence test). #}
           {% if mode != 'stocks' %}
           {# --- Expander toggle button (≥32px tall per spec, delegated handler below).
              role="button" + aria-expanded per spec §6. l-en/l-zh spans, no CJK in title=.
