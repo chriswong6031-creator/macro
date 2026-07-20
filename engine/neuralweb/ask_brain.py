@@ -320,28 +320,72 @@ def sanitize_question(question: str) -> tuple[str, str | None]:
 # Advice post-filter
 # ---------------------------------------------------------------------------
 
-def _post_filter_advice(answer: str, citations: list[str]) -> tuple[str, bool]:
-    """Check for advice patterns; replace with refusal if found.
+# Sentence boundary — split AFTER a terminator, keeping it with its sentence. ZH terminators
+# (。！？) split with no following space (Chinese runs sentences together); EN terminators
+# split only before whitespace (so "11%." / "Inc." don't shatter mid-word).
+_SENT_SPLIT = re.compile(r"(?<=[。！？])|(?<=[.!?])\s+")
+# After rejoining kept sentences with a space, drop the space that lands between two Chinese
+# characters (Chinese doesn't space its sentences) — leaves English spacing untouched.
+_ZH_JOIN_FIX = re.compile(r"(?<=[一-鿿。！？，])\s+(?=[一-鿿])")
 
-    Returns (filtered_answer, was_filtered).
+
+def _advice_refusal(zh: bool, citations: list[str]) -> str:
+    """The graceful, language-aware decline used when the WHOLE answer was an order."""
+    if zh:
+        r = ("我不能给出个人买卖指令 —— 但可以告诉你看板的校准信号现在显示什么，"
+             "以及它们指向的立场。想让我按信号帮你梳理当前的方向吗？")
+    else:
+        r = ("I can't give a personal buy/sell call — but I can tell you what the "
+             "dashboard's calibrated signals show and the stance they point to. "
+             "Want me to walk through what the signals favor right now?")
+    if citations:
+        r += ("\n\n来源: " if zh else "\n\nSources: ") + ", ".join(citations)
+    return r
+
+
+def _post_filter_advice(answer: str, citations: list[str]) -> tuple[str, bool]:
+    """Neutralize personal-order language while KEEPING the good analysis.
+
+    A single stray "you should buy X" no longer nukes a whole page of real signal read.
+    We remove only the sentence(s) that carry the order (line by line, so paragraphs and
+    bullets survive) and keep the rest. The [NEXT] follow-up block is never touched. Only
+    when nothing meaningful is left — the answer WAS the order — do we fall back to the
+    graceful, language-aware refusal. Returns (filtered_answer, was_filtered).
     """
-    for pat in _ADVICE_PATTERNS:
-        if pat.search(answer):
-            # Genuine personal-order language slipped through — decline the *order*
-            # gracefully. Language-aware: a Chinese answer must never be replaced with an
-            # English refusal (and the old copy promised an "honest version" it never gave).
-            zh = bool(re.search(r"[一-鿿]", answer))
-            if zh:
-                refusal = ("我不能给出个人买卖指令 —— 但可以告诉你看板的校准信号现在显示什么，"
-                           "以及它们指向的立场。想让我按信号帮你梳理当前的方向吗？")
-            else:
-                refusal = ("I can't give a personal buy/sell call — but I can tell you what the "
-                           "dashboard's calibrated signals show and the stance they point to. "
-                           "Want me to walk through what the signals favor right now?")
-            if citations:
-                refusal += ("\n\n来源: " if zh else "\n\nSources: ") + ", ".join(citations)
-            return refusal, True
-    return answer, False
+    if not answer or not any(p.search(answer) for p in _ADVICE_PATTERNS):
+        return answer, False
+
+    # Set the [NEXT] block aside — follow-up questions are never advice and must survive.
+    m = re.search(r"\n*\[NEXT\][ \t]*\n", answer)
+    body = answer[:m.start()] if m else answer
+    next_block = answer[m.start():] if m else ""
+
+    removed = False
+    out: list[str] = []
+    for line in body.split("\n"):
+        if not line.strip():
+            out.append(line)
+            continue
+        kept = []
+        for s in _SENT_SPLIT.split(line):
+            if s.strip() and any(p.search(s) for p in _ADVICE_PATTERNS):
+                removed = True   # drop only this sentence
+                continue
+            kept.append(s)
+        joined = _ZH_JOIN_FIX.sub("", " ".join(x for x in kept if x.strip()))
+        if joined:
+            out.append(joined)
+        # else: the whole line was the order → drop it entirely
+    cleaned = re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip()
+
+    # Real analysis survived the strip → keep it (surgical), plus the follow-ups.
+    if removed and len(cleaned) >= 24:
+        result = cleaned + ("\n\n" + next_block.lstrip("\n") if next_block.strip() else "")
+        return result.strip(), True
+
+    # Nothing worth keeping — the answer was the order → graceful refusal, no stale follow-ups.
+    zh = bool(re.search(r"[一-鿿]", answer))
+    return _advice_refusal(zh, citations), True
 
 
 # ---------------------------------------------------------------------------

@@ -348,12 +348,12 @@ def test_quota_fail_open_on_bad_state_dir():
 # ---------------------------------------------------------------------------
 
 def test_advice_filter_buy_should():
-    """'you should buy NVDA' triggers the post-filter."""
+    """'you should buy NVDA' is SURGICALLY removed — the real signal read is kept, not nuked."""
     answer = "Based on the signals, you should buy NVDA now. The radar shows a strong divergence."
     filtered, was_filtered = ab._post_filter_advice(answer, ["signal_id_123"])
     assert was_filtered is True
-    assert "buy/sell call" in filtered
-    assert "signal_id_123" in filtered
+    assert "you should buy" not in filtered.lower()          # the order is gone
+    assert "radar shows a strong divergence" in filtered      # the analysis survives
 
 
 def test_advice_filter_recommendation():
@@ -2007,3 +2007,35 @@ def test_advice_refusal_is_language_aware():
     assert "买卖指令" in zh_ans and "来源" in zh_ans
     en_ans, en_flag = _ab._post_filter_advice("You should buy NVDA now.", ["s1"])
     assert en_flag is True and "buy/sell call" in en_ans and "Sources" in en_ans
+
+
+def test_advice_filter_surgical_keeps_analysis_en():
+    """A single stray order is stripped; the surrounding analysis + stance + [NEXT] survive."""
+    import engine.neuralweb.ask_brain as _ab
+    ans = ("Semis are getting hit — SMH down 11% in 20 days. You should buy NVDA now. "
+           "Software is picking up the slack and it's broad.\n\nWatch — don't chase\n\n"
+           "[NEXT]\nWhat's leading?\nShow me SMH\nIs credit calm?")
+    out, flagged = _ab._post_filter_advice(ans, ["s1"])
+    assert flagged is True
+    assert "you should buy" not in out.lower()          # order removed
+    assert "SMH down 11%" in out and "picking up the slack" in out   # analysis kept
+    assert "Watch — don't chase" in out                 # stance kept
+    assert "[NEXT]" in out and "Show me SMH" in out      # follow-ups kept
+
+
+def test_advice_filter_surgical_keeps_analysis_zh():
+    """Chinese: strip the order sentence (no spaces between 。), keep the rest in clean Chinese."""
+    import engine.neuralweb.ask_brain as _ab
+    ans = "半导体今天很弱，SMH跌了11%。建议加仓AAPL。软件在接棒，而且广度不错。\n\nWatch — don't chase"
+    out, flagged = _ab._post_filter_advice(ans, [])
+    assert flagged is True
+    assert "建议加仓" not in out                          # order removed
+    assert "半导体今天很弱" in out and "软件在接棒" in out   # analysis kept
+    assert "11%。软件" in out                             # no stray space between ZH sentences
+
+
+def test_advice_filter_whole_order_falls_back_to_refusal():
+    """When the WHOLE answer is just the order, fall back to the graceful refusal."""
+    import engine.neuralweb.ask_brain as _ab
+    out, flagged = _ab._post_filter_advice("You should buy NVDA now.", ["s1"])
+    assert flagged is True and "buy/sell call" in out and "Sources" in out
