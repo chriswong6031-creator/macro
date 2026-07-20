@@ -717,83 +717,83 @@
     },
     "2026-07-20": {
       "china": {
-        "cache_read_tokens": 161480,
-        "calls": 1,
-        "input_tokens": 5288,
+        "cache_read_tokens": 448420,
+        "calls": 3,
+        "input_tokens": 27868,
         "keys": {},
-        "output_tokens": 8761,
+        "output_tokens": 24507,
         "seats": {
           "china_brain": {
-            "calls": 1,
-            "input_tokens": 5288,
-            "output_tokens": 8761,
-            "usd": 1.113423
+            "calls": 3,
+            "input_tokens": 27868,
+            "output_tokens": 24507,
+            "usd": 3.437635
           }
         },
-        "usd": 1.113423
+        "usd": 3.437635
       },
       "hk": {
-        "cache_read_tokens": 120750,
-        "calls": 1,
-        "input_tokens": 5293,
+        "cache_read_tokens": 498419,
+        "calls": 3,
+        "input_tokens": 27871,
         "keys": {},
-        "output_tokens": 8202,
+        "output_tokens": 28639,
         "seats": {
           "hk_brain": {
-            "calls": 1,
-            "input_tokens": 5293,
-            "output_tokens": 8202,
-            "usd": 1.043457
+            "calls": 3,
+            "input_tokens": 27871,
+            "output_tokens": 28639,
+            "usd": 3.257998
           }
         },
-        "usd": 1.043457
+        "usd": 3.257998
       },
       "system": {
-        "cache_read_tokens": 40515,
-        "calls": 9,
-        "input_tokens": 90,
+        "cache_read_tokens": 162060,
+        "calls": 29,
+        "input_tokens": 280,
         "keys": {
           "claude_code_oauth_3": {
-            "calls": 2,
-            "input_tokens": 20,
-            "output_tokens": 24137,
-            "usd": 0.19157
+            "calls": 5,
+            "input_tokens": 50,
+            "output_tokens": 53707,
+            "usd": 0.46839
           },
           "claude_code_oauth_4": {
-            "calls": 2,
-            "input_tokens": 20,
-            "output_tokens": 24315,
-            "usd": 0.220211
+            "calls": 7,
+            "input_tokens": 70,
+            "output_tokens": 62275,
+            "usd": 0.594162
           },
           "claude_code_oauth_5": {
-            "calls": 2,
-            "input_tokens": 20,
-            "output_tokens": 19848,
-            "usd": 0.171123
+            "calls": 6,
+            "input_tokens": 50,
+            "output_tokens": 50628,
+            "usd": 0.53711
           },
           "claude_code_oauth_6": {
-            "calls": 2,
-            "input_tokens": 20,
-            "output_tokens": 5058,
-            "usd": 0.097285
+            "calls": 6,
+            "input_tokens": 60,
+            "output_tokens": 47015,
+            "usd": 0.46363
           },
           "claude_code_oauth_7": {
-            "calls": 1,
-            "input_tokens": 10,
-            "output_tokens": 2732,
-            "usd": 0.061478
+            "calls": 5,
+            "input_tokens": 50,
+            "output_tokens": 32375,
+            "usd": 0.365102
           }
         },
-        "output_tokens": 76090,
+        "output_tokens": 246000,
         "seats": {
           "scout": {
-            "calls": 9,
-            "input_tokens": 90,
-            "output_tokens": 76090,
-            "usd": 0.741667
+            "calls": 29,
+            "input_tokens": 280,
+            "output_tokens": 246000,
+            "usd": 2.428393
           }
         },
-        "usd": 0.741667
+        "usd": 2.428393
       }
     }
   },
@@ -801,32 +801,32 @@
   "totals_30d": {
     "by_book": {
       "autonomous": 31.71888,
-      "china": 32.765641,
+      "china": 35.089853,
       "etf": 2.88591,
       "flagship": 40.833917,
       "heavyweight": 13.115459,
-      "hk": 22.328846,
-      "system": 0.835886
+      "hk": 24.543387,
+      "system": 2.522612
     },
     "by_key": {
-      "claude_code_oauth_3": 1.708123,
-      "claude_code_oauth_4": 2.092253,
-      "claude_code_oauth_5": 1.906673,
-      "claude_code_oauth_6": 2.178334,
-      "claude_code_oauth_7": 1.800687
+      "claude_code_oauth_3": 1.984943,
+      "claude_code_oauth_4": 2.466204,
+      "claude_code_oauth_5": 2.27266,
+      "claude_code_oauth_6": 2.544679,
+      "claude_code_oauth_7": 2.104311
     },
     "by_seat": {
       "autonomous_brain": 3.195455,
-      "china_brain": 1.113423,
+      "china_brain": 3.437635,
       "deep": 8.850182,
       "etf_brain": 2.88591,
       "flagship_pm": 1.942054,
       "heavyweight_brain": 1.287095,
-      "hk_brain": 1.043457,
-      "scout": 0.835886
+      "hk_brain": 3.257998,
+      "scout": 2.522612
     },
-    "input_tokens": 211382,
-    "output_tokens": 278932,
-    "usd": 144.4845
+    "input_tokens": 256730,
+    "output_tokens": 485025,
+    "usd": 150.71
   }
 }

@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_nw_feedback.v3",
-  "generated_at": "2026-07-20T12:25:00Z",
+  "generated_at": "2026-07-20T22:25:00Z",
   "window_days": 14,
   "thesis_counts": {
     "open": 27,
@@ -15,21 +15,6 @@
     },
     "macro_refresh": {
       "ok": 109,
-      "error": 0,
-      "other": 0
-    },
-    "derisk_us_intraday": {
-      "ok": 126,
-      "error": 0,
-      "other": 0
-    },
-    "watch_asia_overnight": {
-      "ok": 28,
-      "error": 0,
-      "other": 0
-    },
-    "broken_job": {
-      "ok": 1,
       "error": 0,
       "other": 0
     },
@@ -68,6 +53,11 @@
       "error": 0,
       "other": 0
     },
+    "watch_asia_overnight": {
+      "ok": 28,
+      "error": 0,
+      "other": 0
+    },
     "settle_brain_asia": {
       "ok": 10,
       "error": 0,
@@ -88,18 +78,23 @@
       "error": 0,
       "other": 0
     },
+    "derisk_us_intraday": {
+      "ok": 127,
+      "error": 0,
+      "other": 0
+    },
     "settle_pending": {
-      "ok": 9,
+      "ok": 10,
       "error": 0,
       "other": 0
     },
     "portfolio_risk_compose": {
-      "ok": 119,
+      "ok": 135,
       "error": 0,
       "other": 0
     },
     "portfolio_risk_daily": {
-      "ok": 8,
+      "ok": 9,
       "error": 0,
       "other": 0
     },
@@ -114,12 +109,12 @@
       "other": 0
     },
     "vps_state_sync": {
-      "ok": 705,
+      "ok": 745,
       "error": 13,
       "other": 0
     },
     "prewarm_marks": {
-      "ok": 2682,
+      "ok": 2952,
       "error": 0,
       "other": 0
     }
@@ -129,19 +124,17 @@
       "book_id": "flagship",
       "gate_failures": {
         "by_severity": {
-          "FREEZE": 15,
-          "ADVISORY_ONLY": 2
+          "FREEZE": 7
         },
         "by_guard": {
-          "peer_expectation": 8,
-          "stale_anchor": 7,
-          "dashboard_write": 2
+          "peer_expectation": 4,
+          "stale_anchor": 3
         },
-        "total": 17
+        "total": 7
       },
       "rejected_decision_count": 158,
-      "lock_conflict_count": 5,
-      "stale_freeze_count": 15
+      "lock_conflict_count": 6,
+      "stale_freeze_count": 7
     },
     {
       "book_id": "heavyweight",
@@ -220,7 +213,7 @@
       {
         "book_id": "china",
         "packet_accepted": 0,
-        "packet_rejected": 20
+        "packet_rejected": 15
       },
       {
         "book_id": "etf",
@@ -240,12 +233,12 @@
       {
         "book_id": "hk",
         "packet_accepted": 0,
-        "packet_rejected": 13
+        "packet_rejected": 15
       }
     ],
     "rejection_error_classes": {
-      "expected_failure_mode": 88,
-      "falsifiers": 88
+      "expected_failure_mode": 85,
+      "falsifiers": 85
     }
   },
   "outcome_mix": {
