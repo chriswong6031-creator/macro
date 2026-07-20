@@ -717,6 +717,8 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
     # research mode forces pro lane (gateway also enforces this, but be explicit here)
     lane = "pro" if mode == "research" else (body.lane if body.lane in ("fast", "pro") else "fast")
     user_id = user.get("id") or user.get("email") or "unknown"
+    # CXI-R23a: email comes ONLY from the Supabase-verified require_user result — never body/headers.
+    user_email = (user.get("email") or "").strip().lower()
 
     # Burst throttle FIRST — a throttled request must not consume quota.
     _brain_throttle_check(user_id)
@@ -740,6 +742,7 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
         mode=mode,
         images=body.images,
         device_key=device_hash,
+        user_email=user_email,
     )
 
     if result.get("quota_exhausted"):
@@ -766,6 +769,8 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
     mode = body.mode if body.mode in ("chat", "research") else "chat"
     lane = "pro" if mode == "research" else (body.lane if body.lane in ("fast", "pro") else "fast")
     user_id = user.get("id") or user.get("email") or "unknown"
+    # CXI-R23a: email comes ONLY from the Supabase-verified require_user result — never body/headers.
+    user_email = (user.get("email") or "").strip().lower()
 
     # Burst throttle FIRST — a throttled request must not consume quota.
     _brain_throttle_check(user_id)
@@ -788,6 +793,7 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
             mode=mode,
             images=body.images,
             device_key=device_hash,
+            user_email=user_email,
         )
 
     return StreamingResponse(_gen(), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)

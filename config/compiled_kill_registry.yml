@@ -151,7 +151,7 @@ entries:
     section_name: forbidden_by_ruling
 
   - topic: 'Wiring repo-internals retrieval into ANY public-facing surface (public/subscriber Brain chat, public API, or site endpoint serving `context_search`, the site-semantics glossary, engine source, or research docs)'
-    verdict: 'FORBIDDEN — public-audience answers come only from what the site ships (Tier-2 receipts, on-page help) or a separately curated public FAQ; CXI retrieval is operator/agent-audience only. Source-visibility acceptance (repo public for mirror + live-quotes) does NOT extend to serving internals through product surfaces'
+    verdict: 'FORBIDDEN — public-audience answers come only from what the site ships (Tier-2 receipts, on-page help) or a separately curated public FAQ; CXI retrieval is operator/agent-audience only. SOLE exception (CXI-R23a, operator order 2026-07-20): Brain-gateway sessions whose SERVER-VERIFIED email is in the env-only operator allowlist (BRAIN_INTERNALS_ALLOWLIST; never committed) may receive shared-plane internals tools. Source-visibility acceptance (repo public for mirror + live-quotes) does NOT extend to serving internals through product surfaces'
     source: 'CXI-R23, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` Amendment 2 (2026-07-20, operator ruling)'
     section: 1
     section_name: forbidden_by_ruling
