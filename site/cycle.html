@@ -317,17 +317,18 @@
 <script src="regimedata/regime_prior.js?v=5584226e" defer></script>
 <script src="cycle_data.js?v=2ce0cc08" defer></script>
 <script src="cycledata/cycle_engine.js?v=0cc6f4d0" defer></script>
-<script src="mm_charts.js?v=4"></script>
+<script src="mm_charts.js?v=4" defer></script>
 <script src="cycle_i18n.js?v=81162fb9" defer></script>
-<script src="cycle_app.js?v=3"></script>
-<script>try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}</script>
+<script src="cycle_app.js?v=3" defer></script>
+<script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}});</script>
 <script>
 /* W4.5 regime-prior reconciliation banner — rendered after all data scripts load.
    Two layers: (0) CONTRADICTION — curated regime_claim quad vs the live engine quad
    (from CYCLE_ENGINE.regime_disagreement, softened to amber when the engine read is
    itself provisional); (1) prior stale/partial; (2) curated prose > 30 days old.
-   Dual-span EN/zh — no t() in attributes. */
-(function(){
+   Dual-span EN/zh — no t() in attributes. Runs on DOMContentLoaded so the deferred
+   data scripts (CYCLE_ENGINE / REGIME_PRIOR) are guaranteed loaded first. */
+document.addEventListener('DOMContentLoaded',function(){
   try{
     var host=document.getElementById('regime-prior-banner');
     if(!host)return;
@@ -373,7 +374,7 @@
     });
     host.innerHTML=html;
   }catch(e){}
-})();
+});
 </script>
 <script src="theme.js?v=e63903ba" defer></script>
 </body>
