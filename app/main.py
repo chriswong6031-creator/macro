@@ -42,12 +42,15 @@ DEPLOY NOTE: the per-user/global quota ledger is written to MACRO_API_STATE_DIR
 from __future__ import annotations
 
 import base64
+import hashlib
+import hmac
 import json
 import os
 import subprocess
 import sys
 import threading
 import time
+from collections import deque
 import urllib.error
 import urllib.request
 import uuid
@@ -584,14 +587,112 @@ def _brain_module():
         raise HTTPException(503, f"brain_gateway unavailable: {exc}") from exc
 
 
+# ── Brain security: burst throttle + device-linked identity (PART A/B) ─────────
+# Burst throttle: an in-memory per-user sliding window shared across chat + stream.
+# max 10 requests / 60s → 429. Applied BEFORE the quota check so a throttled request
+# does not consume quota. The dict is capped so it can never grow unbounded.
+_BRAIN_THROTTLE_MAX = 10
+_BRAIN_THROTTLE_WINDOW = 60.0
+_BRAIN_THROTTLE_CAP = 5000
+_brain_throttle: dict[str, deque] = {}
+_brain_throttle_lock = threading.Lock()
+
+
+def _brain_throttle_check(user_id: str) -> None:
+    """Raise 429 when user_id exceeds the sliding-window request budget. Prunes on access."""
+    now = time.monotonic()
+    cutoff = now - _BRAIN_THROTTLE_WINDOW
+    with _brain_throttle_lock:
+        dq = _brain_throttle.get(user_id)
+        if dq is None:
+            if len(_brain_throttle) >= _BRAIN_THROTTLE_CAP:
+                # Evict the oldest-inserted entry (dict preserves insertion order).
+                try:
+                    _brain_throttle.pop(next(iter(_brain_throttle)))
+                except StopIteration:
+                    pass
+            dq = deque()
+            _brain_throttle[user_id] = dq
+        while dq and dq[0] < cutoff:
+            dq.popleft()
+        if len(dq) >= _BRAIN_THROTTLE_MAX:
+            raise HTTPException(429, detail={"error": "rate_limited", "note": "slow down"})
+        dq.append(now)
+
+
+def _brain_identity(request: Request) -> tuple[str, str, str]:
+    """Derive (aid, ip, device_key_hash) for the brain request.
+
+    aid    = the mm_aid first-party visitor cookie (empty when absent).
+    ip     = the real client IP (EO-Client-IP aware, via _mm_client_ip).
+    TRUSTED PROXY OVERRIDE: the Terminal's server-side proxy forwards the real visitor's
+    identity as x-mm-aid / x-mm-ip. We accept those headers ONLY when the request carries
+    the shared BRAIN_PROXY_SECRET — a source-IP check is NOT enough: macro-api sits behind
+    Caddy on 127.0.0.1, so EVERY public request appears to originate from 127.0.0.1 and a
+    browser could otherwise forge a fresh device per request. The secret is known only to
+    the co-located Terminal service; public traffic can't produce it (and Caddy strips
+    x-mm-* on the public hosts as defense-in-depth). No secret configured → never trust the
+    headers (dashboard traffic reads its own cookie/IP directly, which is correct).
+    device_key = 'aid:<aid>' when aid present, else 'ip:<ip>' when ip known, else ''.
+    Returns the sha256[:16] hash of device_key (empty string when device_key is empty).
+    """
+    aid = request.cookies.get(_MM_ANON_COOKIE) or ""
+    ip = _mm_client_ip(request)
+
+    secret = os.environ.get("BRAIN_PROXY_SECRET", "")
+    supplied = (request.headers.get("x-mm-proxy-secret") or "")
+    if secret and hmac.compare_digest(supplied, secret):
+        hdr_aid = (request.headers.get("x-mm-aid") or "").strip()
+        if hdr_aid:
+            aid = hdr_aid
+        hdr_ip = (request.headers.get("x-mm-ip") or "").strip()
+        if hdr_ip:
+            ip = hdr_ip
+
+    if aid:
+        device_key = "aid:" + aid
+    elif ip and ip != "unknown":
+        device_key = "ip:" + ip
+    else:
+        device_key = ""
+
+    device_hash = hashlib.sha256(device_key.encode()).hexdigest()[:16] if device_key else ""
+    return aid, ip, device_hash
+
+
+def _brain_track_event(aid: str, ip: str, user_id: str) -> None:
+    """Fire-and-forget admin cross-tracking row (type 'brain_chat'), mirroring the beacon's
+    row columns. If the analytics table's type CHECK rejects it, the insert silently no-ops
+    (_mm_analytics_insert never raises)."""
+    row = {
+        "type": "brain_chat",
+        "site": "macro",
+        "path": None,
+        "ref": None,
+        "ticker": None,
+        "dwell_ms": None,
+        "scroll": None,
+        "fp": None,
+        "session_id": None,
+        "visitor_id": (aid or None),
+        "user_id": (user_id if user_id and user_id != "unknown" else None),
+        "ip": ip,
+        "ua": None,
+        "client_ts": None,
+        "meta": None,
+    }
+    _mm_analytics_insert([row])
+
+
 @app.post("/api/brain/chat")
-def brain_chat(body: BrainChatRequest, user: dict = Depends(require_user)):
+def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundTasks,
+               user: dict = Depends(require_user)):
     """Brain chat — non-streaming.
 
     POST body: {message, lane?, thread_id?, history?, context?}
     Response: {ok, reply, citations, annotations?, symbol?, lane, model, thread_id,
                quota: {lane, remaining, limit, period}, filtered, degraded, is_context_only}
-    HTTP 402 when quota exhausted.
+    HTTP 402 when quota exhausted; 429 when the burst throttle trips.
     """
     gw = _brain_module()
     # mode validation: only 'chat' and 'research' are accepted
@@ -599,6 +700,14 @@ def brain_chat(body: BrainChatRequest, user: dict = Depends(require_user)):
     # research mode forces pro lane (gateway also enforces this, but be explicit here)
     lane = "pro" if mode == "research" else (body.lane if body.lane in ("fast", "pro") else "fast")
     user_id = user.get("id") or user.get("email") or "unknown"
+
+    # Burst throttle FIRST — a throttled request must not consume quota.
+    _brain_throttle_check(user_id)
+
+    # Device-linked identity (PART A): aid/ip → hashed device_key for the free-credit pool.
+    aid, ip, device_hash = _brain_identity(request)
+    # Best-effort admin cross-tracking event (never blocks; no-ops if the type is rejected).
+    background.add_task(_brain_track_event, aid, ip, user_id)
 
     # History cap: max 12 turns (24 messages)
     history = (body.history or [])[:24]
@@ -613,6 +722,7 @@ def brain_chat(body: BrainChatRequest, user: dict = Depends(require_user)):
         root=REPO,
         mode=mode,
         images=body.images,
+        device_key=device_hash,
     )
 
     if result.get("quota_exhausted"):
@@ -622,7 +732,8 @@ def brain_chat(body: BrainChatRequest, user: dict = Depends(require_user)):
 
 
 @app.post("/api/brain/stream")
-def brain_stream(body: BrainChatRequest, user: dict = Depends(require_user)):
+def brain_stream(body: BrainChatRequest, request: Request, background: BackgroundTasks,
+                 user: dict = Depends(require_user)):
     """Brain chat — SSE streaming.
 
     POST body: same as /api/brain/chat.
@@ -632,11 +743,20 @@ def brain_stream(body: BrainChatRequest, user: dict = Depends(require_user)):
         {"type":"annotate","symbol":...,...}    (when annotate_chart called, 0+)
         {"type":"delta","text":"..."}           (full buffered answer, after all tool turns)
         {"type":"done","citations":[...],"quota":{...},"usage":{...},"filtered":false,"degraded":false,"is_context_only":true}
+    HTTP 429 when the burst throttle trips.
     """
     gw = _brain_module()
     mode = body.mode if body.mode in ("chat", "research") else "chat"
     lane = "pro" if mode == "research" else (body.lane if body.lane in ("fast", "pro") else "fast")
     user_id = user.get("id") or user.get("email") or "unknown"
+
+    # Burst throttle FIRST — a throttled request must not consume quota.
+    _brain_throttle_check(user_id)
+
+    # Device-linked identity (PART A) + admin cross-tracking event.
+    aid, ip, device_hash = _brain_identity(request)
+    background.add_task(_brain_track_event, aid, ip, user_id)
+
     history = (body.history or [])[:24]
 
     def _gen():
@@ -650,6 +770,7 @@ def brain_stream(body: BrainChatRequest, user: dict = Depends(require_user)):
             root=REPO,
             mode=mode,
             images=body.images,
+            device_key=device_hash,
         )
 
     return StreamingResponse(_gen(), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
