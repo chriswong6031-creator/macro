@@ -101,6 +101,68 @@ def _prior_close(bars: pd.DataFrame, session_date: str) -> float | None:
         return None
 
 
+def _ffloat(x) -> float | None:
+    try:
+        v = float(x)
+        return v if v == v and v not in (float("inf"), float("-inf")) else None
+    except (TypeError, ValueError):
+        return None
+
+
+# split-adjustment basis: a k this far from 1.0 is a split (smallest common split 5:4→0.8),
+# never the sub-5% same-day greeks-underlying-vs-close basis of a clean name.
+_SPLIT_REBASE_TOL = 0.10
+
+
+def _rebase_to_adjusted(levels: dict, prior_close: float | None) -> dict:
+    """Rebase a raw-priced reconstructed board onto the ADJUSTED basis of the stock bars.
+
+    SPLIT-BASIS BUG (why this exists): the ThetaData greeks store carries RAW,
+    split-UNADJUSTED underlying prices and strikes, while data/stocks bars are
+    back-adjusted. Grading a raw board (pre-split NVDA: spot ~$1208, strikes $1000-1400)
+    against the next session's adjusted bar (~$120) is a ~10x basis error on EVERY split
+    name, compounding the further back you go — it craters band containment (2024 fell to
+    41% @mult 3.5, vs ~90% for clean names).
+
+    Fix: scale the whole board — spot + every node strike/range — by
+    ``k = prior_close_adjusted / spot_raw``. For a clean name k≈1 (a no-op below the
+    tolerance); for a split it is exactly the split ratio, self-calibrating with no split
+    feed. IV is scale-invariant, so the expected-move band rescales automatically and its
+    width-as-percent is unchanged. Only boards whose |k-1| exceeds the split tolerance are
+    touched, so clean-name grades stay byte-identical to the pre-fix behaviour.
+    """
+    if not isinstance(levels, dict):
+        return levels
+    spot = _ffloat(levels.get("spot"))
+    if spot is None:
+        spot = _ffloat(levels.get("spot_ref"))
+    pc = _ffloat(prior_close)
+    if spot is None or spot <= 0 or pc is None or pc <= 0:
+        return levels  # can't establish basis — grade as-is (clean names already aligned)
+    k = pc / spot
+    if abs(k - 1.0) <= _SPLIT_REBASE_TOL:
+        return levels  # normal same-day basis — leave the board untouched
+    out = dict(levels)
+    for f in ("spot", "spot_ref"):
+        v = _ffloat(out.get(f))
+        if v is not None:
+            out[f] = round(v * k, 4)
+    new_nodes = []
+    for nd in (levels.get("nodes") or []):
+        if not isinstance(nd, dict):
+            new_nodes.append(nd)
+            continue
+        nd2 = dict(nd)
+        for f in ("strike", "strike_lo", "strike_hi"):
+            v = _ffloat(nd2.get(f))
+            if v is not None:
+                nd2[f] = round(v * k, 4)
+        new_nodes.append(nd2)
+    out["nodes"] = new_nodes
+    out["rebased_split_k"] = round(k, 6)  # audit trail: this board was split-rebased
+    return out
+
+
 # ── reconstruction ────────────────────────────────────────────────────────────────
 
 def _reconstruct(root: str, session_date: str, store: Path):
@@ -267,7 +329,11 @@ def main(argv: list[str] | None = None) -> int:
             if rec is None:
                 reasons[why] = reasons.get(why, 0) + 1
                 continue
-            g = grade_board(rec["levels"], nb, prior_close=_prior_close(bars, sd),
+            pc = _prior_close(bars, sd)
+            # rebase the RAW greeks board onto the ADJUSTED bar basis before grading
+            # (split-adjustment fix — see _rebase_to_adjusted). No-op for clean names.
+            levels_adj = _rebase_to_adjusted(rec["levels"], pc)
+            g = grade_board(levels_adj, nb, prior_close=pc,
                             median_iv=rec["median_iv"], band_mult=args.band_mult)
             reasons[g["reason"]] = reasons.get(g["reason"], 0) + 1
             all_graded.append(g)
