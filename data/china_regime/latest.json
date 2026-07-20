@@ -215,8 +215,8 @@
       "chg_20d_pct": -8.11
     },
     "usdcny": {
-      "level": 6.7652,
-      "chg_20d_pct": -0.05
+      "level": 6.7558,
+      "chg_20d_pct": -0.19
     }
   },
   "property": {
@@ -227,9 +227,9 @@
     "climate_index": 91.45,
     "climate_trend": "falling",
     "construction_demand_z": -0.76,
-    "cgb_10y": 1.74,
+    "cgb_10y": 1.745,
     "cgb_10y2y_slope": 0.476,
-    "cgb_10y_chg_6m": -0.118,
+    "cgb_10y_chg_6m": -0.107,
     "property_etf_drawdown": -37.4,
     "note": "display/context only \u2014 A-shares mean-revert, not a scored signal"
   },
@@ -297,15 +297,6 @@
         "direction": "domestic liquidity draining \u2014 M1/M2 down, overnight dear, small-caps & margin sold"
       },
       {
-        "driver": "southbound_appetite",
-        "label": "Southbound / mainland appetite",
-        "label_zh": "\u5357\u5411/\u5185\u8d44\u504f\u597d",
-        "family": "flows",
-        "projection": 0.35,
-        "strength": 0.35,
-        "direction": "mainland risk-on \u2014 southbound buying HK, AH premium narrowing"
-      },
-      {
         "driver": "risk_off_washout",
         "label": "Risk-off / washout",
         "label_zh": "\u907f\u9669/\u6050\u614c\u51fa\u6e05",
@@ -313,6 +304,15 @@
         "projection": -0.29,
         "strength": 0.29,
         "direction": "fear unwind \u2014 QVIX down, breadth recovering, limit-downs fade"
+      },
+      {
+        "driver": "southbound_appetite",
+        "label": "Southbound / mainland appetite",
+        "label_zh": "\u5357\u5411/\u5185\u8d44\u504f\u597d",
+        "family": "flows",
+        "projection": 0.12,
+        "strength": 0.12,
+        "direction": "mainland risk-on \u2014 southbound buying HK, AH premium narrowing"
       },
       {
         "driver": "china_stimulus",
@@ -324,22 +324,22 @@
         "direction": "stimulus-off \u2014 CSI300, brokers, property & copper/rebar lead down"
       },
       {
-        "driver": "cny_shock",
-        "label": "Yuan (CNH) shock",
-        "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
-        "family": "fx",
-        "projection": -0.09,
-        "strength": 0.09,
-        "direction": "yuan firming \u2014 CNH down, capital-inflow relief, equities supported"
-      },
-      {
         "driver": "pboc_repricing",
         "label": "PBoC / rates repricing",
         "label_zh": "\u592e\u884c/\u5229\u7387\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": -0.06,
-        "strength": 0.06,
+        "projection": -0.07,
+        "strength": 0.07,
         "direction": "rates repricing easier \u2014 SHIBOR & CGB yields down, liquidity added"
+      },
+      {
+        "driver": "cny_shock",
+        "label": "Yuan (CNH) shock",
+        "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
+        "family": "fx",
+        "projection": 0.05,
+        "strength": 0.05,
+        "direction": "yuan weakening \u2014 CNH up, capital-outflow stress, equities pressured"
       },
       {
         "driver": "inflation_commodities",
@@ -355,16 +355,16 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.161,
-      "roro_raw": -0.163,
+      "roro": -0.243,
+      "roro_raw": -0.248,
       "roro_state": "neutral",
       "china_roro_copper_gold": 2.395,
       "china_roro_breadth": 0.108,
-      "china_roro_southbound": -0.396,
+      "china_roro_southbound": -1.033,
       "china_roro_m1_m2": -0.808,
       "china_roro_turnover": 0.386,
       "china_roro_qvix": -1.558,
-      "china_roro_usdcnh": -0.932,
+      "china_roro_usdcnh": -0.975,
       "china_roro_margin": -0.499,
       "china_roro_ah_premium": null,
       "legs": [
@@ -386,7 +386,7 @@
           "key": "southbound",
           "name_en": "Southbound smart-money",
           "name_zh": "\u5357\u5411\u8d44\u91d1",
-          "value": -0.396,
+          "value": -1.033,
           "lean": "risk-off"
         },
         {
@@ -414,7 +414,7 @@
           "key": "usdcnh",
           "name_en": "Offshore yuan (20d)",
           "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-          "value": -0.932,
+          "value": -0.975,
           "lean": "risk-off"
         },
         {
@@ -2086,7 +2086,7 @@
           -0.025,
           -0.081,
           -0.248,
-          -0.161
+          -0.243
         ]
       },
       "recession": {
@@ -6820,7 +6820,7 @@
           56.7,
           50.9,
           33.2,
-          42.9
+          33.7
         ]
       }
     },
@@ -6828,10 +6828,10 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated recession/drawdown gauges; never feeds china_axes / china_regime / china_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 43,
-    "band": "Neutral",
-    "band_zh": "\u4e2d\u6027",
-    "roro": -0.161,
+    "fe_score": 34,
+    "band": "Fear",
+    "band_zh": "\u6050\u60e7",
+    "roro": -0.243,
     "roro_state": "neutral",
     "legs": [
       {
@@ -6854,8 +6854,8 @@
         "key": "southbound",
         "name_en": "Southbound smart-money",
         "name_zh": "\u5357\u5411\u8d44\u91d1",
-        "value": -0.396,
-        "pct": 33,
+        "value": -1.033,
+        "pct": 11,
         "lean": "risk-off"
       },
       {
@@ -6886,7 +6886,7 @@
         "key": "usdcnh",
         "name_en": "Offshore yuan (20d)",
         "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-        "value": -0.932,
+        "value": -0.975,
         "pct": 13,
         "lean": "risk-off"
       },
