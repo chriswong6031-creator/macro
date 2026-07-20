@@ -1,40 +1,20 @@
 {
   "schema": "mastermind_nw_feedback.v3",
-  "generated_at": "2026-07-17T22:25:00Z",
+  "generated_at": "2026-07-20T12:25:00Z",
   "window_days": 14,
   "thesis_counts": {
-    "open": 25,
-    "closed_or_rebuilt": 45,
-    "total": 70
+    "open": 27,
+    "closed_or_rebuilt": 52,
+    "total": 79
   },
   "run_counts": {
-    "hk_daily": {
-      "ok": 10,
-      "error": 0,
-      "other": 0
-    },
-    "china_daily": {
-      "ok": 10,
-      "error": 0,
-      "other": 0
-    },
-    "broken_job": {
-      "ok": 3,
+    "publish_macro_snapshot": {
+      "ok": 19,
       "error": 0,
       "other": 0
     },
     "macro_refresh": {
-      "ok": 89,
-      "error": 0,
-      "other": 0
-    },
-    "watch_us_overnight": {
-      "ok": 27,
-      "error": 0,
-      "other": 0
-    },
-    "publish_macro_snapshot": {
-      "ok": 18,
+      "ok": 109,
       "error": 0,
       "other": 0
     },
@@ -44,47 +24,67 @@
       "other": 0
     },
     "watch_asia_overnight": {
-      "ok": 27,
+      "ok": 28,
+      "error": 0,
+      "other": 0
+    },
+    "broken_job": {
+      "ok": 1,
       "error": 0,
       "other": 0
     },
     "daily_mark": {
-      "ok": 9,
+      "ok": 10,
       "error": 0,
       "other": 0
     },
     "daily_loop": {
       "ok": 7,
       "error": 0,
-      "other": 1
+      "other": 2
     },
     "autonomous_daily": {
-      "ok": 8,
+      "ok": 9,
       "error": 0,
       "other": 0
     },
     "etf_daily": {
-      "ok": 8,
+      "ok": 9,
       "error": 0,
       "other": 0
     },
     "heavyweight_daily": {
-      "ok": 8,
+      "ok": 9,
       "error": 0,
       "other": 0
     },
     "loop_maintenance": {
-      "ok": 8,
+      "ok": 9,
       "error": 0,
       "other": 0
     },
     "experiment_maturity": {
-      "ok": 8,
+      "ok": 9,
       "error": 0,
       "other": 0
     },
     "settle_brain_asia": {
-      "ok": 9,
+      "ok": 10,
+      "error": 0,
+      "other": 0
+    },
+    "watch_us_overnight": {
+      "ok": 29,
+      "error": 0,
+      "other": 0
+    },
+    "china_daily": {
+      "ok": 10,
+      "error": 0,
+      "other": 0
+    },
+    "hk_daily": {
+      "ok": 10,
       "error": 0,
       "other": 0
     },
@@ -104,22 +104,22 @@
       "other": 0
     },
     "cio_weekly": {
-      "ok": 1,
+      "ok": 2,
       "error": 0,
       "other": 0
     },
     "improvement_agenda_weekly": {
-      "ok": 1,
+      "ok": 2,
       "error": 0,
       "other": 0
     },
     "vps_state_sync": {
-      "ok": 457,
+      "ok": 705,
       "error": 13,
       "other": 0
     },
     "prewarm_marks": {
-      "ok": 2412,
+      "ok": 2682,
       "error": 0,
       "other": 0
     }
@@ -129,19 +129,19 @@
       "book_id": "flagship",
       "gate_failures": {
         "by_severity": {
-          "ADVISORY_ONLY": 5,
-          "FREEZE": 19
+          "FREEZE": 15,
+          "ADVISORY_ONLY": 2
         },
         "by_guard": {
-          "dashboard_write": 5,
-          "stale_anchor": 10,
-          "peer_expectation": 9
+          "peer_expectation": 8,
+          "stale_anchor": 7,
+          "dashboard_write": 2
         },
-        "total": 24
+        "total": 17
       },
-      "rejected_decision_count": 145,
-      "lock_conflict_count": 3,
-      "stale_freeze_count": 19
+      "rejected_decision_count": 158,
+      "lock_conflict_count": 5,
+      "stale_freeze_count": 15
     },
     {
       "book_id": "heavyweight",
@@ -157,32 +157,24 @@
     {
       "book_id": "autonomous",
       "gate_failures": {
-        "by_severity": {
-          "FREEZE": 1
-        },
-        "by_guard": {
-          "peer_expectation": 1
-        },
-        "total": 1
+        "by_severity": {},
+        "by_guard": {},
+        "total": 0
       },
       "rejected_decision_count": 0,
       "lock_conflict_count": 0,
-      "stale_freeze_count": 1
+      "stale_freeze_count": 0
     },
     {
       "book_id": "etf",
       "gate_failures": {
-        "by_severity": {
-          "FREEZE": 1
-        },
-        "by_guard": {
-          "peer_expectation": 1
-        },
-        "total": 1
+        "by_severity": {},
+        "by_guard": {},
+        "total": 0
       },
       "rejected_decision_count": 0,
       "lock_conflict_count": 0,
-      "stale_freeze_count": 1
+      "stale_freeze_count": 0
     },
     {
       "book_id": "china",
@@ -223,37 +215,37 @@
       {
         "book_id": "autonomous",
         "packet_accepted": 0,
-        "packet_rejected": 14
+        "packet_rejected": 17
       },
       {
         "book_id": "china",
         "packet_accepted": 0,
-        "packet_rejected": 19
+        "packet_rejected": 20
       },
       {
         "book_id": "etf",
         "packet_accepted": 0,
-        "packet_rejected": 14
+        "packet_rejected": 17
       },
       {
         "book_id": "flagship_judgment",
         "packet_accepted": 0,
-        "packet_rejected": 14
+        "packet_rejected": 16
       },
       {
         "book_id": "heavyweight",
         "packet_accepted": 0,
-        "packet_rejected": 4
+        "packet_rejected": 5
       },
       {
         "book_id": "hk",
         "packet_accepted": 0,
-        "packet_rejected": 12
+        "packet_rejected": 13
       }
     ],
     "rejection_error_classes": {
-      "expected_failure_mode": 77,
-      "falsifiers": 77
+      "expected_failure_mode": 88,
+      "falsifiers": 88
     }
   },
   "outcome_mix": {
@@ -263,11 +255,11 @@
   },
   "context_audit": {
     "state": "ok",
-    "n_present": 23,
+    "n_present": 25,
     "n_stale": 1,
     "n_absent": 0,
-    "n_runs_total": 24,
-    "context_seen_rate": 0.958
+    "n_runs_total": 26,
+    "context_seen_rate": 0.962
   },
   "metric_families": {
     "live": [
@@ -290,7 +282,7 @@
   },
   "reflection": {
     "state": "ok",
-    "asof": "2026-07-16",
+    "asof": "2026-07-17",
     "contract_drift": [
       {
         "code": "graph_conflicts_sparse",
@@ -314,17 +306,17 @@
       }
     ],
     "coverage": {
-      "open_theses_n": 22,
+      "open_theses_n": 25,
       "resolved_recent_n": 0,
       "with_context_row_n": 4,
-      "coverage_rate": 0.182
+      "coverage_rate": 0.16
     },
     "context_quality": {
-      "window_runs": 21,
-      "n_present": 20,
+      "window_runs": 24,
+      "n_present": 23,
       "n_stale": 1,
       "n_absent": 0,
-      "seen_rate": 0.952
+      "seen_rate": 0.958
     },
     "attribution": {
       "state": "building",
@@ -338,9 +330,9 @@
       "code": "bottom_state_vocabulary_drift",
       "kind": "contract_drift",
       "severity": "high",
-      "detail": "policy states never observed: BOTTOMING/CONFIRMED (observed vocabulary has 6 values over 250 rows) — candidacy priors above WATCH can never fire",
+      "detail": "policy states never observed: BOTTOMING/CONFIRMED (observed vocabulary has 5 values over 250 rows) — candidacy priors above WATCH can never fire",
       "first_seen": "2026-07-14",
-      "builds_seen": 2
+      "builds_seen": 3
     },
     {
       "code": "fdr_cleared_absent",
@@ -348,15 +340,15 @@
       "severity": "high",
       "detail": "0/250 candidate rows are fdr_cleared — every leg of the typed decision ladder is per-name inert regardless of other fields",
       "first_seen": "2026-07-14",
-      "builds_seen": 2
+      "builds_seen": 3
     },
     {
       "code": "coverage_below_half",
       "kind": "coverage_gap",
       "severity": "medium",
-      "detail": "only 4 of our decided subjects have a candidate_context row (rate 0.182; fires <0.5, clears at >=0.55)",
+      "detail": "only 4 of our decided subjects have a candidate_context row (rate 0.16; fires <0.5, clears at >=0.55)",
       "first_seen": "2026-07-14",
-      "builds_seen": 2
+      "builds_seen": 3
     },
     {
       "code": "graph_conflicts_sparse",
@@ -364,7 +356,7 @@
       "severity": "medium",
       "detail": "1/250 candidate rows carry graph_conflicts",
       "first_seen": "2026-07-14",
-      "builds_seen": 2
+      "builds_seen": 3
     },
     {
       "code": "liquidity_plumbing_absent",
@@ -372,7 +364,7 @@
       "severity": "medium",
       "detail": "liquidity plumbing block absent from the market lobe",
       "first_seen": "2026-07-14",
-      "builds_seen": 2
+      "builds_seen": 3
     }
   ],
   "operator_directives": [
