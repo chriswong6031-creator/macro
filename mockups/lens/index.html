@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lens — explainer popover system · Macro Dashboard</title>
+<style>
+  /* ---- house fonts (self-hosted; falls back cleanly) ---- */
+  @font-face{font-family:Inter;font-weight:400;font-display:swap;src:url("../../site/fonts/Inter-400.woff2") format("woff2")}
+  @font-face{font-family:Inter;font-weight:500;font-display:swap;src:url("../../site/fonts/Inter-500.woff2") format("woff2")}
+  @font-face{font-family:Inter;font-weight:600;font-display:swap;src:url("../../site/fonts/Inter-600.woff2") format("woff2")}
+  @font-face{font-family:Inter;font-weight:700;font-display:swap;src:url("../../site/fonts/Inter-700.woff2") format("woff2")}
+  @font-face{font-family:Inter;font-weight:800;font-display:swap;src:url("../../site/fonts/Inter-800.woff2") format("woff2")}
+
+  /* ---- house tokens (mirror of site/theme.css) ---- */
+  :root{
+    --bg:#0f1115; --panel:#181b21; --panel2:#1e222a;
+    --text:#d7dce3; --muted:#8b93a1; --line:#2a2f3a;
+    --q2:#d4a017; --warn:#e0a030; --ok:#3da564; --up:#45b873; --down:#e06464;
+    --info:#5b9bf0; --link:#7aa7e0;
+    --glass-bg:color-mix(in srgb, var(--panel) 86%, transparent);
+    --glass-brd:color-mix(in srgb, var(--text) 14%, transparent);
+    --glass-blur:saturate(180%) blur(22px);
+    --glass-shadow:0 24px 64px -22px rgba(3,7,18,.74), 0 10px 26px -12px rgba(3,7,18,.55),
+      inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent);
+    --font-ui:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    --font-mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  html[data-theme="light"]{
+    --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f6;
+    --text:#1c2430; --muted:#5d6b7e; --line:#eaecf0;
+    --up:#1f9a55; --down:#cf4040; --info:#285fff; --link:#285fff;
+    --glass-bg:color-mix(in srgb, var(--panel) 90%, transparent);
+    --glass-brd:color-mix(in srgb, #1c2430 9%, transparent);
+    --glass-shadow:0 18px 48px -20px rgba(20,30,50,.28), 0 8px 22px -12px rgba(20,30,50,.16),
+      inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  html:not([data-lang="zh"]) .l-zh{display:none}
+  html[data-lang="zh"] .l-en{display:none}
+  html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+
+  /* ---- demo scaffolding ---- */
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font:400 14px/1.6 var(--font-ui);
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  .amb{position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(640px 420px at 82% -8%, color-mix(in srgb, var(--info) 13%, transparent), transparent 70%),
+      radial-gradient(520px 400px at 6% 28%, color-mix(in srgb, var(--q2) 7%, transparent), transparent 70%);
+  }
+  .wrap{max-width:1020px; margin:0 auto; padding:0 22px}
+
+  header.top{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:22px 0 0; flex-wrap:wrap}
+  .mark{display:flex; align-items:center; gap:10px}
+  .mark .m-glyph{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--info);
+    background:radial-gradient(120% 120% at 30% 18%, color-mix(in srgb, var(--info) 24%, transparent), transparent 65%);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--info) 32%, transparent)}
+  .mark .m-glyph svg{width:17px;height:17px}
+  .mark .m-name{font:800 15px/1 var(--font-ui); letter-spacing:.02em}
+  .mark .m-eyebrow{font:600 9px/1.3 var(--font-mono); letter-spacing:.14em; color:var(--muted); text-transform:uppercase}
+  .ctl{display:flex; gap:8px}
+  .pill{display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:color-mix(in srgb, var(--panel) 60%, transparent)}
+  .pill button{border:0; background:transparent; color:var(--muted); font:600 11px/1 var(--font-ui);
+    padding:7px 12px; cursor:pointer; transition:.15s}
+  .pill button.on{background:color-mix(in srgb, var(--info) 16%, transparent); color:var(--text)}
+
+  .hero{padding:56px 0 10px; max-width:760px}
+  .hero h1{font:800 clamp(30px,5vw,50px)/1.12 var(--font-ui); letter-spacing:-.03em; margin:0}
+  .hero .sub{color:var(--muted); font-size:15px; line-height:1.65; margin:18px 0 0; max-width:600px}
+  .hero .sub b{color:var(--text); font-weight:650}
+
+  section{padding:44px 0 0}
+  .eyebrow{font:700 10px/1 var(--font-mono); letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0 0 8px}
+  h2{font:700 20px/1.3 var(--font-ui); letter-spacing:-.015em; margin:0 0 6px}
+  .lede{color:var(--muted); font-size:13.5px; margin:0 0 22px; max-width:640px}
+
+  /* playground panel — a believable dashboard card */
+  .panel{
+    border-radius:18px; background:var(--glass-bg);
+    -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+    border:1px solid var(--glass-brd); box-shadow:var(--glass-shadow);
+    max-width:560px; padding:20px 22px 8px;
+  }
+  .phd{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .phd .pt{font:700 13px/1 var(--font-ui); letter-spacing:-.01em}
+  .asof{display:inline-flex; align-items:center; gap:6px; font:600 10px/1 var(--font-mono); color:var(--warn);
+    background:color-mix(in srgb, var(--warn) 11%, transparent); border:1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+    border-radius:999px; padding:5px 6px 5px 10px}
+  .pbig{display:flex; align-items:center; gap:18px; padding:18px 0 14px; border-bottom:1px solid var(--line)}
+  .pnum{font:800 46px/1 var(--font-ui); letter-spacing:-.04em;
+    background:linear-gradient(160deg, var(--text), color-mix(in srgb, var(--q2) 65%, var(--text)));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
+  .pttl{font:700 13.5px/1.4 var(--font-ui); display:flex; align-items:center; gap:2px; flex-wrap:wrap}
+  .psub{color:var(--muted); font-size:12px; margin-top:2px}
+  .prow{display:flex; align-items:baseline; justify-content:space-between; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); font-size:12.5px}
+  .prow:last-of-type{border-bottom:0}
+  .prow .pk{color:var(--muted); display:flex; align-items:center; gap:2px}
+  .prow .pv{font-weight:600; text-align:right}
+  .pv .pos{color:var(--up)} .pv .chip{font:700 10px/1 var(--font-ui); letter-spacing:.02em; color:var(--q2);
+    background:color-mix(in srgb, var(--q2) 12%, transparent); border-radius:6px; padding:4px 7px}
+  .hint{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; margin-top:14px}
+  .hint .kbd{font:600 10px/1 var(--font-mono); border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:3px 6px; color:var(--text)}
+
+  /* gallery */
+  .kinds-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:20px}
+  .kinds-grid .lens-pop.lens-inline{width:100%}
+  .kcap{margin-top:10px; font:600 10.5px/1.5 var(--font-mono); letter-spacing:.06em; color:var(--muted); text-transform:uppercase}
+  .kcap i{font-style:normal; color:var(--text)}
+
+  /* anatomy */
+  .anat{display:grid; grid-template-columns:auto 1fr; gap:34px; align-items:start}
+  .anat .lens-pop.lens-inline{width:304px}
+  .alist{display:grid; gap:13px; max-width:460px; padding-top:4px}
+  .arow{display:grid; grid-template-columns:14px 1fr; gap:11px; font-size:12.5px; color:var(--muted)}
+  .arow .dot{width:8px;height:8px;border-radius:50%;margin-top:5px}
+  .arow b{color:var(--text); font-weight:650}
+  @media(max-width:760px){ .anat{grid-template-columns:1fr} }
+
+  /* content law before/after */
+  .law-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:20px; align-items:start}
+  .old-tip{border-radius:10px; background:#0a0c10; border:1px solid var(--line);
+    font:400 11px/1.6 var(--font-mono); color:#9aa3b2; padding:12px 14px; max-width:340px}
+  html[data-theme="light"] .old-tip{background:#22262e; color:#aab2c0}
+  .verdict{margin-top:10px; font:600 10.5px/1.5 var(--font-mono); letter-spacing:.06em; text-transform:uppercase}
+  .verdict.bad{color:var(--down)} .verdict.good{color:var(--ok)}
+
+  /* motion spec chips */
+  .spec-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px}
+  .spec{border:1px solid var(--line); border-radius:12px; padding:13px 15px;
+    background:color-mix(in srgb, var(--panel) 55%, transparent)}
+  .spec .sv{font:700 15px/1.2 var(--font-ui); letter-spacing:-.01em}
+  .spec .sk{color:var(--muted); font-size:11.5px; margin-top:3px; line-height:1.5}
+
+  footer{margin:56px 0 40px; padding-top:18px; border-top:1px solid var(--line);
+    color:var(--muted); font-size:12px; line-height:1.7}
+  footer code{font:500 11px/1 var(--font-mono); color:var(--text)}
+</style>
+<link rel="stylesheet" href="lens.css">
+</head>
+<body>
+<div class="amb"></div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="mark">
+      <span class="m-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="10" r="5.6"/><path d="M14.2 14.2 19 19"/></svg></span>
+      <span>
+        <span class="m-name">Lens</span><br>
+        <span class="m-eyebrow"><span class="l-en">Macro Dashboard · explainer popover system</span><span class="l-zh">宏观仪表盘 · 悬浮解释组件</span></span>
+      </span>
+    </div>
+    <div class="ctl">
+      <span class="pill" id="langPill"><button class="on" data-l="en">EN</button><button data-l="zh">中文</button></span>
+      <span class="pill" id="themePill"><button class="on" data-t="dark"><span class="l-en">Dark</span><span class="l-zh">深色</span></button><button data-t="light"><span class="l-en">Light</span><span class="l-zh">浅色</span></button></span>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>
+      <span class="l-en">Every <span class="lens-term" tabindex="0"
+        data-lens-en="This is Lens — the popover you're reading right now. One component for every explainer on the site."
+        data-lens-zh="这就是 Lens——你正在看的这个悬浮卡片。全站所有解释性提示共用这一个组件。">question&nbsp;mark</span> deserves a beautiful answer.</span>
+      <span class="l-zh">每一个<span class="lens-term" tabindex="0"
+        data-lens-en="This is Lens — the popover you're reading right now. One component for every explainer on the site."
+        data-lens-zh="这就是 Lens——你正在看的这个悬浮卡片。全站所有解释性提示共用这一个组件。">问号</span>，都值得一个漂亮的回答。</span>
+    </h1>
+    <p class="sub">
+      <span class="l-en">The doctrine demotes technicals to hover — so the hover is where trust is won.
+      Lens is one glass card for every <b>?</b>, dotted term, and info tip on the site:
+      plain words on top, the machine receipt torn off below, a small illustration to anchor the idea.</span>
+      <span class="l-zh">设计法则把技术细节降级到悬浮层——因此悬浮层正是赢得信任的地方。
+      Lens 用一张玻璃卡片承载全站所有<b>?</b>、虚线术语和信息提示：上方是大白话，下方撕下一联机器凭据，配一枚小插图点题。</span>
+    </p>
+  </div>
+
+  <!-- ================= LIVE PLAYGROUND ================= -->
+  <section>
+    <p class="eyebrow"><span class="l-en">01 · Live playground</span><span class="l-zh">01 · 实时演示</span></p>
+    <h2><span class="l-en">Try it on a real panel</span><span class="l-zh">在真实面板上试试</span></h2>
+    <p class="lede"><span class="l-en">A dashboard card the way it ships — every marked element opens a Lens.</span><span class="l-zh">与线上一致的仪表盘卡片——所有带标记的元素都会打开一张 Lens 卡。</span></p>
+
+    <div class="panel">
+      <div class="phd">
+        <span class="pt"><span class="l-en">Market read</span><span class="l-zh">市场解读</span></span>
+        <span class="asof">
+          <span class="l-en">PRICED FRI</span><span class="l-zh">周五定价</span>
+          <button class="lens-q" type="button" aria-label="Explain">?</button>
+          <div class="lens-src" data-lens-kind="caution">
+            <div class="lens-hd">
+              <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20.5V4.5"/><path d="M7 5h9.5l-2.6 3.2 2.6 3.2H7"/><path d="M5 20.5h4" opacity=".4"/></svg></span>
+              <span class="lens-hgroup">
+                <span class="lens-kick"><span class="l-en">Heads-up</span><span class="l-zh">温馨提示</span></span>
+                <span class="lens-title"><span class="l-en">Priced Friday</span><span class="l-zh">周五收盘价</span></span>
+              </span>
+            </div>
+            <div class="lens-body">
+              <span class="l-en">Weekend reading — these numbers are <b>Friday's close</b>, not live. They refresh Sunday night when futures reopen.</span>
+              <span class="l-zh">周末读数——显示为<b>周五收盘</b>，并非实时。周日晚间期货开盘后刷新。</span>
+            </div>
+            <div class="lens-receipt">
+              <span class="r-i"><span class="r-k"><span class="l-en">as-of</span><span class="l-zh">截至</span></span> <span class="l-en">Jul 18 close</span><span class="l-zh">7月18日收盘</span></span>
+              <span class="r-i"><span class="r-k"><span class="l-en">next</span><span class="l-zh">下次</span></span> <span class="l-en">Sun 20:00 ET</span><span class="l-zh">周日 20:00 (美东)</span></span>
+            </div>
+          </div>
+        </span>
+      </div>
+
+      <div class="pbig">
+        <div class="pnum">72</div>
+        <div class="pmeta">
+          <div class="pttl">
+            <span class="l-en">Market temperature</span><span class="l-zh">市场温度</span>
+            <button class="lens-q" type="button" aria-label="Explain">?</button>
+            <div class="lens-src" data-lens-kind="read">
+              <div class="lens-hd">
+                <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5a7.5 7.5 0 0 1 15 0"/><path d="M12 16.5l4.2-5.7"/><circle cx="12" cy="16.5" r="1.3" fill="currentColor" stroke="none"/><path d="M6 12.6l1.1.8" opacity=".45"/><path d="M18 12.6l-1.1.8" opacity=".45"/></svg></span>
+                <span class="lens-hgroup">
+                  <span class="lens-kick"><span class="l-en">How to read it</span><span class="l-zh">如何解读</span></span>
+                  <span class="lens-title"><span class="l-en">Market temperature</span><span class="l-zh">市场温度</span></span>
+                </span>
+              </div>
+              <div class="lens-body">
+                <span class="l-en">Above 70 the market is running <b>hot</b> — good news is mostly priced in, so chasing pays less. Cold readings mark washed-out moments.</span>
+                <span class="l-zh">高于70说明市场偏<b>热</b>——利好大多已计入价格，追高性价比不高。低温读数往往对应超跌时刻。</span>
+              </div>
+              <div class="lens-receipt">
+                <span class="r-i"><span class="r-k"><span class="l-en">scale</span><span class="l-zh">量表</span></span> 0–100</span>
+                <span class="r-i"><span class="r-k"><span class="l-en">hot</span><span class="l-zh">偏热</span></span> ≥70</span>
+                <span class="r-i"><span class="r-k"><span class="l-en">updated</span><span class="l-zh">更新</span></span> <span class="l-en">nightly</span><span class="l-zh">每晚</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="psub"><span class="l-en">Running hot — good news mostly priced in</span><span class="l-zh">偏热——利好大多已计入价格</span></div>
+        </div>
+      </div>
+
+      <div class="prow">
+        <span class="pk">
+          <span class="lens-term" tabindex="0"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span>
+          <div class="lens-src" data-lens-kind="define">
+            <div class="lens-hd">
+              <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="5.6"/><path d="M14.2 14.2 19 19"/><path d="M7.4 9.4a3.1 3.1 0 0 1 2.2-2" opacity=".5"/></svg></span>
+              <span class="lens-hgroup">
+                <span class="lens-kick"><span class="l-en">What this is</span><span class="l-zh">名词解释</span></span>
+                <span class="lens-title"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span>
+              </span>
+            </div>
+            <div class="lens-body">
+              <span class="l-en">How many stocks are rising versus falling. A rally carried by <b>many</b> stocks rests on solid ground; one carried by a few is fragile.</span>
+              <span class="l-zh">上涨与下跌股票的数量对比。由<b>多数</b>股票推动的上涨更扎实；只靠少数权重股撑起的行情更脆弱。</span>
+            </div>
+            <div class="lens-receipt">
+              <span class="r-i"><span class="r-k"><span class="l-en">source</span><span class="l-zh">来源</span></span> NYSE+NASDAQ</span>
+              <span class="r-i"><span class="r-k"><span class="l-en">updated</span><span class="l-zh">更新</span></span> <span class="l-en">daily close</span><span class="l-zh">每日收盘</span></span>
+            </div>
+          </div>
+        </span>
+        <span class="pv"><span class="pos"><span class="l-en">62% of stocks rising</span><span class="l-zh">62% 的股票在上涨</span></span></span>
+      </div>
+
+      <div class="prow">
+        <span class="pk">
+          <span class="l-en">Early turn signs</span><span class="l-zh">早期拐点迹象</span>
+          <button class="lens-q" type="button" aria-label="Explain">?</button>
+          <div class="lens-src" data-lens-kind="record">
+            <div class="lens-hd">
+              <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5l5-5 4 2 7-7.5"/><circle cx="20" cy="7" r="1.4" fill="currentColor" stroke="none"/><path d="M4 20.5h16" opacity=".35"/></svg></span>
+            <span class="lens-hgroup">
+                <span class="lens-kick"><span class="l-en">Track record</span><span class="l-zh">历史战绩</span></span>
+                <span class="lens-title"><span class="l-en">Early turn signs</span><span class="l-zh">早期拐点迹象</span></span>
+              </span>
+            </div>
+            <div class="lens-body">
+              <span class="l-en">A heads-up, not a buy signal: in 26 past cases, about <b>6 in 10</b> faded within a day. If the turn is real, the board upgrades on its own.</span>
+              <span class="l-zh">仅是提醒，并非买入信号：历史26次中约<b>六成</b>在一天内消退。若拐点属实，榜单会自行升级。</span>
+            </div>
+            <div class="lens-receipt">
+              <span class="r-i"><span class="r-k"><span class="l-en">cases</span><span class="l-zh">案例</span></span> 26</span>
+              <span class="r-i"><span class="r-k"><span class="l-en">window</span><span class="l-zh">区间</span></span> 2021–26</span>
+              <span class="r-i"><span class="l-en">shown for context</span><span class="l-zh">仅供参考</span></span>
+            </div>
+          </div>
+        </span>
+        <span class="pv"><span class="chip"><span class="l-en">WATCH — DON'T CHASE</span><span class="l-zh">观察，勿追高</span></span></span>
+      </div>
+
+      <div class="prow">
+        <span class="pk">
+          <span class="l-en">Fund positioning</span><span class="l-zh">基金持仓</span>
+          <button class="lens-q" type="button" aria-label="Explain">?</button>
+          <div class="lens-src" data-lens-kind="source">
+            <div class="lens-hd">
+              <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5H14L17.5 7v13.5h-11z"/><path d="M14 3.5V7h3.5" opacity=".55"/><path d="M9.5 11.5h5" opacity=".55"/><path d="M9.5 14.5h5" opacity=".55"/><path d="M9.7 17.6l1.5 1.5 2.8-3" /></svg></span>
+              <span class="lens-hgroup">
+                <span class="lens-kick"><span class="l-en">Where it's from</span><span class="l-zh">数据来源</span></span>
+                <span class="lens-title"><span class="l-en">Fund positioning</span><span class="l-zh">基金持仓</span></span>
+              </span>
+            </div>
+            <div class="lens-body">
+              <span class="l-en">Built from the quarterly reports big funds must file. Fresh filings can arrive up to <b>45 days</b> after the quarter ends — treat it as a slow signal.</span>
+              <span class="l-zh">来自大型基金必须提交的季度持仓报告。新报告最晚在季度结束后<b>45天</b>才公布——属于慢信号。</span>
+            </div>
+            <div class="lens-receipt">
+              <span class="r-i"><span class="r-k"><span class="l-en">filing</span><span class="l-zh">文件</span></span> SEC 13F</span>
+              <span class="r-i"><span class="r-k"><span class="l-en">cadence</span><span class="l-zh">频率</span></span> <span class="l-en">quarterly</span><span class="l-zh">每季度</span></span>
+            </div>
+          </div>
+        </span>
+        <span class="pv"><span class="l-en">Big funds added risk</span><span class="l-zh">大型基金在加仓</span></span>
+      </div>
+
+      <div class="prow">
+        <span class="pk"><span class="lens-term" tabindex="0"
+          data-lens-en="Wall Street's fear gauge — what traders pay to insure against swings over the next 30 days. Low readings mean calm; spikes mean panic."
+          data-lens-zh="华尔街恐惧指标——交易员为对冲未来30天波动支付的保险成本。低位代表平静，飙升代表恐慌。">VIX</span></span>
+        <span class="pv">16.4 · <span class="l-en">calm</span><span class="l-zh">平静</span></span>
+      </div>
+    </div>
+
+    <p class="hint">
+      <span class="kbd"><span class="l-en">hover</span><span class="l-zh">悬停</span></span>
+      <span class="kbd"><span class="l-en">tap</span><span class="l-zh">轻点</span></span>
+      <span class="kbd">Tab</span>
+      <span class="l-en">anything marked <b>?</b> or dotted — Esc closes. On a phone it opens as a bottom sheet.</span>
+      <span class="l-zh">任意 <b>?</b> 或虚线元素——Esc 关闭。手机上会以底部抽屉打开。</span>
+    </p>
+  </section>
+
+  <!-- ================= THE FIVE KINDS ================= -->
+  <section>
+    <p class="eyebrow"><span class="l-en">02 · The five kinds</span><span class="l-zh">02 · 五种类型</span></p>
+    <h2><span class="l-en">The category is the doctrine, drawn</span><span class="l-zh">类型体系即设计法则</span></h2>
+    <p class="lede"><span class="l-en">Tier-2 tips carry exactly five things — definitions, mechanics, base rates, provenance, caveats. Each gets a tinted disc, a spot glyph, and a kicker, so the reader knows what kind of answer is coming before reading a word.</span><span class="l-zh">二级提示只承载五类内容——定义、读法、历史胜率、数据来源、注意事项。每类有专属色盘、图标与眉题，读者在阅读之前就知道将得到哪种回答。</span></p>
+
+    <div class="kinds-grid">
+      <div>
+        <div class="lens-pop lens-inline" data-kind="define">
+          <div class="lens-hd">
+            <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="5.6"/><path d="M14.2 14.2 19 19"/><path d="M7.4 9.4a3.1 3.1 0 0 1 2.2-2" opacity=".5"/></svg></span>
+            <span class="lens-hgroup">
+              <span class="lens-kick"><span class="l-en">What this is</span><span class="l-zh">名词解释</span></span>
+              <span class="lens-title"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span>
+            </span>
+          </div>
+          <div class="lens-body">
+            <span class="l-en">How many stocks are rising versus falling. A rally carried by <b>many</b> stocks rests on solid ground; one carried by a few is fragile.</span>
+            <span class="l-zh">上涨与下跌股票的数量对比。由<b>多数</b>股票推动的上涨更扎实；只靠少数权重股撑起的行情更脆弱。</span>
+          </div>
+          <div class="lens-receipt">
+            <span class="r-i"><span class="r-k"><span class="l-en">source</span><span class="l-zh">来源</span></span> NYSE+NASDAQ</span>
+            <span class="r-i"><span class="r-k"><span class="l-en">updated</span><span class="l-zh">更新</span></span> <span class="l-en">daily close</span><span class="l-zh">每日收盘</span></span>
+          </div>
+        </div>
+        <p class="kcap">define · <i><span class="l-en">a term, translated</span><span class="l-zh">术语翻译成人话</span></i></p>
+      </div>
+
+      <div>
+        <div class="lens-pop lens-inline" data-kind="read">
+          <div class="lens-hd">
+            <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5a7.5 7.5 0 0 1 15 0"/><path d="M12 16.5l4.2-5.7"/><circle cx="12" cy="16.5" r="1.3" fill="currentColor" stroke="none"/><path d="M6 12.6l1.1.8" opacity=".45"/><path d="M18 12.6l-1.1.8" opacity=".45"/></svg></span>
+            <span class="lens-hgroup">
+              <span class="lens-kick"><span class="l-en">How to read it</span><span class="l-zh">如何解读</span></span>
+              <span class="lens-title"><span class="l-en">Market temperature</span><span class="l-zh">市场温度</span></span>
+            </span>
+          </div>
+          <div class="lens-body">
+            <span class="l-en">Above 70 the market is running <b>hot</b> — good news is mostly priced in, so chasing pays less. Cold readings mark washed-out moments.</span>
+            <span class="l-zh">高于70说明市场偏<b>热</b>——利好大多已计入价格，追高性价比不高。低温读数往往对应超跌时刻。</span>
+          </div>
+          <div class="lens-receipt">
+            <span class="r-i"><span class="r-k"><span class="l-en">scale</span><span class="l-zh">量表</span></span> 0–100</span>
+            <span class="r-i"><span class="r-k"><span class="l-en">hot</span><span class="l-zh">偏热</span></span> ≥70</span>
+            <span class="r-i"><span class="r-k"><span class="l-en">updated</span><span class="l-zh">更新</span></span> <span class="l-en">nightly</span><span class="l-zh">每晚</span></span>
+          </div>
+        </div>
+        <p class="kcap">read · <i><span class="l-en">a scale, anchored</span><span class="l-zh">量表配锚点</span></i></p>
+      </div>
+
+      <div>
+        <div class="lens-pop lens-inline" data-kind="record">
+          <div class="lens-hd">
+            <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5l5-5 4 2 7-7.5"/><circle cx="20" cy="7" r="1.4" fill="currentColor" stroke="none"/><path d="M4 20.5h16" opacity=".35"/></svg></span>
+            <span class="lens-hgroup">
+              <span class="lens-kick"><span class="l-en">Track record</span><span class="l-zh">历史战绩</span></span>
+              <span class="lens-title"><span class="l-en">Early turn signs</span><span class="l-zh">早期拐点迹象</span></span>
+            </span>
+          </div>
+          <div class="lens-body">
+            <span class="l-en">A heads-up, not a buy signal: in 26 past cases, about <b>6 in 10</b> faded within a day. If the turn is real, the board upgrades on its own.</span>
+            <span class="l-zh">仅是提醒，并非买入信号：历史26次中约<b>六成</b>在一天内消退。若拐点属实，榜单会自行升级。</span>
+          </div>
+          <div class="lens-receipt">
+            <span class="r-i"><span class="r-k"><span class="l-en">cases</span><span class="l-zh">案例</span></span> 26</span>
+            <span class="r-i"><span class="r-k"><span class="l-en">window</span><span class="l-zh">区间</span></span> 2021–26</span>
+            <span class="r-i"><span class="l-en">shown for context</span><span class="l-zh">仅供参考</span></span>
+          </div>
+        </div>
+        <p class="kcap">record · <i><span class="l-en">honesty with a base rate</span><span class="l-zh">用胜率说实话</span></i></p>
+      </div>
+
+      <div>
+        <div class="lens-pop lens-inline" data-kind="source">
+          <div class="lens-hd">
+            <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5H14L17.5 7v13.5h-11z"/><path d="M14 3.5V7h3.5" opacity=".55"/><path d="M9.5 11.5h5" opacity=".55"/><path d="M9.5 14.5h5" opacity=".55"/><path d="M9.7 17.6l1.5 1.5 2.8-3"/></svg></span>
+            <span class="lens-hgroup">
+              <span class="lens-kick"><span class="l-en">Where it's from</span><span class="l-zh">数据来源</span></span>
+              <span class="lens-title"><span class="l-en">Fund positioning</span><span class="l-zh">基金持仓</span></span>
+            </span>
+          </div>
+          <div class="lens-body">
+            <span class="l-en">Built from the quarterly reports big funds must file. Fresh filings can arrive up to <b>45 days</b> after the quarter ends — treat it as a slow signal.</span>
+            <span class="l-zh">来自大型基金必须提交的季度持仓报告。新报告最晚在季度结束后<b>45天</b>才公布——属于慢信号。</span>
+          </div>
+          <div class="lens-receipt">
+            <span class="r-i"><span class="r-k"><span class="l-en">filing</span><span class="l-zh">文件</span></span> SEC 13F</span>
+            <span class="r-i"><span class="r-k"><span class="l-en">cadence</span><span class="l-zh">频率</span></span> <span class="l-en">quarterly</span><span class="l-zh">每季度</span></span>
+          </div>
+        </div>
+        <p class="kcap">source · <i><span class="l-en">provenance, plainly</span><span class="l-zh">来源交代清楚</span></i></p>
+      </div>
+
+      <div>
+        <div class="lens-pop lens-inline" data-kind="caution">
+          <div class="lens-hd">
+            <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20.5V4.5"/><path d="M7 5h9.5l-2.6 3.2 2.6 3.2H7"/><path d="M5 20.5h4" opacity=".4"/></svg></span>
+            <span class="lens-hgroup">
+              <span class="lens-kick"><span class="l-en">Heads-up</span><span class="l-zh">温馨提示</span></span>
+              <span class="lens-title"><span class="l-en">Priced Friday</span><span class="l-zh">周五收盘价</span></span>
+            </span>
+          </div>
+          <div class="lens-body">
+            <span class="l-en">Weekend reading — these numbers are <b>Friday's close</b>, not live. They refresh Sunday night when futures reopen.</span>
+            <span class="l-zh">周末读数——显示为<b>周五收盘</b>，并非实时。周日晚间期货开盘后刷新。</span>
+          </div>
+          <div class="lens-receipt">
+            <span class="r-i"><span class="r-k"><span class="l-en">as-of</span><span class="l-zh">截至</span></span> <span class="l-en">Jul 18 close</span><span class="l-zh">7月18日收盘</span></span>
+            <span class="r-i"><span class="r-k"><span class="l-en">next</span><span class="l-zh">下次</span></span> <span class="l-en">Sun 20:00 ET</span><span class="l-zh">周日 20:00 (美东)</span></span>
+          </div>
+        </div>
+        <p class="kcap">caution · <i><span class="l-en">the honest asterisk</span><span class="l-zh">诚实的星号</span></i></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ANATOMY ================= -->
+  <section>
+    <p class="eyebrow"><span class="l-en">03 · Anatomy</span><span class="l-zh">03 · 结构解剖</span></p>
+    <h2><span class="l-en">Plain words above the perforation, machine facts below</span><span class="l-zh">虚线之上说人话，虚线之下留凭据</span></h2>
+    <p class="lede"><span class="l-en">The signature move: the technical receipt is literally torn off from the plain answer. Honesty stays; jargon never leads.</span><span class="l-zh">招牌设计：机器凭据像小票一样从答案下方撕下。诚实保留，但术语永不领跑。</span></p>
+
+    <div class="anat">
+      <div class="lens-pop lens-inline" data-kind="record">
+        <div class="lens-hd">
+          <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5l5-5 4 2 7-7.5"/><circle cx="20" cy="7" r="1.4" fill="currentColor" stroke="none"/><path d="M4 20.5h16" opacity=".35"/></svg></span>
+          <span class="lens-hgroup">
+            <span class="lens-kick"><span class="l-en">Track record</span><span class="l-zh">历史战绩</span></span>
+            <span class="lens-title"><span class="l-en">Early turn signs</span><span class="l-zh">早期拐点迹象</span></span>
+          </span>
+        </div>
+        <div class="lens-body">
+          <span class="l-en">A heads-up, not a buy signal: in 26 past cases, about <b>6 in 10</b> faded within a day.</span>
+          <span class="l-zh">仅是提醒，并非买入信号：历史26次中约<b>六成</b>在一天内消退。</span>
+        </div>
+        <div class="lens-receipt">
+          <span class="r-i"><span class="r-k"><span class="l-en">cases</span><span class="l-zh">案例</span></span> 26</span>
+          <span class="r-i"><span class="r-k"><span class="l-en">window</span><span class="l-zh">区间</span></span> 2021–26</span>
+        </div>
+      </div>
+      <div class="alist">
+        <div class="arow"><span class="dot" style="background:var(--ok)"></span><span><b><span class="l-en">Illustration disc</span><span class="l-zh">插图色盘</span></b> — <span class="l-en">a category-tinted jewel with a hand-drawn spot glyph; the idea, anchored before the words.</span><span class="l-zh">类型着色的小圆盘配手绘图标；文字之前先点题。</span></span></div>
+        <div class="arow"><span class="dot" style="background:color-mix(in srgb, var(--ok) 70%, var(--text))"></span><span><b><span class="l-en">Kicker</span><span class="l-zh">眉题</span></b> — <span class="l-en">names the kind of answer: definition, reading, track record, source, or caveat.</span><span class="l-zh">先亮明回答类型：定义、读法、战绩、来源或提示。</span></span></div>
+        <div class="arow"><span class="dot" style="background:var(--text)"></span><span><b><span class="l-en">Title + body</span><span class="l-zh">标题与正文</span></b> — <span class="l-en">the term and one to three short plain sentences. Glance-tier vocabulary only — never machine text.</span><span class="l-zh">术语加一到三句大白话。只用一级词汇——绝无机器文本。</span></span></div>
+        <div class="arow"><span class="dot" style="background:var(--muted)"></span><span><b><span class="l-en">The receipt</span><span class="l-zh">凭据小票</span></b> — <span class="l-en">n, window, source, cadence in small mono under a dashed perforation. Optional; torn off, never leading.</span><span class="l-zh">样本数、区间、来源、频率以小号等宽字排在虚线下。可选；只垫底，不领跑。</span></span></div>
+        <div class="arow"><span class="dot" style="background:var(--info)"></span><span><b><span class="l-en">Aurora hairline</span><span class="l-zh">极光描边</span></b> — <span class="l-en">a 1px gradient ring with a category-tinted arc at the crown, and a single light sweep on open. Then it holds still.</span><span class="l-zh">1px 渐变描边，顶部带类型色弧光，开启时扫过一道光，随后归于安静。</span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CONTENT LAW ================= -->
+  <section>
+    <p class="eyebrow"><span class="l-en">04 · Content law</span><span class="l-zh">04 · 文案法则</span></p>
+    <h2><span class="l-en">The same fact, twice</span><span class="l-zh">同一个事实，两种讲法</span></h2>
+    <p class="lede"><span class="l-en">A popup is where jargon hides after being demoted from panels. Lens refuses to be its hiding place.</span><span class="l-zh">弹窗常常是术语被赶出面板后的藏身处。Lens 拒绝做藏身处。</span></p>
+
+    <div class="law-grid">
+      <div>
+        <div class="old-tip">expected-null forward meter (Oracle P8, n=26); slow reco labels unchanged; T+1 flip base rate: 58% fade. Display context only.</div>
+        <p class="verdict bad">✕ <span class="l-en">the old way — machine text at the moment of curiosity</span><span class="l-zh">旧写法——好奇的瞬间遇上机器文本</span></p>
+      </div>
+      <div>
+        <div class="lens-pop lens-inline" data-kind="record">
+          <div class="lens-hd">
+            <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5l5-5 4 2 7-7.5"/><circle cx="20" cy="7" r="1.4" fill="currentColor" stroke="none"/><path d="M4 20.5h16" opacity=".35"/></svg></span>
+            <span class="lens-hgroup">
+              <span class="lens-kick"><span class="l-en">Track record</span><span class="l-zh">历史战绩</span></span>
+              <span class="lens-title"><span class="l-en">Early turn signs</span><span class="l-zh">早期拐点迹象</span></span>
+            </span>
+          </div>
+          <div class="lens-body">
+            <span class="l-en">A heads-up, not a buy signal: in 26 past cases, about <b>6 in 10</b> faded within a day. If the turn is real, the board upgrades on its own.</span>
+            <span class="l-zh">仅是提醒，并非买入信号：历史26次中约<b>六成</b>在一天内消退。若拐点属实，榜单会自行升级。</span>
+          </div>
+          <div class="lens-receipt">
+            <span class="r-i"><span class="r-k"><span class="l-en">cases</span><span class="l-zh">案例</span></span> 26</span>
+            <span class="r-i"><span class="r-k"><span class="l-en">window</span><span class="l-zh">区间</span></span> 2021–26</span>
+            <span class="r-i"><span class="l-en">shown for context</span><span class="l-zh">仅供参考</span></span>
+          </div>
+        </div>
+        <p class="verdict good">✓ <span class="l-en">through Lens — same honesty, human first</span><span class="l-zh">Lens 写法——同样诚实，先讲人话</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MOTION & UX SPEC ================= -->
+  <section>
+    <p class="eyebrow"><span class="l-en">05 · Motion &amp; UX spec</span><span class="l-zh">05 · 动效与体验规范</span></p>
+    <h2><span class="l-en">Fast to appear, hard to lose, quiet once open</span><span class="l-zh">快速出现，不易丢失，开启后保持安静</span></h2>
+    <div class="spec-grid" style="margin-top:18px">
+      <div class="spec"><div class="sv">90 ms</div><div class="sk"><span class="l-en">hover intent before opening — no flicker when the cursor is just passing through</span><span class="l-zh">悬停意图判定——光标路过不误触</span></div></div>
+      <div class="spec"><div class="sv">180 ms</div><div class="sk"><span class="l-en">close grace, and the card itself is hoverable — text can be selected, links clicked</span><span class="l-zh">关闭宽限，卡片本身可悬停——可选中文字、点击链接</span></div></div>
+      <div class="spec"><div class="sv">280 ms</div><div class="sk"><span class="l-en">spring entrance that materializes from the trigger (transform-origin tracks it); one light sweep, then still</span><span class="l-zh">弹性入场，从触发点生长（变换原点跟随）；扫光一次后静止</span></div></div>
+      <div class="spec"><div class="sv">≤ 640 px</div><div class="sk"><span class="l-en">the card becomes a bottom sheet: scrim, drag handle, swipe-down or tap-away to dismiss, safe-area padded</span><span class="l-zh">卡片变为底部抽屉：遮罩、拖拽柄、下滑或点空白关闭，适配安全区</span></div></div>
+      <div class="spec"><div class="sv">Tab / Esc</div><div class="sk"><span class="l-en">focus opens with a visible ring, Escape closes, triggers are real buttons with labels</span><span class="l-zh">聚焦即打开并显示焦点环，Esc 关闭，触发器是带标签的真按钮</span></div></div>
+      <div class="spec"><div class="sv">1</div><div class="sk"><span class="l-en">popover on screen at a time, one shared singleton in the DOM — hundreds of tips, zero DOM bloat</span><span class="l-zh">同屏仅一张卡、全页共用一个节点——上百条提示，零冗余</span></div></div>
+      <div class="spec"><div class="sv">·</div><div class="sk"><span class="l-en">reduced-motion collapses everything to simple fades; no backdrop-filter fallback goes near-opaque</span><span class="l-zh">减弱动效时全部退化为淡入淡出；不支持磨砂时自动加深底色</span></div></div>
+      <div class="spec"><div class="sv">≤ 80</div><div class="sk"><span class="l-en">words per tip (house law) — structured label:value beats prose, and machine text is banned above the perforation</span><span class="l-zh">每条提示≤80词（家规）——结构化优于长文，虚线上方禁用机器文本</span></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="l-en"><code>lens.css</code> + <code>lens.js</code> drop into <code>theme.css</code> / <code>theme.js</code> as the restyled tip singleton:
+    the site's 486 <code>data-tip-en/zh</code> attributes and ~295 auto-upgraded legacy <code>?</code> icons render through Lens with <b>zero template changes</b>;
+    the rich illustrated tier arrives via <code>.lens-src</code> blocks as pages get touched. Integration map in <code>README.md</code>.</span>
+    <span class="l-zh"><code>lens.css</code> 与 <code>lens.js</code> 可直接并入 <code>theme.css</code> / <code>theme.js</code> 作为换装后的提示单例：
+    全站486处 <code>data-tip-en/zh</code> 属性与约295个自动升级的旧版 <code>?</code> 图标<b>无需改动模板</b>即可通过 Lens 渲染；
+    插图富层随页面迭代经 <code>.lens-src</code> 块逐步接入。集成说明见 <code>README.md</code>。</span>
+  </footer>
+</div>
+
+<script>
+  (function(){
+    var lp = document.getElementById('langPill'), tp = document.getElementById('themePill');
+    lp.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      document.documentElement.setAttribute('data-lang', b.dataset.l);
+      lp.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
+    });
+    tp.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      document.documentElement.setAttribute('data-theme', b.dataset.t);
+      tp.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
+    });
+  })();
+</script>
+<script src="lens.js"></script>
+</body>
+</html>

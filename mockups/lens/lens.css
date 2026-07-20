@@ -1,0 +1,250 @@
+/* ============================================================================
+   LENS — site-wide explainer popover system
+   ----------------------------------------------------------------------------
+   One component for every hover/tap explainer on the site: ? glyphs, dotted
+   terms, chip/stat info tips. Replaces the .i18n-tip-pop singleton skin and,
+   over time, the page-local tooltip forks (.help .tip, .txq, .tm-flag,
+   .st-th-tip, data-tip→title).
+
+   Contract
+   --------
+   String tier (zero migration — today's site contract):
+     <span data-tip-en="…" data-tip-zh="…">…</span>
+   Rich tier (illustrated anatomy):
+     <button class="lens-q" type="button" aria-label="Explain">?</button>
+     <div class="lens-src" data-lens-kind="define|read|record|source|caution">
+       <div class="lens-hd">
+         <span class="lens-ill"><svg…/></span>
+         <span class="lens-hgroup">
+           <span class="lens-kick"><span class="l-en">…</span><span class="l-zh">…</span></span>
+           <span class="lens-title"><span class="l-en">…</span><span class="l-zh">…</span></span>
+         </span>
+       </div>
+       <div class="lens-body">…l-en/l-zh…</div>
+       <div class="lens-receipt">
+         <span class="r-i"><span class="r-k">…</span> …</span>
+       </div>
+     </div>
+
+   Tokens resolve against BOTH CSS families (theme.css --panel/--text/--muted
+   and vector --card/--ink) via fallback chains. Bilingual via l-en/l-zh spans
+   — never title= attributes (CI law).
+   ============================================================================ */
+
+:root{
+  --lens-w: 304px;
+  --lens-r: 16px;
+  --lens-z: 12600;                                  /* above .row-pop 12000 + .i18n-tip-pop 12500 */
+  --lens-spring: cubic-bezier(.34,1.26,.4,1);
+  --lens-accent: var(--info, var(--blue, #5b9bf0));
+  --lens-text: var(--text, var(--ink, #d7dce3));
+  --lens-mut: var(--muted, var(--mut, #8b93a1));
+  --lens-panel: var(--panel, var(--card, #181b21));
+}
+
+/* ------------------------------------------------------------ triggers ---- */
+.lens-q{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:17px; height:17px; border-radius:50%;
+  margin:0 2px; padding:0; vertical-align:middle; flex:none;
+  font:600 10.5px/1 var(--font-ui, Inter, sans-serif);
+  color:var(--lens-mut);
+  background:color-mix(in srgb, var(--lens-mut) 9%, transparent);
+  border:1px solid color-mix(in srgb, var(--lens-mut) 42%, transparent);
+  cursor:help; user-select:none; -webkit-tap-highlight-color:transparent;
+  transition:color .18s, border-color .18s, background .18s,
+             box-shadow .22s, transform .22s var(--lens-spring);
+}
+.lens-q:hover, .lens-q.lens-on, .lens-q:focus-visible{
+  color:var(--lens-accent);
+  border-color:color-mix(in srgb, var(--lens-accent) 55%, transparent);
+  background:color-mix(in srgb, var(--lens-accent) 13%, transparent);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--lens-accent) 12%, transparent),
+             0 2px 10px -2px color-mix(in srgb, var(--lens-accent) 35%, transparent);
+  transform:scale(1.12);
+}
+.lens-q:focus-visible{ outline:none }
+
+.lens-term{
+  border-bottom:1px dotted color-mix(in srgb, var(--lens-mut) 65%, transparent);
+  cursor:help; border-radius:3px 3px 0 0;
+  transition:color .18s, border-color .18s, background .18s;
+}
+.lens-term:hover, .lens-term.lens-on, .lens-term:focus-visible{
+  color:var(--lens-accent);
+  border-bottom:1px solid var(--lens-accent);
+  background:color-mix(in srgb, var(--lens-accent) 9%, transparent);
+  outline:none;
+}
+
+.lens-src{ display:none }
+
+/* ---------------------------------------------------------------- card ---- */
+.lens-pop{
+  position:fixed; left:0; top:0; z-index:var(--lens-z);
+  width:min(var(--lens-w), calc(100vw - 24px));
+  border-radius:var(--lens-r);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fff 4%, transparent), transparent 46%),
+    color-mix(in srgb, var(--lens-panel) 88%, transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(24px);
+  backdrop-filter:saturate(180%) blur(24px);
+  box-shadow:0 24px 64px -18px rgba(3,7,18,.72),
+             0 8px 22px -10px rgba(3,7,18,.5);
+  opacity:0; pointer-events:none;
+  transform:translateY(7px) scale(.96);
+  transition:opacity .12s ease, transform .12s ease;
+  will-change:transform, opacity;
+}
+@supports not (backdrop-filter: blur(1px)){
+  .lens-pop{ background:color-mix(in srgb, var(--lens-panel) 98%, #fff) }
+}
+.lens-pop.open{
+  opacity:1; pointer-events:auto; transform:none;
+  transition:opacity .2s ease, transform .28s var(--lens-spring);
+}
+
+/* aurora hairline — neutral ring with a category-tinted arc at the crown */
+.lens-pop::before{
+  content:""; position:absolute; inset:0; border-radius:inherit; padding:1px;
+  background:
+    radial-gradient(140px 70px at 22% -4%,
+      color-mix(in srgb, var(--lens-accent) 75%, transparent), transparent 72%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--lens-text) 17%, transparent),
+      color-mix(in srgb, var(--lens-text) 7%, transparent));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite:exclude;
+  pointer-events:none;
+}
+/* one light sweep on open, then quiet */
+.lens-pop::after{
+  content:""; position:absolute; inset:1px; border-radius:inherit; pointer-events:none;
+  background:linear-gradient(112deg, transparent 40%, rgba(255,255,255,.07) 50%, transparent 60%);
+  background-size:240% 100%; background-position:130% 0; opacity:0;
+}
+.lens-pop.open::after{ animation:lens-sheen .95s cubic-bezier(.4,.1,.2,1) .1s 1 both }
+@keyframes lens-sheen{
+  0%{opacity:0; background-position:130% 0}
+  18%{opacity:1}
+  100%{opacity:0; background-position:-40% 0}
+}
+
+/* category accents */
+.lens-pop[data-kind="define"] { --lens-accent:var(--info, var(--blue, #5b9bf0)) }
+.lens-pop[data-kind="read"]   { --lens-accent:var(--q2, #d4a017) }
+.lens-pop[data-kind="record"] { --lens-accent:var(--ok, #3da564) }
+.lens-pop[data-kind="source"] { --lens-accent:color-mix(in srgb, var(--lens-mut) 85%, var(--lens-text)) }
+.lens-pop[data-kind="caution"]{ --lens-accent:var(--warn, #e0a030) }
+
+/* ------------------------------------------------------------- anatomy ---- */
+.lens-hd{ display:flex; align-items:center; gap:11px; padding:15px 16px 0 }
+.lens-ill{
+  flex:none; width:34px; height:34px; border-radius:11px;
+  display:grid; place-items:center; color:var(--lens-accent);
+  background:radial-gradient(120% 120% at 30% 18%,
+    color-mix(in srgb, var(--lens-accent) 24%, transparent),
+    color-mix(in srgb, var(--lens-accent) 6%, transparent) 62%, transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--lens-accent) 30%, transparent);
+}
+.lens-ill svg{ width:20px; height:20px; display:block }
+.lens-hgroup{ min-width:0 }
+.lens-kick{
+  display:block;
+  font:700 9.5px/1 var(--font-ui, Inter, sans-serif);
+  letter-spacing:.15em; text-transform:uppercase;
+  color:color-mix(in srgb, var(--lens-accent) 80%, var(--lens-text));
+}
+.lens-title{
+  display:block; margin-top:4px;
+  font:700 14px/1.3 var(--font-ui, Inter, sans-serif);
+  letter-spacing:-.01em; color:var(--lens-text);
+}
+.lens-body{
+  padding:10px 16px 14px;
+  font:450 12.5px/1.62 var(--font-ui, Inter, sans-serif);
+  color:color-mix(in srgb, var(--lens-text) 88%, var(--lens-mut));
+}
+.lens-body b, .lens-body strong{ font-weight:650; color:var(--lens-text) }
+
+/* the receipt tear-off: machine facts below a perforation, in mono */
+.lens-receipt{
+  display:flex; flex-wrap:wrap; gap:5px 14px; align-items:baseline;
+  margin:0 16px; padding:10px 0 13px;
+  border-top:1px dashed color-mix(in srgb, var(--lens-text) 17%, transparent);
+  font:500 10px/1.5 var(--font-mono, ui-monospace, Menlo, monospace);
+  color:var(--lens-mut);
+}
+.lens-receipt .r-i{ display:inline-flex; align-items:baseline; gap:5px; white-space:nowrap }
+.lens-receipt .r-k{
+  font:700 8.5px/1 var(--font-ui, Inter, sans-serif);
+  letter-spacing:.12em; text-transform:uppercase;
+  color:color-mix(in srgb, var(--lens-mut) 75%, transparent);
+}
+
+/* string tier (data-tip-en/zh — body only, tighter) */
+.lens-pop.lens-plain{ width:auto; max-width:min(272px, calc(100vw - 24px)) }
+.lens-pop.lens-plain .lens-body{ padding:11px 14px 12px; font-size:12px }
+
+/* content stagger on open */
+.lens-pop.open .lens-hd,
+.lens-pop.open .lens-body,
+.lens-pop.open .lens-receipt{ animation:lens-rise .34s var(--lens-spring) both }
+.lens-pop.open .lens-body{ animation-delay:.045s }
+.lens-pop.open .lens-receipt{ animation-delay:.09s }
+@keyframes lens-rise{ from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:none} }
+
+/* ------------------------------------------------- mobile: bottom sheet ---- */
+.lens-grab, .lens-x{ display:none }
+.lens-scrim{
+  position:fixed; inset:0; z-index:calc(var(--lens-z) - 5);
+  background:rgba(4,7,13,.48);
+  -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px);
+  opacity:0; pointer-events:none; transition:opacity .24s ease;
+}
+.lens-scrim.open{ opacity:1; pointer-events:auto }
+html.lens-lock, html.lens-lock body{ overflow:hidden }
+
+@media (max-width:640px){
+  .lens-pop:not(.lens-inline){
+    left:0 !important; right:0; top:auto !important; bottom:0 !important;
+    width:100%; max-width:100%;
+    border-radius:20px 20px 0 0;
+    padding-bottom:max(10px, env(safe-area-inset-bottom));
+    max-height:min(72vh, 480px); overflow:auto; overscroll-behavior:contain;
+    transform:translateY(26px);
+    transform-origin:50% 100% !important;
+  }
+  .lens-pop:not(.lens-inline).open{ transform:none }
+  .lens-pop:not(.lens-inline) .lens-grab{
+    display:block; width:38px; height:4px; border-radius:2px; margin:10px auto 2px;
+    background:color-mix(in srgb, var(--lens-text) 22%, transparent);
+  }
+  .lens-pop:not(.lens-inline) .lens-x{
+    display:grid; place-items:center; position:absolute; top:10px; right:12px;
+    width:26px; height:26px; border-radius:50%; border:0; padding:0;
+    font:600 11px/1 var(--font-ui, Inter, sans-serif);
+    color:var(--lens-mut);
+    background:color-mix(in srgb, var(--lens-mut) 14%, transparent);
+    cursor:pointer;
+  }
+  .lens-pop:not(.lens-inline) .lens-hd{ padding-top:8px }
+  .lens-pop:not(.lens-inline) .lens-ill{ width:38px; height:38px }
+  .lens-pop:not(.lens-inline).lens-plain .lens-body{ font-size:13px; padding:12px 18px 14px }
+}
+
+/* demo/static mode — a card pinned in normal flow (galleries, specs) */
+.lens-pop.lens-inline{
+  position:static; opacity:1; transform:none; pointer-events:auto; width:var(--lens-w);
+}
+.lens-pop.lens-inline::after{ animation:none }
+
+/* ------------------------------------------------------ reduced motion ---- */
+@media (prefers-reduced-motion: reduce){
+  .lens-pop, .lens-pop.open{ transition:opacity .12s ease; transform:none }
+  .lens-pop.open::after{ animation:none }
+  .lens-pop.open .lens-hd, .lens-pop.open .lens-body, .lens-pop.open .lens-receipt{ animation:none }
+  .lens-q, .lens-q:hover, .lens-q.lens-on{ transform:none; transition:none }
+}
