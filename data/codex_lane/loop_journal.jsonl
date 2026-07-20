@@ -71,3 +71,4 @@
 {"ts": "2026-07-19T19:32:57+00:00", "lane": "both", "iteration": 1, "results": {}, "stop_reason": "budget_gate (iteration 1): budget:primary:85.0%"}
 {"ts": "2026-07-19T21:07:24+00:00", "lane": "both", "iteration": 1, "results": {}, "stop_reason": "budget_gate (iteration 1): budget:primary:85.0%"}
 {"ts": "2026-07-20T04:04:57+00:00", "lane": "both", "iteration": 1, "results": {}, "stop_reason": "budget_gate (iteration 1): budget:primary:86.0%"}
+{"ts": "2026-07-20T07:29:38+00:00", "lane": "both", "iteration": 1, "results": {}, "stop_reason": "budget_gate (iteration 1): budget:primary:86.0%"}
