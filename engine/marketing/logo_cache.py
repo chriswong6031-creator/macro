@@ -3,10 +3,17 @@
 Public API:
     white_logo_datauri(ticker, root, *, fetch=True, max_px=420) -> str | None
     cached_only(ticker, root) -> str | None
+    color_logo_datauri(ticker, root, *, fetch=True, max_px=256) -> str | None
+    cached_only_color(ticker, root) -> str | None
 
-Treatment: fetch the nvstly/icons CDN PNG, convert every non-transparent pixel to
-pure white (preserving alpha). This is the TrendSpider monochrome-overlay treatment.
-Cached in data/marketing/logos/<TICKER>_white.png after first fetch.
+Two treatments, two caches, one CDN source (nvstly/icons):
+  - WHITE: every non-transparent pixel → pure white (preserving alpha). The
+    TrendSpider monochrome chart-watermark look. Cached as <TICKER>_white.png.
+  - COLOR: the ORIGINAL full-color RGBA icon, only downscaled — for avatar chips
+    where the brand hue is the point. Cached as <TICKER>_color.png.
+
+The whitening is deliberate (chart watermarks); the color path never touches
+that pipeline or its cache — they are independent by file suffix.
 
 Never raises — fail-soft None on any error.
 """
@@ -23,6 +30,10 @@ _TIMEOUT = 6
 
 def _cache_path(ticker: str, root: Path) -> Path:
     return root / "data" / "marketing" / "logos" / f"{ticker.upper()}_white.png"
+
+
+def _color_cache_path(ticker: str, root: Path) -> Path:
+    return root / "data" / "marketing" / "logos" / f"{ticker.upper()}_color.png"
 
 
 def _to_datauri(img_bytes: bytes) -> str:
@@ -55,6 +66,30 @@ def _whiten(png_bytes: bytes, max_px: int = 420) -> bytes | None:
                 if a > 8:
                     pixels[x, y] = (255, 255, 255, a)
         # Save to bytes
+        buf = io.BytesIO()
+        img.save(buf, format="PNG", optimize=True)
+        return buf.getvalue()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _downscale(png_bytes: bytes, max_px: int = 256) -> bytes | None:
+    """Downscale a PNG to *max_px* wide, preserving the ORIGINAL RGBA colors.
+
+    The color-avatar mirror of _whiten: same decode/resize path, but the pixels
+    are left untouched — the brand hue and transparency are the whole point.
+    Returns PNG bytes or None on failure.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    try:
+        img = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
+        w, h = img.size
+        if w > max_px:
+            new_h = int(h * max_px / w)
+            img = img.resize((max_px, new_h), Image.LANCZOS)
         buf = io.BytesIO()
         img.save(buf, format="PNG", optimize=True)
         return buf.getvalue()
@@ -112,3 +147,55 @@ def white_logo_datauri(
 def cached_only(ticker: str, root: Path | str) -> str | None:
     """Return data URI from cache only — no network. Returns None if not cached."""
     return white_logo_datauri(ticker, root, fetch=False)
+
+
+def color_logo_datauri(
+    ticker: str,
+    root: Path | str,
+    *,
+    fetch: bool = True,
+    max_px: int = 256,
+) -> str | None:
+    """Return a data: URI for the ORIGINAL full-color company logo, or None.
+
+    The color mirror of white_logo_datauri: same cache-first / fetch-if-absent /
+    deterministic-once-cached contract, but the icon keeps its brand hue and
+    transparency (only downscaled). Cached as <TICKER>_color.png — a file
+    independent from the whitened cache, so the two treatments never collide.
+
+    Never raises.
+    """
+    try:
+        root = Path(root)
+        cpath = _color_cache_path(ticker, root)
+        if cpath.exists():
+            return _to_datauri(cpath.read_bytes())
+        if not fetch:
+            return None
+        try:
+            import requests  # type: ignore[import-untyped]
+        except ImportError:
+            return None
+        url = _CDN.format(ticker=ticker.upper())
+        try:
+            resp = requests.get(url, timeout=_TIMEOUT)
+        except Exception:  # noqa: BLE001
+            return None
+        if resp.status_code != 200:
+            return None
+        ctype = resp.headers.get("content-type", "")
+        if "image" not in ctype:
+            return None
+        color_bytes = _downscale(resp.content, max_px=max_px)
+        if color_bytes is None:
+            return None
+        cpath.parent.mkdir(parents=True, exist_ok=True)
+        cpath.write_bytes(color_bytes)
+        return _to_datauri(color_bytes)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def cached_only_color(ticker: str, root: Path | str) -> str | None:
+    """Return color data URI from cache only — no network. None if not cached."""
+    return color_logo_datauri(ticker, root, fetch=False)

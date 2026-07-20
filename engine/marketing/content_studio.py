@@ -1264,6 +1264,10 @@ def content_plan(
                             # logos written into the repo), real path on nightly.
                             logo_root=root,
                             subtitle=_wl_subtitle,
+                            # Portrait 4:5 (1080×1350) — the tallest image X renders
+                            # un-cropped on a phone timeline (mobile-first surface).
+                            width=1080,
+                            height=1350,
                         )
                         _wl_chart_id = f"chart-{chart_id_counter:03d}"
                         _tl_item["chart_id"] = _wl_chart_id

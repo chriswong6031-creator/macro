@@ -152,10 +152,18 @@ def test_gate_rejects_dead_actions():
         assert is_postable_signal(p) is False, f"action {action} must be rejected"
 
 
-def test_invalidated_plan_never_appears_in_signal_posts_or_charts():
+def test_invalidated_plan_never_appears_in_signal_posts_or_charts(monkeypatch):
     """Full pipeline: a QCOM-class invalidated plan must not leak anywhere."""
+    import engine.marketing.chart_render as cr
     from engine.marketing.content_studio import content_plan
     from engine.marketing.chart_render import load_closes
+    # This test passes the real ROOT so load_closes can read committed parquet,
+    # but the theme_list watchlist card would then fetch + cache company logos
+    # into the repo's real data/marketing/logos/ tree. Neutralize BOTH logo
+    # resolvers so the card renders offline (monograms) and writes nothing —
+    # tests must never mutate the real logo cache (MM_DATA_GUARD law).
+    monkeypatch.setattr(cr, "resolve_color_logo", lambda *a, **k: None)
+    monkeypatch.setattr(cr, "resolve_logo", lambda *a, **k: None)
     cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
     plans = _SAMPLE_PLANS + [_INVALIDATED_PLAN]
     loader = lambda t: load_closes(t, ROOT, n=90)  # noqa: E731

@@ -13,6 +13,7 @@ CDN fetch and the closes loader, so nothing touches the filesystem or network.
 """
 from __future__ import annotations
 
+import pathlib
 import re
 
 import pytest
@@ -52,19 +53,48 @@ def test_render_watchlist_card_valid_svg(n: int):
         assert r["ticker"] in svg, f"Ticker {r['ticker']} missing from {n}-row card"
 
 
-@pytest.mark.parametrize("n", [3, 10])
-def test_render_watchlist_card_height_autoscales(n: int):
-    """Auto height must grow with the row count (no fixed-height clipping)."""
+def test_render_watchlist_card_portrait_default():
+    """v2 default canvas is 1080×1350 (4:5 portrait) — the tallest un-cropped
+    image X renders on a phone timeline."""
     from engine.marketing.chart_render import render_watchlist_card
-    svg = render_watchlist_card("theme", _rows(min(n, 8)) + _rows(2)[: max(0, n - 8)])
-    m = re.search(r'height="(\d+)"', svg)
-    assert m, "No height attribute on <svg>"
-    # A 10-row card must be meaningfully taller than a 3-row card.
-    small = render_watchlist_card("theme", _rows(3))
+    svg = render_watchlist_card("theme", _rows(5))
+    assert 'width="1080"' in svg, "Default width must be 1080 (portrait)"
+    assert 'height="1350"' in svg, "Default height must be 1350 (4:5 portrait)"
+    assert 'viewBox="0 0 1080 1350"' in svg
+
+
+def test_render_watchlist_card_width_height_back_compat():
+    """The old width/height signature still works: width is always honored, and
+    an explicit height is honored exactly when the rows fit inside it."""
+    from engine.marketing.chart_render import render_watchlist_card
+    # 3 rows fit comfortably in a 1000px-tall canvas → height honored exactly.
+    svg = render_watchlist_card("theme", _rows(3), width=1000, height=1000)
+    assert 'width="1000"' in svg
+    assert 'height="1000"' in svg
+    assert 'viewBox="0 0 1000 1000"' in svg
+
+
+def test_render_watchlist_card_fixed_height_never_clips_rows():
+    """A row count too tall for the fixed portrait canvas must auto-grow the
+    height rather than clip the footer/rows."""
+    from engine.marketing.chart_render import render_watchlist_card
     big = render_watchlist_card("theme", _rows(8) + [
         {"ticker": "AAA", "price": 1.0, "pct_change": 9.9},
         {"ticker": "BBB", "price": 2.0, "pct_change": 8.8},
     ])
+    h = int(re.search(r'height="(\d+)"', big).group(1))
+    assert h > 1350, f"10-row card ({h}) must grow past the 1350 default, not clip"
+
+
+@pytest.mark.parametrize("n", [3, 10])
+def test_render_watchlist_card_height_autoscales(n: int):
+    """height=None opts back into row-count auto-scaling (old behavior)."""
+    from engine.marketing.chart_render import render_watchlist_card
+    small = render_watchlist_card("theme", _rows(3), height=None)
+    big = render_watchlist_card("theme", _rows(8) + [
+        {"ticker": "AAA", "price": 1.0, "pct_change": 9.9},
+        {"ticker": "BBB", "price": 2.0, "pct_change": 8.8},
+    ], height=None)
     hs = int(re.search(r'height="(\d+)"', small).group(1))
     hb = int(re.search(r'height="(\d+)"', big).group(1))
     assert hb > hs, f"10-row card ({hb}) should be taller than 3-row ({hs})"
@@ -140,11 +170,11 @@ def test_render_watchlist_card_hostile_title_and_subtitle_escaped():
 # ---------------------------------------------------------------------------
 
 def test_monogram_fallback_when_no_logo(monkeypatch):
-    """With logo_root set but resolve_logo returning None, each row must draw a
-    deterministic monogram tile (gradient + a single letter) — never an <image>
-    or a broken glyph."""
+    """With logo_root set but resolve_color_logo returning None, each row must
+    draw a deterministic circular monogram (gradient + a single letter) — never
+    an <image> or a broken glyph."""
     import engine.marketing.chart_render as cr
-    monkeypatch.setattr(cr, "resolve_logo", lambda *a, **k: None)
+    monkeypatch.setattr(cr, "resolve_color_logo", lambda *a, **k: None)
     monkeypatch.setattr(cr, "load_closes", lambda *a, **k: None)  # no sparkline data
     svg = cr.render_watchlist_card("theme", _rows(4), logo_root="/nonexistent")
     # No embedded raster logo when none resolve.
@@ -157,14 +187,65 @@ def test_monogram_fallback_when_no_logo(monkeypatch):
         assert f">{first}<" in svg, f"Monogram initial '{first}' missing"
 
 
+def test_avatar_chip_when_color_logo_resolves(monkeypatch):
+    """When resolve_color_logo returns a data URI, each row must house it in a
+    light circular avatar chip (an <image> clipped to a disc) — never the raw
+    whitened logo, and never a monogram."""
+    import engine.marketing.chart_render as cr
+    fake_uri = "data:image/png;base64,AAAA"
+    monkeypatch.setattr(cr, "resolve_color_logo", lambda *a, **k: fake_uri)
+    monkeypatch.setattr(cr, "load_closes", lambda *a, **k: None)
+    svg = cr.render_watchlist_card("theme", _rows(3), logo_root="/x")
+    assert fake_uri in svg, "Color logo data URI not embedded"
+    assert "<image" in svg, "Avatar chip <image> not drawn"
+    assert "wlav_" in svg, "Avatar-chip clipPath not emitted"
+    # Chip housed a logo → no monogram initials for those rows.
+    assert "wlmono_" not in svg, "Monogram drawn despite a resolved color logo"
+
+
+def test_render_watchlist_card_uses_color_not_white_logo(monkeypatch):
+    """The card must resolve the COLOR logo path, never the whitened chart path,
+    so the avatar chips carry the brand hue."""
+    import engine.marketing.chart_render as cr
+    calls = {"color": 0, "white": 0}
+
+    def _fake_color(*a, **k):
+        calls["color"] += 1
+        return None
+
+    def _fake_white(*a, **k):
+        calls["white"] += 1
+        return "data:image/png;base64,WHITE"
+
+    monkeypatch.setattr(cr, "resolve_color_logo", _fake_color)
+    monkeypatch.setattr(cr, "resolve_logo", _fake_white)
+    monkeypatch.setattr(cr, "load_closes", lambda *a, **k: None)
+    cr.render_watchlist_card("theme", _rows(3), logo_root="/x")
+    assert calls["color"] == 3, "Every row must query the color logo path"
+    assert calls["white"] == 0, "The whitened chart-watermark path must not be used"
+
+
 def test_monogram_direct_helper():
-    """The monogram helper renders a single-letter tile and is deterministic."""
+    """The monogram helper renders a single-letter CIRCLE and is deterministic."""
     from engine.marketing.chart_render import _wl_monogram
-    defs_a, grp_a = _wl_monogram("NVDA", 100, 100, 38, "u1")
-    defs_b, grp_b = _wl_monogram("NVDA", 100, 100, 38, "u1")
+    defs_a, grp_a = _wl_monogram("NVDA", 100, 100, 58, "u1")
+    defs_b, grp_b = _wl_monogram("NVDA", 100, 100, 58, "u1")
     assert (defs_a, grp_a) == (defs_b, grp_b), "Monogram must be deterministic"
     assert ">N<" in grp_a, "Leading initial not rendered"
+    assert "<circle" in grp_a, "Monogram must be a circle (matches avatar silhouette)"
     assert "linearGradient" in defs_a
+
+
+def test_avatar_chip_direct_helper():
+    """The avatar-chip helper houses a logo in a clipped light disc, deterministic."""
+    from engine.marketing.chart_render import _wl_avatar_chip
+    uri = "data:image/png;base64,ZZZZ"
+    defs_a, grp_a = _wl_avatar_chip(uri, 100, 100, 58, "u1")
+    defs_b, grp_b = _wl_avatar_chip(uri, 100, 100, 58, "u1")
+    assert (defs_a, grp_a) == (defs_b, grp_b), "Avatar chip must be deterministic"
+    assert "clipPath" in defs_a, "Logo must be clipped to the disc"
+    assert uri in grp_a and "<image" in grp_a
+    assert "<circle" in grp_a, "Light disc + rim must be drawn"
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +254,7 @@ def test_monogram_direct_helper():
 
 def test_sparkline_renders_with_data(monkeypatch):
     import engine.marketing.chart_render as cr
-    monkeypatch.setattr(cr, "resolve_logo", lambda *a, **k: None)
+    monkeypatch.setattr(cr, "resolve_color_logo", lambda *a, **k: None)
     monkeypatch.setattr(
         cr, "load_closes",
         lambda ticker, root, n=10: (
@@ -189,7 +270,7 @@ def test_sparkline_absent_without_data(monkeypatch):
     """A ticker with no price history must degrade to no sparkline — never a
     broken glyph or an empty <polyline>."""
     import engine.marketing.chart_render as cr
-    monkeypatch.setattr(cr, "resolve_logo", lambda *a, **k: None)
+    monkeypatch.setattr(cr, "resolve_color_logo", lambda *a, **k: None)
     monkeypatch.setattr(cr, "load_closes", lambda *a, **k: None)
     svg = cr.render_watchlist_card("theme", _rows(3), logo_root="/x")
     # No row sparklines (the only polylines in this card come from sparklines).
@@ -315,3 +396,116 @@ def test_render_watchlist_card_uid_is_stable_across_hash_seeds():
     assert outs[0] == outs[1] == outs[2] == outs[3], (
         f"render_watchlist_card uid is not deterministic across PYTHONHASHSEED: {outs}"
     )
+
+
+# ---------------------------------------------------------------------------
+# color_logo_datauri — the avatar-chip source (logo_cache)
+#
+# CRITICAL TRAP (cost a blocker last round): NO test here may write into the
+# real data/marketing/logos/ tree. Every test uses a tmp_path root or
+# fetch=False, and never touches the network. A drift check
+# (`git status --short data/marketing/logos/`) must stay empty after this file.
+# ---------------------------------------------------------------------------
+
+def _make_png_bytes(color=(120, 186, 0, 255), size=(64, 64)) -> bytes:
+    """A tiny in-memory RGBA PNG for cache-hit tests (no network)."""
+    import io
+    from PIL import Image
+    img = Image.new("RGBA", size, color)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_color_logo_cached_hit_no_network(tmp_path):
+    """A pre-seeded <TICKER>_color.png is returned as a data URI with NO fetch."""
+    from engine.marketing.logo_cache import color_logo_datauri
+    logos = tmp_path / "data" / "marketing" / "logos"
+    logos.mkdir(parents=True)
+    (logos / "NVDA_color.png").write_bytes(_make_png_bytes())
+    # fetch=False proves it never hits the network — pure cache read.
+    uri = color_logo_datauri("NVDA", tmp_path, fetch=False)
+    assert uri is not None and uri.startswith("data:image/png;base64,")
+
+
+def test_color_logo_fetch_false_uncached_is_none(tmp_path):
+    """fetch=False with no cache entry returns None (never raises, never fetches)."""
+    from engine.marketing.logo_cache import color_logo_datauri
+    assert color_logo_datauri("ZZZZ", tmp_path, fetch=False) is None
+
+
+def test_cached_only_color_no_network(tmp_path):
+    """cached_only_color is the fetch=False shorthand — cache read or None."""
+    from engine.marketing.logo_cache import cached_only_color
+    logos = tmp_path / "data" / "marketing" / "logos"
+    logos.mkdir(parents=True)
+    assert cached_only_color("NONE", tmp_path) is None
+    (logos / "AMD_color.png").write_bytes(_make_png_bytes(color=(237, 28, 36, 255)))
+    uri = cached_only_color("AMD", tmp_path)
+    assert uri is not None and uri.startswith("data:image/png;base64,")
+
+
+def test_color_logo_writes_only_color_cache_file(tmp_path, monkeypatch):
+    """A fetch writes ONLY <TICKER>_color.png — never the whitened cache file.
+    (Network is stubbed; nothing leaves the tmp root.)"""
+    import engine.marketing.logo_cache as lc
+
+    class _Resp:
+        status_code = 200
+        headers = {"content-type": "image/png"}
+        content = _make_png_bytes()
+
+    monkeypatch.setattr(lc, "requests", type("R", (), {"get": staticmethod(lambda *a, **k: _Resp())})(), raising=False)
+    uri = lc.color_logo_datauri("TSM", tmp_path, fetch=True)
+    assert uri is not None and uri.startswith("data:image/png;base64,")
+    logos = tmp_path / "data" / "marketing" / "logos"
+    assert (logos / "TSM_color.png").exists(), "color cache file not written"
+    assert not (logos / "TSM_white.png").exists(), (
+        "color path must never write the whitened cache file"
+    )
+
+
+def test_color_logo_never_raises_on_bad_root():
+    """The contract mirrors white_logo_datauri: fail-soft None, never raises."""
+    from engine.marketing.logo_cache import color_logo_datauri
+    # A None root would blow up a naive Path() — must be swallowed to None.
+    assert color_logo_datauri("NVDA", None, fetch=False) is None  # type: ignore[arg-type]
+
+
+def test_color_logo_does_not_touch_repo_logos_dir(tmp_path, monkeypatch):
+    """Belt-and-suspenders: rendering a card with a tmp logo_root writes any
+    logos ONLY under that tmp root, never the repo's data/marketing/logos/.
+    Network is stubbed so the test is offline and deterministic."""
+    import engine.marketing.chart_render as cr
+    # Stub the resolver so no real fetch happens; the card still exercises the
+    # avatar path with a fake URI.
+    monkeypatch.setattr(cr, "resolve_color_logo", lambda *a, **k: "data:image/png;base64,AAAA")
+    monkeypatch.setattr(cr, "load_closes", lambda *a, **k: None)
+    rows = [{"ticker": "NVDA", "price": 100.0, "pct_change": 2.0}]
+    svg = cr.render_watchlist_card("t", rows, logo_root=tmp_path)
+    assert svg.strip().startswith("<svg")
+    # The repo's real logo tree must not exist under the tmp root (isolation).
+    real_repo_logos = pathlib.Path(__file__).resolve().parent.parent / "data" / "marketing" / "logos"
+    assert tmp_path not in real_repo_logos.parents, "tmp root must be isolated from repo"
+
+
+def test_eight_rows_with_stance_holds_4to5_ratio():
+    """X crops taller than 4:5 — 8 rows must compress into 1350, never grow."""
+    import re
+    from engine.marketing.chart_render import render_watchlist_card
+    rows = [
+        {"ticker": f"T{i}", "name": f"Co {i}", "price": 100.0 + i, "pct_change": -(8 - i) * 0.7}
+        for i in range(8)
+    ]
+    svg = render_watchlist_card("Selloff", rows, subtitle="Watch, don't chase")
+    w, h = re.search(r'width="(\d+)" height="(\d+)"', svg).groups()
+    assert (int(w), int(h)) == (1080, 1350)
+
+
+def test_pathological_row_count_grows_rather_than_clips():
+    import re
+    from engine.marketing.chart_render import render_watchlist_card
+    rows = [{"ticker": f"T{i}", "price": 1.0, "pct_change": 0.1} for i in range(12)]
+    svg = render_watchlist_card("Big list", rows)
+    w, h = re.search(r'width="(\d+)" height="(\d+)"', svg).groups()
+    assert int(h) > 1350  # documented fallback: grow, never clip the footer

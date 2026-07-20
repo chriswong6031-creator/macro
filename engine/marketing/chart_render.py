@@ -564,6 +564,19 @@ def resolve_logo(ticker: str, root: Path | str) -> str | None:
         return None
 
 
+def resolve_color_logo(ticker: str, root: Path | str) -> str | None:
+    """Return ORIGINAL full-color data URI for ticker logo (cached; fetch if needed).
+
+    The avatar-chip counterpart to resolve_logo: keeps brand hue + transparency
+    for the light circular chips in the watchlist card. Fail-soft None.
+    """
+    try:
+        from engine.marketing.logo_cache import color_logo_datauri
+        return color_logo_datauri(ticker, root, fetch=True)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _brand_bar(
     width: int,
     height: int,
@@ -591,7 +604,21 @@ def _brand_bar(
     """
     band_top = height - band_h
     cy = band_top + band_h / 2.0
-    pad = 14
+    # Everything in the bar scales with the band height so a taller footer (the
+    # portrait watchlist card passes band_h=72) keeps the logomark, URL, button
+    # and copyright in proportion. The family default is band_h=46 (s == 1.0):
+    # for THAT path the original literal geometry is emitted verbatim (see _num
+    # below) so every existing caller's SVG stays byte-identical — only a
+    # non-default band_h re-scales.
+    s = band_h / 46.0
+    _scaled = abs(s - 1.0) > 1e-9
+
+    def _num(base: float, literal: str, fmt: str = ".1f") -> str:
+        """Emit *literal* verbatim on the default band (byte-stable), else the
+        scaled value formatted with *fmt*."""
+        return literal if not _scaled else format(base * s, fmt)
+
+    pad = 14 * s
 
     laser_id = f"bb_laser_{uid}"
     btn_id = f"bb_btn_{uid}"
@@ -617,56 +644,59 @@ def _brand_bar(
     bar = (
         f'<rect x="0" y="{band_top}" width="{width}" height="{band_h}" '
         f'fill="#0A1020" opacity="0.94"/>'
-        f'<rect x="0" y="{band_top}" width="{width}" height="1.5" '
+        f'<rect x="0" y="{band_top}" width="{width}" height="{_num(1.5, "1.5", ".2f")}" '
         f'fill="url(#{laser_id})"/>'
     )
 
     # Left lockup: logomark tile always anchors the brand; URL is the marketing
     # voice (suppressed on sober cards), descriptor is the quiet second voice.
-    tile = 18.0
+    tile = 18.0 * s
     lm_defs, lm_group = _favicon_logomark(pad + tile / 2, cy, size=tile, uid=f"{uid}bb")
     defs += lm_defs
     bar += lm_group
-    x = pad + tile + 9.0
+    x = pad + tile + 9.0 * s
     if show_url:
         bar += (
-            f'<text x="{x:.1f}" y="{cy + 5:.1f}" fill="#ffffff" '
-            f'font-size="15" font-weight="800" font-family="sans-serif" '
+            f'<text x="{x:.1f}" y="{cy + 5 * s:.1f}" fill="#ffffff" '
+            f'font-size="{_num(15, "15")}" font-weight="800" font-family="sans-serif" '
             f'letter-spacing="0.3">mastermind-x.com</text>'
         )
-        x += 152.0
+        x += 152.0 * s
     if descriptor:
         if show_url:
-            x += 11.0
-            bar += f'<circle cx="{x:.1f}" cy="{cy:.1f}" r="1.5" fill="#3a4466"/>'
-            x += 11.0
+            x += 11.0 * s
+            bar += (
+                f'<circle cx="{x:.1f}" cy="{cy:.1f}" r="{_num(1.5, "1.5", ".2f")}" '
+                f'fill="#3a4466"/>'
+            )
+            x += 11.0 * s
         bar += (
-            f'<text x="{x:.1f}" y="{cy + 4:.1f}" fill="#8899bb" '
-            f'font-size="11" font-family="sans-serif" letter-spacing="0.2">'
+            f'<text x="{x:.1f}" y="{cy + 4 * s:.1f}" fill="#8899bb" '
+            f'font-size="{_num(11, "11")}" font-family="sans-serif" letter-spacing="0.2">'
             f'{_xesc(descriptor)}</text>'
         )
 
     # Right cluster: © in whisper ink, then THE one saturated element.
     right_x = width - pad
     if show_button:
-        bw = int(len(button_label) * 7.1) + 30
-        bh = 26.0
+        bw = int(len(button_label) * 7.1 * s) + int(30 * s)
+        bh = 26.0 * s
         bx = right_x - bw
         by = cy - bh / 2.0
         bar += (
             f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bw}" height="{bh:.0f}" '
-            f'rx="13" fill="url(#{btn_id})"/>'
+            f'rx="{_num(13, "13")}" fill="url(#{btn_id})"/>'
             f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bw}" height="{bh:.0f}" '
-            f'rx="13" fill="url(#{btn_sheen_id})" stroke="#ffffff" '
+            f'rx="{_num(13, "13")}" fill="url(#{btn_sheen_id})" stroke="#ffffff" '
             f'stroke-opacity="0.16" stroke-width="1"/>'
-            f'<text x="{bx + bw / 2.0:.1f}" y="{cy + 4:.1f}" fill="#ffffff" '
-            f'font-size="12" font-weight="700" font-family="sans-serif" '
+            f'<text x="{bx + bw / 2.0:.1f}" y="{cy + 4 * s:.1f}" fill="#ffffff" '
+            f'font-size="{_num(12, "12")}" font-weight="700" font-family="sans-serif" '
             f'text-anchor="middle" letter-spacing="0.2">{_xesc(button_label)}</text>'
         )
-        right_x = bx - 14.0
+        right_x = bx - 14.0 * s
     bar += (
-        f'<text x="{right_x:.1f}" y="{cy + 3:.1f}" fill="#3a4466" '
-        f'font-size="9" text-anchor="end" font-family="sans-serif">'
+        f'<text x="{right_x:.1f}" y="{cy + 3 * s:.1f}" fill="#3a4466" '
+        f'font-size="{_num(9, "9")}" text-anchor="end" font-family="sans-serif">'
         f'{_xesc(copyright_text)}</text>'
     )
     return defs, bar
@@ -1968,21 +1998,20 @@ def _wl_sparkline(
 
 
 def _wl_monogram(ticker: str, cx: float, cy: float, size: float, uid: str) -> tuple[str, str]:
-    """Deterministic rounded-tile monogram — the fallback when no logo resolves.
+    """Deterministic circular monogram — the fallback when no color logo resolves.
 
-    A rounded square in a house-gradient hue picked from the ticker hash, with
-    the ticker's first 1-2 letters in white. Reads as a deliberate avatar, never
-    a broken-image glyph. Returns (defs, group).
+    A house-gradient CIRCLE (matching the avatar-chip silhouette) picked from the
+    ticker hash, with the ticker's leading initial in white. Circular — not a
+    rounded square — so a monogram and a logo chip share one silhouette and the
+    column never looks half-avatar / half-tile. Reads as a deliberate avatar,
+    never a broken-image glyph. Returns (defs, group).
     """
-    half = size / 2.0
-    x = cx - half
-    y = cy - half
-    rx = size * 0.26
+    r = size / 2.0
     tk = "".join(ch for ch in str(ticker).upper() if ch.isalnum())
     # A single initial reads as a deliberate avatar; two letters look like a
     # placeholder abbreviation. Keep it to the leading glyph.
     letters = (tk[:1] or "•")
-    idx = (abs(hash(tk)) % len(_WL_MONO_PALETTE)) if tk else 0
+    idx = (zlib.crc32(tk.encode("utf-8")) % len(_WL_MONO_PALETTE)) if tk else 0
     c_top, c_bot = _WL_MONO_PALETTE[idx]
     grad_id = f"wlmono_{uid}"
     defs = (
@@ -1991,15 +2020,54 @@ def _wl_monogram(ticker: str, cx: float, cy: float, size: float, uid: str) -> tu
         f'<stop offset="1" stop-color="{c_bot}"/>'
         f'</linearGradient>'
     )
-    fsize = size * 0.52
+    fsize = size * 0.46
     group = (
-        f'<rect x="{x:.1f}" y="{y:.1f}" width="{size:.1f}" height="{size:.1f}" '
-        f'rx="{rx:.1f}" fill="url(#{grad_id})"/>'
-        f'<rect x="{x:.1f}" y="{y:.1f}" width="{size:.1f}" height="{size:.1f}" '
-        f'rx="{rx:.1f}" fill="#ffffff" fill-opacity="0.06"/>'
+        f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="url(#{grad_id})"/>'
+        f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="#ffffff" '
+        f'fill-opacity="0.07"/>'
+        f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r - 0.5:.1f}" fill="none" '
+        f'stroke="#ffffff" stroke-opacity="0.14" stroke-width="1"/>'
         f'<text x="{cx:.1f}" y="{cy + fsize * 0.35:.1f}" fill="#ffffff" '
         f'font-size="{fsize:.1f}" font-weight="800" text-anchor="middle" '
-        f'font-family="sans-serif" letter-spacing="0.02em">{_xesc(letters)}</text>'
+        f'font-family="sans-serif" letter-spacing="0.01em">{_xesc(letters)}</text>'
+    )
+    return defs, group
+
+
+def _wl_avatar_chip(logo_datauri: str, cx: float, cy: float, size: float, uid: str) -> tuple[str, str]:
+    """A light circular avatar chip housing a full-color company logo.
+
+    The premium-fintech idiom: a near-white circle with a subtle cool rim and a
+    soft inner shadow, the logo centered with ~22% padding. Any brand mark — dark
+    or light, square or round — reads as intentional inside it, and the light disc
+    lifts off the dark card the way an app-icon does off a home screen. Returns
+    (defs, group). The logo is clipped to the disc so a wide wordmark can never
+    bleed past the rim.
+    """
+    r = size / 2.0
+    pad = size * 0.22          # inner padding — the logo occupies the middle ~56%
+    inner = size - 2 * pad
+    clip_id = f"wlav_{uid}"
+    grad_id = f"wlavg_{uid}"
+    defs = (
+        f'<clipPath id="{clip_id}"><circle cx="{cx:.1f}" cy="{cy:.1f}" '
+        f'r="{r - 1:.1f}"/></clipPath>'
+        # Faint top-down sheen so the disc reads as a lit surface, not a flat dot.
+        f'<linearGradient id="{grad_id}" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0" stop-color="#ffffff"/>'
+        f'<stop offset="1" stop-color="#E7ECF6"/>'
+        f'</linearGradient>'
+    )
+    group = (
+        # Light disc + cool rim (the chip).
+        f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="url(#{grad_id})"/>'
+        f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r - 0.5:.1f}" fill="none" '
+        f'stroke="#C3CEE0" stroke-width="1"/>'
+        # Full-color logo, padded + clipped to the disc.
+        f'<image href="{logo_datauri}" '
+        f'x="{cx - inner / 2:.1f}" y="{cy - inner / 2:.1f}" '
+        f'width="{inner:.1f}" height="{inner:.1f}" '
+        f'preserveAspectRatio="xMidYMid meet" clip-path="url(#{clip_id})"/>'
     )
     return defs, group
 
@@ -2011,18 +2079,25 @@ def render_watchlist_card(
     as_of: str | None = None,
     logo_root: "Path | str | None" = None,
     subtitle: str | None = None,
-    width: int = 1000,
-    height: int | None = None,
+    width: int = 1080,
+    height: int | None = 1350,
 ) -> str:
     """Render a branded watchlist share-card SVG in the Mastermind card family.
 
     Reframes a plain multi-ticker text post ("Social media selling off:
     $SNAP -3.4% $RBLX -4.3% …") as a screenshot of a premium SaaS watchlist
-    panel: dark #0E1420 base, favicon lockup + wordmark, a titled panel with a
-    column-label header, one raised cell per ticker (accent spine + logo/monogram
-    + ticker/name + 10-session sparkline + right-aligned price + colored % pill),
-    and the shared _brand_bar CTA footer. The third member of the earnings /
-    breaking card family.
+    panel on a phone: dark #0E1420 base, favicon lockup + wordmark, a titled
+    panel with a column-label header, one raised cell per ticker (rank rail +
+    light color-logo avatar chip + ticker/name + 10-session sparkline +
+    right-aligned price + colored % pill), and the shared _brand_bar CTA footer.
+    The third member of the earnings / breaking card family.
+
+    v2 (portrait, mobile-first): defaults are 1080×1350 (4:5) — the tallest image
+    X renders un-cropped in a phone timeline. The canvas is assumed displayed at
+    ~390px wide (2.8x downscale), so type is sized generously (tickers/prices
+    ~44-52px on canvas) and nothing on-canvas is smaller than ~26px. The signature
+    is the RANK RAIL: the magnitude order is a true sequence, so each cell carries
+    its ordinal on a left spine fused with the direction accent.
 
     Args:
         title: Theme / list name (the hero, e.g. "Social media selling off").
@@ -2032,14 +2107,17 @@ def render_watchlist_card(
             no price) rather than printing a placeholder dash.
         as_of: Optional as-of stamp shown in the panel header (e.g. "Jul 20").
         logo_root: If provided, each row's logo is auto-resolved + cached via
-            resolve_logo(ticker, logo_root); rows with no resolvable logo fall
-            back to a deterministic gradient monogram tile.
+            resolve_color_logo(ticker, logo_root) — the ORIGINAL full-color icon,
+            housed in a light avatar chip. Rows with no resolvable logo fall back
+            to a deterministic circular gradient monogram.
         subtitle: Optional one-line plain-word stance under the title
             (Tier-1 doctrine: every panel answers "so what do I do"). Omitted
             cleanly when None.
-        width: Card width in px (default 1000).
-        height: Card height in px. When None, auto-scales to the row count so
-            spacing rhythm stays constant regardless of how many tickers ship.
+        width: Card width in px (default 1080; back-compat — pass 1000 for the
+            old landscape geometry).
+        height: Card height in px (default 1350 = 4:5 portrait). Pass None to
+            auto-scale to the row count instead (old behavior); explicit height
+            wins over both.
 
     Returns:
         Self-contained SVG string. No <script>. All text _xesc'd. Deterministic.
@@ -2065,21 +2143,50 @@ def render_watchlist_card(
     # ── Deterministic id suffix (zlib.crc32: PYTHONHASHSEED-stable) ─────────
     wl_uid = str(zlib.crc32(((title or "") + "wl").encode("utf-8")) & 0xFFFFFFFF)
 
-    # ── Layout geometry ──────────────────────────────────────────────────────
-    HEADER_H = 60                 # brand band (family constant)
-    PAD = 40                      # left/right card gutter
+    # ── Layout geometry — scaled ~1.9x from the old 1000-wide landscape so every
+    # element clears the ~26px on-canvas floor (≈9.5pt at the 2.8x phone
+    # downscale). Row height and type are the load-bearing legibility levers. ──
+    HEADER_H = 92                 # brand band (family constant, portrait scale)
+    PAD = 56                      # left/right card gutter
     # Title block reserves room BELOW the header for: eyebrow + title baseline +
     # (optional stance line) + breathing room before the column-label strip.
-    # The title baseline lands at HEADER_H+68; +26 for the subtitle; then air.
-    TITLE_BLOCK = 132 if subtitle else 104   # header→top of column-label strip
-    COLHEAD_H = 26                # column-label strip
-    ROW_H = 62                    # one watchlist cell
-    ROW_GAP = 10                  # air between cells
-    FOOTER_H = 46                 # _brand_bar band
+    TITLE_BLOCK = 214 if subtitle else 176   # header→top of column-label strip
+    COLHEAD_H = 40                # column-label strip
+    ROW_H = 108                   # one watchlist cell (generous — legible at 390px)
+    ROW_GAP = 16                  # air between cells
+    FOOTER_H = 72                 # _brand_bar band (portrait scale)
     PANEL_TOP = HEADER_H + TITLE_BLOCK   # y where the column-label strip begins
     rows_span = n_rows * ROW_H + max(0, n_rows - 1) * ROW_GAP
-    auto_h = PANEL_TOP + COLHEAD_H + 16 + rows_span + 24 + FOOTER_H
-    H = int(height) if height else int(auto_h)
+    auto_h = PANEL_TOP + COLHEAD_H + 26 + rows_span + 40 + FOOTER_H
+    # Portrait default (1350) unless the caller pins a height; height=None opts
+    # back into row-count auto-scaling (old behavior).
+    if height is not None:
+        H = int(height)
+    else:
+        H = int(auto_h)
+    # If a fixed portrait canvas can't fit the rows at the default rhythm,
+    # COMPRESS the row rhythm toward a legibility floor first: X crops images
+    # taller than 4:5 in the timeline, so the pinned height is the hard
+    # platform constraint. Only grow past it when even floor-rhythm rows
+    # cannot fit (pathological row counts).
+    if height is not None and auto_h > H:
+        _ROW_H_MIN = 88.0   # ~31px displayed at the 2.8x phone downscale
+        _ROW_GAP_MIN = 10.0
+        _chrome = PANEL_TOP + COLHEAD_H + 26 + 40 + FOOTER_H
+        _avail = H - _chrome
+        _row_h = (_avail - max(0, n_rows - 1) * _ROW_GAP_MIN) / max(1, n_rows)
+        if _row_h >= _ROW_H_MIN:
+            ROW_H = min(float(ROW_H), _row_h)
+            if n_rows > 1:
+                ROW_GAP = min(
+                    float(ROW_GAP),
+                    (_avail - n_rows * ROW_H) / (n_rows - 1),
+                )
+            else:
+                ROW_GAP = 0.0
+            rows_span = n_rows * ROW_H + max(0, n_rows - 1) * ROW_GAP
+        else:
+            H = int(auto_h)
 
     panel_x = PAD
     panel_w = width - 2 * PAD
@@ -2098,79 +2205,97 @@ def render_watchlist_card(
         f'</linearGradient>'
     )
 
-    # ── Panel surface (subtle raised card the rows live inside) ───────────────
-    # Starts just above the column-label strip so the title + stance line read as
-    # a header ABOVE the panel (like a real app's list section), not inside it.
-    panel_top = PANEL_TOP - 16
-    panel_bot = H - FOOTER_H - 14
-    body_parts.append(
-        f'<rect x="{panel_x - 8:.1f}" y="{panel_top:.1f}" '
-        f'width="{panel_w + 16:.1f}" height="{panel_bot - panel_top:.1f}" '
-        f'rx="18" fill="#0B111C" stroke="#1B2333" stroke-width="1"/>'
-    )
-
     # ── Title + eyebrow + optional stance subtitle ────────────────────────────
-    eyebrow_y = HEADER_H + 34
+    eyebrow_y = HEADER_H + 58
     body_parts.append(
-        f'<rect x="{PAD}" y="{eyebrow_y - 11:.1f}" width="10" height="10" '
-        f'rx="2.5" fill="url(#{title_grad_id})"/>'
-        f'<text x="{PAD + 18}" y="{eyebrow_y - 1:.1f}" fill="#8899bb" '
-        f'font-size="12" font-weight="700" font-family="sans-serif" '
-        f'letter-spacing="3">WATCHLIST</text>'
+        f'<rect x="{PAD}" y="{eyebrow_y - 18:.1f}" width="17" height="17" '
+        f'rx="4" fill="url(#{title_grad_id})"/>'
+        f'<text x="{PAD + 30}" y="{eyebrow_y - 2:.1f}" fill="#8899bb" '
+        f'font-size="20" font-weight="700" font-family="sans-serif" '
+        f'letter-spacing="5">WATCHLIST</text>'
     )
-    title_y = eyebrow_y + 34
+    title_y = eyebrow_y + 62
     title_text = str(title or "Watchlist")
     # Size the title down for very long theme names so it never collides with
-    # the as-of stamp on the right.
-    t_size = 34 if len(title_text) <= 30 else (28 if len(title_text) <= 44 else 23)
+    # the as-of stamp on the right. Portrait scale — the title is the hero.
+    t_size = 56 if len(title_text) <= 22 else (
+        46 if len(title_text) <= 30 else (38 if len(title_text) <= 44 else 30))
     body_parts.append(
         f'<text x="{PAD}" y="{title_y:.1f}" fill="#ffffff" '
         f'font-size="{t_size}" font-weight="800" font-family="sans-serif" '
-        f'letter-spacing="-0.01em">{_xesc(title_text)}</text>'
+        f'letter-spacing="-0.015em">{_xesc(title_text)}</text>'
     )
-    # As-of stamp — right-aligned on the title baseline (one stamp per panel).
+    # As-of stamp — right-aligned on the eyebrow baseline (one stamp per panel).
     if as_of:
         body_parts.append(
-            f'<text x="{width - PAD:.1f}" y="{eyebrow_y - 1:.1f}" fill="#6b7a99" '
-            f'font-size="12" text-anchor="end" font-family="sans-serif" '
+            f'<text x="{width - PAD:.1f}" y="{eyebrow_y - 2:.1f}" fill="#6b7a99" '
+            f'font-size="20" text-anchor="end" font-family="sans-serif" '
             f'letter-spacing="0.5">{_xesc(str(as_of))}</text>'
         )
     if subtitle:
         body_parts.append(
-            f'<text x="{PAD}" y="{title_y + 26:.1f}" fill="#a7b4cc" '
-            f'font-size="15" font-family="sans-serif">{_xesc(str(subtitle))}</text>'
+            f'<text x="{PAD}" y="{title_y + 42:.1f}" fill="#a7b4cc" '
+            f'font-size="24" font-family="sans-serif">{_xesc(str(subtitle))}</text>'
         )
 
+    # ── Panel surface (subtle raised card the rows live inside) ───────────────
+    # Starts just above the column-label strip so the title + stance line read as
+    # a header ABOVE the panel (like a real app's list section), not inside it.
+    panel_top = PANEL_TOP - 22
+    panel_bot = H - FOOTER_H - 22
+    body_parts.append(
+        f'<rect x="{panel_x - 10:.1f}" y="{panel_top:.1f}" '
+        f'width="{panel_w + 20:.1f}" height="{panel_bot - panel_top:.1f}" '
+        f'rx="26" fill="#0B111C" stroke="#1B2333" stroke-width="1.5"/>'
+    )
+
     # ── Column-label strip (this is the "app panel" tell) ─────────────────────
-    col_y = PANEL_TOP + 6
-    # x anchors: logo | name-block ... sparkline | price | pct-pill(right)
-    inner_l = panel_x + 20
-    inner_r = panel_x + panel_w - 20
-    price_col_x = inner_r - 118           # right edge of price numerals
+    col_y = PANEL_TOP + 12
+    # x anchors: rail | avatar | name-block ... sparkline | price | pct-pill(right)
+    inner_l = panel_x + 30
+    inner_r = panel_x + panel_w - 30
+    rail_w = 46                            # left rank rail column width
+    sym_x = inner_l + rail_w              # where the SYMBOL cluster begins
+    price_col_x = inner_r - 200           # right edge of price numerals
     pill_col_x = inner_r                  # right edge of pct pill
-    spark_w = 96
-    spark_r = price_col_x - 150           # right edge of sparkline box
+    spark_w = 150
+    spark_r = price_col_x - 236           # right edge of sparkline box
     spark_l = spark_r - spark_w
     body_parts.append(
-        f'<text x="{inner_l:.1f}" y="{col_y:.1f}" fill="#5c6a86" '
-        f'font-size="10.5" font-weight="700" font-family="sans-serif" '
-        f'letter-spacing="1.5">SYMBOL</text>'
+        f'<text x="{sym_x:.1f}" y="{col_y:.1f}" fill="#5c6a86" '
+        f'font-size="18" font-weight="700" font-family="sans-serif" '
+        f'letter-spacing="2.5">SYMBOL</text>'
         f'<text x="{price_col_x:.1f}" y="{col_y:.1f}" fill="#5c6a86" '
-        f'font-size="10.5" font-weight="700" text-anchor="end" '
-        f'font-family="sans-serif" letter-spacing="1.5">LAST</text>'
+        f'font-size="18" font-weight="700" text-anchor="end" '
+        f'font-family="sans-serif" letter-spacing="2.5">LAST</text>'
         f'<text x="{pill_col_x:.1f}" y="{col_y:.1f}" fill="#5c6a86" '
-        f'font-size="10.5" font-weight="700" text-anchor="end" '
-        f'font-family="sans-serif" letter-spacing="1.5">CHANGE</text>'
-        f'<line x1="{inner_l:.1f}" y1="{col_y + 10:.1f}" '
-        f'x2="{inner_r:.1f}" y2="{col_y + 10:.1f}" '
-        f'stroke="#1B2333" stroke-width="1"/>'
+        f'font-size="18" font-weight="700" text-anchor="end" '
+        f'font-family="sans-serif" letter-spacing="2.5">CHANGE</text>'
+        f'<line x1="{inner_l:.1f}" y1="{col_y + 18:.1f}" '
+        f'x2="{inner_r:.1f}" y2="{col_y + 18:.1f}" '
+        f'stroke="#1B2333" stroke-width="1.5"/>'
     )
 
     # ── Rows ─────────────────────────────────────────────────────────────────
     UP, DOWN, FLAT = "#4CAF50", "#E23B3B", "#6b7a99"
-    rows_top = col_y + 22
+    # Distribute free vertical space as an even inter-row GAP so the rows fill the
+    # panel from the column header down (the real-app list idiom) — centering the
+    # whole block instead would strand the header above a void on short lists. The
+    # gap is capped so a 3-row card never looks like 3 lonely bars in a big box.
+    rows_top = col_y + 34
+    _rows_region_bot = panel_bot - 26
+    _slack = (_rows_region_bot - rows_top) - rows_span
+    if n_rows > 1 and _slack > 0:
+        _gap_add = min(_slack / (n_rows - 1), ROW_H * 0.9)
+        eff_gap = ROW_GAP + _gap_add
+        # Any slack the gap cap couldn't absorb (very short lists) is split above
+        # and below so the block sits centered, not top-anchored over a void.
+        _residual = _slack - _gap_add * (n_rows - 1)
+        rows_top += max(0.0, _residual / 2.0)
+    else:
+        eff_gap = ROW_GAP
     for i, r in enumerate(safe_rows):
-        ry = rows_top + i * (ROW_H + ROW_GAP)
+        ry = rows_top + i * (ROW_H + eff_gap)
         row_cy = ry + ROW_H / 2.0
         ruid = f"{wl_uid}r{i}"
         ticker = str(r.get("ticker", "") or "").upper()[:8]
@@ -2188,51 +2313,57 @@ def render_watchlist_card(
         up = pct > 0
         down = pct < 0
         dcolor = UP if up else (DOWN if down else FLAT)
+        spine_color = dcolor if has_pct else "#3a4466"
 
-        # Row cell plate + direction accent spine (the signature).
+        # Row cell plate + direction accent spine.
         body_parts.append(
-            f'<rect x="{inner_l - 8:.1f}" y="{ry:.1f}" '
-            f'width="{inner_r - inner_l + 16:.1f}" height="{ROW_H:.1f}" '
-            f'rx="12" fill="#141C2C" stroke="#20293C" stroke-width="1"/>'
-            f'<rect x="{inner_l - 8:.1f}" y="{ry:.1f}" width="4" height="{ROW_H:.1f}" '
-            f'rx="2" fill="{dcolor if has_pct else "#3a4466"}"/>'
+            f'<rect x="{inner_l - 12:.1f}" y="{ry:.1f}" '
+            f'width="{inner_r - inner_l + 24:.1f}" height="{ROW_H:.1f}" '
+            f'rx="18" fill="#141C2C" stroke="#20293C" stroke-width="1.5"/>'
+            f'<rect x="{inner_l - 12:.1f}" y="{ry:.1f}" width="6" height="{ROW_H:.1f}" '
+            f'rx="3" fill="{spine_color}"/>'
         )
 
-        # Logo tile (resolve → whitened logo, else deterministic monogram).
-        tile = 38.0
-        tile_cx = inner_l + 14 + tile / 2
-        logo_datauri = resolve_logo(ticker, logo_root) if logo_root else None
-        if logo_datauri:
-            body_parts.append(
-                f'<rect x="{tile_cx - tile / 2:.1f}" y="{row_cy - tile / 2:.1f}" '
-                f'width="{tile:.1f}" height="{tile:.1f}" rx="10" '
-                f'fill="#0E1420" stroke="#232A3D" stroke-width="1"/>'
-                f'<image href="{logo_datauri}" '
-                f'x="{tile_cx - tile / 2 + 5:.1f}" y="{row_cy - tile / 2 + 5:.1f}" '
-                f'width="{tile - 10:.1f}" height="{tile - 10:.1f}" '
-                f'preserveAspectRatio="xMidYMid meet"/>'
-            )
+        # Rank rail — the signature. The magnitude order is a true sequence, so
+        # each cell carries its ordinal on the left spine (tinted to direction),
+        # turning the sort into visible information rather than decoration.
+        rank_x = inner_l + rail_w / 2 - 8
+        body_parts.append(
+            f'<text x="{rank_x:.1f}" y="{row_cy + 11:.1f}" fill="{spine_color}" '
+            f'font-size="32" font-weight="800" text-anchor="middle" '
+            f'font-family="sans-serif" fill-opacity="0.9" '
+            f'letter-spacing="-0.03em">{i + 1}</text>'
+        )
+
+        # Avatar chip: full-color logo in a light disc, else circular monogram.
+        av = 58.0
+        av_cx = sym_x + av / 2
+        color_uri = resolve_color_logo(ticker, logo_root) if logo_root else None
+        if color_uri:
+            a_defs, a_group = _wl_avatar_chip(color_uri, av_cx, row_cy, av, ruid)
+            defs_parts.append(a_defs)
+            body_parts.append(a_group)
         else:
-            m_defs, m_group = _wl_monogram(ticker, tile_cx, row_cy, tile, ruid)
+            m_defs, m_group = _wl_monogram(ticker, av_cx, row_cy, av, ruid)
             defs_parts.append(m_defs)
             body_parts.append(m_group)
 
         # Ticker + name block.
-        text_x = tile_cx + tile / 2 + 16
+        text_x = av_cx + av / 2 + 24
         if name:
             body_parts.append(
-                f'<text x="{text_x:.1f}" y="{row_cy - 5:.1f}" fill="#ffffff" '
-                f'font-size="19" font-weight="800" font-family="sans-serif" '
-                f'letter-spacing="0.01em">{_xesc(ticker)}</text>'
-                f'<text x="{text_x:.1f}" y="{row_cy + 15:.1f}" fill="#7d8aa5" '
-                f'font-size="12.5" font-family="sans-serif">'
-                f'{_xesc(name[:26])}</text>'
+                f'<text x="{text_x:.1f}" y="{row_cy - 8:.1f}" fill="#ffffff" '
+                f'font-size="34" font-weight="800" font-family="sans-serif" '
+                f'letter-spacing="0.005em">{_xesc(ticker)}</text>'
+                f'<text x="{text_x:.1f}" y="{row_cy + 26:.1f}" fill="#7d8aa5" '
+                f'font-size="21" font-family="sans-serif">'
+                f'{_xesc(name[:24])}</text>'
             )
         else:
             body_parts.append(
-                f'<text x="{text_x:.1f}" y="{row_cy + 6:.1f}" fill="#ffffff" '
-                f'font-size="20" font-weight="800" font-family="sans-serif" '
-                f'letter-spacing="0.01em">{_xesc(ticker)}</text>'
+                f'<text x="{text_x:.1f}" y="{row_cy + 11:.1f}" fill="#ffffff" '
+                f'font-size="36" font-weight="800" font-family="sans-serif" '
+                f'letter-spacing="0.005em">{_xesc(ticker)}</text>'
             )
 
         # Sparkline (10-session closes) — direction-colored; silent if no data.
@@ -2242,7 +2373,7 @@ def render_watchlist_card(
             if closes is not None:
                 _, cvals = closes
                 spark = _wl_sparkline(
-                    cvals, spark_l, ry + 14, spark_w, ROW_H - 28, dcolor, ruid
+                    cvals, spark_l, ry + 26, spark_w, ROW_H - 52, dcolor, ruid
                 )
         if spark:
             body_parts.append(spark)
@@ -2254,9 +2385,9 @@ def render_watchlist_card(
             if not math.isnan(price):
                 price_s = f"{price:,.2f}"
                 body_parts.append(
-                    f'<text x="{price_col_x:.1f}" y="{row_cy + 6:.1f}" fill="#e6ecf6" '
-                    f'font-size="19" font-weight="700" text-anchor="end" '
-                    f'font-family="monospace" letter-spacing="-0.02em">'
+                    f'<text x="{price_col_x:.1f}" y="{row_cy + 11:.1f}" fill="#e6ecf6" '
+                    f'font-size="34" font-weight="700" text-anchor="end" '
+                    f'font-family="monospace" letter-spacing="-0.03em">'
                     f'{_xesc(price_s)}</text>'
                 )
         except (TypeError, ValueError):
@@ -2268,47 +2399,48 @@ def render_watchlist_card(
             pct_txt = f"{sign}{abs(pct):.1f}%"
             arrow = "▲" if up else ("▼" if down else "•")
             pill_label = f"{arrow} {pct_txt}"
-            pw = 20 + int(len(pill_label) * 8.4)
-            ph = 30
+            pw = 40 + int(len(pill_label) * 15.6)
+            ph = 54
             px0 = pill_col_x - pw
             py0 = row_cy - ph / 2.0
             body_parts.append(
                 f'<rect x="{px0:.1f}" y="{py0:.1f}" width="{pw}" height="{ph}" '
-                f'rx="9" fill="{dcolor}" fill-opacity="0.16" '
-                f'stroke="{dcolor}" stroke-opacity="0.5" stroke-width="1"/>'
-                f'<text x="{px0 + pw / 2:.1f}" y="{row_cy + 5:.1f}" fill="{dcolor}" '
-                f'font-size="15" font-weight="700" text-anchor="middle" '
-                f'font-family="sans-serif" letter-spacing="0.02em">'
+                f'rx="16" fill="{dcolor}" fill-opacity="0.16" '
+                f'stroke="{dcolor}" stroke-opacity="0.5" stroke-width="1.5"/>'
+                f'<text x="{px0 + pw / 2:.1f}" y="{row_cy + 9:.1f}" fill="{dcolor}" '
+                f'font-size="27" font-weight="700" text-anchor="middle" '
+                f'font-family="sans-serif" letter-spacing="0.01em">'
                 f'{_xesc(pill_label)}</text>'
             )
 
-    # ── Brand lockup (top-left) — identical family treatment ──────────────────
-    wl_logo_tile = 30.0
-    logo_cx_brand = 14 + wl_logo_tile / 2
-    logo_cy_brand = 14 + wl_logo_tile / 2
+    # ── Brand lockup (top-left) — identical family treatment (portrait scale) ──
+    wl_logo_tile = 46.0
+    logo_cx_brand = 24 + wl_logo_tile / 2
+    logo_cy_brand = 22 + wl_logo_tile / 2
     wl_logo_defs, wl_logo_group = _favicon_logomark(
         logo_cx_brand, logo_cy_brand, size=wl_logo_tile, uid=wl_uid
     )
     defs_parts.append(wl_logo_defs)
-    wordmark_x = logo_cx_brand + wl_logo_tile / 2 + 8
-    wordmark_y = logo_cy_brand + 7
+    wordmark_x = logo_cx_brand + wl_logo_tile / 2 + 13
+    wordmark_y = logo_cy_brand + 10
     header_svg = (
         f'<rect x="0" y="0" width="{width}" height="{HEADER_H}" '
         f'fill="#0A1020" opacity="0.92"/>'
         + wl_logo_group
         + f'<text x="{wordmark_x:.1f}" y="{wordmark_y:.1f}" fill="#ffffff" '
-        f'font-size="17" font-weight="900" font-family="sans-serif" '
+        f'font-size="26" font-weight="900" font-family="sans-serif" '
         f'letter-spacing="0.07em">MASTERMIND</text>'
         # Desk tag, right of header — signals the lane (family idiom).
-        f'<text x="{width - 14}" y="{logo_cy_brand + 5:.1f}" fill="#6b7a99" '
-        f'font-size="11" text-anchor="end" font-family="sans-serif" '
-        f'letter-spacing="2">WATCHLIST</text>'
+        f'<text x="{width - 24}" y="{logo_cy_brand + 8:.1f}" fill="#6b7a99" '
+        f'font-size="18" text-anchor="end" font-family="sans-serif" '
+        f'letter-spacing="3">WATCHLIST</text>'
     )
 
     # ── Footer — shared brand bar (the ad unit) ───────────────────────────────
     wl_bar_defs, footer_svg = _brand_bar(
         width, H, wl_uid,
         copyright_text="© 2026 Mastermind",
+        band_h=FOOTER_H,
     )
 
     defs_svg = "".join(defs_parts) + wl_bar_defs
