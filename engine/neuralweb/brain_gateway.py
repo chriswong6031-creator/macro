@@ -267,6 +267,25 @@ def _internals_allowed(user_email: str) -> bool:
     return email in allowed
 
 
+def _unlimited_allowed(user_email: str) -> bool:
+    """Return True iff user_email is on the BRAIN_UNLIMITED_ALLOWLIST env var.
+
+    Unlimited users bypass BOTH the per-lane request quota AND the monthly token ceiling.
+    Deliberately independent from BRAIN_INTERNALS_ALLOWLIST — the operator sets each grant
+    separately (internals access vs unlimited spend).
+    Empty/unset env → always False.  Matching: exact string, strip+lower both sides.
+    No config/brain.yml fallback — must not be committable.
+    """
+    raw = os.environ.get("BRAIN_UNLIMITED_ALLOWLIST", "").strip()
+    if not raw:
+        return False
+    email = (user_email or "").strip().lower()
+    if not email:
+        return False
+    allowed = {e.strip().lower() for e in raw.split(",") if e.strip()}
+    return email in allowed
+
+
 def _internals_tool_schemas() -> list[dict]:
     """Return context_search + context_open tool schemas (CXI-R23a, allowlisted sessions only)."""
     return [
@@ -2525,6 +2544,7 @@ def _check_and_increment_quota(
     current_period_end: str | None,
     root: Path | None = None,
     device_key: str = "",
+    user_email: str = "",
 ) -> tuple[bool, dict]:
     """Check request quota + token ceiling.  Increment request counter on pass.
 
@@ -2537,7 +2557,15 @@ def _check_and_increment_quota(
     allowance limit. The request is allowed only if BOTH the user count AND the device
     count are under limit; on allow, BOTH are incremented and remaining = min(user, device).
     Paid tiers ignore the device ledger (multiple devices are legitimate for payers).
+
+    UNLIMITED BYPASS: if user_email is on BRAIN_UNLIMITED_ALLOWLIST, bypasses BOTH the
+    per-lane request quota AND the monthly token ceiling, increments nothing, and returns
+    remaining=-1/limit=-1 (existing "uncapped" sentinel).
     """
+    # Unlimited operator bypass — checked BEFORE any ledger I/O.
+    if _unlimited_allowed(user_email):
+        return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "unlimited"}
+
     cfg = _load_brain_config(root)
     token_ceilings = cfg.get("token_ceilings") or {}
 
@@ -3749,7 +3777,8 @@ def chat(
     cpe = entitlement.get("current_period_end")
 
     # 3a. Research mode pro-eligibility gate (W6b): pro quota limit > 0 required
-    if mode == "research":
+    # Unlimited operators bypass this gate entirely.
+    if mode == "research" and not _unlimited_allowed(user_email):
         pro_allowance = _get_allowance(tier, status, "pro", root)
         if pro_allowance["limit"] == 0:
             # Not a pro-eligible tier
@@ -3762,7 +3791,7 @@ def chat(
             }
 
     # 3. Quota check (research mode already forced lane='pro' above)
-    allowed, quota_info = _check_and_increment_quota(user_id, lane, tier, status, cpe, root, device_key=device_key)
+    allowed, quota_info = _check_and_increment_quota(user_id, lane, tier, status, cpe, root, device_key=device_key, user_email=user_email)
     if not allowed:
         if mode == "research":
             return {
@@ -3821,8 +3850,8 @@ def chat(
     # else the Pro lane's Opus via OAuth), with OAuth-token failover across them.
     image_blocks = _image_blocks(images)
     turn_providers = providers
-    if image_blocks and _get_allowance(tier, status, "pro", root).get("limit", 0) <= 0:
-        image_blocks = []  # not Pro-eligible → drop attachments
+    if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) <= 0:
+        image_blocks = []  # not Pro-eligible → drop attachments (unlimited operators keep vision)
     if image_blocks:
         vprovs = _vision_providers(lane, providers, root)
         if vprovs:
@@ -4027,14 +4056,15 @@ def chat_stream(
     cpe = entitlement.get("current_period_end")
 
     # 2a. Research mode pro-eligibility gate
-    if mode == "research":
+    # Unlimited operators bypass this gate entirely.
+    if mode == "research" and not _unlimited_allowed(user_email):
         pro_allowance = _get_allowance(tier, status, "pro", root)
         if pro_allowance["limit"] == 0:
             yield f"data: {json.dumps({'type': 'meta', 'lane': 'pro', 'model': 'none', 'thread_id': None, 'quota': {}})}\n\n"
             yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'quota_exhausted': True, 'mode': 'research', 'upgrade': '/plans.html', 'is_context_only': True})}\n\n"
             return
 
-    allowed, quota_info = _check_and_increment_quota(user_id, lane, tier, status, cpe, root, device_key=device_key)
+    allowed, quota_info = _check_and_increment_quota(user_id, lane, tier, status, cpe, root, device_key=device_key, user_email=user_email)
     if not allowed:
         yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'none', 'thread_id': None, 'quota': quota_info})}\n\n"
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': quota_info, 'usage': {}, 'filtered': False, 'degraded': True, 'quota_exhausted': True, 'is_context_only': True})}\n\n"
@@ -4070,8 +4100,8 @@ def chat_stream(
     # the reported model serves the turn.
     image_blocks = _image_blocks(images)
     turn_providers = providers
-    if image_blocks and _get_allowance(tier, status, "pro", root).get("limit", 0) <= 0:
-        image_blocks = []  # not Pro-eligible → drop attachments
+    if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) <= 0:
+        image_blocks = []  # not Pro-eligible → drop attachments (unlimited operators keep vision)
     if image_blocks:
         vprovs = _vision_providers(lane, providers, root)
         if vprovs:
