@@ -1,5 +1,0 @@
-{
-  "regime_context": "The flow lens verdict is display-only, with de-confounded rank-IC ~0 and no validated directional edge; cross-sectional concentration into Consumer Staples, Financials, and Real Estate and deflation from IT are coincident patterns. The regime snap is dormant with fear modestly rebuilding (0.504) but no relief snap active. Base-rate confirms zero forward predictability, so no falsifiable lean is justified.",
-  "theses": [],
-  "confidence": "low"
-}

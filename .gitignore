@@ -89,6 +89,14 @@ data/ipo/ticker_cik.json
 data/catalyst/digest_cache/
 data/catalyst/stockbrief_cache/
 
+# master_brain same-day LLM reply cache (engine/master_brain.py _mb_reply_cache_*):
+# prompt hash changes daily with state, so entries are dead weight after one day.
+# Written & read only inside the nightly ENGINE job (one machine); engine-render
+# deliberately skips the LLM brains — no cross-machine reader. 410 of the 411
+# once-committed files were pytest junk swept in pre-#3097 (hermetic-cache
+# fixture); untracked 2026-07-20 so the blanket `git add data/` stops re-growing it.
+data/master_brain/reply_cache/
+
 # Event-calendar fetch caches (regenerable; keyless TreasuryDirect + keyed FRED
 # release/dates). Date-stamped & ephemeral — never commit.
 data/macro/news_cache/

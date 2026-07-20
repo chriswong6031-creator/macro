@@ -1,9 +1,0 @@
-{
-  "emerging_watch": {
-    "hypothesis": "Healthcare REITs & Senior Housing (AHR, CTRE, ENSG, LTC, OHI, SBRA, UHT, VTR) may be forming a quiet uptrend driven by demographic tailwinds and stabilizing interest‑rate expectations.",
-    "rationale": "theme_candidates radar shows a coherent cluster (cohesion 0.632, cohesion_chg +0.223) of 9 healthcare‑real‑estate names. The group is cross‑sector but thematically tight – skilled nursing, senior housing, and healthcare REITs. No IPO wave or hype spike; emergence is early and under‑the‑radar. The radar is noisy, so treat as a watch hypothesis only.",
-    "kill_criterion": "Kill if the group's equal‑weight average 20‑day forward return vs S&P 500 turns negative, or if the cluster’s cohesion falls below 0.50 for five consecutive days.",
-    "confidence": "low – theme_candidates radar has ~10% persistence; no edge, no size"
-  },
-  "note": "This is a falsifiable watch hypothesis, not a trade. No position sizing or directional certainty implied. The only validated edge in the detector is drawdown control via absolute‑trend gates, not theme picking. Guardrails honoured: no fade call, no next‑narrative prediction, no crowding‑based sell."
-}

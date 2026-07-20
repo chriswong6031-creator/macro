@@ -1,4 +1,0 @@
-emerging_watch: robotics_forming
-  thesis: "Robotics & Automation (rank 5) shows trend persistence, high breadth (0.91), no crowding, but lacks an ETF proxy—suggesting it may still be in a pre‑basket accumulation phase. If the theme’s score continues to rise (now 1.26) without a coincident inflow spike, leadership could form alongside AI Compute rather than replace it."
-  kill_criterion: "Score falls below 0.5 or breadth drops below 0.6 over any rolling 2‑week window."
-  note: "theme_candidates is null; this watch is derived from existing rank dynamics, not from a newly detected name‑group. The detector’s momentum rank‑IC ≈ 0, so this is a fallible conditional, never a trade."
