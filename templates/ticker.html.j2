@@ -40,6 +40,7 @@ body.st-pos{--stance:var(--up);}
 body.st-warn{--stance:var(--warn);}
 body.st-neg{--stance:var(--down);}
 html body{font:400 13.5px/1.55 var(--font-ui);background:var(--bg);color:var(--text);margin:0;padding:24px 0 0;-webkit-font-smoothing:antialiased;}  /* 24px top gap = check_nav_gap contract */
+html,body{overflow-x:clip;}  /* safety net — offenders are also fixed at the source */
 a{text-decoration:none;color:inherit;}
 .num{font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
 .pos{color:var(--up);}.neg{color:var(--down);}.wrn{color:var(--warn);}.mut{color:var(--muted);}
@@ -53,7 +54,7 @@ a{text-decoration:none;color:inherit;}
   background:radial-gradient(closest-side,color-mix(in srgb,var(--info) 6%,transparent) 0%,transparent 78%);}
 
 /* sticky jump strip */
-.strip{position:fixed;top:0;left:0;right:0;z-index:220;display:flex;align-items:center;gap:12px;height:48px;
+.strip{position:fixed;top:0;left:0;right:0;z-index:220;display:flex;align-items:center;gap:12px;height:48px;overflow:hidden;
   padding:0 22px;background:color-mix(in srgb,var(--bg) 86%,transparent);
   backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
   border-bottom:1px solid var(--hair);transform:translateY(-100%);transition:transform .3s cubic-bezier(.22,.9,.26,1.02);}
@@ -69,6 +70,7 @@ a{text-decoration:none;color:inherit;}
 .strip nav a:hover{color:var(--text);background:var(--gbtn-bg);}
 .strip nav a.is-on{color:var(--text);background:color-mix(in srgb,var(--link) 14%,transparent);}
 @media(max-width:760px){.strip nav{display:none;}.strip .sname{display:none;}}
+@media(max-width:480px){.strip .schip{display:none;}}
 
 /* layout */
 .page-wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:0 26px 60px;}
@@ -224,6 +226,7 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .sbar span{font-size:9.5px;color:var(--muted);}
 
 /* tables */
+.vt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px;}
 .vt{width:100%;border-collapse:collapse;font-size:12.5px;}
 .vt th{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:2px 8px 8px;border-bottom:1px solid var(--hair);}
 .vt td{padding:8px;border-bottom:1px solid var(--hair);}
@@ -424,6 +427,15 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 @media(max-width:980px){.cols{grid-template-columns:1fr;}}
 @media(max-width:860px){.hero-grid{grid-template-columns:1fr;gap:12px;}.px-block{text-align:left;}}
 @media(max-width:760px){.chart-mod .mod-hd{flex-wrap:wrap;}}
+@media(max-width:700px){
+  .mod-hd{flex-wrap:wrap;row-gap:8px;}
+  .mod-hd .hint{white-space:normal;flex-wrap:wrap;justify-content:flex-end;row-gap:6px;}
+}
+@media(max-width:480px){
+  .why .wr{flex-wrap:wrap;}
+  .why .wc{flex-basis:calc(100% - 20px);padding-top:0;}
+  .why .wl{min-width:0;}
+}
 @media(max-width:640px){
   .page-wrap{padding:0 14px 44px;}
   .mod{padding:16px 15px 17px;border-radius:15px;}
@@ -657,7 +669,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <div class="mod-hd"><h2>{{ t('Valuation', '估值') }}</h2>
       <span class="hint">{% if gauges and gauges.valuation %}<span class="okx {{ 'y' if (gauges.valuation.pct|float(0)) > 55 else ('n' if (gauges.valuation.pct|float(0)) < 30 else 'w') }}" style="font-size:10.5px;">{{ t(gauges.valuation.verdict_en, gauges.valuation.verdict_zh) }}</span> {% endif %}{% if 'stats' in deep_ids %}<button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-stats')">{{ t('Full detail', '完整数据') }}</button>{% endif %}</span>
     </div>
-    <table class="vt">
+    <div class="vt-wrap"><table class="vt">
       <thead><tr>
         <th>{{ t('Multiple', '指标') }}</th><th>{{ ticker }}</th>
         <th>{{ t('Sector median', '行业中位') }}</th><th>{{ t('Cheaper than', '相对便宜') }}</th>
@@ -676,7 +688,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
       </tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     <div class="mod-ft">{{ t('"Cheaper than" = share of sector peers trading richer on that multiple.', '「相对便宜」= 行业中该指标估值更高的同行占比。') }}</div>
   </section>
   {% endif %}
@@ -819,7 +831,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     {% endif %}
     {% if ownership.hhi_en %}<p class="sm mut" style="margin:0 0 10px;">{{ t(ownership.hhi_en, ownership.hhi_zh) }}</p>{% endif %}
     {% if ownership.holders %}
-    <table class="vt">
+    <div class="vt-wrap"><table class="vt">
       <thead><tr>
         <th>{{ t('Fund', '基金') }}</th><th>{{ t('Grade', '评级') }}</th>
         <th>{{ t('Latest move', '最新动作') }}</th><th>{{ t('% of book', '组合占比') }}</th><th>{{ t('As of', '截至') }}</th>
@@ -835,7 +847,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
       </tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     {% endif %}
   </section>
   {% endif %}
