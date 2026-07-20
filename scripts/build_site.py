@@ -4307,6 +4307,7 @@ def main() -> int:
     # origins live in the Supabase dashboard (see ACCOUNTS_SETUP.md).
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+                  "illus.css", "illus.js",
                   "account.js",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   "tablesort.js", "charts.js",

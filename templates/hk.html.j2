@@ -15,7 +15,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-{% include '_plotly_head.html.j2' %}
+<link rel="stylesheet" href="illus.css">
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -923,6 +923,31 @@
   body.page-hk .hkx-chip{font-size:11px;border-radius:999px;padding:3px 10px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04)}
   body.page-hk .hkx-chip.hot{background:rgba(224,100,100,.13);border-color:rgba(224,100,100,.4);color:#eda8a8}
   body.page-hk .hkx-chip.turn{background:rgba(69,184,115,.12);border-color:rgba(69,184,115,.4);color:#8fd7ae}
+  /* Attention chip (news names getting real coverage) — plain state word, muted glass */
+  body.page-hk .hkx-nchip{display:inline-flex;align-items:baseline;gap:6px;font-size:11.5px;border-radius:999px;padding:4px 11px;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+  body.page-hk .hkx-nchip b{font-weight:650;color:var(--text)}
+  body.page-hk .hkx-nchip .st{font-size:10.5px;color:var(--muted)}
+  /* News & Filings type pill — colour = MARKET IMPACT direction (semantic, not decor):
+     buyback supports price (--up), placement dilutes (--down), results neutral (--info). */
+  body.page-hk .hkx-tp{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.5px;
+     text-transform:uppercase;border-radius:5px;padding:2px 7px;white-space:nowrap;
+     border:1px solid color-mix(in srgb,var(--muted) 40%,transparent);color:var(--muted);
+     background:color-mix(in srgb,var(--muted) 10%,transparent)}
+  body.page-hk .hkx-tp.buyback{border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}
+  body.page-hk .hkx-tp.placement{border-color:color-mix(in srgb,var(--down) 55%,transparent);color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent)}
+  body.page-hk .hkx-tp.results{border-color:color-mix(in srgb,var(--info) 55%,transparent);color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent)}
+  /* recent-window count strip — honest counts, plain words, one glance line */
+  body.page-hk .hkx-fsum{display:flex;flex-wrap:wrap;gap:5px 14px;font-size:11.5px;color:var(--muted);margin:2px 0 10px}
+  body.page-hk .hkx-fsum b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+  body.page-hk .hkx-fsum .u{color:var(--up)} body.page-hk .hkx-fsum .d{color:var(--down)} body.page-hk .hkx-fsum .i{color:var(--info)}
+  /* filing row (card + dialog) — date · company · pill · plain read */
+  body.page-hk .hkx-frw{display:flex;align-items:baseline;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+  body.page-hk .hkx-frw:last-child{border-bottom:none}
+  body.page-hk .hkx-frw .co{font-weight:650;color:var(--text);white-space:nowrap}
+  body.page-hk .hkx-frw .rd{color:var(--muted);font-size:11.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.page-hk .hkx-frw .dt{color:var(--muted);font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  body.page-hk .hkx-warm{font-size:12px;color:var(--muted);background:color-mix(in srgb,var(--info) 6%,transparent);border-left:2px solid color-mix(in srgb,var(--info) 40%,transparent);border-radius:0 8px 8px 0;padding:9px 12px;margin:2px 0}
+  body.page-hk .hkx-fresh{font-size:10.5px;color:var(--muted);margin-top:6px;opacity:.85}
   body.page-hk .hkx-lbl{font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:8px 0 4px}
   body.page-hk .hkx-foot{font-size:10.5px;color:var(--muted);margin-top:9px;border-top:1px solid rgba(255,255,255,.05);padding-top:7px}
   body.page-hk .hkx-bignum{font-size:28px;font-weight:750;line-height:1.05}
@@ -1023,7 +1048,8 @@
   /* Mechanic #6: dialog body 2-col with minmax(0,1fr) */
   body.page-hk .hkx-dlg-body .hkx-cols2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   @media(max-width:980px){body.page-hk .hkx-dlg-body .hkx-cols2{grid-template-columns:minmax(0,1fr)}}
-  body.page-hk .hkx-dlg-body :is(.js-plotly-plot,.plotly-graph-div){max-width:100%!important}
+  /* ilx / Signal-Ink charts stretch to their column width intrinsically (illus.css);
+     no per-chart resize needed. */
   body.page-hk table.hkx-mt{display:block;max-width:100%;overflow-x:auto}
   @media(prefers-reduced-motion:no-preference){
     body.page-hk .hkx-dlg-backdrop{opacity:0;transition:opacity 240ms ease-out}
@@ -1560,13 +1586,21 @@
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-news')">
       <div class="hkx-ctitle">{{ t('News & Company Filings','新闻与公司公告') }}</div>
       {% if filing_bus and filing_bus.tape %}
+      {% set _s = filing_bus.summary %}
+      {% if _s %}
+      {# glance line: honest recent-window counts, plain words, one line #}
+      <div class="hkx-fsum">
+        <span class="l-en">This week:</span><span class="l-zh">本周：</span>
+        <span><b class="u">{{ _s.buyback }}</b> {{ t('buybacks','回购') }}</span>
+        <span><b class="d">{{ _s.placement }}</b> {{ t('placements','配股') }}</span>
+        <span><b class="i">{{ _s.results }}</b> {{ t('results','业绩') }}</span>
+      </div>
+      {% endif %}
       {% for f in filing_bus.tape[:3] %}
-      <div class="hkx-row">
-        <span class="hkx-ic">{{ '💰' if f.buyback_flag else ('⚠' if f.dilution_flag else '📈') }}</span>
-        <div class="hkx-tx">
-          <b>{{ f.title_en }}</b>
-          <span class="hkx-sub">{{ f.ticker }} · {{ f.category }}</span>
-        </div>
+      <div class="hkx-frw">
+        <span class="hkx-tp {{ f.bucket }}">{{ t(f.pill_en, f.pill_zh) }}</span>
+        <span class="co">{{ t(f.name_en, f.name_zh) if f.name_en else f.ticker }}</span>
+        <span class="rd">{{ t(f.read_en, f.read_zh) }}</span>
       </div>
       {% endfor %}
       <div class="hkx-view-all">{{ filing_bus.tape|length }} {{ t('company filings','公司公告') }} · {{ t('see all →','查看全部 →') }}</div>
@@ -1906,34 +1940,47 @@
     <div class="hkx-dlg-panel">
       <div class="hkx-dlg-head"><span class="hkx-dlg-title">{{ t('News & Company Filings','新闻与公司公告') }}</span><button class="hkx-dlg-close" onclick="hkxCloseDlg()">×</button></div>
       <div class="hkx-dlg-body">
-        <div class="hkx-plain">{{ t('Two things here: <b>official company filings</b> (buybacks, share sales, results) from the Hong Kong exchange, and <b>where the story is heating up</b> in the news — which names are getting unusual attention.','两项内容：来自港交所的<b>公司公告</b>（回购、配股、业绩），以及<b>新闻热点</b> — 哪些个股正在获得异常关注。') | safe }}</div>
+        <div class="hkx-plain">{{ t('Two things here: <b>official company filings</b> (buybacks, share sales, results) from the Hong Kong exchange, and <b>which names are getting news attention</b> right now.','两项内容：来自港交所的<b>公司公告</b>（回购、配股、业绩），以及<b>哪些个股正在获得新闻关注</b>。') | safe }}</div>
         {% if filing_bus and filing_bus.tape %}
         <div class="hkx-eyebrow">{{ t('Company filings','公司公告') }}</div>
-        <table class="hkx-mt">
-          <tr><th>{{ t('Company','公司') }}</th><th>{{ t('What','内容') }}</th><th>{{ t('Read','解读') }}</th></tr>
-          {% for f in filing_bus.tape[:6] %}
-          <tr>
-            <td>{{ f.ticker }}</td>
-            <td>{{ f.title_en }}</td>
-            <td class="{{ 'hkx-up' if f.buyback_flag else ('hkx-dn' if f.dilution_flag else '') }}">{{ t('supports price','支撑股价') if f.buyback_flag else (t('dilution — can weigh','稀释 — 可能承压') if f.dilution_flag else t('watch','观察')) }}</td>
-          </tr>
-          {% endfor %}
-        </table>
+        {% set _s = filing_bus.summary %}
+        {% if _s %}
+        <div class="hkx-fsum">
+          <span class="l-en">This week:</span><span class="l-zh">本周：</span>
+          <span><b class="u">{{ _s.buyback }}</b> {{ t('buybacks','回购') }}</span>
+          <span><b class="d">{{ _s.placement }}</b> {{ t('placements','配股') }}</span>
+          <span><b class="i">{{ _s.results }}</b> {{ t('results','业绩') }}</span>
+          {% if _s.other %}<span><b>{{ _s.other }}</b> {{ t('other','其他') }}</span>{% endif %}
+        </div>
+        {% endif %}
+        {% for f in filing_bus.tape[:10] %}
+        <div class="hkx-frw">
+          <span class="dt">{{ f.date }}</span>
+          <span class="hkx-tp {{ f.bucket }}">{{ t(f.pill_en, f.pill_zh) }}</span>
+          <span class="co">{{ t(f.name_en, f.name_zh) if f.name_en else f.ticker }}</span>
+          <span class="rd">{{ t(f.read_en, f.read_zh) }}</span>
+        </div>
+        {% endfor %}
         {% else %}
         <p style="font-size:12px;color:var(--muted)">{{ t('No major filings today.','今日暂无重要公告。') }}</p>
         {% endif %}
-        {# GDELT narrative entities — which names are getting news attention #}
-        {% if hk_narrative and hk_narrative.entities and hk_narrative.entities|length > 0 %}
+        {# News-attention entities — plain-word state per name with real data; an honest
+           null line when coverage is still warming up (Design Doctrine Law 5). #}
+        {% if hk_narrative and hk_narrative.entities %}
         <div class="hkx-sep"></div>
-        <div class="hkx-eyebrow">{{ t('Names getting unusual attention','获得异常关注的个股') }}</div>
+        <div class="hkx-eyebrow">{{ t('Names getting news attention','获得新闻关注的个股') }}</div>
+        {% if hk_narrative.warming_up %}
+        <div class="hkx-warm">{{ t('News coverage tracking is still warming up','新闻关注度追踪仍在积累中') }} — {{ hk_narrative.n_watched }} {{ t('names watched, too little history to read yet.','只个股跟踪中，历史数据尚不足以解读。') }}</div>
+        {% else %}
         <div class="hkx-chips">
-          {% for ent in hk_narrative.entities[:8] %}
-          <span class="hkx-chip">{{ ent.name if ent.name is defined else ent }}</span>
+          {% for ent in hk_narrative.live_entities %}
+          <span class="hkx-nchip"><b><span class="l-en">{{ ent.name_en }}</span><span class="l-zh">{{ ent.name_zh or ent.name_en }}</span></b><span class="st">{{ t(ent.state_en, ent.state_zh) }}</span></span>
           {% endfor %}
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">{{ t('News attention score — not a signal, just context.','新闻关注度 — 非信号，仅为背景。') }}</div>
         {% endif %}
-        <div class="hkx-receipt">{{ t('Official filings from the Hong Kong exchange. Buyback = company buying its own shares (supports price). Placement = new shares sold (dilution).','来自港交所的正式公告。回购 = 公司买回自家股份（支撑股价）。配股 = 新发股份（稀释）。') }}</div>
+        <div class="hkx-fresh">{{ t('Weakest evidence tier — news volume, not a buy signal.','最弱证据层 — 新闻热度，非买入信号。') }}{% if hk_narrative.is_stale %} · {{ t('slow-moving','缓慢更新') }}{% endif %} · {{ t('as of','截至') }} {{ hk_narrative.as_of }}</div>
+        {% endif %}
+        <div class="hkx-receipt">{{ t('Official filings from the Hong Kong exchange. Buyback = company buying its own shares (supports price). Placement = new shares sold (dilution). News attention comes from English-language news volume; it is context, not a signal.','来自港交所的正式公告。回购 = 公司买回自家股份（支撑股价）。配股 = 新发股份（稀释）。新闻关注度来自英文媒体报道量，仅为背景，非信号。') }}</div>
       </div>
     </div>
   </div>
@@ -2323,6 +2370,9 @@
       try{MMHeatmap.mountScorecard('hk-hm-embed','marketdata/hk_heatmap.json');}
       catch(e){_hkHmMounted=false;}
     }
+    /* Replay the ilx / Signal-Ink charts in this dialog once the panel entrance has
+       settled — mirrors china.html.j2:cnxOpenDlg, so every open re-animates the ink. */
+    if(window.ilxReveal){setTimeout(function(){ilxReveal(d);},340);}
   }
   function hkxCloseDlg(){
     if(document.querySelector('.hm-ov'))return;
@@ -3454,6 +3504,7 @@ _rcHkObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
 <script src="tablesort.js"></script>
 <script src="stocktable.js"></script>
 {%- if mode != 'stocks' %}<script src="heatmap.js"></script>{%- endif %}
+<script defer src="illus.js"></script>
 <script>
 /* W8-G: StockTable init — standout board table view (HK market).
    Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent.

@@ -24,14 +24,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import plotly.graph_objects as go  # noqa: E402
 
-from lib import config, site_assets, store  # noqa: E402
+from lib import config, illus, site_assets, store  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js", "aibrief.js", "stockview.js")
+          "charts.js", "tablesort.js", "aibrief.js", "stockview.js",
+          "illus.css", "illus.js")
 
 
 def _range_selector() -> dict:
@@ -106,25 +107,19 @@ def _chart_axes(hist: pd.DataFrame, days: int = 3650) -> str:
 
 
 # ---- market-internals panel charts + view-models ------------------------------
-def _panel_line(series: dict, color: str, height: int = 200, zero: bool = False,
-                fill: bool = False, hline: float | None = None, hline_text: str = "") -> str:
-    """Single-line panel chart from an internals {dates, vals} dict."""
+def _ilx(series: dict, accent: str, *, kind: str = "line", height: int = 190,
+         baseline: float | None = None, reference: float | None = None,
+         unit_en: str = "", unit_zh: str | None = None, bands=None,
+         value_fmt: str = "{:,.1f}", aria_en: str = "") -> str:
+    """Bridge an internals {dates, vals} dict to an ilx / Signal-Ink fragment.
+    Replaces the retired Plotly `_panel_line`; all illustrative China charts route
+    through lib.illus (SSR SVG + CSS animation, no client charting library)."""
     if not series or not series.get("dates"):
         return ""
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=pd.to_datetime(series["dates"]), y=series["vals"], mode="lines",
-        line={"color": color, "width": 1.5},
-        fill="tozeroy" if fill else None,
-        fillcolor=("rgba(63,120,216,0.10)" if fill else None)))
-    if zero:
-        fig.add_hline(y=0, line={"color": "rgba(128,138,160,0.5)", "width": 0.8})
-    if hline is not None:
-        fig.add_hline(y=hline, line={"color": "#d04545", "width": 0.8, "dash": "dot"},
-                      annotation_text=hline_text, annotation_position="top left",
-                      annotation_font={"size": 10, "color": "#d04545"})
-    fig.update_layout(**{**PLOT_LAYOUT, "height": height}, showlegend=False)
-    return _chart_html(fig)
+    return illus.illus(series, kind=kind, accent=accent, height=height,
+                       baseline=baseline, reference=reference,
+                       unit_en=unit_en, unit_zh=unit_zh, bands=bands,
+                       value_fmt=value_fmt, aria_en=aria_en or f"{kind} chart")
 
 
 def china_regime_timeline(hist: pd.DataFrame) -> dict:
@@ -234,33 +229,41 @@ def _internals_vm() -> dict:
     vm: dict = {}
     margin = ci.margin_meter()
     if margin:
-        margin["chart_html"] = _panel_line(margin.get("chart"), "#e0a030", height=190,
-                                            hline=margin.get("peak"),
-                                            hline_text=f"2015 peak {margin.get('peak')}%")
+        # margin crowd meter — line, info accent, peak level as a reference marker
+        margin["chart_html"] = _ilx(margin.get("chart"), "var(--info)", height=190,
+                                     reference=margin.get("peak"), unit_en="%",
+                                     value_fmt="{:,.2f}", aria_en="Margin financing chart")
         vm["margin"] = margin
     sb = ci.southbound_flow()
     if sb:
-        sb["chart_html"] = _panel_line(sb.get("chart_cum"), "#3f78d8", height=190,
-                                       zero=True, fill=True)
+        # southbound flow — THE waterline (up-tint above 0, down-tint below)
+        sb["chart_html"] = _ilx(sb.get("chart_cum"), "var(--info)", kind="baseline",
+                                height=190, baseline=0, unit_en="亿", unit_zh="亿",
+                                aria_en="Southbound cumulative flow chart")
         vm["southbound"] = sb
     credit = ci.credit_tape()
     if credit:
         if credit.get("impulse_chart"):
-            credit["impulse_html"] = _panel_line(credit["impulse_chart"], "#3f9fd8",
-                                                 height=180, zero=True)
+            credit["impulse_html"] = _ilx(credit["impulse_chart"], "var(--info)",
+                                          kind="bars", height=180, baseline=0,
+                                          unit_en="%", aria_en="Credit impulse chart")
         if credit.get("scissors_chart"):
-            credit["scissors_html"] = _panel_line(credit["scissors_chart"], "#5fbf7f",
-                                                   height=180, zero=True)
+            credit["scissors_html"] = _ilx(credit["scissors_chart"], "var(--info)",
+                                           kind="bars", height=180, baseline=0,
+                                           unit_en="pp", aria_en="M1 minus M2 chart")
         if credit.get("loans_chart"):
-            credit["loans_html"] = _panel_line(credit["loans_chart"], "#8b93a1", height=160)
+            credit["loans_html"] = _ilx(credit["loans_chart"], "var(--muted)",
+                                        height=160, aria_en="New loans chart")
         vm["credit"] = credit
     flows = ci.flow_snaps()
     if flows:
         vm["flows"] = flows
     turn = ci.market_turnover()
     if turn:
-        turn["chart_html"] = _panel_line(turn.get("chart"), "#c08bd8", height=150,
-                                         hline=10000, hline_text="¥1T")
+        # turnover thermometer — line, warn accent; ¥1T threshold as reference
+        turn["chart_html"] = _ilx(turn.get("chart"), "var(--warn)", height=150,
+                                  reference=10000, unit_en="亿", unit_zh="亿",
+                                  value_fmt="{:,.0f}", aria_en="Market turnover chart")
         vm["turnover"] = turn
     pboc = ci.pboc_policy()
     if pboc:
@@ -277,17 +280,27 @@ def _property_vm() -> dict | None:
     if not v:
         return None
     if v.get("breadth") and v["breadth"].get("chart"):
-        v["breadth"]["chart_html"] = _panel_line(v["breadth"]["chart"], "#c97f9a", height=170, zero=True)
+        # net rising cities — sign-colored bars around zero
+        v["breadth"]["chart_html"] = _ilx(v["breadth"]["chart"], "var(--info)",
+                                          kind="bars", height=170, baseline=0,
+                                          value_fmt="{:,.0f}", aria_en="City price breadth chart")
     if v.get("climate") and v["climate"].get("chart"):
-        v["climate"]["chart_html"] = _panel_line(v["climate"]["chart"], "#5fbf7f", height=170,
-                                                 hline=100, hline_text="neutral 100")
+        # NBS builder climate — line, orange accent, neutral 100 reference
+        v["climate"]["chart_html"] = _ilx(v["climate"]["chart"], "var(--orange)",
+                                          height=170, reference=100,
+                                          aria_en="Builder climate index chart")
     if v.get("construction") and v["construction"].get("chart"):
-        v["construction"]["chart_html"] = _panel_line(v["construction"]["chart"], "#e0a030", height=170)
+        v["construction"]["chart_html"] = _ilx(v["construction"]["chart"], "var(--info)",
+                                               height=170, aria_en="Construction demand chart")
     if v.get("cgb") and v["cgb"].get("chart"):
-        v["cgb"]["chart_html"] = _panel_line(v["cgb"]["chart"], "#3f9fd8", height=170)
+        v["cgb"]["chart_html"] = _ilx(v["cgb"]["chart"], "var(--warn)", height=170,
+                                      unit_en="%", value_fmt="{:,.2f}",
+                                      aria_en="Government bond yield chart")
     if v.get("prop_etf") and v["prop_etf"].get("chart"):
-        v["prop_etf"]["chart_html"] = _panel_line(v["prop_etf"]["chart"], "#d04545", height=170,
-                                                 zero=True, fill=True)
+        # property-ETF drawdown from all-time high — underwater fill
+        v["prop_etf"]["chart_html"] = _ilx(v["prop_etf"]["chart"], "var(--down)",
+                                           kind="drawdown", height=170, unit_en="%",
+                                           aria_en="Property ETF drawdown chart")
     return v
 
 
@@ -836,12 +849,27 @@ def main() -> int:
             cond = latest.get("conditions")
             if cond and cond.get("charts"):
                 ch = cond["charts"]
-                cond["roro_html"] = _panel_line(ch.get("roro"), "#3f9fd8", height=170, zero=True)
-                cond["recession_html"] = _panel_line(ch.get("recession"), "#d4a017", height=150)
-                cond["drawdown_html"] = _panel_line(ch.get("drawdown"), "#d04545", height=150)
+                cond["roro_html"] = _ilx(ch.get("roro"), "var(--info)", kind="bars",
+                                         height=170, baseline=0, aria_en="Risk-on/off chart")
+                cond["recession_html"] = _ilx(ch.get("recession"), "var(--warn)",
+                                              height=150, aria_en="Slowdown gauge chart")
+                cond["drawdown_html"] = _ilx(ch.get("drawdown"), "var(--down)",
+                                             height=150, aria_en="Drawdown gauge chart")
                 fe = latest.get("fear_euphoria")
                 if fe is not None and ch.get("fear_euphoria"):
-                    fe["chart_html"] = _panel_line(ch["fear_euphoria"], "#c08bd8", height=160)
+                    # 0-100 fear↔euphoria percentile: soft warn zone ≥70 (Euphoria),
+                    # soft info zone ≤30 (Fear); plum accent per the ilx China ruling.
+                    fe_bands = [
+                        {"hi": 100, "lo": 70,
+                         "tint": "color-mix(in srgb, var(--warn) 15%, transparent)",
+                         "label_en": "Euphoria", "label_zh": "亢奋", "pos": "top"},
+                        {"hi": 30, "lo": 0,
+                         "tint": "color-mix(in srgb, var(--info) 15%, transparent)",
+                         "label_en": "Fear", "label_zh": "恐惧", "pos": "bottom"},
+                    ]
+                    fe["chart_html"] = _ilx(ch["fear_euphoria"], "#c08bd8", height=160,
+                                            bands=fe_bands, value_fmt="{:,.0f}",
+                                            aria_en="Fear and euphoria gauge chart")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china conditions charts failed (%s); skipping", e)
 

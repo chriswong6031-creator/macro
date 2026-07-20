@@ -23,10 +23,10 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import plotly.graph_objects as go  # noqa: E402
+import plotly.graph_objects as go  # noqa: E402  (still used by the hk_history STUDY page)
 from markupsafe import Markup  # noqa: E402
 
-from lib import config, site_assets, store  # noqa: E402
+from lib import config, illus, site_assets, store  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -34,7 +34,7 @@ log = logging.getLogger("build_hk")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
           "charts.js", "tablesort.js", "stocktable.js", "aibrief.js", "stockview.js",
-          "heatmap.js")
+          "heatmap.js", "illus.css", "illus.js")
 
 
 def _range_selector() -> dict:
@@ -311,24 +311,123 @@ def _build_history(env, latest: dict, generated: str) -> None:
     log.info("wrote hk_history.html (%d regime periods)", trans.get("n_segments", 0))
 
 
-def _panel_line(series: dict, color: str, height: int = 190, zero: bool = False,
-                fill: bool = False, hline: float | None = None, hline_text: str = "") -> str:
-    """Single-line panel chart from an internals {dates, vals} dict."""
+def _ilx(series: dict, accent: str, *, kind: str = "line", height: int = 190,
+         baseline: float | None = None, reference: float | None = None,
+         unit_en: str = "", unit_zh: str | None = None, bands=None,
+         value_fmt: str = "{:,.1f}", aria_en: str = "") -> str:
+    """Bridge an internals {dates, vals} dict to an ilx / Signal-Ink fragment.
+    Replaces the retired Plotly `_panel_line`; every illustrative HK panel chart
+    routes through lib.illus (SSR SVG + CSS animation, no client charting library).
+    Mirrors scripts/build_china._ilx. The hk_history STUDY page keeps its Plotly
+    regime/axes timelines (range-selectors + quad shading = real charting)."""
     if not series or not series.get("dates"):
         return ""
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=pd.to_datetime(series["dates"]), y=series["vals"], mode="lines",
-        line={"color": color, "width": 1.5}, fill="tozeroy" if fill else None,
-        fillcolor=("rgba(63,120,216,0.10)" if fill else None)))
-    if zero:
-        fig.add_hline(y=0, line={"color": "rgba(128,138,160,0.5)", "width": 0.8})
-    if hline is not None:
-        fig.add_hline(y=hline, line={"color": "#d04545", "width": 0.8, "dash": "dot"},
-                      annotation_text=hline_text, annotation_position="top left",
-                      annotation_font={"size": 10, "color": "#d04545"})
-    fig.update_layout(**{**PLOT_LAYOUT, "height": height}, showlegend=False)
-    return _chart_html(fig)
+    return illus.illus(series, kind=kind, accent=accent, height=height,
+                       baseline=baseline, reference=reference,
+                       unit_en=unit_en, unit_zh=unit_zh, bands=bands,
+                       value_fmt=value_fmt, aria_en=aria_en or f"{kind} chart")
+
+
+# ---- News & Company Filings view-model enrichment -----------------------------
+# The template renders raw exchange rows (ALL-CAPS titles) and, previously, a broken
+# `ent.name` field. These helpers do the plain-word translation on the build side so
+# the surface stays glance-tier: a type PILL + one-line read per filing, an honest
+# recent-window count summary, and plain-word attention states (Design Doctrine §Law
+# 2/5 — no internal slugs, no dict internals, nulls printed in plain words).
+
+def _filing_bucket(row: dict) -> str:
+    """Collapse a filing row to one of four glance-tier buckets by MARKET IMPACT.
+    Order matters: a buyback flag wins, then dilution (placement/mandate/rights),
+    then results, else other. Bound to theme colours in the template."""
+    if row.get("buyback_flag"):
+        return "buyback"
+    if row.get("dilution_flag"):
+        return "placement"
+    if row.get("category") == "results":
+        return "results"
+    return "other"
+
+
+# bucket -> (pill EN, pill ZH, one-line read EN, one-line read ZH). The read is the
+# "so what" — plain words, never the raw ALL-CAPS exchange title.
+_FILING_PILL = {
+    "buyback":   ("Buyback", "回购", "company buying back", "公司回购股份"),
+    "placement": ("Placement", "配股", "new shares — dilution", "新发股份 — 稀释"),
+    "results":   ("Results", "业绩", "earnings update", "业绩更新"),
+    "other":     ("Filing", "公告", "routine filing", "常规公告"),
+}
+
+
+def _news_enrich_filings(snap: dict) -> None:
+    """Add glance-tier fields to a filing-bus snapshot in place: a recent-window
+    count summary (this week's buybacks / placements / results) and, per tape row,
+    a plain type pill + one-line read + resolved company name. None-safe."""
+    tape = snap.get("tape") or []
+    if not tape:
+        snap["summary"] = None
+        return
+    # ticker -> display name from the bellwether roster (falls back to the ticker).
+    names = {b.get("ticker"): b.get("name_en")
+             for b in (snap.get("bellwethers") or []) if b.get("name_en")}
+    names_zh = {b.get("ticker"): b.get("name_zh")
+                for b in (snap.get("bellwethers") or []) if b.get("name_zh")}
+
+    # recent window = the last 7 *distinct* filing dates (the "this week" the exchange
+    # actually reported), so the count is honest even across weekends/holidays.
+    dates = sorted({r.get("date") for r in tape if r.get("date")}, reverse=True)
+    recent = set(dates[:7])
+    counts = {"buyback": 0, "placement": 0, "results": 0, "other": 0}
+    for r in tape:
+        b = _filing_bucket(r)
+        r["bucket"] = b
+        pe, pz, re_, rz = _FILING_PILL[b]
+        r["pill_en"], r["pill_zh"] = pe, pz
+        r["read_en"], r["read_zh"] = re_, rz
+        r["name_en"] = names.get(r.get("ticker"))
+        r["name_zh"] = names_zh.get(r.get("ticker"))
+        if r.get("date") in recent:
+            counts[b] += 1
+    snap["summary"] = {
+        "buyback": counts["buyback"], "placement": counts["placement"],
+        "results": counts["results"], "other": counts["other"],
+        "window_days": len(recent),
+    }
+
+
+# narrative_state slug -> (plain word EN, plain word ZH). Only non-null states render
+# a chip; unknown states route to the cautious "getting noticed" word.
+_NARR_STATE = {
+    "attention_spike":     ("in the news", "新闻热度"),
+    "tone_positive_shift": ("tone improving", "舆情转暖"),
+    "tone_negative_shift": ("tone souring", "舆情转弱"),
+    "quiet":               ("quiet", "平静"),
+}
+
+
+def _news_enrich_narrative(snap: dict) -> None:
+    """Add plain-word state labels to entities that have real data, and an honest
+    digest for the null-wall case (most names young / no history). In place, None-safe.
+    NEVER emits slugs, z-scores or dict internals to the surface (Doctrine Law 2/5)."""
+    ents = snap.get("entities") or []
+    live = []
+    for e in ents:
+        st = e.get("narrative_state")
+        if st:
+            we, wz = _NARR_STATE.get(st, ("getting noticed", "受到关注"))
+            e["state_en"], e["state_zh"] = we, wz
+            live.append(e)
+        else:
+            e["state_en"] = e["state_zh"] = None
+    snap["live_entities"] = live          # only these render as chips
+    snap["n_watched"] = len(ents)
+    snap["n_live"] = len(live)
+    # honest digest: True when NO name has enough history to read — render ONE plain
+    # "warming up" line instead of a chip wall. Staleness is a *separate* quiet
+    # freshness word (below), not a reason to hide the chips we do have.
+    snap["warming_up"] = len(live) == 0
+    # quiet freshness word whenever the payload isn't fully current (ok). Freshness is
+    # one of ok | degraded | stale | missing — anything but "ok" is slow-moving context.
+    snap["is_stale"] = snap.get("freshness") not in (None, "ok")
 
 
 def hk_regime_timeline(hist: pd.DataFrame) -> dict:
@@ -364,9 +463,13 @@ def _internals_vm(latest: dict) -> dict:
     vm: dict = {}
     sb = ci.southbound_flow()
     if sb:
-        sb["chart_html"] = _panel_line(sb.get("chart_cum"), "#3f78d8", height=190, zero=True, fill=True)
+        sb["chart_html"] = _ilx(sb.get("chart_cum"), "var(--info)", kind="baseline",
+                                baseline=0, height=190, unit_en="亿", unit_zh="亿",
+                                value_fmt="{:+,.0f}",
+                                aria_en="Cumulative southbound net flow, 20-day")
         if sb.get("hold_chart"):
-            sb["hold_html"] = _panel_line(sb["hold_chart"], "#5fbf7f", height=150)
+            sb["hold_html"] = _ilx(sb["hold_chart"], "var(--up)", height=150,
+                                   aria_en="Southbound holdings trend")
         vm["southbound"] = sb
     div = ci.southbound_price_divergence()   # DISPLAY-ONLY context chip (not scored)
     if div:
@@ -374,7 +477,9 @@ def _internals_vm(latest: dict) -> dict:
     credit = ci.credit_tape()
     if credit:
         if credit.get("impulse_chart"):
-            credit["impulse_html"] = _panel_line(credit["impulse_chart"], "#3f9fd8", height=170, zero=True)
+            credit["impulse_html"] = _ilx(credit["impulse_chart"], "var(--info)", kind="bars",
+                                          baseline=0, height=170,
+                                          aria_en="China credit impulse")
         vm["credit"] = credit
     pboc = ci.pboc_policy()
     if pboc:
@@ -398,8 +503,10 @@ def _funding_vm(latest: dict) -> dict | None:
         "agg_chg_1y_pct": round(100 * (latest_ab / yr_ago - 1), 1) if yr_ago else None,
         "agg_pctile": int(round((ab <= latest_ab).mean() * 100)),
         "agg_max": round(float(ab.max())),
-        "chart_html": _panel_line({"dates": [d.strftime("%Y-%m-%d") for d in ab.index],
-                                    "vals": [round(float(v)) for v in ab]}, "#d4a017", height=200, fill=True),
+        "chart_html": _ilx({"dates": [d.strftime("%Y-%m-%d") for d in ab.index],
+                            "vals": [round(float(v)) for v in ab]}, "#d4a017", kind="area",
+                           height=200, unit_en="HK$M", unit_zh="百万港元", value_fmt="{:,.0f}",
+                           aria_en="HKMA Aggregate Balance — system liquidity"),
     }
     for col, key in (("hibor_on", "hibor_on"), ("hibor_1m", "hibor_1m"),
                      ("twi", "twi"), ("base_rate", "base_rate")):
@@ -506,7 +613,8 @@ def _hk_property_vm() -> dict | None:
             return None
         ccl = v.get("ccl") or {}
         if ccl.get("chart"):
-            v["chart_html"] = _panel_line(ccl["chart"], "#c08bd8", height=190)
+            v["chart_html"] = _ilx(ccl["chart"], "#c08bd8", height=190,
+                                   aria_en="Centa-City Leading Index — HK home prices")
         return v
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("hk property vm failed (%s); skipping", e)
@@ -534,9 +642,10 @@ def _hk_valuation_vm() -> dict | None:
         }
     if not out:
         return None
-    out["pe_chart_html"] = _panel_line(
+    out["pe_chart_html"] = _ilx(
         {"dates": [d.strftime("%Y-%m-%d") for d in df["pe"].dropna().index],
-         "vals": [round(float(v), 2) for v in df["pe"].dropna()]}, "#5fbf7f", height=180)
+         "vals": [round(float(v), 2) for v in df["pe"].dropna()]}, "var(--up)", height=180,
+        value_fmt="{:,.1f}", aria_en="HK index P/E history")
     out["n"] = int(df["n_pe"].dropna().iloc[-1]) if "n_pe" in df.columns and not df["n_pe"].dropna().empty else None
     return out
 
@@ -560,9 +669,11 @@ def _hk_ah_official_vm() -> dict | None:
                 "pctile": int(round((s <= lvl).mean() * 100)),
                 "chg_1y": round(lvl - float(s.iloc[-253]), 1) if len(s) > 253 else None,
                 "span": f"{s.index.min():%Y-%m} → {s.index.max():%Y-%m}",
-                "chart_html": _panel_line(
+                "chart_html": _ilx(
                     {"dates": [d.strftime("%Y-%m-%d") for d in s.index],
-                     "vals": [round(float(v), 1) for v in s]}, "#c08bd8", height=190, zero=False),
+                     "vals": [round(float(v), 1) for v in s]}, "var(--info)", height=190,
+                    reference=100, value_fmt="{:,.1f}",
+                    aria_en="A/H premium index — 100 is parity"),
             })
     if spot is not None and not spot.empty and "hsahp" in spot.columns:
         r = spot.dropna(subset=["hsahp"])
@@ -776,12 +887,17 @@ def main() -> int:
             cond = latest.get("conditions")
             if cond and cond.get("charts"):
                 ch = cond["charts"]
-                cond["roro_html"] = _panel_line(ch.get("roro"), "#3f9fd8", height=170, zero=True)
-                cond["recession_html"] = _panel_line(ch.get("recession"), "#d4a017", height=150)
-                cond["drawdown_html"] = _panel_line(ch.get("drawdown"), "#d04545", height=150)
+                cond["roro_html"] = _ilx(ch.get("roro"), "var(--info)", kind="baseline",
+                                         baseline=0, height=170,
+                                         aria_en="Risk-on / risk-off gauge")
+                cond["recession_html"] = _ilx(ch.get("recession"), "var(--warn)", height=150,
+                                              aria_en="Slowdown gauge")
+                cond["drawdown_html"] = _ilx(ch.get("drawdown"), "var(--down)", kind="drawdown",
+                                             height=150, aria_en="Drawdown from high")
                 fe = latest.get("fear_euphoria")
                 if fe is not None and ch.get("fear_euphoria"):
-                    fe["chart_html"] = _panel_line(ch["fear_euphoria"], "#c08bd8", height=160)
+                    fe["chart_html"] = _ilx(ch["fear_euphoria"], "#c08bd8", height=160,
+                                            aria_en="Fear to euphoria sentiment")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk conditions charts failed (%s); skipping", e)
 
@@ -1019,6 +1135,7 @@ def main() -> int:
         try:
             from engine import hk_filing_bus as _fbus
             _fbus_snap = _fbus.run()
+            _news_enrich_filings(_fbus_snap)   # recent-window counts + plain rows
             vm["filing_bus"] = _fbus_snap
             _fd = site / "factordata"
             _fd.mkdir(parents=True, exist_ok=True)
@@ -1039,6 +1156,7 @@ def main() -> int:
         try:
             from engine import hk_narrative as _hn
             _hn_snap = _hn.run()
+            _news_enrich_narrative(_hn_snap)   # plain-word states + honest-null digest
             vm["hk_narrative"] = _hn_snap
             _fd = site / "factordata"
             _fd.mkdir(parents=True, exist_ok=True)
@@ -1077,7 +1195,9 @@ def main() -> int:
             from engine.hk_ah import ah_basket
             ah = ah_basket()
             if ah and ah.get("chart"):
-                ah["chart_html"] = _panel_line(ah["chart"], "#c08bd8", height=190, zero=True)
+                ah["chart_html"] = _ilx(ah["chart"], "var(--info)", kind="baseline",
+                                        baseline=0, height=190, value_fmt="{:+,.1f}",
+                                        aria_en="A/H premium — computed basket")
             vm["ah"] = ah
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk AH premium failed (%s); skipping", e)
