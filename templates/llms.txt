@@ -1,0 +1,21 @@
+# Mastermind — www.mastermind-x.com
+
+> Mastermind is a market-intelligence platform: nightly-computed macro regime, market-cycle, and sector-rotation dashboards across US, China, Hong Kong, Canada and global markets, plus per-stock dossiers with proprietary trend, stage and confluence models. Bilingual English/Chinese at every URL. Signals and scores come from deterministic engines over market data; AI assists explanation, not signal generation.
+
+Machine-readable brand facts: https://www.mastermind-x.com/brand-facts.json
+Sitemap: https://www.mastermind-x.com/sitemap.xml
+
+## Primary surfaces
+- [Macro Regime Dashboard](https://www.mastermind-x.com/macro.html): US macro regime, risk radar and market state, updated nightly.
+- [US Stock Dashboard](https://www.mastermind-x.com/us_stocks.html): ranked US stock board with entry/quality/context signals.
+- [Stock Dossiers](https://www.mastermind-x.com/stocks/index.html): ~1,460 per-ticker pages — trend, stage, confluence, ownership and options context.
+- [China A-Share Regime](https://www.mastermind-x.com/china.html) · [Hong Kong Regime](https://www.mastermind-x.com/hk.html) · [Canada Regime](https://www.mastermind-x.com/canada.html)
+- [Thematic Baskets](https://www.mastermind-x.com/baskets.html): theme performance vs benchmark with leadership health.
+- [Factor Rankings](https://www.mastermind-x.com/factors.html) · [Sector Cycles](https://www.mastermind-x.com/sector_cycles.html) · [Market Structure](https://www.mastermind-x.com/market_structure.html)
+- [Congressional Trades](https://www.mastermind-x.com/congress_trades.html): tracked congressional trading with entry-timing context.
+- [Today's Movers](https://www.mastermind-x.com/movers.html) · [Research Reports](https://www.mastermind-x.com/reports.html) · [Learn](https://www.mastermind-x.com/learn.html)
+
+## Cadence & method
+- US boards update nightly after US close; Asia boards after Asia close.
+- [Methodology](https://www.mastermind-x.com/methodology.html): how factor labs, baskets and seasonality are computed.
+- Every signal panel discloses when a reading is display-only or unconfirmed; nulls are printed, not hidden.

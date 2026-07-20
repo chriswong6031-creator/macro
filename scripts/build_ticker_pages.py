@@ -39,6 +39,7 @@ if str(_ROOT) not in sys.path:
 
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
+from lib.seo import SITE_BASE as _SITE_BASE  # noqa: E402
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
@@ -60,7 +61,8 @@ except Exception as _sc_import_err:  # noqa: BLE001
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-CANONICAL_BASE = "https://mastermind-x.com"
+# CANONICAL_BASE: strip trailing slash for use in URL path concatenation.
+CANONICAL_BASE = _SITE_BASE.rstrip("/")
 STALENESS_DAYS = 14
 SEASONALITY_MIN_BARS = 750  # require at least this many ohlc bars
 
@@ -2578,7 +2580,7 @@ def run(
                         _sc_skipped += 1
                     # Only pass og_image_url if PNG actually exists
                     if _og_out.exists():
-                        og_image_url = f"https://mastermind-x.com/og/stocks/{ticker}.png"
+                        og_image_url = f"{CANONICAL_BASE}/og/stocks/{ticker}.png"
                 except Exception as _sc_err:  # noqa: BLE001
                     log.debug("share card failed for %s: %s", ticker, _sc_err)
                     og_image_url = None

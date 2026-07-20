@@ -12,7 +12,7 @@
    scrapers (Slack/X/iMessage/Facebook) do NOT run JS, so this MUST be static
    HTML — never inject it from theme.js. Favicon paths are root-relative (all
    pages that include this live at the site root). #}
-{%- set _base = 'https://mastermind-x.com/' -%}
+{%- set _base = 'https://www.mastermind-x.com/' -%}
 {%- set _title = seo_title | default('Mastermind — Macro Regime & Market Cycle Intelligence') -%}
 {%- set _desc = seo_desc | default('Live macro-regime, market-cycle and sector-rotation intelligence across US, China, Hong Kong, Canada and global markets — risk radar, signals and cycle clocks in one dashboard.') -%}
 {%- set _url = _base ~ (seo_path | default('')) -%}

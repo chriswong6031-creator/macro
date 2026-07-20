@@ -524,14 +524,14 @@
   }
   function citeToPage(c) {
     c = String(c);
-    if (/master_brief|world_state|regime/.test(c)) return (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'macro.html';
-    if (/options|gex|flow/.test(c)) return (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'options_hub.html';
-    if (/factor/.test(c)) return (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'factors.html';
+    if (/master_brief|world_state|regime/.test(c)) return (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'macro.html';
+    if (/options|gex|flow/.test(c)) return (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'options_hub.html';
+    if (/factor/.test(c)) return (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'factors.html';
     return null;
   }
   function showUpgrade(d) {
     upgradeEl.style.display = 'block';
-    var plansHref = (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'plans.html';
+    var plansHref = (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'plans.html';
     var link = '<a href="' + plansHref + '" target="_blank">' + L('See plans', '查看套餐') + '</a>';
     if (d && d.feature === 'vision') {
       upgradeEl.innerHTML = '<strong>' + L('Image analysis is a Pro feature', '图像分析为 Pro 功能') + '</strong> — ' +
@@ -636,7 +636,7 @@
     var a = t.dataset.act;
     if (a === 'close') close(); else if (a === 'max') toggleMax(); else if (a === 'side') toggleSide();
     else if (a === 'new') newChat(); else if (a === 'research') setResearch(!researchMode);
-    else if (a === 'home') location.href = (ANCHOR === 'top' ? 'https://mastermind-x.com/' : '') + 'macro.html';
+    else if (a === 'home') location.href = (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'macro.html';
     else if (a === 'voice') startVoice();
     else if (a === 'attach') { if (proEligible) fileEl.click(); else showUpgrade({ feature: 'vision' }); }
     else if (a === 'signin') { if (window.MDXAuth) window.MDXAuth.open('signin'); }
