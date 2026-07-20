@@ -69,20 +69,28 @@
   <div class="cyc-cards" id="cyc-cards"></div>
 </div>
 
+<!-- Load order matters: optimize_assets.py adds ?v=<hash>+defer to every unqueried
+     local .js, so ALL of these defer and execute in source order after parse (data →
+     engine → charts → i18n → app), before DOMContentLoaded. mm_charts.js / cycle_app.js
+     must NOT carry a manual ?v= query — that makes optimize_assets skip them (leaving
+     them synchronous), so the app would run before the deferred engine data and abort on
+     `if (!ENGINE) return`. The two inline consumer scripts below read that data, so they
+     run on DOMContentLoaded (fires after every defer script). -->
 <script src="regimedata/regime_prior.js"></script>
 <script src="cycle_data.js"></script>
 <script src="cycledata/cycle_engine.js"></script>
-<script src="mm_charts.js?v=4"></script>
+<script src="mm_charts.js"></script>
 <script src="cycle_i18n.js"></script>
-<script src="cycle_app.js?v=3"></script>
-<script>try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}</script>
+<script src="cycle_app.js"></script>
+<script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}});</script>
 <script>
 /* W4.5 regime-prior reconciliation banner — rendered after all data scripts load.
    Two layers: (0) CONTRADICTION — curated regime_claim quad vs the live engine quad
    (from CYCLE_ENGINE.regime_disagreement, softened to amber when the engine read is
    itself provisional); (1) prior stale/partial; (2) curated prose > 30 days old.
-   Dual-span EN/zh — no t() in attributes. */
-(function(){
+   Dual-span EN/zh — no t() in attributes. Runs on DOMContentLoaded so the deferred
+   data scripts (CYCLE_ENGINE / REGIME_PRIOR) are guaranteed loaded first. */
+document.addEventListener('DOMContentLoaded',function(){
   try{
     var host=document.getElementById('regime-prior-banner');
     if(!host)return;
@@ -128,7 +136,7 @@
     });
     host.innerHTML=html;
   }catch(e){}
-})();
+});
 </script>
 <script src="theme.js"></script>
 </body>
