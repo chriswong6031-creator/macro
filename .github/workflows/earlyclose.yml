@@ -320,7 +320,7 @@ jobs:
           exit 1
       - name: inject data-base shim
         if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
-        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"; python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
 
       # ── (e) COMMIT — site/ ONLY, with fastpath-style data/ discard guard ────────────
       # Replicates intraday-fastpath.yml lines 71-83 VERBATIM-IN-SPIRIT (FT-R5/FT-R8):

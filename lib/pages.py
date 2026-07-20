@@ -19,6 +19,7 @@ import logging
 import re
 import shutil
 from pathlib import Path
+from typing import Callable, Optional
 
 from lib import config
 
@@ -26,6 +27,67 @@ log = logging.getLogger("pages")
 
 DBASE_MARKER = "data-dbase"
 _HEAD_RE = re.compile(r"<head[^>]*>", re.IGNORECASE)
+
+# --- asset optimization (content-hash cache-busting + defer) -----------------
+# A post-render sweep (scripts/optimize_assets.py) rewrites every local .js/.css
+# reference to carry a ?v=<content-hash> query and marks non-critical <script>s
+# `defer`, so the edge can cache them `immutable` (see app/deploy/Caddyfile) and
+# the browser stops blocking the main thread on synchronous script execution.
+# Kept here beside inject_text() because both are page-string post-processors.
+_OPEN_TAG_RE = re.compile(r"<(script|link)\b([^>]*)>", re.IGNORECASE)
+_SRC_ATTR_RE = re.compile(r'\b(src|href)\s*=\s*"([^"]*)"', re.IGNORECASE)
+_HAS_DEFER_ASYNC_RE = re.compile(r"\b(defer|async)\b", re.IGNORECASE)
+_MODULE_RE = re.compile(r'\btype\s*=\s*"module"', re.IGNORECASE)
+_SCHEME_RE = re.compile(r"[a-zA-Z][\w+.-]*:")  # http:, https:, data:, mailto: ...
+
+
+def _is_local_asset(url: str) -> bool:
+    """True for a same-origin relative ref (no scheme, not protocol-relative)."""
+    return bool(url) and not url.startswith("//") and not _SCHEME_RE.match(url)
+
+
+def optimize_assets_text(text: str, hash_for: Callable[[str], Optional[str]]) -> str:
+    """Rewrite local .js/.css refs in `text` for cache-busting + non-blocking JS.
+
+    For each ``<script src=…>`` / ``<link href=…>`` pointing at a same-origin
+    ``.js``/``.css`` file:
+      * append ``?v=<hash>`` (from ``hash_for(url)``) so the edge can cache it
+        ``immutable`` — a content change yields a new URL, never a stale hit;
+      * add ``defer`` to scripts (keeps them off the critical path) unless they
+        are ``async``/``type=module`` or the data-base shim (``data-dbase``),
+        which must stay blocking at the top of <head> before any fetch.
+
+    Idempotent: a ref that already carries a query (manual ``?v=N`` or a prior
+    run) is left untouched, and ``defer``/``async`` scripts are not re-marked.
+    ``hash_for`` returns ``None`` when the asset can't be hashed (missing on
+    disk) — the ref is then left unversioned but a script still gets ``defer``.
+    """
+    def _rewrite(m: "re.Match[str]") -> str:
+        kind = m.group(1).lower()
+        attrs = m.group(2)
+        if DBASE_MARKER in attrs:              # data-base shim: never touch
+            return m.group(0)
+        am = _SRC_ATTR_RE.search(attrs)
+        if not am:                             # inline <script> / no href
+            return m.group(0)
+        attr_name, url = am.group(1).lower(), am.group(2)
+        if (kind == "script") != (attr_name == "src"):
+            return m.group(0)                  # href on <script> etc. — skip
+        if not _is_local_asset(url):
+            return m.group(0)
+        low = url.lower()
+        if "?" in url or "#" in url or not (low.endswith(".js") or low.endswith(".css")):
+            return m.group(0)                  # already-queried or not a hashed asset
+        new_attrs = attrs
+        h = hash_for(url)
+        if h:
+            new_url = f'{am.group(1)}="{url}?v={h}"'
+            new_attrs = new_attrs[: am.start()] + new_url + new_attrs[am.end():]
+        if kind == "script" and not _HAS_DEFER_ASYNC_RE.search(new_attrs) and not _MODULE_RE.search(new_attrs):
+            new_attrs = new_attrs.rstrip() + " defer"
+        return f"<{m.group(1)}{new_attrs}>"
+
+    return _OPEN_TAG_RE.sub(_rewrite, text)
 
 
 def _tag(prefix: str) -> str:

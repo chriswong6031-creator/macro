@@ -181,7 +181,7 @@ jobs:
           printf '{"last_run": "%s", "run_id": "%s", "workflow": "weekly"}\n' \
             "$(date -u +%FT%T+00:00)" "${GITHUB_RUN_ID:-local}" > data/weekly_status.json
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
-        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"; python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
       - name: commit weekly outputs
         run: |
           git config user.name "dashboard-bot"
