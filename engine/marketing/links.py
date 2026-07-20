@@ -21,7 +21,7 @@ from urllib.parse import parse_qs, quote, urlencode, urlsplit
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-DEFAULT_BASE_URL: str = "https://mastermind-x.com/"
+DEFAULT_BASE_URL: str = "https://www.mastermind-x.com/"
 DEFAULT_UTM_SOURCE: str = "x"
 
 # ─────────────────────────────────────────────────────────────────────────────

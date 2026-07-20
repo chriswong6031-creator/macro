@@ -1,0 +1,72 @@
+{
+  "effective_at": "2026-07-20",
+  "owner": "Mastermind Research",
+  "source": "https://www.mastermind-x.com/brand-facts.json",
+  "brand": {
+    "name": "Mastermind",
+    "url": "https://www.mastermind-x.com/",
+    "languages": ["en", "zh"]
+  },
+  "what_it_is": "Market-intelligence platform: nightly macro-regime, market-cycle and sector-rotation dashboards for US, China, Hong Kong, Canada and global markets, plus ~1,460 per-stock dossiers with proprietary trend, stage and confluence models.",
+  "surfaces": [
+    {
+      "name": "Macro Regime Dashboard",
+      "url": "https://www.mastermind-x.com/macro.html",
+      "description": "US macro regime, risk radar and market state, updated nightly."
+    },
+    {
+      "name": "US Stock Dashboard",
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "description": "Ranked US stock board with entry, quality and context signals."
+    },
+    {
+      "name": "Stock Dossiers",
+      "url": "https://www.mastermind-x.com/stocks/index.html",
+      "description": "~1,460 per-ticker pages with trend, stage, confluence, ownership and options context."
+    },
+    {
+      "name": "China A-Share Regime",
+      "url": "https://www.mastermind-x.com/china.html",
+      "description": "China A-share macro regime and sector rotation, updated nightly."
+    },
+    {
+      "name": "Hong Kong Regime",
+      "url": "https://www.mastermind-x.com/hk.html",
+      "description": "Hong Kong market regime and sector rotation, updated nightly."
+    },
+    {
+      "name": "Canada Regime",
+      "url": "https://www.mastermind-x.com/canada.html",
+      "description": "Canadian market regime and sector rotation, updated nightly."
+    },
+    {
+      "name": "Thematic Baskets",
+      "url": "https://www.mastermind-x.com/baskets.html",
+      "description": "Theme performance vs benchmark with leadership health and sector context."
+    },
+    {
+      "name": "Factor Rankings",
+      "url": "https://www.mastermind-x.com/factors.html",
+      "description": "Factor performance rankings and seasonality across US equity factors."
+    },
+    {
+      "name": "Congressional Trades",
+      "url": "https://www.mastermind-x.com/congress_trades.html",
+      "description": "Tracked congressional trading with entry-timing context and member skill ratings."
+    },
+    {
+      "name": "Methodology",
+      "url": "https://www.mastermind-x.com/methodology.html",
+      "description": "How factor labs, baskets and seasonality models are computed."
+    }
+  ],
+  "coverage": {
+    "markets": ["US", "China", "Hong Kong", "Canada", "International"],
+    "stock_dossiers": "~1,460 US tickers, expanding",
+    "update_cadence": "nightly"
+  },
+  "editorial": {
+    "author_entity": "Mastermind Research (organization)",
+    "ai_use": "AI assists drafting and explanation; signals and scores come from deterministic engines."
+  }
+}
