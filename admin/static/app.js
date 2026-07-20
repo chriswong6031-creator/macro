@@ -4016,6 +4016,15 @@ function obxReceiptLine(r) {
    controls work off decided state without re-fetching per keystroke. Cleared and
    rebuilt on every render. */
 let OBX_LAST = null;
+/* Active client-side filters, kept across in-place refreshes so a decision never
+   snaps the operator back to "all desks / all kinds". */
+let OBX_ACTIVE_DESK = "all";
+let OBX_ACTIVE_KIND = "all";
+/* Media cache keyed by repo-relative path. The media endpoint sends
+   Cache-Control:no-store, so an in-place refresh would otherwise re-download
+   every chart; caching the loaded <img> and mounting a clone keeps refreshes
+   instant and network-free. */
+const OBX_MEDIA_CACHE = new Map();
 
 RENDER.marketing_outbox = async () => {
   const v = $("#view");
@@ -4026,15 +4035,14 @@ RENDER.marketing_outbox = async () => {
 
   const cap = d.cap != null ? d.cap : "—";
   const asOf = d.as_of || null;
-  const summary = d.summary || {};
   const accounts = d.accounts || [];
-  const history = d.history || [];
   const sentinel = d.sentinel || null;
   const activity = d.activity || [];
 
   /* Cross-link to Sentinel — surface any policy holds so a reviewer here knows
      the gate caught something worth reading before they approve. Fail-soft:
-     the outbox never blocks on the sentinel fetch. */
+     the outbox never blocks on the sentinel fetch. Computed once on mount (the
+     header is static across in-place refreshes). */
   let sentinelChip = "";
   try {
     const sd = await api("/api/marketing/sentinel");
@@ -4061,6 +4069,29 @@ RENDER.marketing_outbox = async () => {
     </div>` + obxActivityStrip(activity);
     return;
   }
+
+  /* Static header + a re-renderable live zone. Decisions re-render only the live
+     zone (obxRefreshInPlace) so media never re-downloads and the header/filters
+     survive. Reset filters to "all" only on a full mount (nav into the page). */
+  OBX_ACTIVE_DESK = "all";
+  OBX_ACTIVE_KIND = "all";
+  v.innerHTML = header + `<div id="obx-live"></div>`;
+  obxRenderLive(d);
+};
+
+/* Build (or rebuild) the dynamic body into #obx-live. Called on mount and by
+   obxRefreshInPlace after a decision — the header stays put. */
+function obxRenderLive(d) {
+  const live = document.getElementById("obx-live");
+  if (!live) return;
+  OBX_LAST = d;
+
+  const cap = d.cap != null ? d.cap : "—";
+  const summary = d.summary || {};
+  const accounts = d.accounts || [];
+  const history = d.history || [];
+  const sentinel = d.sentinel || null;
+  const activity = d.activity || [];
 
   /* Global work count — how many undecided/re-armable items across all desks. */
   let globalReady = 0;
@@ -4173,12 +4204,29 @@ RENDER.marketing_outbox = async () => {
   const decisionHtml = obxDecisionLog(d.decision_log || []);
   const historyHtml = obxHistoryBlock(history);
 
-  v.innerHTML = header + obxSentinelCard(sentinel, cap) + commandBar + tiles
+  live.innerHTML = obxSentinelCard(sentinel, cap) + commandBar + tiles
     + obxActivityStrip(activity)
     + filterChips + acctPills + `<div id="obx-review">${sections}</div>`
     + decisionHtml + historyHtml;
+  /* Re-apply any active desk/kind filter (persisted across in-place refreshes). */
+  obxApplyDeskFilter();
+  obxApplyKindFilter();
   obxLoadAllMedia();
-};
+}
+
+/* Non-destructive refresh after a decision: re-fetch only the outbox JSON and
+   re-render the live zone. Media stays cached, the header + active filters
+   survive, and scroll position is restored — no full-page flash, no re-download. */
+async function obxRefreshInPlace() {
+  const y = window.scrollY;
+  const d = await api("/api/marketing/outbox");
+  if (!d || !d.ok) return;                    /* keep the current view on a bad fetch */
+  /* If the queue ever drops to the day-0 empty payload, the live zone can't
+     express it — fall back to a full mount so the accruing card renders. */
+  if (d.note && !(d.accounts || []).length) { await RENDER.marketing_outbox(); return; }
+  obxRenderLive(d);
+  window.scrollTo({ top: y, behavior: "instant" });
+}
 
 /* Per-item decision audit trail — who held/approved/posted which post, and when.
    Complements the pipeline `activity` (run tallies): this is the operator's own
@@ -4758,8 +4806,24 @@ function obxLoadAllMedia() {
     const p = el.getAttribute("data-media-path");
     const cap = el.getAttribute("data-media-cap") || "chart";
     const slot = el.querySelector(".obx-media-slot");
-    if (!p || !slot) return;
+    if (!p || !slot || slot.classList.contains("obx-media-ready")) return;
     const src = "/api/marketing/outbox/media?path=" + encodeURIComponent(p);
+
+    /* Mount a loaded <img> into the slot: clone the cached node so one cached
+       image can appear in many slots at once (a node lives in one place). */
+    const mount = (loaded) => {
+      const node = loaded.cloneNode(true);
+      slot.innerHTML = "";
+      slot.appendChild(node);
+      slot.classList.add("obx-media-ready");
+      node.onclick = () => obxLightbox(src, cap);
+    };
+
+    /* Cache HIT — reuse the already-loaded image, no endpoint re-fetch. The
+       endpoint sends no-store, so this JS cache is what makes refreshes free. */
+    const cached = OBX_MEDIA_CACHE.get(p);
+    if (cached) { mount(cached); return; }
+
     /* Render via <img>: SVG loaded as an image cannot execute embedded script,
        so served media never runs in the admin origin. The endpoint re-validates
        path containment server-side — it is the trust boundary for `p`. NEVER
@@ -4767,12 +4831,7 @@ function obxLoadAllMedia() {
     const img = document.createElement("img");
     img.className = "obx-media-svg";
     img.alt = "chart preview for " + cap;
-    img.onload = () => {
-      slot.innerHTML = "";
-      slot.appendChild(img);
-      slot.classList.add("obx-media-ready");
-      img.onclick = () => obxLightbox(src, cap);
-    };
+    img.onload = () => { OBX_MEDIA_CACHE.set(p, img); mount(img); };
     img.onerror = () => {
       slot.innerHTML = `<span class="statpill s-mut obx-mini">media unavailable</span>`;
     };
@@ -4804,29 +4863,49 @@ function obxCloseLightbox() {
   document.removeEventListener("keydown", obxLbKey);
 }
 
-/* Filter the review queue to one desk (client-side, mirrors Content Studio). */
+/* Filter the review queue to one desk (client-side, mirrors Content Studio).
+   Remembers the choice so it survives an in-place refresh after a decision. */
 function obxSwitchAcct(acct, btn) {
-  document.querySelectorAll("#obx-acct-sw .mkt-acct-pill").forEach(el => el.classList.remove("active"));
-  if (btn) btn.classList.add("active");
+  OBX_ACTIVE_DESK = acct;
+  obxApplyDeskFilter();
+}
+/* Re-apply the stored desk filter (active pill + section visibility). Falls back
+   to "all" if the remembered desk vanished from the payload. */
+function obxApplyDeskFilter() {
+  const sw = document.getElementById("obx-acct-sw");
+  if (!sw) return;
+  const pills = sw.querySelectorAll(".mkt-acct-pill");
+  const known = new Set([...pills].map(p => p.dataset.acct));
+  if (!known.has(OBX_ACTIVE_DESK)) OBX_ACTIVE_DESK = "all";
+  pills.forEach(p => p.classList.toggle("active", p.dataset.acct === OBX_ACTIVE_DESK));
   document.querySelectorAll(".obx-acct-section").forEach(el => {
-    el.style.display = (acct === "all" || el.dataset.acct === acct) ? "" : "none";
+    el.style.display = (OBX_ACTIVE_DESK === "all" || el.dataset.acct === OBX_ACTIVE_DESK) ? "" : "none";
   });
 }
 
 /* Filter the rail to one content kind (client-side). Hides non-matching cards
    AND any account section left with no visible cards, so empty desks recede. */
 function obxFilterKind(kind, btn) {
-  document.querySelectorAll("#obx-filters .mkt-filter-chip").forEach(el => el.classList.remove("active"));
-  if (btn) btn.classList.add("active");
+  OBX_ACTIVE_KIND = kind;
+  obxApplyKindFilter();
+}
+/* Re-apply the stored kind filter. Falls back to "all" if the kind is gone. */
+function obxApplyKindFilter() {
+  const bar = document.getElementById("obx-filters");
+  if (!bar) return;
+  const chips = bar.querySelectorAll(".mkt-filter-chip");
+  const known = new Set([...chips].map(c => c.dataset.kind));
+  if (!known.has(OBX_ACTIVE_KIND)) OBX_ACTIVE_KIND = "all";
+  chips.forEach(c => c.classList.toggle("active", c.dataset.kind === OBX_ACTIVE_KIND));
   document.querySelectorAll(".obx-acct-section").forEach(sec => {
     let shown = 0;
     sec.querySelectorAll(".obx-card").forEach(card => {
-      const match = (kind === "all" || card.dataset.kind === kind);
+      const match = (OBX_ACTIVE_KIND === "all" || card.dataset.kind === OBX_ACTIVE_KIND);
       card.style.display = match ? "" : "none";
       if (match) shown++;
     });
     /* When a kind filter is on, hide desks with no matching cards entirely. */
-    sec.classList.toggle("obx-sec-empty", kind !== "all" && shown === 0);
+    sec.classList.toggle("obx-sec-empty", OBX_ACTIVE_KIND !== "all" && shown === 0);
   });
 }
 
@@ -4842,8 +4921,9 @@ async function obxDecide(id, decision, btn) {
     const r = await post("/api/marketing/outbox/decide", { id, decision });
     if (!r || !r.ok) throw new Error((r && r.error) || "decision failed");
     toast(decision === "approve" ? (isRetry ? "Approved to retry" : "Approved for posting") : "Held — won't post");
-    /* Refetch so summary tiles + counts + state chips all re-fold consistently. */
-    await RENDER.marketing_outbox();
+    /* Refetch in place so tiles + counts + state chips re-fold consistently
+       without a full-page flash, media re-download, or losing the filter. */
+    await obxRefreshInPlace();
   } catch (e) {
     btns.forEach(b => { b.disabled = false; });
     if (msg) { msg.className = "obx-ctrl-msg obx-ctrl-err"; msg.textContent = (e && e.message) || "failed — try again"; }
@@ -4940,7 +5020,7 @@ async function obxRunBatch(ids, decision, barEl, msgEl, workingText) {
     } else {
       toast(decision === "approve" ? `Approved ${okN}` : `Held ${okN}`);
     }
-    await RENDER.marketing_outbox();
+    await obxRefreshInPlace();
   } catch (e) {
     btns.forEach(b => { b.disabled = false; });
     if (msgEl) {
