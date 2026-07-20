@@ -29,16 +29,21 @@ or if you need to manually confirm the job:
 pgrep -fl "ThetaTerminalv3\|theta"
 ```
 
-If it is not running, start it:
+If it is not running, the `com.macro.theta-terminal` keepalive lane (§3) should
+relaunch it within ~60 s.  If that lane is not installed, start it manually:
 
 ```bash
-# Preferred: the repo launcher (handles Java 21, key-via-env, health hints)
+# Preferred: the repo launcher (handles Java 21, key-via-env, stdin-safe launch)
 bash "/Users/chriswong/Documents/Cluade/Macro Dashboard/scripts/run_theta_terminal.sh"
 
-# Manual equivalent — key via environment, NEVER as --api-key argv
-# (argv is plaintext-readable by any local process via `ps`):
+# Manual equivalent — TWO laws:
+#   1. Key via environment, NEVER as --api-key argv (argv is plaintext-readable
+#      by any local process via `ps`).
+#   2. stdin held open by an infinite pipe — stdin EOF is the v3 shutdown
+#      trigger; a bare `java ... &` dies when the launching tty closes
+#      (the 2026-07-17..07-20 outage).
 cd /Users/chriswong/theta && \
-    THETADATA_API_KEY="$THETA_API_KEY" java -jar ThetaTerminalv3.jar &
+    nohup tail -f /dev/null | THETADATA_API_KEY="$THETA_API_KEY" nohup java -jar ThetaTerminalv3.jar &
 # Allow 30–60 seconds for the terminal to become reachable
 # THETA_API_KEY must be set in the operator's shell profile or fetched from
 # the local secret store (e.g. `export THETA_API_KEY=$(op read "op://Private/ThetaData/api_key")`).
@@ -76,33 +81,59 @@ tail -20 /Users/chriswong/theta-ops-wt/backfill.log
 
 ---
 
-## §3 Keepalive: install, verify, uninstall
+## §3 launchd lanes: install, verify, uninstall
 
-The plist and wrapper script ship under `scripts/launchd/` in the repo.
-After the PR merges to main, run the install commands once.
+Three launchd lanes keep the EOD store alive end-to-end.  Plists + wrapper
+scripts ship under `scripts/launchd/` in the repo; the plists execute the ops
+worktree copies (`/Users/chriswong/theta-ops-wt/scripts/launchd/`) because
+macOS TCC denies launchd exec under `~/Documents/` — after a lane-affecting
+merge, fast-forward the ops worktree before expecting behavior changes.
 
-### Install
+| Lane | Label | Schedule | What it does |
+|------|-------|----------|--------------|
+| Terminal keepalive | `com.macro.theta-terminal` | `KeepAlive`, 60 s `ThrottleInterval` | Health-polls :25503; exits 0 when healthy (or when any ThetaTerminalv3 process exists — never duplicates a manual launch). Otherwise launches the terminal foreground with stdin held open (`tail -f /dev/null \|` pipe — stdin EOF is the v3 shutdown trigger; root cause of the 2026-07-17..07-20 outage). Backs off 240 s when the terminal dies in < 30 s (stale-`THETA_API_KEY` shape) so the auth endpoint is never hammered; auto-heals ~5 min after the key is fixed in `theta-ops-wt/.env`. Log: `/tmp/theta_terminal_keepalive.log`. |
+| Backfill keepalive | `com.macro.thetadata-backfill` | `KeepAlive` | Auto-resumes `backfill_thetadata_eod` after reboots; guard-exits when an instance is already running (§2). |
+| Staleness sentinel | `com.macro.theta-staleness` | 06:15 + 18:30 local (`StartCalendarInterval`) | Tripwire against silent stalls: ALERTs when :25503 is unreachable OR `greeks/SPY` is ≥ 2 weekday-sessions behind (WARN at 1; today counts as due when local hour ≥ 17, or force with `--due-today`). Writes `/tmp/theta_staleness.json` (latest machine-readable verdict, atomic), appends `/tmp/theta_staleness.log`, and raises a macOS notification on WARN/ALERT. 06:15 = pre-open sanity before the ledger seal; 18:30 = post-close check that today's pull landed. |
+
+The lanes are independent — install any subset.  The terminal keepalive is the
+one that prevents a repeat of the 07-17 silent death; the sentinel is the alarm
+if anything else starves the store.
+
+### Install (once per lane)
 
 ```bash
+# Pick the lane:
+LANE=com.macro.theta-terminal   # or com.macro.thetadata-backfill / com.macro.theta-staleness
+
 # Step 1: copy the plist to LaunchAgents (do NOT commit ~/Library to git)
-cp "$(git -C "/Users/chriswong/Documents/Cluade/Macro Dashboard" rev-parse --show-toplevel)/scripts/launchd/com.macro.thetadata-backfill.plist" \
-    ~/Library/LaunchAgents/
+cp "/Users/chriswong/theta-ops-wt/scripts/launchd/${LANE}.plist" ~/Library/LaunchAgents/
 
 # Step 2: load it
-launchctl load ~/Library/LaunchAgents/com.macro.thetadata-backfill.plist
+launchctl bootstrap gui/$(id -u) "$HOME/Library/LaunchAgents/${LANE}.plist"
 
 # Step 3: confirm the job is registered
-launchctl list com.macro.thetadata-backfill
+launchctl list "${LANE}"
 ```
 
-Expected output from Step 3 should show the label with `"OnDemand" = false`.
+### Verify — terminal keepalive
 
-### Verify guard exits correctly while a backfill is running
+```bash
+curl -s -m 6 -o /dev/null -w '%{http_code}\n' \
+    'http://127.0.0.1:25503/v3/option/list/symbols'   # 200 once the terminal is up
+tail -5 /tmp/theta_terminal_keepalive.log
+# Healthy steady state is SILENT (the wrapper exits 0 without logging).
+# After a terminal death you should see "launching terminal (health was 000)"
+# within ~60 s; repeated "died in <30s ... backing off 240s" = stale THETA_API_KEY
+# → refresh it at https://thetadata.us/account into theta-ops-wt/.env (and
+# hub-ops-wt/.env). Never echo or commit the key.
+```
+
+### Verify — backfill guard exits correctly while a backfill is running
 
 While `backfill_thetadata_eod` is live:
 
 ```bash
-bash "/Users/chriswong/Documents/Cluade/Macro Dashboard/scripts/launchd/theta_backfill_keepalive.sh"
+bash /Users/chriswong/theta-ops-wt/scripts/launchd/theta_backfill_keepalive.sh
 # Should exit immediately (guard path)
 tail -5 /Users/chriswong/theta-ops-wt/backfill.log
 # Should show: "... backfill_thetadata_eod already running — exiting (no duplicate)"
@@ -110,11 +141,18 @@ tail -5 /Users/chriswong/theta-ops-wt/backfill.log
 
 The live backfill process must remain running (check with `pgrep -fl backfill_thetadata_eod`).
 
-### Uninstall
+### Verify — staleness sentinel
 
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.macro.thetadata-backfill.plist
-rm ~/Library/LaunchAgents/com.macro.thetadata-backfill.plist
+bash /Users/chriswong/theta-ops-wt/scripts/launchd/theta_staleness_sentinel.sh --due-today
+cat /tmp/theta_staleness.json   # level OK/WARN/ALERT + latest_greeks_date + reasons
+```
+
+### Uninstall (per lane)
+
+```bash
+launchctl bootout gui/$(id -u) "$HOME/Library/LaunchAgents/${LANE}.plist"
+rm "$HOME/Library/LaunchAgents/${LANE}.plist"
 ```
 
 ---
