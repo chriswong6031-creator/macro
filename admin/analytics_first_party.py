@@ -61,6 +61,26 @@ _EXCL_PATH = Path(os.environ.get(
 # many unrelated visitors, so linking on it would falsely merge/over-hide them).
 _NON_ID_IPS = ("'unknown'", "'::1'", "'127.0.0.1'", "'localhost'")
 
+# ── Crawler / bot detection (default-on; config can extend the patterns) ────────
+# A visitor is a bot if ANY holds: its user-agent matches _DEFAULT_BOT_UA, its IP sits in a
+# datacenter that is NOT a consumer VPN (is_hosting and not is_vpn — keeps real VPN users),
+# the IP's network org matches _DEFAULT_BOT_ORG, or the IP is in the config bots.ips list.
+# Bots are hidden from every surface by default but stay REVEALABLE (include_bots=1) and are
+# counted, so detection is transparent and false positives are catchable. Behavioural signals
+# (short dwell / bounce) are deliberately NOT used — real humans bounce too.
+_DEFAULT_BOT_UA = (
+    r"bot|crawl|spider|slurp|scrape|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|"
+    r"facebookexternalhit|meta-externalagent|Applebot|PetalBot|Bytespider|GPTBot|ClaudeBot|"
+    r"Claude-Web|anthropic-ai|OAI-SearchBot|CCBot|Amazonbot|SemrushBot|AhrefsBot|DotBot|"
+    r"MJ12bot|DataForSeo|python-requests|Go-http-client|node-fetch|axios|libwww|curl/|wget|"
+    r"Scrapy|HeadlessChrome|PhantomJS"
+)
+_DEFAULT_BOT_ORG = (
+    r"googlebot|google llc|google cloud|meta platforms|facebook|amazon|amazonaws|aws|"
+    r"microsoft|azure|openai|anthropic|bytedance|censys|shodan|internet.?archive|"
+    r"digitalocean|linode|hetzner|ovh|scaleway"
+)
+
 
 def _sql_str(s) -> str:
     """A single-quoted SQL string literal with embedded quotes doubled (raw-SQL endpoint)."""
@@ -80,15 +100,35 @@ def _sanitize_q(v, maxlen: int = 64) -> str:
     return re.sub(r"[^A-Za-z0-9@.\-: ]", "", str(v or ""))[:maxlen].strip()
 
 
+def _clean_ips(seq) -> list:
+    """Keep only plausible IP literals (digits, dots, colons, hex) — belt-and-braces before
+    they are single-quoted into SQL. Blanks/garbage dropped."""
+    out = []
+    for v in (seq or []):
+        s = re.sub(r"[^0-9a-fA-F.:]", "", str(v or ""))
+        if s:
+            out.append(s)
+    return out
+
+
 def _load_exclusions() -> dict:
-    """Read the self-exclusion config. Missing/malformed → empty (nothing hidden)."""
+    """Read the analytics-filter config. Missing/malformed → empty (nothing hidden/relabelled).
+
+    Keys: emails[], locations[{city,region,country_code}], ips[] (operator self-exclusion);
+    bots{ips[],ua_pattern,org_pattern} (crawler filter — patterns EXTEND the baked-in defaults);
+    geo_overrides[{ip_prefix,city,region,country_code,country}] (display relabel by IP prefix)."""
+    empty = {"emails": [], "locations": [], "ips": [], "bots": {}, "geo_overrides": []}
     try:
         cfg = json.loads(_EXCL_PATH.read_text())
     except Exception:  # noqa: BLE001 — never break analytics on a bad config file
-        return {"emails": [], "locations": []}
+        return empty
     emails = [str(e).strip().lower() for e in (cfg.get("emails") or []) if str(e).strip()]
     locations = [l for l in (cfg.get("locations") or []) if isinstance(l, dict)]
-    return {"emails": emails, "locations": locations}
+    ips = _clean_ips(cfg.get("ips"))
+    bots = cfg.get("bots") if isinstance(cfg.get("bots"), dict) else {}
+    geo = [o for o in (cfg.get("geo_overrides") or [])
+           if isinstance(o, dict) and str(o.get("ip_prefix") or "").strip()]
+    return {"emails": emails, "locations": locations, "ips": ips, "bots": bots, "geo_overrides": geo}
 
 
 def _excluded_cte() -> str:
@@ -115,12 +155,15 @@ def _excluded_cte() -> str:
             preds.append("(" + " and ".join(terms) + ")")
     geo_body = (f"select ip from public.ip_geo g where {' or '.join(preds)}"
                 if preds else "select ip from public.ip_geo where false")
+    ips_body = (f"select unnest(array[{','.join(_sql_str(i) for i in cfg['ips'])}]::text[]) as ip"
+                if cfg["ips"] else "select null::text as ip where false")
     return (
         f"excl_users as ({users_body}), "
         f"excl_geo_ips as ({geo_body}), "
+        f"excl_ips as ({ips_body}), "
         "excl_seed as (select distinct e.visitor_id from public.analytics_events e "
         "  where e.visitor_id is not null and (e.user_id in (select id from excl_users) "
-        "  or e.ip in (select ip from excl_geo_ips))), "
+        "  or e.ip in (select ip from excl_geo_ips) or e.ip in (select ip from excl_ips))), "
         "excl_link as (select distinct e2.visitor_id from public.analytics_events e2 "
         "  join (select distinct fp, ip from public.analytics_events "
         "        where visitor_id in (select visitor_id from excl_seed)) k "
@@ -132,8 +175,38 @@ def _excluded_cte() -> str:
     )
 
 
+def _bot_cte() -> str:
+    """CTE bodies (bot_ips, bots) — the visitor_ids that look like crawlers/automation.
+    Signals: config bot IPs, a bot user-agent, a datacenter-but-not-VPN IP, or a known
+    crawler network org. Patterns come from the baked-in defaults, EXTENDED by config."""
+    cfg = _load_exclusions()
+    bots_cfg = cfg["bots"]
+    ua = _DEFAULT_BOT_UA + (f"|{bots_cfg['ua_pattern']}" if bots_cfg.get("ua_pattern") else "")
+    org = _DEFAULT_BOT_ORG + (f"|{bots_cfg['org_pattern']}" if bots_cfg.get("org_pattern") else "")
+    bot_ips = _clean_ips(bots_cfg.get("ips"))
+    ips_body = (f"select unnest(array[{','.join(_sql_str(i) for i in bot_ips)}]::text[]) as ip"
+                if bot_ips else "select null::text as ip where false")
+    # A prefix the operator manually relabelled (geo_overrides) is a curated REAL user —
+    # never let the datacenter/org heuristic auto-flag it as a bot (e.g. a residential-VPN
+    # exit read as datacenter).
+    keep = [str(o.get("ip_prefix")) for o in cfg["geo_overrides"] if o.get("ip_prefix")]
+    keep_clause = (" and not (" + " or ".join(f"e.ip like {_sql_str(p + '%')}" for p in keep) + ")"
+                   if keep else "")
+    return (
+        f"bot_ips as ({ips_body}), "
+        "bots as (select distinct e.visitor_id from public.analytics_events e "
+        "  left join public.ip_geo g on g.ip = e.ip "
+        "  where e.visitor_id is not null and ("
+        "    e.ip in (select ip from bot_ips) "
+        f"    or (e.ua is not null and e.ua ~* {_sql_str(ua)}) "
+        "    or (g.is_hosting is true and coalesce(g.is_vpn, false) = false) "
+        f"    or (g.org is not null and g.org ~* {_sql_str(org)}))"
+        f"{keep_clause})"
+    )
+
+
 def _cte(include_ident: bool = False) -> str:
-    """Full `with …` prefix: the excluded-visitor chain, optionally preceded by `ident`."""
+    """Full `with …` prefix: the excluded-visitor + bot chains, optionally preceded by `ident`."""
     parts = []
     if include_ident:
         parts.append(
@@ -141,7 +214,35 @@ def _cte(include_ident: bool = False) -> str:
             "from public.analytics_events where visitor_id is not null and user_id is not null "
             "group by visitor_id having count(distinct user_id) = 1)")
     parts.append(_excluded_cte())
+    parts.append(_bot_cte())
     return "with " + ", ".join(parts) + " "
+
+
+def _not_a_bot(alias: str = "e") -> str:
+    """WHERE fragment that drops crawler/automation cookies. Null visitor_id is KEPT."""
+    col = f"{alias}.visitor_id" if alias else "visitor_id"
+    return f"({col} is null or {col} not in (select visitor_id from bots))"
+
+
+def _apply_geo_overrides(rows, ip_key: str = "ip"):
+    """Relabel the displayed location of rows whose IP starts with a configured prefix
+    (fixes IPs geolocated to the wrong place — e.g. an HK VPN read as Frankfurt). Applied at
+    read time in Python so a single stale ip_geo row can't misfile a whole prefix. Mutates
+    and returns `rows`."""
+    ovr = _load_exclusions()["geo_overrides"]
+    if not ovr or not rows:
+        return rows
+    for r in rows:
+        ip = str(r.get(ip_key) or "")
+        if not ip:
+            continue
+        for o in ovr:
+            if ip.startswith(str(o.get("ip_prefix"))):
+                for fld in ("city", "region", "country_code", "country"):
+                    if o.get(fld):
+                        r[fld] = o[fld]
+                break
+    return rows
 
 
 def _not_excluded(alias: str = "e") -> str:
@@ -221,7 +322,9 @@ def overview(days=7) -> dict:
     d = _days(days)
     def run():
         # 'visitors' counts PEOPLE (canonical identity), not raw cookies. The operator's own
-        # hidden cookies (excluded CTE) are dropped so headline counts match the tables below.
+        # hidden cookies (excluded) AND crawlers (bots) are dropped so the headline counts
+        # reflect real humans and match the tables below.
+        human = f"and {_not_excluded('e')} and {_not_a_bot('e')}"
         win = (_query(_cte(include_ident=True) +
             "select count(*)::int as events, "
             f"{_CANON_VISITORS}, "
@@ -230,23 +333,30 @@ def overview(days=7) -> dict:
             "count(*) filter (where e.type='ticker_view')::int as ticker_views, "
             "count(*) filter (where e.type='search')::int as searches "
             "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{d} days' and {_not_excluded('e')}") or [{}])[0]
+            f"where e.created_at > now() - interval '{d} days' {human}") or [{}])[0]
         alltime = (_query(_cte(include_ident=True) +
             f"select count(*)::int as events, {_CANON_VISITORS} "
             "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where {_not_excluded('e')}") or [{}])[0]
+            f"where {_not_excluded('e')} and {_not_a_bot('e')}") or [{}])[0]
+        # Bots filtered out of the window (shown separately so detection is transparent).
+        bots = (_query(_cte() +
+            "select count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
+            "from public.analytics_events e "
+            f"where e.created_at > now() - interval '{d} days' and {_not_excluded('e')} "
+            "and e.visitor_id in (select visitor_id from bots)") or [{}])[0]
         by_site = _query(_cte(include_ident=True) +
             f"select e.site, count(*)::int as events, {_CANON_VISITORS} "
             "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{d} days' and {_not_excluded('e')} "
+            f"where e.created_at > now() - interval '{d} days' {human} "
             "group by e.site order by events desc") or []
         daily = _query(_cte(include_ident=True) +
             "select to_char(date_trunc('day', e.created_at),'YYYY-MM-DD') as day, "
             f"{_CANON_VISITORS}, count(*)::int as events "
             "from public.analytics_events e left join ident i on i.visitor_id = e.visitor_id "
-            f"where e.created_at > now() - interval '{d} days' and {_not_excluded('e')} "
+            f"where e.created_at > now() - interval '{d} days' {human} "
             "group by 1 order by 1") or []
-        return {"days": d, "window": win, "alltime": alltime, "by_site": by_site, "daily": daily}
+        return {"days": d, "window": win, "alltime": alltime, "bots": bots,
+                "by_site": by_site, "daily": daily}
     return _guard(run)
 
 
@@ -259,7 +369,7 @@ def pages(days=7, limit=25) -> dict:
             "count(distinct visitor_id)::int as visitors, "
             "round(avg(dwell_ms) filter (where dwell_ms is not null))::int as avg_dwell_ms "
             f"from public.analytics_events where created_at > now() - interval '{d} days' "
-            f"and {_not_excluded('')} "
+            f"and {_not_excluded('')} and {_not_a_bot('')} "
             "group by 1,2 order by views desc nulls last "
             f"limit {n}") or []
         return {"days": d, "pages": rows}
@@ -273,49 +383,52 @@ def geo(days=30, limit=200) -> dict:
             "select coalesce(g.country,'(unknown)') as country, g.country_code, "
             "count(distinct e.visitor_id)::int as visitors, count(*)::int as events "
             "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
-            f"where e.created_at > now() - interval '{d} days' and {_not_excluded('e')} "
+            f"where e.created_at > now() - interval '{d} days' and {_not_excluded('e')} and {_not_a_bot('e')} "
             "group by 1,2 order by visitors desc nulls last") or []
         cities = _query(_cte() +
             "select g.city, g.region, g.country_code, g.lat, g.lon, "
             "count(distinct e.visitor_id)::int as visitors "
             "from public.analytics_events e join public.ip_geo g on g.ip = e.ip "
             f"where e.created_at > now() - interval '{d} days' and g.city is not null "
-            f"and {_not_excluded('e')} "
+            f"and {_not_excluded('e')} and {_not_a_bot('e')} "
             "group by 1,2,3,4,5 order by visitors desc "
             f"limit {n}") or []
         return {"days": d, "countries": countries, "cities": cities}
     return _guard(run)
 
 
-def sessions(limit=100, q="") -> dict:
+def sessions(limit=100, q="", include_bots=False) -> dict:
     n = _limit(limit, 100, 2000)
     qq = _sanitize_q(q)
-    # Free-text filter (visitor id / IP / site / city / region / country). Applied AFTER the
-    # geo join and BEFORE the limit so it searches the full history, not just the newest n.
-    where = ""
+    # Filter clauses, applied AFTER the geo join and BEFORE the limit so they see full history.
+    conds = []
     if qq:
         cols = ("s.visitor_id", "s.ip", "s.site", "g.city", "g.region", "g.country_code")
-        where = "where (" + " or ".join(f"{c} ilike '%{qq}%'" for c in cols) + ") "
+        conds.append("(" + " or ".join(f"{c} ilike '%{qq}%'" for c in cols) + ")")
+    if not include_bots:
+        conds.append("s.is_bot = 0")          # crawlers hidden unless explicitly revealed
+    where = ("where " + " and ".join(conds) + " ") if conds else ""
     def run():
         rows = _query(_cte() +
             "select s.session_id, s.visitor_id, s.site, s.events, s.pages, "
             "to_char(s.started,'YYYY-MM-DD HH24:MI') as started, "
             "round(extract(epoch from (s.ended - s.started)))::int as duration_s, "
-            "s.ip, g.city, g.region, g.country_code "
+            "s.ip, s.is_bot, g.city, g.region, g.country_code "
             "from (select session_id, max(visitor_id) as visitor_id, max(site) as site, "
             "  count(*)::int as events, count(*) filter (where type in ('pageview','route'))::int as pages, "
             "  min(created_at) as started, max(created_at) as ended, "
-            "  (array_agg(ip order by created_at))[1] as ip "
+            "  (array_agg(ip order by created_at))[1] as ip, "
+            "  max(case when visitor_id in (select visitor_id from bots) then 1 else 0 end) as is_bot "
             f"  from public.analytics_events where session_id is not null and {_not_excluded('')} "
             "  group by session_id) s "
             "left join public.ip_geo g on g.ip = s.ip "
             f"{where}"
             f"order by s.started desc limit {n}") or []
-        return {"sessions": rows, "q": qq}
+        return {"sessions": _apply_geo_overrides(rows), "q": qq, "include_bots": include_bots}
     return _guard(run)
 
 
-def visitors(limit=250, q="") -> dict:
+def visitors(limit=250, q="", include_bots=False) -> dict:
     """One row per PERSON — the 'Frequent Visitors' list.
 
     Identity resolution: any anonymous cookie (mm_aid) that ever appears on a signed-in
@@ -325,12 +438,14 @@ def visitors(limit=250, q="") -> dict:
     Ordered by session count."""
     n = _limit(limit, 250, 2000)
     qq = _sanitize_q(q)
-    # Free-text filter (email / visitor id / IP / city / region / country). Applied AFTER the
-    # user+geo joins and BEFORE the limit so it searches the whole roster, not just the top n.
-    where = ""
+    # Filters, applied AFTER the user+geo joins and BEFORE the limit so they see the whole roster.
+    conds = []
     if qq:
         cols = ("u.email", "v.canon", "v.last_ip", "g.city", "g.region", "g.country", "g.country_code")
-        where = "where (" + " or ".join(f"{c} ilike '%{qq}%'" for c in cols) + ") "
+        conds.append("(" + " or ".join(f"{c} ilike '%{qq}%'" for c in cols) + ")")
+    if not include_bots:
+        conds.append("v.is_bot = 0")           # crawlers hidden unless explicitly revealed
+    where = ("where " + " and ".join(conds) + " ") if conds else ""
     def run():
         rows = _query(
             # ident: each mm_aid -> the user uuid it belongs to (if ever authenticated).
@@ -342,7 +457,7 @@ def visitors(limit=250, q="") -> dict:
             "  from public.analytics_events "
             "  where visitor_id is not null and user_id is not null "
             "  group by visitor_id having count(distinct user_id) = 1"
-            "), " + _excluded_cte() +
+            "), " + _excluded_cte() + ", " + _bot_cte() +
             # ev: every (non-hidden) event tagged with its canonical identity (uid if known, else mm_aid)
             ", ev as ("
             "  select e.session_id, e.ip, e.created_at, e.visitor_id, i.uid, "
@@ -352,7 +467,7 @@ def visitors(limit=250, q="") -> dict:
             f"  where e.visitor_id is not null and {_not_excluded('e')}"
             ") "
             "select v.canon as visitor_id, (v.uid is not null) as is_user, u.email, "
-            "  v.events, v.sessions, v.identities, v.ips, v.last_ip, "
+            "  v.events, v.sessions, v.identities, v.ips, v.last_ip, v.is_bot, "
             "  to_char(v.first_seen,'YYYY-MM-DD HH24:MI') as first_seen, "
             "  to_char(v.last_seen,'YYYY-MM-DD HH24:MI') as last_seen, "
             "  g.city, g.region, g.country, g.country_code, g.is_vpn "
@@ -360,13 +475,14 @@ def visitors(limit=250, q="") -> dict:
             "  count(distinct session_id)::int as sessions, "
             "  count(distinct visitor_id)::int as identities, count(distinct ip)::int as ips, "
             "  min(created_at) as first_seen, max(created_at) as last_seen, "
-            "  (array_agg(ip order by created_at desc))[1] as last_ip "
+            "  (array_agg(ip order by created_at desc))[1] as last_ip, "
+            "  max(case when visitor_id in (select visitor_id from bots) then 1 else 0 end) as is_bot "
             "  from ev group by canon) v "
             "left join auth.users u on u.id::text = v.uid "
             "left join public.ip_geo g on g.ip = v.last_ip "
             f"{where}"
             f"order by v.sessions desc, v.last_seen desc limit {n}") or []
-        return {"visitors": rows, "q": qq}
+        return {"visitors": _apply_geo_overrides(rows, "last_ip"), "q": qq, "include_bots": include_bots}
     return _guard(run)
 
 
@@ -392,10 +508,10 @@ def flow(days=7, limit=40) -> dict:
     d, n = _days(days), _limit(limit, 40, 200)
     def run():
         rows = _query(
-            "with " + _excluded_cte() + ", ev as (select session_id, path, "
+            "with " + _excluded_cte() + ", " + _bot_cte() + ", ev as (select session_id, path, "
             "  lag(path) over (partition by session_id order by id) as prev "
             "  from public.analytics_events "
-            f"  where type in ('pageview','route') and path is not null and {_not_excluded('')} "
+            f"  where type in ('pageview','route') and path is not null and {_not_excluded('')} and {_not_a_bot('')} "
             f"    and created_at > now() - interval '{d} days') "
             "select prev as from_path, path as to_path, count(*)::int as n "
             "from ev where prev is not null and prev <> path "
@@ -408,22 +524,23 @@ def flow(days=7, limit=40) -> dict:
 def terminal(days=7, limit=25) -> dict:
     d, n = _days(days), _limit(limit, 25)
     def run():
+        no_bot_search = "(anon_id is null or anon_id not in (select visitor_id from bots))"
         searches = _query(_cte() +
             "select symbol as ticker, count(*)::int as searches, "
             "count(distinct coalesce(user_id::text, anon_id, ip))::int as visitors "
             f"from public.search_events where created_at > now() - interval '{d} days' "
-            f"and {_not_excluded_search()} "
+            f"and {_not_excluded_search()} and {no_bot_search} "
             f"group by 1 order by searches desc limit {n}") or []
         views = _query(_cte() +
             "select ticker, count(*)::int as views, count(distinct visitor_id)::int as visitors "
             "from public.analytics_events where type='ticker_view' and ticker is not null "
-            f"and created_at > now() - interval '{d} days' and {_not_excluded('')} "
+            f"and created_at > now() - interval '{d} days' and {_not_excluded('')} and {_not_a_bot('')} "
             f"group by 1 order by views desc limit {n}") or []
         totals = (_query(_cte() +
             "select (select count(*)::int from public.search_events "
-            f"  where created_at > now() - interval '{d} days' and {_not_excluded_search()}) as search_total, "
+            f"  where created_at > now() - interval '{d} days' and {_not_excluded_search()} and {no_bot_search}) as search_total, "
             "(select count(*)::int from public.analytics_events where type='ticker_view' "
-            f"  and created_at > now() - interval '{d} days' and {_not_excluded('')}) as view_total") or [{}])[0]
+            f"  and created_at > now() - interval '{d} days' and {_not_excluded('')} and {_not_a_bot('')}) as view_total") or [{}])[0]
         return {"days": d, "top_searches": searches, "top_views": views, "totals": totals}
     return _guard(run)
 
@@ -457,11 +574,11 @@ def visitor(visitor_id: str) -> dict:
             f"from public.analytics_events where {inaids}") or [{}])[0]
         er = _query(f"select email from auth.users where id::text = '{v}'") or []
         email = er[0].get("email") if er else None
-        ips = _query(cte +
+        ips = _apply_geo_overrides(_query(cte +
             "select e.ip, g.city, g.region, g.country_code, g.asn, g.org, "
             "g.is_vpn, g.is_proxy, g.is_hosting, count(*)::int as events "
             "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
-            f"where e.{inaids} group by 1,2,3,4,5,6,7,8,9 order by events desc") or []
+            f"where e.{inaids} group by 1,2,3,4,5,6,7,8,9 order by events desc") or [])
         # OTHER anon visitors sharing a fingerprint or IP with this person (not yet merged by login)
         linked = _query(cte +
             "select e2.visitor_id, count(*)::int as shared_events, "
@@ -501,13 +618,13 @@ def realtime() -> dict:
             "select count(distinct visitor_id)::int as visitors, "
             "count(distinct session_id)::int as sessions, count(*)::int as events "
             "from public.analytics_events where created_at > now() - interval '5 minutes' "
-            f"and {_not_excluded('')}") or [{}])[0]
-        recent = _query(_cte() +
-            "select e.type, e.site, coalesce(e.path,'') as path, e.ticker, "
+            f"and {_not_excluded('')} and {_not_a_bot('')}") or [{}])[0]
+        recent = _apply_geo_overrides(_query(_cte() +
+            "select e.type, e.site, coalesce(e.path,'') as path, e.ticker, e.ip, "
             "to_char(e.created_at,'HH24:MI:SS') as t, g.city, g.country_code "
             "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
-            f"where e.created_at > now() - interval '15 minutes' and {_not_excluded('e')} "
-            "order by e.id desc limit 30") or []
+            f"where e.created_at > now() - interval '15 minutes' and {_not_excluded('e')} and {_not_a_bot('e')} "
+            "order by e.id desc limit 30") or [])
         return {"active": now, "recent": recent}
     return _guard(run)
 

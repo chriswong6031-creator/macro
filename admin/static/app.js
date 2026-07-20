@@ -997,7 +997,7 @@ RENDER.vector = async () => {
    Reads our own analytics_events / search_events / ip_geo via /api/analytics/fp/*.
    Sub-tabs lazy-load each panel; Umami/GA4 remain as a third-party cross-check.
    Session replay + visitor identity are hash sub-pages (#/session/… , #/visitor/…). */
-let AN = { tab: "overview", days: 7, tbl: { visitors: { q: "", rows: 250 }, sessions: { q: "", rows: 100 } } };
+let AN = { tab: "overview", days: 7, tbl: { visitors: { q: "", rows: 250, bots: false }, sessions: { q: "", rows: 100, bots: false } } };
 let AN_QTIMER = null;
 const AN_TABS = [["overview", "Overview"], ["visitors", "Visitors"], ["sessions", "Sessions"], ["pages", "Pages"], ["geo", "Map"], ["flow", "Flow"], ["terminal", "Terminal"]];
 const AN_RENDER = {};
@@ -1073,11 +1073,11 @@ async function anUmamiStrip() {
 AN_RENDER.overview = async () => {
   const d = await api(`/api/analytics/fp/overview?days=${AN.days}`);
   const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
-  const w = d.window || {}, at = d.alltime || {}, daily = d.daily || [];
+  const w = d.window || {}, at = d.alltime || {}, daily = d.daily || [], bots = d.bots || {};
   const maxV = Math.max(1, ...daily.map(x => x.visitors));
   b.innerHTML = `
     <div class="grid">
-      ${card(`Visitors (${d.days}d)`, `<div class="big">${fmtNum(w.visitors)}</div><div class="sub">${fmtNum(at.visitors)} all-time</div>`)}
+      ${card(`Visitors (${d.days}d)`, `<div class="big">${fmtNum(w.visitors)}</div><div class="sub">${fmtNum(at.visitors)} all-time · humans only${bots.visitors ? ` · ${fmtNum(bots.visitors)} bots hidden` : ""}</div>`)}
       ${card(`Sessions (${d.days}d)`, `<div class="big">${fmtNum(w.sessions)}</div><div class="sub">${fmtNum(w.events)} events</div>`)}
       ${card(`Pageviews (${d.days}d)`, `<div class="big">${fmtNum(w.pageviews)}</div><div class="sub">${fmtNum(w.ticker_views)} ticker views</div>`)}
       ${card(`Searches (${d.days}d)`, `<div class="big">${fmtNum(w.searches)}</div><div class="sub">tickers searched</div>`)}
@@ -1123,34 +1123,37 @@ function anTableBar(kind) {
   return `<div class="an-tbar">
     <input id="anQ" class="an-q" type="search" placeholder="${ph}" value="${esc(st.q)}" autocomplete="off" spellcheck="false">
     <select id="anRows" class="an-rows" title="max rows loaded">${opts}</select>
+    <label class="an-botsy" title="crawlers/bots are hidden by default"><input type="checkbox" id="anBots"${st.bots ? " checked" : ""}> show bots</label>
     <span class="an-spacer"></span>
     <span class="sub"><span class="cnt" id="anTblCnt">…</span> shown</span>
   </div>`;
 }
 function anWireTableBar(kind) {
   const st = AN.tbl[kind];
-  const qi = $("#anQ"), rs = $("#anRows");
+  const qi = $("#anQ"), rs = $("#anRows"), bo = $("#anBots");
   if (qi) qi.oninput = () => { st.q = qi.value; clearTimeout(AN_QTIMER); AN_QTIMER = setTimeout(() => anLoadTable(kind), 300); };
   if (rs) rs.onchange = () => { st.rows = parseInt(rs.value, 10) || st.rows; anLoadTable(kind); };
+  if (bo) bo.onchange = () => { st.bots = bo.checked; anLoadTable(kind); };
 }
 async function anLoadTable(kind) {
   const st = AN.tbl[kind];
   const host = $("#anTbl"); if (!host) return;
   host.setAttribute("aria-busy", "true");
-  const d = await api(`/api/analytics/fp/${kind}?limit=${st.rows}&q=${encodeURIComponent(st.q || "")}`);
+  const d = await api(`/api/analytics/fp/${kind}?limit=${st.rows}&q=${encodeURIComponent(st.q || "")}${st.bots ? "&bots=1" : ""}`);
   if ($("#anTbl") !== host) return;               // tab switched mid-fetch — drop stale result
   if (!d.ok) { host.innerHTML = anNotReady(d); return; }
   const rows = kind === "visitors" ? (d.visitors || []) : (d.sessions || []);
   const cnt = $("#anTblCnt");
-  if (cnt) cnt.textContent = fmtNum(rows.length) + (rows.length >= st.rows ? "+" : "") + (st.q ? " match" : "");
+  if (cnt) cnt.textContent = fmtNum(rows.length) + (rows.length >= st.rows ? "+" : "") + (st.q ? " match" : "") + (st.bots ? " · bots shown" : "");
   host.innerHTML = (kind === "visitors" ? anVisitorsTable : anSessionsTable)(rows, st.q);
   host.removeAttribute("aria-busy");
 }
+const AN_BOT_PILL = '<span class="statpill s-mut" title="detected crawler/automation">bot</span>';
 function anSessionsTable(rows, q) {
   const empty = q ? "no sessions match this filter" : "no sessions yet";
   return `<table><thead><tr><th>Started</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
     ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
-      <td><a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a></td>
+      <td><a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a>${s.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(s.ip || "—")}</td>
       <td class="sub">${esc(s.city || "—")}${s.region ? ", " + esc(s.region) : ""}${s.country_code ? " · " + esc(s.country_code) : ""}</td>
       <td class="sub">${esc(s.site || "")}</td>
@@ -1166,7 +1169,7 @@ function anVisitorsTable(rows, q) {
       <td>${v.is_user
         ? `<a href="#/visitor/${encodeURIComponent(v.visitor_id || "")}"><b>${esc(v.email || "registered user")}</b></a> <span class="statpill s-ok">registered</span>`
         : `<a class="mono" href="#/visitor/${encodeURIComponent(v.visitor_id || "")}">${esc((v.visitor_id || "—").slice(0, 10))}…</a>`
-      }${(v.identities > 1) ? ` <span class="statpill s-mut">${fmtNum(v.identities)} devices</span>` : ""}</td>
+      }${(v.identities > 1) ? ` <span class="statpill s-mut">${fmtNum(v.identities)} devices</span>` : ""}${v.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(v.last_ip || "—")}</td>
       <td>${esc(v.city || "—")}${v.region ? ", " + esc(v.region) : ""}${v.country_code ? " · " + esc(v.country_code) : ""}</td>
       <td>${v.is_vpn ? '<span class="statpill s-warn">VPN</span>' : '<span class="sub">—</span>'}</td>
