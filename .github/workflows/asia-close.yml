@@ -599,7 +599,9 @@ jobs:
           fi
           exit 0
       - name: inject data-base shim into CN/HK pages (site-wide, no-op while DATA_BASE empty)
-        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+        run: |
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
       - name: commit engine outputs
         if: always()
         run: |

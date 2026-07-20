@@ -401,7 +401,9 @@ jobs:
           exit 1
       - name: inject data-base shim
         if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
-        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+        run: |
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
 
       # ── (h) PROVISIONAL STAMP ARTIFACT ──────────────────────────────────────────────
       # Write site/live/closingbell_stamp.json: {as_of, provisional: true, lane: "closingbell"}.
