@@ -1892,6 +1892,7 @@ jobs:
           # when window.DATA_BASE is set; no-op while empty. Last page-mutating pass so no
           # later builder strips the tag. See scripts/inject_data_base.py.
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "css externalize skipped (additive)"
           # cache-bust (?v=<hash>) + defer local js/css so the shared bundle caches
           # immutable and stops re-revalidating on every nav. See scripts/optimize_assets.py.
           python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"

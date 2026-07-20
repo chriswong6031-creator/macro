@@ -760,6 +760,8 @@ lanes:
         module: scripts.inject_wh_banner
       - id: inject_data_base
         module: scripts.inject_data_base
+      - id: externalize_css
+        module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
       - id: oracle_nightly
@@ -1421,6 +1423,8 @@ lanes:
           CN_LANE=asia required for all ledger/data writes.
       - id: inject_data_base
         module: scripts.inject_data_base
+      - id: externalize_css
+        module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
       - id: publish_r2_asia
@@ -1552,6 +1556,8 @@ lanes:
           non-fatal data-base shim. Library builds (build_china_library, build_hk_library,
           build_canada_library, build_intl_library) run in a background loop via shell
           variable expansion; parser cannot extract them. Intentionally omitted.
+      - id: externalize_css
+        module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
       - id: check_template_site_sync_fix
@@ -1665,6 +1671,8 @@ lanes:
         note: >
           non-fatal data-base shim. Library builds run in background loops via shell
           variable expansion; parser cannot extract them. Intentionally omitted.
+      - id: externalize_css
+        module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
       - id: check_template_site_sync_fix
@@ -1818,6 +1826,8 @@ lanes:
           Library builds (build_china_library, build_hk_library, build_canada_library,
           build_intl_library) run in a shell loop via variable expansion after inject_data_base;
           parser cannot extract them. Intentionally omitted.
+      - id: externalize_css
+        module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
 

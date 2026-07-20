@@ -90,6 +90,48 @@ def optimize_assets_text(text: str, hash_for: Callable[[str], Optional[str]]) ->
     return _OPEN_TAG_RE.sub(_rewrite, text)
 
 
+# --- inline CSS externalization ----------------------------------------------
+# A post-render sweep (scripts/externalize_css.py) lifts each large inline
+# <style> block into a content-hashed external stylesheet linked IN PLACE, so the
+# design-system + section CSS caches `immutable` across daily re-renders instead
+# of re-shipping inside every 60s-TTL HTML page. In-place <link> (not hoisted)
+# preserves BOTH the cascade (rule source order) and the first-paint profile
+# (only the pre-existing <head> block blocks paint). Byte-for-byte CSS → no
+# render change. Reuses the ?v= immutable rule from optimize_assets — no Caddy
+# change. Tiny blocks stay inline (a request isn't worth a few hundred bytes).
+_STYLE_BLOCK_RE = re.compile(r"<style\b([^>]*)>(.*?)</style>", re.IGNORECASE | re.DOTALL)
+_MEDIA_ATTR_RE = re.compile(r'\bmedia\s*=\s*"([^"]*)"', re.IGNORECASE)
+
+
+def externalize_css_text(
+    text: str, make_href: Callable[[str, int, Optional[str]], Optional[str]]
+) -> str:
+    """Replace each ``<style>`` block with a ``<link>`` to an external stylesheet.
+
+    ``make_href(css, index, media)`` writes the stylesheet (or dedupes to an
+    existing one) and returns the ``<link href>`` — or ``None`` to leave that
+    block inline (below a size threshold, or one we choose not to touch).
+    ``index`` is the block's 1-based position on the page; ``media`` is its
+    ``media`` attribute if any (carried onto the link). The CSS crosses over
+    byte-for-byte, so rendering is unchanged. Idempotent: a page already free of
+    ``<style>`` blocks is returned untouched.
+    """
+    counter = [0]
+
+    def _repl(m: "re.Match[str]") -> str:
+        attrs, css = m.group(1), m.group(2)
+        counter[0] += 1
+        media_m = _MEDIA_ATTR_RE.search(attrs)
+        media = media_m.group(1) if media_m else None
+        href = make_href(css, counter[0], media)
+        if not href:
+            return m.group(0)  # left inline
+        media_attr = f' media="{media}"' if media else ""
+        return f'<link rel="stylesheet"{media_attr} href="{href}">'
+
+    return _STYLE_BLOCK_RE.sub(_repl, text)
+
+
 def _tag(prefix: str) -> str:
     return f'<script {DBASE_MARKER} src="{prefix}data_base.js"></script>'
 
