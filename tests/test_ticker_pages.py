@@ -1584,6 +1584,65 @@ class TestDeepDialogs:
         assert "indexOf('dlg-')===0" in html  # #dlg- hash deep-link wired
 
 
+class TestDeepBuilders:
+    """M2 coverage: deep builders never raise, degrade to None, and hold units."""
+
+    def _aapl_blob(self):
+        import json
+        from pathlib import Path as _P
+        blob_path = _P(__file__).resolve().parent.parent / "site" / "stockdata" / "AAPL.json"
+        if not blob_path.exists():
+            pytest.skip("no local AAPL blob (gitignored fixture)")
+        return json.loads(blob_path.read_text())
+
+    def test_deep_none_and_sparse_inputs(self):
+        from scripts.build_ticker_pages import _build_deep
+        assert _build_deep(None, {}, {}, "X", None, None, None, "", "") is None
+        out = _build_deep({}, {}, {}, "X", None, None, None, "", "")
+        assert out is None or isinstance(out.get("dialogs"), list)
+
+    def test_deep_malformed_fields_do_not_raise(self):
+        from scripts.build_ticker_pages import _build_deep
+        blob = {
+            "alpha": {"rs": "not-a-number", "sector_rank": None},
+            "revisions": {"n_analysts": "many", "breadth": {}},
+            "smart_money": {"holders": ["not-a-dict", {"fund_name": "F", "action": "trimming"}]},
+            "fund_flows": [{"direction": "mystery-vocab", "fund_name": "X"}, "junk"],
+            "financials": {"multiyear": {"years": [2024], "revenue": ["oops"]}},
+        }
+        try:
+            out = _build_deep(blob, {}, {}, "X", None, None, None, "", "")
+        except Exception as e:  # noqa: BLE001
+            pytest.fail(f"_build_deep raised on malformed blob: {e}")
+        # unknown fund-flow vocab must be omitted, never echoed into ZH
+        if out:
+            import json as _j
+            assert "mystery-vocab" not in _j.dumps(out.get("dialogs"), ensure_ascii=False)
+
+    def test_deep_real_blob_units(self):
+        import json as _j
+        from scripts.build_ticker_pages import _build_deep
+        blob = self._aapl_blob()
+        out = _build_deep(blob, {}, {"tech_screener": {}}, "AAPL", None, None, None, "", "")
+        assert out and out["dialogs"]
+        dump = _j.dumps(out["dialogs"], ensure_ascii=False)
+        # M1: debt/assets stays in its native percent (AAPL ~20%, never ~2000%)
+        fin = next((d for d in out["dialogs"] if d["id"] == "financials"), None)
+        if fin:
+            for pnl in fin["panels"]:
+                for r in pnl.get("rows", []):
+                    if isinstance(r, dict) and r.get("k_en") == "Debt / assets":
+                        val = float(r["v"].replace("%", ""))
+                        assert 0 <= val <= 100, f"debt/assets unit bug: {r['v']}"
+        # H1: no bare-EN direction words inside ZH spans (spot the known engine vocab)
+        own = next((d for d in out["dialogs"] if d["id"] == "ownership"), None)
+        if own:
+            flows = next((p for p in own["panels"] if p.get("title_en") == "Recent fund flows"), None)
+            if flows:
+                for r in flows["rows"]:
+                    assert r.get("v_zh") and not r["v_zh"].isascii(), f"ZH leak in fund flow: {r}"
+
+
 class TestMachineScrub:
     """Operator order: no machine reads in Tier-1 stance copy."""
 
@@ -1613,7 +1672,7 @@ class TestMachineScrub:
         from scripts.build_ticker_pages import _scrub_machine_zh
         out = _scrub_machine_zh("低点于约 4 天前形成 @ 275.15，且价格已重新站上（日线RSI 72）10 日均线。")
         assert "RSI" not in out
-        assert "价位 275.15" in out
+        assert "价位275.15" in out
 
 
 class TestLadderBuilder:

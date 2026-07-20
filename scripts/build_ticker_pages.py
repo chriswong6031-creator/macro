@@ -456,7 +456,7 @@ def _scrub_machine_zh(s: str) -> str:
         if out == s:
             break
         s = out
-    s = re.sub(r"\s*@ ?(\d)", r"，价位 \1", s)
+    s = re.sub(r"\s*@ ?(\d)", r"，价位\1", s)
     s = re.sub(r"（\s*）|\(\s*\)", "", s)
     s = re.sub(r"\s{2,}", " ", s)
     return s.strip()
@@ -947,7 +947,10 @@ def _deep_stats(blob: dict, performance: list | None, stats: dict | None) -> dic
         v = alpha.get(key)
         if v is None:
             continue
-        f = float(v)
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            continue
         word_en = "stronger than most" if f >= 70 else ("weaker than most" if f <= 30 else "middle of the pack")
         word_zh = "强于多数" if f >= 70 else ("弱于多数" if f <= 30 else "居中")
         rs_rows.append({"k_en": en, "k_zh": zh, "v": f"{f:.0f}/100 — ", "v_en": word_en, "v_zh": word_zh,
@@ -1012,7 +1015,10 @@ def _deep_financials(blob: dict) -> dict | None:
             cells = [{"en": label_en, "zh": label_zh}]
             for i in range(len(years)):
                 v = arr[i] if i < len(arr) else None
-                cells.append(fmt(v) if v is not None else "—")
+                try:
+                    cells.append(fmt(v) if v is not None else "—")
+                except (TypeError, ValueError):
+                    cells.append("—")
             rows.append(cells)
         _series("revenue", "Revenue", "营业收入", _fmt_bn)
         _series("eps", "EPS", "每股收益", lambda v: f"${float(v):.2f}")
@@ -1042,7 +1048,7 @@ def _deep_financials(blob: dict) -> dict | None:
     qual = []
     for key, en, zh, fmt in (("roe", "Return on equity", "股本回报率", _fmt_pct),
                              ("roa", "Return on assets", "资产回报率", _fmt_pct),
-                             ("debt_to_assets", "Debt / assets", "负债/资产", lambda v: _fmt_pct(float(v) * 100 if abs(float(v)) <= 1.5 else float(v))),
+                             ("debt_to_assets", "Debt / assets", "负债/资产", _fmt_pct),
                              ("rev_growth", "Revenue growth", "营收增速", lambda v: _fmt_pct(v, 1, sign=True)),
                              ("ni_growth", "Profit growth", "利润增速", lambda v: _fmt_pct(v, 1, sign=True)),
                              ("asset_growth", "Asset growth", "资产增速", lambda v: _fmt_pct(v, 1, sign=True))):
@@ -1190,18 +1196,21 @@ def _deep_earnings(blob: dict) -> dict | None:
                        "rows": srows})
 
     rrows = []
-    if rev.get("n_analysts"):
-        rrows.append({"k_en": "Analysts covering", "k_zh": "覆盖分析师", "v": f"{int(float(rev['n_analysts']))}", "v_en": "", "v_zh": ""})
-    if rev.get("breadth") is not None:
+    try:
+        if rev.get("n_analysts"):
+            rrows.append({"k_en": "Analysts covering", "k_zh": "覆盖分析师", "v": f"{int(float(rev['n_analysts']))}", "v_en": "", "v_zh": ""})
+    except (TypeError, ValueError):
+        pass
+    if isinstance(rev.get("breadth"), (int, float)):
         b = float(rev["breadth"])
         word_en = "mostly raising" if b > 0.6 else ("mostly cutting" if b < 0.4 else "mixed")
         word_zh = "多数上调" if b > 0.6 else ("多数下调" if b < 0.4 else "分歧")
         rrows.append({"k_en": "Estimate direction", "k_zh": "预期调整方向", "v": "", "v_en": word_en, "v_zh": word_zh,
                       "cls": "pos" if b > 0.6 else ("neg" if b < 0.4 else "")})
-    if rev.get("est_chg_90d") is not None:
+    if isinstance(rev.get("est_chg_90d"), (int, float)):
         rrows.append({"k_en": "Estimate change, 90 days", "k_zh": "预期变化（90天）",
                       "v": _fmt_pct(rev["est_chg_90d"], 1, sign=True), "v_en": "", "v_zh": ""})
-    if rev.get("net_up_30d") is not None:
+    if isinstance(rev.get("net_up_30d"), (int, float)):
         rrows.append({"k_en": "Net upgrades, 30 days", "k_zh": "净上调（30天）",
                       "v": f"{float(rev['net_up_30d']):+.0f}", "v_en": "", "v_zh": ""})
     if rrows:
@@ -1253,7 +1262,7 @@ def _deep_options(blob: dict, gex_v1: dict | None) -> dict | None:
     if ng is not None:
         try:
             f = float(ng)
-            lv.append({"k_en": "Net dealer gamma", "k_zh": "做市商净伽玛", "v": f"${f:+.1f}B", "v_en": "", "v_zh": "",
+            lv.append({"k_en": "Net dealer gamma", "k_zh": "做市商净伽玛", "v": f"{'+' if f >= 0 else '-'}${abs(f):.1f}B", "v_en": "", "v_zh": "",
                        "cls": "pos" if f > 0 else "neg"})
         except (TypeError, ValueError):
             pass
@@ -1298,6 +1307,8 @@ def _deep_ownership(blob: dict) -> dict | None:
 
     hrows = []
     for h in (sm.get("holders") or [])[:15]:
+        if not isinstance(h, dict):
+            continue
         act = _clean_str(h.get("action"))
         act_en = {"new": "New position", "add": "Adding", "trim": "Trimming", "exit": "Exited", "hold": "Holding"}.get(act, act.title() if act else "—")
         act_zh = {"new": "新建仓", "add": "增持", "trim": "减持", "exit": "清仓", "hold": "持有"}.get(act, act or "—")
@@ -1353,10 +1364,16 @@ def _deep_ownership(blob: dict) -> dict | None:
         if not isinstance(f, dict):
             continue
         d = _clean_str(f.get("direction"))
-        d_en = {"in": "flowing in", "out": "flowing out", "buy": "buying", "sell": "selling"}.get(d, d)
-        d_zh = {"in": "流入", "out": "流出", "buy": "买入", "sell": "卖出"}.get(d, d)
+        _DIR = {"in": ("flowing in", "流入"), "out": ("flowing out", "流出"),
+                "buy": ("buying", "买入"), "sell": ("selling", "卖出"),
+                "accumulating": ("accumulating", "持续增持"), "adding": ("adding", "加仓"),
+                "trimming": ("trimming", "减持"), "exiting": ("exiting", "清仓"),
+                "new": ("new position", "新建仓"), "hold": ("holding", "持有")}
+        if d not in _DIR:
+            continue  # unknown engine vocab: omit rather than leak EN into ZH
+        d_en, d_zh = _DIR[d]
         frows.append({"k_en": _clean_str(f.get("fund_name") or f.get("fund")), "k_zh": _clean_str(f.get("fund_name") or f.get("fund")),
-                      "v": "", "v_en": d_en, "v_zh": d_zh, "cls": "pos" if d in ("in", "buy") else ("neg" if d in ("out", "sell") else "")})
+                      "v": "", "v_en": d_en, "v_zh": d_zh, "cls": "pos" if d in ("in", "buy", "accumulating", "adding", "new") else ("neg" if d in ("out", "sell", "trimming", "exiting") else "")})
     if frows:
         panels.append({"kind": "kv", "title_en": "Recent fund flows", "title_zh": "近期基金流向", "rows": frows})
 
@@ -1410,14 +1427,22 @@ def _build_deep(blob: dict | None, per: dict, agg: dict, ticker: str,
     if not blob:
         return None
     ts_row = (agg.get("tech_screener") or {}).get(ticker)
+
+    def _soft(fn, *args):
+        try:
+            return fn(*args)
+        except Exception as e:  # noqa: BLE001 — a broken dialog costs the dialog, never the page
+            log.debug("deep dialog %s failed for %s: %s", getattr(fn, "__name__", "?"), ticker, e)
+            return None
+
     dialogs = [d for d in (
-        _deep_stats(blob, performance, stats),
-        _deep_financials(blob),
-        _deep_technicals(blob, ts_row),
-        _deep_earnings(blob),
-        _deep_options(blob, per.get("gex_v1")),
-        _deep_ownership(blob),
-        _deep_seasonality(monthly, season_this, season_this_zh),
+        _soft(_deep_stats, blob, performance, stats),
+        _soft(_deep_financials, blob),
+        _soft(_deep_technicals, blob, ts_row),
+        _soft(_deep_earnings, blob),
+        _soft(_deep_options, blob, per.get("gex_v1")),
+        _soft(_deep_ownership, blob),
+        _soft(_deep_seasonality, monthly, season_this, season_this_zh),
     ) if d]
     return {"dialogs": dialogs} if dialogs else None
 
@@ -2977,8 +3002,12 @@ def build_page_context(
     profile_extras = _build_profile_extras(blob)
     brief_section = _build_brief(brief)
     factors_section = _build_factors_section(blob)
-    deep = _build_deep(blob, per, agg, ticker, performance, stats,
-                       monthly_data, season_this, season_this_zh)
+    try:
+        deep = _build_deep(blob, per, agg, ticker, performance, stats,
+                           monthly_data, season_this, season_this_zh)
+    except Exception as e:  # noqa: BLE001 — a broken dialog must cost the dialog, not the page
+        log.debug("deep dialogs failed for %s: %s", ticker, e)
+        deep = None
 
     # News section (raw for template)
     news_section: list | None = None
