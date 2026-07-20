@@ -570,6 +570,48 @@ def test_block_bootstrap_stat_diff_ci_degenerate_month_guard():
 
 
 # --------------------------------------------------------------------------- #
+# PSQ-T3b: aggregator=np.mean gives correct stopped FRACTION (not median)      #
+# --------------------------------------------------------------------------- #
+def test_block_bootstrap_stat_diff_ci_aggregator_mean():
+    """H3 uses aggregator=np.mean so stopped_fraction = mean(0/1 flags), not median.
+
+    With 65% of fires stopped (majority → median=1.0, but mean=0.65):
+    C arm: 30% stopped. A arm: 65% stopped. Diff = -0.35 (C better).
+    The CI with aggregator=np.mean should have a negative upper bound (PASS for H3).
+    """
+    fires = []
+    for m in range(1, 30):   # 29 months → above 24-month gate
+        date = _month_date(m)
+        # Arm A (stage 4): 65% stopped → 13 stopped, 7 wins per month.
+        for k in range(7):
+            fires.append(_psq_fire(f"AW_{m}_{k}", date, ret126=0.1, mfe126=0.2, mdd126=-0.03,
+                                   stage=4, ec=None, win=True, stopped=False))
+        for k in range(13):
+            fires.append(_psq_fire(f"AS_{m}_{k}", date, ret126=-0.1, mfe126=0.04, mdd126=-0.18,
+                                   stage=4, ec=None, win=False, stopped=True))
+        # Arm C (stage 2, EC): 30% stopped → 7 wins, 3 stopped per month.
+        for k in range(7):
+            fires.append(_psq_fire(f"CW_{m}_{k}", date, ret126=0.12, mfe126=0.22, mdd126=-0.02,
+                                   stage=2, ec=26.0, win=True, stopped=False))
+        for k in range(3):
+            fires.append(_psq_fire(f"CS_{m}_{k}", date, ret126=-0.08, mfe126=0.05, mdd126=-0.12,
+                                   stage=2, ec=26.0, win=False, stopped=True))
+
+    bd = psf.block_bootstrap_stat_diff_ci(
+        fires, "C", "A", psf._stat_stopped_flag, "stopped_fraction_test",
+        n_boot=500, seed=42, aggregator=np.mean
+    )
+    assert bd["no_verdict"] is False
+    # Arm A pools ALL T1/T2 fires (stage-4 + stage-2+EC combined):
+    #   per month: 7 AW + 13 AS + 7 CW + 3 CS = 30 fires; stopped = 13+3 = 16 → 53.3%.
+    # Arm C: 7 CW + 3 CS = 10 fires; stopped = 3 → 30%.
+    # Diff = 0.30 - 0.533 ≈ -0.233 (C lower stopped rate = better).
+    assert bd["diff_point"] == pytest.approx(-7 / 30, abs=0.02)
+    # CI upper bound must be < 0 (C better across all months consistently).
+    assert bd["upper_lt_0"] is True, f"Expected CI upper < 0, got ci95={bd['ci95']}"
+
+
+# --------------------------------------------------------------------------- #
 # PSQ-T4: EA arithmetic correctness (_stat_ea_126)                             #
 # --------------------------------------------------------------------------- #
 def test_psq_ea_arithmetic():

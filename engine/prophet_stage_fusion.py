@@ -727,6 +727,7 @@ def block_bootstrap_stat_diff_ci(
     ec_gate: float = EC_SENT_GATE,
     n_boot: int = PSQ_N_BOOT,
     seed: int = PSQ_SEED,
+    aggregator=None,
 ) -> dict[str, Any]:
     """PSQ §4 — month-block PAIRED bootstrap of a continuous per-fire statistic difference.
 
@@ -736,26 +737,31 @@ def block_bootstrap_stat_diff_ci(
     (the common market factor) is preserved exactly.
 
     Args:
-        fires:     all matured fires (matured_15_126 flag gates membership).
-        arm_hi:    the arm whose stat is subtracted FROM  (e.g. "C").
-        arm_lo:    the arm being subtracted  (e.g. "A").
-        stat_fn:   callable(Fire) -> float | None.  Returns the per-fire statistic value;
-                   None / non-finite values are silently excluded from the month's pool.
-        stat_name: human-readable label for the log / result dict.
-        ec_gate:   EC gate sentinel (mirrors EC_SENT_GATE default).
-        n_boot:    number of bootstrap replicates (PSQ §4: 10,000).
-        seed:      fixed RNG seed (PSQ §4: 20260720).
+        fires:      all matured fires (matured_15_126 flag gates membership).
+        arm_hi:     the arm whose stat is subtracted FROM  (e.g. "C").
+        arm_lo:     the arm being subtracted  (e.g. "A").
+        stat_fn:    callable(Fire) -> float | None.  Returns the per-fire statistic value;
+                    None / non-finite values are silently excluded from the month's pool.
+        stat_name:  human-readable label for the log / result dict.
+        ec_gate:    EC gate sentinel (mirrors EC_SENT_GATE default).
+        n_boot:     number of bootstrap replicates (PSQ §4: 10,000).
+        seed:       fixed RNG seed (PSQ §4: 20260720).
+        aggregator: callable(list[float]) -> float to compute arm statistic per replicate.
+                    Defaults to np.median (for H1/H2).  Use np.mean for H3 (STOPPED fraction
+                    per PSQ prereg §4: "median for H1/H2; STOPPED fraction for H3").
 
     Returns dict with keys:
         stat_name, arm_hi, arm_lo,
         n_fires_hi, n_fires_lo,   (matured arm members with non-null stat)
         n_months,                  (union of months present in either arm)
-        point_hi, point_lo, diff_point,  (full-sample arm medians + difference)
+        point_hi, point_lo, diff_point,  (full-sample arm statistics + difference)
         boot_mean, boot_se,
         ci95: [lo, hi],            (2.5 / 97.5 percentile)
         lower_gt_0, upper_lt_0,   (convenience flags for falsifiers)
         no_verdict: bool           (True if n_months < PSQ_MIN_MONTHS)
     """
+    if aggregator is None:
+        aggregator = np.median
     by_month_hi = _month_stat_values(fires, arm_hi, stat_fn, ec_gate)
     by_month_lo = _month_stat_values(fires, arm_lo, stat_fn, ec_gate)
     months = sorted(set(by_month_hi) | set(by_month_lo))
@@ -770,14 +776,15 @@ def block_bootstrap_stat_diff_ci(
 
     vals_hi = _all_vals(by_month_hi)
     vals_lo = _all_vals(by_month_lo)
-    point_hi = float(np.median(vals_hi)) if vals_hi else None
-    point_lo = float(np.median(vals_lo)) if vals_lo else None
+    point_hi = float(aggregator(vals_hi)) if vals_hi else None
+    point_lo = float(aggregator(vals_lo)) if vals_lo else None
     diff_point = (point_hi - point_lo) if (point_hi is not None and point_lo is not None) else None
 
     base: dict[str, Any] = {
         "stat_name": stat_name,
         "arm_hi": arm_hi,
         "arm_lo": arm_lo,
+        "aggregator": getattr(aggregator, "__name__", str(aggregator)),
         "n_fires_hi": len(vals_hi),
         "n_fires_lo": len(vals_lo),
         "n_months": n_months,
@@ -804,7 +811,7 @@ def block_bootstrap_stat_diff_ci(
         pool: list[float] = []
         for j in pick:
             pool.extend(by_month.get(month_arr[j], []))
-        return float(np.median(pool)) if pool else None
+        return float(aggregator(pool)) if pool else None
 
     for i in range(n_boot):
         pick = rng.integers(0, n_months, size=n_months)   # resample WITH replacement
@@ -923,8 +930,11 @@ def psq_falsifier_verdicts(fires: list[Fire], ec_gate: float = EC_SENT_GATE) -> 
     # --- H3: STOPPED fraction C−A (secondary; lower C = better; H3 FAILs if CI UPPER >= 0) ---
     # Sign convention: C_stopped_frac - A_stopped_frac; negative = C better.
     # H3 FAILS iff the CI UPPER bound >= 0 (i.e., cannot rule out C being >= A in stop rate).
+    # Per prereg §4: "STOPPED fraction" = mean of 0/1 flags, NOT median (median of mostly-1
+    # vectors collapses to 1.0 everywhere; fraction = mean is the correct statistic).
     h3_ca = block_bootstrap_stat_diff_ci(fires, "C", "A", _stat_stopped_flag,
-                                          "stopped_fraction", ec_gate)
+                                          "stopped_fraction", ec_gate,
+                                          aggregator=np.mean)
     h3_no_verdict = h3_ca.get("no_verdict", True)
     h3_ci_hi = h3_ca["ci95"][1]
     if h3_no_verdict:
