@@ -1,7 +1,7 @@
 {
   "schema": "stage_context.v1",
   "asof": "2026-07-20",
-  "built": "2026-07-20T04:20:12Z",
+  "built": "2026-07-20T14:25:09Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -55,7 +55,14 @@
       "why_zh": [
         "上升初期 — 已上行 10 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 1.3646,
+      "atr_ext": 0.382,
+      "atr_pct_price": 0.36488,
+      "sata_score": 6,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "PM",
@@ -91,7 +98,14 @@
         "上升初期 — 已上行 10 周",
         "位于 30 周均线之上 — 趋势向好",
         "其他多项验证同样给出强确认"
-      ]
+      ],
+      "atr_14w": 11.932,
+      "atr_ext": 1.705,
+      "atr_pct_price": 0.06183,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 100.0
     },
     {
       "ticker": "LKFN",
@@ -127,7 +141,14 @@
         "上升初期 — 已上行 5 周",
         "位于 30 周均线之上 — 趋势向好",
         "其他多项验证同样给出强确认"
-      ]
+      ],
+      "atr_14w": 3.6426,
+      "atr_ext": 0.939,
+      "atr_pct_price": 0.05811,
+      "sata_score": 6,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 2.3
     },
     {
       "ticker": "SILA",
@@ -161,7 +182,14 @@
       "why_zh": [
         "上升初期 — 已上行 9 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 0.7868,
+      "atr_ext": 5.748,
+      "atr_pct_price": 0.02596,
+      "sata_score": 9,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": null
     },
     {
       "ticker": "KEEL",
@@ -195,7 +223,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 1.1436,
+      "atr_ext": 0.502,
+      "atr_pct_price": 0.28951,
+      "sata_score": 6,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "ZURA",
@@ -229,7 +264,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.7618,
+      "atr_ext": 0.161,
+      "atr_pct_price": 0.13978,
+      "sata_score": 5,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "NWL",
@@ -263,7 +305,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 0.7026,
+      "atr_ext": 1.401,
+      "atr_pct_price": 0.13434,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 85.2
     },
     {
       "ticker": "WYFI",
@@ -297,7 +346,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 8.2137,
+      "atr_ext": 0.47,
+      "atr_pct_price": 0.32659,
+      "sata_score": 5,
+      "sata_change_1w": -3,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
     },
     {
       "ticker": "CBT",
@@ -331,7 +387,14 @@
       "why_zh": [
         "上升初期 — 已上行 10 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 6.2542,
+      "atr_ext": 2.044,
+      "atr_pct_price": 0.06919,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": 85.7
     },
     {
       "ticker": "GIC",
@@ -365,7 +428,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 2.1411,
+      "atr_ext": 1.414,
+      "atr_pct_price": 0.06215,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "NODK",
@@ -399,7 +469,14 @@
       "why_zh": [
         "上升初期 — 已上行 6 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.7684,
+      "atr_ext": 2.675,
+      "atr_pct_price": 0.04829,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": null
     },
     {
       "ticker": "AAL",
@@ -433,7 +510,14 @@
       "why_zh": [
         "上升初期 — 已上行 9 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 1.6943,
+      "atr_ext": 0.707,
+      "atr_pct_price": 0.1131,
+      "sata_score": 5,
+      "sata_change_1w": -3,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 50.0
     },
     {
       "ticker": "EDIT",
@@ -467,7 +551,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 0.6382,
+      "atr_ext": 0.671,
+      "atr_pct_price": 0.21417,
+      "sata_score": 5,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
     },
     {
       "ticker": "KRRO",
@@ -501,7 +592,14 @@
       "why_zh": [
         "上升初期 — 已上行 3 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 2.4325,
+      "atr_ext": 0.182,
+      "atr_pct_price": 0.19857,
+      "sata_score": 4,
+      "sata_change_1w": -2,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 8.9
     },
     {
       "ticker": "AIRJ",
@@ -535,7 +633,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.8414,
+      "atr_ext": 0.048,
+      "atr_pct_price": 0.22496,
+      "sata_score": 4,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
     },
     {
       "ticker": "BSVN",
@@ -569,7 +674,14 @@
       "why_zh": [
         "上升初期 — 已上行 6 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 2.3912,
+      "atr_ext": 3.073,
+      "atr_pct_price": 0.04692,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": null
     },
     {
       "ticker": "FOXF",
@@ -605,7 +717,14 @@
         "上升初期 — 已上行 4 周",
         "位于 30 周均线之上 — 趋势向好",
         "其他多项验证同样给出强确认"
-      ]
+      ],
+      "atr_14w": 1.9763,
+      "atr_ext": 0.668,
+      "atr_pct_price": 0.10391,
+      "sata_score": 5,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 33.3
     },
     {
       "ticker": "TRNS",
@@ -639,7 +758,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 9.6,
+      "atr_ext": 1.209,
+      "atr_pct_price": 0.10922,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "BLZE",
@@ -673,7 +799,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 2.1283,
+      "atr_ext": 3.157,
+      "atr_pct_price": 0.16099,
+      "sata_score": 9,
+      "sata_change_1w": -1,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": 100.0
     },
     {
       "ticker": "EML",
@@ -707,7 +840,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 1.999,
+      "atr_ext": 2.252,
+      "atr_pct_price": 0.07895,
+      "sata_score": 8,
+      "sata_change_1w": -1,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": null
     },
     {
       "ticker": "ONL",
@@ -741,7 +881,14 @@
       "why_zh": [
         "上升初期 — 已上行 10 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.2173,
+      "atr_ext": 0.61,
+      "atr_pct_price": 0.08261,
+      "sata_score": 5,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
     },
     {
       "ticker": "OUST",
@@ -775,7 +922,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 10.1921,
+      "atr_ext": 0.819,
+      "atr_pct_price": 0.27517,
+      "sata_score": 6,
+      "sata_change_1w": -2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 77.8
     },
     {
       "ticker": "PGEN",
@@ -809,7 +963,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.6579,
+      "atr_ext": 0.938,
+      "atr_pct_price": 0.1329,
+      "sata_score": 6,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "WHG",
@@ -843,7 +1004,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 1.6255,
+      "atr_ext": 1.663,
+      "atr_pct_price": 0.0821,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "BV",
@@ -877,7 +1045,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.9899,
+      "atr_ext": 1.625,
+      "atr_pct_price": 0.06818,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 55.6
     },
     {
       "ticker": "DDD",
@@ -911,7 +1086,14 @@
       "why_zh": [
         "上升初期 — 已上行 7 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.5714,
+      "atr_ext": 0.383,
+      "atr_pct_price": 0.21243,
+      "sata_score": 5,
+      "sata_change_1w": -2,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
     },
     {
       "ticker": "GBCI",
@@ -947,7 +1129,14 @@
       "why_zh": [
         "上升初期 — 已上行 9 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 2.6658,
+      "atr_ext": 2.225,
+      "atr_pct_price": 0.04976,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": 34.1
     },
     {
       "ticker": "VOR",
@@ -981,7 +1170,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 2.7,
+      "atr_ext": 1.146,
+      "atr_pct_price": 0.14925,
+      "sata_score": 6,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "EFSI",
@@ -1015,7 +1211,14 @@
       "why_zh": [
         "上升初期 — 已上行 9 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 2.538,
+      "atr_ext": 1.6,
+      "atr_pct_price": 0.05996,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "FRD",
@@ -1049,7 +1252,14 @@
       "why_zh": [
         "上升初期 — 已上行 7 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 3.5969,
+      "atr_ext": 3.18,
+      "atr_pct_price": 0.10551,
+      "sata_score": 9,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": null
     },
     {
       "ticker": "HNGE",
@@ -1083,7 +1293,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 6.8585,
+      "atr_ext": 5.152,
+      "atr_pct_price": 0.07875,
+      "sata_score": 9,
+      "sata_change_1w": -1,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": null
     },
     {
       "ticker": "LPRO",
@@ -1117,7 +1334,14 @@
       "why_zh": [
         "上升初期 — 已上行 7 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 0.3001,
+      "atr_ext": 4.031,
+      "atr_pct_price": 0.09559,
+      "sata_score": 9,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": 100.0
     },
     {
       "ticker": "TMHC",
@@ -1151,7 +1375,14 @@
       "why_zh": [
         "上升初期 — 已上行 6 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 3.3071,
+      "atr_ext": 2.57,
+      "atr_pct_price": 0.04585,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": 77.8
     },
     {
       "ticker": "ADV",
@@ -1185,7 +1416,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 7.5305,
+      "atr_ext": 1.304,
+      "atr_pct_price": 0.19703,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "COOK",
@@ -1219,7 +1457,14 @@
       "why_zh": [
         "上升初期 — 已上行 6 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 12.4254,
+      "atr_ext": 1.799,
+      "atr_pct_price": 0.17146,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "MSEX",
@@ -1253,7 +1498,14 @@
       "why_zh": [
         "上升初期 — 已上行 3 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 3.2072,
+      "atr_ext": 1.473,
+      "atr_pct_price": 0.05583,
+      "sata_score": 7,
+      "sata_change_1w": 2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 71.4
     },
     {
       "ticker": "NGNE",
@@ -1287,7 +1539,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 5.1109,
+      "atr_ext": 2.465,
+      "atr_pct_price": 0.13698,
+      "sata_score": 8,
+      "sata_change_1w": -1,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": 85.4
     },
     {
       "ticker": "OPBK",
@@ -1321,7 +1580,14 @@
       "why_zh": [
         "上升初期 — 已上行 10 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.7634,
+      "atr_ext": 1.291,
+      "atr_pct_price": 0.05096,
+      "sata_score": 6,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "OSUR",
@@ -1355,7 +1621,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 0.4043,
+      "atr_ext": 1.524,
+      "atr_pct_price": 0.10447,
+      "sata_score": 7,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 84.9
     },
     {
       "ticker": "WMK",
@@ -1389,7 +1662,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 4.95,
+      "atr_ext": 1.329,
+      "atr_pct_price": 0.06342,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "AMLX",
@@ -1423,7 +1703,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 1.9716,
+      "atr_ext": 1.452,
+      "atr_pct_price": 0.11107,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "ANET",
@@ -1457,7 +1744,14 @@
       "why_zh": [
         "上升初期 — 已上行 6 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 20.4643,
+      "atr_ext": 1.063,
+      "atr_pct_price": 0.12137,
+      "sata_score": 6,
+      "sata_change_1w": -2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 33.3
     },
     {
       "ticker": "AOMR",
@@ -1491,7 +1785,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.4109,
+      "atr_ext": 1.827,
+      "atr_pct_price": 0.04501,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "CHCO",
@@ -1525,7 +1826,14 @@
       "why_zh": [
         "上升初期 — 已上行 7 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 5.5901,
+      "atr_ext": 2.182,
+      "atr_pct_price": 0.04118,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": null
     },
     {
       "ticker": "FRBA",
@@ -1559,7 +1867,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 1.0423,
+      "atr_ext": 1.497,
+      "atr_pct_price": 0.05836,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "LYTS",
@@ -1593,7 +1908,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 2.1989,
+      "atr_ext": 0.883,
+      "atr_pct_price": 0.09189,
+      "sata_score": 6,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 58.1
     },
     {
       "ticker": "PRTH",
@@ -1627,7 +1949,14 @@
       "why_zh": [
         "上升初期 — 已上行 4 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 0.6914,
+      "atr_ext": 1.341,
+      "atr_pct_price": 0.10335,
+      "sata_score": 6,
+      "sata_change_1w": -2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "SFBS",
@@ -1661,7 +1990,14 @@
       "why_zh": [
         "上升初期 — 已上行 8 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 4.237,
+      "atr_ext": 1.895,
+      "atr_pct_price": 0.04873,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 20.9
     },
     {
       "ticker": "SMHI",
@@ -1695,7 +2031,14 @@
       "why_zh": [
         "上升初期 — 已上行 1 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.8059,
+      "atr_ext": 0.897,
+      "atr_pct_price": 0.10188,
+      "sata_score": 6,
+      "sata_change_1w": 2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "SYBT",
@@ -1729,7 +2072,14 @@
       "why_zh": [
         "上升初期 — 已上行 9 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 4.1676,
+      "atr_ext": 2.753,
+      "atr_pct_price": 0.05136,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": null
     },
     {
       "ticker": "TBRG",
@@ -1763,7 +2113,14 @@
       "why_zh": [
         "上升初期 — 已上行 10 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 1.0643,
+      "atr_ext": 4.041,
+      "atr_pct_price": 0.04056,
+      "sata_score": 9,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": null
     },
     {
       "ticker": "URI",
@@ -1799,7 +2156,14 @@
       "why_zh": [
         "上升初期 — 已上行 7 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 73.2796,
+      "atr_ext": 1.831,
+      "atr_pct_price": 0.07011,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 57.7
     },
     {
       "ticker": "AHR",
@@ -1833,7 +2197,14 @@
       "why_zh": [
         "上升初期 — 已上行 1 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 3.1681,
+      "atr_ext": 1.42,
+      "atr_pct_price": 0.05914,
+      "sata_score": 7,
+      "sata_change_1w": 3,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 80.0
     },
     {
       "ticker": "ARL",
@@ -1867,7 +2238,14 @@
       "why_zh": [
         "上升初期 — 已上行 3 周",
         "仍接近 30 周均线 — 尚未站稳"
-      ]
+      ],
+      "atr_14w": 2.4564,
+      "atr_ext": -0.079,
+      "atr_pct_price": 0.15469,
+      "sata_score": 4,
+      "sata_change_1w": -4,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
     },
     {
       "ticker": "BMRC",
@@ -1901,7 +2279,14 @@
       "why_zh": [
         "上升初期 — 已上行 1 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 1.5687,
+      "atr_ext": 1.806,
+      "atr_pct_price": 0.05424,
+      "sata_score": 7,
+      "sata_change_1w": 3,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "DLO",
@@ -1935,7 +2320,14 @@
       "why_zh": [
         "上升初期 — 已上行 1 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 1.366,
+      "atr_ext": 1.153,
+      "atr_pct_price": 0.09434,
+      "sata_score": 6,
+      "sata_change_1w": 2,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 65.4
     },
     {
       "ticker": "DTIL",
@@ -1969,7 +2361,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 1.2729,
+      "atr_ext": 1.513,
+      "atr_pct_price": 0.16174,
+      "sata_score": 7,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "FSBW",
@@ -2003,7 +2402,14 @@
       "why_zh": [
         "上升初期 — 已上行 9 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 2.1894,
+      "atr_ext": 1.435,
+      "atr_pct_price": 0.04973,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     },
     {
       "ticker": "FTDR",
@@ -2037,7 +2443,14 @@
       "why_zh": [
         "上升初期 — 已上行 6 周",
         "已明显高于 30 周均线 — 可能需要回踩"
-      ]
+      ],
+      "atr_14w": 5.51,
+      "atr_ext": 2.275,
+      "atr_pct_price": 0.0728,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": 85.7
     },
     {
       "ticker": "GENC",
@@ -2071,7 +2484,14 @@
       "why_zh": [
         "上升初期 — 已上行 5 周",
         "位于 30 周均线之上 — 趋势向好"
-      ]
+      ],
+      "atr_14w": 0.8707,
+      "atr_ext": 1.523,
+      "atr_pct_price": 0.05422,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
     }
   ],
   "warnings_stage3": [

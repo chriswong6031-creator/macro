@@ -370,3 +370,194 @@ def test_n_weeks_empty_input_is_zero():
     res = ws.classify(pd.Series([], dtype=float), None, pd.Series([], dtype=float))
     assert res["too_young"] is True
     assert res["n_weeks"] == 0
+
+
+# ===========================================================================
+# SGA-2 (v2) — ATR extension, SATA reproduction, stage_detailed taxonomy,
+# and calibration vs the EquityDesk seed table.
+# ===========================================================================
+from pathlib import Path  # noqa: E402
+
+_REPO = Path(__file__).resolve().parents[1]
+_SEED = _REPO / "data" / "stage_analysis" / "backfill" / "stage_daily.parquet"
+
+
+def _ohlc_round_trip():
+    """A round-trip close path plus synthetic H/L bands so the 14w ATR is well
+    defined (H = close*1.02, L = close*0.98)."""
+    close = _round_trip_close()
+    high = close * 1.02
+    low = close * 0.98
+    return close, high, low
+
+
+# --- new-field presence + shape -------------------------------------------
+def test_v2_fields_present_on_classify():
+    close, high, low = _ohlc_round_trip()
+    n = len(close)
+    res = ws.classify(close, None, _flat_bench(n), high, low)
+    for k in ("atr_14w", "atr_ext", "atr_pct_price", "sata_score",
+              "sata_change_1w", "stage_detailed"):
+        assert k in res, f"missing SGA-2 field {k}"
+    # ATR is positive; extension is a finite number; SATA is 0..10.
+    assert res["atr_14w"] is not None and res["atr_14w"] > 0
+    assert res["atr_pct_price"] is not None and res["atr_pct_price"] > 0
+    if res["sata_score"] is not None:
+        assert 0 <= res["sata_score"] <= 10
+
+
+def test_v2_fields_null_on_too_young():
+    res = ws.classify(_series(np.linspace(100.0, 120.0, 30)), None,
+                      _flat_bench(30))
+    for k in ("atr_14w", "atr_ext", "atr_pct_price", "sata_score",
+              "sata_change_1w", "stage_detailed"):
+        assert res[k] is None
+
+
+def test_atr_ext_matches_close_minus_ma_over_atr():
+    """atr_ext must equal (wclose - ma30) / atr_14w — the EquityDesk identity."""
+    close, high, low = _ohlc_round_trip()
+    n = len(close)
+    res = ws.classify(close, None, _flat_bench(n), high, low)
+    wf = ws.weekly_frame(close, None, _flat_bench(n))
+    atr = ws.weekly_atr14(high, low, close, wf.index)
+    wc = float(wf["wclose"].iloc[-1])
+    ma = float(wf["ma30"].iloc[-1])
+    a = float(atr.iloc[-1])
+    expected = (wc - ma) / a
+    assert abs(res["atr_ext"] - round(expected, 4)) < 1e-3
+
+
+def test_atr14_falls_back_to_close_only_without_high_low():
+    """Missing H/L must not null the extension — a close-only ATR still fills."""
+    close = _round_trip_close()
+    n = len(close)
+    res = ws.classify(close, None, _flat_bench(n))  # no high/low
+    assert res["atr_14w"] is not None and res["atr_14w"] > 0
+    assert res["atr_ext"] is not None
+
+
+# --- deterministic SATA reproduction --------------------------------------
+def test_sata_monotone_in_extension_and_rs():
+    """SATA rises with stage, extension and RS (the calibrated drivers)."""
+    # Strong Stage 2, extended, strong RS -> high SATA.
+    hi = ws._sata_from(2, atr_ext=3.0, mansfield_rs=30.0)
+    # Weak Stage 4, below the line, weak RS -> low SATA.
+    lo = ws._sata_from(4, atr_ext=-3.0, mansfield_rs=-30.0)
+    assert hi is not None and lo is not None
+    assert hi > lo
+    assert 0 <= lo <= 10 and 0 <= hi <= 10
+    # None stage -> no SATA.
+    assert ws._sata_from(None, 1.0, 1.0) is None
+    assert ws._sata_from(0, 1.0, 1.0) is None
+    # Null inputs fall back (a stageable name still scores).
+    assert ws._sata_from(2, None, None) is not None
+
+
+# --- stage_detailed taxonomy ----------------------------------------------
+def test_stage_detailed_label_space():
+    """Every emitted label is one of the 9 EquityDesk target strings (or None)."""
+    valid = {
+        "1X_fallback_base", "2A_strong_breakout", "2D_extended_run",
+        "2X_catch_price_above_ma", "2X_fallback_bullish",
+        "3A_sideways_exhaustion", "3C_volatility_blowoff",
+        "4B_steady_decline", "4X_fallback_bearish",
+    }
+    cases = [
+        (1, 3, 0.5, -10.0, None, False),
+        (2, 3, 0.4, -6.0, None, True),     # 2X catch
+        (2, 20, 1.4, 14.0, None, False),   # 2X bullish
+        (2, 5, 2.4, 12.0, "breakout", True),  # 2A
+        (2, 30, 2.2, 7.0, None, False),    # 2D
+        (3, 1, -1.8, -36.0, None, False),  # 3C
+        (3, 4, 0.0, -11.0, None, False),   # 3A
+        (4, 10, -1.9, -22.0, None, False), # 4B
+        (4, 2, -0.5, -28.0, None, False),  # 4X
+    ]
+    for st, wk, ae, mrs, ev, fr in cases:
+        lab = ws._stage_detailed(st, wk, ae, mrs, ev, fr)
+        assert lab in valid, f"{(st, wk, ae, mrs)} -> {lab}"
+    assert ws._stage_detailed(None, 0, None, None, None, False) is None
+
+
+def test_stage_detailed_catch_vs_bullish():
+    """2X Catch (fresh, low extension, weak RS) vs 2X Bullish (established RS+)."""
+    catch = ws._stage_detailed(2, 4, 0.4, -6.0, None, True)
+    bullish = ws._stage_detailed(2, 22, 1.4, 15.0, None, False)
+    assert catch == "2X_catch_price_above_ma"
+    assert bullish == "2X_fallback_bullish"
+
+
+# --- calibration vs the EquityDesk seed (skips if seed / OHLCV absent) ------
+@pytest.mark.skipif(not _SEED.exists(), reason="EquityDesk seed parquet absent")
+def test_calibration_vs_equitydesk_seed():
+    """Reproduce atr_ext / sata_score / stage_detailed from OUR OHLCV and check
+    they track the EquityDesk seed table. Thresholds (per the masterplan
+    calibration contract):
+        SATA Spearman > 0.5,  atr_ext Spearman > 0.9,
+        stage_flag agreement > 0.60, and stage_detailed top-label agreement
+        is REPORTED (asserted only to be non-trivial).
+    """
+    import pandas as pd
+    from scipy.stats import spearmanr
+
+    from engine.stage_analysis import _load_bench_close, _load_prices
+
+    dr = _REPO / "data"
+    bench = _load_bench_close(dr)
+    if bench is None:
+        pytest.skip("SPY benchmark absent")
+
+    seed = pd.read_parquet(_SEED)
+    seed["tk"] = seed["ticker"].str.upper()
+    seedmap = {r.tk: r for r in seed.itertuples()}
+
+    ours = {}
+    for sub in ("baskets/ohlcv", "stocks"):
+        d = dr / sub
+        if d.is_dir():
+            for p in d.glob("*.parquet"):
+                ours[p.stem.upper()] = True
+    common = [t for t in ours if t in seedmap]
+    if len(common) < 100:
+        pytest.skip(f"only {len(common)} overlapping tickers — too few to calibrate")
+
+    ours_sata, their_sata = [], []
+    ours_ext, their_ext = [], []
+    stage_agree = 0
+    sd_agree = 0
+    sd_n = 0
+    n = 0
+    for tk in common:
+        close, vol, high, low = _load_prices(tk, dr)
+        if close is None:
+            continue
+        res = ws.classify(close, vol, bench, high, low)
+        if res.get("too_young") or res.get("sata_score") is None:
+            continue
+        s = seedmap[tk]
+        n += 1
+        ours_sata.append(res["sata_score"]); their_sata.append(float(s.sata_score))
+        if res["atr_ext"] is not None and s.atr_ext == s.atr_ext:
+            ours_ext.append(res["atr_ext"]); their_ext.append(float(s.atr_ext))
+        if res["stage"] == int(s.stage_flag):
+            stage_agree += 1
+        if res.get("stage_detailed") and isinstance(s.stage_detailed, str):
+            sd_n += 1
+            if res["stage_detailed"] == s.stage_detailed:
+                sd_agree += 1
+
+    assert n >= 100, f"only {n} names classified"
+    sata_r = spearmanr(ours_sata, their_sata).correlation
+    ext_r = spearmanr(ours_ext, their_ext).correlation
+    stage_frac = stage_agree / n
+    sd_frac = (sd_agree / sd_n) if sd_n else 0.0
+    print(f"\n[SGA-2 calibration] n={n} SATA_spearman={sata_r:.3f} "
+          f"atr_ext_spearman={ext_r:.3f} stage_agree={stage_frac:.3f} "
+          f"stage_detailed_agree={sd_frac:.3f}")
+
+    assert sata_r > 0.5, f"SATA Spearman {sata_r:.3f} <= 0.5"
+    assert ext_r > 0.9, f"atr_ext Spearman {ext_r:.3f} <= 0.9"
+    assert stage_frac > 0.60, f"stage agreement {stage_frac:.3f} <= 0.60"
+    # stage_detailed top-label agreement is reported; assert it is non-trivial.
+    assert sd_frac > 0.20, f"stage_detailed agreement {sd_frac:.3f} <= 0.20"

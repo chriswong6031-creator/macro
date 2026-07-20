@@ -39,12 +39,22 @@
       "gate_tier": "T1",
       "blackout": false,
       "arc_pos": 0.31,
+      "atr_14w": 6.0,
+      "atr_ext": 2.1,
+      "atr_pct_price": 0.045,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 78.4,
       "earnings": {
         "present": true,
         "sentiment": 0.58,
         "performance": 8.2,
         "tone_word": "upbeat",
-        "tags": ["guidance_raised", "demand_acceleration"],
+        "tags": [
+          "guidance_raised",
+          "demand_acceleration"
+        ],
         "quarter": "Q2 2026",
         "summary": "Data center revenue of $22.6B rose 16% sequentially and 154% YoY, surpassing all estimates. Blackwell supply continues to ramp. Management guided Q3 revenue to approximately $28B, well above consensus of $25B."
       },
@@ -75,12 +85,21 @@
       "gate_tier": "T2",
       "blackout": true,
       "arc_pos": 0.38,
+      "atr_14w": 6.0,
+      "atr_ext": 2.1,
+      "atr_pct_price": 0.045,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 78.4,
       "earnings": {
         "present": true,
         "sentiment": 0.12,
         "performance": 6.4,
         "tone_word": "steady",
-        "tags": ["margin_expansion"],
+        "tags": [
+          "margin_expansion"
+        ],
         "quarter": "Q2 2026",
         "summary": "AI revenue exceeded $4B for the first time. Custom silicon with hyperscalers tracking ahead of plan. Management flagged some near-term softness in legacy networking while maintaining full-year AI semiconductor outlook."
       },
@@ -111,6 +130,13 @@
       "gate_tier": null,
       "blackout": false,
       "arc_pos": 0.46,
+      "atr_14w": 6.0,
+      "atr_ext": 2.1,
+      "atr_pct_price": 0.045,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 78.4,
       "earnings": {
         "present": false,
         "sentiment": null,
@@ -144,6 +170,13 @@
       "gate_tier": null,
       "blackout": false,
       "arc_pos": 0.49,
+      "atr_14w": 6.0,
+      "atr_ext": 2.1,
+      "atr_pct_price": 0.045,
+      "sata_score": 7,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 78.4,
       "earnings": {
         "present": false,
         "sentiment": null,
@@ -171,47 +204,154 @@
     }
   ],
   "sectors": [
-    {"sector": "Information Technology", "n": 2, "pct_stage2": 100.0, "trend": "up"},
-    {"sector": "Consumer Staples", "n": 3, "pct_stage2": 66.7, "trend": "up"},
-    {"sector": "Industrials", "n": 2, "pct_stage2": 0.0, "trend": "down"},
-    {"sector": "Health Care", "n": 2, "pct_stage2": 0.0, "trend": "flat"}
+    {
+      "sector": "Information Technology",
+      "n": 2,
+      "pct_stage2": 100.0,
+      "trend": "up"
+    },
+    {
+      "sector": "Consumer Staples",
+      "n": 3,
+      "pct_stage2": 66.7,
+      "trend": "up"
+    },
+    {
+      "sector": "Industrials",
+      "n": 2,
+      "pct_stage2": 0.0,
+      "trend": "down"
+    },
+    {
+      "sector": "Health Care",
+      "n": 2,
+      "pct_stage2": 0.0,
+      "trend": "flat"
+    }
   ],
   "roster": {
-    "NVDA": [2, 6],
-    "AVGO": [2, 9],
-    "COST": [2, 22],
-    "WMT": [2, 40],
-    "MMM": [3, 4],
-    "PFE": [4, 11],
-    "INTC": [4, 25],
-    "KO": [1, 8],
-    "GE": [1, 3]
+    "NVDA": [
+      2,
+      6
+    ],
+    "AVGO": [
+      2,
+      9
+    ],
+    "COST": [
+      2,
+      22
+    ],
+    "WMT": [
+      2,
+      40
+    ],
+    "MMM": [
+      3,
+      4
+    ],
+    "PFE": [
+      4,
+      11
+    ],
+    "INTC": [
+      4,
+      25
+    ],
+    "KO": [
+      1,
+      8
+    ],
+    "GE": [
+      1,
+      3
+    ]
   },
   "changes": {
     "items": [
-      {"kind": "entered_stage2", "ticker": "NVDA", "detail": "Moved into an advancing stage"},
-      {"kind": "breakout", "ticker": "NVDA", "detail": "Broke out of its base on volume"},
-      {"kind": "topping", "ticker": "MMM", "detail": "Advance is stalling — topping out"}
+      {
+        "kind": "entered_stage2",
+        "ticker": "NVDA",
+        "detail": "Moved into an advancing stage"
+      },
+      {
+        "kind": "breakout",
+        "ticker": "NVDA",
+        "detail": "Broke out of its base on volume"
+      },
+      {
+        "kind": "topping",
+        "ticker": "MMM",
+        "detail": "Advance is stalling — topping out"
+      }
     ],
     "n": 3
   },
   "prev_state": {
     "asof": "2026-07-16",
     "by_key": {
-      "NVDA": {"stage": 1, "fresh": false, "event": null},
-      "AVGO": {"stage": 2, "fresh": true, "event": "trendline_recapture"},
-      "MMM": {"stage": 2, "fresh": false, "event": null}
+      "NVDA": {
+        "stage": 1,
+        "fresh": false,
+        "event": null
+      },
+      "AVGO": {
+        "stage": 2,
+        "fresh": true,
+        "event": "trendline_recapture"
+      },
+      "MMM": {
+        "stage": 2,
+        "fresh": false,
+        "event": null
+      }
     }
   },
   "_current_by_key": {
-    "NVDA": {"stage": 2, "fresh": true, "event": "breakout"},
-    "AVGO": {"stage": 2, "fresh": true, "event": "trendline_recapture"},
-    "COST": {"stage": 2, "fresh": false, "event": null},
-    "WMT": {"stage": 2, "fresh": false, "event": null},
-    "MMM": {"stage": 3, "fresh": false, "event": null},
-    "PFE": {"stage": 4, "fresh": false, "event": null},
-    "INTC": {"stage": 4, "fresh": false, "event": null},
-    "KO": {"stage": 1, "fresh": false, "event": null},
-    "GE": {"stage": 1, "fresh": false, "event": null}
+    "NVDA": {
+      "stage": 2,
+      "fresh": true,
+      "event": "breakout"
+    },
+    "AVGO": {
+      "stage": 2,
+      "fresh": true,
+      "event": "trendline_recapture"
+    },
+    "COST": {
+      "stage": 2,
+      "fresh": false,
+      "event": null
+    },
+    "WMT": {
+      "stage": 2,
+      "fresh": false,
+      "event": null
+    },
+    "MMM": {
+      "stage": 3,
+      "fresh": false,
+      "event": null
+    },
+    "PFE": {
+      "stage": 4,
+      "fresh": false,
+      "event": null
+    },
+    "INTC": {
+      "stage": 4,
+      "fresh": false,
+      "event": null
+    },
+    "KO": {
+      "stage": 1,
+      "fresh": false,
+      "event": null
+    },
+    "GE": {
+      "stage": 1,
+      "fresh": false,
+      "event": null
+    }
   }
 }

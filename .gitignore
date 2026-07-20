@@ -430,3 +430,12 @@ data/marketing/fastlane_heartbeat.txt
 # D05 breaking-feed local-only poller state (seen ledger + ETag state);
 # the nightly blanket "git add data/" must never stage these.
 data/marketing/breaking/
+
+# SGA (Stage Analysis v2): raw EquityDesk backfill seeds (~55MB incl. the 34MB
+# earnings_calls.parquet) violate the <1MB-in-git rule — one-time competitor backfill
+# kept LOCAL + archived at ~/Documents/Cluade/equitydesk_backfill/. Engines calibrate/
+# regenerate from them locally; on CI/deploy they are absent and every consumer
+# fails-open to the committed sub-1.3MB display JSON (data/stage_analysis/*.json).
+data/stage_analysis/backfill/
+# Forward ledger: nightly is the SOLE advancer (house law) — never commit from a worktree.
+data/stage_analysis/forward_ledger.jsonl

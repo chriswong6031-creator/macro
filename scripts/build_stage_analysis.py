@@ -53,6 +53,49 @@ def main(argv: list[str] | None = None) -> int:
 
     root = Path(args.root) if args.root else None
 
+    # --- SGA-2 side surfaces (industry ranks/flows + earnings) --------------
+    # These regenerate the artifacts the flagship page consumes from the
+    # committed parquet seeds: industry_name_pctile.json (the screener "Ind %ile"
+    # column), industry_ranks.json, industry_flows.json, and the four Earnings-
+    # Calls surfaces (ec_industry / earnings_{season,compare,table}.json).
+    # They must run BEFORE build_context_feed so the context feed can join the
+    # freshly-written industry_name_pctile.json. Each is fail-open (::warning::)
+    # so a broken side-surface never breaks the context feed or the build.
+    # Skipped in --fixture mode (dry runs / tests load a pre-built contract).
+    if not args.fixture:
+        try:
+            from engine import stage_industry  # noqa: PLC0415
+            stage_industry.build(root=root, asof=args.asof)
+            log.info("stage_industry: ranks + name-percentile artifacts built")
+        except Exception as e:  # noqa: BLE001 — never break the build
+            log.warning("::warning:: stage_industry.build failed (%s)", e)
+        try:
+            from engine import stage_flows  # noqa: PLC0415
+            stage_flows.build(root=root, asof=args.asof)
+            log.info("stage_flows: industry/sub-industry flows artifact built")
+        except Exception as e:  # noqa: BLE001
+            log.warning("::warning:: stage_flows.build failed (%s)", e)
+        try:
+            from engine import earnings_qual  # noqa: PLC0415
+            # build_all_earnings_surfaces takes the REPO root (data/ lives under it).
+            eq_root = root.parent if root is not None else None
+            earnings_qual.build_all_earnings_surfaces(eq_root)
+            log.info("earnings_qual: 4 Earnings-Calls surfaces built")
+        except Exception as e:  # noqa: BLE001
+            log.warning("::warning:: earnings_qual.build_all_earnings_surfaces failed (%s)", e)
+        try:
+            from engine import altdata_stage  # noqa: PLC0415
+            altdata_stage.build_altdata_trending(root=root)
+            log.info("altdata_stage: altdata_trending artifact built")
+        except Exception as e:  # noqa: BLE001
+            log.warning("::warning:: altdata_stage.build_altdata_trending failed (%s)", e)
+        try:
+            from engine import stage_research  # noqa: PLC0415
+            stage_research.build_research_index(root=root)
+            log.info("stage_research: research_index artifact built")
+        except Exception as e:  # noqa: BLE001
+            log.warning("::warning:: stage_research.build_research_index failed (%s)", e)
+
     try:
         if args.fixture:
             fx = Path(args.fixture)
