@@ -1,23 +1,24 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-07-20T05:40:57Z",
-  "as_of": "2026-07-20",
+  "produced_at": "2026-07-21T03:30:42Z",
+  "as_of": "2026-07-21",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 112,
+    "items": 111,
     "passed": 12,
-    "quarantined": 100,
-    "quarantined_policy": 10,
-    "quarantined_overflow": 90,
+    "quarantined": 99,
+    "quarantined_policy": 14,
+    "quarantined_overflow": 85,
     "warnings": 0,
     "exceptions_applied": 0
   },
   "reasons_histogram": {
-    "cadence_cap_daily": 90,
-    "near_dup": 10
+    "cadence_cap_daily": 85,
+    "advice_lexicon": 1,
+    "near_dup": 13
   },
   "quarantined": [
     {
@@ -25,8 +26,8 @@
       "account": "flagship",
       "slot": "D1-EOD",
       "type": "watchlist",
-      "cashtag": "$INTU",
-      "headline": "On our radar this week",
+      "cashtag": "$PLTR",
+      "headline": "$PLTR on my radar this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -37,8 +38,8 @@
       "account": "flagship",
       "slot": "D2-AM",
       "type": "chart",
-      "cashtag": "$PI",
-      "headline": "$PI | chart context this week",
+      "cashtag": "$ADBE",
+      "headline": "ADBE, one chart",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -48,9 +49,9 @@
       "id": "post-flagship-005",
       "account": "flagship",
       "slot": "D2-PM",
-      "type": "education",
-      "cashtag": "",
-      "headline": "What 'conviction' actually means at the desk",
+      "type": "chart",
+      "cashtag": "$ARES",
+      "headline": "$ARES this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -62,7 +63,7 @@
       "slot": "D3-PM",
       "type": "macro",
       "cashtag": "",
-      "headline": "Macro backdrop: what the data shows",
+      "headline": "What the data's actually saying",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -72,9 +73,9 @@
       "id": "post-flagship-010",
       "account": "flagship",
       "slot": "D4-AM",
-      "type": "watchlist",
+      "type": "event",
       "cashtag": "",
-      "headline": "On our radar this week",
+      "headline": "My read on today's move",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -84,21 +85,21 @@
       "id": "post-flagship-011",
       "account": "flagship",
       "slot": "D4-PM",
-      "type": "macro",
+      "type": "education",
       "cashtag": "",
-      "headline": "What the macro is saying right now",
-      "class": "overflow",
+      "headline": "What flagging something actually means",
+      "class": "policy",
       "reasons": [
-        "cadence_cap_daily"
+        "advice_lexicon:sure thing"
       ]
     },
     {
       "id": "post-flagship-012",
       "account": "flagship",
       "slot": "D4-EOD",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "The macro read this week",
+      "type": "watchlist",
+      "cashtag": "$SONO",
+      "headline": "Watching $SONO, not buying yet",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -108,9 +109,9 @@
       "id": "post-flagship-013",
       "account": "flagship",
       "slot": "D5-AM",
-      "type": "education",
-      "cashtag": "",
-      "headline": "Why invalidation matters more than the target",
+      "type": "chart",
+      "cashtag": "$PLTR",
+      "headline": "PLTR | worth a look",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -121,8 +122,8 @@
       "account": "flagship",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$INTU",
-      "headline": "Under observation this week",
+      "cashtag": "$ADBE",
+      "headline": "Circling $ADBE this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -132,21 +133,9 @@
       "id": "post-flagship-015",
       "account": "flagship",
       "slot": "D5-EOD",
-      "type": "chart",
-      "cashtag": "$PI",
-      "headline": "PI price context | 144.40 is the line",
-      "class": "overflow",
-      "reasons": [
-        "cadence_cap_daily"
-      ]
-    },
-    {
-      "id": "post-flagship-016",
-      "account": "flagship",
-      "slot": "D6-AM",
-      "type": "event",
-      "cashtag": "",
-      "headline": "Market event: our read",
+      "type": "watchlist",
+      "cashtag": "$ARES",
+      "headline": "$ARES on my radar this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -157,8 +146,8 @@
       "account": "flagship",
       "slot": "D6-PM",
       "type": "watchlist",
-      "cashtag": "$BA",
-      "headline": "Radar names | context first",
+      "cashtag": "$SONO",
+      "headline": "Circling $SONO this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -170,7 +159,7 @@
       "slot": "D6-EOD",
       "type": "watchlist",
       "cashtag": "$PLTR",
-      "headline": "Radar names | context first",
+      "headline": "Circling $PLTR this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -181,8 +170,8 @@
       "account": "flagship",
       "slot": "D7-AM",
       "type": "watchlist",
-      "cashtag": "$STEP",
-      "headline": "On our radar this week",
+      "cashtag": "",
+      "headline": "on my radar this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -193,8 +182,8 @@
       "account": "flagship",
       "slot": "D7-PM",
       "type": "watchlist",
-      "cashtag": "$MOS",
-      "headline": "Radar names | context first",
+      "cashtag": "$ARES",
+      "headline": "$ARES on my radar this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -205,8 +194,8 @@
       "account": "flagship",
       "slot": "D7-EOD",
       "type": "watchlist",
-      "cashtag": "$GPI",
-      "headline": "On our radar this week",
+      "cashtag": "$EFX",
+      "headline": "$EFX is sitting on my desk this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -218,7 +207,7 @@
       "slot": "CONF-01",
       "type": "signal",
       "cashtag": "$VST",
-      "headline": "$VST just triggered a setup that's historically worked 86% of the time",
+      "headline": "Our technical signals have resolved higher 86% of the time from this spot. $VST is there now.",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -230,7 +219,7 @@
       "slot": "CONF-02",
       "type": "signal",
       "cashtag": "$XEL",
-      "headline": "$XEL just triggered a setup that's historically worked 70% of the time",
+      "headline": "Our technical signals have resolved higher 70% of the time from this spot. $XEL is there now.",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -242,7 +231,7 @@
       "slot": "CONF-03",
       "type": "signal",
       "cashtag": "$IBM",
-      "headline": "$IBM just triggered a setup that's historically worked 67% of the time",
+      "headline": "Our technical signals have resolved higher 67% of the time from this spot. $IBM is there now.",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -254,7 +243,7 @@
       "slot": "CONF-04",
       "type": "signal",
       "cashtag": "$WMT",
-      "headline": "$WMT just triggered a setup that's historically worked 66% of the time",
+      "headline": "Our technical signals have resolved higher 66% of the time from this spot. $WMT is there now.",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -265,8 +254,8 @@
       "account": "flagship",
       "slot": "THEME-03",
       "type": "theme_list",
-      "cashtag": "$DSP",
-      "headline": "Social Media selling off — -2.8% avg today",
+      "cashtag": "$IREN",
+      "headline": "Crypto & Blockchain ripping, +3.6% avg today",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -276,9 +265,9 @@
       "id": "post-receipts-004",
       "account": "receipts",
       "slot": "D2-AM",
-      "type": "chart",
-      "cashtag": "$EFX",
-      "headline": "EFX — chart update",
+      "type": "watchlist",
+      "cashtag": "$STEP",
+      "headline": "$STEP | watching, no position",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -289,8 +278,8 @@
       "account": "receipts",
       "slot": "D2-PM",
       "type": "watchlist",
-      "cashtag": "$BA",
-      "headline": "Watch list | no position",
+      "cashtag": "$ARES",
+      "headline": "$ARES | watching, no position",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -300,9 +289,9 @@
       "id": "post-receipts-007",
       "account": "receipts",
       "slot": "D3-AM",
-      "type": "education",
-      "cashtag": "",
-      "headline": "How we track our calls",
+      "type": "chart",
+      "cashtag": "$LKFN",
+      "headline": "LKFN | where it stands",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -312,9 +301,9 @@
       "id": "post-receipts-008",
       "account": "receipts",
       "slot": "D3-PM",
-      "type": "watchlist",
-      "cashtag": "$ENOV",
-      "headline": "Radar: names we're monitoring",
+      "type": "education",
+      "cashtag": "",
+      "headline": "How I keep myself honest",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -324,9 +313,9 @@
       "id": "post-receipts-009",
       "account": "receipts",
       "slot": "D3-EOD",
-      "type": "chart",
-      "cashtag": "$SONO",
-      "headline": "SONO — chart update",
+      "type": "watchlist",
+      "cashtag": "$ARES",
+      "headline": "$ARES | watching, no position",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -337,8 +326,8 @@
       "account": "receipts",
       "slot": "D4-AM",
       "type": "chart",
-      "cashtag": "$CUBI",
-      "headline": "$CUBI | what the tape shows",
+      "cashtag": "$FDS",
+      "headline": "$FDS | no spin",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -350,19 +339,19 @@
       "slot": "D4-PM",
       "type": "watchlist",
       "cashtag": "",
-      "headline": "Watch list | no position",
-      "class": "overflow",
+      "headline": "| watching, no position",
+      "class": "policy",
       "reasons": [
-        "cadence_cap_daily"
+        "near_dup:post-flagship-019"
       ]
     },
     {
       "id": "post-receipts-012",
       "account": "receipts",
       "slot": "D4-EOD",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "Macro: what the data shows",
+      "type": "chart",
+      "cashtag": "$STEP",
+      "headline": "$STEP | no spin",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -373,8 +362,8 @@
       "account": "receipts",
       "slot": "D5-AM",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "Watch list | no position",
+      "cashtag": "$ARES",
+      "headline": "$ARES | watching only",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -385,8 +374,8 @@
       "account": "receipts",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$LKFN",
-      "headline": "Watchlist update | not triggered",
+      "cashtag": "$FDS",
+      "headline": "$FDS close, not triggered",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -397,8 +386,8 @@
       "account": "receipts",
       "slot": "D5-EOD",
       "type": "watchlist",
-      "cashtag": "$CRM",
-      "headline": "Under watch | positions not open",
+      "cashtag": "$LKFN",
+      "headline": "$LKFN on the radar, not the board",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -408,9 +397,9 @@
       "id": "post-receipts-018",
       "account": "receipts",
       "slot": "D6-EOD",
-      "type": "watchlist",
-      "cashtag": "$CVI",
-      "headline": "Watchlist update | not triggered",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "Macro, plainly",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -421,8 +410,8 @@
       "account": "receipts",
       "slot": "D7-AM",
       "type": "watchlist",
-      "cashtag": "$PLTR",
-      "headline": "Watch list | no position",
+      "cashtag": "$LKFN",
+      "headline": "$LKFN | watching only",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -432,9 +421,9 @@
       "id": "post-receipts-020",
       "account": "receipts",
       "slot": "D7-PM",
-      "type": "chart",
-      "cashtag": "$ADBE",
-      "headline": "$ADBE — one chart, no spin",
+      "type": "watchlist",
+      "cashtag": "$STEP",
+      "headline": "$STEP close, not triggered",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -446,7 +435,7 @@
       "slot": "D7-EOD",
       "type": "event",
       "cashtag": "",
-      "headline": "Event reaction | numbers first",
+      "headline": "Today's event, numbers first",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -457,8 +446,8 @@
       "account": "receipts",
       "slot": "MOVER-01",
       "type": "mover",
-      "cashtag": "$ISRG",
-      "headline": "$ISRG -14.2% today",
+      "cashtag": "$GPN",
+      "headline": "$GPN +5.8% today",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -469,8 +458,8 @@
       "account": "theme_desk",
       "slot": "D1-EOD",
       "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Vertical watch list this week",
+      "cashtag": "$ENOV",
+      "headline": "$ENOV is the one I'm watching in my group",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -480,9 +469,9 @@
       "id": "post-theme_desk-004",
       "account": "theme_desk",
       "slot": "D2-AM",
-      "type": "chart",
-      "cashtag": "$GPI",
-      "headline": "$GPI | sector price context",
+      "type": "watchlist",
+      "cashtag": "$EFX",
+      "headline": "$EFX is the one I'm watching in my group",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -494,19 +483,19 @@
       "slot": "D2-PM",
       "type": "event",
       "cashtag": "",
-      "headline": "Event impact on our sector",
-      "class": "overflow",
+      "headline": "What today's event does to my group",
+      "class": "policy",
       "reasons": [
-        "cadence_cap_daily"
+        "near_dup:post-flagship-010"
       ]
     },
     {
       "id": "post-theme_desk-006",
       "account": "theme_desk",
       "slot": "D2-EOD",
-      "type": "chart",
+      "type": "watchlist",
       "cashtag": "$SONO",
-      "headline": "$SONO | sector price context",
+      "headline": "$SONO setup in progress",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -518,10 +507,10 @@
       "slot": "D3-PM",
       "type": "event",
       "cashtag": "",
-      "headline": "How this event hits our theme",
-      "class": "overflow",
+      "headline": "How this hits my corner of the market",
+      "class": "policy",
       "reasons": [
-        "cadence_cap_daily"
+        "near_dup:post-receipts-021"
       ]
     },
     {
@@ -529,8 +518,8 @@
       "account": "theme_desk",
       "slot": "D4-AM",
       "type": "watchlist",
-      "cashtag": "$CRM",
-      "headline": "What's near entry in the sector",
+      "cashtag": "$ADBE",
+      "headline": "Watching $ADBE, not acting yet",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -542,7 +531,7 @@
       "slot": "D4-EOD",
       "type": "watchlist",
       "cashtag": "",
-      "headline": "Vertical watch list this week",
+      "headline": "is the one I'm watching in my group",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -552,12 +541,12 @@
       "id": "post-theme_desk-013",
       "account": "theme_desk",
       "slot": "D5-AM",
-      "type": "macro",
+      "type": "education",
       "cashtag": "",
-      "headline": "Macro note for the vertical",
-      "class": "policy",
+      "headline": "The thing most people get wrong about this group",
+      "class": "overflow",
       "reasons": [
-        "near_dup:post-flagship-012"
+        "cadence_cap_daily"
       ]
     },
     {
@@ -565,8 +554,8 @@
       "account": "theme_desk",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "What's near entry in the sector",
+      "cashtag": "$EFX",
+      "headline": "$EFX near entry in my corner",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -577,8 +566,8 @@
       "account": "theme_desk",
       "slot": "D6-AM",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "Specialist watch: setups in progress",
+      "cashtag": "$SONO",
+      "headline": "$SONO is the one I'm watching in my group",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -590,22 +579,10 @@
       "slot": "D6-PM",
       "type": "macro",
       "cashtag": "",
-      "headline": "How macro is affecting our sector",
+      "headline": "Why the macro matters for these names",
       "class": "policy",
       "reasons": [
-        "near_dup:post-flagship-011"
-      ]
-    },
-    {
-      "id": "post-theme_desk-018",
-      "account": "theme_desk",
-      "slot": "D6-EOD",
-      "type": "event",
-      "cashtag": "",
-      "headline": "Sector event reaction",
-      "class": "overflow",
-      "reasons": [
-        "cadence_cap_daily"
+        "near_dup:post-receipts-018"
       ]
     },
     {
@@ -613,8 +590,8 @@
       "account": "theme_desk",
       "slot": "D7-AM",
       "type": "watchlist",
-      "cashtag": "$SBUX",
-      "headline": "Vertical watch list this week",
+      "cashtag": "$CRM",
+      "headline": "$CRM setup in progress",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -625,8 +602,8 @@
       "account": "theme_desk",
       "slot": "D7-PM",
       "type": "watchlist",
-      "cashtag": "$PLTR",
-      "headline": "Sector radar | watching not acting",
+      "cashtag": "$ADBE",
+      "headline": "$ADBE near entry in my corner",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -636,9 +613,9 @@
       "id": "post-theme_desk-021",
       "account": "theme_desk",
       "slot": "D7-EOD",
-      "type": "education",
-      "cashtag": "",
-      "headline": "The factor that moves this vertical",
+      "type": "chart",
+      "cashtag": "$ENOV",
+      "headline": "ENOV | this chart tells me where the theme's going",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -649,23 +626,23 @@
       "account": "theme_desk",
       "slot": "THEME-04",
       "type": "theme_list",
-      "cashtag": "$BKKT",
-      "headline": "Crypto & Blockchain selling off — -1.9% avg today",
+      "cashtag": "$GPN",
+      "headline": "FinTech ripping, +1.3% avg today",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
       ]
     },
     {
-      "id": "post-research_a-004",
+      "id": "post-research_a-002",
       "account": "research_a",
-      "slot": "D2-AM",
+      "slot": "D1-PM",
       "type": "macro",
       "cashtag": "",
-      "headline": "Breaking down the macro backdrop",
+      "headline": "The macro in plain words",
       "class": "policy",
       "reasons": [
-        "near_dup:post-flagship-012"
+        "near_dup:post-receipts-018"
       ]
     },
     {
@@ -674,7 +651,7 @@
       "slot": "D2-EOD",
       "type": "watchlist",
       "cashtag": "$CVI",
-      "headline": "The watch list: how we filter",
+      "headline": "How I filter what I watch",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -685,8 +662,8 @@
       "account": "research_a",
       "slot": "D3-AM",
       "type": "watchlist",
-      "cashtag": "$REZI",
-      "headline": "On our radar | here's what we're waiting for",
+      "cashtag": "$STEP",
+      "headline": "What I'm waiting on with $STEP",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -696,9 +673,9 @@
       "id": "post-research_a-008",
       "account": "research_a",
       "slot": "D3-PM",
-      "type": "education",
-      "cashtag": "",
-      "headline": "Plain English: what is a 'setup'?",
+      "type": "chart",
+      "cashtag": "$PI",
+      "headline": "What PI's chart is quietly telling you",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -708,9 +685,9 @@
       "id": "post-research_a-009",
       "account": "research_a",
       "slot": "D3-EOD",
-      "type": "education",
-      "cashtag": "",
-      "headline": "Why the 'what would change this' line matters",
+      "type": "chart",
+      "cashtag": "$MSFT",
+      "headline": "MSFT, let me walk you through this chart",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -722,7 +699,7 @@
       "slot": "D4-AM",
       "type": "education",
       "cashtag": "",
-      "headline": "Here's the part most people miss",
+      "headline": "The 'what would prove me wrong' line is the whole thing",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -732,9 +709,9 @@
       "id": "post-research_a-011",
       "account": "research_a",
       "slot": "D4-PM",
-      "type": "chart",
-      "cashtag": "$PAHC",
-      "headline": "Chart breakdown: PAHC",
+      "type": "watchlist",
+      "cashtag": "$MOS",
+      "headline": "What earns a spot on a watch list",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -745,8 +722,8 @@
       "account": "research_a",
       "slot": "D4-EOD",
       "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "The watch list: how we filter",
+      "cashtag": "",
+      "headline": "What earns a spot on a watch list",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -756,9 +733,9 @@
       "id": "post-research_a-013",
       "account": "research_a",
       "slot": "D5-AM",
-      "type": "education",
-      "cashtag": "",
-      "headline": "What 'tracking publicly' actually means",
+      "type": "chart",
+      "cashtag": "$CUBI",
+      "headline": "What CUBI's chart is quietly telling you",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -768,9 +745,9 @@
       "id": "post-research_a-014",
       "account": "research_a",
       "slot": "D5-PM",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "Macro 101: what this regime means",
+      "type": "watchlist",
+      "cashtag": "$INTU",
+      "headline": "What earns a spot on a watch list",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -781,8 +758,8 @@
       "account": "research_a",
       "slot": "D5-EOD",
       "type": "watchlist",
-      "cashtag": "$ADBE",
-      "headline": "What goes on a watch list — and why",
+      "cashtag": "$GPI",
+      "headline": "How I filter what I watch",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -792,9 +769,9 @@
       "id": "post-research_a-016",
       "account": "research_a",
       "slot": "D6-AM",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "Plain-English macro update",
+      "type": "watchlist",
+      "cashtag": "$CVI",
+      "headline": "What earns a spot on a watch list",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -805,8 +782,8 @@
       "account": "research_a",
       "slot": "D6-PM",
       "type": "watchlist",
-      "cashtag": "$CVI",
-      "headline": "On our radar | here's what we're waiting for",
+      "cashtag": "$STEP",
+      "headline": "What earns a spot on a watch list",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -816,21 +793,9 @@
       "id": "post-research_a-019",
       "account": "research_a",
       "slot": "D7-AM",
-      "type": "watchlist",
-      "cashtag": "$ENOV",
-      "headline": "What goes on a watch list — and why",
-      "class": "overflow",
-      "reasons": [
-        "cadence_cap_daily"
-      ]
-    },
-    {
-      "id": "post-research_a-020",
-      "account": "research_a",
-      "slot": "D7-PM",
-      "type": "event",
-      "cashtag": "",
-      "headline": "What today's event means — plain English",
+      "type": "signal",
+      "cashtag": "$MSFT",
+      "headline": "$MSFT | this is what a setup actually looks like",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -840,12 +805,12 @@
       "id": "post-research_a-021",
       "account": "research_a",
       "slot": "D7-EOD",
-      "type": "watchlist",
+      "type": "event",
       "cashtag": "",
-      "headline": "What goes on a watch list — and why",
-      "class": "overflow",
+      "headline": "What today's event actually means",
+      "class": "policy",
       "reasons": [
-        "cadence_cap_daily"
+        "near_dup:post-flagship-010"
       ]
     },
     {
@@ -853,8 +818,8 @@
       "account": "research_a",
       "slot": "MOVER-02",
       "type": "mover",
-      "cashtag": "$CDNS",
-      "headline": "$CDNS -9.5% today",
+      "cashtag": "$CVNA",
+      "headline": "$CVNA -4.8% today",
       "class": "policy",
       "reasons": [
         "near_dup:post-mover-001"
@@ -864,9 +829,9 @@
       "id": "post-research_b-004",
       "account": "research_b",
       "slot": "D2-AM",
-      "type": "chart",
-      "cashtag": "$FBRT",
-      "headline": "$FBRT | chart update",
+      "type": "watchlist",
+      "cashtag": "$CUBI",
+      "headline": "$CUBI close to going",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -877,8 +842,8 @@
       "account": "research_b",
       "slot": "D2-PM",
       "type": "watchlist",
-      "cashtag": "$CVI",
-      "headline": "Watching | not acting",
+      "cashtag": "$REZI",
+      "headline": "Quick radar check on $REZI",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -889,8 +854,8 @@
       "account": "research_b",
       "slot": "D2-EOD",
       "type": "watchlist",
-      "cashtag": "$LKFN",
-      "headline": "Quick radar | watching these",
+      "cashtag": "$STEP",
+      "headline": "Quick radar check on $STEP",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -901,8 +866,8 @@
       "account": "research_b",
       "slot": "D3-AM",
       "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "Watch list update",
+      "cashtag": "$INTU",
+      "headline": "$INTU watching, not acting",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -912,12 +877,12 @@
       "id": "post-research_b-008",
       "account": "research_b",
       "slot": "D3-PM",
-      "type": "watchlist",
-      "cashtag": "$REZI",
-      "headline": "Quick radar | watching these",
-      "class": "overflow",
+      "type": "education",
+      "cashtag": "",
+      "headline": "Quick: what's a setup?",
+      "class": "policy",
       "reasons": [
-        "cadence_cap_daily"
+        "near_dup:post-research_a-004"
       ]
     },
     {
@@ -925,8 +890,8 @@
       "account": "research_b",
       "slot": "D3-EOD",
       "type": "watchlist",
-      "cashtag": "$PAHC",
-      "headline": "Watch list update",
+      "cashtag": "$PI",
+      "headline": "Watching $PI right now",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -936,24 +901,36 @@
       "id": "post-research_b-010",
       "account": "research_b",
       "slot": "D4-AM",
+      "type": "watchlist",
+      "cashtag": "$GPI",
+      "headline": "Watching $GPI right now",
+      "class": "overflow",
+      "reasons": [
+        "cadence_cap_daily"
+      ]
+    },
+    {
+      "id": "post-research_b-011",
+      "account": "research_b",
+      "slot": "D4-PM",
       "type": "event",
       "cashtag": "",
-      "headline": "Reaction: what just happened",
+      "headline": "What just happened",
       "class": "policy",
       "reasons": [
-        "near_dup:post-theme_desk-018"
+        "near_dup:post-receipts-018"
       ]
     },
     {
       "id": "post-research_b-012",
       "account": "research_b",
       "slot": "D4-EOD",
-      "type": "watchlist",
+      "type": "macro",
       "cashtag": "",
-      "headline": "Quick radar | watching these",
+      "headline": "Fast macro read",
       "class": "policy",
       "reasons": [
-        "near_dup:post-receipts-011"
+        "near_dup:post-flagship-010"
       ]
     },
     {
@@ -961,8 +938,8 @@
       "account": "research_b",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$EFX",
-      "headline": "Radar check | names close to entry",
+      "cashtag": "$CUBI",
+      "headline": "Quick radar check on $CUBI",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -972,21 +949,21 @@
       "id": "post-research_b-015",
       "account": "research_b",
       "slot": "D5-EOD",
-      "type": "event",
+      "type": "watchlist",
       "cashtag": "",
-      "headline": "Event | quick read",
+      "headline": "Watching right now",
       "class": "policy",
       "reasons": [
-        "near_dup:post-flagship-016"
+        "near_dup:post-theme_desk-012"
       ]
     },
     {
       "id": "post-research_b-017",
       "account": "research_b",
       "slot": "D6-PM",
-      "type": "macro",
-      "cashtag": "",
-      "headline": "Fast macro read",
+      "type": "chart",
+      "cashtag": "$INTU",
+      "headline": "INTU | tape check",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -997,20 +974,32 @@
       "account": "research_b",
       "slot": "D7-AM",
       "type": "watchlist",
-      "cashtag": "$REZI",
-      "headline": "Watching | not acting",
+      "cashtag": "$PI",
+      "headline": "$PI watching, not acting",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
       ]
     },
     {
+      "id": "post-research_b-020",
+      "account": "research_b",
+      "slot": "D7-PM",
+      "type": "event",
+      "cashtag": "",
+      "headline": "Quick read on today",
+      "class": "policy",
+      "reasons": [
+        "near_dup:post-flagship-010"
+      ]
+    },
+    {
       "id": "post-research_b-021",
       "account": "research_b",
       "slot": "D7-EOD",
-      "type": "chart",
-      "cashtag": "$ADBE",
-      "headline": "ADBE chart | quick look",
+      "type": "watchlist",
+      "cashtag": "$FDS",
+      "headline": "$FDS close to going",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1021,8 +1010,8 @@
       "account": "research_b",
       "slot": "THEME-05",
       "type": "theme_list",
-      "cashtag": "$AFRM",
-      "headline": "FinTech selling off — -1.5% avg today",
+      "cashtag": "$TEM",
+      "headline": "Healthcare & Biotech selling off, -1.5% avg today",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1033,8 +1022,8 @@
       "account": "research_c",
       "slot": "D2-PM",
       "type": "watchlist",
-      "cashtag": "$REZI",
-      "headline": "Watch list | the rhymes in progress",
+      "cashtag": "$CVI",
+      "headline": "$CVI rhyming with an old setup",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1044,9 +1033,9 @@
       "id": "post-research_c-006",
       "account": "research_c",
       "slot": "D2-EOD",
-      "type": "chart",
-      "cashtag": "$STEP",
-      "headline": "STEP chart | precedent matters",
+      "type": "watchlist",
+      "cashtag": "$PLTR",
+      "headline": "Old shapes showing up in $PLTR",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1058,10 +1047,10 @@
       "slot": "D3-AM",
       "type": "watchlist",
       "cashtag": "",
-      "headline": "Pattern watch list | not triggered",
-      "class": "policy",
+      "headline": "Watching a pattern in",
+      "class": "overflow",
       "reasons": [
-        "near_dup:post-receipts-011"
+        "cadence_cap_daily"
       ]
     },
     {
@@ -1069,8 +1058,8 @@
       "account": "research_c",
       "slot": "D3-PM",
       "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Pattern watch list | not triggered",
+      "cashtag": "$ENOV",
+      "headline": "Old shapes showing up in $ENOV",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1081,8 +1070,8 @@
       "account": "research_c",
       "slot": "D3-EOD",
       "type": "watchlist",
-      "cashtag": "$EFX",
-      "headline": "Historical watch: patterns in progress",
+      "cashtag": "$PI",
+      "headline": "Old shapes showing up in $PI",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1093,20 +1082,20 @@
       "account": "research_c",
       "slot": "D4-AM",
       "type": "watchlist",
-      "cashtag": "",
-      "headline": "Historical watch: patterns in progress",
-      "class": "policy",
+      "cashtag": "$EFX",
+      "headline": "$EFX | a setup with a memory",
+      "class": "overflow",
       "reasons": [
-        "near_dup:post-receipts-011"
+        "cadence_cap_daily"
       ]
     },
     {
       "id": "post-research_c-011",
       "account": "research_c",
       "slot": "D4-PM",
-      "type": "education",
-      "cashtag": "",
-      "headline": "When history rhymes: a primer",
+      "type": "chart",
+      "cashtag": "$MSFT",
+      "headline": "$MSFT | chart with a memory",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1117,8 +1106,8 @@
       "account": "research_c",
       "slot": "D4-EOD",
       "type": "watchlist",
-      "cashtag": "",
-      "headline": "Watch list | the rhymes in progress",
+      "cashtag": "$LKFN",
+      "headline": "Watching a pattern in $LKFN",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1129,8 +1118,8 @@
       "account": "research_c",
       "slot": "D5-AM",
       "type": "chart",
-      "cashtag": "$PAHC",
-      "headline": "PAHC chart | precedent matters",
+      "cashtag": "$REZI",
+      "headline": "REZI | this chart looks familiar",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1140,9 +1129,9 @@
       "id": "post-research_c-014",
       "account": "research_c",
       "slot": "D5-PM",
-      "type": "chart",
-      "cashtag": "$INTU",
-      "headline": "INTU chart | precedent matters",
+      "type": "watchlist",
+      "cashtag": "$ADBE",
+      "headline": "Old shapes showing up in $ADBE",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1152,9 +1141,9 @@
       "id": "post-research_c-015",
       "account": "research_c",
       "slot": "D5-EOD",
-      "type": "chart",
-      "cashtag": "$ARES",
-      "headline": "ARES chart | precedent matters",
+      "type": "watchlist",
+      "cashtag": "$MOS",
+      "headline": "Watching a pattern in $MOS",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1165,8 +1154,8 @@
       "account": "research_c",
       "slot": "D6-PM",
       "type": "watchlist",
-      "cashtag": "$FBRT",
-      "headline": "Historical watch: patterns in progress",
+      "cashtag": "$FDS",
+      "headline": "$FDS | a setup with a memory",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1176,21 +1165,21 @@
       "id": "post-research_c-019",
       "account": "research_c",
       "slot": "D7-AM",
-      "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "Watch list | the rhymes in progress",
-      "class": "overflow",
+      "type": "macro",
+      "cashtag": "",
+      "headline": "This macro setup rhymes with something",
+      "class": "policy",
       "reasons": [
-        "cadence_cap_daily"
+        "near_dup:post-receipts-021"
       ]
     },
     {
       "id": "post-research_c-020",
       "account": "research_c",
       "slot": "D7-PM",
-      "type": "macro",
+      "type": "education",
       "cashtag": "",
-      "headline": "Macro analogue: what the data rhymes with",
+      "headline": "When history rhymes, read it carefully",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1201,8 +1190,8 @@
       "account": "research_c",
       "slot": "D7-EOD",
       "type": "watchlist",
-      "cashtag": "$ADBE",
-      "headline": "Watch list | the rhymes in progress",
+      "cashtag": "$INTU",
+      "headline": "$INTU | a setup with a memory",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1213,28 +1202,28 @@
       "account": "research_c",
       "slot": "THEME-06",
       "type": "theme_list",
-      "cashtag": "$NFLX",
-      "headline": "Digital Entertainment selling off — -1.5% avg today",
-      "class": "policy",
+      "cashtag": "$LAR",
+      "headline": "Commodities Metals selling off, -1.0% avg today",
+      "class": "overflow",
       "reasons": [
-        "near_dup:post-theme-005"
+        "cadence_cap_daily"
       ]
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 4622,
-      "hits": 10,
+      "pairs_checked": 4255,
+      "hits": 13,
       "shared_media_hits": 0
     },
     "cadence": {
-      "cadence_cap_daily_hits": 90,
+      "cadence_cap_daily_hits": 85,
       "cashtag_cap_hits": 0,
       "slot_collision_hits": 0,
       "reply_cap_hits": 0
     },
     "lexicon": {
-      "hits": 0
+      "hits": 1
     },
     "disclosure": {
       "hits": 0
@@ -1242,12 +1231,13 @@
     "cherry_pick": {
       "status": "run",
       "loss_tickers_in_window": [
+        "MS",
         "QCOM"
       ],
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 4,
+      "age_days": 1,
       "max": 7
     },
     "kill_switch": {

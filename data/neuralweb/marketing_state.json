@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-07-20",
+  "as_of": "2026-07-21",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 26,
+    "opportunity_queue_depth": 36,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1330,15 +1330,15 @@
         "voice": "authoritative desk",
         "corpus": "full",
         "tilt": {
-          "signal": 0.32,
-          "chart": 0.1,
-          "education": 0.08,
-          "macro": 0.14,
-          "receipt": 0.08,
-          "watchlist": 0.05,
-          "event": 0.05,
+          "signal": 0.4,
+          "chart": 0.12,
           "mover": 0.1,
-          "theme_list": 0.08
+          "theme_list": 0.09,
+          "receipt": 0.08,
+          "event": 0.06,
+          "education": 0.05,
+          "macro": 0.05,
+          "watchlist": 0.05
         },
         "mix_observed": {},
         "stage": "A",
@@ -1358,15 +1358,15 @@
         "voice": "dry, receipts-forward",
         "corpus": "full",
         "tilt": {
-          "signal": 0.26,
-          "chart": 0.18,
-          "education": 0.05,
-          "macro": 0.07,
-          "receipt": 0.18,
-          "watchlist": 0.05,
+          "signal": 0.38,
+          "chart": 0.12,
+          "mover": 0.1,
+          "theme_list": 0.1,
+          "receipt": 0.1,
           "event": 0.05,
-          "mover": 0.08,
-          "theme_list": 0.08
+          "education": 0.05,
+          "macro": 0.04,
+          "watchlist": 0.06
         },
         "mix_observed": {},
         "stage": "A",
@@ -1382,19 +1382,19 @@
         "id": "theme_desk",
         "handle": null,
         "kind": "branded",
-        "beat": "Rotating high-attention vertical",
+        "beat": "Rotating high-attention sector",
         "voice": "specialist",
         "corpus": "full",
         "tilt": {
-          "signal": 0.28,
-          "chart": 0.1,
-          "education": 0.08,
-          "macro": 0.08,
+          "signal": 0.39,
+          "chart": 0.11,
+          "mover": 0.11,
+          "theme_list": 0.12,
           "receipt": 0.06,
-          "watchlist": 0.05,
-          "event": 0.14,
-          "mover": 0.1,
-          "theme_list": 0.11
+          "event": 0.07,
+          "education": 0.06,
+          "macro": 0.04,
+          "watchlist": 0.04
         },
         "mix_observed": {},
         "stage": "A",
@@ -1414,15 +1414,15 @@
         "voice": "educational",
         "corpus": "full",
         "tilt": {
-          "signal": 0.24,
-          "chart": 0.08,
-          "education": 0.18,
-          "macro": 0.2,
-          "receipt": 0.05,
-          "watchlist": 0.05,
-          "event": 0.03,
+          "signal": 0.36,
+          "chart": 0.14,
           "mover": 0.1,
-          "theme_list": 0.07
+          "theme_list": 0.09,
+          "receipt": 0.08,
+          "event": 0.07,
+          "education": 0.08,
+          "macro": 0.04,
+          "watchlist": 0.04
         },
         "mix_observed": {},
         "stage": "A",
@@ -1442,15 +1442,15 @@
         "voice": "fast, reactive",
         "corpus": "full",
         "tilt": {
-          "signal": 0.3,
-          "chart": 0.16,
-          "education": 0.04,
-          "macro": 0.06,
-          "receipt": 0.06,
-          "watchlist": 0.04,
+          "signal": 0.42,
+          "chart": 0.1,
+          "mover": 0.12,
+          "theme_list": 0.12,
+          "receipt": 0.05,
           "event": 0.08,
-          "mover": 0.14,
-          "theme_list": 0.12
+          "education": 0.04,
+          "macro": 0.03,
+          "watchlist": 0.04
         },
         "mix_observed": {},
         "stage": "A",
@@ -1470,15 +1470,15 @@
         "voice": "pattern/history",
         "corpus": "full",
         "tilt": {
-          "signal": 0.26,
-          "chart": 0.22,
-          "education": 0.06,
-          "macro": 0.06,
-          "receipt": 0.05,
-          "watchlist": 0.13,
+          "signal": 0.37,
+          "chart": 0.13,
+          "mover": 0.09,
+          "theme_list": 0.08,
+          "receipt": 0.09,
           "event": 0.05,
-          "mover": 0.1,
-          "theme_list": 0.07
+          "education": 0.07,
+          "macro": 0.05,
+          "watchlist": 0.07
         },
         "mix_observed": {},
         "stage": "A",
@@ -1494,30 +1494,30 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 26,
-      "scored": 25,
+      "open": 36,
+      "scored": 36,
       "newest": [
         {
-          "id": "radar-earnings-AAL-2026-07-20",
+          "id": "radar-earnings-AAL-2026-07-21",
           "problem_or_desire": "$AAL: earnings 2026-07-23",
           "expected_value": 0.5,
-          "score": 0.424319,
+          "score": 0.451774,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-earnings-ACI-2026-07-20",
+          "id": "radar-earnings-ACI-2026-07-21",
           "problem_or_desire": "$ACI: earnings 2026-07-21",
           "expected_value": 0.5,
-          "score": 0.424319,
+          "score": 0.451774,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-earnings-ADT-2026-07-20",
+          "id": "radar-earnings-ADT-2026-07-21",
           "problem_or_desire": "$ADT: earnings 2026-07-23",
           "expected_value": 0.5,
-          "score": 0.424319,
+          "score": 0.451774,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1776,11 +1776,11 @@
   ],
   "content": {
     "total_posts": 130,
-    "signal_posts": 38,
-    "charts": 5,
+    "signal_posts": 52,
+    "charts": 8,
     "accounts": 6,
     "state": "present",
-    "as_of": "2026-07-20"
+    "as_of": "2026-07-21"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -1790,7 +1790,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-20T05:40:58Z",
-  "inputs_hash": "sha256:e436518a7e97ef19ef2c5fda7fdfd6e2eb7ca369dbe9476c138013be7ccc28a5",
+  "produced_at": "2026-07-21T03:30:43Z",
+  "inputs_hash": "sha256:863a405bb369674e59a8c2ba202983eed0aaf9ebdd0db38bb5318acc80a9eabc",
   "tier": "display"
 }
