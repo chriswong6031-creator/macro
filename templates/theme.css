@@ -451,6 +451,16 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
    no longer get squeezed into wrapping a third row beside the pills. */
 .site-nav .nav-links { grid-column: 1 / -1; grid-row: 1; display: flex; flex-wrap: wrap;
   align-items: center; gap: 3px; min-width: 0; }
+/* CLS: pre-collapse the mobile nav at PARSE time. theme.js injects the hamburger +
+   flyout sheet on init, but that lands ~2s in on a phone — until then the full
+   desktop menu (~258px tall at 412px wide) rendered expanded, then vanished:
+   a 0.30 layout shift on every mobile load (2026-07-21 audit, the whole page
+   jumped up). Same 1259px breakpoint as theme.js's injected sheet; :not(.nav-open)
+   keeps this inert once the flyout opens (JS toggles nav-open on .site-nav); the
+   <noscript> re-expand in _navlinks.html.j2 preserves the no-JS fallback. */
+@media (max-width: 1259px){
+  .site-nav:not(.nav-open) .nav-links { display: none; }
+}
 /* ── Brand lockup — the crafted Mastermind “M” logomark + MASTERMIND wordmark, the
    first item in the shared _navlinks list, pinned at the head of the menu bar and
    linking Home. The wordmark collapses on phones (≤560px); the full “Market

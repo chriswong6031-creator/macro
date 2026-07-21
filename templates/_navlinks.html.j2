@@ -317,3 +317,9 @@
      when neither a Worker URL nor a snapshot URL is configured. #}
   <script src="{{ NP }}live_config.js"></script>
   <script src="{{ NP }}live.js"></script>
+  {# CLS guard pair: theme.css (+ the _vector_polish port) pre-collapses .nav-links
+     below 1260px at parse, so the menu never renders expanded and then vanishes
+     when theme.js's hamburger sheet lands (~2s on phones — a 0.30 layout shift,
+     2026-07-21 audit). With JS off the hamburger never arrives — this noscript
+     restores the always-expanded fallback (every link stays reachable). #}
+  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
