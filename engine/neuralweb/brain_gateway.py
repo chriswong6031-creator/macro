@@ -4244,8 +4244,15 @@ def get_thread(thread_id: str, user_id: str) -> dict | None:
 # /api/brain/me quota summary helper
 # ---------------------------------------------------------------------------
 
-def get_user_quotas(user_id: str, root: Path | None = None) -> dict:
-    """Return quota status for both lanes for a user."""
+def get_user_quotas(user_id: str, root: Path | None = None, user_email: str = "") -> dict:
+    """Return quota status for both lanes for a user.
+
+    Unlimited operators (BRAIN_UNLIMITED_ALLOWLIST) report uncapped (limit=-1) on BOTH lanes
+    so the widget unlocks Pro, Deep Research, and image attach for them (the backend already
+    bypasses the quota/gates; this makes the UI match)."""
+    if _unlimited_allowed(user_email):
+        unl = {"remaining": -1, "limit": -1, "period": "unlimited"}
+        return {"tier": "unlimited", "quotas": {"fast": dict(unl), "pro": dict(unl)}}
     entitlement = _resolve_tier(user_id, root)
     tier = entitlement.get("tier") or "free"
     status = entitlement.get("status") or "active"
