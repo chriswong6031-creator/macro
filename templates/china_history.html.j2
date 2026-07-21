@@ -238,10 +238,12 @@
 window.__CHART_SWAP__ = {
   /* zh 红涨绿跌 (operator ruling 2026-07-21): direction phase pairs swap.
      LIQUIDITY_IGNITION (#45b873 = bullish accumulation) ↔ EUPHORIA (#e06464 = bearish top).
-     BROADENING (#3da564 ≈ green bullish mid-phase) ↔ DISTRIBUTION (#e07070 ≈ red exit).
-     Existing #5fbf7f↔#e07070 and #2e9e4f↔#d04545 are light-mode hue pairs (same axis). */
+     Existing #5fbf7f↔#e07070 and #2e9e4f↔#d04545 are light-mode hue pairs (same axis).
+     Entries must be SYMMETRIC pairs — chart_i18n applies the same map to toggle back, so
+     a one-way entry (e.g. #3da564→#e07070) would drift that trace's colour on en↔zh
+     round trips (#e07070 maps back to #5fbf7f, not #3da564). */
   colors: {"#5fbf7f":"#e07070","#e07070":"#5fbf7f","#2e9e4f":"#d04545","#d04545":"#2e9e4f",
-           "#45b873":"#e06464","#e06464":"#45b873","#3da564":"#e07070"},
+           "#45b873":"#e06464","#e06464":"#45b873"},
   labels: {"growth":"增长","inflation":"通胀"}
 };
 </script>

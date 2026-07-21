@@ -291,6 +291,7 @@
   body.page-canada .cax-regime-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--q3)}
   /* zh 红涨绿跌: color-mix over var(--up)/var(--down) so pills flip automatically in zh */
   body.page-canada .ms-green .cax-regime-pill{background:color-mix(in srgb,var(--up) 10%,transparent)}
+  body.page-canada .ms-red .cax-regime-pill{background:color-mix(in srgb,var(--down) 10%,transparent)}
   body.page-canada .ms-green .cax-regime-pill .dot{background:var(--up)}
   body.page-canada .ms-yellow .cax-regime-pill{background:rgba(224,160,48,.10)}
   body.page-canada .ms-yellow .cax-regime-pill .dot{background:var(--warn)}
@@ -747,7 +748,7 @@
         <span class="l-en">{{ _n_bull }} of {{ _n_total }} signals aligned</span><span class="l-zh">{{ _n_total }} 项中 {{ _n_bull }} 项一致</span>
         <span class="n">▾</span></button>
       <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
-        <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--act)">{{ _rr_score }}</span>{% endif %} ▾</button>
+        <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--down)">{{ _rr_score }}</span>{% endif %} ▾</button>
 
       <!-- popover: factor breakdown -->
       <div class="cax-pop" id="cax-pop-signals">
@@ -930,8 +931,8 @@
   <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-risk')" style="border-color:color-mix(in srgb,var(--down) 35%,transparent)">
     <div class="cax-ctitle">{{ t('Pullback Risk','回撤风险') }} <span class="cax-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)">{{ t('HIGH','高') }}</span></div>
     {% if _rr_score is not none %}
-    <div class="cax-bignum" style="color:var(--act)">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)"> /100</span></div>
-    <div class="cax-bigsub" style="color:var(--act)">{{ t(_rr.get('label_en') or '', _rr.get('label_zh') or '') }}</div>
+    <div class="cax-bignum" style="color:var(--down)">{{ _rr_score }}<span style="font-size:14px;color:var(--muted)"> /100</span></div>
+    <div class="cax-bigsub" style="color:var(--down)">{{ t(_rr.get('label_en') or '', _rr.get('label_zh') or '') }}</div>
     {% endif %}
     {% if _rr_p21 is not none %}<div class="cax-kv"><span class="k">{{ t('≥5% dip odds','≥5%回撤概率') }}</span><span class="v">{{ (_rr_p21*100)|round|int }}%</span></div>{% endif %}
     <div class="cax-foot">{{ t(_rr_do_en or 'High pullback risk — size down, watch alerts.', _rr_do_zh or '回撤风险高 — 缩仓，关注警报。') }}</div>

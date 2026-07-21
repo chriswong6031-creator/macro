@@ -926,11 +926,10 @@
   body.page-hk .hkx-stword.warn{color:var(--warn)}
   body.page-hk .hkx-stword.bad{color:var(--down)}
   /* .hkx-stword.act uses var(--act) which is a non-flipping legacy alias → remap to var(--down)
-     so it participates in the zh swap (market-direction reads: "act" = a bad stance) */
+     so it participates in the zh swap (market-direction reads: "act" = a bad stance).
+     NO zh overrides for .ok/.bad here: they paint from --up/--down, which the theme.css
+     zh swap already flips — a zh-scoped re-swap would double-flip them back to Western. */
   body.page-hk .hkx-stword.act{color:var(--down)}
-  /* zh 红涨绿跌: market-direction stance words swap; .warn is severity/amber → stays */
-  html[data-lang="zh"] body.page-hk .hkx-stword.ok{color:var(--down)}
-  html[data-lang="zh"] body.page-hk .hkx-stword.bad{color:var(--up)}
   body.page-hk .hkx-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
   body.page-hk .hkx-chip{font-size:11px;border-radius:999px;padding:3px 10px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04)}
   body.page-hk .hkx-chip.hot{background:rgba(224,100,100,.13);border-color:rgba(224,100,100,.4);color:#eda8a8}
