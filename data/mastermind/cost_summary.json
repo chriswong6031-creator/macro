@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-20",
+  "as_of": "2026-07-21",
   "days": {
     "2026-06-23": {
       "autonomous": {
@@ -716,117 +716,246 @@
       }
     },
     "2026-07-20": {
-      "china": {
-        "cache_read_tokens": 448420,
-        "calls": 3,
-        "input_tokens": 27868,
+      "autonomous": {
+        "cache_read_tokens": 271838,
+        "calls": 1,
+        "input_tokens": 11493,
         "keys": {},
-        "output_tokens": 24507,
+        "output_tokens": 10361,
+        "seats": {
+          "autonomous_brain": {
+            "calls": 1,
+            "input_tokens": 11493,
+            "output_tokens": 10361,
+            "usd": 1.378378
+          }
+        },
+        "usd": 1.378378
+      },
+      "china": {
+        "cache_read_tokens": 592444,
+        "calls": 4,
+        "input_tokens": 39140,
+        "keys": {},
+        "output_tokens": 32774,
         "seats": {
           "china_brain": {
-            "calls": 3,
-            "input_tokens": 27868,
-            "output_tokens": 24507,
-            "usd": 3.437635
+            "calls": 4,
+            "input_tokens": 39140,
+            "output_tokens": 32774,
+            "usd": 4.614541
           }
         },
-        "usd": 3.437635
+        "usd": 4.614541
+      },
+      "etf": {
+        "cache_read_tokens": 84031,
+        "calls": 1,
+        "input_tokens": 11372,
+        "keys": {},
+        "output_tokens": 7928,
+        "seats": {
+          "etf_brain": {
+            "calls": 1,
+            "input_tokens": 11372,
+            "output_tokens": 7928,
+            "usd": 1.076887
+          }
+        },
+        "usd": 1.076887
+      },
+      "heavyweight": {
+        "cache_read_tokens": 163553,
+        "calls": 1,
+        "input_tokens": 11722,
+        "keys": {},
+        "output_tokens": 9346,
+        "seats": {
+          "heavyweight_brain": {
+            "calls": 1,
+            "input_tokens": 11722,
+            "output_tokens": 9346,
+            "usd": 1.381741
+          }
+        },
+        "usd": 1.381741
       },
       "hk": {
-        "cache_read_tokens": 498419,
-        "calls": 3,
-        "input_tokens": 27871,
+        "cache_read_tokens": 645442,
+        "calls": 4,
+        "input_tokens": 39150,
         "keys": {},
-        "output_tokens": 28639,
+        "output_tokens": 38564,
         "seats": {
           "hk_brain": {
-            "calls": 3,
-            "input_tokens": 27871,
-            "output_tokens": 28639,
-            "usd": 3.257998
+            "calls": 4,
+            "input_tokens": 39150,
+            "output_tokens": 38564,
+            "usd": 4.505128
           }
         },
-        "usd": 3.257998
+        "usd": 4.505128
       },
       "system": {
-        "cache_read_tokens": 162060,
-        "calls": 29,
-        "input_tokens": 280,
+        "cache_read_tokens": 256595,
+        "calls": 41,
+        "input_tokens": 400,
         "keys": {
           "claude_code_oauth_3": {
-            "calls": 5,
-            "input_tokens": 50,
-            "output_tokens": 53707,
-            "usd": 0.46839
+            "calls": 8,
+            "input_tokens": 80,
+            "output_tokens": 83807,
+            "usd": 0.723163
           },
           "claude_code_oauth_4": {
-            "calls": 7,
-            "input_tokens": 70,
-            "output_tokens": 62275,
-            "usd": 0.594162
+            "calls": 9,
+            "input_tokens": 90,
+            "output_tokens": 81644,
+            "usd": 0.769758
           },
           "claude_code_oauth_5": {
-            "calls": 6,
-            "input_tokens": 50,
-            "output_tokens": 50628,
-            "usd": 0.53711
+            "calls": 9,
+            "input_tokens": 80,
+            "output_tokens": 84576,
+            "usd": 0.81155
           },
           "claude_code_oauth_6": {
-            "calls": 6,
-            "input_tokens": 60,
-            "output_tokens": 47015,
-            "usd": 0.46363
+            "calls": 8,
+            "input_tokens": 80,
+            "output_tokens": 61916,
+            "usd": 0.615723
           },
           "claude_code_oauth_7": {
-            "calls": 5,
-            "input_tokens": 50,
-            "output_tokens": 32375,
-            "usd": 0.365102
+            "calls": 7,
+            "input_tokens": 70,
+            "output_tokens": 51700,
+            "usd": 0.53999
           }
         },
-        "output_tokens": 246000,
+        "output_tokens": 363643,
         "seats": {
           "scout": {
-            "calls": 29,
-            "input_tokens": 280,
-            "output_tokens": 246000,
-            "usd": 2.428393
+            "calls": 41,
+            "input_tokens": 400,
+            "output_tokens": 363643,
+            "usd": 3.460182
           }
         },
-        "usd": 2.428393
+        "usd": 3.460182
+      }
+    },
+    "2026-07-21": {
+      "china": {
+        "cache_read_tokens": 148860,
+        "calls": 1,
+        "input_tokens": 11442,
+        "keys": {},
+        "output_tokens": 9566,
+        "seats": {
+          "china_brain": {
+            "calls": 1,
+            "input_tokens": 11442,
+            "output_tokens": 9566,
+            "usd": 1.255714
+          }
+        },
+        "usd": 1.255714
+      },
+      "hk": {
+        "cache_read_tokens": 144859,
+        "calls": 1,
+        "input_tokens": 11297,
+        "keys": {},
+        "output_tokens": 7734,
+        "seats": {
+          "hk_brain": {
+            "calls": 1,
+            "input_tokens": 11297,
+            "output_tokens": 7734,
+            "usd": 1.166025
+          }
+        },
+        "usd": 1.166025
+      },
+      "system": {
+        "cache_read_tokens": 54020,
+        "calls": 11,
+        "input_tokens": 110,
+        "keys": {
+          "claude_code_oauth_3": {
+            "calls": 2,
+            "input_tokens": 20,
+            "output_tokens": 7578,
+            "usd": 0.11478
+          },
+          "claude_code_oauth_4": {
+            "calls": 2,
+            "input_tokens": 20,
+            "output_tokens": 20966,
+            "usd": 0.210384
+          },
+          "claude_code_oauth_5": {
+            "calls": 3,
+            "input_tokens": 30,
+            "output_tokens": 26889,
+            "usd": 0.239063
+          },
+          "claude_code_oauth_6": {
+            "calls": 2,
+            "input_tokens": 20,
+            "output_tokens": 8186,
+            "usd": 0.118706
+          },
+          "claude_code_oauth_7": {
+            "calls": 2,
+            "input_tokens": 20,
+            "output_tokens": 15086,
+            "usd": 0.192889
+          }
+        },
+        "output_tokens": 78705,
+        "seats": {
+          "scout": {
+            "calls": 11,
+            "input_tokens": 110,
+            "output_tokens": 78705,
+            "usd": 0.875821
+          }
+        },
+        "usd": 0.875821
       }
     }
   },
   "schema": "mastermind.cost_summary.v1",
   "totals_30d": {
     "by_book": {
-      "autonomous": 31.71888,
-      "china": 35.089853,
-      "etf": 2.88591,
+      "autonomous": 33.097258,
+      "china": 37.522473,
+      "etf": 3.962797,
       "flagship": 40.833917,
-      "heavyweight": 13.115459,
-      "hk": 24.543387,
-      "system": 2.522612
+      "heavyweight": 14.4972,
+      "hk": 26.956542,
+      "system": 4.430222
     },
     "by_key": {
-      "claude_code_oauth_3": 1.984943,
-      "claude_code_oauth_4": 2.466204,
-      "claude_code_oauth_5": 2.27266,
-      "claude_code_oauth_6": 2.544679,
-      "claude_code_oauth_7": 2.104311
+      "claude_code_oauth_3": 2.354496,
+      "claude_code_oauth_4": 2.852184,
+      "claude_code_oauth_5": 2.786163,
+      "claude_code_oauth_6": 2.815478,
+      "claude_code_oauth_7": 2.472088
     },
     "by_seat": {
-      "autonomous_brain": 3.195455,
-      "china_brain": 3.437635,
+      "autonomous_brain": 4.573833,
+      "china_brain": 5.870255,
       "deep": 8.850182,
-      "etf_brain": 2.88591,
+      "etf_brain": 3.962797,
       "flagship_pm": 1.942054,
-      "heavyweight_brain": 1.287095,
-      "hk_brain": 3.257998,
-      "scout": 2.522612
+      "heavyweight_brain": 2.668836,
+      "hk_brain": 5.671153,
+      "scout": 4.430222
     },
-    "input_tokens": 256730,
-    "output_tokens": 485025,
-    "usd": 150.71
+    "input_tokens": 336837,
+    "output_tokens": 744500,
+    "usd": 161.3004
   }
 }
