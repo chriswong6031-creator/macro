@@ -318,6 +318,11 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
 .gbtn-up{ border-color:color-mix(in srgb, var(--up) 45%, var(--gbtn-brd)); background:linear-gradient(180deg, color-mix(in srgb, var(--up) 12%, var(--gbtn-bg)), var(--gbtn-bg)); }
 @keyframes gbtnBreath{ 0%,100%{ box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
   50%{ box-shadow: inset 0 1px 0 var(--gbtn-sheen), 0 0 18px -4px color-mix(in srgb, var(--link) 38%, transparent); } }
+/* Perf: box-shadow breathing repaints on the MAIN THREAD every frame — measured
+   ~4.5s of style/paint per 18s on a mid phone (2026-07-21 mobile audit). The
+   .gbtn overflow:hidden clips any pseudo-element glow overlay, so touch devices
+   simply hold the static resting state; desktop keeps the identical breathing. */
+@media (pointer: coarse){ .gbtn-cta{ animation:none; } }
 @media (prefers-reduced-motion: reduce){
   .gbtn::after{ display:none; } .gbtn, .gbtn:hover, .gbtn:active{ transform:none; } .gbtn-cta{ animation:none; } }
 
@@ -608,19 +613,27 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
 .nav-search .mag { position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
   font-size: 12px; opacity: .65; pointer-events: none; }
 .nav-search input { width: 100%; box-sizing: border-box; padding: 8px 12px 8px 32px;
-  border-radius: 10px; border: 1px solid var(--line); background: var(--panel2);
+  border-radius: 10px; border: 1px solid color-mix(in srgb, #416aec 30%, var(--line));
+  background: var(--panel2);
   color: var(--text); font: inherit; font-size: 13px; outline: none;
-  transition: border-color .18s, box-shadow .25s ease;
-  /* idle: a calm #416aec glow that breathes in and out, drawing the eye to the
-     search. Stops dead on focus (see :focus) so typing feels solid and steady. */
-  animation: searchBreathe 3.8s ease-in-out infinite; }
-@keyframes searchBreathe {
-  0%, 100% { border-color: color-mix(in srgb, #416aec 30%, var(--line));
-    box-shadow: 0 0 0 0 rgba(65,106,236,0), 0 0 5px 0 rgba(65,106,236,.10); }
-  50% { border-color: #416aec;
-    box-shadow: 0 0 0 3px rgba(65,106,236,.22), 0 0 16px 2px rgba(65,106,236,.38); } }
+  box-shadow: 0 0 5px 0 rgba(65,106,236,.10);
+  transition: border-color .18s, box-shadow .25s ease; }
+/* idle: a calm #416aec glow that breathes in and out, drawing the eye to the
+   search. Stops dead on focus so typing feels solid and steady.
+   Perf: the glow lives on a pseudo whose ONLY animated property is opacity —
+   compositor-run, zero per-frame style/paint. Never animate box-shadow or
+   border-color here: that repaints the nav on the main thread every frame
+   (~measured seconds of phone CPU per minute, 2026-07-21 mobile audit). */
+.nav-search::after { content: ""; position: absolute; inset: 0; border-radius: 10px;
+  border: 1px solid #416aec;
+  box-shadow: 0 0 0 3px rgba(65,106,236,.22), 0 0 16px 2px rgba(65,106,236,.38);
+  opacity: 0; pointer-events: none;
+  animation: mmGlowBreathe 3.8s ease-in-out infinite; }
+.nav-search:focus-within::after { animation: none; opacity: 0; }
+/* shared compositor-only breathing ramp — reused by page-level glow pulses */
+@keyframes mmGlowBreathe { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 .nav-search input::placeholder { color: var(--muted); }
-.nav-search input:focus { border-color: var(--link); animation: none; box-shadow: none; }
+.nav-search input:focus { border-color: var(--link); box-shadow: none; }
 .nav-sugg { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 80;
   background: var(--glass-bg);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
@@ -714,10 +727,16 @@ html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
 .nav-ctrls .ai-brief-link.terminal-link:hover { color: #fff; border-color: var(--link);
   background: linear-gradient(180deg, color-mix(in srgb, var(--link) 88%, transparent), var(--link));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 8px 24px -10px color-mix(in srgb, var(--link) 60%, transparent); }
+/* Perf: box-shadow breathing = main-thread repaint per frame; touch devices hold
+   the resting state (see .gbtn-cta note; 2026-07-21 mobile audit). The nav-search
+   pseudo-breathe is compositor-only, so it stays on for touch. */
+@media (pointer: coarse){
+  .nav-ctrls .ai-brief-link { animation: none; } }
 @media (prefers-reduced-motion: reduce){
   .nav-ctrls .ai-brief-link { animation: none; transform: none; }
-  .nav-ctrls .ai-brief-link:hover { transform: none; }
-  .nav-ctrls .ai-brief-link::after { display: none; } }
+  .nav-ctrls .ai-brief-link::after { display: none; }
+  .nav-search::after { animation: none; opacity: 0; }
+  .nav-ctrls .ai-brief-link:hover { transform: none; } }
 
 /* AI Daily Brief entry card — the single in-page doorway to the cross-asset LLM
    synthesis page (aibrief.html). Replaces the old inline AI Master Brief panel on the

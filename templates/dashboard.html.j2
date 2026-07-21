@@ -257,17 +257,22 @@
   /* Dislocation Gate-1 "lit" state: when a real stress dislocation is live the
      whole panel glows in the verdict colour carried on --lit (green = buyable
      washout, red = falling knife). Dormant/calm = no glow. engine/dislocation.py */
-  @keyframes disloGlow {
-    0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 32%, transparent),
-                           0 0 17px 1px color-mix(in srgb, var(--lit) 17%, transparent); }
-    50%      { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 58%, transparent),
-                           0 0 30px 5px color-mix(in srgb, var(--lit) 38%, transparent); }
-  }
+  /* Perf: the glow pulse lives on a pseudo animating ONLY opacity (compositor);
+     animating box-shadow on the panel repainted it every frame (2026-07-21
+     mobile audit). Base = old 0% state, pseudo = old 50% state fading in/out. */
   .panel.dislo-lit { border-color: color-mix(in srgb, var(--lit) 60%, var(--line));
     background: color-mix(in srgb, var(--lit) 7%, var(--panel));
-    animation: disloGlow 3.6s ease-in-out infinite; }
+    position: relative;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 32%, transparent),
+                0 0 17px 1px color-mix(in srgb, var(--lit) 17%, transparent); }
+  .panel.dislo-lit::after { content: ""; position: absolute; inset: 0;
+    border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 58%, transparent),
+                0 0 30px 5px color-mix(in srgb, var(--lit) 38%, transparent);
+    opacity: 0; animation: mmGlowBreathe 3.6s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) {
-    .panel.dislo-lit { animation: none;
+    .panel.dislo-lit::after { animation: none; opacity: 0; }
+    .panel.dislo-lit {
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 50%, transparent),
                   0 0 22px 2px color-mix(in srgb, var(--lit) 30%, transparent); } }
   .muted { color: var(--muted); }
@@ -1596,12 +1601,20 @@
      dislocation banner is the late, falling-knife filter. */
   body.page-macro #risk-state { scroll-margin-top: 16px; border-left: 4px solid var(--rs); }
   body.page-macro #risk-state.rs-float { order: -1; }
-  body.page-macro #risk-state.rs-loud { animation: rspulse 2.2s ease-in-out infinite; }
+  /* Perf: loud-state pulse = pseudo animating ONLY opacity (compositor); the old
+     box-shadow keyframes repainted the panel every frame (2026-07-21 mobile audit). */
+  body.page-macro #risk-state.rs-loud, body.page-macro #risk-radar.rr-loud { position: relative; }
+  body.page-macro #risk-state.rs-loud::after, body.page-macro #risk-radar.rr-loud::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 16px 2px var(--rs-glow);
+    opacity: 0; animation: mmGlowBreathe 2.2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    body.page-macro #risk-state.rs-loud::after, body.page-macro #risk-radar.rr-loud::after {
+      animation: none; opacity: .6; } }
   body.page-macro #risk-state .rs-head { font-size: 19px; font-weight: 800; color: var(--rs); letter-spacing: .2px; }
   body.page-macro #risk-state .rs-score { font-variant-numeric: tabular-nums; }
   body.page-macro #risk-state .rs-driver { display:flex; align-items:baseline; gap:8px; padding:3px 0; }
   body.page-macro #risk-state .rs-bar { height:6px; border-radius:3px; background:var(--rs); opacity:.85; }
-  @keyframes rspulse { 0%,100% { box-shadow: 0 0 0 0 var(--rs-glow); } 50% { box-shadow: 0 0 16px 2px var(--rs-glow); } }
   /* ---- Sector heat strip (macro-only, DISPLAY-ONLY) ---- */
   .sh-strip { padding: 8px 14px 10px; }
   .sh-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -1625,7 +1638,7 @@
      the regime hero (below the acute dislocation filter) and pulses when the gated loud banner fires. */
   body.page-macro #risk-radar { scroll-margin-top: 16px; border-left: 4px solid var(--rr); }
   body.page-macro #risk-radar.rr-float { order: -1; }
-  body.page-macro #risk-radar.rr-loud { animation: rspulse 2.2s ease-in-out infinite; }
+  /* rr-loud pulse: shares the compositor pseudo defined beside #risk-state above */
   body.page-macro #risk-radar .rr-head { font-size: 20px; font-weight: 800; color: var(--rr); letter-spacing: .2px; }
   body.page-macro #risk-radar .rr-prob { font-variant-numeric: tabular-nums; }
   body.page-macro #risk-radar .rr-scare { border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; }
@@ -2788,7 +2801,14 @@ body.page-macro .sx-island::before{
   opacity:0;transition:opacity .5s ease;
 }
 body.page-macro .sx[data-open] .sx-island::before{
-  opacity:.38;animation:isle-aurora 14s linear infinite;
+  /* Perf (2026-07-21 mobile audit): the angle sweep restyles + repaints the whole
+     island every frame (custom-property animation is main-thread). steps(84)
+     keeps the drift at ~6fps — visually identical on this soft gradient — and
+     cuts ~90% of the paint work; touch devices hold the lit rim entirely. */
+  opacity:.38;animation:isle-aurora 14s steps(84) infinite;
+}
+@media (pointer:coarse){
+  body.page-macro .sx[data-open] .sx-island::before{animation:none}
 }
 body.page-macro .sx:not([data-open]) .sx-island::before{opacity:0;animation:none}
 [data-theme="light"] body.page-macro .sx[data-open] .sx-island::before{opacity:.2}
@@ -2799,7 +2819,9 @@ body.page-macro .sx-island::after{
   position:absolute;left:10%;right:10%;bottom:-14px;height:30px;
   border-radius:50%;
   background:color-mix(in srgb,var(--isle-color,var(--info)) 38%,transparent);
-  filter:blur(14px);opacity:0;transition:opacity .4s ease;z-index:-2;
+  /* blur frozen at the midpoint — animating blur() re-rasterizes every frame
+     (2026-07-21 mobile audit); the breathing lives in opacity alone below. */
+  filter:blur(16px);opacity:0;transition:opacity .4s ease;z-index:-2;
 }
 body.page-macro .sx[data-open] .sx-island::after{
   opacity:.55;animation:isle-underglow 5s ease-in-out infinite;
@@ -2819,8 +2841,8 @@ body.page-macro.many-open .sx[data-open] .sx-island::after{opacity:.28}
   from{--isle-aurora-angle:0deg}to{--isle-aurora-angle:360deg}
 }
 @keyframes isle-underglow{
-  0%,100%{opacity:.50;filter:blur(14px)}
-  50%{opacity:.70;filter:blur(18px)}
+  0%,100%{opacity:.50}
+  50%{opacity:.70}
 }
 
 /* Island header beacon */
