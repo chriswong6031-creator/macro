@@ -72,9 +72,9 @@ INELIGIBLE for registration.**
 ### Algebraic chain
 
 1. `clean_hold` requires no forward close below close(t0) over (t0, t0+126td]
-   (`engine/winner_autopsy.py:497-506`).
-2. `durable_winner` requires `clean_hold` (`:511`).
-3. Detector onset requires a new-63d-high at t0 (`:296`), forcing close(t0) >= close(t0-1).
+   (`engine/winner_autopsy.py:515-524`).
+2. `durable_winner` requires `clean_hold` (`:526-529`).
+3. Detector onset requires a new-63d-high at t0 (`:285-290`), forcing close(t0) >= close(t0-1).
 4. Therefore: `gap_hold_k ≡ close(t0+k) > close(t0-1)` is **TRUE by algebra** for every
    kept_going episode (clean_hold prevents any close below close(t0) >= close(t0-1)).
 5. Conclusion: gap_hold_k = 1.0 for 100% of kept_going episodes is a logical consequence
@@ -324,4 +324,37 @@ A with-crypto re-run is not performed (benchmark error makes the comparison inva
 
 ## Adjudication (WA-R8, main loop)
 
-PENDING
+Ruled 2026-07-20 by main-loop Fable, after a round-1 adversarial stats review (opus; found
+the Bonferroni mislabel, the F2 tautology, the F4/F5 double-count) and a round-2
+verification (opus; all ten ordered corrections confirmed landed, both independent
+recomputations reproduced the corrected tables exactly, MERGEABLE).
+
+**WA-R8 ruling: NO fingerprint candidate earns a pre-registered slot.**
+
+- **F2 (gap-holds) — TAUTOLOGICAL; permanently ineligible against the current label
+  family.** The kept-going 100% hold rate is algebra (the `clean_hold` no-forward-drop
+  rule plus the detector's onset new-high), not a market regularity. Any future
+  early-hold conditioner requires outcome labels that do not embed a hold condition — a
+  new label construction plus its own prereg.
+- **F1 (catalyst rungs) — REFUTED on the 8-K-covered subset**, trailing and t0+21td
+  alike. Construction-scoped: fuller 8-K coverage could reopen it; nothing here
+  motivates that.
+- **F4/F5 (initial-excess magnitude, collapsed) — NULL at the declared α/m correction
+  and direction-reversed vs the failed contrast.** Bigger initial excess is not a
+  winner-selector.
+- **F3, F6 — UNTESTABLE** (A2-firewall coverage; no PIT short-interest/options
+  history). These remain open *questions*, not open candidates: each needs its data
+  substrate before any test can be designed.
+
+**The null is the deliverable.** At onset, on every feature measurable today,
+kept-going breakaways are statistically indistinguishable from blow-offs. Two
+consequences for the Lab: (i) if discriminating information exists, it is not in t0
+price/volume/8-K geometry — the forward-accruing substrates (per-ticker options,
+analyst revisions; joins began 2026-06, first answerable ~mid-2027 per the masterplan
+clock) and the unrun Layer-3(b) study (pre-onset vs matched controls) are the live
+directions; (ii) the asymmetric-exit doctrine strengthens — with entry-time
+discrimination refuted, edge extraction lives in holding policy conditioned on
+post-onset evidence (see the PSQ adjudication, PR #3162, for the Prophet-side
+counterpart ruled the same day). A construction-scoped registry row is appended to
+DO_NOT_REBUILD §2; per house epistemics this closes the tested constructions, not the
+search — "not found yet" ≠ "does not exist."
