@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.causal_lab_state.v1",
-  "asof": "2026-07-20T05:40:26Z",
+  "asof": "2026-07-21T03:31:07Z",
   "heartbeat": {
     "program": "CHF",
     "wave": "W3",
@@ -42,15 +42,15 @@
     "value_heuristic_formula": "score = UNEXPLORED_BONUS(10 if unexplored) + DATA_PRESENT_BONUS(5 if present) + ERA_BREADTH_BONUS(min(era_coverage_len, 4) * 1.0) - NULL_BASIN_PENALTY(20 if null_basin) - KILLED_PENALTY(100 if killed)"
   },
   "surprise_queue": {
-    "size": 18,
+    "size": 23,
     "stalest_source": "data/release_forecast/forward_ledger.jsonl",
-    "stalest_source_asof": "2026-07-19"
+    "stalest_source_asof": "2026-07-20"
   },
   "drift_events": [],
   "llm_lane": {
-    "status": "degraded_pack_only",
-    "asof": "2026-07-14T10:22:10+00:00",
-    "description": "generator failed: auth_invalid_all"
+    "status": "armed",
+    "asof": "2026-07-20T05:40:27+00:00",
+    "description": "auto_loop armed (operator ruling 2026-07-09); scheduled OAuth LLM run fires on the Tuesday nightly"
   },
   "data_absent_notes": [
     "entry_quality target family unavailable: replay_boarded.parquet not found (set REPLAY_BOARDED_PATH env var to runner-local path)"
