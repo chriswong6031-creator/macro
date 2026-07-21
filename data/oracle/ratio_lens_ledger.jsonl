@@ -74,3 +74,11 @@
 {"date": "2026-07-19", "pair_id": "smh_vs_rsp", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.093425, "leg_den_ret_1w": -0.004349, "state": "NO_ANCHOR", "kind": "etf"}
 {"date": "2026-07-19", "pair_id": "software_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.030631, "leg_den_ret_1w": -0.148121, "state": "NO_ANCHOR", "kind": "basket"}
 {"date": "2026-07-19", "pair_id": "mag7_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.011548, "leg_den_ret_1w": -0.148121, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-07-20", "pair_id": "smh_vs_spy", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.046826, "leg_den_ret_1w": -0.009495, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-20", "pair_id": "sox_vs_qqq", "event": "state_transition", "state_from": "NO_ANCHOR", "state": "BASING", "z252": 1.37, "z63": -0.293, "pct_3y": 95.0, "kind": "etf"}
+{"date": "2026-07-20", "pair_id": "igv_vs_smh", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.003016, "leg_den_ret_1w": -0.046826, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-20", "pair_id": "igv_vs_qqq", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.003016, "leg_den_ret_1w": -0.022277, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-20", "pair_id": "smh_vs_rsp", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.046826, "leg_den_ret_1w": -0.008485, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-07-20", "pair_id": "software_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.01609, "leg_den_ret_1w": -0.079036, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-07-20", "pair_id": "mag7_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.00179, "leg_den_ret_1w": -0.079036, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-07-20", "pair_id": "power_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.00733, "leg_den_ret_1w": -0.079036, "state": "NO_ANCHOR", "kind": "basket"}
