@@ -1354,7 +1354,10 @@ RENDER.users = async () => {
     <div class="section">Signups (30d)</div>
     <div class="card"><div class="spark">${series.map(x => `<i style="height:${Math.round(x.n / maxN * 100)}%" title="${esc(x.day)}: ${x.n}"></i>`).join("") || "<span class='muted'>no signups in 30d</span>"}</div></div>
     <div class="section">Recent users <span class="cnt" id="uCnt"></span></div>
-    <div id="uTbl"><div class="spin">loading…</div></div>`;
+    <div id="uTbl"><div class="spin">loading…</div></div>
+    <div class="section" style="margin-top:22px">Subscribers <span class="cnt" id="subCnt"></span> <span class="sub">— paid + trial, from Stripe (user_entitlements)</span></div>
+    <div id="subSummary"></div>
+    <div id="subTbl"><div class="spin">loading…</div></div>`;
   const rec = await api("/api/users/recent?limit=50");
   if (rec.ok) {
     $("#uCnt").textContent = rec.users.length;
@@ -1363,6 +1366,19 @@ RENDER.users = async () => {
         <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td></tr>`).join("")}
     </tbody></table>`;
   } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
+
+  const subs = await api("/api/users/subscribers?limit=200");
+  if (subs.ok) {
+    const bd = (subs.summary || []).map(r => `<span class="statpill ${["active", "trialing"].includes(r.status) ? "s-ok" : "s-mut"}">${esc(r.tier)} · ${esc(r.status)}: ${r.n}</span>`).join(" ") || "<span class='muted'>no entitlement rows yet</span>";
+    $("#subSummary").innerHTML = `<div class="card">${bd}</div>`;
+    const rows = subs.subscribers || [];
+    $("#subCnt").textContent = rows.length;
+    $("#subTbl").innerHTML = rows.length ? `<table><thead><tr><th>Email</th><th>Tier</th><th>Status</th><th>Renews</th><th>Source</th><th>Updated</th></tr></thead><tbody>
+      ${rows.map(u => `<tr><td class="mono">${esc(u.email)}</td><td><b>${esc(u.tier)}</b></td>
+        <td><span class="statpill ${["active", "trialing"].includes(u.status) ? "s-ok" : "s-mut"}">${esc(u.status)}</span></td>
+        <td class="mono sub">${esc(u.renews || "—")}</td><td class="sub">${esc(u.source || "")}</td><td class="mono sub">${esc(u.updated_at || "—")}</td></tr>`).join("")}
+    </tbody></table>` : `<div class="card sub">No paid or trialing subscribers yet.</div>`;
+  } else { $("#subTbl").innerHTML = `<div class="card sub">${esc(subs.error || "could not load")}</div>`; }
 };
 
 /* ---- SYSTEM + SERVICES + UPTIME ----------------------------------------- */

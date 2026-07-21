@@ -482,8 +482,55 @@ def require_user(authorization: str | None = Header(default=None)) -> dict:
 
 @app.get("/api/me")
 def me(user: dict = Depends(require_user)) -> dict:
-    """Whoami — first authenticated route; proves the Supabase login works."""
-    return {"id": user.get("id"), "email": user.get("email"), "role": user.get("role")}
+    """Whoami + entitlement + chat budget.
+
+    {id, email, role, tier, features, status, current_period_end, chat_budget}. Entitlement
+    fields fail-safe to the free default; chat_budget mirrors /api/brain/me's quota shape.
+    """
+    out: dict[str, Any] = {"id": user.get("id"), "email": user.get("email"), "role": user.get("role")}
+    user_id = user.get("id") or user.get("email") or ""
+    try:
+        from app import billing  # noqa: PLC0415
+        out.update(billing.read_entitlement(user_id))
+    except Exception:  # noqa: BLE001
+        out.update({"tier": "free", "features": [], "status": "none", "current_period_end": None})
+    try:
+        gw = _brain_module()
+        q = gw.get_user_quotas(user_id, root=REPO, user_email=(user.get("email") or "").strip().lower())
+        out["chat_budget"] = q.get("quotas")
+        if q.get("tier") == "unlimited":  # operator allowlist — surface the uncapped tier
+            out["tier"] = "unlimited"
+    except Exception:  # noqa: BLE001
+        out["chat_budget"] = None
+    return out
+
+
+_PLAN_LABELS = {"free": "Free", "insider": "Insider", "pro": "Pro", "unlimited": "Unlimited"}
+
+
+@app.get("/api/account")
+def account(user: dict = Depends(require_user)) -> dict:
+    """Plan-display payload for the shared account.js card — macro-hosted, so the macro site
+    no longer depends on the Terminal repo for plan display (masterplan §3.2 / MNZ-OD4)."""
+    user_id = user.get("id") or user.get("email") or ""
+    ent = {"tier": "free", "features": [], "status": "none", "current_period_end": None}
+    try:
+        from app import billing  # noqa: PLC0415
+        ent = billing.read_entitlement(user_id)
+    except Exception:  # noqa: BLE001
+        pass
+    tier = ent["tier"]
+    return {
+        "authenticated": True,
+        "email": user.get("email"),
+        "email_confirmed": bool(user.get("email_confirmed_at") or user.get("confirmed_at")),
+        "tier": tier,
+        "plan_label": _PLAN_LABELS.get(tier, tier.title()),
+        "status": ent["status"],
+        "features": ent["features"],
+        "current_period_end": ent["current_period_end"],
+        "plans_url": "/plans.html",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1024,3 +1071,16 @@ try:
     app.include_router(hub_router)
 except ImportError:
     pass  # app/hub.py not yet present — hub routes unavailable until lane B merges
+
+
+# ---------------------------------------------------------------------------
+# Billing spine router (MNZ W2 — app/billing.py): /api/billing/checkout|webhook|portal.
+# Included after require_user is defined (app/billing._current_user lazy-imports it),
+# so there is no import cycle. Routes 503 cleanly when STRIPE_SECRET_KEY is unset.
+# ---------------------------------------------------------------------------
+try:
+    from app.billing import router as billing_router  # noqa: E402
+    app.include_router(billing_router)
+except Exception as _billing_exc:  # noqa: BLE001 — never let a billing wiring error crash the whole API
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("billing router not mounted: %r", _billing_exc)

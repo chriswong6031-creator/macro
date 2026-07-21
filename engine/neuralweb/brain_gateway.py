@@ -2411,6 +2411,17 @@ def _resolve_tier(user_id: str, root: Path | None = None) -> dict:
     return result
 
 
+def invalidate_tier(user_id: str) -> None:
+    """Drop a user's cached tier so the next _resolve_tier re-reads Supabase.
+
+    Called by app/billing.py right after a Stripe webhook mutates public.user_entitlements,
+    so a purchase / upgrade / cancel / chargeback takes effect within one request instead of
+    lingering for up to one cache TTL (masterplan §3.2 negative-propagation is first-class).
+    """
+    with _TIER_CACHE_LOCK:
+        _TIER_CACHE.pop(user_id, None)
+
+
 # Make urllib.parse available (used in _resolve_tier)
 import urllib.parse  # noqa: E402
 

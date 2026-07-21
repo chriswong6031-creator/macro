@@ -96,3 +96,32 @@ def recent(limit: int = 30) -> dict:
         return {"ok": True, "users": rows or []}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
+
+
+def subscribers(limit: int = 200) -> dict:
+    """Paid + trialing entitlement roster joined to auth.users email (MNZ W2).
+
+    Reads public.user_entitlements (written by the Stripe webhook/reconciler in
+    app/billing.py) via the same read-only Management API path as the user roster.
+    Degrades gracefully when the table does not exist yet (returns ok:False + error).
+    """
+    if not status()["configured"]:
+        return {"ok": False, **status()}
+    try:
+        n = max(1, min(500, int(limit)))   # int-clamped → safe to interpolate
+        summary = _query(
+            "select tier, status, count(*)::int as n "
+            "from public.user_entitlements group by 1,2 order by 1,2")
+        rows = _query(
+            "select coalesce(u.email, e.user_id::text) as email, "
+            "e.tier, e.status, e.source, "
+            "to_char(e.current_period_end,'YYYY-MM-DD') as renews, "
+            "e.stripe_customer_id, "
+            "to_char(e.updated_at,'YYYY-MM-DD HH24:MI') as updated_at "
+            "from public.user_entitlements e "
+            "left join auth.users u on u.id = e.user_id "
+            "where e.tier <> 'free' or e.status in ('active','trialing','past_due') "
+            f"order by e.updated_at desc limit {n}")
+        return {"ok": True, "summary": summary or [], "subscribers": rows or []}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
