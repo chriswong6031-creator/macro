@@ -1,0 +1,214 @@
+{#=============================================================================
+  calculators/position_size.html.j2 — FLAGSHIP EXEMPLAR
+  The styled reference the five sibling calculators clone. Implements
+  CONTRACT §7 position-size formulas EXACTLY + the §6 WORKED_EXAMPLES self-check.
+  Explainer body follows §8 structure: direct answer → formula → worked example
+  → common trap → where it breaks → links.
+
+  Context set by the builder (per CONTRACT §5): page{slug:'position-size',
+  family:'page', title, description, canonical, url_path, section:'tools',
+  breadcrumbs}, rel, site, toc, related, cta.
+
+  --- CLONE GUIDE (sonnet builder, read once) -------------------------------
+  To build another calculator: keep the page structure identical; only change
+  (1) the fields in {% block calc_form %}, (2) compute()/render()/copyLine()
+  and the WORKED_EXAMPLES fixtures in {% block calc_script %}, (3) the explainer
+  prose in {% block article_body %}. The compute() function is PURE (no DOM);
+  the wire() function does all DOM reads/writes; WORKED_EXAMPLES runs each §7
+  fixture through compute() on load and console.error's any mismatch (silent
+  when green). Never render NaN/Infinity; empty/invalid → a plain-word sentence
+  in .co-plain and "—" in the number. Inputs accept commas.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter your account size, the share of it you’re willing to risk, your entry and your stop. You get the exact number of shares that keeps the loss at that risk if the stop is hit.',
+   '填入账户规模、你愿意承担的风险比例、入场价与止损价，即可得到——若触发止损、亏损恰好等于该风险时——应买入的确切股数。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Account size ($)', '账户规模（$）') }}</span>
+    <input id="account" inputmode="decimal" autocomplete="off" placeholder="10,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Risk per trade (%)', '每笔风险（%）') }} <span class="hint">{{ t('of the account', '占账户') }}</span></span>
+    <input id="riskpct" inputmode="decimal" autocomplete="off" placeholder="1"></label>
+  <label class="ci"><span class="ci-l">{{ t('Entry price ($)', '入场价（$）') }}</span>
+    <input id="entry" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l">{{ t('Stop price ($)', '止损价（$）') }} <span class="hint">{{ t('above entry = short', '高于入场=做空') }}</span></span>
+    <input id="stop" inputmode="decimal" autocomplete="off" placeholder="48"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('shares', '股') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in all four fields to size the trade.', '填入四个字段即可计算仓位。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Dollar risk', '风险金额') }}</dt><dd id="out-risk">—</dd></div>
+    <div><dt>{{ t('Risk per share', '每股风险') }}</dt><dd id="out-pershare">—</dd></div>
+    <div><dt>{{ t('Position value', '仓位价值') }}</dt><dd id="out-pos">—</dd></div>
+    <div><dt>{{ t('Position as % of account', '占账户比例') }}</dt><dd id="out-pospct">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('The number of shares to buy is your <strong>dollar risk</strong> divided by your <strong>risk per share</strong>, rounded down. Dollar risk is the slice of your account you’ll accept losing on this one trade; risk per share is the distance from your entry to your stop. Everything else — the position’s size, what fraction of the account it ties up — falls out of those two numbers.',
+   '应买入的股数，等于你的<strong>风险金额</strong>除以<strong>每股风险</strong>后向下取整。风险金额是你愿意在这一笔交易上承担损失的那部分账户；每股风险是入场价到止损价的距离。其余的一切——仓位大小、占用账户的比例——都由这两个数字决定。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Dollar risk</strong> = Account × Risk% ÷ 100', '<strong>风险金额</strong> = 账户 × 风险% ÷ 100') }}<br>
+{{ t('<strong>Risk per share</strong> = | Entry − Stop |', '<strong>每股风险</strong> = | 入场 − 止损 |') }}<br>
+{{ t('<strong>Shares</strong> = floor( Dollar risk ÷ Risk per share )', '<strong>股数</strong> = 向下取整( 风险金额 ÷ 每股风险 )') }}<br>
+{{ t('Position value = Shares × Entry', '仓位价值 = 股数 × 入场价') }}
+</div>
+<p>{{ t('The floor matters: you can’t buy a fraction of a share in most accounts, and rounding <em>up</em> would push your loss past the risk you set. Round down and your realized risk sits at or just under target — never over.',
+   '向下取整很关键：多数账户无法买入零股，而向<em>上</em>取整会让亏损超过你设定的风险。向下取整后，你的实际风险恰好等于或略低于目标——绝不会超出。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose you hold a <span class="num">$10,000</span> account and risk <span class="num">1%</span> per trade. You buy at <span class="num">$50.00</span> with a stop at <span class="num">$48.00</span>.',
+   '假设你有一个 <span class="num">$10,000</span> 的账户，每笔风险 <span class="num">1%</span>。你在 <span class="num">$50.00</span> 入场，止损设在 <span class="num">$48.00</span>。') }}</p>
+<ul>
+<li>{{ t('Dollar risk = <span class="num">10,000 × 1 ÷ 100 = $100</span>', '风险金额 = <span class="num">10,000 × 1 ÷ 100 = $100</span>') }}</li>
+<li>{{ t('Risk per share = <span class="num">| 50 − 48 | = $2.00</span>', '每股风险 = <span class="num">| 50 − 48 | = $2.00</span>') }}</li>
+<li>{{ t('Shares = <span class="num">floor(100 ÷ 2) = 50</span>', '股数 = <span class="num">向下取整(100 ÷ 2) = 50</span>') }}</li>
+<li>{{ t('Position value = <span class="num">50 × 50 = $2,500</span> — a quarter of the account, risking <span class="num">$100</span> to protect it.',
+   '仓位价值 = <span class="num">50 × 50 = $2,500</span>——占账户四分之一，用 <span class="num">$100</span> 的风险来守护它。') }}</li>
+</ul>
+</div>
+<p>{{ t('That $2,500 position sounds large, but the <em>loss</em> is capped at $100 — because the stop is close. Position size and risk are different questions; sizing off risk is what keeps a wide, low-conviction trade from quietly becoming your biggest loss.',
+   '这个 $2,500 的仓位听起来很大，但<em>亏损</em>被限制在 $100——因为止损很近。仓位大小和风险是两个不同的问题；以风险来定仓位，能防止一笔宽止损、低把握的交易悄悄变成你最大的亏损。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Sizing off the price, not the stop', '按价格定仓，而非按止损') }}</span>
+<p>{{ t('The most common mistake is deciding “I’ll put $2,000 into this” and setting a stop afterward. Now your loss depends on where the stop lands — a tight stop and a loose one give wildly different risk on the same $2,000. Size <em>from</em> the stop instead: pick the risk, pick the stop, and let the share count follow. A wider stop simply means fewer shares, not more risk.',
+   '最常见的错误是先决定「我要投 $2,000」，再设止损。此时你的亏损取决于止损设在哪里——同样的 $2,000，紧止损和松止损带来的风险天差地别。反过来<em>从</em>止损定仓：先定风险、再定止损，让股数随之而定。更宽的止损只意味着更少的股数，而非更多的风险。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('This math sizes a <em>single</em> trade cleanly. It does not know about the rest of your book. A few honest limits:',
+   '这套算法能干净地为<em>单</em>笔交易定仓，但它并不了解你账簿上的其余部分。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>Correlated positions.</strong> Ten trades each risking 1% aren’t 1% of risk if they all move together — a sector selloff can hit them at once. Cap total open risk, not just per-trade risk.',
+   '<strong>相关持仓。</strong>十笔各承担 1% 风险的交易，若齐涨齐跌，就不是 1% 的风险——一次板块抛售可能同时击中它们。要限制总的敞口风险，而不只是单笔风险。') }}</li>
+<li>{{ t('<strong>Gaps and slippage.</strong> A stop is a request, not a guarantee. Overnight gaps and thin liquidity can fill you well below the stop, so the real loss can exceed the planned risk.',
+   '<strong>跳空与滑点。</strong>止损是一个请求，而非保证。隔夜跳空和流动性不足可能让你的成交价远低于止损，实际亏损因此可能超过计划风险。') }}</li>
+<li>{{ t('<strong>Position larger than the account.</strong> A very tight stop can call for a position worth more than your cash — that needs margin, with its own risks. This tool flags it rather than pretending it away.',
+   '<strong>仓位大于账户。</strong>极紧的止损可能要求一个价值超过你现金的仓位——那需要保证金，并带来自身的风险。本工具会提示这一点，而非假装无事。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Decide what you’re willing to lose before you decide how much to buy. Position size is an output, not an input.',
+   '在决定买多少之前，先决定你愿意亏多少。仓位是结果，不是起点。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Go deeper in the lesson on <a href="', '在这节课中深入了解 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t(', or turn a stop into a target with the <a href="', '，或用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t('.', '把止损换算成目标。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (CONTRACT §7 — do not re-derive) ──────────────────────────
+  // inputs: {A account, r riskPct, E entry, S stop}. Returns an outputs object,
+  // or {ok:false, msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var A=inp.A, r=inp.r, E=inp.E, S=inp.S;
+    if(!(A>0)) return {ok:false, msg:"Enter an account size above zero."};
+    if(!(r>0)) return {ok:false, msg:"Enter the percent of your account to risk."};
+    if(!(E>0)) return {ok:false, msg:"Enter your entry price."};
+    if(!(S>0)) return {ok:false, msg:"Enter your stop price."};
+    var perShare = Math.abs(E - S);
+    if(perShare === 0) return {ok:false, msg:"Your stop equals your entry — there's no risk per share to size against."};
+    var risk = A * r / 100;
+    var shares = Math.floor(risk / perShare);
+    var positionVal = shares * E;
+    var positionPct = A > 0 ? (100 * positionVal / A) : 0;
+    var dir = S < E ? "long" : "short";
+    return {
+      ok:true, dir:dir, shares:shares, risk:risk, perShare:perShare,
+      positionVal:positionVal, positionPct:positionPct,
+      overAccount: positionPct > 100
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{A:10000, r:1,   E:50,    S:48},   want:{shares:50,  positionVal:2500, risk:100, dir:"long"} },
+    { in:{A:25000, r:0.5, E:12.40, S:13.10}, want:{shares:178, risk:125, dir:"short"} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("position-size self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.5 && got[k] !== w[k]){
+        console.error("position-size self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { account:$("account"), riskpct:$("riskpct"), entry:$("entry"), stop:$("stop") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outRisk=$("out-risk"), outPer=$("out-pershare"), outPos=$("out-pos"), outPct=$("out-pospct"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function dash(){ [outMain].forEach(function(e){e.textContent="—";});
+      [outRisk,outPer,outPos,outPct].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ A:numFrom(els.account), r:numFrom(els.riskpct), E:numFrom(els.entry), S:numFrom(els.stop) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent = res.shares.toLocaleString("en-US");
+      outRisk.textContent = money(res.risk);
+      outPer.textContent  = money(res.perShare);
+      outPos.textContent  = money(res.positionVal);
+      outPct.textContent  = res.positionPct.toFixed(res.positionPct<10?1:0) + "%";
+      // Law 3: plain-word interpretation under the number
+      var lead = res.dir==="long"
+        ? "Buy " + res.shares.toLocaleString("en-US") + " shares long"
+        : "Short " + res.shares.toLocaleString("en-US") + " shares";
+      var plain = lead +
+        ". If the stop is hit you lose " + money(res.risk) + " — " +
+        res.positionPct.toFixed(res.positionPct<10?1:0) + "% of the account is in this trade.";
+      if(res.overAccount){
+        plain = "This position is worth more than your account — it needs margin. " + plain;
+        outPlain.className="co-plain warn"; outPct.className="neg";
+      } else { outPlain.className="co-plain"; outPct.className=""; }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Position size: " + last.shares.toLocaleString("en-US") + " shares " + last.dir +
+        " · risk " + money(last.risk) + " · position " + money(last.positionVal) +
+        " (" + last.positionPct.toFixed(last.positionPct<10?1:0) + "% of account) — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["account","riskpct","entry","stop"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

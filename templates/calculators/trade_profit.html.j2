@@ -1,0 +1,252 @@
+{#=============================================================================
+  calculators/trade_profit.html.j2
+  Clone of position_size.html.j2 — §7 trade-profit formulas.
+  Long/short segmented toggle per CONTRACT §6.
+
+  Context (CONTRACT §5): page{slug:'trade-profit', family:'page', title,
+  description, canonical, url_path, section:'tools', breadcrumbs}, rel, site,
+  toc, related, cta.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Choose direction, fill in your prices and quantity. Add dates to see an annualized return — useful for comparing trades of different lengths.',
+   '选择方向，填入价格和数量。添加日期可查看年化收益率——便于比较不同持仓时长的交易。') }}</p>
+
+<div class="calc-in">
+  <div class="ci ci-wide" style="flex-direction:row; align-items:center; gap:10px;">
+    <span class="ci-l" style="white-space:nowrap;">{{ t('Direction', '方向') }}</span>
+    <div class="ci-seg" role="radiogroup" data-name="direction" id="direction-seg">
+      <button class="on" data-v="long" type="button">{{ t('Long', '做多') }}</button><button data-v="short" type="button">{{ t('Short', '做空') }}</button>
+    </div>
+  </div>
+  <label class="ci"><span class="ci-l">{{ t('Entry price ($)', '入场价（$）') }}</span>
+    <input id="entry" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l">{{ t('Exit price ($)', '出场价（$）') }}</span>
+    <input id="exit" inputmode="decimal" autocomplete="off" placeholder="55"></label>
+  <label class="ci"><span class="ci-l">{{ t('Shares / units', '股数 / 单位') }}</span>
+    <input id="qty" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+  <label class="ci"><span class="ci-l">{{ t('Total fees ($)', '总费用（$）') }} <span class="hint">{{ t('both sides', '双边') }}</span></span>
+    <input id="fees" inputmode="decimal" autocomplete="off" placeholder="2"></label>
+  <label class="ci"><span class="ci-l">{{ t('Open date', '开仓日期') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <input id="date-open" type="date" autocomplete="off"></label>
+  <label class="ci"><span class="ci-l">{{ t('Close date', '平仓日期') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <input id="date-close" type="date" autocomplete="off"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit" id="out-main-unit">{{ t('P/L', '盈亏') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in the fields to see your trade result.', '填入字段即可查看交易结果。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Return', '回报率') }}</dt><dd id="out-ret">—</dd></div>
+    <div><dt>{{ t('Annualized return', '年化回报率') }}</dt><dd id="out-ann">—</dd></div>
+    <div><dt>{{ t('Cost basis', '成本') }}</dt><dd id="out-cost">—</dd></div>
+    <div><dt>{{ t('Holding days', '持仓天数') }}</dt><dd id="out-days">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('Trade profit and loss is the difference between your exit and entry, multiplied by your position size, minus fees. Whether you\'re long or short changes the sign: a long trade profits when price rises, a short trade profits when price falls.',
+   '交易盈亏是出场价与入场价之差，乘以仓位大小，再减去费用。做多还是做空决定了符号：做多时价格上涨盈利，做空时价格下跌盈利。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Long P/L</strong> = (Exit − Entry) × Qty − Fees', '<strong>做多盈亏</strong> = (出场 − 入场) × 数量 − 费用') }}<br>
+{{ t('<strong>Short P/L</strong> = (Entry − Exit) × Qty − Fees', '<strong>做空盈亏</strong> = (入场 − 出场) × 数量 − 费用') }}<br>
+{{ t('<strong>Return %</strong> = P/L ÷ (Entry × Qty) × 100', '<strong>回报率</strong> = 盈亏 ÷ (入场 × 数量) × 100') }}<br>
+{{ t('<strong>Annualized %</strong> = ((1 + Return) ^ (365 ÷ days) − 1) × 100', '<strong>年化回报率</strong> = ((1 + 回报率) ^ (365 ÷ 天数) − 1) × 100') }}
+</div>
+<p>{{ t('The annualized return only appears when you supply both dates and the holding period is at least one day. It answers "what would this pace of return look like over a full year?" — a short, sharp gain looks enormous annualized, which is why the label reads "if repeated at this pace for a year."',
+   '年化回报率仅在你提供两个日期且持仓时间至少为一天时才会显示。它回答的是"若以此节奏持续一整年会是什么样？"——短期大涨年化后看起来惊人，这就是为什么标签标注为"若以此节奏持续一年"。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('You buy <span class="num">100 shares</span> at <span class="num">$50</span>, sell at <span class="num">$55</span>, and pay <span class="num">$2</span> in total commissions.',
+   '你以 <span class="num">$50</span> 买入 <span class="num">100股</span>，以 <span class="num">$55</span> 卖出，共支付 <span class="num">$2</span> 佣金。') }}</p>
+<ul>
+<li>{{ t('P/L = <span class="num">(55 − 50) × 100 − 2 = $498</span>', '盈亏 = <span class="num">(55 − 50) × 100 − 2 = $498</span>') }}</li>
+<li>{{ t('Return = <span class="num">498 ÷ (50 × 100) × 100 = 9.96%</span>', '回报率 = <span class="num">498 ÷ (50 × 100) × 100 = 9.96%</span>') }}</li>
+<li>{{ t('Cost basis = <span class="num">$5,000</span>', '成本 = <span class="num">$5,000</span>') }}</li>
+</ul>
+<p>{{ t('For the short-side fixture: sell short <span class="num">10 shares</span> at <span class="num">$200</span>, cover at <span class="num">$210</span> with <span class="num">$0</span> fees. P/L = <span class="num">(200 − 210) × 10 = −$100</span>, return = <span class="num">−5%</span>. Price moved against the short.',
+   '做空示例：以 <span class="num">$200</span> 做空 <span class="num">10股</span>，以 <span class="num">$210</span> 平仓，费用为 <span class="num">$0</span>。盈亏 = <span class="num">(200 − 210) × 10 = −$100</span>，回报率 = <span class="num">−5%</span>。价格对做空方向不利。') }}</p>
+</div>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Ignoring fees on small positions', '忽视小仓位的费用') }}</span>
+<p>{{ t('On a $500 position, a $10 round-trip commission is 2% — it means you need a 2% gain just to break even. Fees become a rounding error on large positions but can consume a meaningful slice of small ones. Always include total fees (both the open and close leg) in the calculation.',
+   '对于$500的仓位，$10的往返佣金占2%——这意味着你需要2%的涨幅才能保本。费用在大仓位上只是零头，但在小仓位上可能吞噬可观的比例。计算时始终要将总费用（开仓和平仓两侧）都包括进去。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<ul>
+<li>{{ t('<strong>Partial fills and averages.</strong> If you built or exited a position in multiple lots at different prices, this calculator takes single entry and exit prices. Average your fills before entering.',
+   '<strong>部分成交与均价。</strong>若你以不同价格分批建仓或平仓，本计算器只接受单一入场和出场价。请先自行计算加权均价后再填入。') }}</li>
+<li>{{ t('<strong>Currency and FX risk.</strong> If your account is in a different currency from the stock, FX moves affect the real P/L. This tool assumes one currency throughout.',
+   '<strong>货币与汇率风险。</strong>若你的账户与股票使用不同货币，汇率变动会影响实际盈亏。本工具假设全程使用同一货币。') }}</li>
+<li>{{ t('<strong>Dividends and corporate actions.</strong> Dividends, splits, and spin-offs alter the economics of a trade and are not captured here.',
+   '<strong>股息与公司行动。</strong>股息、拆股和分拆改变交易的经济学，本工具未作考虑。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Return % shows how efficiently your capital worked. Annualized return shows what that pace implies over a year — useful for comparison, not as a promise.',
+   '回报率显示你的资本使用效率。年化回报率显示该节奏意味着一年能达到什么水平——用于比较，而非承诺。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Before you enter a trade, set a sensible risk with the <a href="', '在入场前，用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t('. Want to track these results systematically? The <a href="', '设定合理的风险。想系统追踪这些结果？可下载 <a href="') }}{{ rel }}tools/spreadsheets/trading-journal.html">{{ t('trading journal spreadsheet', '交易日志表格') }}</a>{{ t(' logs every trade with automatic P/L.', '自动计算每笔交易的盈亏。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  var direction = "long";
+
+  // ── pure compute (CONTRACT §7) ──────────────────────────────────────────────
+  function compute(inp){
+    var dir=inp.dir, E=inp.E, X=inp.X, Q=inp.Q, F=inp.F, days=inp.days;
+    if(!dir) return {ok:false, msg:"Select a direction — long or short."};
+    if(!(E>0)) return {ok:false, msg:"Enter your entry price."};
+    if(!(X>0)) return {ok:false, msg:"Enter your exit price."};
+    if(!(Q>0)) return {ok:false, msg:"Enter the number of shares or units."};
+    if(!(F>=0)) return {ok:false, msg:"Enter total fees (use 0 if none)."};
+    var cost = E * Q;
+    var PL = dir === "long" ? (X - E) * Q - F : (E - X) * Q - F;
+    var ret = cost !== 0 ? 100 * PL / cost : 0;
+    var out = {ok:true, PL:PL, ret:ret, cost:cost, dir:dir};
+    if(days !== null && days >= 1){
+      var retFrac = PL / cost;
+      var base = 1 + retFrac;
+      if(base > 0){
+        var ann = 100 * (Math.pow(base, 365 / days) - 1);
+        if(isFinite(ann)){ out.ann = ann; }
+      } else {
+        out.annUnannualizable = true;
+      }
+      out.days = days;
+    }
+    return out;
+  }
+
+  // ── §6 self-check ──────────────────────────────────────────────────────────
+  var WORKED_EXAMPLES = [
+    { in:{dir:"long",  E:50,  X:55,  Q:100, F:2, days:null}, want:{PL:498, ret:9.96} },
+    { in:{dir:"short", E:200, X:210, Q:10,  F:0, days:null}, want:{PL:-100, ret:-5} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("trade-profit self-check "+i+": compute failed", got.msg); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.05){
+        console.error("trade-profit self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring ──────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { entry:$("entry"), exit:$("exit"), qty:$("qty"), fees:$("fees"),
+                dateOpen:$("date-open"), dateClose:$("date-close") };
+    var outMain=$("out-main"), outPlain=$("out-plain"), outMainUnit=$("out-main-unit"),
+        outRet=$("out-ret"), outAnn=$("out-ann"), outCost=$("out-cost"), outDays=$("out-days"),
+        seg=$("direction-seg"), copyBtn=$("copy-result"), copied=$("copied");
+
+    // segmented toggle
+    seg.addEventListener("click", function(e){
+      var btn=e.target.closest("[data-v]"); if(!btn) return;
+      [].forEach.call(seg.querySelectorAll("button"), function(b){ b.classList.remove("on"); });
+      btn.classList.add("on"); direction=btn.dataset.v; render();
+    });
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return (n<0?"-$":"$") + Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:2}); }
+    function parseDays(){
+      var o=els.dateOpen.value, c=els.dateClose.value;
+      if(!o||!c) return null;
+      var d = (new Date(c) - new Date(o)) / 86400000;
+      return isFinite(d) && d >= 0 ? Math.round(d) : null;
+    }
+    function dash(){
+      outMain.textContent="—";
+      [outRet,outAnn,outCost,outDays].forEach(function(e){ e.textContent="—"; e.className=""; });
+    }
+
+    var last=null;
+    function render(){
+      var F=numFrom(els.fees); if(isNaN(F)) F=0;
+      var inp = { dir:direction, E:numFrom(els.entry), X:numFrom(els.exit),
+                  Q:numFrom(els.qty), F:F, days:parseDays() };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      var plClass = res.PL >= 0 ? "pos" : "neg";
+      outMain.textContent = money(res.PL);
+      outMainUnit.textContent = "";  // P/L value carries its own sign
+      outMain.className = plClass;
+      outRet.textContent = (res.ret >= 0 ? "+" : "") + res.ret.toFixed(2) + "%";
+      outRet.className = plClass;
+      outCost.textContent = "$" + res.cost.toLocaleString("en-US",{maximumFractionDigits:2});
+
+      if(res.days != null){
+        outDays.textContent = res.days.toLocaleString("en-US");
+        if(res.ann != null){
+          outAnn.textContent  = (res.ann >= 0 ? "+" : "") + res.ann.toFixed(1) + "% if repeated at this pace for a year";
+          outAnn.className    = res.ann >= 0 ? "pos" : "neg";
+        } else {
+          outAnn.textContent = "—";
+          outAnn.className   = "";
+        }
+      } else {
+        outDays.textContent = "—";
+        outAnn.textContent  = "—";
+        outAnn.className    = "";
+      }
+
+      var dirWord = res.dir === "long" ? "long" : "short";
+      var plain = "This " + dirWord + " trade " + (res.PL >= 0 ? "made" : "lost") +
+        " " + money(Math.abs(res.PL)) + " — a " + (res.ret >= 0 ? "+" : "") + res.ret.toFixed(2) +
+        "% return on the " + "$" + res.cost.toLocaleString("en-US",{maximumFractionDigits:0}) + " cost basis.";
+      if(res.annUnannualizable){
+        plain += " A loss larger than the position can't be annualized.";
+      }
+      outPlain.textContent = plain;
+      outPlain.className = "co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var line = "Trade P/L: " + money(last.PL) +
+        " (" + (last.ret >= 0 ? "+" : "") + last.ret.toFixed(2) + "% return, " + last.dir + ")";
+      if(last.days != null){
+        line += " · " + last.days + "d";
+        if(last.ann != null) line += " · annualized " + (last.ann >= 0 ? "+" : "") + last.ann.toFixed(1) + "%";
+      }
+      line += " — mastermind-x.com";
+      return line;
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["entry","exit","qty","fees","date-open","date-close"].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

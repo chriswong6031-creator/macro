@@ -1,0 +1,46 @@
+# Calculator registry — CONTRACT §5
+# Provides hub card metadata for all six calculators.
+# Fields: slug, title, description (120–155 chars), blurb (≤90 chars),
+#         cluster, related_lesson
+
+- slug: position-size
+  title: "Position Size Calculator"
+  description: "Calculate how many shares to buy based on your account size, risk percentage, entry price, and stop price. Keeps every loss within a fixed dollar limit."
+  blurb: "Shares to buy from account size, risk % and stop."
+  cluster: risk-management
+  related_lesson: risk/position-sizing
+
+- slug: risk-reward
+  title: "Risk-Reward Calculator"
+  description: "Find your risk-to-reward ratio, breakeven win rate, and trade expectancy from entry, stop, and target prices. Add your win rate to see the full picture."
+  blurb: "R:R ratio, breakeven win rate and expectancy from entry, stop and target."
+  cluster: risk-management
+  related_lesson: risk/risk-reward-expectancy
+
+- slug: trade-profit
+  title: "Trade Profit & Loss Calculator"
+  description: "Calculate the profit or loss of a long or short trade from entry, exit, quantity, and fees. Add open and close dates to see an honest annualized return."
+  blurb: "P/L, return % and annualized rate for long or short trades."
+  cluster: trade-analysis
+  related_lesson: risk/risk-reward-expectancy
+
+- slug: compounding
+  title: "Compound Interest Calculator"
+  description: "See how a starting sum and regular contributions grow at a given annual return. Includes a year-by-year breakdown table and an inline growth curve."
+  blurb: "Future value of principal plus regular contributions over time."
+  cluster: growth-math
+  related_lesson: risk/position-sizing
+
+- slug: cagr
+  title: "CAGR Calculator"
+  description: "Calculate the compound annual growth rate between two values and a time period, or project a future value at a target rate. Supports date-range input."
+  blurb: "Find CAGR from begin/end values, or project a future value at a set rate."
+  cluster: growth-math
+  related_lesson: risk/position-sizing
+
+- slug: drawdown-recovery
+  title: "Drawdown Recovery Calculator"
+  description: "Find the gain needed to recover from a drawdown and estimate years to break even at a given return. Enter a percentage or peak and current values."
+  blurb: "Required gain and recovery time from any drawdown percentage."
+  cluster: risk-management
+  related_lesson: risk/risk-reward-expectancy

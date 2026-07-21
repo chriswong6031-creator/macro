@@ -1,0 +1,716 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drawdown Recovery Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Find the gain needed to recover from a drawdown and estimate years to break even at a given return. Enter a percentage or peak and current values.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/drawdown-recovery.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Drawdown Recovery Calculator">
+<meta property="og:description" content="Find the gain needed to recover from a drawdown and estimate years to break even at a given return. Enter a percentage or peak and current values.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/drawdown-recovery.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Drawdown Recovery Calculator">
+<meta name="twitter:description" content="Find the gain needed to recover from a drawdown and estimate years to break even at a given return. Enter a percentage or peak and current values.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../../theme.css"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Drawdown Recovery Calculator"}]}</script>
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   THE READING ROOM — Free Estate design system
+   Serif prose (Newsreader) + monospace math (house --font-mono). House palette
+   only; two estate tokens derive from house vars so every theme resolves at
+   paint. Scoped under body.estate so nothing here can leak onto dashboards.
+   ══════════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;}
+:root{
+  /* estate-scoped accents, all derived from house vars (theme/zh-safe) */
+  --ink: var(--text);                                       /* the plotted-line pen */
+  --serif: "Newsreader", Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+  --rule: color-mix(in srgb, var(--line) 74%, var(--info)); /* ledger / plot hairline */
+  --measure: 68ch;                                          /* reading-room line length */
+}
+html[data-lang="zh"] body.estate{
+  /* Hanzi reads better in the house CJK sans than a Latin serif; theme.css already
+     forces the CJK stack on body, so estate prose inherits it under zh. */
+  --serif: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+}
+html body.estate{
+  background:var(--bg); color:var(--text);
+  font-family:var(--serif); font-size:17px; line-height:1.68;
+  margin:0; padding:0 0 72px;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+html,body{overflow-x:clip;}                                 /* 390px bleed guard */
+body.estate a{color:var(--link); text-decoration:none;}
+body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
+.mono{font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
+.est-wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
+
+/* ── the plotted-line signature ─────────────────────────────────────────────
+   A hand-drawn ink stroke that draws itself L→R. Reused as the kicker underline,
+   the section rule and the calc-card crown. Grammar borrowed from house Signal
+   Ink: round caps, non-scaling stroke, stroke-dashoffset draw-on-reveal. */
+.plot-line{display:block; width:100%; height:14px; overflow:visible; color:var(--link);}
+.plot-line path{fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round;
+  stroke-linejoin:round; vector-effect:non-scaling-stroke;
+  stroke-dasharray:var(--pl-len,240); stroke-dashoffset:var(--pl-len,240);
+  animation:plotDraw 1100ms cubic-bezier(.33,.62,.26,1) 120ms forwards;}
+.plot-line .dot{fill:currentColor; filter:drop-shadow(0 0 4px color-mix(in srgb,currentColor 62%,transparent));
+  opacity:0; animation:plotDot .01s linear 1160ms forwards;}
+@keyframes plotDraw{to{stroke-dashoffset:0;}}
+@keyframes plotDot{to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){
+  .plot-line path{animation:none; stroke-dashoffset:0;}
+  .plot-line .dot{animation:none; opacity:1;}
+}
+
+/* ── estate top bar (slim; own toggles reuse house .theme-switch/.lang-toggle) ── */
+.est-bar{position:sticky; top:0; z-index:60; background:color-mix(in srgb,var(--bg) 84%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px);
+  border-bottom:1px solid var(--line);}
+.est-bar-in{max-width:1120px; margin:0 auto; padding:9px 24px;
+  display:flex; align-items:center; gap:16px;}
+.est-brand{display:inline-flex; align-items:center; gap:9px; flex:none; text-decoration:none;
+  padding:3px 8px 3px 4px; border-radius:10px; transition:background .18s;}
+.est-brand:hover{background:color-mix(in srgb,var(--link) 10%,transparent); text-decoration:none;}
+.est-brand .glyph{width:26px; height:26px; flex:none; filter:drop-shadow(0 2px 6px rgba(40,56,128,.30));}
+.est-brand .word{font-family:var(--font-ui); font-weight:900; font-size:13px; letter-spacing:.06em;
+  color:var(--text); white-space:nowrap;}
+.est-brand .word .sub{display:block; font-weight:600; font-size:9px; letter-spacing:.14em;
+  color:var(--muted); margin-top:1px;}
+.est-nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex-wrap:wrap; min-width:0;}
+.est-nav a{font-family:var(--font-ui); font-size:13.5px; font-weight:500; color:var(--muted);
+  padding:6px 10px; border-radius:8px; text-decoration:none; white-space:nowrap;
+  transition:color .16s,background .16s;}
+.est-nav a:hover,.est-nav a[aria-current="page"]{color:var(--text);
+  background:color-mix(in srgb,var(--link) 11%,var(--panel2)); text-decoration:none;}
+.est-ctrls{margin-left:auto; display:flex; align-items:center; gap:9px; flex:none;}
+.est-ctrls .est-cta{font-family:var(--font-ui);}
+.est-ctrls .est-cta .cta-short{display:none;}
+/* the house animated toggles are styled by theme.css? No — those visuals live in
+   nav CSS the estate doesn't load. Give .theme-switch / .lang-toggle a compact,
+   self-contained skin here so the class-bound theme.js listeners still fire. */
+.est-ctrls .theme-switch{font:600 12px/1 var(--font-ui); cursor:pointer;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  border-radius:999px; padding:6px 10px; display:inline-flex; align-items:center; gap:5px;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:color .16s,border-color .16s;}
+.est-ctrls .theme-switch:hover{color:var(--text); border-color:var(--gbtn-brd-hover);}
+.est-ctrls .theme-switch .ic{font-size:13px; line-height:1;}
+.est-ctrls .theme-switch .sun{display:none;} .est-ctrls .theme-switch .moon{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .sun{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .moon{display:none;}
+.est-ctrls .theme-switch .knob{display:none;}
+.est-ctrls .lang-toggle{position:relative; display:inline-flex; cursor:pointer; user-select:none;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); border-radius:999px; overflow:hidden;
+  font:600 11.5px/1 var(--font-ui);}
+.est-ctrls .lang-toggle .opt{padding:6px 9px; color:var(--muted); transition:color .16s;}
+.est-ctrls .lang-toggle .pill{display:none;}
+html:not([data-lang="zh"]) .est-ctrls .lang-toggle .en-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+:where(.est-brand,.est-nav a,.est-ctrls .theme-switch,.est-ctrls .lang-toggle,.est-cta):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--link) 70%,transparent); outline-offset:2px;}
+@media (max-width:720px){
+  .est-bar-in{flex-wrap:wrap; gap:8px 12px; padding:8px 16px;}
+  .est-nav{order:3; width:100%; margin-left:0; gap:1px;}
+  .est-nav a{padding:6px 9px; font-size:13px;}
+  .est-ctrls{gap:7px;}
+  /* compact CTA on phones: hide the long label, show the short bilingual one */
+  .est-ctrls .est-cta .cta-long{display:none;}
+  .est-ctrls .est-cta .cta-short{display:inline;}
+}
+
+/* ── breadcrumb ─────────────────────────────────────────────────────────────── */
+.est-crumb{max-width:1120px; margin:18px auto 0; padding:0 24px;
+  font-family:var(--font-ui); font-size:12.5px; color:var(--muted);}
+.est-crumb ol{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:7px;}
+.est-crumb a{color:var(--muted);} .est-crumb a:hover{color:var(--text);}
+.est-crumb .sep{opacity:.4;}
+.est-crumb li[aria-current="page"]{color:var(--text);}
+
+/* ── shared prose vocabulary (CONTRACT §4 body classes) ─────────────────────── */
+.est-prose{font-size:17px; line-height:1.72;}
+.est-prose > *{max-width:var(--measure);}
+.est-prose h2{font-family:var(--serif); font-size:25px; font-weight:600; line-height:1.24;
+  letter-spacing:-.01em; margin:38px 0 12px; scroll-margin-top:76px;
+  display:flex; align-items:baseline; gap:11px;}
+.est-prose h2 .est-h2-mark{font-family:var(--font-mono); font-size:13px; font-weight:500;
+  color:var(--link); flex:none; opacity:.9;}
+.est-prose h3{font-family:var(--serif); font-size:19.5px; font-weight:600; margin:26px 0 6px; color:var(--text);}
+.est-prose p{margin:12px 0;}
+.est-prose ul,.est-prose ol{margin:12px 0; padding-left:24px;}
+.est-prose li{margin:7px 0;}
+.est-prose li::marker{color:var(--muted);}
+.est-prose strong{font-weight:600; color:var(--text);}
+.est-prose em{font-style:italic;}
+.est-prose code{font-family:var(--font-mono); font-size:.86em; background:var(--panel2);
+  border:1px solid var(--line); border-radius:5px; padding:1px 6px;}
+.est-prose a{border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-prose a:hover{border-bottom-color:var(--link); text-decoration:none;}
+.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rule);
+  color:var(--text); font-style:italic; opacity:.92;}
+
+/* callouts — lead / warn / key (house colours, serif body, mono heading label) */
+.est-prose .callout{border-radius:13px; padding:15px 18px; margin:18px 0; border:1px solid var(--line);
+  background:var(--panel2); position:relative; max-width:var(--measure);}
+.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--font-ui);
+  font-size:12px; font-weight:700; letter-spacing:.02em; text-transform:uppercase;}
+.est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
+.est-prose .callout.lead{border-left:4px solid var(--link);}
+.est-prose .callout.lead .co-h{color:var(--link);}
+.est-prose .callout.warn{border-left:4px solid var(--warn);
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel2));}
+.est-prose .callout.warn .co-h{color:var(--warn);}
+.est-prose .callout.key{border-left:4px solid var(--ok);
+  background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
+.est-prose .callout.key .co-h{color:var(--ok);}
+
+/* formula — the desk's chalk line. Mono, centred, on a faint ruled slab. */
+.est-prose .formula{font-family:var(--font-mono); font-size:15px; line-height:1.7;
+  background:linear-gradient(var(--panel2),var(--panel2)) padding-box,
+             var(--panel2); border:1px solid var(--rule); border-radius:11px;
+  padding:16px 18px; margin:18px 0; overflow-x:auto; max-width:var(--measure);
+  color:var(--text); letter-spacing:.01em;}
+.est-prose .formula strong{color:var(--link); font-weight:600;}
+
+/* worked example — the marginalia. A ledger-ruled block with a mono heading. */
+.est-prose .worked{border:1px solid var(--line); border-radius:13px; margin:18px 0;
+  padding:16px 18px; max-width:var(--measure);
+  background:
+    linear-gradient(var(--rule),var(--rule)) 0 0/100% 1px no-repeat,
+    var(--panel);}
+.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--font-ui);
+  font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted);}
+.est-prose .worked .num,.est-prose .worked code{font-family:var(--font-mono);}
+
+/* data table — the ruled column */
+.est-prose table.data{border-collapse:collapse; width:100%; max-width:var(--measure);
+  font-family:var(--font-mono); font-size:13.5px; margin:18px 0;}
+.est-prose table.data th{text-align:left; padding:9px 12px; background:var(--panel2);
+  color:var(--muted); font-family:var(--font-ui); font-weight:600; font-size:12px;
+  letter-spacing:.02em; border-bottom:2px solid var(--rule);}
+.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--info) 5%,var(--panel));}
+.est-prose table.data .num{font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right;}
+.est-tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:18px 0; max-width:var(--measure);}
+.est-tbl-scroll table.data{margin:0;}
+
+.est-prose figure{margin:20px 0; max-width:var(--measure);}
+.est-prose figcaption{font-family:var(--font-ui); font-size:12.5px; color:var(--muted); margin-top:8px;}
+
+/* ── related rail + CTA (shared by article + calculator layouts) ────────────── */
+.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--rule);}
+.est-related .rel-h{font-family:var(--font-ui); font-size:11.5px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); margin:0 0 12px;}
+.est-related .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+.est-relcard{display:block; border:1px solid var(--line); border-radius:12px; padding:13px 15px;
+  background:var(--panel); text-decoration:none; transition:transform .18s,border-color .18s,box-shadow .18s;}
+.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--line));
+  box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-relcard .rc-kind{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--link); opacity:.9;}
+.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--serif); font-size:16px;
+  font-weight:600; color:var(--text); line-height:1.32;}
+
+.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--line));
+  border-radius:16px; padding:22px 24px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
+    var(--panel); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
+.est-cta-block .cta-k{font-family:var(--font-mono); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--link);}
+.est-cta-block .cta-t{font-family:var(--serif); font-size:19px; font-weight:600; margin:3px 0 0; line-height:1.3;}
+.est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
+
+/* ── estate footer ──────────────────────────────────────────────────────────── */
+.est-footer{max-width:1120px; margin:56px auto 0; padding:24px 24px 8px;
+  border-top:1px solid var(--line); font-family:var(--font-ui);}
+.est-foot-links{display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:14px;}
+.est-foot-col{display:flex; flex-direction:column; gap:5px; min-width:150px;}
+.est-foot-col .fh{font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:3px;}
+.est-foot-col a{font-size:13px; color:var(--muted); text-decoration:none;}
+.est-foot-col a:hover{color:var(--text);}
+.est-foot-disc{font-size:12px; color:var(--muted); line-height:1.6; border-top:1px solid var(--line);
+  padding-top:13px; margin-top:6px;}
+.est-foot-disc .mono{opacity:.85;}
+
+/* ── page header (kicker + plotted-line + title + dek) ──────────────────────── */
+.est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+.est-kicker{font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--link); display:inline-block; margin:0 0 2px;}
+.est-kicker-plot{max-width:220px; margin:2px 0 14px;}
+.est-title{font-family:var(--serif); font-size:clamp(30px,4.6vw,46px); font-weight:600; line-height:1.1;
+  letter-spacing:-.015em; margin:0;}
+.est-dek{font-family:var(--serif); font-size:19px; line-height:1.5; color:var(--muted);
+  margin:12px 0 0; max-width:60ch;}
+.est-meta{font-family:var(--font-ui); font-size:12.5px; color:var(--muted); margin:14px 0 0;
+  display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
+.est-meta .dot{opacity:.4;}
+
+@media (max-width:600px){
+  html body.estate{font-size:16px;}
+  .est-wrap,.est-head,.est-crumb,.est-footer{padding-left:16px; padding-right:16px;}
+  .est-prose{font-size:16px;}
+  .est-prose h2{font-size:22px; margin:30px 0 10px;}
+  .est-prose h3{font-size:18px;}
+  .est-dek{font-size:17px;}
+  .est-cta-block{padding:18px; gap:14px;}
+}
+
+  .cx-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+  .cx-shell{max-width:1120px; margin:22px auto 0; padding:0 24px;
+    display:grid; grid-template-columns:minmax(0,1fr) 210px; gap:44px; align-items:start;}
+  .cx-main{min-width:0;}
+  .cx-toc{position:sticky; top:76px; font-family:var(--font-ui); font-size:12.5px;
+    border-left:1px solid var(--line); padding-left:15px;}
+  .cx-toc .toc-h{font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin:0 0 9px;}
+  .cx-toc a{display:block; color:var(--muted); padding:5px 0 5px 14px; margin-left:-15px; line-height:1.35;
+    border-left:2px solid transparent; transition:color .15s,border-color .15s;}
+  .cx-toc a:hover{color:var(--text);} .cx-toc a.active{color:var(--text); border-left-color:var(--link); font-weight:600;}
+
+  /* ── the calculator card — the desk instrument, above the fold ──────────────
+     Glass-kin (frosted, hairline, house shadow) but crowned by the plotted line
+     so it reads as one family with the estate signature. */
+  .calc-card{position:relative; border:1px solid var(--glass-brd); border-radius:18px;
+    background:var(--glass-bg); box-shadow:var(--glass-shadow);
+    -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+    padding:6px 22px 22px; overflow:hidden;}
+  /* the crown: a drawn plotted line across the card's top edge */
+  .calc-card .cc-crown{display:block; width:100%; height:16px; margin:0 -22px 8px; width:calc(100% + 44px);}
+  .calc-card .cc-crown path{fill:none; stroke:var(--link); stroke-width:1.6; stroke-linecap:round;
+    stroke-linejoin:round; vector-effect:non-scaling-stroke;
+    stroke-dasharray:var(--pl-len,320); stroke-dashoffset:var(--pl-len,320);
+    animation:plotDraw 1200ms cubic-bezier(.33,.62,.26,1) 150ms forwards;}
+  @media (prefers-reduced-motion:reduce){ .calc-card .cc-crown path{animation:none; stroke-dashoffset:0;} }
+
+  .calc-card .cc-lede{font-family:var(--serif); font-size:16px; color:var(--muted); margin:0 0 16px; line-height:1.5;}
+
+  .calc-in{display:grid; grid-template-columns:repeat(2,1fr); gap:14px 18px;}
+  @media (max-width:560px){ .calc-in{grid-template-columns:1fr;} }
+  .ci{display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .ci.ci-wide{grid-column:1 / -1;}
+  .ci-l{font-family:var(--font-ui); font-size:12.5px; font-weight:600; color:var(--muted); letter-spacing:.01em;}
+  .ci-l .hint{font-weight:400; color:var(--muted); opacity:.8;}
+  .ci input, .ci select{font-family:var(--font-mono); font-size:16px; font-variant-numeric:tabular-nums;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px; color:var(--text);
+    padding:11px 13px; width:100%; outline:none; transition:border-color .16s,box-shadow .16s;}
+  .ci input:focus, .ci select:focus{border-color:var(--link);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent);}
+  .ci input::placeholder{color:var(--muted); opacity:.55;}
+
+  /* segmented toggle (§6) — long/short, forward/inverse, etc. */
+  .ci-seg{display:inline-flex; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:3px; gap:3px; align-self:start;}
+  .ci-seg button{font-family:var(--font-ui); font-size:13px; font-weight:600; color:var(--muted);
+    background:transparent; border:none; border-radius:7px; padding:8px 16px; cursor:pointer;
+    transition:color .16s,background .16s;}
+  .ci-seg button:hover{color:var(--text);}
+  .ci-seg button.on{color:var(--text); background:color-mix(in srgb,var(--link) 18%,var(--panel2));}
+  .ci-seg button:focus-visible{outline:2px solid var(--link); outline-offset:2px;}
+
+  /* ── the readout ──────────────────────────────────────────────────────────── */
+  .calc-out{margin:20px 0 0; padding:18px 20px; border-radius:14px; border:1px solid var(--rule);
+    background:linear-gradient(var(--rule),var(--rule)) 0 0/100% 1px no-repeat, var(--panel2);}
+  .co-main{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;}
+  .co-main #out-main, .co-main [data-out-main]{font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+    font-size:clamp(38px,7vw,52px); font-weight:600; line-height:1; letter-spacing:-.02em; color:var(--text);}
+  .co-main .co-unit{font-family:var(--font-ui); font-size:15px; font-weight:600; color:var(--muted);}
+  /* Law 3: the big number ALWAYS carries a plain-word interpretation sentence */
+  .co-plain{font-family:var(--serif); font-size:16.5px; line-height:1.5; color:var(--text); margin:10px 0 0; max-width:56ch;}
+  .co-plain.warn{color:var(--warn);}
+  .co-rows{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 20px;
+    margin:16px 0 0; padding-top:14px; border-top:1px solid var(--line);}
+  .co-rows > div{display:flex; flex-direction:column; gap:2px;}
+  .co-rows dt{font-family:var(--font-ui); font-size:11.5px; color:var(--muted); letter-spacing:.02em;}
+  .co-rows dd{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:17px; font-weight:600;
+    color:var(--text); margin:0;}
+  .co-rows dd.pos{color:var(--up);} .co-rows dd.neg{color:var(--down);}
+
+  .calc-actions{margin:16px 0 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .calc-actions .copied{font-family:var(--font-ui); font-size:12.5px; color:var(--ok); opacity:0;
+    transition:opacity .2s;}
+  .calc-actions .copied.show{opacity:1;}
+  .calc-actions .gbtn{font-family:var(--font-ui);}
+
+  .cx-explainer{margin:40px 0 0;}
+  @media (max-width:900px){
+    .cx-shell{grid-template-columns:1fr; gap:12px;}
+    .cx-toc{position:static; top:auto; border-left:none; padding:12px 14px; margin:22px 0 2px; order:2;
+      display:flex; flex-wrap:wrap; gap:6px; border:1px solid var(--line); border-radius:12px; background:var(--panel2);}
+    .cx-toc .toc-h{flex-basis:100%; margin:0 0 2px;}
+    .cx-toc a{border:1px solid var(--line); border-radius:999px; padding:6px 11px; margin:0; color:var(--muted);}
+    .cx-toc a.active{border-color:var(--link); color:var(--text);}
+    .cx-main{order:1;}
+  }
+  @media (max-width:560px){ .calc-card{padding:6px 16px 18px;} .calc-card .cc-crown{margin:0 -16px 8px; width:calc(100% + 32px);} }
+
+</style>
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">READING ROOM</span><span class="l-zh">阅览室</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Drawdown Recovery Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <svg class="plot-line est-kicker-plot" viewBox="0 0 220 14" preserveAspectRatio="none" aria-hidden="true" style="--pl-len:230;">
+    <path d="M2 11 C 40 11, 55 4, 90 7 S 150 3, 178 5 S 210 4, 218 3"/>
+    <circle class="dot" cx="218" cy="3" r="2.6"/>
+  </svg>
+  <h1 class="est-title">Drawdown Recovery Calculator</h1>
+  <p class="est-dek">Find the gain needed to recover from a drawdown and estimate years to break even at a given return. Enter a percentage or peak and current values.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <svg class="cc-crown" viewBox="0 0 640 16" preserveAspectRatio="none" aria-hidden="true" style="--pl-len:660;">
+        <path d="M4 12 C 90 12, 130 4, 210 7 S 360 3, 440 6 S 560 4, 636 3"/>
+      </svg>
+      
+<p class="cc-lede"><span class="l-en">Enter a drawdown percentage, or your peak and current values — the calculator derives the loss and tells you how much you need to recover. Add an expected annual return to estimate recovery time.</span><span class="l-zh">填入回撤百分比，或填入峰值与当前值——计算器将推算亏损并告知你需要多少才能回本。添加预期年化收益率可估算恢复时间。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Drawdown (%)</span><span class="l-zh">回撤（%）</span> <span class="hint"><span class="l-en">or use peak / current below</span><span class="l-zh">或填峰值/当前值</span></span></span>
+    <input id="dd-pct" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Peak value ($)</span><span class="l-zh">峰值（$）</span> <span class="hint"><span class="l-en">optional — overrides %</span><span class="l-zh">可选，覆盖%</span></span></span>
+    <input id="peak" inputmode="decimal" autocomplete="off" placeholder="100,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Current value ($)</span><span class="l-zh">当前值（$）</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <input id="current" inputmode="decimal" autocomplete="off" placeholder="50,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Expected annual return (%)</span><span class="l-zh">预期年化收益率（%）</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <input id="ret-rate" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">to recover</span><span class="l-zh">才能回本</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Enter a drawdown to see the required recovery gain.</span><span class="l-zh">填入回撤幅度即可查看所需涨幅。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Drawdown used</span><span class="l-zh">使用的回撤值</span></dt><dd id="out-dd">—</dd></div>
+    <div><dt><span class="l-en">Years to recover</span><span class="l-zh">恢复年数</span></dt><dd id="out-years">—</dd></div>
+    <div><dt><span class="l-en">Dollar loss</span><span class="l-zh">亏损金额</span></dt><dd id="out-loss">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Losses are asymmetric: a 50% drawdown requires a 100% gain to recover. The math is straightforward — if you lose half your money, you need to double what remains. This asymmetry is one of the most important and most overlooked facts in risk management.</span><span class="l-zh">亏损是不对称的：50%的回撤需要100%的涨幅才能回本。数学很直接——如果你损失了一半的钱，你需要将剩余的资金翻倍。这种不对称性是风险管理中最重要、也最常被忽视的事实之一。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Required gain%</strong> = d ÷ (100 − d) × 100</span><span class="l-zh"><strong>所需涨幅%</strong> = d ÷ (100 − d) × 100</span><br>
+<span class="l-en">where d = drawdown %</span><span class="l-zh">其中 d = 回撤百分比</span><br>
+<span class="l-en"><strong>Years to recover</strong> = ln(100 ÷ (100 − d)) ÷ ln(1 + g ÷ 100)  <em>(requires annual return g)</em></span><span class="l-zh"><strong>恢复年数</strong> = ln(100 ÷ (100 − d)) ÷ ln(1 + g ÷ 100)  <em>（需填年化收益率g）</em></span>
+</div>
+<p><span class="l-en">When you supply peak and current values, the drawdown is calculated as <span class="num">(peak − current) ÷ peak × 100</span> and that derived figure is used for all subsequent calculations.</span><span class="l-zh">当你填入峰值和当前值时，回撤计算为 <span class="num">(峰值 − 当前) ÷ 峰值 × 100</span>，并用该数值进行后续计算。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">A portfolio falls <span class="num">50%</span> from its peak. The assumed recovery rate is <span class="num">10%</span> per year.</span><span class="l-zh">一个投资组合从峰值回撤 <span class="num">50%</span>。假设年化收益率为 <span class="num">10%</span>。</span></p>
+<ul>
+<li><span class="l-en">Required gain = <span class="num">50 ÷ (100 − 50) × 100 = 100%</span></span><span class="l-zh">所需涨幅 = <span class="num">50 ÷ (100 − 50) × 100 = 100%</span></span></li>
+<li><span class="l-en">Years to recover = <span class="num">ln(100 ÷ 50) ÷ ln(1.10) ≈ 7.27 years</span></span><span class="l-zh">恢复年数 = <span class="num">ln(100 ÷ 50) ÷ ln(1.10) ≈ 7.27年</span></span></li>
+<li><span class="l-en">A 20% drawdown requires only <span class="num">25%</span> to recover — far less damaging, and the contrast illustrates why avoiding large drawdowns matters more than chasing extra returns.</span><span class="l-zh">20%的回撤只需 <span class="num">25%</span> 才能回本——损害小得多。这一对比说明了为什么避免大回撤比追逐额外回报更重要。</span></li>
+</ul>
+</div>
+
+<h2 id="reference"><span class="est-h2-mark">03</span><span class="l-en">Reference table</span><span class="l-zh">参考表格</span></h2>
+<p><span class="l-en">The asymmetry accelerates steeply at deeper drawdowns. A 90% loss requires a 900% recovery — nine times your remaining capital just to break even.</span><span class="l-zh">不对称性在更深的回撤处急剧加速。90%的亏损需要900%的涨幅才能回本——仅仅为了回到原点，你就需要将剩余资金增加至原来的9倍。</span></p>
+<table class="data">
+<thead><tr><th><span class="l-en">Drawdown</span><span class="l-zh">回撤</span></th><th class="num"><span class="l-en">Required gain to recover</span><span class="l-zh">回本所需涨幅</span></th></tr></thead>
+<tbody>
+<tr><td>5%</td><td class="num">5.3%</td></tr>
+<tr><td>10%</td><td class="num">11.1%</td></tr>
+<tr><td>15%</td><td class="num">17.6%</td></tr>
+<tr><td>20%</td><td class="num">25.0%</td></tr>
+<tr><td>25%</td><td class="num">33.3%</td></tr>
+<tr><td>30%</td><td class="num">42.9%</td></tr>
+<tr><td>40%</td><td class="num">66.7%</td></tr>
+<tr><td>50%</td><td class="num">100.0%</td></tr>
+<tr><td>60%</td><td class="num">150.0%</td></tr>
+<tr><td>70%</td><td class="num">233.3%</td></tr>
+<tr><td>80%</td><td class="num">400.0%</td></tr>
+<tr><td>90%</td><td class="num">900.0%</td></tr>
+</tbody>
+</table>
+
+<h2 id="trap"><span class="est-h2-mark">04</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Treating drawdown and return as symmetric</span><span class="l-zh">将回撤与涨幅视为对称</span></span>
+<p><span class="l-en">"I'm down 30%, I just need to make back 30%." No — a 30% loss requires a 42.9% gain. A 50% loss requires 100%. The further you fall, the steeper the climb out. This is why position sizing and stop-losses exist: preventing a large drawdown is worth far more than chasing an equivalent gain.</span><span class="l-zh">"我跌了30%，只需要再涨30%即可。"不对——30%的亏损需要42.9%的涨幅。50%的亏损需要100%。跌得越深，爬出来越陡峭。这就是为什么仓位管理和止损存在：防止大回撤远比追逐等量涨幅有价值。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">05</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<ul>
+<li><span class="l-en"><strong>Recovery rate is assumed constant.</strong> Real returns are volatile. A 10% annual return assumption is just that — an assumption. Sequence of returns matters: a bad year in the early recovery extends the timeline.</span><span class="l-zh"><strong>假设恢复速率固定。</strong>实际回报率是波动的。10%的年化回报率假设仅仅是假设。回报顺序很重要：恢复初期的一个坏年份会延长恢复时间线。</span></li>
+<li><span class="l-en"><strong>The formula uses the peak-to-trough definition.</strong> "Drawdown" is sometimes quoted as the loss from the high-water mark. Make sure the percentage you enter matches this definition.</span><span class="l-zh"><strong>公式使用峰谷定义。</strong>"回撤"有时被引用为从高水位线开始的亏损。请确保你输入的百分比符合这一定义。</span></li>
+<li><span class="l-en"><strong>Taxes and fees reduce the effective recovery rate.</strong> If capital gains are taxed and trading incurs fees, the net annual return available for recovery is lower than the gross figure.</span><span class="l-zh"><strong>税收和费用降低有效恢复速率。</strong>若资本利得需要纳税，且交易产生费用，则可用于恢复的净年化收益率低于毛值。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Cutting a loss in half doesn't cut the recovery time in half — it eliminates most of it. Protecting capital is asymmetrically more valuable than finding returns.</span><span class="l-zh">将亏损减半不能将恢复时间减半——而是几乎消除了大部分。保护本金在不对称上远比寻找回报更有价值。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">The companion piece for this topic is <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">Why a 50% loss needs a 100% gain</a>. For long-run compounding context, see <a href="/blog/compound-growth-for-traders.html">Compound growth for traders</a>. Model recovery scenarios with the <a href="</span><span class="l-zh">本主题的配套阅读是 <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">为什么亏损50%需要盈利100%才能回本</a>。长期复利背景请参见 <a href="/blog/compound-growth-for-traders.html">交易者的复利增长</a>。用 <a href="</span>../../tools/calculators/compounding.html"><span class="l-en">compounding calculator</span><span class="l-zh">复利计算器</span></a><span class="l-en"> to model recovery scenarios.</span><span class="l-zh">建模恢复情景。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        
+        <a class="est-relcard" href="../../learn/risk/risk-reward-expectancy.html"><span class="rc-kind"><span class="l-en">Lesson</span><span class="l-zh">课程</span></span><span class="rc-title">Risk/Reward Ratios and Trade Expectancy Explained</span></a>
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    <aside class="est-cta-block">
+      <div class="cta-copy">
+        <span class="cta-k"><span class="l-en">Next step</span><span class="l-zh">下一步</span></span>
+        <p class="cta-t">Read the lesson: Risk/Reward Ratios and Trade Expectancy Explained</p>
+      </div>
+      <a class="gbtn gbtn-lg gbtn-cta" href="../../learn/risk/risk-reward-expectancy.html">Read the lesson: Risk/Reward Ratios and Trade Expectancy Explained</a>
+    </aside>
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (CONTRACT §7) ──────────────────────────────────────────────
+  function compute(inp){
+    var ddPct=inp.ddPct, peak=inp.peak, current=inp.current, g=inp.g;
+    // Derive drawdown: peak/current overrides when both present
+    var d = null, dollarLoss = null;
+    if(peak > 0 && current >= 0 && !isNaN(peak) && !isNaN(current)){
+      if(current > peak) return {ok:false, msg:"Current value is above the peak — there's no drawdown to recover from."};
+      d = (peak - current) / peak * 100;
+      dollarLoss = peak - current;
+    } else if(!isNaN(ddPct) && ddPct > 0 && ddPct < 100){
+      d = ddPct;
+    } else if(!isNaN(ddPct) && ddPct <= 0){
+      return {ok:false, msg:"Enter a drawdown greater than 0%."};
+    } else if(!isNaN(ddPct) && ddPct >= 100){
+      return {ok:false, msg:"A 100% drawdown means total loss — there's nothing left to recover."};
+    } else {
+      return {ok:false, msg:"Enter a drawdown percentage, or a peak and current value."};
+    }
+    if(d <= 0) return {ok:false, msg:"Enter a drawdown greater than 0%."};
+    if(d >= 100) return {ok:false, msg:"A 100% drawdown means total loss — there's nothing left to recover."};
+    var reqGain = 100 * d / (100 - d);
+    var out = {ok:true, d:d, reqGain:reqGain, dollarLoss:dollarLoss, fromPeakCurrent: (peak>0&&!isNaN(peak))};
+    if(!isNaN(g) && g > 0){
+      out.years = Math.log(100 / (100 - d)) / Math.log(1 + g / 100);
+      out.g = g;
+    }
+    return out;
+  }
+
+  // ── §6 self-check ──────────────────────────────────────────────────────────
+  var WORKED_EXAMPLES = [
+    { in:{ddPct:50, peak:NaN, current:NaN, g:NaN},  want:{reqGain:100} },
+    { in:{ddPct:20, peak:NaN, current:NaN, g:NaN},  want:{reqGain:25} },
+    { in:{ddPct:50, peak:NaN, current:NaN, g:10},   want:{years:7.27} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("drawdown self-check "+i+": compute failed", got.msg); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.05){
+        console.error("drawdown self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring ──────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { ddPct:$("dd-pct"), peak:$("peak"), current:$("current"), retRate:$("ret-rate") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outDd=$("out-dd"), outYears=$("out-years"), outLoss=$("out-loss"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:0}); }
+    function dash(){ outMain.textContent="—"; [outDd,outYears,outLoss].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp = { ddPct:numFrom(els.ddPct), peak:numFrom(els.peak),
+                  current:numFrom(els.current), g:numFrom(els.retRate) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outMain.textContent = "+" + res.reqGain.toFixed(1) + "%";
+      outMain.className   = "neg";  // recovery from a loss — sobering, not celebratory
+      outDd.textContent   = res.d.toFixed(1) + "%" + (res.fromPeakCurrent ? " (from peak/current)" : "");
+      if(res.dollarLoss !== null){
+        outLoss.textContent = money(res.dollarLoss) + " from peak";
+        outLoss.className   = "neg";
+      } else {
+        outLoss.textContent = "—";
+        outLoss.className   = "";
+      }
+      if(res.years != null){
+        outYears.textContent = res.years.toFixed(1) + " yr at " + res.g.toFixed(1) + "% annual";
+      } else {
+        outYears.textContent = "—";
+      }
+
+      var plain = "A " + res.d.toFixed(1) + "% drawdown requires a +" + res.reqGain.toFixed(1) +
+        "% gain just to break even.";
+      if(res.years != null){
+        plain += " At " + res.g.toFixed(1) + "% per year, that takes about " +
+          res.years.toFixed(1) + " years.";
+      }
+      outPlain.textContent = plain;
+      outPlain.className   = "co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var line = "Drawdown " + last.d.toFixed(1) + "% → needs +" + last.reqGain.toFixed(1) + "% to recover";
+      if(last.years != null) line += " · ~" + last.years.toFixed(1) + " yr at " + last.g.toFixed(1) + "% annual";
+      line += " — mastermind-x.com";
+      return line;
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["dd-pct","peak","current","ret-rate"].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js"></script>
+</body>
+</html>
