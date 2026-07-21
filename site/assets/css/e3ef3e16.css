@@ -449,7 +449,14 @@ body.page-macro .sx-island::before{
   opacity:0;transition:opacity .5s ease;
 }
 body.page-macro .sx[data-open] .sx-island::before{
-  opacity:.38;animation:isle-aurora 14s linear infinite;
+  /* Perf (2026-07-21 mobile audit): the angle sweep restyles + repaints the whole
+     island every frame (custom-property animation is main-thread). steps(84)
+     keeps the drift at ~6fps — visually identical on this soft gradient — and
+     cuts ~90% of the paint work; touch devices hold the lit rim entirely. */
+  opacity:.38;animation:isle-aurora 14s steps(84) infinite;
+}
+@media (pointer:coarse){
+  body.page-macro .sx[data-open] .sx-island::before{animation:none}
 }
 body.page-macro .sx:not([data-open]) .sx-island::before{opacity:0;animation:none}
 [data-theme="light"] body.page-macro .sx[data-open] .sx-island::before{opacity:.2}
@@ -460,7 +467,9 @@ body.page-macro .sx-island::after{
   position:absolute;left:10%;right:10%;bottom:-14px;height:30px;
   border-radius:50%;
   background:color-mix(in srgb,var(--isle-color,var(--info)) 38%,transparent);
-  filter:blur(14px);opacity:0;transition:opacity .4s ease;z-index:-2;
+  /* blur frozen at the midpoint — animating blur() re-rasterizes every frame
+     (2026-07-21 mobile audit); the breathing lives in opacity alone below. */
+  filter:blur(16px);opacity:0;transition:opacity .4s ease;z-index:-2;
 }
 body.page-macro .sx[data-open] .sx-island::after{
   opacity:.55;animation:isle-underglow 5s ease-in-out infinite;
@@ -480,8 +489,8 @@ body.page-macro.many-open .sx[data-open] .sx-island::after{opacity:.28}
   from{--isle-aurora-angle:0deg}to{--isle-aurora-angle:360deg}
 }
 @keyframes isle-underglow{
-  0%,100%{opacity:.50;filter:blur(14px)}
-  50%{opacity:.70;filter:blur(18px)}
+  0%,100%{opacity:.50}
+  50%{opacity:.70}
 }
 
 /* Island header beacon */

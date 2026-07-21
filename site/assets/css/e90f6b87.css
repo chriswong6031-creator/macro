@@ -226,7 +226,9 @@ html[data-theme="dark"]{--drag:#e58a97;--lift:#54c39a}
 .cx-step:last-child{padding-bottom:0}
 .cx-step:not(:last-child)::before{content:'';position:absolute;left:14px;top:30px;bottom:-3px;width:2px;border-radius:2px;
   background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 60%,transparent) 0%,color-mix(in srgb,var(--accent) 13%,var(--grid)) 26%,color-mix(in srgb,var(--accent) 13%,var(--grid)) 100%);
-  background-size:100% 230%;animation:cxFlow 2.5s linear infinite}
+  /* steps(15) ≈ 6fps: background-position drift repaints per frame; visually
+     identical on a 2px soft-gradient rail (2026-07-21 mobile audit) */
+  background-size:100% 230%;animation:cxFlow 2.5s steps(15) infinite}
 .cx-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;z-index:1;
   color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 32%,var(--grid))}
 .cx-phrase{font-size:14px;font-weight:700;color:var(--ink);line-height:1.35;display:flex;align-items:flex-start;gap:6px;padding-top:5px}
