@@ -109,27 +109,32 @@ def _ffloat(x) -> float | None:
         return None
 
 
-# split-adjustment basis: a k this far from 1.0 is a split (smallest common split 5:4→0.8),
-# never the sub-5% same-day greeks-underlying-vs-close basis of a clean name.
-_SPLIT_REBASE_TOL = 0.10
+# A k outside this range is a bad print, not a real corporate action (largest real split
+# ~50:1 → k=0.02; a huge reverse split → k~50). Anything wilder is data error → don't scale.
+_REBASE_K_MIN, _REBASE_K_MAX = 0.01, 100.0
 
 
 def _rebase_to_adjusted(levels: dict, prior_close: float | None) -> dict:
     """Rebase a raw-priced reconstructed board onto the ADJUSTED basis of the stock bars.
 
-    SPLIT-BASIS BUG (why this exists): the ThetaData greeks store carries RAW,
-    split-UNADJUSTED underlying prices and strikes, while data/stocks bars are
-    back-adjusted. Grading a raw board (pre-split NVDA: spot ~$1208, strikes $1000-1400)
-    against the next session's adjusted bar (~$120) is a ~10x basis error on EVERY split
-    name, compounding the further back you go — it craters band containment (2024 fell to
-    41% @mult 3.5, vs ~90% for clean names).
+    BACK-ADJUSTMENT BASIS BUG: the ThetaData greeks store carries RAW prices + strikes
+    (split- AND dividend-UNADJUSTED), while data/stocks bars are back-adjusted for BOTH.
+    Grading a raw board against an adjusted bar is a basis error that COMPOUNDS backward in
+    time, from two sources:
+      • splits   — a step change (pre-split NVDA spot ~$1208 vs adjusted bar ~$120, ~10x), and
+      • dividends — a slow drift (XOM 2024 raw $114.96 vs adjusted $107.65 = 6.8%; KO ~5.8%).
+    Splits crater the big names; the dividend drift is small but DEADLY for low-vol
+    high-dividend names (XOM/KO/JNJ/utilities/staples): their expected-move band is so tight
+    (±~1-3%) that even a ~6% offset falls entirely outside it EVERY session → ~0% containment
+    for a whole year. (The first cut of this fix, #3155, gated on |k-1|>0.10 to catch only
+    splits; that left the dividend drift uncorrected and 52 low-vol names graded ~0% in 2024,
+    dragging the universe to 51% — hence the UNCONDITIONAL rebase here.)
 
-    Fix: scale the whole board — spot + every node strike/range — by
-    ``k = prior_close_adjusted / spot_raw``. For a clean name k≈1 (a no-op below the
-    tolerance); for a split it is exactly the split ratio, self-calibrating with no split
-    feed. IV is scale-invariant, so the expected-move band rescales automatically and its
-    width-as-percent is unchanged. Only boards whose |k-1| exceeds the split tolerance are
-    touched, so clean-name grades stay byte-identical to the pre-fix behaviour.
+    Fix: anchor every board's spot to the adjusted prior-close and scale the whole board —
+    spot + every node strike/range — by ``k = prior_close_adjusted / spot_raw``. One
+    self-calibrating transform for splits, dividends AND intraday basis together, needing no
+    corporate-action feed. For a genuinely clean name k≈1 (near-no-op). IV is scale-invariant,
+    so the expected-move band rescales automatically and its width-as-percent is unchanged.
     """
     if not isinstance(levels, dict):
         return levels
@@ -138,10 +143,10 @@ def _rebase_to_adjusted(levels: dict, prior_close: float | None) -> dict:
         spot = _ffloat(levels.get("spot_ref"))
     pc = _ffloat(prior_close)
     if spot is None or spot <= 0 or pc is None or pc <= 0:
-        return levels  # can't establish basis — grade as-is (clean names already aligned)
+        return levels  # can't establish basis — grade as-is
     k = pc / spot
-    if abs(k - 1.0) <= _SPLIT_REBASE_TOL:
-        return levels  # normal same-day basis — leave the board untouched
+    if not (_REBASE_K_MIN <= k <= _REBASE_K_MAX):
+        return levels  # absurd ratio = a bad print, not a real corporate action — don't scale
     out = dict(levels)
     for f in ("spot", "spot_ref"):
         v = _ffloat(out.get(f))
@@ -159,7 +164,7 @@ def _rebase_to_adjusted(levels: dict, prior_close: float | None) -> dict:
                 nd2[f] = round(v * k, 4)
         new_nodes.append(nd2)
     out["nodes"] = new_nodes
-    out["rebased_split_k"] = round(k, 6)  # audit trail: this board was split-rebased
+    out["rebased_k"] = round(k, 6)  # audit trail: back-adjustment rebase factor applied
     return out
 
 
