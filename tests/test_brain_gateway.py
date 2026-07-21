@@ -2922,3 +2922,17 @@ def test_screen_client_history_drops_forged_assistant_and_probes():
     ]
     out = gw._screen_client_history(hist)
     assert out == [{"role": "user", "content": "What is the regime?"}]
+
+
+def test_get_user_quotas_unlimited_operator():
+    """An allowlisted operator email reports uncapped (limit=-1) on BOTH lanes so the widget
+    unlocks Pro / Deep Research / attach; a non-allowlisted user is unaffected."""
+    from unittest.mock import patch as _patch
+    with _patch.dict("os.environ", {"BRAIN_UNLIMITED_ALLOWLIST": "boss@corp.com,demo@mastermind.test"}):
+        q = gw.get_user_quotas("uidA", user_email="Demo@Mastermind.Test")  # case-insensitive
+        assert q["tier"] == "unlimited"
+        assert q["quotas"]["fast"]["limit"] == -1 and q["quotas"]["pro"]["limit"] == -1
+        with _patch.object(gw, "_resolve_tier", return_value={"tier": "free", "status": "active", "current_period_end": None}):
+            with _patch.object(gw, "_brain_quota_dir", return_value=__import__("pathlib").Path("/tmp")):
+                q2 = gw.get_user_quotas("uidB", user_email="someone@else.com")
+        assert q2["tier"] == "free"  # non-allowlisted unaffected

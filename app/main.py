@@ -807,7 +807,10 @@ def brain_me(user: dict = Depends(require_user)):
     """
     gw = _brain_module()
     user_id = user.get("id") or user.get("email") or "unknown"
-    return gw.get_user_quotas(user_id, root=REPO)
+    # email from the Supabase-verified session only (never body/headers) — drives the
+    # unlimited-operator UI unlock, matching the backend's BRAIN_UNLIMITED_ALLOWLIST bypass.
+    user_email = (user.get("email") or "").strip().lower()
+    return gw.get_user_quotas(user_id, root=REPO, user_email=user_email)
 
 
 @app.get("/api/brain/threads")

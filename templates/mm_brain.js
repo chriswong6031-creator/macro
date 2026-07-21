@@ -346,7 +346,8 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d) return; quotas = d.quotas || {};
-        proEligible = !!(quotas.pro && quotas.pro.limit > 0);
+        /* limit < 0 = unlimited (operator allowlist) → Pro eligible; limit 0 = lane locked. */
+        proEligible = !!(quotas.pro && quotas.pro.limit !== 0);
         researchBtn.classList.toggle('mmb-off', !proEligible);
         if (!proEligible && researchMode) setResearch(false);
         renderQuota();
@@ -355,7 +356,9 @@
   function renderQuota() {
     var q = quotas[researchMode ? 'pro' : lane];
     if (!q) { qEl.textContent = ''; return; }
-    qEl.textContent = (researchMode ? '◈ ' : (lane === 'pro' ? '◈ ' : '⚡ ')) + q.remaining + '/' + q.limit;
+    var pre = (researchMode || lane === 'pro') ? '◈ ' : '⚡ ';
+    if (q.limit < 0) { qEl.textContent = pre + '∞'; qEl.className = 'mmb-q'; return; }  /* unlimited */
+    qEl.textContent = pre + q.remaining + '/' + q.limit;
     qEl.className = 'mmb-q' + (q.remaining <= 0 ? ' empty' : (q.remaining <= Math.max(1, q.limit * 0.15) ? ' warn' : ''));
   }
 
