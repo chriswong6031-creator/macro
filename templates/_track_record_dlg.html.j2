@@ -114,8 +114,12 @@
   .trd-spark path.trd-live{ stroke-dasharray:120;stroke-dashoffset:120;animation:trd-draw .9s ease-out .15s forwards; }
   @keyframes trd-draw{ to{ stroke-dashoffset:0; } }
   /* slow breathing halo — scored/interim winning states only; NOT accruing
-     (nothing to brag about — honesty in motion). Quieter than .gbtn-cta. */
+     (nothing to brag about — honesty in motion). Quieter than .gbtn-cta.
+     Perf: box-shadow breathing repaints on the main thread every frame, and
+     overflow:hidden clips any pseudo glow overlay — so touch devices hold the
+     resting state (2026-07-21 mobile audit; same call as .gbtn-cta). */
   .trd-btn.trd-breathe{ animation:trd-breathe 3.8s ease-in-out infinite; }
+  @media (pointer: coarse){ .trd-btn.trd-breathe{ animation:none; } }
   @keyframes trd-breathe{
     0%,100%{ box-shadow:inset 0 1px 0 var(--trd-sheen), 0 1px 2px rgba(3,7,18,.18); }
     50%{ box-shadow:inset 0 1px 0 var(--trd-sheen), 0 0 0 4px color-mix(in srgb,var(--trd-accent) 12%,transparent), 0 1px 2px rgba(3,7,18,.18); }

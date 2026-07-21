@@ -93,6 +93,10 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   box-shadow:var(--surface-shadow);
   -webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);
   animation:ss-rise .5s cubic-bezier(.2,.8,.3,1) both, ss-breathe 6s ease-in-out 1s infinite;}
+/* Perf: box-shadow breathing on the full-width hero repaints it every frame, and
+   overflow:hidden clips a pseudo glow — touch devices keep the entrance rise only
+   (2026-07-21 mobile audit; same call as .gbtn-cta). */
+@media(pointer:coarse){.hero{animation:ss-rise .5s cubic-bezier(.2,.8,.3,1) both}}
 @media(prefers-reduced-motion:reduce){.hero{animation:none}}
 .hero::before{content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(620px 320px at 80% -20%,color-mix(in srgb,#8b5cf6 12%,transparent),transparent 70%),

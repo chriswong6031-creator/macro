@@ -113,11 +113,13 @@
     border:1.5px solid transparent; box-shadow:0 18px 56px -28px color-mix(in srgb,var(--acc1) 55%,transparent); }
   .stage-flag { display:inline-flex; align-items:center; gap:7px; font-size:10.5px; font-weight:800; letter-spacing:.13em;
     text-transform:uppercase; color:#fff; background:var(--acc-grad); background-size:200% 100%;
-    padding:5px 12px; border-radius:999px; animation:accflow 7s linear infinite; }
+    padding:5px 12px; border-radius:999px; animation:accflow 7s steps(46) infinite; }
+  /* Perf: background-position drift repaints per frame — steps ≈ 6fps is visually
+     identical on these soft gradients (2026-07-21 mobile audit). */
   @keyframes accflow { to { background-position:200% 0; } }
   .stage-h1 { font-size:30px; font-weight:800; letter-spacing:-.02em; margin:11px 0 6px;
     background:linear-gradient(90deg,var(--acc1),var(--acc2),var(--acc3),var(--acc1)); background-size:300% 100%;
-    -webkit-background-clip:text; background-clip:text; color:transparent; animation:accshim 10s linear infinite; }
+    -webkit-background-clip:text; background-clip:text; color:transparent; animation:accshim 10s steps(66) infinite; }
   @keyframes accshim { to { background-position:300% 0; } }
   @media (prefers-reduced-motion: reduce) { .stage-flag,.stage-h1 { animation:none; } }
   .stage-read { color:var(--text); font-size:14px; line-height:1.55; max-width:1000px; margin:2px 0 0; }
