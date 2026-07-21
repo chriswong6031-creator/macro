@@ -1,32 +1,32 @@
 {
-  "3740b4829630": {
-    "name_en": "Cross-sector cluster \u00b7 Energy + Utilities",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Energy + Utilities",
-    "score": 68.5
+  "2a28a5c2bd9f": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Basic Materials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Basic Materials",
+    "score": 53.6
+  },
+  "4097ec2ee51d": {
+    "name_en": "Cross-sector cluster \u00b7 Healthcare + Communication Services",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Healthcare + Communication Services",
+    "score": 59.6
+  },
+  "509e7b542a36": {
+    "name_en": "Emerging Industrials cluster",
+    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
+    "score": 58.0
+  },
+  "86195e87fb74": {
+    "name_en": "Cross-sector cluster \u00b7 Technology + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Technology + Industrials",
+    "score": 83.0
   },
   "8fc0dcf3b9d7": {
     "name_en": "Cross-sector cluster (5 names)",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4\uff085\u53ea\uff09",
-    "score": 71.8
+    "score": 75.0
   },
-  "ad8090fee3c1": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Industrials",
-    "score": 53.4
-  },
-  "b188b60f7f9b": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
-    "score": 57.0
-  },
-  "d56afc4a78d3": {
-    "name_en": "Cross-sector cluster \u00b7 Technology + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Technology + Industrials",
-    "score": 79.4
-  },
-  "f421f87e4561": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
-    "score": 54.4
+  "e0a4135f10fd": {
+    "name_en": "Cross-sector cluster \u00b7 Energy + Utilities",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Energy + Utilities",
+    "score": 63.2
   }
 }

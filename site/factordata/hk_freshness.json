@@ -1,31 +1,31 @@
 {
-  "checked_at": "2026-07-21T03:20:58+00:00",
-  "expected_session": "2026-07-20",
+  "checked_at": "2026-07-21T09:40:22+00:00",
+  "expected_session": "2026-07-21",
   "stores": {
     "cache": {
-      "asof": "2026-07-17",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-07-21",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "bellwether": {
-      "asof": "2026-07-20",
+      "asof": "2026-07-21",
       "lag_days": 0,
       "state": "fresh"
     },
     "standouts": {
       "asof": "2026-07-20",
-      "lag_days": 0,
+      "lag_days": 1,
       "state": "fresh"
     },
     "regime": {
       "asof": "2026-07-20",
-      "lag_days": 0,
+      "lag_days": 1,
       "state": "fresh"
     },
     "southbound": {
-      "asof": "2026-07-17",
-      "lag_days": 3,
-      "state": "slow"
+      "asof": "2026-07-20",
+      "lag_days": 1,
+      "state": "fresh"
     }
   },
   "coherence": {
@@ -35,14 +35,11 @@
     "note": null
   },
   "regression": {
-    "ok": false,
+    "ok": true,
     "prev_cache_max": "2026-07-20",
-    "curr_cache_max": "2026-07-17",
-    "note": "cache rolled BACK from 2026-07-20 to 2026-07-17 (likely -X theirs clobber)"
+    "curr_cache_max": "2026-07-21",
+    "note": null
   },
-  "verdict": "stale",
-  "banner_message": {
-    "en": "HK data stale \u2014 cache rolled BACK from 2026-07-20 to 2026-07-17 (likely -X theirs clobber)",
-    "zh": "\u6e2f\u80a1\u6570\u636e\u5df2\u8fc7\u671f \u2014 \u7f13\u5b58\u6570\u636e\u56de\u9000\uff1a2026-07-20 \u2192 2026-07-17"
-  }
+  "verdict": "ok",
+  "banner_message": null
 }

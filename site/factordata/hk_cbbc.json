@@ -1,5 +1,5 @@
 {
-  "as_of_trade_date": "20072026",
+  "as_of_trade_date": "21072026",
   "freshness": "fresh",
   "bellwethers": [
     {
@@ -54,14 +54,14 @@
       "leverage_state": "bull_skew_froth",
       "n_cbbc_contracts": 296,
       "data_note": "call price coverage 6% \u2014 low SLD coverage; magnets may be incomplete",
-      "magnet_below": false,
+      "magnet_below": true,
       "magnet_above": false,
-      "nearest_magnet_pct": null,
+      "nearest_magnet_pct": -9.0,
       "magnet_clusters": [
         {
           "bucket": -1,
           "distance_pct": -1.0,
-          "level_approx": 473.02,
+          "level_approx": 469.26,
           "side": "bull",
           "outstanding_sum": 0,
           "n_contracts": 2,
@@ -71,41 +71,41 @@
         {
           "bucket": -2,
           "distance_pct": -3.0,
-          "level_approx": 463.47,
+          "level_approx": 459.78,
           "side": "bull",
-          "outstanding_sum": 6550000,
-          "n_contracts": 1,
-          "bull_outstanding": 6550000,
+          "outstanding_sum": 10270000,
+          "n_contracts": 2,
+          "bull_outstanding": 10270000,
           "bear_outstanding": 0
         },
         {
           "bucket": -3,
           "distance_pct": -5.0,
-          "level_approx": 453.91,
+          "level_approx": 450.3,
           "side": "bull",
-          "outstanding_sum": 5415000,
+          "outstanding_sum": 6905000,
           "n_contracts": 3,
-          "bull_outstanding": 5415000,
+          "bull_outstanding": 6905000,
           "bear_outstanding": 0
         },
         {
           "bucket": -4,
           "distance_pct": -7.0,
-          "level_approx": 444.35,
+          "level_approx": 440.82,
           "side": "bull",
-          "outstanding_sum": 6720000,
-          "n_contracts": 3,
-          "bull_outstanding": 6720000,
+          "outstanding_sum": 1510000,
+          "n_contracts": 2,
+          "bull_outstanding": 1510000,
           "bear_outstanding": 0
         },
         {
           "bucket": -5,
           "distance_pct": -9.0,
-          "level_approx": 434.8,
+          "level_approx": 431.34,
           "side": "bull",
-          "outstanding_sum": 6295000,
-          "n_contracts": 2,
-          "bull_outstanding": 6295000,
+          "outstanding_sum": 16890000,
+          "n_contracts": 5,
+          "bull_outstanding": 16890000,
           "bear_outstanding": 0
         }
       ],
@@ -207,9 +207,9 @@
       "nearest_magnet_pct": null,
       "magnet_clusters": [
         {
-          "bucket": 2,
-          "distance_pct": 5.0,
-          "level_approx": 114.66,
+          "bucket": 3,
+          "distance_pct": 7.0,
+          "level_approx": 114.7,
           "side": "bull",
           "outstanding_sum": 0,
           "n_contracts": 1,
@@ -277,29 +277,19 @@
       "nearest_magnet_pct": -9.0,
       "magnet_clusters": [
         {
-          "bucket": -3,
-          "distance_pct": -5.0,
-          "level_approx": 377.53,
-          "side": "bull",
-          "outstanding_sum": 1700000,
-          "n_contracts": 1,
-          "bull_outstanding": 1700000,
-          "bear_outstanding": 0
-        },
-        {
           "bucket": -4,
           "distance_pct": -7.0,
-          "level_approx": 369.58,
+          "level_approx": 371.63,
           "side": "bull",
-          "outstanding_sum": 385000,
-          "n_contracts": 1,
-          "bull_outstanding": 385000,
+          "outstanding_sum": 2085000,
+          "n_contracts": 2,
+          "bull_outstanding": 2085000,
           "bear_outstanding": 0
         },
         {
           "bucket": -5,
           "distance_pct": -9.0,
-          "level_approx": 361.63,
+          "level_approx": 363.64,
           "side": "bull",
           "outstanding_sum": 4835000,
           "n_contracts": 2,
@@ -313,8 +303,8 @@
     }
   ],
   "banner": null,
-  "cbbc_total_contracts": 33933,
-  "dw_total_contracts": 45417,
-  "sld_call_levels_in_store": 790,
+  "cbbc_total_contracts": 28271,
+  "dw_total_contracts": 37895,
+  "sld_call_levels_in_store": 841,
   "display_only": true
 }

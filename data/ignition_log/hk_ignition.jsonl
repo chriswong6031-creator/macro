@@ -173,3 +173,20 @@
 {"asof":"2026-07-20","market":"hk","basket":"hk_banks","name":"Banks (H + HK)","ignition_score":0.3327,"state":"fading","alert":false,"logged_at":"2026-07-20T11:09:50+00:00","graded":null}
 {"asof":"2026-07-20","market":"hk","basket":"hk_tech_hardware","name":"Tech Hardware & Semis","ignition_score":0.2667,"state":"fading","alert":false,"logged_at":"2026-07-20T11:09:50+00:00","graded":null}
 {"asof":"2026-07-20","market":"hk","basket":"hk_china_tech","name":"China Tech & Internet","ignition_score":0.2539,"state":"fading","alert":false,"logged_at":"2026-07-20T11:09:50+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_ev","name":"China EV & Autos","ignition_score":0.764,"state":"igniting","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_property","name":"Property & REITs","ignition_score":0.7421,"state":"igniting","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_consumer","name":"China Consumer Brands","ignition_score":0.6335,"state":"igniting","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_biotech","name":"Biotech, Pharma & CXO","ignition_score":0.6227,"state":"igniting","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_platform_tech","name":"China Platform Megacaps","ignition_score":0.5651,"state":"igniting","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_telco_util","name":"Telecom & Utilities","ignition_score":0.5353,"state":"running","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_energy","name":"Energy (H-shares)","ignition_score":0.5036,"state":"running","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_industrials","name":"Industrials & Infrastructure","ignition_score":0.4825,"state":"running","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_conglo","name":"Conglomerates & Exchange","ignition_score":0.4496,"state":"running","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_gaming","name":"Macau Gaming","ignition_score":0.4467,"state":"running","alert":true,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_miners","name":"Diversified Miners","ignition_score":0.3339,"state":"fading","alert":false,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_insurers","name":"Insurers","ignition_score":0.32,"state":"fading","alert":false,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_banks","name":"Banks (H + HK)","ignition_score":0.2972,"state":"fading","alert":false,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_dividend","name":"High-Dividend Blue Chips","ignition_score":0.2959,"state":"fading","alert":false,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_materials","name":"Materials & Metals","ignition_score":0.2837,"state":"fading","alert":false,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_china_tech","name":"China Tech & Internet","ignition_score":0.2448,"state":"fading","alert":false,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
+{"asof":"2026-07-21","market":"hk","basket":"hk_tech_hardware","name":"Tech Hardware & Semis","ignition_score":0.2,"state":"fading","alert":false,"logged_at":"2026-07-21T09:42:15+00:00","graded":null}
