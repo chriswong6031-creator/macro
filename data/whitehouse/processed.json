@@ -305,6 +305,18 @@
       "at": "2026-07-21T18:40:13.817329+00:00",
       "activated": false,
       "importance": 10
+    },
+    "https://www.whitehouse.gov/?p=45456": {
+      "id": "wh-2026-07-21-nominations-sent-to-the-senate-60e9",
+      "at": "2026-07-21T20:36:36.377878+00:00",
+      "activated": false,
+      "importance": 0
+    },
+    "https://www.whitehouse.gov/?p=45449": {
+      "id": "wh-2026-07-21-democrat-glitch-registers-thousands-of-noncitizens-to-vote-another-reason-to-pas",
+      "at": "2026-07-21T20:36:41.115983+00:00",
+      "activated": false,
+      "importance": 10
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
