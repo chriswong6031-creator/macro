@@ -82,6 +82,14 @@ html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.acti
    (--panel2/--line/--text/--muted/--link/--glass-*), the --card/--grid/--text/--muted
    pages, and commodities' --panel2/--line/--tx/--mut/--blue. Loaded after each page's
    own <style> (and after theme.css on the two pages that link it), so it wins. */
+/* CLS: pre-collapse the mobile nav at PARSE time (port of the theme.css rule —
+   this partial's pages don't all load theme.css). theme.js's hamburger sheet lands
+   ~2s in on phones; until then the expanded menu caused a 0.30 layout shift
+   (2026-07-21 audit). :not(.nav-open) yields once the flyout opens; the noscript
+   re-expand in _navlinks.html.j2 keeps the no-JS fallback reachable. */
+@media (max-width:1259px){
+  .site-nav:not(.nav-open) .nav-links{display:none}
+}
 .site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}
 .site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;box-shadow:0 0 5px 0 rgba(65,106,236,.10);transition:border-color .18s,box-shadow .25s ease}
 /* Perf: glow breathe on a pseudo animating ONLY opacity (compositor) — animating
