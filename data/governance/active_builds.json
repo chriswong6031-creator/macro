@@ -1,17 +1,17 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-20T03:13:57.609342+00:00",
+  "generated_at": "2026-07-21T01:03:30.028148+00:00",
   "base": {
-    "sha": "46e6293de6153b1aa77efb2adef5c1e93a3f3677"
+    "sha": "eb2d2506b9ec1f45177b145baf706123fc030881"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 3105,
-      "title": "feat(admin): Raw Key Usage shows Mastermind bot key-pool health (MM federation lane)",
-      "head_ref": "claude/raw-key-mm-federation",
-      "updated_at": "2026-07-20T02:09:32Z",
+      "number": 3133,
+      "title": "docs(marketing): define affiliate creator launch strategy",
+      "head_ref": "codex/affiliate-creator-launch-strategy",
+      "updated_at": "2026-07-20T12:21:04Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -19,13 +19,11 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "admin/static/app.js",
-        "engine/neuralweb/key_pool.py",
-        "tests/test_key_pool_mm_state.py"
+        "research/marketing_dockets/D11_AFFILIATE_CREATOR_PROGRAM_SHAPE_RULING.md",
+        "research/marketing_dockets/D11_ALLIES_ECOSYSTEM_W1.md",
+        "research/marketing_dockets/INDEX.md"
       ],
-      "protected_paths_touched": [
-        "engine/neuralweb/key_pool.py"
-      ]
+      "protected_paths_touched": []
     },
     {
       "number": 3092,
@@ -78,12 +76,307 @@
       "protected_paths_touched": []
     }
   ],
-  "collisions": [],
+  "collisions": [
+    {
+      "pr_a": 3133,
+      "pr_b": 3092,
+      "shared_files": [
+        "research/marketing_dockets/INDEX.md"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    }
+  ],
   "recent_merged": [
+    {
+      "number": 3163,
+      "title": "feat(seo): D12 W1 \u2014 free acquisition estate: Calculator Lab, Learning Center, Blog + trading-journal spreadsheet",
+      "merged_at": "2026-07-21T00:27:57Z"
+    },
+    {
+      "number": 3162,
+      "title": "feat(psq): Prophet \u00d7 Stage quality re-grade \u2014 PSQ prereg + pre-registered median/EA/stopped falsifiers, full run",
+      "merged_at": "2026-07-21T00:26:55Z"
+    },
+    {
+      "number": 3161,
+      "title": "feat(wa): W3 census fingerprint study (Layer-3a) \u2014 W2 candidates vs full-census base rates",
+      "merged_at": "2026-07-21T00:23:39Z"
+    },
+    {
+      "number": 3160,
+      "title": "feat(seo): Search Console ingestion adapter \u2014 credentials-gated demand loop (MKT-SEO-07 W0)",
+      "merged_at": "2026-07-20T23:31:32Z"
+    },
+    {
+      "number": 3159,
+      "title": "fix(cycle): repair blank cycle.html \u2014 defer/load-order regression",
+      "merged_at": "2026-07-20T22:52:20Z"
+    },
+    {
+      "number": 3158,
+      "title": "feat(universe): Russell 2000 + Dow 30 \u2014 dossier coverage grows to 2,778 names",
+      "merged_at": "2026-07-20T23:00:19Z"
+    },
+    {
+      "number": 3157,
+      "title": "feat(sga): Prophet \u00d7 Stage forward-shadow \u2014 definitive on-Prophet fusion test, accruing from go-live",
+      "merged_at": "2026-07-20T22:27:14Z"
+    },
+    {
+      "number": 3156,
+      "title": "research(sga): Prophet\u00d7Stage fusion backtest \u2014 pre-registered NULL, kill the win-rate-gate construction",
+      "merged_at": "2026-07-20T21:55:09Z"
+    },
+    {
+      "number": 3155,
+      "title": "fix(levels): rebase reconstructed board onto adjusted price basis (split-basis bug)",
+      "merged_at": "2026-07-20T21:20:53Z"
+    },
+    {
+      "number": 3154,
+      "title": "fix(hub): keep a11y-critical CSS inline on index.html through the externalize pass",
+      "merged_at": "2026-07-20T18:25:59Z"
+    },
+    {
+      "number": 3153,
+      "title": "fix(master_brain): retry empty/refusal LLM replies so a lens can't go blank for the day",
+      "merged_at": "2026-07-20T18:33:49Z"
+    },
+    {
+      "number": 3152,
+      "title": "fix(seo): dossier mobile hardening \u2014 kill every small-screen bleed",
+      "merged_at": "2026-07-20T17:56:08Z"
+    },
+    {
+      "number": 3151,
+      "title": "feat(sga): Stage Analysis v2 \u2014 full EquityDesk transfer (6 surfaces) + dark hub redo",
+      "merged_at": "2026-07-20T15:01:53Z"
+    },
+    {
+      "number": 3150,
+      "title": "fix(theta): keepalive key via THETADATA_API_KEY env, never --api-key argv",
+      "merged_at": "2026-07-20T13:29:14Z"
+    },
+    {
+      "number": 3149,
+      "title": "fix(marketing): earnings card typography \u2014 sans-serif verdict chip, larger stat fonts",
+      "merged_at": "2026-07-20T13:27:06Z"
+    },
+    {
+      "number": 3148,
+      "title": "docs(seo): D12A status \u2192 W1 SHIPPED; retire stale apex-era NOTE in seo_director",
+      "merged_at": "2026-07-20T13:23:28Z"
+    },
+    {
+      "number": 3147,
+      "title": "feat(seo): meta rollout \u2014 _seo_head + ratified titles/descriptions across 94 public templates (D12A PR B)",
+      "merged_at": "2026-07-20T13:22:10Z"
+    },
+    {
+      "number": 3146,
+      "title": "design(seo): dossier v6b \u2014 popup dashboards (deep tier), machine-text scrub, Performance retired",
+      "merged_at": "2026-07-20T13:53:10Z"
+    },
+    {
+      "number": 3145,
+      "title": "chore(seo): source seo_director host constants from lib.seo",
+      "merged_at": "2026-07-20T13:15:13Z"
+    },
+    {
+      "number": 3144,
+      "title": "fix(seo): seo-director.yml invalid YAML \u2014 dispatch rejected, phantom 0s failures",
+      "merged_at": "2026-07-20T13:13:57Z"
+    },
+    {
+      "number": 3143,
+      "title": "feat(marketing): brand bar 'AI stock signals' tagline next to mastermind-x.com",
+      "merged_at": "2026-07-20T13:13:50Z"
+    },
+    {
+      "number": 3142,
+      "title": "feat(admin): Beacon SEO control plane \u2014 Marketing \u2192 SEO page (D12A PR D)",
+      "merged_at": "2026-07-20T13:11:48Z"
+    },
+    {
+      "number": 3141,
+      "title": "feat(seo): SEO Director \u2014 deterministic weekly audit engine + gated loop (D12A PR C)",
+      "merged_at": "2026-07-20T13:10:56Z"
+    },
+    {
+      "number": 3140,
+      "title": "feat(seo): technical foundation \u2014 www canonical host, full core sitemap, llms.txt + brand-facts, homepage JSON-LD (D12A PR A)",
+      "merged_at": "2026-07-20T12:59:28Z"
+    },
+    {
+      "number": 3139,
+      "title": "design(seo): dossier v6 \u2014 Terminal embed chart, trade-levels ladder, Inter-only type",
+      "merged_at": "2026-07-20T13:07:29Z"
+    },
+    {
+      "number": 3138,
+      "title": "ops(theta): zombie-proof terminal health checks (200+body law) + in-run watchdog; upstream current-day-400 skip",
+      "merged_at": "2026-07-20T12:48:40Z"
+    },
+    {
+      "number": 3137,
+      "title": "fix(seo): 24px top gap above site-nav on ticker dossier pages (nav-gap gate)",
+      "merged_at": "2026-07-20T12:35:27Z"
+    },
+    {
+      "number": 3136,
+      "title": "fix(theta): keepalive stdin via anonymous FIFO \u2014 tail-pipe deadlocked on java death",
+      "merged_at": "2026-07-20T12:40:17Z"
+    },
+    {
+      "number": 3135,
+      "title": "feat(illus): ilx \"Signal Ink\" illustration format \u2014 china/hk/canada off Plotly + HK news revamp",
+      "merged_at": "2026-07-20T12:29:18Z"
+    },
+    {
+      "number": 3134,
+      "title": "feat(brain): env-gated unlimited quota + token ceiling for operator allowlist (both lanes)",
+      "merged_at": "2026-07-20T12:22:06Z"
+    },
+    {
+      "number": 3132,
+      "title": "Docs: add Beacon SEO publishing and tools docket",
+      "merged_at": "2026-07-20T12:24:37Z"
+    },
+    {
+      "number": 3131,
+      "title": "feat(marketing): watchlist card v2 \u2014 portrait 4:5 mobile-first, color-logo avatar chips",
+      "merged_at": "2026-07-20T12:11:55Z"
+    },
+    {
+      "number": 3130,
+      "title": "perf(site): externalize inline CSS to cached hash files (HTML -44%)",
+      "merged_at": "2026-07-20T12:14:05Z"
+    },
+    {
+      "number": 3129,
+      "title": "ops(theta): stdin-safe run_theta_terminal.sh + runbook \u00a73 launchd lanes",
+      "merged_at": "2026-07-20T12:10:27Z"
+    },
+    {
+      "number": 3128,
+      "title": "feat(cxi): CXI-R23a \u2014 operator-allowlist internals tools in Brain gateway",
+      "merged_at": "2026-07-20T11:23:57Z"
+    },
+    {
+      "number": 3127,
+      "title": "ops(theta): terminal keepalive + EOD staleness sentinel launchd lanes",
+      "merged_at": "2026-07-20T11:48:41Z"
+    },
+    {
+      "number": 3126,
+      "title": "fix(flow): route flow_leaders/flow_desk stub writes through write_page",
+      "merged_at": "2026-07-20T11:14:01Z"
+    },
+    {
+      "number": 3125,
+      "title": "feat(brain): surgical advice filter \u2014 strip only the offending sentence, keep the analysis",
+      "merged_at": "2026-07-20T11:05:31Z"
+    },
+    {
+      "number": 3124,
+      "title": "research(cxi): CXI-R23 audience fence \u2014 public surfaces never serve repo-internals retrieval",
+      "merged_at": "2026-07-20T10:59:04Z"
+    },
+    {
+      "number": 3123,
+      "title": "design(macro): rich Tier-2 popovers \u2014 kill the machine-talk hover walls + trim the regime popup",
+      "merged_at": "2026-07-20T10:50:41Z"
+    },
+    {
+      "number": 3122,
+      "title": "fix(brain): advice-refusal is language-aware (no English refusal for Chinese users)",
+      "merged_at": "2026-07-20T10:48:43Z"
+    },
+    {
+      "number": 3121,
+      "title": "feat(brain): plain-voice overhaul \u2014 kill machine text, translate numbers, natural Chinese + chip redesign",
+      "merged_at": "2026-07-20T10:38:45Z"
+    },
+    {
+      "number": 3120,
+      "title": "polish(brain-widget): billion-dollar expand \u2014 GPU FLIP morph replaces the janky resize",
+      "merged_at": "2026-07-20T10:28:11Z"
+    },
+    {
+      "number": 3119,
+      "title": "admin analytics: IP self-exclusion + crawler/bot filter + geo relabel",
+      "merged_at": "2026-07-20T10:24:54Z"
+    },
+    {
+      "number": 3118,
+      "title": "perf(site): immutable-cache + defer local js/css for faster mobile loads",
+      "merged_at": "2026-07-20T10:32:31Z"
+    },
+    {
+      "number": 3117,
+      "title": "docs(cxi): advisory Context Index pointer in house laws (CXI-R19)",
+      "merged_at": "2026-07-20T10:04:00Z"
+    },
+    {
+      "number": 3116,
+      "title": "feat(track-record): shared receipt-chip button + in-page popup dashboard on all four stock boards",
+      "merged_at": "2026-07-20T10:01:02Z"
+    },
+    {
+      "number": 3115,
+      "title": "feat(cxi): CXI-2x \u2014 site glossary + comprehension family (8/8) + honest no-answer null (Amendment 2)",
+      "merged_at": "2026-07-20T09:55:34Z"
+    },
+    {
+      "number": 3114,
+      "title": "admin analytics: operator self-exclusion + table filtering + deeper history",
+      "merged_at": "2026-07-20T09:52:44Z"
+    },
+    {
+      "number": 3113,
+      "title": "feat(brain): security layer \u2014 scope/anti-distillation guardrails + device-linked credit pool",
+      "merged_at": "2026-07-20T09:47:22Z"
+    },
+    {
+      "number": 3112,
+      "title": "fix(design): soften harsh dark-mode red text site-wide",
+      "merged_at": "2026-07-20T09:22:37Z"
+    },
+    {
+      "number": 3111,
+      "title": "feat(marketing): human-voice overhaul \u2014 kill the AI tells, watchlist share-cards, signals-first tilts",
+      "merged_at": "2026-07-20T09:17:17Z"
+    },
+    {
+      "number": 3110,
+      "title": "fix(brain-widget): compact-first open, mobile compact-only, drop footer",
+      "merged_at": "2026-07-20T09:15:13Z"
+    },
+    {
+      "number": 3109,
+      "title": "chore(master_brain): untrack reply_cache junk (411 files) + gitignore",
+      "merged_at": "2026-07-20T08:10:30Z"
+    },
+    {
+      "number": 3108,
+      "title": "feat(lens): wire the Lens explainer popover site-wide \u2014 singleton swap + first content conversions",
+      "merged_at": "2026-07-20T07:46:29Z"
+    },
+    {
+      "number": 3107,
+      "title": "test(release-radar): drop stale week-ahead ordering assertion",
+      "merged_at": "2026-07-20T07:11:06Z"
+    },
     {
       "number": 3106,
       "title": "feat(macro): fold Release Radar into the Events dialog \u2014 calendar cards become the selector",
       "merged_at": "2026-07-20T02:25:50Z"
+    },
+    {
+      "number": 3105,
+      "title": "feat(admin): Raw Key Usage shows Mastermind bot key-pool health (MM federation lane)",
+      "merged_at": "2026-07-20T03:32:04Z"
     },
     {
       "number": 3104,
@@ -2294,291 +2587,6 @@
       "number": 2619,
       "title": "feat(live_flow): local day_state retention sweep (5 trading days, config-driven)",
       "merged_at": "2026-07-16T20:10:08Z"
-    },
-    {
-      "number": 2617,
-      "title": "heatmap: transparent frame/gaps (remove white background)",
-      "merged_at": "2026-07-16T19:55:58Z"
-    },
-    {
-      "number": 2616,
-      "title": "fix(thetadata): canonical store resolver \u2014 fail-loud single fallback chain (P0 WP-RESOLVER)",
-      "merged_at": "2026-07-16T20:56:40Z"
-    },
-    {
-      "number": 2615,
-      "title": "feat(options_hub): dated per-strike GEX snapshot retention (PIT scrubber/topology history) + options-stack doc-honesty sweep",
-      "merged_at": "2026-07-16T19:59:16Z"
-    },
-    {
-      "number": 2614,
-      "title": "research: Options Confluence Program \u2014 adjudicated plan of record + ThetaData v3 probe results (2026-07-16)",
-      "merged_at": "2026-07-16T19:59:12Z"
-    },
-    {
-      "number": 2613,
-      "title": "fix(tests): stop pytest writing the real site/ tree + extend MM_DATA_GUARD to site/",
-      "merged_at": "2026-07-16T21:33:38Z"
-    },
-    {
-      "number": 2612,
-      "title": "feat(mlc): W2a board coherence \u2014 generals lens + read-lag disclosure + vocab + .ldb absorbs .m7p",
-      "merged_at": "2026-07-16T18:41:31Z"
-    },
-    {
-      "number": 2611,
-      "title": "feat(analytics): registered-visitor email identity + world-map backdrop + real-IP header",
-      "merged_at": "2026-07-16T21:33:34Z"
-    },
-    {
-      "number": 2610,
-      "title": "feat(site-gate): admin-managed IP/country blocking + bilingual coming-soon page",
-      "merged_at": "2026-07-17T08:33:08Z"
-    },
-    {
-      "number": 2609,
-      "title": "fix(tests): stop pytest writing the real data/ tree + MM_DATA_GUARD tripwire",
-      "merged_at": "2026-07-16T05:34:43Z"
-    },
-    {
-      "number": 2608,
-      "title": "feat(mlc): remove Leadership Board from us_stocks too \u2014 gone from all pages",
-      "merged_at": "2026-07-16T05:11:24Z"
-    },
-    {
-      "number": 2607,
-      "title": "feat(ui): unify help '?' icons site-wide (new popover + mobile fixes) + align China header with US",
-      "merged_at": "2026-07-16T05:29:58Z"
-    },
-    {
-      "number": 2606,
-      "title": "fix(china stocks): mobile Table toggle + table pagination + mobile column scroll",
-      "merged_at": "2026-07-16T05:30:52Z"
-    },
-    {
-      "number": 2605,
-      "title": "fix(leader-radar): unfreeze state_history append + repoint board lifecycle to radar.json",
-      "merged_at": "2026-07-16T04:51:14Z"
-    },
-    {
-      "number": 2604,
-      "title": "feat(mlc): remove Leadership Board from macro.html (keep on us_stocks)",
-      "merged_at": "2026-07-16T04:05:39Z"
-    },
-    {
-      "number": 2603,
-      "title": "feat(schedule): two-build cutover \u2014 Build A crons live, Build B to 18:30 ET, earlyclose retired",
-      "merged_at": "2026-07-16T03:54:20Z"
-    },
-    {
-      "number": 2602,
-      "title": "fix(china): translate remaining English in china_stocks.html Chinese mode",
-      "merged_at": "2026-07-16T04:00:31Z"
-    },
-    {
-      "number": 2601,
-      "title": "fix(stocks): unify Standout 'See more' on Intl + tighten help '?' icon",
-      "merged_at": "2026-07-16T03:35:01Z"
-    },
-    {
-      "number": 2600,
-      "title": "china: match US light-mode card shadows + company names in heatmap",
-      "merged_at": "2026-07-16T03:23:11Z"
-    },
-    {
-      "number": 2599,
-      "title": "feat(closing-bell): Build A \u2014 full-market close render, non-ledger-advancing (dispatch-only)",
-      "merged_at": "2026-07-16T01:57:53Z"
-    },
-    {
-      "number": 2598,
-      "title": "feat(ledgers): COLLECT_LANE gates on all ungated forward-ledger appenders (two-build Step 0)",
-      "merged_at": "2026-07-16T01:57:32Z"
-    },
-    {
-      "number": 2597,
-      "title": "fix(us-boards): staleness disclosure + generals/dots receipt + index_leadership dead-wire wiring",
-      "merged_at": "2026-07-16T01:52:41Z"
-    },
-    {
-      "number": 2596,
-      "title": "china: fix light-mode \u2014 mx5 glass was dark-only, now matches US dashboard",
-      "merged_at": "2026-07-16T01:54:02Z"
-    },
-    {
-      "number": 2595,
-      "title": "china: fix pullback-risk radar wiring + gauge/needle/heatmap/mobile audit fixes",
-      "merged_at": "2026-07-16T01:35:35Z"
-    },
-    {
-      "number": 2594,
-      "title": "china: fix hero popover z-index (rendered behind tiles) + live sub-line mismatch",
-      "merged_at": "2026-07-15T11:10:40Z"
-    },
-    {
-      "number": 2593,
-      "title": "china: fix dialog chart overflow + duplicate heatmap Expand button",
-      "merged_at": "2026-07-15T10:58:14Z"
-    },
-    {
-      "number": 2592,
-      "title": "china: add US mx5 open/close animations to the macro dialogs",
-      "merged_at": "2026-07-15T10:07:49Z"
-    },
-    {
-      "number": 2591,
-      "title": "china: fix half-width macro layout (.grid \u2192 block)",
-      "merged_at": "2026-07-15T09:59:05Z"
-    },
-    {
-      "number": 2590,
-      "title": "feat(release_forecast): block-level component scoring for cpi_bridge",
-      "merged_at": "2026-07-15T06:18:49Z"
-    },
-    {
-      "number": 2589,
-      "title": "china: mx5 glance + popup redesign for the macro dashboard",
-      "merged_at": "2026-07-15T06:05:01Z"
-    },
-    {
-      "number": 2588,
-      "title": "docs(release_forecast): ENERGY_COLLAPSE surprise-anatomy family + June-2026 episode",
-      "merged_at": "2026-07-15T05:55:40Z"
-    },
-    {
-      "number": 2587,
-      "title": "fix(daily): stop the nightly failing \u2014 engine timeout 120\u2192150, tolerant oracle git-add, R2 tripwire 2h\u219226h",
-      "merged_at": "2026-07-15T05:13:27Z"
-    },
-    {
-      "number": 2586,
-      "title": "ci(ccw-w4): add plotly to ccw-w4-credit-desk install deps",
-      "merged_at": "2026-07-15T05:12:30Z"
-    },
-    {
-      "number": 2585,
-      "title": "research(ccw): W6 Study S1 \u2014 spread-velocity lead test (LEADS, with honest caveats)",
-      "merged_at": "2026-07-15T05:01:34Z"
-    },
-    {
-      "number": 2584,
-      "title": "docs(release_forecast): bridge forward-proxy field guide (understanding phase)",
-      "merged_at": "2026-07-15T05:08:33Z"
-    },
-    {
-      "number": 2583,
-      "title": "chore(deploy): mirror terminal-data publish-integrity gate",
-      "merged_at": "2026-07-15T04:52:19Z"
-    },
-    {
-      "number": 2582,
-      "title": "feat(ccw): W4 surfaces \u2014 the ratified Corporate credit desk on bonds.html",
-      "merged_at": "2026-07-15T04:06:37Z"
-    },
-    {
-      "number": 2581,
-      "title": "feat(mlc): W5 earnings-proximity wiring \u2014 un-stale the store + report-date chips",
-      "merged_at": "2026-07-15T04:39:14Z"
-    },
-    {
-      "number": 2580,
-      "title": "feat(mlc): W1 Leadership Board \u2014 megacap tiles + cohort + sector RS (macro & us_stocks)",
-      "merged_at": "2026-07-15T04:30:27Z"
-    },
-    {
-      "number": 2579,
-      "title": "fix(v11): fence NIPA re-base seams on the walk-forward TARGET side (follow-up to #2575)",
-      "merged_at": "2026-07-15T04:10:35Z"
-    },
-    {
-      "number": 2578,
-      "title": "research(registry): append missing sector_rotation_schedule.v1 kill row (Oracle TM adjudication)",
-      "merged_at": "2026-07-15T01:33:57Z"
-    },
-    {
-      "number": 2577,
-      "title": "feat(release_forecast): combined_point v1 \u2014 pre-registered forecast-combination layer (MRI-R40)",
-      "merged_at": "2026-07-14T23:50:17Z"
-    },
-    {
-      "number": 2576,
-      "title": "docs(mlc): 2026-07-14 rotation-miss postmortem + Megacap & Leadership Coherence masterplan (W0)",
-      "merged_at": "2026-07-14T23:21:15Z"
-    },
-    {
-      "number": 2575,
-      "title": "fix(release_forecast): extend FIX 2 range guard to v11 PCE/PPI feature builders (#2574 follow-up)",
-      "merged_at": "2026-07-14T22:58:51Z"
-    },
-    {
-      "number": 2574,
-      "title": "fix(release_forecast): CPI June-2026 post-mortem P0 \u2014 feature units, mf_energy gamma, range guard, scoring PIT",
-      "merged_at": "2026-07-14T22:36:31Z"
-    },
-    {
-      "number": 2573,
-      "title": "feat(ccw): W3 credit momentum organs \u2014 velocity, breadth, fallen-angel watch (crosses honestly DEMOTED)",
-      "merged_at": "2026-07-15T01:24:33Z"
-    },
-    {
-      "number": 2572,
-      "title": "research: study intraday large-cap tech leaders",
-      "merged_at": "2026-07-15T10:40:30Z"
-    },
-    {
-      "number": 2571,
-      "title": "fix(analytics): geo_enrich hardening \u2014 skip non-routable IPs, no NULL-pin on unresolved",
-      "merged_at": "2026-07-14T20:11:44Z"
-    },
-    {
-      "number": 2570,
-      "title": "fix(analytics): real visitor IP behind the CDN",
-      "merged_at": "2026-07-14T19:49:24Z"
-    },
-    {
-      "number": 2569,
-      "title": "research(ric): proactive-learning pass \u2014 HS-1/HS-2 + MRI miss anatomy + risk-radar episode atlas",
-      "merged_at": "2026-07-14T19:29:22Z"
-    },
-    {
-      "number": 2568,
-      "title": "feat(flow-ml): FS-4 \u2014 trainer + calibrated scorer + display surfaces (prereg-frozen)",
-      "merged_at": "2026-07-15T10:40:24Z"
-    },
-    {
-      "number": 2567,
-      "title": "feat(admin-analytics): Frequent Visitors tab + IP/state in Sessions + geo-enrich UA fix",
-      "merged_at": "2026-07-14T18:34:55Z"
-    },
-    {
-      "number": 2566,
-      "title": "feat(cycle): mobile UX overhaul \u2014 working touch gestures, native drag sheet, category filter",
-      "merged_at": "2026-07-14T13:43:32Z"
-    },
-    {
-      "number": 2565,
-      "title": "fix(china-stocks): act-now SECTOR tag chips render bilingual twins (tag_zh)",
-      "merged_at": "2026-07-14T13:38:48Z"
-    },
-    {
-      "number": 2564,
-      "title": "fix(capability-broker): stop journal artifact paths tripping the base64 redline selftest",
-      "merged_at": "2026-07-14T13:15:56Z"
-    },
-    {
-      "number": 2563,
-      "title": "fix(china-stocks): act-now board \u2014 imminent no longer 'Buy Now', HTF curl-down de-escalates, rows link out",
-      "merged_at": "2026-07-14T13:21:48Z"
-    },
-    {
-      "number": 2562,
-      "title": "test: repair stale qvix end-marker in china W0.9 copy tests",
-      "merged_at": "2026-07-14T13:11:03Z"
-    },
-    {
-      "number": 2561,
-      "title": "fix(analytics-deploy): browser UA for Supabase Management API (Cloudflare 1010)",
-      "merged_at": "2026-07-14T12:43:02Z"
     }
   ]
 }
