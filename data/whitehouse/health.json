@@ -1,21 +1,15 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-21T16:41:35.920563+00:00",
-  "posts_seen": 17,
-  "seen_total": 50,
-  "evaluated": 2,
+  "as_of": "2026-07-21T18:40:13.818038+00:00",
+  "posts_seen": 18,
+  "seen_total": 51,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-07-21-fact-sheet-president-donald-j-trump-announces-trade-deal-with-jordan",
-      "importance": 15,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-21-agreement-between-the-united-states-of-america-and-the-hashemite-kingdom-of-jord",
-      "importance": 25,
+      "id": "wh-2026-07-21-president-trumps-working-families-tax-cuts-ignite-manufacturing-renaissance-acro",
+      "importance": 10,
       "activated": false,
       "degraded_reason": "served_by:deepseek"
     }
