@@ -1,171 +1,164 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-17",
-  "generated_at": "2026-07-20T05:41:06.069877+00:00",
+  "as_of": "2026-07-20",
+  "generated_at": "2026-07-21T03:32:23.348315+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-17-AMKR-1",
-      "ticker": "AMKR",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Cycle-blocked downtrend and imminent binary earnings (8d) override positive selection; the engine's 'wait for a base' risk control dominates, so AMKR is likely to underperform the S&P 500 near-term.",
-      "evidence": [
-        "Verdict: 'Strong name \u00b7 wrong tape \u2014 wait for a base'",
-        "cycle_blocked: true, entry axis z -0.62, board state DECLINE, urgency avoid",
-        "Cautions: earnings in 8d (binary event), cycle DOWNTREND",
-        "Selection z 1.11 present but entry gate forbids participation"
-      ],
-      "dissent": "Strong SUE (z 0.38) and alpha (z 1.64) could produce a positive earnings surprise that reverses the downtrend abruptly.",
-      "falsifier": {
-        "text": "Price closes above its 50-day moving average on above-average volume following the earnings event, invalidating the downtrend.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "AMKR",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 15
-        }
-      },
-      "check_by": "2026-08-07",
-      "engine_verdict": "Strong name \u00b7 wrong tape \u2014 wait for a base"
-    },
-    {
-      "id": "2026-07-17-BG-2",
+      "id": "2026-07-20-BG-1",
       "ticker": "BG",
       "name": null,
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Positive momentum and revisions are offset by a negative SUE and an accounting warning; the engine's 'verify before buying' guard makes near-term outperformance unlikely until the flag is resolved.",
+      "horizon_d": 30,
+      "thesis": "The accounting warning flag undermines the otherwise positive selection signal (insider buying, revisions); the board's countertrend bounce and stale negative SUE counsel patience. The engine's 'verify before buying' verdict matches a cautious stance.",
       "evidence": [
-        "Verdict: 'Leader \u00b7 accounting warning \u2014 verify before buying'",
-        "Quality axis accounting flag: 'warn'",
-        "SUE z -0.81 (negative surprise), despite revisions z 1.02",
-        "Board state COUNTERTREND BOUNCE, urgency caution"
+        "verdict: Leader \u00b7 accounting warning \u2014 verify before buying",
+        "quality axis: accounting warn, z=-0.795",
+        "selection: SUE z=-0.81, stale 82d",
+        "board: dir caution, countertrend bounce"
       ],
-      "dissent": "The accounting flag may be a false alarm, and strong revisions (z 1.02) plus momentum (z 1.54) could drive a re-rating if concerns prove unfounded.",
+      "dissent": "Strong insider buying and momentum could override the accounting red flag if the next filing reveals no material issues.",
       "falsifier": {
-        "text": "Subsequent 10-Q/K filing shows no material accounting issues and EPS revision trend continues upward, removing the key caution.",
+        "text": "BG closes above $130 on above-average volume after an unqualified 10-Q that resolves the accounting concern, or SUE z-score flips positive (>0).",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BG",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 20
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-08-14",
+      "check_by": "2026-08-31",
       "engine_verdict": "Leader \u00b7 accounting warning \u2014 verify before buying"
     },
     {
-      "id": "2026-07-17-GIII-3",
+      "id": "2026-07-20-GIII-2",
       "ticker": "GIII",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "High-confluence selection (SUE 1.33, revisions 1.62, alpha 1.48) is fully reflected with price near highs (off high -1.3%); the engine's neutral band and hold urgency suggest no clear relative edge over the S&P 500.",
+      "horizon_d": 30,
+      "thesis": "Despite strong fundamental selection (SUE z=1.33, revisions z=1.61, clean quality), the entry is poor per the engine's verdict to wait for a base; the stock is extended and near highs, justifying a neutral stance.",
       "evidence": [
-        "Verdict: 'High-confluence leader (context)', band neutral",
-        "Board state RALLY ON, urgency hold, off high -1.3%",
-        "Selection z 1.53 but no risk-control entry or tailwind edge"
+        "verdict: Leader \u00b7 poor entry \u2014 wait for a base",
+        "entry axis: extension present, z=-0.40",
+        "board: state Rally On, urgency hold, off-high only -1.3%"
       ],
-      "dissent": "Exceptional earnings momentum could extend the rally beyond current highs if the next quarter surpasses elevated expectations.",
+      "dissent": "The underlying earnings trend could keep driving the stock higher without a meaningful pullback, making a wait costly.",
       "falsifier": {
-        "text": "A breakout to new highs on above-average volume and a sustained SUE above 1.0 would challenge the neutral stance.",
+        "text": "GIII establishes a higher low near 33 and breaks out above 35.50 on above-average volume, signaling the base has formed and the poor-entry condition is resolved.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-07",
-      "engine_verdict": "High-confluence leader (context)"
+      "check_by": "2026-08-31",
+      "engine_verdict": "Leader \u00b7 poor entry \u2014 wait for a base"
     },
     {
-      "id": "2026-07-17-HR-4",
-      "ticker": "HR",
+      "id": "2026-07-20-PLD-3",
+      "ticker": "PLD",
       "name": null,
-      "lean": "constructive",
+      "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine's constructive band, unblocked entry (z 0.45), and FRESH BUY urgency align with strong revisions (z 2.23) and a tailwind, supporting likely relative outperformance versus the S&P 500 over the horizon.",
+      "horizon_d": 30,
+      "thesis": "No clear edge is apparent: the selection z-score is moderate, quality is slightly negative, and the entry is non-compelling; the board's rally-on/ hold state supports a wait-and-see approach.",
       "evidence": [
-        "Verdict: 'High-confluence leader (context)', band constructive",
-        "Board state FRESH BUY, urgency now, off high 0.0, entry not blocked",
-        "Revisions z 2.23, tailwind z 0.31, quality clean",
-        "Cautions: none"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z=0.63 with revisions only 0.33",
+        "quality z=-0.51",
+        "board urgency hold, off-high -1.7%"
       ],
-      "dissent": "SUE is nearly zero (z 0.04), meaning recent earnings surprise is absent; the stock could be momentum-driven and vulnerable to a rapid reversal if sentiment shifts.",
+      "dissent": "Momentum (alpha z=1.14) and positive SUE (0.69) could push the stock higher if broader market tailwinds strengthen.",
       "falsifier": {
-        "text": "Price closes below the 20-day moving average without immediate recovery, or the revisions z-score turns negative, invalidating the constructive lean.",
+        "text": "PLD closes above $152 for three consecutive days with an improving revisions z-score above 0.5, invalidating the neutral edge assessment.",
         "check": {
-          "kind": "rel_return",
-          "subject_ticker": "HR",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-14",
-      "engine_verdict": "High-confluence leader (context)"
+      "check_by": "2026-08-31",
+      "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-07-17-AEIS-5",
-      "ticker": "AEIS",
+      "id": "2026-07-20-WT-4",
+      "ticker": "WT",
       "name": null,
       "lean": "cautious",
       "conviction": "low",
       "horizon_d": 15,
-      "thesis": "Cycle-blocked decline and a deteriorating semiconductor equipment narrative suppress the stock despite decent selection; the engine's 'wait for a base' and avoid urgency signal likely underperformance versus the S&P 500 near-term.",
+      "thesis": "The stock is extended (+32% over 200dma) and the engine blocks buying; the entry axis is deep in negative territory with pullback/extended flag, cycle bottoming, and accounting watch. Chasing here carries high risk, per the 'Extended \u2014 don't chase' verdict.",
       "evidence": [
-        "Verdict: 'Strong name \u00b7 wrong tape \u2014 wait for a base'",
-        "cycle_blocked: true, entry axis z -0.62, board state DECLINE, urgency avoid",
-        "Cautions: cycle DOWNTREND, narrative basket (WFE) deteriorating",
-        "Selection z 1.01 but overridden by risk controls"
+        "verdict: Extended \u2014 don't chase; wait for a pullback",
+        "entry axis: blocked, z=-1.46, pullback/extended, over-200dma",
+        "cycle_blocked: true",
+        "off-high 0%, board state TURN SIGNALED (near top)"
       ],
-      "dissent": "Strong SUE (z 0.60) and alpha (z 1.21) could fuel a sharp recovery if semiconductor sector sentiment unexpectedly improves.",
+      "dissent": "Momentum could continue and the turnaround might not materialize; waiting could miss further gains if the stock has a strong fundamental catalyst.",
       "falsifier": {
-        "text": "Price closes above the 50-day moving average on strong volume and the semiconductor equipment basket's relative strength turns positive, breaking the downtrend.",
+        "text": "WT closes above $22 for more than three days without first pulling back at least 10% from its peak ($20.24), then the cautious call would be premature.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "AEIS",
+          "subject_ticker": "WT",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
           "horizon_d": 15
         }
       },
-      "check_by": "2026-08-07",
-      "engine_verdict": "Strong name \u00b7 wrong tape \u2014 wait for a base"
+      "check_by": "2026-08-10",
+      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
     },
     {
-      "id": "2026-07-17-ODFL-6",
-      "ticker": "ODFL",
+      "id": "2026-07-20-BTU-5",
+      "ticker": "BTU",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Mixed signals\u2014positive quality (z 1.16) and alpha (z 1.19) but negative SUE (-0.37) and weak entry (z -0.64)\u2014yield no clear edge; the engine's neutral verdict supports an expectation of market-like returns relative to the S&P 500.",
+      "horizon_d": 30,
+      "thesis": "Negative earnings surprise and negative revisions (SUE z=-0.61, revisions z=-1.21) offset any deep-value appeal; the board is in bottom watch with a down direction, and the engine verdict is neutral, indicating no directional edge.",
       "evidence": [
-        "Verdict: 'Neutral \u2014 no clear edge', band neutral",
-        "SUE z -0.37, Entry z -0.64, board state COUNTERTREND BOUNCE, urgency caution",
-        "Quality clean but insufficient to offset weak earnings and entry signal"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z=-0.49, SUE negative, revisions negative",
+        "board: dir down, state BOTTOM WATCH, urgency later",
+        "quality: accounting watch (null factor)"
       ],
-      "dissent": "High quality and strong momentum could lead to mean reversion if the negative SUE was a one-time anomaly, allowing significant outperformance.",
+      "dissent": "The stock is deeply beaten down (-41.7% from high) and a tailwind z=0.40 could spark a reversal if commodity sentiment improves.",
       "falsifier": {
-        "text": "A confirmed break above the recent swing high on positive volume and a turn to positive SUE on the next report would indicate an edge has emerged.",
+        "text": "BTU breaks above 25 with a positive SUE cross (z>0) and a board direction shift to up, contradicting the neutral view.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-07",
+      "check_by": "2026-08-31",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-20-AEO-6",
+      "ticker": "AEO",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Mixed signals: strong quality (z=1.025) and decent SUE (0.79) clash with negative revisions (-0.92) and a neutral selection z-score. The board's fresh buy signal is tempered by caution urgency, consistent with the engine's 'no clear edge' verdict.",
+      "evidence": [
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z=-0.10 with revisions negative",
+        "board: state FRESH BUY but urgency caution",
+        "quality clean, entry z=0.48"
+      ],
+      "dissent": "The deep pullback (-37.1%) and fresh buy signal could mark a durable bottom, leading to outperformance if revisions turn.",
+      "falsifier": {
+        "text": "AEO closes above $20 for five days and the revisions z-score turns positive, signaling that the earnings trajectory has improved and the neutral assessment is outdated.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-31",
       "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
