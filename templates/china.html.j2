@@ -715,6 +715,22 @@
   [data-theme="light"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%)}
   /* Reduced-motion: no animations */
   @media(prefers-reduced-motion:reduce){body.page-china .aurora,body.page-china .aurora::before,body.page-china .aurora::after,body.page-china .aurora .au-a3{animation:none}}
+  /* zh direction-convention mirrors (operator ruling 2026-07-21): the aurora state wash
+     and the big-score glow are literal rgba (not token-driven), so they can't flip via
+     the --up/--down remap — mirror them here. green wash #22d97a ↔ red wash #ef4444
+     (light mode: 34,217,122 ↔ 220,38,38); yellow is direction-neutral and stays. */
+  html[data-lang="zh"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(239,68,68,.12) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(239,68,68,.07) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(34,217,122,.10) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.06) 0%,transparent 70%)}
+  html[data-theme="light"][data-lang="zh"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
+  html[data-theme="light"][data-lang="zh"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.03) 0%,transparent 70%)}
+  html[data-theme="light"][data-lang="zh"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(34,217,122,.05) 0%,transparent 70%)}
+  html[data-theme="light"][data-lang="zh"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.035) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .ms-green .cnx-big-score{text-shadow:0 0 36px rgba(239,68,68,.3)}
+  html[data-lang="zh"] body.page-china .ms-red .cnx-big-score{text-shadow:0 0 36px rgba(34,217,122,.3)}
   /* The redesigned macro page lays out with its own .cnx-tiles/.rack grids, so the
      theme's 12-column .grid must be a plain block here — otherwise .cnx-wrap is placed
      into a single content-sized grid column and the page renders at ~half width. */
@@ -739,12 +755,12 @@
   body.page-china .cnx-hero-right{padding:18px 24px 14px}
   body.page-china .cnx-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11.5px;background:rgba(208,69,69,.10)}
   body.page-china .cnx-regime-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--q3)}
-  body.page-china .ms-green .cnx-regime-pill{background:rgba(69,184,115,.10)}
-  body.page-china .ms-green .cnx-regime-pill .dot{background:var(--ok)}
+  body.page-china .ms-green .cnx-regime-pill{background:color-mix(in srgb,var(--up) 10%,transparent)}
+  body.page-china .ms-green .cnx-regime-pill .dot{background:var(--up)}
   body.page-china .ms-yellow .cnx-regime-pill{background:rgba(224,160,48,.10)}
   body.page-china .ms-yellow .cnx-regime-pill .dot{background:var(--warn)}
-  body.page-china .ms-red .cnx-regime-pill{background:rgba(224,100,100,.10)}
-  body.page-china .ms-red .cnx-regime-pill .dot{background:var(--act)}
+  body.page-china .ms-red .cnx-regime-pill{background:color-mix(in srgb,var(--down) 10%,transparent)}
+  body.page-china .ms-red .cnx-regime-pill .dot{background:var(--down)}
   body.page-china .cnx-live-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:999px;margin-left:8px;opacity:.45}
   body.page-china .cnx-live-pill .d{width:6px;height:6px;border-radius:50%;background:var(--muted)}
   body.page-china .cnx-live-pill.on{opacity:1;color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
@@ -756,39 +772,42 @@
   @media(max-width:560px){body.page-china .cnx-gauge-svg{width:90px;height:58px;flex:0 0 90px}}
   /* gauge fill colour follows the .ms-{color} class (which the live lane swaps) so it
      never shows a red arc next to a green/yellow live verdict. (Fill fraction is baked.)
-     COLOUR TOKENS: this is a DANGER/health gauge (green=supported, red=defend capital),
-     NOT a price-direction read — so it paints from the NON-flipping health pair
-     --ok/--warn/--act, matching the Pullback-Risk bars. Do NOT swap these to --up/--down:
-     in zh those flip (red=up), which would paint the "红/defend capital" tier GREEN. */
-  body.page-china .ms-green .cnx-gauge-fill{stroke:var(--ok)}
+     COLOUR TOKENS (operator ruling 2026-07-21, reverses #2947's no-flip): the market-state
+     gauge and the whole pullback-risk family are market-DIRECTION reads (risk-on vs
+     risk-off) — same family as theme.css's .rrx radar remap and the factor bars below —
+     so they paint from the zh-flipping pair --up/--down. Asia convention in zh: red=bullish
+     /trend-following, green=defend capital. The zh legend words in .cnx-sub-line swap 红/绿
+     to match the paint. --warn is direction-neutral and never flips. Genuine health/
+     staleness signals (not market reads) keep --ok/--act so red=bad stays in both langs. */
+  body.page-china .ms-green .cnx-gauge-fill{stroke:var(--up)}
   body.page-china .ms-yellow .cnx-gauge-fill{stroke:var(--warn)}
-  body.page-china .ms-red .cnx-gauge-fill{stroke:var(--act)}
+  body.page-china .ms-red .cnx-gauge-fill{stroke:var(--down)}
   /* needle accents follow the same .ms-* class as the arc (US idiom: hub ring +
      core + glowing tip dot in the verdict colour; stem is theme-text) */
   body.page-china .cnx-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
   body.page-china .cnx-needle-core,body.page-china .cnx-needle-tip{fill:var(--warn)}
   body.page-china .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--warn))}
-  body.page-china .ms-green .cnx-needle-hub{stroke:var(--ok)}
-  body.page-china .ms-green .cnx-needle-core,body.page-china .ms-green .cnx-needle-tip{fill:var(--ok)}
-  body.page-china .ms-green .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--ok))}
-  body.page-china .ms-red .cnx-needle-hub{stroke:var(--act)}
-  body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--act)}
-  body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--act))}
+  body.page-china .ms-green .cnx-needle-hub{stroke:var(--up)}
+  body.page-china .ms-green .cnx-needle-core,body.page-china .ms-green .cnx-needle-tip{fill:var(--up)}
+  body.page-china .ms-green .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--up))}
+  body.page-china .ms-red .cnx-needle-hub{stroke:var(--down)}
+  body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--down)}
+  body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
   body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   /* Big score: US parity — 68px/800, tabular-nums, state-keyed glow */
   body.page-china .cnx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
-  body.page-china .ms-green .cnx-big-score{color:var(--ok);text-shadow:0 0 36px rgba(34,217,122,.3)}
-  body.page-china .ms-red .cnx-big-score{color:var(--act);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  body.page-china .ms-green .cnx-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
+  body.page-china .ms-red .cnx-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
   @media(max-width:560px){body.page-china .cnx-big-score{font-size:34px}}
   /* Verdict word: 19px/700 to match US spec */
   body.page-china .cnx-verdict{font-size:19px;font-weight:700;white-space:nowrap}
   @media(max-width:560px){body.page-china .cnx-verdict{font-size:13px}}
   body.page-china .cnx-verdict .arr{color:var(--warn)}
-  body.page-china .ms-green .cnx-verdict .arr{color:var(--ok)}
-  body.page-china .ms-red .cnx-verdict .arr{color:var(--act)}
+  body.page-china .ms-green .cnx-verdict .arr{color:var(--up)}
+  body.page-china .ms-red .cnx-verdict .arr{color:var(--down)}
   body.page-china .cnx-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--warn);margin-top:2px}
-  body.page-china .ms-green .cnx-sub-line{color:var(--ok)}
-  body.page-china .ms-red .cnx-sub-line{color:var(--act)}
+  body.page-china .ms-green .cnx-sub-line{color:var(--up)}
+  body.page-china .ms-red .cnx-sub-line{color:var(--down)}
   /* stance line follows the .ms-{color} class — default caution (yellow), green/red override */
   body.page-china .cnx-sub-line .cnx-sub-g,body.page-china .cnx-sub-line .cnx-sub-r{display:none}
   body.page-china .cnx-sub-line .cnx-sub-y{display:inline}
@@ -817,8 +836,8 @@
   body.page-china .cnx-pop-flag{font-size:9.5px;font-weight:700;letter-spacing:.8px;color:var(--warn);margin:10px 0 2px}
   body.page-china .cnx-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--link);margin-top:12px;cursor:pointer}
   body.page-china .cnx-pop-big{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
-  body.page-china .cnx-pop-big .n{font-size:30px;font-weight:750;color:var(--act)}
-  body.page-china .cnx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--act)}
+  body.page-china .cnx-pop-big .n{font-size:30px;font-weight:750;color:var(--down)}
+  body.page-china .cnx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--down)}
   body.page-china .cnx-pop-sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
   /* tiles rack */
   body.page-china .cnx-secbar{display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
@@ -960,6 +979,11 @@
   body.page-china .cnx-ihcard .p{font-size:17px;font-weight:700;margin:4px 0 6px}
   body.page-china .cnx-okchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(69,184,115,.13);color:#8fd7ae}
   body.page-china .cnx-badchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(224,100,100,.13);color:#eda8a8}
+  /* zh mirror (2026-07-21 ruling): ok/bad chips carry direction reads (above/below MA,
+     flow supportive/strain) — swap tint pair in zh like the factor bars. hot/turn/stage
+     chips are labelled metaphor badges, not direction paint — they stay. */
+  html[data-lang="zh"] body.page-china .cnx-okchip{background:rgba(224,100,100,.13);color:#eda8a8}
+  html[data-lang="zh"] body.page-china .cnx-badchip{background:rgba(69,184,115,.13);color:#8fd7ae}
   body.page-china .cnx-nchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(255,255,255,.06);color:var(--muted)}
   body.page-china .cnx-ledd{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-china .cnx-ledd .rk{color:var(--muted);font-size:10.5px}
@@ -1073,15 +1097,16 @@
     {# W5b EDGE-1 — CN drawdown-radar RISK-BACKDROP cue. Source: engine/risk_radar_intl.py
        cn_sleeve_chip(), wired into setups.sleeve_chip by build_china_library.main().
        Plain-word rebuild of the old "Sleeve ×0.62" chip: the "sleeve" multiplier was
-       jargon, and it coloured from --down (which flips GREEN in zh for a risk-off state).
-       Now a plain stance + severity strip, coloured from the NON-flipping danger pair
-       --act/--warn/--ok (danger stays red both langs). This is the ONLY risk read on the
+       jargon. Coloured from the zh-flipping direction pair --down/--warn/--up (operator
+       ruling 2026-07-21, reverses #2947's no-flip): the risk backdrop is a market-
+       direction read, so risk-off shows green in zh per the Asia convention, matching
+       theme.css's .rrx remap and the macro-board state gauge. This is the ONLY risk read on the
        stocks page (Pullback-Risk card is macro-mode only). Degrades: hidden when
        sleeve_chip absent or radar_state None. CN-SYS-R7: display context, never board-sort. #}
     {% set _sc = setups.sleeve_chip if setups else none %}
     {% if _sc and _sc.radar_state and _sc.radar_state != 'None' %}
     {% set _rs = _sc.radar_state %}
-    {% set _rs_col = 'var(--act)' if _rs in ('elevated','risk-off') else ('var(--warn)' if _rs == 'caution' else 'var(--ok)') %}
+    {% set _rs_col = 'var(--down)' if _rs in ('elevated','risk-off') else ('var(--warn)' if _rs == 'caution' else 'var(--up)') %}
     {% set _rs_en = {'risk-off':'RISK-OFF','elevated':'ELEVATED','caution':'CAUTION','calm':'CALM'}.get(_rs, _rs|upper) %}
     {% set _rs_zh = {'risk-off':'避险','elevated':'偏高','caution':'谨慎','calm':'平静'}.get(_rs, _rs) %}
     {% set _rs_act_en = {'risk-off':'trade smaller','elevated':'trade smaller','caution':'avoid chasing','calm':'normal sizing'}.get(_rs, '') %}
@@ -1335,7 +1360,7 @@
         {% set _needle_deg = ((_ms_score * 1.8) - 90) | round(1) %}
         <svg class="cnx-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
           <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
-          <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--ok)' if _ms_color == 'green' else ('var(--act)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
+          <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
           {# needle (US idiom): stem + hub + accent tip dot; colours are CLASS-driven
              via .ms-* so they always match the verdict, both themes #}
           <g class="cnx-gauge-needle" transform="rotate({{ _needle_deg }} 60 68)">
@@ -1350,9 +1375,10 @@
           {# The stance line is driven by the .ms-{green|yellow|red} class (which the live
              lane swaps) so it can never contradict the live-patched score/verdict above. #}
           <div class="cnx-sub-line">
-            <span class="cnx-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">绿 — 支持趋势跟随</span></span>
+            {# zh colour words mirror the zh paint (--up/--down flip): supported=红, defend=绿 #}
+            <span class="cnx-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">红 — 支持趋势跟随</span></span>
             <span class="cnx-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">黄 — 谨慎交易</span></span>
-            <span class="cnx-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">红 — 优先保住本金</span></span>
+            <span class="cnx-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">绿 — 优先保住本金</span></span>
           </div>
         </div>
       </div>
@@ -1373,8 +1399,8 @@
         {% set _rr_do_zh = (_rr.get('do_zh') or '') if _rr else '' %}
         {% set _rr_sub_en = ('~%d%% chance of a ≥5%% pullback within a month'|format((_rr_p21*100)|round|int) ~ (' · %.1f× the usual odds'|format(_rr_lift) if _rr_lift else '')) if _rr_p21 is not none else (_rr_do_en or ms.posture_en or '') %}
         {% set _rr_sub_zh = ('未来一个月内出现≥5%%回撤的概率约%d%%'|format((_rr_p21*100)|round|int) ~ (' · 约为平时的%.1f倍'|format(_rr_lift) if _rr_lift else '')) if _rr_p21 is not none else (_rr_do_zh or ms.posture_zh or '') %}
-        <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:rgba(224,100,100,.5)">⚠
-          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--act)">{{ _rr_score }}</span>{% endif %} ▾</button>
+        <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
+          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--down)">{{ _rr_score }}</span>{% endif %} ▾</button>
 
         <!-- popover: factor breakdown -->
         <div class="cnx-pop" id="cnx-pop-signals">
@@ -1400,7 +1426,7 @@
           {% for leg in (_rr.scares or [])[:3] %}
           <div class="cnx-pop-row">
             <div class="pr-t"><span>{{ t(leg.label_en or leg.scare, leg.label_zh or leg.scare or '') }}</span><b>{{ leg.score|round|int }}</b></div>
-            <div class="cnx-pop-bar"><i style="width:{{ leg.score|round|int }}%;background:var(--act)"></i></div>
+            <div class="cnx-pop-bar"><i style="width:{{ leg.score|round|int }}%;background:var(--down)"></i></div>
           </div>
           {% endfor %}
           {% else %}
@@ -1417,15 +1443,15 @@
       {% set _pts = ms_history %}
       {% set _n = _pts | length %}
       <svg class="cnx-path-svg" viewBox="0 0 560 232" aria-hidden="true">
-        <rect x="20" y="22" width="520" height="56" fill="rgba(69,184,115,.06)"/>
-        <rect x="20" y="134" width="520" height="56" fill="rgba(224,100,100,.06)"/>
+        <rect x="20" y="22" width="520" height="56" fill="color-mix(in srgb,var(--up) 6%,transparent)"/>
+        <rect x="20" y="134" width="520" height="56" fill="color-mix(in srgb,var(--down) 6%,transparent)"/>
         <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
-        <text x="540" y="34" font-size="9" fill="var(--ok)" text-anchor="end" class="l-en">Risk-on</text>
-        <text x="540" y="34" font-size="9" fill="var(--ok)" text-anchor="end" class="l-zh">风险偏好</text>
+        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-en">Risk-on</text>
+        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-zh">风险偏好</text>
         <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-en">Mixed</text>
         <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-zh">混合</text>
-        <text x="540" y="186" font-size="9" fill="var(--act)" text-anchor="end" class="l-en">Risk-off</text>
-        <text x="540" y="186" font-size="9" fill="var(--act)" text-anchor="end" class="l-zh">避险</text>
+        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-en">Risk-off</text>
+        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-zh">避险</text>
         <text x="14" y="26" font-size="9" fill="var(--muted)" text-anchor="end">100</text>
         <text x="14" y="109" font-size="9" fill="var(--muted)" text-anchor="end">50</text>
         <text x="14" y="192" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
@@ -1434,7 +1460,7 @@
         {% set _poly_pts = [] %}
         {% for p in _pts %}{% set _x = 20 + loop.index0 * _step %}{% set _y = 190 - (p.score / 100) * 168 %}{% set _ = _poly_pts.append((_x|round(1)|string) + ' ' + (_y|round(1)|string)) %}{% endfor %}
         <path d="M{{ _poly_pts | join(' L') }}"
-              fill="none" stroke="{{ 'var(--ok)' if _ms_color == 'green' else ('var(--act)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="2.2" stroke-linejoin="round"/>
+              fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="2.2" stroke-linejoin="round"/>
         <text x="30" y="222" font-size="9" fill="var(--muted)">{{ _pts[0].date if _pts[0] else '' }}</text>
         <text x="536" y="222" font-size="9" fill="var(--muted)" text-anchor="end">{{ _pts[-1].date if _pts[-1] else '' }}</text>
       </svg>
@@ -1533,13 +1559,15 @@
        the shared .rrx card (_risk_radar_card.html.j2, used by macro / HK / Canada): this
        card sits in a cnx-rack beside the Sentiment/Sector cards, and the dialog carries
        CN-only gauges (deep-drawdown, slowdown, FX context) the .rrx card doesn't have.
-       Keep all danger colours on the NON-flipping --ok/--warn/--act pair (never --up/--down)
-       so a risk-off state stays red in zh.
+       COLOURS (operator ruling 2026-07-21, reverses #2947's no-flip): the pullback family
+       is a market-direction read — paint danger from the zh-flipping var(--down) (via
+       color-mix for washes) exactly like theme.css's `html[data-lang="zh"] .rrx` remap on
+       the sibling boards, so risk-off reads green in zh (Asia convention). --warn neutral.
        Severity tier drives the pill/number colour (was hardcoded HIGH/red for caution,
        elevated AND risk-off alike): caution → amber CAUTION, elevated/risk-off → red. #}
-    {% set _rr_sev_col  = 'var(--warn)' if _risk_state == 'caution' else 'var(--act)' %}
-    {% set _rr_sev_bg   = 'rgba(224,160,48,.16)' if _risk_state == 'caution' else 'rgba(224,100,100,.16)' %}
-    {% set _rr_sev_bord = 'rgba(224,160,48,.35)' if _risk_state == 'caution' else 'rgba(224,100,100,.35)' %}
+    {% set _rr_sev_col  = 'var(--warn)' if _risk_state == 'caution' else 'var(--down)' %}
+    {% set _rr_sev_bg   = 'rgba(224,160,48,.16)' if _risk_state == 'caution' else 'color-mix(in srgb,var(--down) 16%,transparent)' %}
+    {% set _rr_sev_bord = 'rgba(224,160,48,.35)' if _risk_state == 'caution' else 'color-mix(in srgb,var(--down) 35%,transparent)' %}
     {% set _rr_sev_en   = 'HIGH' if _risk_state == 'risk-off' else ('ELEVATED' if _risk_state == 'elevated' else 'CAUTION') %}
     {% set _rr_sev_zh   = '高' if _risk_state == 'risk-off' else ('偏高' if _risk_state == 'elevated' else '谨慎') %}
     <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-risk')" style="border-color:{{ _rr_sev_bord }}">
@@ -1551,9 +1579,10 @@
       <div class="cnx-kv"><span class="k">{{ t('≥5% dip odds','≥5%回撤概率') }}</span><span class="v">{% if _rr_p21 is not none %}{{ (_rr_p21*100)|round|int }}%{% else %}{{ t('—','—') }}{% endif %}</span></div>
       <div class="cnx-kv"><span class="k">{{ t('Deep-drawdown gauge','深跌仪表') }}</span>
         {# SAME recession score + 60/40 bands as the detail dialog (was label-based, which
-           could disagree with the dialog's score-based colour); non-flipping health tokens. #}
+           could disagree with the dialog's score-based colour); direction pair per the
+           2026-07-21 ruling so the whole pullback family flips together in zh. #}
         {% set _rr_rec_sc = (latest.conditions.recession.score if latest.conditions and latest.conditions.get('recession') and latest.conditions.recession else none) %}
-        <span class="v"><span style="font-weight:700;color:{{ 'var(--act)' if (_rr_rec_sc or 0) >= 60 else ('var(--warn)' if (_rr_rec_sc or 0) >= 40 else 'var(--ok)') }}">{{ t('High','高危') if (_rr_rec_sc or 0) >= 60 else (t('Elevated','偏高') if (_rr_rec_sc or 0) >= 40 else t('Calm','平静')) }}</span></span></div>
+        <span class="v"><span style="font-weight:700;color:{{ 'var(--down)' if (_rr_rec_sc or 0) >= 60 else ('var(--warn)' if (_rr_rec_sc or 0) >= 40 else 'var(--up)') }}">{{ t('High','高危') if (_rr_rec_sc or 0) >= 60 else (t('Elevated','偏高') if (_rr_rec_sc or 0) >= 40 else t('Calm','平静')) }}</span></span></div>
       <div class="cnx-foot">{{ t(_rr_do_en or 'High pullback risk — size down, watch alerts.', _rr_do_zh or '回撤风险高 — 缩仓，关注警报。') }}</div>
     </div>
     {% else %}
@@ -1877,15 +1906,15 @@
             <div class="cnx-eyebrow">{{ t('Risk radar','风险雷达') }}{% if _rr_score is not none %} · {{ _rr_score }}/100{% endif %}</div>
             {% if _rr_score is not none %}
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 8px">
-              <span class="cnx-bignum" style="color:var(--act)">{{ _rr_score }}</span>
-              <span class="cnx-alert-pill" style="background:rgba(224,100,100,.16);color:var(--act);margin:0">{{ t((_rr.label_en or '').upper(), (_rr.label_zh or '').upper()) }}</span>
+              <span class="cnx-bignum" style="color:var(--down)">{{ _rr_score }}</span>
+              <span class="cnx-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down);margin:0">{{ t((_rr.label_en or '').upper(), (_rr.label_zh or '').upper()) }}</span>
             </div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:10px">{{ t(_rr_sub_en, _rr_sub_zh) }}</div>
             {% for leg in (_rr.scares or [])[:4] %}
             <div class="cnx-frow" style="grid-template-columns:170px 1fr 40px">
               <span>{{ t(leg.label_en or leg.scare, leg.label_zh or leg.scare or '') }}</span>
-              <span><div class="cnx-fbar"><i style="width:{{ leg.score|round|int }}%;background:var(--act)"></i></div></span>
-              <span class="cnx-fscore" style="color:var(--act)">{{ leg.score|round|int }}</span>
+              <span><div class="cnx-fbar"><i style="width:{{ leg.score|round|int }}%;background:var(--down)"></i></div></span>
+              <span class="cnx-fscore" style="color:var(--down)">{{ leg.score|round|int }}</span>
             </div>
             {% endfor %}
             {% endif %}
@@ -1895,7 +1924,7 @@
             {% if latest.conditions and latest.conditions.get('recession') %}
             {% set _cr = latest.conditions.recession %}
             <div style="display:flex;gap:10px;align-items:baseline;margin:2px 0 6px">
-              <span class="cnx-bignum" style="color:{{ 'var(--act)' if (_cr.score or 0) >= 60 else 'var(--warn)' if (_cr.score or 0) >= 40 else 'var(--ok)' }}">{{ (_cr.score or 0) | round | int }}</span>
+              <span class="cnx-bignum" style="color:{{ 'var(--down)' if (_cr.score or 0) >= 60 else 'var(--warn)' if (_cr.score or 0) >= 40 else 'var(--up)' }}">{{ (_cr.score or 0) | round | int }}</span>
             </div>
             {% if _cr.chart_html %}<div class="chart">{{ _cr.chart_html | safe }}</div>{% endif %}
             {% else %}
