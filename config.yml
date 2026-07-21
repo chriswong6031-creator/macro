@@ -4029,7 +4029,7 @@ master_brain:
 # =============================================================================
 ai_desk:
   enabled: true                   # MASTER SWITCH — pipeline runs it only when true
-  interval_days: 1                # regenerate the desk note every N days (1..7); 1 =
+  interval_days: 2                # regenerate the desk note every N days (1..7); 1 =
                                   # every build. >1 keeps the prior note live (and skips
                                   # the ledger append) until it's that many days old.
   api_key_env: DEEPSEEK_API_KEY
