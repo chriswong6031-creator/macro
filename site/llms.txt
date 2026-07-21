@@ -19,3 +19,9 @@ Sitemap: https://www.mastermind-x.com/sitemap.xml
 - US boards update nightly after US close; Asia boards after Asia close.
 - [Methodology](https://www.mastermind-x.com/methodology.html): how factor labs, baskets and seasonality are computed.
 - Every signal panel discloses when a reading is display-only or unconfirmed; nulls are printed, not hidden.
+
+## Free tools & learning
+- [Trading Calculators](https://www.mastermind-x.com/tools/index.html): position sizing, risk/reward, compounding, CAGR, drawdown recovery — free, no sign-in.
+- [Learning Center](https://www.mastermind-x.com/learn/index.html): structured lessons on technical analysis, position sizing, and reading insider filings.
+- [Blog](https://www.mastermind-x.com/blog/index.html): plain-English articles on trading math, risk, and market mechanics.
+- [Trading Journal Spreadsheet](https://www.mastermind-x.com/tools/spreadsheets/trading-journal.html): free Excel/Google Sheets template for tracking trades and reviewing performance.

@@ -1,0 +1,62 @@
+{#=============================================================================
+  seo_blog_index.html.j2 — Blog hub
+  Context (CONTRACT §5): page, rel, site, items (article dicts:
+  {title, description, url_path, published, ...}). RSS at /blog/feed.xml.
+  page.section == 'blog'.
+=============================================================================#}
+{% extends "seo_base.html.j2" %}
+{% block body_class %}est-blog{% endblock %}
+
+{% block head_extra %}
+<link rel="alternate" type="application/rss+xml" title="Mastermind Blog"
+      href="{{ site.base }}blog/feed.xml">
+{% endblock %}
+
+{% block estate_css %}
+  .bh-hero{max-width:1120px; margin:22px auto 0; padding:0 24px;}
+  .bh-hero .rss{font-family:var(--font-mono); font-size:12px; color:var(--link); margin-top:12px;
+    display:inline-flex; align-items:center; gap:6px;}
+  .bh-list{max-width:820px; margin:26px auto 0; padding:0 24px;}
+  /* a ruled reading list — each post a ledger row with a hairline plotted rule */
+  .bh-post{display:block; text-decoration:none; padding:22px 0; border-top:1px solid var(--line);
+    transition:padding-left .18s;}
+  .bh-post:first-child{border-top:none;}
+  .bh-post:hover{text-decoration:none;}
+  .bh-post:hover .bp-t{color:var(--link);}
+  .bh-post .bp-date{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.03em; color:var(--muted);}
+  .bh-post .bp-t{font-family:var(--serif); font-size:24px; font-weight:600; line-height:1.24;
+    color:var(--text); margin:5px 0 0; transition:color .16s;}
+  .bh-post .bp-d{font-family:var(--serif); font-size:16px; line-height:1.5; color:var(--muted); margin:8px 0 0; max-width:60ch;}
+  .bh-post .bp-go{font-family:var(--font-mono); font-size:11.5px; color:var(--link); margin-top:10px;
+    display:inline-flex; align-items:center; gap:6px;}
+  .bh-post .bp-go .arw{transition:transform .2s;}
+  .bh-post:hover .bp-go .arw{transform:translateX(3px);}
+  @media (max-width:600px){ .bh-post .bp-t{font-size:21px;} }
+{% endblock %}
+
+{% block main %}
+<div class="bh-hero">
+  <div class="est-head" style="max-width:none; margin:0; padding:0;">
+    <span class="est-kicker">{{ t('The Blog', '博客') }}</span>
+    <svg class="plot-line est-kicker-plot" viewBox="0 0 220 14" preserveAspectRatio="none" aria-hidden="true" style="--pl-len:230;">
+      <path d="M2 11 C 40 11, 55 4, 90 7 S 150 3, 178 5 S 210 4, 218 3"/>
+      <circle class="dot" cx="218" cy="3" r="2.6"/>
+    </svg>
+    <h1 class="est-title">{{ t('Notes from the desk', '来自工作台的笔记') }}</h1>
+    <p class="est-dek">{{ t('Short, honest essays on the math traders actually live with — losing streaks, why win rate is overrated, the arithmetic of drawdown. No hot takes, just the numbers worked out.',
+       '关于交易者真正要面对的数学的短篇诚实随笔——连败、为何胜率被高估、回撤的算术。没有噱头，只把数字算清。') }}</p>
+    <a class="rss" href="{{ site.base }}blog/feed.xml">{{ t('Subscribe via RSS', '通过 RSS 订阅') }} ↗</a>
+  </div>
+</div>
+
+<section class="bh-list" aria-label="Articles">
+  {% for it in items %}
+  <a class="bh-post" href="{{ rel }}{{ it.url_path.lstrip('/') }}">
+    <span class="bp-date">{{ it.published }}</span>
+    <h2 class="bp-t">{{ it.title }}</h2>
+    <p class="bp-d">{{ it.description }}</p>
+    <span class="bp-go">{{ t('Read', '阅读') }} <span class="arw">→</span></span>
+  </a>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -6,7 +6,25 @@
 
 **Priority:** P1 program; MKT-SEO-00 and MKT-SEO-01 are P0 foundations
 
-**Status:** W0 READY FOR A SPECIALIST CLAUDE SESSION — docket only; no D12 product code has shipped
+**Status:** W1 CONTENT SLICE SHIPPED 2026-07-20 — the free acquisition estate is live in one wave:
+Calculator Lab (`/tools/` hub + 6 calculators: position-size, risk-reward, trade-profit,
+compounding, cagr, drawdown-recovery — all static, inline-JS, fixture-self-checked), free
+trading-journal spreadsheet (`/tools/spreadsheets/trading-journal.html` + deterministic
+`.xlsx` generator, ungated download), Learning Center (`/learn/` hub + 8 cornerstone lessons
+across technical/risk/ownership tracks; the Gamma Weather manual at `/learn.html` featured
+untouched as the flagship options lesson), Blog (`/blog/` hub + 6 launch articles + RSS),
+`/about-research.html` entity page, and the shared substrate (`content/seo/CONTRACT.md`,
+`scripts/build_free_content.py`, `templates/seo_*.html.j2`, `lib/seo.py` subdir sitemap
+discovery, llms.txt section, 139 tests). All off the nightly render path; opus-reviewed
+(content claims + code) with all findings fixed. W0 rulings recorded in
+`content/seo/CONTRACT.md`: EN-only `.md` bodies with bilingual chrome (D12A R3 option A;
+calculator template bodies ratified fully bilingual), single-file sitemap extended (family
+index split still open per D12A R2). REMAINING lanes: MKT-SEO-05 living toolkits
+(52w-highs / insider / earnings — data lanes, untouched), MKT-SEO-06 link graph/crawl
+control, MKT-SEO-07 Search Console loop (operator GSC verification still open), MKT-SEO-08
+beyond the shipped llms.txt. Original W0 directive preserved below.
+
+**Prior status (2026-07-20, pre-W1):** W0 READY FOR A SPECIALIST CLAUDE SESSION — docket only; no D12 product code had shipped
 
 **Operator request:** Launch a native blog, a TrendSpider-University-style Learning Center, free calculators, recurring market toolkits such as new 52-week highs and recent insider transactions, and the additional SEO systems worth building now.
 

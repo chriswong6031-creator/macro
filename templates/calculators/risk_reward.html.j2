@@ -1,0 +1,222 @@
+{#=============================================================================
+  calculators/risk_reward.html.j2
+  Clone of position_size.html.j2 — same structure, §7 risk-reward formulas.
+
+  Context (CONTRACT §5): page{slug:'risk-reward', family:'page', title,
+  description, canonical, url_path, section:'tools', breadcrumbs}, rel, site,
+  toc, related, cta.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter your entry, stop, and target. Add your win rate to see whether the math works in your favour over time.',
+   '填入入场价、止损价和目标价。加入胜率可查看长期数学期望是否对你有利。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Entry price ($)', '入场价（$）') }}</span>
+    <input id="entry" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+  <label class="ci"><span class="ci-l">{{ t('Stop price ($)', '止损价（$）') }}</span>
+    <input id="stop" inputmode="decimal" autocomplete="off" placeholder="95"></label>
+  <label class="ci"><span class="ci-l">{{ t('Target price ($)', '目标价（$）') }}</span>
+    <input id="target" inputmode="decimal" autocomplete="off" placeholder="115"></label>
+  <label class="ci"><span class="ci-l">{{ t('Win rate (%)', '胜率（%）') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <input id="winrate" inputmode="decimal" autocomplete="off" placeholder="40"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('R:R', 'R:R') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in entry, stop, and target to see your risk-to-reward ratio.', '填入入场价、止损价和目标价以查看盈亏比。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Breakeven win rate', '保本胜率') }}</dt><dd id="out-breakeven">—</dd></div>
+    <div><dt>{{ t('Reward per share', '每股收益') }}</dt><dd id="out-reward">—</dd></div>
+    <div><dt>{{ t('Risk per share', '每股风险') }}</dt><dd id="out-risk">—</dd></div>
+    <div><dt>{{ t('Expectancy (R)', '期望值（R）') }}</dt><dd id="out-exp">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('The risk-to-reward ratio is the distance from your entry to your target, divided by the distance from your entry to your stop. A 3:1 ratio means you stand to make three dollars for every dollar you risk — and that single number tells you how often you need to be right just to break even.',
+   '盈亏比是入场价到目标价的距离，除以入场价到止损价的距离。3:1意味着你每冒1美元风险，预期获得3美元——这个数字直接告诉你需要多高的胜率才能保本。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>R:R</strong> = | Target − Entry | ÷ | Entry − Stop |', '<strong>R:R</strong> = | 目标 − 入场 | ÷ | 入场 − 止损 |') }}<br>
+{{ t('<strong>Breakeven win rate</strong> = 100 ÷ (1 + R:R)', '<strong>保本胜率</strong> = 100 ÷ (1 + R:R)') }}<br>
+{{ t('<strong>Expectancy (R)</strong> = win rate × R:R − (1 − win rate)  <em>(requires win rate)</em>', '<strong>期望值（R）</strong> = 胜率 × R:R − (1 − 胜率)  <em>（需填胜率）</em>') }}
+</div>
+<p>{{ t('The breakeven win rate is the floor: if you win less often than that, this trade shape loses money on average even when R:R looks attractive. Expectancy in R combines both sides — a positive number means the setup has a mathematical edge per trade.',
+   '保本胜率是下限：若胜率低于此值，即便盈亏比看起来不错，这类交易长期也会亏损。R期望值将两者合并——正值意味着该设置每笔交易具有数学优势。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('You buy at <span class="num">$100</span>, place your stop at <span class="num">$95</span>, and set a target at <span class="num">$115</span>. Your win rate from similar setups is <span class="num">40%</span>.',
+   '你在 <span class="num">$100</span> 买入，止损设在 <span class="num">$95</span>，目标设在 <span class="num">$115</span>。历史同类设置的胜率为 <span class="num">40%</span>。') }}</p>
+<ul>
+<li>{{ t('Risk per share = <span class="num">| 100 − 95 | = $5</span>', '每股风险 = <span class="num">| 100 − 95 | = $5</span>') }}</li>
+<li>{{ t('Reward per share = <span class="num">| 115 − 100 | = $15</span>', '每股收益 = <span class="num">| 115 − 100 | = $15</span>') }}</li>
+<li>{{ t('R:R = <span class="num">15 ÷ 5 = 3.0</span>', 'R:R = <span class="num">15 ÷ 5 = 3.0</span>') }}</li>
+<li>{{ t('Breakeven win rate = <span class="num">100 ÷ (1 + 3) = 25%</span>', '保本胜率 = <span class="num">100 ÷ (1 + 3) = 25%</span>') }}</li>
+<li>{{ t('Expectancy = <span class="num">0.40 × 3 − 0.60 = +0.60 R</span> per trade', '期望值 = <span class="num">0.40 × 3 − 0.60 = +0.60 R</span> 每笔') }}</li>
+</ul>
+<p>{{ t('You\'re risking $1 to make $3. You\'d need to win more than 25% of the time for this trade shape to break even — and at 40%, you clear that bar with room to spare.',
+   '你以1美元的风险换3美元的回报。只需胜率超过25%即可保本——而40%的胜率轻松超过这条线。') }}</p>
+</div>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Chasing ratio without an edge', '追求比率却没有优势') }}</span>
+<p>{{ t('A 5:1 ratio looks spectacular. But if you only win 10% of the time, expectancy is still negative: <span class="num">0.10 × 5 − 0.90 = −0.40 R</span>. The ratio and the win rate are a pair — you can\'t optimise one while ignoring the other. Moving a stop tighter to improve the ratio also reduces the win rate; there\'s no free lunch.',
+   '5:1的比率看起来非常诱人。但若胜率只有10%，期望值仍为负：<span class="num">0.10 × 5 − 0.90 = −0.40 R</span>。比率与胜率是一对——不能只优化其中一个。将止损收紧以改善比率，同时也会降低胜率；没有免费的午餐。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<ul>
+<li>{{ t('<strong>Win rate is estimated, not known.</strong> Unless you have a meaningful sample of identical setups, any expectancy calculation is a hypothesis, not a projection.',
+   '<strong>胜率是估计值，不是已知量。</strong>除非你拥有大量相同设置的样本，否则任何期望值计算都只是假设，而非预测。') }}</li>
+<li>{{ t('<strong>Targets and stops are not always hit cleanly.</strong> Slippage, gaps, and partial fills mean the realized R:R often differs from the planned ratio. Plan around a range, not a single number.',
+   '<strong>目标价和止损价并非总能干净成交。</strong>滑点、跳空和部分成交意味着实际R:R往往与计划值有差距。以区间而非单一数字来规划。') }}</li>
+<li>{{ t('<strong>R:R varies by time frame.</strong> A 3:1 ratio on a five-minute chart and a daily chart are very different problems — holding period, news risk, and mean reversion all change the picture.',
+   '<strong>R:R因时间周期而异。</strong>5分钟图和日线图上的3:1代表截然不同的交易——持仓时间、消息风险和均值回归均会改变情况。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('R:R tells you the shape of one trade. Win rate tells you how often that shape pays off. You need both numbers to know if a setup has an edge.',
+   'R:R描述的是单笔交易的形态。胜率告诉你这种形态多频繁能带来回报。你需要两个数字才能判断一个设置是否具有优势。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Understand the math behind win rates and losing streaks in <a href="/blog/win-rate-is-overrated.html">Win rate is overrated</a>, or learn how to size each trade correctly with the <a href="', '在 <a href="/blog/win-rate-is-overrated.html">胜率被高估了</a> 中了解胜率与亏损连续的数学，或通过 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t('. For a deeper look at expectancy, see the lesson on <a href="/learn/risk/risk-reward-expectancy.html">risk-reward and expectancy</a>.', '正确计算每笔交易的仓位。深入了解期望值，参见 <a href="/learn/risk/risk-reward-expectancy.html">盈亏比与期望值</a>。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (CONTRACT §7 — do not re-derive) ──────────────────────────
+  // inputs: {E entry, S stop, T target, w winRate%|null}
+  // Returns outputs object or {ok:false, msg}.
+  function compute(inp){
+    var E=inp.E, S=inp.S, T=inp.T, w=inp.w;
+    if(!(E>0)) return {ok:false, msg:"Enter your entry price."};
+    if(!(S>0)) return {ok:false, msg:"Enter your stop price."};
+    if(!(T>0)) return {ok:false, msg:"Enter your target price."};
+    var riskPer = Math.abs(E - S);
+    if(riskPer === 0) return {ok:false, msg:"Your stop equals your entry — there's no risk to measure."};
+    var rewardPer = Math.abs(T - E);
+    if(rewardPer === 0) return {ok:false, msg:"Your target equals your entry — there's no reward to measure."};
+    // Validate that T and S are on opposite sides of E (plain-word warning)
+    var longSide = S < E;  // stop below entry → long
+    var targetValid = longSide ? (T > E) : (T < E);
+    var RR = rewardPer / riskPer;
+    var breakevenWin = 100 / (1 + RR);
+    var out = {ok:true, RR:RR, breakevenWin:breakevenWin, riskPer:riskPer, rewardPer:rewardPer,
+               dir: longSide ? "long" : "short", targetWarn: !targetValid};
+    if(w !== null && w !== undefined && !isNaN(w) && w >= 0 && w <= 100){
+      var wFrac = w / 100;
+      out.expectancyR = wFrac * RR - (1 - wFrac);
+      out.hasWinRate = true;
+    } else {
+      out.hasWinRate = false;
+    }
+    return out;
+  }
+
+  // ── §6 self-check ──────────────────────────────────────────────────────────
+  var WORKED_EXAMPLES = [
+    { in:{E:100, S:95, T:115, w:null}, want:{RR:3.0, breakevenWin:25} },
+    { in:{E:100, S:95, T:115, w:40},   want:{RR:3.0, breakevenWin:25, expectancyR:0.6} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("risk-reward self-check "+i+": compute failed", got.msg); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.05){
+        console.error("risk-reward self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring ──────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { entry:$("entry"), stop:$("stop"), target:$("target"), winrate:$("winrate") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outBe=$("out-breakeven"), outRew=$("out-reward"), outRisk=$("out-risk"), outExp=$("out-exp"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:2}); }
+    function dash(){
+      outMain.textContent="—";
+      [outBe,outRew,outRisk,outExp].forEach(function(e){ e.textContent="—"; e.className=""; });
+    }
+
+    var last=null;
+    function render(){
+      var wRaw = numFrom(els.winrate);
+      var inp = { E:numFrom(els.entry), S:numFrom(els.stop), T:numFrom(els.target),
+                  w: isFinite(wRaw) ? wRaw : null };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outMain.textContent = res.RR.toFixed(1);
+      outBe.textContent   = res.breakevenWin.toFixed(1) + "%";
+      outRew.textContent  = money(res.rewardPer);
+      outRisk.textContent = money(res.riskPer);
+
+      if(res.hasWinRate){
+        outExp.textContent = (res.expectancyR >= 0 ? "+" : "") + res.expectancyR.toFixed(2) + " R";
+        outExp.className = res.expectancyR >= 0 ? "pos" : "neg";
+      } else {
+        outExp.textContent = "—";
+        outExp.className = "";
+      }
+
+      var plain = "You’re risking $1 to make $" + (res.RR % 1 === 0 ? res.RR.toFixed(0) : res.RR.toFixed(2)) +
+        ". You’d need to win more than " + res.breakevenWin.toFixed(1) +
+        "% of the time for this trade shape to break even.";
+      if(res.targetWarn){
+        plain = "Note: your target and stop appear to be on the same side of your entry. Check the prices. " + plain;
+        outPlain.className = "co-plain warn";
+      } else if(res.hasWinRate){
+        plain += " At " + numFrom(els.winrate).toFixed(1) + "% wins, expectancy is " +
+          (res.expectancyR >= 0 ? "+" : "") + res.expectancyR.toFixed(2) + " R per trade.";
+        outPlain.className = "co-plain";
+      } else {
+        outPlain.className = "co-plain";
+      }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var line = "Risk-to-Reward: " + last.RR.toFixed(1) + ":1" +
+        " · breakeven " + last.breakevenWin.toFixed(1) + "% win rate";
+      if(last.hasWinRate) line += " · expectancy " +
+        (last.expectancyR >= 0 ? "+" : "") + last.expectancyR.toFixed(2) + " R";
+      line += " — mastermind-x.com";
+      return line;
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["entry","stop","target","winrate"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,233 @@
+{#=============================================================================
+  calculators/drawdown_recovery.html.j2
+  Clone of position_size.html.j2 — §7 drawdown-recovery formulas.
+  Static reference table lives in article body (SEO content, not JS-rendered).
+  Peak/current input overrides drawdown % when both filled.
+
+  Context (CONTRACT §5): page{slug:'drawdown-recovery', family:'page', title,
+  description, canonical, url_path, section:'tools', breadcrumbs}, rel, site,
+  toc, related, cta.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter a drawdown percentage, or your peak and current values — the calculator derives the loss and tells you how much you need to recover. Add an expected annual return to estimate recovery time.',
+   '填入回撤百分比，或填入峰值与当前值——计算器将推算亏损并告知你需要多少才能回本。添加预期年化收益率可估算恢复时间。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Drawdown (%)', '回撤（%）') }} <span class="hint">{{ t('or use peak / current below', '或填峰值/当前值') }}</span></span>
+    <input id="dd-pct" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l">{{ t('Peak value ($)', '峰值（$）') }} <span class="hint">{{ t('optional — overrides %', '可选，覆盖%') }}</span></span>
+    <input id="peak" inputmode="decimal" autocomplete="off" placeholder="100,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Current value ($)', '当前值（$）') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <input id="current" inputmode="decimal" autocomplete="off" placeholder="50,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Expected annual return (%)', '预期年化收益率（%）') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <input id="ret-rate" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('to recover', '才能回本') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Enter a drawdown to see the required recovery gain.', '填入回撤幅度即可查看所需涨幅。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Drawdown used', '使用的回撤值') }}</dt><dd id="out-dd">—</dd></div>
+    <div><dt>{{ t('Years to recover', '恢复年数') }}</dt><dd id="out-years">—</dd></div>
+    <div><dt>{{ t('Dollar loss', '亏损金额') }}</dt><dd id="out-loss">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('Losses are asymmetric: a 50% drawdown requires a 100% gain to recover. The math is straightforward — if you lose half your money, you need to double what remains. This asymmetry is one of the most important and most overlooked facts in risk management.',
+   '亏损是不对称的：50%的回撤需要100%的涨幅才能回本。数学很直接——如果你损失了一半的钱，你需要将剩余的资金翻倍。这种不对称性是风险管理中最重要、也最常被忽视的事实之一。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Required gain%</strong> = d ÷ (100 − d) × 100', '<strong>所需涨幅%</strong> = d ÷ (100 − d) × 100') }}<br>
+{{ t('where d = drawdown %', '其中 d = 回撤百分比') }}<br>
+{{ t('<strong>Years to recover</strong> = ln(100 ÷ (100 − d)) ÷ ln(1 + g ÷ 100)  <em>(requires annual return g)</em>', '<strong>恢复年数</strong> = ln(100 ÷ (100 − d)) ÷ ln(1 + g ÷ 100)  <em>（需填年化收益率g）</em>') }}
+</div>
+<p>{{ t('When you supply peak and current values, the drawdown is calculated as <span class="num">(peak − current) ÷ peak × 100</span> and that derived figure is used for all subsequent calculations.',
+   '当你填入峰值和当前值时，回撤计算为 <span class="num">(峰值 − 当前) ÷ 峰值 × 100</span>，并用该数值进行后续计算。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('A portfolio falls <span class="num">50%</span> from its peak. The assumed recovery rate is <span class="num">10%</span> per year.',
+   '一个投资组合从峰值回撤 <span class="num">50%</span>。假设年化收益率为 <span class="num">10%</span>。') }}</p>
+<ul>
+<li>{{ t('Required gain = <span class="num">50 ÷ (100 − 50) × 100 = 100%</span>', '所需涨幅 = <span class="num">50 ÷ (100 − 50) × 100 = 100%</span>') }}</li>
+<li>{{ t('Years to recover = <span class="num">ln(100 ÷ 50) ÷ ln(1.10) ≈ 7.27 years</span>', '恢复年数 = <span class="num">ln(100 ÷ 50) ÷ ln(1.10) ≈ 7.27年</span>') }}</li>
+<li>{{ t('A 20% drawdown requires only <span class="num">25%</span> to recover — far less damaging, and the contrast illustrates why avoiding large drawdowns matters more than chasing extra returns.',
+   '20%的回撤只需 <span class="num">25%</span> 才能回本——损害小得多。这一对比说明了为什么避免大回撤比追逐额外回报更重要。') }}</li>
+</ul>
+</div>
+
+<h2 id="reference"><span class="est-h2-mark">03</span>{{ t('Reference table', '参考表格') }}</h2>
+<p>{{ t('The asymmetry accelerates steeply at deeper drawdowns. A 90% loss requires a 900% recovery — nine times your remaining capital just to break even.',
+   '不对称性在更深的回撤处急剧加速。90%的亏损需要900%的涨幅才能回本——仅仅为了回到原点，你就需要将剩余资金增加至原来的9倍。') }}</p>
+<table class="data">
+<thead><tr><th>{{ t('Drawdown', '回撤') }}</th><th class="num">{{ t('Required gain to recover', '回本所需涨幅') }}</th></tr></thead>
+<tbody>
+<tr><td>5%</td><td class="num">5.3%</td></tr>
+<tr><td>10%</td><td class="num">11.1%</td></tr>
+<tr><td>15%</td><td class="num">17.6%</td></tr>
+<tr><td>20%</td><td class="num">25.0%</td></tr>
+<tr><td>25%</td><td class="num">33.3%</td></tr>
+<tr><td>30%</td><td class="num">42.9%</td></tr>
+<tr><td>40%</td><td class="num">66.7%</td></tr>
+<tr><td>50%</td><td class="num">100.0%</td></tr>
+<tr><td>60%</td><td class="num">150.0%</td></tr>
+<tr><td>70%</td><td class="num">233.3%</td></tr>
+<tr><td>80%</td><td class="num">400.0%</td></tr>
+<tr><td>90%</td><td class="num">900.0%</td></tr>
+</tbody>
+</table>
+
+<h2 id="trap"><span class="est-h2-mark">04</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Treating drawdown and return as symmetric', '将回撤与涨幅视为对称') }}</span>
+<p>{{ t('"I\'m down 30%, I just need to make back 30%." No — a 30% loss requires a 42.9% gain. A 50% loss requires 100%. The further you fall, the steeper the climb out. This is why position sizing and stop-losses exist: preventing a large drawdown is worth far more than chasing an equivalent gain.',
+   '"我跌了30%，只需要再涨30%即可。"不对——30%的亏损需要42.9%的涨幅。50%的亏损需要100%。跌得越深，爬出来越陡峭。这就是为什么仓位管理和止损存在：防止大回撤远比追逐等量涨幅有价值。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">05</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<ul>
+<li>{{ t('<strong>Recovery rate is assumed constant.</strong> Real returns are volatile. A 10% annual return assumption is just that — an assumption. Sequence of returns matters: a bad year in the early recovery extends the timeline.',
+   '<strong>假设恢复速率固定。</strong>实际回报率是波动的。10%的年化回报率假设仅仅是假设。回报顺序很重要：恢复初期的一个坏年份会延长恢复时间线。') }}</li>
+<li>{{ t('<strong>The formula uses the peak-to-trough definition.</strong> "Drawdown" is sometimes quoted as the loss from the high-water mark. Make sure the percentage you enter matches this definition.',
+   '<strong>公式使用峰谷定义。</strong>"回撤"有时被引用为从高水位线开始的亏损。请确保你输入的百分比符合这一定义。') }}</li>
+<li>{{ t('<strong>Taxes and fees reduce the effective recovery rate.</strong> If capital gains are taxed and trading incurs fees, the net annual return available for recovery is lower than the gross figure.',
+   '<strong>税收和费用降低有效恢复速率。</strong>若资本利得需要纳税，且交易产生费用，则可用于恢复的净年化收益率低于毛值。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Cutting a loss in half doesn\'t cut the recovery time in half — it eliminates most of it. Protecting capital is asymmetrically more valuable than finding returns.',
+   '将亏损减半不能将恢复时间减半——而是几乎消除了大部分。保护本金在不对称上远比寻找回报更有价值。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('The companion piece for this topic is <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">Why a 50% loss needs a 100% gain</a>. For long-run compounding context, see <a href="/blog/compound-growth-for-traders.html">Compound growth for traders</a>. Model recovery scenarios with the <a href="', '本主题的配套阅读是 <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">为什么亏损50%需要盈利100%才能回本</a>。长期复利背景请参见 <a href="/blog/compound-growth-for-traders.html">交易者的复利增长</a>。用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(' to model recovery scenarios.', '建模恢复情景。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (CONTRACT §7) ──────────────────────────────────────────────
+  function compute(inp){
+    var ddPct=inp.ddPct, peak=inp.peak, current=inp.current, g=inp.g;
+    // Derive drawdown: peak/current overrides when both present
+    var d = null, dollarLoss = null;
+    if(peak > 0 && current >= 0 && !isNaN(peak) && !isNaN(current)){
+      if(current > peak) return {ok:false, msg:"Current value is above the peak — there's no drawdown to recover from."};
+      d = (peak - current) / peak * 100;
+      dollarLoss = peak - current;
+    } else if(!isNaN(ddPct) && ddPct > 0 && ddPct < 100){
+      d = ddPct;
+    } else if(!isNaN(ddPct) && ddPct <= 0){
+      return {ok:false, msg:"Enter a drawdown greater than 0%."};
+    } else if(!isNaN(ddPct) && ddPct >= 100){
+      return {ok:false, msg:"A 100% drawdown means total loss — there's nothing left to recover."};
+    } else {
+      return {ok:false, msg:"Enter a drawdown percentage, or a peak and current value."};
+    }
+    if(d <= 0) return {ok:false, msg:"Enter a drawdown greater than 0%."};
+    if(d >= 100) return {ok:false, msg:"A 100% drawdown means total loss — there's nothing left to recover."};
+    var reqGain = 100 * d / (100 - d);
+    var out = {ok:true, d:d, reqGain:reqGain, dollarLoss:dollarLoss, fromPeakCurrent: (peak>0&&!isNaN(peak))};
+    if(!isNaN(g) && g > 0){
+      out.years = Math.log(100 / (100 - d)) / Math.log(1 + g / 100);
+      out.g = g;
+    }
+    return out;
+  }
+
+  // ── §6 self-check ──────────────────────────────────────────────────────────
+  var WORKED_EXAMPLES = [
+    { in:{ddPct:50, peak:NaN, current:NaN, g:NaN},  want:{reqGain:100} },
+    { in:{ddPct:20, peak:NaN, current:NaN, g:NaN},  want:{reqGain:25} },
+    { in:{ddPct:50, peak:NaN, current:NaN, g:10},   want:{years:7.27} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("drawdown self-check "+i+": compute failed", got.msg); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.05){
+        console.error("drawdown self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring ──────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { ddPct:$("dd-pct"), peak:$("peak"), current:$("current"), retRate:$("ret-rate") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outDd=$("out-dd"), outYears=$("out-years"), outLoss=$("out-loss"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:0}); }
+    function dash(){ outMain.textContent="—"; [outDd,outYears,outLoss].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp = { ddPct:numFrom(els.ddPct), peak:numFrom(els.peak),
+                  current:numFrom(els.current), g:numFrom(els.retRate) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outMain.textContent = "+" + res.reqGain.toFixed(1) + "%";
+      outMain.className   = "neg";  // recovery from a loss — sobering, not celebratory
+      outDd.textContent   = res.d.toFixed(1) + "%" + (res.fromPeakCurrent ? " (from peak/current)" : "");
+      if(res.dollarLoss !== null){
+        outLoss.textContent = money(res.dollarLoss) + " from peak";
+        outLoss.className   = "neg";
+      } else {
+        outLoss.textContent = "—";
+        outLoss.className   = "";
+      }
+      if(res.years != null){
+        outYears.textContent = res.years.toFixed(1) + " yr at " + res.g.toFixed(1) + "% annual";
+      } else {
+        outYears.textContent = "—";
+      }
+
+      var plain = "A " + res.d.toFixed(1) + "% drawdown requires a +" + res.reqGain.toFixed(1) +
+        "% gain just to break even.";
+      if(res.years != null){
+        plain += " At " + res.g.toFixed(1) + "% per year, that takes about " +
+          res.years.toFixed(1) + " years.";
+      }
+      outPlain.textContent = plain;
+      outPlain.className   = "co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var line = "Drawdown " + last.d.toFixed(1) + "% → needs +" + last.reqGain.toFixed(1) + "% to recover";
+      if(last.years != null) line += " · ~" + last.years.toFixed(1) + " yr at " + last.g.toFixed(1) + "% annual";
+      line += " — mastermind-x.com";
+      return line;
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["dd-pct","peak","current","ret-rate"].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

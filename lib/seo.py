@@ -4,6 +4,8 @@ Provides:
   SITE_BASE          — canonical www host (single source of truth)
   page_url(path)     — construct a full canonical URL
   discover_core_pages(site_dir) — discover public site/*.html pages
+  discover_free_pages(site_dir) — discover free-estate sub-family pages
+                                  (site/blog/, site/learn/*/, site/tools/, etc.)
   build_core_sitemap(existing_xml, site_dir) — regenerate non-/stocks/ sitemap entries
 """
 from __future__ import annotations
@@ -139,6 +141,76 @@ def _freq_priority(name: str) -> tuple[str, float]:
 # Core page discovery
 # ─────────────────────────────────────────────────────────────────────────────
 
+def discover_free_pages(site_dir: Path) -> list[tuple[str, str, str, str, float]]:
+    """Discover free-estate sub-family HTML pages (blog/, learn/*/, tools/, etc.).
+
+    Returns a sorted list of (rel_path, loc_url, changefreq, filename, priority).
+
+    Families and rules (CONTRACT §9 / MKT-SEO-01..04):
+      - site/blog/index.html          -> hub (weekly, 0.7)
+      - site/blog/<slug>.html         -> leaf (monthly, 0.6)
+      - site/learn/index.html         -> hub (weekly, 0.7)
+      - site/learn/<track>/*.html     -> leaf (monthly, 0.6)
+      - site/tools/index.html         -> hub (weekly, 0.7)
+      - site/tools/calculators/*.html -> leaf (monthly, 0.6)
+      - site/tools/spreadsheets/*.html-> leaf (monthly, 0.6)
+
+    feed.xml and non-.html files are never included.
+    Hub index.html filenames are preserved in the URL (e.g. /blog/index.html).
+    """
+    results: list[tuple[str, str, str, str, float]] = []
+
+    # ---- blog ----
+    blog_dir = site_dir / "blog"
+    if blog_dir.is_dir():
+        for p in sorted(blog_dir.glob("*.html")):
+            if p.name == "index.html":
+                freq, pri = "weekly", 0.7
+            else:
+                freq, pri = "monthly", 0.6
+            rel = f"blog/{p.name}"
+            results.append((rel, page_url(rel), freq, p.name, pri))
+
+    # ---- learn ----
+    learn_dir = site_dir / "learn"
+    if learn_dir.is_dir():
+        # hub
+        learn_idx = learn_dir / "index.html"
+        if learn_idx.exists():
+            rel = "learn/index.html"
+            results.append((rel, page_url(rel), "weekly", "index.html", 0.7))
+        # track subdirectories (one level deep only)
+        for track_dir in sorted(learn_dir.iterdir()):
+            if not track_dir.is_dir():
+                continue
+            for p in sorted(track_dir.glob("*.html")):
+                rel = f"learn/{track_dir.name}/{p.name}"
+                results.append((rel, page_url(rel), "monthly", p.name, 0.6))
+
+    # ---- tools ----
+    tools_dir = site_dir / "tools"
+    if tools_dir.is_dir():
+        # hub
+        tools_idx = tools_dir / "index.html"
+        if tools_idx.exists():
+            rel = "tools/index.html"
+            results.append((rel, page_url(rel), "weekly", "index.html", 0.7))
+        # calculators/
+        calc_dir = tools_dir / "calculators"
+        if calc_dir.is_dir():
+            for p in sorted(calc_dir.glob("*.html")):
+                rel = f"tools/calculators/{p.name}"
+                results.append((rel, page_url(rel), "monthly", p.name, 0.6))
+        # spreadsheets/
+        ss_dir = tools_dir / "spreadsheets"
+        if ss_dir.is_dir():
+            for p in sorted(ss_dir.glob("*.html")):
+                rel = f"tools/spreadsheets/{p.name}"
+                results.append((rel, page_url(rel), "monthly", p.name, 0.6))
+
+    return results
+
+
 def discover_core_pages(site_dir: Path) -> list[tuple[str, str, str]]:
     """Return a sorted list of (name_without_ext, loc_url, filename) for public pages.
 
@@ -211,12 +283,20 @@ def build_core_sitemap(existing_xml: str, site_dir: Path) -> str:
         entry = f"  <url><loc>{url}</loc><lastmod>{today}</lastmod><changefreq>{freq}</changefreq><priority>{pri_str}</priority></url>"
         core_entries.append(entry)
 
+    # Discover free-estate sub-family pages (blog/, learn/, tools/).
+    free_entries: list[str] = []
+    for _rel, url, freq, _fname, pri in discover_free_pages(site_dir):
+        pri_str = f"{pri:.1f}" if pri == int(pri) else str(pri)
+        entry = f"  <url><loc>{url}</loc><lastmod>{today}</lastmod><changefreq>{freq}</changefreq><priority>{pri_str}</priority></url>"
+        free_entries.append(entry)
+
     # Assemble XML.
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ]
     parts.extend(core_entries)
+    parts.extend(free_entries)
     parts.extend(stocks_lines)
     parts.append("</urlset>")
     return "\n".join(parts) + "\n"

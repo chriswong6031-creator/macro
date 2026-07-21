@@ -1,0 +1,324 @@
+{#=============================================================================
+  calculators/compounding.html.j2
+  Clone of position_size.html.j2 — §7 compounding formula (ordinary annuity).
+  Includes per-year table (JS-rendered, ≤50 rows) and inline SVG growth curve.
+
+  Context (CONTRACT §5): page{slug:'compounding', family:'page', title,
+  description, canonical, url_path, section:'tools', breadcrumbs}, rel, site,
+  toc, related, cta.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+
+{% block estate_css %}
+{{ super() }}
+  /* compounding-specific: table + SVG curve */
+  .cp-table-wrap{margin:20px 0 0; overflow-x:auto;}
+  .cp-table-wrap table{width:100%; border-collapse:collapse; font-family:var(--font-mono);
+    font-size:13.5px; font-variant-numeric:tabular-nums;}
+  .cp-table-wrap th{font-family:var(--font-ui); font-size:11px; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.06em; padding:7px 10px; text-align:right; border-bottom:1px solid var(--line);}
+  .cp-table-wrap th:first-child{text-align:left;}
+  .cp-table-wrap td{padding:6px 10px; text-align:right; border-bottom:1px solid var(--rule); color:var(--text);}
+  .cp-table-wrap td:first-child{text-align:left; color:var(--muted);}
+  .cp-table-wrap td.pos-col{color:var(--up);}
+  .cp-curve-wrap{margin:20px 0 0; border-radius:12px; border:1px solid var(--line); overflow:hidden;}
+  .cp-curve-wrap svg{display:block; width:100%; height:auto; background:var(--panel2);}
+{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter a starting amount, a recurring contribution, how often you contribute, an annual return, and a time horizon. The calculator shows how your money compounds year by year.',
+   '填入初始金额、定期投入、投入频率、年化收益率和时间跨度。计算器将逐年展示你的资金如何复利增长。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Starting principal ($)', '初始本金（$）') }}</span>
+    <input id="principal" inputmode="decimal" autocomplete="off" placeholder="10,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Contribution per period ($)', '每期投入（$）') }}</span>
+    <input id="contrib" inputmode="decimal" autocomplete="off" placeholder="500"></label>
+  <div class="ci" style="flex-direction:column; gap:6px;">
+    <span class="ci-l">{{ t('Contribution frequency', '投入频率') }}</span>
+    <div class="ci-seg" role="radiogroup" data-name="freq" id="freq-seg">
+      <button class="on" data-v="12" type="button">{{ t('Monthly', '每月') }}</button><button data-v="4" type="button">{{ t('Quarterly', '每季') }}</button><button data-v="1" type="button">{{ t('Annual', '每年') }}</button>
+    </div>
+  </div>
+  <label class="ci"><span class="ci-l">{{ t('Annual return (%)', '年化收益率（%）') }}</span>
+    <input id="rate" inputmode="decimal" autocomplete="off" placeholder="7"></label>
+  <label class="ci"><span class="ci-l">{{ t('Years', '年数') }}</span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('future value', '终值') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in all fields to see how your money grows.', '填入所有字段即可查看资金增长情况。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Total contributed', '合计投入') }}</dt><dd id="out-contrib">—</dd></div>
+    <div><dt>{{ t('Growth (interest)', '增长（利息）') }}</dt><dd id="out-growth">—</dd></div>
+    <div><dt>{{ t('Growth multiple', '增长倍数') }}</dt><dd id="out-mult">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+
+<div class="cp-curve-wrap" id="curve-wrap" aria-hidden="true" style="display:none;">
+  <svg id="cp-curve" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <linearGradient id="grad-fv" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="var(--link)" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="var(--link)" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    <path id="cp-area-fv"  fill="url(#grad-fv)" d=""/>
+    <path id="cp-area-c"   fill="var(--panel)" d="" opacity="0.7"/>
+    <path id="cp-line-fv"  fill="none" stroke="var(--link)"  stroke-width="2" stroke-linecap="round"/>
+    <path id="cp-line-c"   fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+    <g id="cp-legend" font-family="var(--font-ui)" font-size="11" fill="var(--muted)">
+      <text x="12" y="18">&#9472; Total value</text>
+      <text x="12" y="32">&#8229; Contributed</text>
+    </g>
+  </svg>
+</div>
+
+<div class="cp-table-wrap" id="year-table-wrap" style="display:none;" aria-label="{{ t('Year-by-year breakdown', '逐年明细') }}">
+  <table>
+    <thead><tr>
+      <th>{{ t('Year', '年份') }}</th>
+      <th>{{ t('Contributed', '投入') }}</th>
+      <th>{{ t('Growth', '增长') }}</th>
+      <th>{{ t('Total value', '总值') }}</th>
+    </tr></thead>
+    <tbody id="year-tbody"></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('Compound growth means your returns earn returns. The longer the horizon and the higher the rate, the more dominant the compounding effect becomes — a dollar of growth today adds to the base that all future periods compound on top of.',
+   '复利增长意味着你的收益也在产生收益。时间跨度越长、收益率越高，复利效应就越显著——今天的一美元增长，成为未来所有周期继续复利的基础。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>FV</strong> = P × (1 + i)<sup>m</sup> + c × ((1 + i)<sup>m</sup> − 1) ÷ i', '<strong>终值</strong> = P × (1 + i)<sup>m</sup> + c × ((1 + i)<sup>m</sup> − 1) ÷ i') }}<br>
+{{ t('where i = annual rate ÷ 100 ÷ frequency, m = years × frequency', '其中 i = 年利率 ÷ 100 ÷ 频率，m = 年数 × 频率') }}<br>
+{{ t('<em>(Ordinary annuity — contributions at the end of each period)</em>', '<em>（普通年金——每期末投入）</em>') }}
+</div>
+<p>{{ t('The "ordinary annuity" convention matters: contributions land at the <em>end</em> of each period, not the start. The first period\'s contribution earns one fewer period of interest than the principal. If your contributions go in at the start of each period (annuity-due), the future value would be slightly higher — but this convention is the standard baseline.',
+   '"普通年金"约定很重要：投入发生在每期<em>末</em>，而非期初。第一期的投入比本金少计一期利息。如果你在每期初投入（期初年金），终值会略高——但普通年金是标准基准。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose you start with <span class="num">$10,000</span>, add <span class="num">$500</span> every month, earn <span class="num">7%</span> per year, and let it run for <span class="num">10 years</span>.',
+   '假设你以 <span class="num">$10,000</span> 起始，每月追加 <span class="num">$500</span>，年收益率 <span class="num">7%</span>，持续 <span class="num">10年</span>。') }}</p>
+<ul>
+<li>{{ t('Monthly rate i = <span class="num">7% ÷ 12 ≈ 0.5833%</span>', '月利率 i = <span class="num">7% ÷ 12 ≈ 0.5833%</span>') }}</li>
+<li>{{ t('Number of periods m = <span class="num">10 × 12 = 120</span>', '期数 m = <span class="num">10 × 12 = 120</span>') }}</li>
+<li>{{ t('FV ≈ <span class="num">$106,639</span>', '终值 ≈ <span class="num">$106,639</span>') }}</li>
+<li>{{ t('Total contributed = <span class="num">$10,000 + 500 × 120 = $70,000</span>', '合计投入 = <span class="num">$10,000 + 500 × 120 = $70,000</span>') }}</li>
+<li>{{ t('Growth (interest) ≈ <span class="num">$36,639</span> — over half of contributed, earned for free by staying invested.',
+   '增长（利息）≈ <span class="num">$36,639</span>——超过投入的一半，靠长期持有白得的回报。') }}</li>
+</ul>
+</div>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Mistaking average return for compound return', '混淆平均收益率与复合收益率') }}</span>
+<p>{{ t('A 50% gain followed by a 50% loss is not a 0% net result — it\'s −25%. Compounding is multiplicative: <span class="num">1.5 × 0.5 = 0.75</span>. When you read "average annual return of X%", check whether it\'s an arithmetic average (often quoted, optimistic) or a geometric average (compound annual growth rate — what money actually does). The CAGR is always lower than or equal to the arithmetic mean.',
+   '上涨50%再下跌50%，净结果不是0%，而是−25%。复利是乘法：<span class="num">1.5 × 0.5 = 0.75</span>。当你看到"年均收益率X%"时，要确认这是算术平均（常被引用，偏乐观）还是几何平均（即CAGR——资金实际经历的）。CAGR始终低于或等于算术均值。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<ul>
+<li>{{ t('<strong>The rate is assumed constant.</strong> Real returns are volatile. Sequence of returns matters: a bad year early, when the balance is smaller, hurts less than a bad year late, when there\'s more to lose.',
+   '<strong>收益率假设固定不变。</strong>实际回报率是波动的。回报顺序很重要：早期亏损时余额小影响较小，晚期亏损时本金已积累更多则伤害更大。') }}</li>
+<li>{{ t('<strong>Taxes and inflation are not modeled.</strong> After-tax and inflation-adjusted returns can differ materially from the nominal figure used here.',
+   '<strong>未计入税收和通胀。</strong>税后、通胀调整后的实际回报率与这里使用的名义数字可能相差很大。') }}</li>
+<li>{{ t('<strong>Contributions are assumed uniform.</strong> Real savings rates vary. Gaps in contributions reduce FV proportionally.',
+   '<strong>假设投入金额不变。</strong>实际储蓄率会变化。中断投入会按比例降低终值。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Time is the most powerful input. Doubling your rate is hard; doubling your years is often possible.',
+   '时间是最强大的变量。将收益率翻倍很难；将年数翻倍往往是可能的。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how compounding interacts with drawdowns in <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">Why a 50% loss needs a 100% gain</a>, and explore growth rates with the <a href="', '在 <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">为什么亏损50%需要盈利100%才能回本</a> 中了解复利与回撤的关系，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', 'CAGR计算器') }}</a>{{ t('. For long-run thinking, <a href="/blog/compound-growth-for-traders.html">Compound growth for traders</a> is the companion piece.', '探索增长率。长期思维的配套阅读：<a href="/blog/compound-growth-for-traders.html">交易者的复利增长</a>。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  var freq = 12;  // default monthly
+
+  // ── pure compute (CONTRACT §7 — ordinary annuity) ──────────────────────────
+  function compute(inp){
+    var P=inp.P, c=inp.c, f=inp.f, r=inp.r, n=inp.n;
+    if(!(P>=0)) return {ok:false, msg:"Enter a starting principal (0 or more)."};
+    if(!(c>=0)) return {ok:false, msg:"Enter a contribution amount (0 or more)."};
+    if(!(f>0))  return {ok:false, msg:"Select a contribution frequency."};
+    if(!(r>=0)) return {ok:false, msg:"Enter an annual return rate (0 or more)."};
+    if(!(n>=1)) return {ok:false, msg:"Enter a holding period of at least 1 year."};
+    if(n>50)    return {ok:false, msg:"The table is capped at 50 years."};
+    var i = r / 100 / f;
+    var m = Math.round(n * f);
+    var pow = Math.pow(1 + i, m);
+    var FV  = i === 0 ? (P + c * m) : (P * pow + c * (pow - 1) / i);
+    var contributed = P + c * m;
+    var growth = FV - contributed;
+    // per-year table (whole years, plus fractional final row if n is non-integer)
+    var rows = [];
+    var nFloor = Math.floor(n);
+    for(var yr=1; yr<=nFloor; yr++){
+      var mm = Math.round(yr * f);
+      var pw = Math.pow(1 + i, mm);
+      var fvYr = i === 0 ? (P + c * mm) : (P * pw + c * (pw - 1) / i);
+      var contYr = P + c * mm;
+      rows.push({ year:yr, contributed:contYr, growth:fvYr-contYr, fv:fvYr });
+    }
+    // if n is non-integer, append a final row at exactly n years using the same
+    // m=round(n*f) as the headline FV so the last point equals the headline
+    if(n !== nFloor){
+      rows.push({ year:n, contributed:contributed, growth:growth, fv:FV });
+    }
+    var mult = contributed > 0 ? FV / contributed : null;
+    return {ok:true, FV:FV, contributed:contributed, growth:growth, rows:rows, mult:mult};
+  }
+
+  // ── §6 self-check ──────────────────────────────────────────────────────────
+  var WORKED_EXAMPLES = [
+    { in:{P:10000, c:500, f:12, r:7, n:10}, want:{FV:106638.65} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("compounding self-check "+i+": compute failed", got.msg); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 1){
+        console.error("compounding self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── SVG curve ──────────────────────────────────────────────────────────────
+  var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function drawCurve(rows){
+    var W=600, H=200, PL=40, PR=20, PT=24, PB=28;
+    var cw=W-PL-PR, ch=H-PT-PB;
+    var maxFV = rows[rows.length-1].fv;
+    function sx(i){ return PL + (i / (rows.length-1)) * cw; }
+    function sy(v){ return PT + ch - (v / maxFV) * ch; }
+
+    function mkPath(getter){
+      return rows.map(function(r,i){ return (i===0?"M":"L")+sx(i).toFixed(1)+","+sy(getter(r)).toFixed(1); }).join(" ");
+    }
+    function mkArea(getter){
+      var d = rows.map(function(r,i){ return (i===0?"M":"L")+sx(i).toFixed(1)+","+sy(getter(r)).toFixed(1); }).join(" ");
+      d += " L"+sx(rows.length-1).toFixed(1)+","+(PT+ch)+" L"+PL+","+(PT+ch)+" Z";
+      return d;
+    }
+
+    var lineFV  = document.getElementById("cp-line-fv");
+    var areaFV  = document.getElementById("cp-area-fv");
+    var lineC   = document.getElementById("cp-line-c");
+    var areaC   = document.getElementById("cp-area-c");
+
+    areaFV.setAttribute("d", mkArea(function(r){return r.fv;}));
+    areaC.setAttribute("d",  mkArea(function(r){return r.contributed;}));
+    var pathD = mkPath(function(r){return r.fv;});
+    lineFV.setAttribute("d", pathD);
+    lineC.setAttribute("d",  mkPath(function(r){return r.contributed;}));
+
+    if(!reducedMotion){
+      var len = lineFV.getTotalLength ? lineFV.getTotalLength() : 600;
+      lineFV.style.strokeDasharray = len;
+      lineFV.style.strokeDashoffset = len;
+      lineFV.style.transition = "stroke-dashoffset 1.2s cubic-bezier(.33,.62,.26,1) 100ms";
+      requestAnimationFrame(function(){ lineFV.style.strokeDashoffset = 0; });
+    }
+    document.getElementById("curve-wrap").style.display = "";
+  }
+
+  // ── DOM wiring ──────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { principal:$("principal"), contrib:$("contrib"), rate:$("rate"), years:$("years") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outContrib=$("out-contrib"), outGrowth=$("out-growth"), outMult=$("out-mult"),
+        tbody=$("year-tbody"), tableWrap=$("year-table-wrap"), seg=$("freq-seg"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    seg.addEventListener("click", function(e){
+      var btn=e.target.closest("[data-v]"); if(!btn) return;
+      [].forEach.call(seg.querySelectorAll("button"), function(b){ b.classList.remove("on"); });
+      btn.classList.add("on"); freq=parseInt(btn.dataset.v,10); render();
+    });
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{maximumFractionDigits:0}); }
+    function dash(){ outMain.textContent="—"; [outContrib,outGrowth,outMult].forEach(function(e){e.textContent="—";}); }
+
+    var last=null;
+    function render(){
+      var inp={ P:numFrom(els.principal), c:numFrom(els.contrib),
+                f:freq, r:numFrom(els.rate), n:numFrom(els.years) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain";
+        tableWrap.style.display="none"; document.getElementById("curve-wrap").style.display="none"; return; }
+
+      outMain.textContent = money(res.FV);
+      outContrib.textContent = money(res.contributed);
+      outGrowth.textContent  = "$" + res.growth.toLocaleString("en-US",{maximumFractionDigits:0});
+      outGrowth.className    = "pos";
+      if(res.mult !== null){
+        outMult.textContent = res.mult.toFixed(2) + "×";
+      } else {
+        outMult.textContent = "— enter a principal or contribution";
+      }
+
+      var plain = "After " + inp.n + " years, $" + res.contributed.toLocaleString("en-US",{maximumFractionDigits:0}) +
+        " in contributions grow to " + money(res.FV) +
+        " — the extra $" + res.growth.toLocaleString("en-US",{maximumFractionDigits:0}) + " is compounding doing the work.";
+      outPlain.textContent = plain; outPlain.className = "co-plain";
+
+      // render year table
+      tbody.innerHTML = "";
+      res.rows.forEach(function(r){
+        var tr=document.createElement("tr");
+        var yearLabel = Number.isInteger(r.year) ? r.year : r.year.toFixed(1);
+        tr.innerHTML = '<td>'+yearLabel+'</td>' +
+          '<td>'+money(r.contributed)+'</td>' +
+          '<td class="pos-col">$'+r.growth.toLocaleString("en-US",{maximumFractionDigits:0})+'</td>' +
+          '<td>'+money(r.fv)+'</td>';
+        tbody.appendChild(tr);
+      });
+      tableWrap.style.display = "";
+
+      // draw curve (≥2 rows needed)
+      if(res.rows.length >= 2) drawCurve(res.rows);
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Compounding: " + money(last.FV) + " after " + numFrom(els.years) + " years" +
+        " · contributed " + money(last.contributed) +
+        " · growth $" + last.growth.toLocaleString("en-US",{maximumFractionDigits:0}) +
+        " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["principal","contrib","rate","years"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

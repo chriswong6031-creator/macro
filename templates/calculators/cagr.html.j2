@@ -1,0 +1,251 @@
+{#=============================================================================
+  calculators/cagr.html.j2
+  Clone of position_size.html.j2 — §7 CAGR formula.
+  Segmented mode: "Find CAGR" vs "Project value".
+
+  Context (CONTRACT §5): page{slug:'cagr', family:'page', title,
+  description, canonical, url_path, section:'tools', breadcrumbs}, rel, site,
+  toc, related, cta.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Switch between finding the compound annual growth rate of an investment or projecting a future value at a target rate.',
+   '在"求CAGR"与"预测终值"两种模式之间切换。') }}</p>
+
+<div class="calc-in">
+  <div class="ci ci-wide" style="flex-direction:row; align-items:center; gap:10px;">
+    <span class="ci-l" style="white-space:nowrap;">{{ t('Mode', '模式') }}</span>
+    <div class="ci-seg" role="radiogroup" data-name="mode" id="mode-seg">
+      <button class="on" data-v="find" type="button">{{ t('Find CAGR', '求CAGR') }}</button><button data-v="project" type="button">{{ t('Project value', '预测终值') }}</button>
+    </div>
+  </div>
+
+  <label class="ci"><span class="ci-l" id="lbl-v0">{{ t('Beginning value ($)', '起始值（$）') }}</span>
+    <input id="v0" inputmode="decimal" autocomplete="off" placeholder="10,000"></label>
+
+  <!-- find-CAGR fields -->
+  <label class="ci" id="row-v1"><span class="ci-l">{{ t('Ending value ($)', '终止值（$）') }}</span>
+    <input id="v1" inputmode="decimal" autocomplete="off" placeholder="19,672"></label>
+
+  <!-- project-value field -->
+  <label class="ci" id="row-cagr" style="display:none;"><span class="ci-l">{{ t('CAGR (%)', 'CAGR（%）') }}</span>
+    <input id="cagr-rate" inputmode="decimal" autocomplete="off" placeholder="7"></label>
+
+  <!-- shared: years or date range -->
+  <label class="ci" id="row-years"><span class="ci-l">{{ t('Years', '年数') }} <span class="hint">{{ t('or use dates below', '或填日期') }}</span></span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+  <label class="ci"><span class="ci-l">{{ t('Start date', '起始日期') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <input id="date-start" type="date" autocomplete="off"></label>
+  <label class="ci"><span class="ci-l">{{ t('End date', '终止日期') }} <span class="hint">{{ t('optional, overrides years', '可选，覆盖年数') }}</span></span>
+    <input id="date-end" type="date" autocomplete="off"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit" id="out-unit">{{ t('CAGR', 'CAGR') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in the fields to calculate.', '填入字段即可计算。') }}</p>
+  <dl class="co-rows">
+    <div><dt id="row-dt-gain">{{ t('Total gain', '总增益') }}</dt><dd id="out-gain">—</dd></div>
+    <div><dt>{{ t('Years used', '使用年数') }}</dt><dd id="out-years">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('The compound annual growth rate (CAGR) is the single percentage that, if applied uniformly each year, turns a beginning value into an ending value over the stated period. It smooths out the volatile path and tells you the constant-rate equivalent.',
+   '复合年均增长率（CAGR）是一个单一百分比——若每年以此固定速率增长，能在给定期间将起始值变为终止值。它平滑掉波动的路径，告诉你等效的固定增长率。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>CAGR</strong> = (End ÷ Begin)<sup>1/n</sup> − 1', '<strong>CAGR</strong> = (终值 ÷ 起始值)<sup>1/n</sup> − 1') }}<br>
+{{ t('where n = number of years', '其中 n = 年数') }}<br>
+{{ t('<strong>Project value</strong> (inverse): End = Begin × (1 + CAGR)<sup>n</sup>', '<strong>预测终值</strong>（反向）: 终值 = 起始值 × (1 + CAGR)<sup>n</sup>') }}
+</div>
+<p>{{ t('When you supply two dates instead of a year count, the calculator derives n = days ÷ 365.25 — handling leap years automatically. Periods under one year still produce a result, but the annualization exaggerates short-term moves.',
+   '若提供两个日期而非年数，计算器自动换算 n = 天数 ÷ 365.25——自动处理闰年。不足一年的区间仍会给出结果，但年化会放大短期波动。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose an investment grows from <span class="num">$10,000</span> to <span class="num">$19,672</span> over <span class="num">10 years</span>.',
+   '假设一笔投资在 <span class="num">10年</span> 内从 <span class="num">$10,000</span> 增长至 <span class="num">$19,672</span>。') }}</p>
+<ul>
+<li>{{ t('CAGR = <span class="num">(19,672 ÷ 10,000)<sup>1/10</sup> − 1 ≈ 7.00%</span>', 'CAGR = <span class="num">(19,672 ÷ 10,000)<sup>1/10</sup> − 1 ≈ 7.00%</span>') }}</li>
+<li>{{ t('Inverse check: <span class="num">10,000 × 1.07<sup>10</sup> ≈ $19,672</span>', '反向验证：<span class="num">10,000 × 1.07<sup>10</sup> ≈ $19,672</span>') }}</li>
+</ul>
+<p>{{ t('The 7% CAGR says that a steady 7% per year would have produced the same ending value — even if the actual year-by-year returns were all over the place.',
+   '7%的CAGR意味着每年稳定增长7%将得到相同的终值——即使实际每年的回报率大相径庭。') }}</p>
+</div>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('CAGR is not what you earn each year', 'CAGR不是你每年实际赚到的') }}</span>
+<p>{{ t('If a fund reports a 10-year CAGR of 12%, that does not mean you earned 12% every year. Some years were far above 12%, some below, possibly negative. CAGR describes the net result of the full period, smoothed into a single rate. It says nothing about the volatility of the ride or the risk of timing.',
+   '若一只基金报告10年CAGR为12%，这不代表你每年赚到12%。某些年份远高于12%，某些年份低于12%，甚至可能为负。CAGR描述的是整个周期净结果平滑后的单一速率，不反映波动性或时机风险。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<ul>
+<li>{{ t('<strong>Under a year.</strong> A 50% return in six months annualizes to 125%. That is mathematically correct — and practically misleading. Short holding periods inflate the CAGR dramatically.',
+   '<strong>不足一年。</strong>六个月50%的回报年化后为125%。这在数学上是正确的——实际上却具有误导性。短持仓期会大幅抬高CAGR。') }}</li>
+<li>{{ t('<strong>Negative or zero start value.</strong> CAGR is undefined when the beginning value is zero or negative. Use absolute change instead.',
+   '<strong>起始值为零或负数。</strong>当起始值为零或负时，CAGR无意义。改用绝对变化量。') }}</li>
+<li>{{ t('<strong>Cash flows during the period.</strong> CAGR uses only the beginning and ending values. It does not account for dividends, withdrawals, or additional contributions made during the period. For those, use IRR.',
+   '<strong>期间存在现金流。</strong>CAGR只使用起始和终止两个值，不考虑期间的股息、取款或追加投入。此情形应使用IRR（内部收益率）。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('CAGR is a summary statistic, not a promise. It tells you where you ended up relative to where you started — nothing about the path between.',
+   'CAGR是一个汇总统计量，而非承诺。它告诉你相对于起点到达了哪里——对中间的路径一无所言。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Explore what your CAGR compounds into over time with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or see how drawdowns interrupt compound growth in <a href="/blog/compound-growth-for-traders.html">Compound growth for traders</a> and <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">Why a 50% loss needs a 100% gain</a>.', '探索你的CAGR随时间复利增长的结果，或在 <a href="/blog/compound-growth-for-traders.html">交易者的复利增长</a> 和 <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">为什么亏损50%需要盈利100%才能回本</a> 中了解回撤如何打断复利增长。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  var mode = "find";  // "find" | "project"
+
+  // ── pure compute (CONTRACT §7) ──────────────────────────────────────────────
+  function compute(inp){
+    var m=inp.mode, V0=inp.V0, V1=inp.V1, n=inp.n, cagrRate=inp.cagrRate;
+    if(!(V0>0)) return {ok:false, msg:"Enter a beginning value above zero."};
+    if(!(n>0))  return {ok:false, msg:"Enter a number of years (or two dates)."};
+
+    var underYear = n < 1;
+    if(m === "find"){
+      if(!(V1>0)) return {ok:false, msg:"Enter an ending value above zero."};
+      var CAGR = 100 * (Math.pow(V1 / V0, 1 / n) - 1);
+      var totalGain = 100 * (V1 / V0 - 1);
+      return {ok:true, mode:"find", CAGR:CAGR, V1:V1, V0:V0, n:n, totalGain:totalGain, underYear:underYear};
+    } else {
+      // project
+      if(!(cagrRate !== null && isFinite(cagrRate))) return {ok:false, msg:"Enter a CAGR rate."};
+      if(cagrRate <= -100) return {ok:false, msg:"A rate of −100% or worse wipes the account out — there's nothing left to project."};
+      var g = cagrRate / 100;
+      var projV1 = V0 * Math.pow(1 + g, n);
+      var totalGain2 = 100 * (projV1 / V0 - 1);
+      return {ok:true, mode:"project", V1:projV1, V0:V0, n:n, cagrRate:cagrRate, totalGain:totalGain2, underYear:underYear};
+    }
+  }
+
+  // ── §6 self-check ──────────────────────────────────────────────────────────
+  var WORKED_EXAMPLES = [
+    { in:{mode:"find",    V0:10000, V1:19672, n:10, cagrRate:null}, want:{CAGR:7.0} },
+    { in:{mode:"project", V0:10000, V1:null,  n:10, cagrRate:7},    want:{V1:19671.51} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("cagr self-check "+i+": compute failed", got.msg); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.05){
+        console.error("cagr self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring ──────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { v0:$("v0"), v1:$("v1"), years:$("years"), cagrRate:$("cagr-rate"),
+                dateStart:$("date-start"), dateEnd:$("date-end") };
+    var outMain=$("out-main"), outUnit=$("out-unit"), outPlain=$("out-plain"),
+        outGain=$("out-gain"), outYears=$("out-years"),
+        rowDtGain=$("row-dt-gain"),
+        seg=$("mode-seg"), copyBtn=$("copy-result"), copied=$("copied");
+    var rowV1=$("row-v1"), rowCagr=$("row-cagr");
+
+    function setMode(m){
+      mode = m;
+      [].forEach.call(seg.querySelectorAll("button"), function(b){ b.classList.remove("on"); });
+      seg.querySelector("[data-v='"+m+"']").classList.add("on");
+      if(m === "find"){
+        rowV1.style.display="";  rowCagr.style.display="none";
+        outUnit.textContent="CAGR"; rowDtGain.textContent="Total gain";
+      } else {
+        rowV1.style.display="none"; rowCagr.style.display="";
+        outUnit.textContent="projected value"; rowDtGain.textContent="Total gain";
+      }
+    }
+    seg.addEventListener("click", function(e){
+      var btn=e.target.closest("[data-v]"); if(!btn) return;
+      setMode(btn.dataset.v); render();
+    });
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + Math.abs(n).toLocaleString("en-US",{maximumFractionDigits:0}); }
+    function parseDays(){
+      var s=els.dateStart.value, e=els.dateEnd.value;
+      if(!s||!e) return null;
+      var d = (new Date(e) - new Date(s)) / 86400000;
+      return isFinite(d) && d >= 0 ? d : null;
+    }
+    function dash(){ outMain.textContent="—"; outGain.textContent="—"; outYears.textContent="—"; }
+
+    var last=null;
+    function render(){
+      var days = parseDays();
+      var n = days !== null ? days / 365.25 : numFrom(els.years);
+      var inp = { mode:mode, V0:numFrom(els.v0), V1:numFrom(els.v1),
+                  n:n, cagrRate:numFrom(els.cagrRate) };
+      if(mode==="find" && isNaN(inp.V1)) inp.V1 = NaN;
+      if(mode==="project" && isNaN(inp.cagrRate)) inp.cagrRate = null;
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      if(mode==="find"){
+        outMain.textContent = (res.CAGR >= 0 ? "+" : "") + res.CAGR.toFixed(2) + "%";
+        var plain = "$" + res.V0.toLocaleString("en-US",{maximumFractionDigits:0}) +
+          " grew to $" + res.V1.toLocaleString("en-US",{maximumFractionDigits:0}) +
+          " over " + res.n.toFixed(res.n>=1?1:2) + " years — a CAGR of " + res.CAGR.toFixed(2) + "% per year.";
+        if(res.underYear) plain += " Note: under a year — annualizing exaggerates short-term results.";
+        outPlain.textContent = plain;
+      } else {
+        outMain.textContent = money(res.V1);
+        outUnit.textContent = "projected value";
+        var plain2 = "$" + res.V0.toLocaleString("en-US",{maximumFractionDigits:0}) +
+          " growing at " + res.cagrRate.toFixed(2) + "% per year reaches " +
+          money(res.V1) + " after " + res.n.toFixed(res.n>=1?1:2) + " years.";
+        if(res.underYear) plain2 += " Note: under a year — annualizing exaggerates short-term results.";
+        outPlain.textContent = plain2;
+      }
+      outPlain.className = res.underYear ? "co-plain warn" : "co-plain";
+      outGain.textContent = (res.totalGain >= 0 ? "+" : "") + res.totalGain.toFixed(1) + "% total";
+      outGain.className   = res.totalGain >= 0 ? "pos" : "neg";
+      outYears.textContent = res.n.toFixed(res.n>=1?2:4) + " yr";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      if(last.mode==="find"){
+        return "CAGR: " + last.CAGR.toFixed(2) + "% over " + last.n.toFixed(1) + " years" +
+          " (" + money(last.V0) + " → " + money(last.V1) + ") — mastermind-x.com";
+      } else {
+        return "Projected value: " + money(last.V1) + " from " + money(last.V0) +
+          " at " + last.cagrRate.toFixed(2) + "% for " + last.n.toFixed(1) + " years — mastermind-x.com";
+      }
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["v0","v1","years","cagr-rate","date-start","date-end"].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Mastermind Research Blog</title>
+    <link>https://www.mastermind-x.com/blog/index.html</link>
+    <description>Plain-English trading education from Mastermind Research.</description>
+    <atom:link href="https://www.mastermind-x.com/blog/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title><![CDATA[Compound Growth for Traders]]></title>
+      <link>https://www.mastermind-x.com/blog/compound-growth-for-traders.html</link>
+      <description><![CDATA[Return sequencing and drawdowns dominate long-run CAGR. Why the arithmetic mean of annual returns overstates actual wealth growth and what to use instead.]]></description>
+      <pubDate>Mon, 20 Jul 2026 12:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://www.mastermind-x.com/blog/compound-growth-for-traders.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[Congress Trades Are Not Real-Time Signals]]></title>
+      <link>https://www.mastermind-x.com/blog/congress-trades-are-not-realtime-signals.html</link>
+      <description><![CDATA[The STOCK Act gives members of Congress 45 days to disclose trades. By the time you see a filing, the position is weeks old and the context has shifted.]]></description>
+      <pubDate>Mon, 20 Jul 2026 12:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://www.mastermind-x.com/blog/congress-trades-are-not-realtime-signals.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[How to Keep a Trading Journal]]></title>
+      <link>https://www.mastermind-x.com/blog/how-to-keep-a-trading-journal.html</link>
+      <description><![CDATA[Most trading journals die from friction or vanity metrics. The exact fields that let you compute expectancy, R multiples, and mistake cost per setup.]]></description>
+      <pubDate>Mon, 20 Jul 2026 12:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://www.mastermind-x.com/blog/how-to-keep-a-trading-journal.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[The Math of Losing Streaks]]></title>
+      <link>https://www.mastermind-x.com/blog/the-math-of-losing-streaks.html</link>
+      <description><![CDATA[Losing streaks are a mathematical certainty at any realistic win rate. The only question is whether your position sizing lets you survive them.]]></description>
+      <pubDate>Mon, 20 Jul 2026 12:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://www.mastermind-x.com/blog/the-math-of-losing-streaks.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[Why a 50% Loss Needs a 100% Gain]]></title>
+      <link>https://www.mastermind-x.com/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html</link>
+      <description><![CDATA[Losses and gains are not symmetric. A 50% drawdown requires a 100% return to recover — the math that makes drawdown depth the professional obsession.]]></description>
+      <pubDate>Mon, 20 Jul 2026 12:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://www.mastermind-x.com/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html</guid>
+    </item>
+    <item>
+      <title><![CDATA[Win Rate Is Overrated]]></title>
+      <link>https://www.mastermind-x.com/blog/win-rate-is-overrated.html</link>
+      <description><![CDATA[A 35% win rate can be more profitable than a 70% win rate. Expectancy — not how often you win — determines whether a system makes money.]]></description>
+      <pubDate>Mon, 20 Jul 2026 12:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://www.mastermind-x.com/blog/win-rate-is-overrated.html</guid>
+    </item>
+  </channel>
+</rss>
