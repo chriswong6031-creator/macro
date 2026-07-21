@@ -94,8 +94,6 @@
   #mmb-panel.max .mmb-threads{width:236px}
   .mmb-th-h{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px}
   .mmb-th-h span{font:700 11px/1 var(--mmb-font);letter-spacing:.08em;text-transform:uppercase;color:var(--mmb-muted)}
-  .mmb-newc{display:inline-flex;align-items:center;gap:5px;font:600 12px/1 var(--mmb-font);color:color-mix(in srgb,var(--mmb-info) 90%,#fff);cursor:pointer;
-    background:color-mix(in srgb,var(--mmb-info) 16%,transparent);border:1px solid color-mix(in srgb,var(--mmb-info) 32%,transparent);border-radius:999px;padding:5px 11px}
   .mmb-ti{margin:2px 8px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mmb-ti:hover{background:color-mix(in srgb,#fff 6%,transparent)}
   .mmb-ti.on{background:color-mix(in srgb,var(--mmb-info) 14%,transparent);border-color:color-mix(in srgb,var(--mmb-info) 30%,transparent)}
@@ -269,8 +267,7 @@
         '<button class="mmb-icon" data-act="home" title="Dashboard">' + ic('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>') + '</button>' +
         '<div class="sp"></div>' +
       '</div>' +
-      '<div class="mmb-threads"><div class="mmb-th-h"><span>' + L('Chats', '对话') + '</span>' +
-        '<button class="mmb-newc" data-act="new">' + ic('<path d="M12 5v14M5 12h14"/>') + L('New', '新建') + '</button></div>' +
+      '<div class="mmb-threads"><div class="mmb-th-h"><span>' + L('Chats', '对话') + '</span></div>' +
         '<div id="mmb-tlist"><div class="mmb-th-empty">' + L('Your conversations appear here.', '你的对话会显示在这里。') + '</div></div>' +
       '</div>' +
       '<div class="mmb-main"><div class="mmb-sidescrim" data-act="side"></div>' +
