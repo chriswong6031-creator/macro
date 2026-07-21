@@ -314,12 +314,19 @@
   <div class="cyc-cards" id="cyc-cards"></div>
 </div>
 
-<script src="regimedata/regime_prior.js?v=2195e02f" defer></script>
+<!-- Load order matters: optimize_assets.py adds ?v=<hash>+defer to every unqueried
+     local .js, so ALL of these defer and execute in source order after parse (data →
+     engine → charts → i18n → app), before DOMContentLoaded. mm_charts.js / cycle_app.js
+     must NOT carry a manual ?v= query — that makes optimize_assets skip them (leaving
+     them synchronous), so the app would run before the deferred engine data and abort on
+     `if (!ENGINE) return`. The two inline consumer scripts below read that data, so they
+     run on DOMContentLoaded (fires after every defer script). -->
+<script src="regimedata/regime_prior.js?v=5e3c4089" defer></script>
 <script src="cycle_data.js?v=2ce0cc08" defer></script>
-<script src="cycledata/cycle_engine.js?v=76b85ca8" defer></script>
-<script src="mm_charts.js?v=4"></script>
+<script src="cycledata/cycle_engine.js?v=26d9fbfa" defer></script>
+<script src="mm_charts.js?v=244eb769" defer></script>
 <script src="cycle_i18n.js?v=81162fb9" defer></script>
-<script src="cycle_app.js?v=3" defer></script>
+<script src="cycle_app.js?v=5d8df547" defer></script>
 <script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.CYCLE_ENGINE||window.CYCLE_META||{}).as_of||(window.CYCLE_META||{}).asOf||'';}catch(e){}});</script>
 <script>
 /* W4.5 regime-prior reconciliation banner — rendered after all data scripts load.

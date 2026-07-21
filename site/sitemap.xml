@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.mastermind-x.com/</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.mastermind-x.com/about-research.html</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/advanced.html</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/ai_desk.html</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/aibrief.html</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
@@ -215,6 +216,30 @@
   <url><loc>https://www.mastermind-x.com/vector.html</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/vector_allocation.html</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/whitehouse.html</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/blog/compound-growth-for-traders.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/blog/congress-trades-are-not-realtime-signals.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/blog/how-to-keep-a-trading-journal.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/blog/index.html</loc><lastmod>2026-07-21</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.mastermind-x.com/blog/the-math-of-losing-streaks.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/blog/win-rate-is-overrated.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/index.html</loc><lastmod>2026-07-21</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/ownership/insider-filings-form-4.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/risk/position-sizing.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/risk/risk-reward-expectancy.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/technical/52-week-highs.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/technical/macd.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/technical/market-breadth.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/technical/rsi.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/learn/technical/vwap-anchored-vwap.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/index.html</loc><lastmod>2026-07-21</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/cagr.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/compounding.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/drawdown-recovery.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/position-size.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/risk-reward.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/trade-profit.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/spreadsheets/trading-journal.html</loc><lastmod>2026-07-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/index.html</loc><lastmod>2026-07-19</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/MMM.html</loc><lastmod>2026-07-20</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/AOS.html</loc><lastmod>2026-07-20</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
