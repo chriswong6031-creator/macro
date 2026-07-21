@@ -8,8 +8,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Insurance — cycle & constituents</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="../theme.css?v=de86232e">
-<link rel="stylesheet" href="../assets/css/2eed8869.css?v=2eed8869">
+<link rel="stylesheet" href="../theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1200px)/2)); } }
+  html[data-lang="zh"] body { font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration:none; color:var(--link); }
+  h1 { font-size:20px; margin:0; } h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .navbtn { display:inline-block; padding:5px 11px; border-radius:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); font-size:13px; font-weight:600; }
+  .muted { color:var(--muted); }
+  .lad { display:inline-block; padding:2px 10px; border-radius:11px; font-weight:700; font-size:12px;
+         background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
+  .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 4px; padding:9px 12px; border-radius:9px; background:var(--panel2); border-left:4px solid var(--muted); font-size:14px; }
+  .entrytag { font-weight:800; font-size:12px; padding:3px 9px; border-radius:7px; background:var(--panel); border:1px solid var(--line); white-space:nowrap; }
+  .urg-now .entrytag{background:var(--up);color:#fff;} .urg-now{border-left-color:var(--up);}
+  .urg-imminent .entrytag{background:var(--g-cold);color:#fff;} .urg-imminent{border-left-color:var(--g-cold);}
+  .urg-caution .entrytag{background:var(--warn);color:#1a1a1a;} .urg-caution{border-left-color:var(--warn);}
+  .urg-exit .entrytag{background:var(--down);color:#fff;} .urg-exit{border-left-color:var(--down);}
+  .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2); border-left:3px solid var(--link); font-size:13px; color:var(--text); }
+  .agechip { font-size:11px; font-weight:700; padding:2px 7px; border-radius:9px; background:var(--panel); color:var(--muted); border:1px solid var(--line); white-space:nowrap; }
+  .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2); font-size:13px; line-height:1.6; }
+  .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin:9px 0; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
+  .help:hover .tip { display:block; }
+  .tv { margin-top:8px; }
+</style>
 </head>
 <body>
   
@@ -169,7 +199,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="../assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="../intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -228,8 +322,8 @@
     </div>
   </div>
   
-  <script src="../live_config.js?v=0add7ac4" defer></script>
-  <script src="../live.js?v=2758e158" defer></script>
+  <script src="../live_config.js"></script>
+  <script src="../live.js"></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -281,7 +375,7 @@
     <div id="lwchart" style="height:420px;width:100%"></div>
     <p class="muted" style="font-size:11.5px;margin:6px 0 0"><span class="l-en">Equal-weight basket index (rebased) · 50/200-day moving averages · drawn from our stored EOD prices (the free TradingView widget gates HKEX data behind a login)</span><span class="l-zh">等权篮子指数（再基准化）· 50/200 日均线 · 由我方存储的日线数据绘制（免费版 TradingView 组件需登录才能查看港股数据）</span></p>
     <!-- self-hosted (was unpkg, blocked in mainland China); reuse the vendored v4 bundle at site/ -->
-    <script src="../lightweight-charts.js?v=46fc6953" defer></script>
+    <script src="../lightweight-charts.js"></script>
     <script>
     (function () {
       var ch = {"t": ["2024-07-02", "2024-07-03", "2024-07-04", "2024-07-05", "2024-07-08", "2024-07-09", "2024-07-10", "2024-07-11", "2024-07-12", "2024-07-15", "2024-07-16", "2024-07-17", "2024-07-18", "2024-07-19", "2024-07-22", "2024-07-23", "2024-07-24", "2024-07-25", "2024-07-26", "2024-07-29", "2024-07-30", "2024-07-31", "2024-08-01", "2024-08-02", "2024-08-05", "2024-08-06", "2024-08-07", "2024-08-08", "2024-08-09", "2024-08-12", "2024-08-13", "2024-08-14", "2024-08-15", "2024-08-16", "2024-08-19", "2024-08-20", "2024-08-21", "2024-08-22", "2024-08-23", "2024-08-26", "2024-08-27", "2024-08-28", "2024-08-29", "2024-08-30", "2024-09-02", "2024-09-03", "2024-09-04", "2024-09-05", "2024-09-09", "2024-09-10", "2024-09-11", "2024-09-12", "2024-09-13", "2024-09-16", "2024-09-17", "2024-09-19", "2024-09-20", "2024-09-23", "2024-09-24", "2024-09-25", "2024-09-26", "2024-09-27", "2024-09-30", "2024-10-02", "2024-10-03", "2024-10-04", "2024-10-07", "2024-10-08", "2024-10-09", "2024-10-10", "2024-10-14", "2024-10-15", "2024-10-16", "2024-10-17", "2024-10-18", "2024-10-21", "2024-10-22", "2024-10-23", "2024-10-24", "2024-10-25", "2024-10-28", "2024-10-29", "2024-10-30", "2024-10-31", "2024-11-01", "2024-11-04", "2024-11-05", "2024-11-06", "2024-11-07", "2024-11-08", "2024-11-11", "2024-11-12", "2024-11-13", "2024-11-14", "2024-11-15", "2024-11-18", "2024-11-19", "2024-11-20", "2024-11-21", "2024-11-22", "2024-11-25", "2024-11-26", "2024-11-27", "2024-11-28", "2024-11-29", "2024-12-02", "2024-12-03", "2024-12-04", "2024-12-05", "2024-12-06", "2024-12-09", "2024-12-10", "2024-12-11", "2024-12-12", "2024-12-13", "2024-12-16", "2024-12-17", "2024-12-18", "2024-12-19", "2024-12-20", "2024-12-23", "2024-12-24", "2024-12-27", "2024-12-30", "2024-12-31", "2025-01-02", "2025-01-03", "2025-01-06", "2025-01-07", "2025-01-08", "2025-01-09", "2025-01-10", "2025-01-13", "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17", "2025-01-20", "2025-01-21", "2025-01-22", "2025-01-23", "2025-01-24", "2025-01-27", "2025-01-28", "2025-02-03", "2025-02-04", "2025-02-05", "2025-02-06", "2025-02-07", "2025-02-10", "2025-02-11", "2025-02-12", "2025-02-13", "2025-02-14", "2025-02-17", "2025-02-18", "2025-02-19", "2025-02-20", "2025-02-21", "2025-02-24", "2025-02-25", "2025-02-26", "2025-02-27", "2025-02-28", "2025-03-03", "2025-03-04", "2025-03-05", "2025-03-06", "2025-03-07", "2025-03-10", "2025-03-11", "2025-03-12", "2025-03-13", "2025-03-14", "2025-03-17", "2025-03-18", "2025-03-19", "2025-03-20", "2025-03-21", "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-27", "2025-03-28", "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-07", "2025-04-08", "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-14", "2025-04-15", "2025-04-16", "2025-04-17", "2025-04-22", "2025-04-23", "2025-04-24", "2025-04-25", "2025-04-28", "2025-04-29", "2025-04-30", "2025-05-02", "2025-05-06", "2025-05-07", "2025-05-08", "2025-05-09", "2025-05-12", "2025-05-13", "2025-05-14", "2025-05-15", "2025-05-16", "2025-05-19", "2025-05-20", "2025-05-21", "2025-05-22", "2025-05-23", "2025-05-26", "2025-05-27", "2025-05-28", "2025-05-29", "2025-05-30", "2025-06-02", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06", "2025-06-09", "2025-06-10", "2025-06-11", "2025-06-12", "2025-06-13", "2025-06-16", "2025-06-17", "2025-06-18", "2025-06-19", "2025-06-20", "2025-06-23", "2025-06-24", "2025-06-25", "2025-06-26", "2025-06-27", "2025-06-30", "2025-07-02", "2025-07-03", "2025-07-04", "2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11", "2025-07-14", "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24", "2025-07-25", "2025-07-28", "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08", "2025-08-11", "2025-08-12", "2025-08-13", "2025-08-14", "2025-08-15", "2025-08-18", "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28", "2025-08-29", "2025-09-01", "2025-09-02", "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12", "2025-09-15", "2025-09-16", "2025-09-17", "2025-09-18", "2025-09-19", "2025-09-22", "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-29", "2025-09-30", "2025-10-02", "2025-10-03", "2025-10-06", "2025-10-08", "2025-10-09", "2025-10-10", "2025-10-13", "2025-10-14", "2025-10-15", "2025-10-16", "2025-10-17", "2025-10-20", "2025-10-21", "2025-10-22", "2025-10-23", "2025-10-24", "2025-10-27", "2025-10-28", "2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-24", "2025-11-25", "2025-11-26", "2025-11-27", "2025-11-28", "2025-12-01", "2025-12-02", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-08", "2025-12-09", "2025-12-10", "2025-12-11", "2025-12-12", "2025-12-15", "2025-12-16", "2025-12-17", "2025-12-18", "2025-12-19", "2025-12-22", "2025-12-23", "2025-12-24", "2025-12-29", "2025-12-30", "2025-12-31", "2026-01-02", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30", "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-16", "2026-02-20", "2026-02-23", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-16", "2026-04-17", "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-04-24", "2026-04-27", "2026-04-28", "2026-04-29", "2026-04-30", "2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07", "2026-05-08", "2026-05-11", "2026-05-12", "2026-05-13", "2026-05-14", "2026-05-15", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-21", "2026-05-22", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22", "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29", "2026-06-30", "2026-07-02", "2026-07-03", "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21"], "c": [0.851, 0.862, 0.859, 0.845, 0.835, 0.839, 0.847, 0.866, 0.886, 0.871, 0.849, 0.864, 0.872, 0.856, 0.854, 0.848, 0.837, 0.82, 0.828, 0.835, 0.835, 0.864, 0.861, 0.843, 0.843, 0.811, 0.824, 0.818, 0.824, 0.828, 0.833, 0.827, 0.829, 0.84, 0.854, 0.853, 0.84, 0.85, 0.87, 0.881, 0.885, 0.907, 0.908, 0.944, 0.949, 0.938, 0.926, 0.94, 0.911, 0.904, 0.896, 0.901, 0.908, 0.906, 0.919, 0.951, 0.96, 0.973, 1.043, 1.069, 1.134, 1.198, 1.261, 1.398, 1.382, 1.466, 1.575, 1.301, 1.273, 1.349, 1.331, 1.265, 1.269, 1.256, 1.327, 1.314, 1.307, 1.343, 1.335, 1.339, 1.317, 1.321, 1.269, 1.271, 1.275, 1.276, 1.327, 1.28, 1.352, 1.313, 1.274, 1.213, 1.222, 1.201, 1.186, 1.202, 1.207, 1.213, 1.205, 1.15, 1.142, 1.138, 1.176, 1.163, 1.172, 1.188, 1.212, 1.197, 1.179, 1.211, 1.268, 1.245, 1.21, 1.223, 1.173, 1.154, 1.143, 1.163, 1.151, 1.143, 1.158, 1.178, 1.166, 1.176, 1.167, 1.111, 1.109, 1.107, 1.102, 1.09, 1.088, 1.048, 1.046, 1.069, 1.067, 1.084, 1.097, 1.111, 1.121, 1.093, 1.11, 1.14, 1.139, 1.135, 1.113, 1.137, 1.124, 1.137, 1.159, 1.159, 1.132, 1.166, 1.147, 1.197, 1.204, 1.203, 1.191, 1.169, 1.214, 1.243, 1.207, 1.262, 1.254, 1.182, 1.177, 1.171, 1.201, 1.256, 1.25, 1.241, 1.237, 1.243, 1.232, 1.308, 1.325, 1.34, 1.345, 1.28, 1.257, 1.268, 1.221, 1.233, 1.243, 1.246, 1.227, 1.247, 1.278, 1.25, 1.057, 1.068, 1.071, 1.081, 1.089, 1.122, 1.124, 1.107, 1.123, 1.137, 1.16, 1.15, 1.146, 1.126, 1.131, 1.161, 1.186, 1.188, 1.2, 1.216, 1.209, 1.263, 1.239, 1.313, 1.3, 1.282, 1.275, 1.297, 1.295, 1.285, 1.286, 1.284, 1.3, 1.293, 1.319, 1.3, 1.295, 1.321, 1.336, 1.368, 1.364, 1.395, 1.408, 1.456, 1.458, 1.447, 1.464, 1.469, 1.451, 1.409, 1.455, 1.476, 1.539, 1.595, 1.582, 1.548, 1.531, 1.543, 1.55, 1.548, 1.544, 1.557, 1.521, 1.558, 1.599, 1.61, 1.599, 1.578, 1.567, 1.628, 1.65, 1.676, 1.704, 1.743, 1.744, 1.802, 1.804, 1.833, 1.773, 1.726, 1.739, 1.766, 1.757, 1.774, 1.757, 1.743, 1.804, 1.831, 1.885, 1.902, 1.919, 1.874, 1.897, 1.895, 1.89, 1.91, 1.881, 1.818, 1.832, 1.804, 1.803, 1.785, 1.766, 1.717, 1.73, 1.733, 1.753, 1.782, 1.79, 1.796, 1.773, 1.716, 1.737, 1.697, 1.691, 1.664, 1.649, 1.649, 1.628, 1.647, 1.712, 1.706, 1.709, 1.694, 1.696, 1.689, 1.711, 1.739, 1.705, 1.713, 1.804, 1.829, 1.748, 1.776, 1.836, 1.805, 1.814, 1.822, 1.847, 1.838, 1.855, 1.832, 1.851, 1.862, 1.855, 1.909, 1.9, 1.953, 1.954, 2.006, 2.042, 1.999, 1.976, 1.91, 1.917, 1.916, 1.849, 1.847, 1.882, 1.882, 1.893, 1.861, 1.871, 1.889, 1.849, 1.867, 1.956, 1.97, 1.923, 1.936, 1.918, 1.982, 2.031, 1.988, 2.039, 2.048, 2.069, 2.073, 2.081, 2.084, 2.069, 2.058, 2.031, 2.103, 2.182, 2.265, 2.284, 2.237, 2.241, 2.223, 2.271, 2.253, 2.24, 2.248, 2.257, 2.313, 2.297, 2.234, 2.227, 2.271, 2.352, 2.394, 2.45, 2.425, 2.353, 2.377, 2.421, 2.379, 2.32, 2.405, 2.408, 2.359, 2.332, 2.266, 2.3, 2.292, 2.359, 2.257, 2.276, 2.2, 2.214, 2.163, 2.143, 2.077, 2.093, 2.111, 2.059, 2.11, 2.105, 2.081, 2.045, 2.066, 2.093, 2.118, 2.062, 2.066, 1.926, 1.998, 2.026, 1.953, 1.958, 1.917, 1.937, 1.987, 1.971, 2.054, 2.038, 2.069, 2.042, 2.072, 2.038, 2.076, 2.036, 2.056, 2.045, 2.029, 1.983, 2.003, 2.002, 1.98, 2.078, 2.095, 2.111, 2.118, 2.14, 2.206, 2.195, 2.195, 2.186, 2.142, 2.118, 2.093, 2.07, 2.066, 2.029, 2.023, 2.028, 2.04, 2.011, 1.978, 1.991, 1.999, 2.0, 1.977, 1.93, 1.9, 1.885, 1.897, 1.919, 1.935, 1.985, 2.04, 2.024, 1.994, 1.893, 1.963, 1.911, 1.865, 1.849, 1.796, 1.819, 1.792, 1.854, 1.877, 1.92, 1.883, 1.917, 1.883, 1.893, 1.872, 1.923, 1.95, 1.953, 1.91, 1.974, 2.005]};
@@ -390,8 +484,8 @@
   </div>
   
 
-<script src="../mtf.js?v=b62aea2f" defer></script>
-<script src="../theme.js?v=e63903ba" defer></script>
+<script src="../mtf.js"></script>
+<script src="../theme.js"></script>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
