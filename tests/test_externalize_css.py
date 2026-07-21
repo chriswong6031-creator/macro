@@ -65,6 +65,35 @@ def test_none_href_leaves_block_inline():
     assert externalize_css_text(html, lambda *a: None) == html
 
 
+def test_svg_internal_style_never_lifted():
+    # A <link rel=stylesheet> inside inline SVG parses as an inert SVG-namespace
+    # element (sheet never loads) — report figures rendered blank (2026-07-21).
+    html = f'<figure><svg viewBox="0 0 10 10"><style>{_BIG}</style><rect/></svg></figure>'
+    assert externalize_css_text(html, _href_for([])) == html
+
+
+def test_svg_internal_stays_while_html_block_lifts():
+    html = (
+        f"<head><style>{_BIG}</style></head>"
+        f"<body><svg><style>{_BIG}</style></svg></body>"
+    )
+    out = externalize_css_text(html, _href_for([]))
+    assert out.count("<style>") == 1  # svg block kept
+    assert "<svg><style>" in out  # kept exactly where it was
+    assert '<link rel="stylesheet"' in out  # head block lifted
+
+
+def test_nested_svg_style_stays_inline():
+    inner = f"<svg><g><svg><style>{_BIG}</style></svg></g></svg>"
+    assert externalize_css_text(inner, _href_for([])) == inner
+
+
+def test_unclosed_svg_treated_as_svg_to_eof():
+    # malformed page: opened svg never closes — err on the safe (inline) side
+    html = f"<svg><style>{_BIG}</style>"
+    assert externalize_css_text(html, _href_for([])) == html
+
+
 # ---- end-to-end sweep (real files) ----------------------------------------
 
 def test_sweep_externalizes_and_is_byte_identical(tmp_path):

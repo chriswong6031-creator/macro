@@ -101,6 +101,31 @@ def optimize_assets_text(text: str, hash_for: Callable[[str], Optional[str]]) ->
 # change. Tiny blocks stay inline (a request isn't worth a few hundred bytes).
 _STYLE_BLOCK_RE = re.compile(r"<style\b([^>]*)>(.*?)</style>", re.IGNORECASE | re.DOTALL)
 _MEDIA_ATTR_RE = re.compile(r'\bmedia\s*=\s*"([^"]*)"', re.IGNORECASE)
+_SVG_TAG_RE = re.compile(r"<svg\b|</svg\s*>", re.IGNORECASE)
+
+
+def _svg_spans(text: str) -> list[tuple[int, int]]:
+    """Top-level ``<svg>…</svg>`` spans in `text` (nesting collapsed via depth
+    count; an unclosed ``<svg`` extends to end-of-text). Used to keep SVG-internal
+    ``<style>`` blocks inline: an HTML ``<link rel=stylesheet>`` inside foreign
+    (SVG) content parses as an inert SVG-namespace element — the sheet never
+    loads and the figure renders unstyled (report figures went blank, 2026-07-21)."""
+    spans: list[tuple[int, int]] = []
+    depth = 0
+    start: Optional[int] = None
+    for m in _SVG_TAG_RE.finditer(text):
+        if not m.group(0).startswith("</"):
+            if depth == 0:
+                start = m.start()
+            depth += 1
+        elif depth:
+            depth -= 1
+            if depth == 0 and start is not None:
+                spans.append((start, m.end()))
+                start = None
+    if start is not None:
+        spans.append((start, len(text)))
+    return spans
 
 
 def externalize_css_text(
@@ -114,13 +139,17 @@ def externalize_css_text(
     ``index`` is the block's 1-based position on the page; ``media`` is its
     ``media`` attribute if any (carried onto the link). The CSS crosses over
     byte-for-byte, so rendering is unchanged. Idempotent: a page already free of
-    ``<style>`` blocks is returned untouched.
+    ``<style>`` blocks is returned untouched. Blocks inside inline ``<svg>``
+    elements are NEVER lifted (see ``_svg_spans``) — a ``<link>`` there is inert.
     """
     counter = [0]
+    svg_spans = _svg_spans(text)
 
     def _repl(m: "re.Match[str]") -> str:
         attrs, css = m.group(1), m.group(2)
         counter[0] += 1
+        if any(a <= m.start() < b for a, b in svg_spans):
+            return m.group(0)  # SVG-internal <style>: must stay inline
         media_m = _MEDIA_ATTR_RE.search(attrs)
         media = media_m.group(1) if media_m else None
         href = make_href(css, counter[0], media)
