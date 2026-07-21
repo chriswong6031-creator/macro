@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/build_site.py",
-  "produced_at": "2026-07-21T20:12:11Z",
+  "produced_at": "2026-07-21T21:45:40Z",
   "inputs_hash": "sha256:c574005bc86bef928626a9d38c5b556abb0733a97d4b2ee1021d75a8a57a783d",
   "tier": "display",
   "artifact_path": "site/neuralwebdata/health_history.json",

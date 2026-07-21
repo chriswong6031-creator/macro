@@ -335,19 +335,26 @@
   <div class="cyc-cards" id="cyc-cards"></div>
 </div>
 
+<!-- Load order matters (#3159 doctrine): optimize_assets adds ?v=<hash>+defer to every
+     unqueried local .js, so ALL of these defer and run in source order (prior → i18n →
+     data → engine → charts → app) before DOMContentLoaded. Never manually pin ?v= here —
+     a pinned ref is SKIPPED by the pass, stays synchronous, and races ahead of the
+     deferred data (that blanked cycle.html). Inline consumers below run on
+     DOMContentLoaded (fires after every defer script). -->
 <script src="regimedata/regime_prior.js?v=8d9b1507" defer></script>
-<script src="markets_i18n.js?v=2"></script>
-<script src="markets_data.js?v=2"></script>
-<script src="marketsdata/markets_engine.js?v=1"></script>
-<script src="mm_charts.js?v=4"></script>
-<script src="markets_app.js?v=7"></script>
-<script>try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}</script>
+<script src="markets_i18n.js?v=85a87240" defer></script>
+<script src="markets_data.js?v=ae8afe5b" defer></script>
+<script src="marketsdata/markets_engine.js?v=48582ba4" defer></script>
+<script src="mm_charts.js?v=244eb769" defer></script>
+<script src="markets_app.js?v=e660b9cf" defer></script>
+<script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}});</script>
 <script>
 /* W4.5 regime-prior reconciliation banner for markets.html.
    Two layers: (0) CONTRADICTION — curated market regime_claim quad (us / hk carry a
    US-quad premise) vs the live engine quad, from MARKETS_ENGINE.regime_disagreement,
    softened to amber when the engine read is itself provisional; (1) prior stale/partial;
-   (2) MARKET_META.asOf > 30 days old. Dual-span EN/zh — no t() in attributes. */
+   (2) MARKET_META.asOf > 30 days old. Dual-span EN/zh — no t() in attributes.
+   Runs on DOMContentLoaded so the deferred data scripts are guaranteed loaded. */
 document.addEventListener('DOMContentLoaded',function(){
   try{
     var host=document.getElementById('regime-prior-banner');
@@ -398,7 +405,8 @@ document.addEventListener('DOMContentLoaded',function(){
 /* markets_data.js staleness banner — INTL-47.
    markets_data.js is a hand-curated static file; its MARKET_META.asOf is the
    authoritative freshness date. Show a visible warning when >5 days old so the
-   reader is never misled by stale "now" blocks (level / %-off-ATH / valuations). */
+   reader is never misled by stale "now" blocks (level / %-off-ATH / valuations).
+   Runs on DOMContentLoaded — markets_data.js is deferred (see load-order note). */
 document.addEventListener('DOMContentLoaded',function(){
   try {
     var asOf = (window.MARKET_META||{}).asOf;
@@ -419,7 +427,7 @@ document.addEventListener('DOMContentLoaded',function(){
   } catch(e) {}
 });
 </script>
-<script src="theme.js?v=e63903ba" defer></script>
+<script src="theme.js?v=195f6d56" defer></script>
 <script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>
