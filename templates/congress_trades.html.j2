@@ -69,6 +69,9 @@
   .cg-num { font-variant-numeric:tabular-nums; font-weight:700; }
   .cg-flag { display:inline-block; padding:1px 7px; border-radius:5px; font-size:10px; font-weight:700; letter-spacing:.02em; white-space:nowrap; }
   .cg-flag.act  { background:#1f9a5522; color:#1f9a55; } html[data-theme="dark"] .cg-flag.act { color:#3fc07e; }
+  /* zh 红涨绿跌: .act = actionable/bullish entry → red in zh */
+  html[data-lang="zh"] .cg-flag.act { background:#d23f3f22; color:#d23f3f; }
+  html[data-theme="dark"][data-lang="zh"] .cg-flag.act { color:#ef6a6a; }
   .cg-flag.wait { background:#e0973a22; color:#c77a1f; } html[data-theme="dark"] .cg-flag.wait { color:#e0973a; }
   .cg-flag.imp  { background:#5b8def22; color:#5b8def; }
   .cg-flag.bip  { background:var(--panel2); color:var(--text); border:1px solid var(--line); }
@@ -101,6 +104,18 @@
   .side-chip.sell { background:#d23f3f22; color:#d23f3f; } html[data-theme="dark"] .side-chip.sell { color:#ef6a6a; }
   .arrow-buy  { color:#1f9a55; } html[data-theme="dark"] .arrow-buy  { color:#3fc07e; }
   .arrow-sell { color:#d23f3f; } html[data-theme="dark"] .arrow-sell { color:#ef6a6a; }
+  /* zh 红涨绿跌 (operator ruling 2026-07-21): buy/add=bullish → red; sell/exit=bearish → green */
+  html[data-lang="zh"] .side-chip.buy  { background:#d23f3f22; color:#d23f3f; }
+  html[data-lang="zh"] .side-chip.sell { background:#1f9a5522; color:#1f9a55; }
+  html[data-lang="zh"] .arrow-buy  { color:#d23f3f; }
+  html[data-lang="zh"] .arrow-sell { color:#1f9a55; }
+  html[data-theme="dark"][data-lang="zh"] .side-chip.buy  { color:#ef6a6a; }
+  html[data-theme="dark"][data-lang="zh"] .side-chip.sell { color:#3fc07e; }
+  html[data-theme="dark"][data-lang="zh"] .arrow-buy  { color:#ef6a6a; }
+  html[data-theme="dark"][data-lang="zh"] .arrow-sell { color:#3fc07e; }
+  /* .mb-tier-proven: a strong congress-member track record is a direction-win read → zh red */
+  html[data-lang="zh"] .mb-tier-proven { color:#d23f3f; }
+  html[data-theme="dark"][data-lang="zh"] .mb-tier-proven { color:#ef6a6a; }
   .feedlink { font-size:11.5px; }
   .mb-tier-proven { color:#1f9a55; font-weight:700; } html[data-theme="dark"] .mb-tier-proven { color:#3fc07e; }
   .mb-tier-watch  { color:#5b8def; font-weight:600; }

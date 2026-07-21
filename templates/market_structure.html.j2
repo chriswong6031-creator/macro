@@ -68,6 +68,8 @@ a{color:var(--blue);text-decoration:none}
 .stance-chip.watch{background:rgba(242,178,77,.16);color:var(--amb)}
 .stance-chip.act{background:rgba(55,208,127,.16);color:var(--up)}
 .stance-chip.caution{background:rgba(255,106,106,.14);color:var(--dn)}
+/* zh 红涨绿跌 (operator ruling 2026-07-21): act = risk-on/bullish stance → red in zh */
+html[data-lang="zh"] .stance-chip.act{background:rgba(211,11,11,.13);color:var(--red)}
 .stance-chip.neutral{background:var(--panel2);color:var(--mut);border:1px solid var(--line)}
 /* ── help tooltip ── */
 .help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--faint);color:var(--faint);font-size:9.5px;font-weight:700;cursor:help;position:relative;vertical-align:middle;margin-left:5px}

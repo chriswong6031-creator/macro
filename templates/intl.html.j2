@@ -40,9 +40,11 @@
   .chip.ok { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,transparent); }
   /* quad chip */
   .quad { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:9px; font-weight:800; font-size:12px; color:#fff; }
-  .q-Q1 { background:#2e9e4f; } .q-Q2 { background:#d4a017; } .q-Q3 { background:#d04545; } .q-Q4 { background:#3f78d8; }
+  /* zh 红涨绿跌: q1/q3 use token vars so theme.css's html[data-lang="zh"] swap picks them up
+     automatically (no per-page mirror needed). q2/q4 (amber/blue) are direction-neutral. */
+  .q-Q1 { background:var(--q1,#2e9e4f); } .q-Q2 { background:#d4a017; } .q-Q3 { background:var(--q3,#d04545); } .q-Q4 { background:#3f78d8; }
   .qdot { width:9px;height:9px;border-radius:50%;display:inline-block; }
-  .qd-Q1{background:#2e9e4f}.qd-Q2{background:#d4a017}.qd-Q3{background:#d04545}.qd-Q4{background:#3f78d8}
+  .qd-Q1{background:var(--q1,#2e9e4f)}.qd-Q2{background:#d4a017}.qd-Q3{background:var(--q3,#d04545)}.qd-Q4{background:#3f78d8}
   /* comparison grid */
   .gridwrap { overflow-x:auto; }
   table.cmp { border-collapse:collapse; width:100%; font-size:12.5px; min-width:1080px; }
@@ -62,7 +64,7 @@
   /* heatmap scatter */
   .scatter { position:relative; height:300px; border:1px solid var(--line); border-radius:10px; margin-top:8px; background:
      linear-gradient(to right, color-mix(in srgb,#3f78d8 7%,transparent), transparent 50%, color-mix(in srgb,#d4a017 7%,transparent)),
-     linear-gradient(to top, color-mix(in srgb,#3f78d8 6%,transparent), transparent 50%, color-mix(in srgb,#2e9e4f 6%,transparent)); }
+     linear-gradient(to top, color-mix(in srgb,#3f78d8 6%,transparent), transparent 50%, color-mix(in srgb,var(--q1,#2e9e4f) 6%,transparent)); }
   .scatter .axx, .scatter .axy { position:absolute; background:var(--line); }
   .scatter .axx { left:0; right:0; top:50%; height:1px; } .scatter .axy { top:0; bottom:0; left:50%; width:1px; }
   .scatter .ql { position:absolute; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
