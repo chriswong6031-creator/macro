@@ -35,12 +35,17 @@
     MIXED: ["Trade with caution. Size small.", "谨慎操作，仓位缩小。"],
     RISK_OFF: ["Defend capital first. Reduce risk.", "优先保住本金，降低风险。"]
   };
-  var HEX = { green: "#22d97a", yellow: "#f59e0b", red: "#ef4444" };
-  var GLOW = { green: "rgba(34,217,122,.7)", yellow: "rgba(245,158,11,.7)", red: "rgba(239,68,68,.7)" };
-  var SOFT = { green: "rgba(34,217,122,.30)", yellow: "rgba(245,158,11,.30)", red: "rgba(239,68,68,.30)" };
-  var HALO = { green: "rgba(34,217,122,.14)", yellow: "rgba(245,158,11,.14)", red: "rgba(239,68,68,.14)" };
+  /* zh 红涨绿跌 (operator ruling 2026-07-21): the state colours are DIRECTION reads
+     (risk-on=bullish), so they route through the zh-swapping --up/--warn/--down tokens
+     instead of literal hex. These are CSS values, so every consumer below MUST write
+     them via el.style.* (inline style resolves var()/color-mix; bare SVG presentation
+     attributes do not) — which also means a lang toggle recolours instantly, no repaint. */
+  var HEX = { green: "var(--up)", yellow: "var(--warn)", red: "var(--down)" };
+  var GLOW = { green: "color-mix(in srgb,var(--up) 70%,transparent)", yellow: "color-mix(in srgb,var(--warn) 70%,transparent)", red: "color-mix(in srgb,var(--down) 70%,transparent)" };
+  var SOFT = { green: "color-mix(in srgb,var(--up) 30%,transparent)", yellow: "color-mix(in srgb,var(--warn) 30%,transparent)", red: "color-mix(in srgb,var(--down) 30%,transparent)" };
+  var HALO = { green: "color-mix(in srgb,var(--up) 14%,transparent)", yellow: "color-mix(in srgb,var(--warn) 14%,transparent)", red: "color-mix(in srgb,var(--down) 14%,transparent)" };
   var WTD_ICON = { green: "mx5-ai-green", yellow: "mx5-ai-yellow", red: "mx5-ai-gray" };
-  var WTD_STROKE = { green: "#22d97a", yellow: "#f59e0b", red: "rgba(255,255,255,.38)" };
+  var WTD_STROKE = { green: "var(--up)", yellow: "var(--warn)", red: "rgba(255,255,255,.38)" };
   var WTD_SHAPE = {
     green: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
     yellow: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
@@ -100,13 +105,13 @@
     var lastP = pts[pts.length - 1];
     var lineStr = pts.map(function (p) { return p.x + "," + p.y; }).join(" ");
     var poly = svg.querySelector("polyline");
-    if (poly) { poly.setAttribute("points", lineStr); poly.setAttribute("stroke", col); }
+    if (poly) { poly.setAttribute("points", lineStr); poly.style.stroke = col; }
     var area = svg.querySelector('path[fill^="url("]');
     if (area)
       area.setAttribute("d", "M" + lineStr.replace(/ /g, " L") +
                              " L" + lastP.x + "," + PYB + " L" + PX0 + "," + PYB + " Z");
     var stops = svg.querySelectorAll("linearGradient stop");
-    for (i = 0; i < stops.length; i++) stops[i].setAttribute("stop-color", col);
+    for (i = 0; i < stops.length; i++) stops[i].style.stopColor = col;
     var tdot = document.querySelector(".mx5-sc-right .mx5-pl-today");
     if (tdot) {
       tdot.style.left = (lastP.x / VBW * 100).toFixed(2) + "%";
@@ -260,19 +265,19 @@
       /* inline-SVG accents carry the render-time color as attributes — repaint */
       var num = document.getElementById("mx5-score-numeral");
       if (num) {
-        num.setAttribute("fill", HEX[col]);
+        num.style.fill = HEX[col];
         num.style.filter = "drop-shadow(0 0 10px " + GLOW[col] + ")";
       }
       var ndl = document.getElementById("mx5-gauge-needle");
       if (ndl) {
         var nln = ndl.querySelector("line");
-        if (nln) nln.setAttribute("stroke", SOFT[col]);
+        if (nln) nln.style.stroke = SOFT[col];
         var ncs = ndl.querySelectorAll("circle");
         if (ncs.length >= 4) {
-          ncs[0].setAttribute("fill", HALO[col]);
-          ncs[1].setAttribute("stroke", HEX[col]);
-          ncs[2].setAttribute("fill", HEX[col]);
-          ncs[3].setAttribute("fill", HEX[col]);
+          ncs[0].style.fill = HALO[col];
+          ncs[1].style.stroke = HEX[col];
+          ncs[2].style.fill = HEX[col];
+          ncs[3].style.fill = HEX[col];
           ncs[3].style.filter = "drop-shadow(0 0 4px " + HEX[col] + ")";
         }
       }
@@ -297,7 +302,7 @@
         wicon.classList.remove("mx5-ai-green", "mx5-ai-yellow", "mx5-ai-gray");
         wicon.classList.add(WTD_ICON[col]);
         var wsvg = wicon.querySelector("svg");
-        if (wsvg) { wsvg.setAttribute("stroke", WTD_STROKE[col]); wsvg.innerHTML = WTD_SHAPE[col]; }
+        if (wsvg) { wsvg.style.stroke = WTD_STROKE[col]; wsvg.innerHTML = WTD_SHAPE[col]; }
       }
       /* the flip-condition line belongs to the BAKED verdict — its trigger prose is
          stale (or already met) once the live band moves off it, so hide it then. */
