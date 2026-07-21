@@ -104,10 +104,12 @@ html[data-theme="dark"] .mm-stage{box-shadow:0 22px 72px color-mix(in srgb,var(-
 .mm-stage-glow{position:absolute;inset:0;pointer-events:none;opacity:.7;
   background:radial-gradient(320px 210px at 90% -12%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 70%)}
 .mm-flag{position:relative;display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;
-  background:linear-gradient(120deg,var(--grad));background-size:200% 100%;padding:5px 13px;border-radius:999px;animation:mm-flow 6s linear infinite}
+  background:linear-gradient(120deg,var(--grad));background-size:200% 100%;padding:5px 13px;border-radius:999px;animation:mm-flow 6s steps(40) infinite}
+/* Perf: background-position drift repaints per frame — steps(40/60) ≈ 6fps is
+   visually identical on these soft gradients (2026-07-21 mobile audit). */
 @keyframes mm-flow{to{background-position:200% 0}}
 .mm-h1{position:relative;font-size:36px;font-weight:800;letter-spacing:-.02em;margin:13px 0 6px;
-  background:linear-gradient(90deg,var(--grad),var(--accent));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:mm-shimmer 9s linear infinite}
+  background:linear-gradient(90deg,var(--grad),var(--accent));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:mm-shimmer 9s steps(60) infinite}
 @keyframes mm-shimmer{to{background-position:300% 0}}
 .mm-lead{position:relative;color:var(--muted);font-size:14.5px;max-width:850px;line-height:1.55;margin-bottom:18px}
 .mm-hero-mets{position:relative;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px}

@@ -88,13 +88,19 @@ html[data-theme="dark"] .stance{background:var(--grid)}
   border:1.5px solid transparent;box-shadow:0 10px 40px rgba(40,95,255,.10)}
 html[data-theme="dark"] .mm-hero{box-shadow:0 14px 50px rgba(120,80,255,.18)}
 .mm-hero-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.mm-pin{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#fff;
-  background:linear-gradient(120deg,#285fff,#a855f7);padding:4px 10px;border-radius:999px;animation:mm-pulse 2.6s ease-out infinite}
-@keyframes mm-pulse{0%{box-shadow:0 0 0 0 rgba(168,85,247,.45)}70%{box-shadow:0 0 0 9px rgba(168,85,247,0)}100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}}
+/* Perf (2026-07-21 mobile audit): ping on a pseudo (transform/opacity = compositor;
+   box-shadow spread repainted per frame); shimmer at steps(60) ≈ 6fps — visually
+   identical soft drift, ~90% fewer text repaints. */
+.mm-pin{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#fff;position:relative;
+  background:linear-gradient(120deg,#285fff,#a855f7);padding:4px 10px;border-radius:999px}
+.mm-pin::after{content:"";position:absolute;inset:0;border-radius:999px;pointer-events:none;
+  box-shadow:0 0 0 4px rgba(168,85,247,.45);animation:mm-ping 2.6s ease-out infinite}
+@keyframes mm-ping{0%{transform:scale(1);opacity:1}70%,100%{transform:scale(1.9);opacity:0}}
 .mm-title{font-size:20px;font-weight:800;letter-spacing:-.02em;
   background:linear-gradient(90deg,#1FA971,#285fff,#a855f7,#1FA971);background-size:300% 100%;
-  -webkit-background-clip:text;background-clip:text;color:transparent;animation:mm-shimmer 9s linear infinite}
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:mm-shimmer 9s steps(60) infinite}
 @keyframes mm-shimmer{to{background-position:300% 0}}
+@media(prefers-reduced-motion:reduce){.mm-pin::after,.mm-title{animation:none}}
 .mm-sub{color:var(--muted);font-size:13px}
 .mm-hub-link{margin-left:auto;font-size:13px;font-weight:700;color:var(--blue);text-decoration:none;white-space:nowrap}
 .mm-hub-link:hover{text-decoration:underline}

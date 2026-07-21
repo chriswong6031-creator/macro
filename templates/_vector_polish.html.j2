@@ -83,13 +83,18 @@ html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.acti
    pages, and commodities' --panel2/--line/--tx/--mut/--blue. Loaded after each page's
    own <style> (and after theme.css on the two pages that link it), so it wins. */
 .site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}
-.site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;transition:border-color .18s,box-shadow .25s ease;animation:vpSearchGlow 3.8s ease-in-out infinite}
-@keyframes vpSearchGlow{
-  0%,100%{border-color:color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));box-shadow:0 0 0 0 rgba(65,106,236,0),0 0 5px 0 rgba(65,106,236,.10)}
-  50%{border-color:#416aec;box-shadow:0 0 0 3px rgba(65,106,236,.22),0 0 16px 2px rgba(65,106,236,.38)}}
+.site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;box-shadow:0 0 5px 0 rgba(65,106,236,.10);transition:border-color .18s,box-shadow .25s ease}
+/* Perf: glow breathe on a pseudo animating ONLY opacity (compositor) — animating
+   border/box-shadow on the input restyled+repainted every frame (2026-07-21 mobile
+   audit; mirrors theme.css .nav-search::after). Local keyframes: vector-family
+   pages don't all load theme.css. */
+.site-nav .nav-search{position:relative}
+.site-nav .nav-search::after{content:"";position:absolute;inset:0;border-radius:10px;border:1px solid #416aec;box-shadow:0 0 0 3px rgba(65,106,236,.22),0 0 16px 2px rgba(65,106,236,.38);opacity:0;pointer-events:none;animation:vpGlowO 3.8s ease-in-out infinite}
+.site-nav .nav-search:focus-within::after{animation:none;opacity:0}
+@keyframes vpGlowO{0%,100%{opacity:0}50%{opacity:1}}
 .site-nav .nav-search input::placeholder{color:var(--muted,var(--mut))}
-.site-nav .nav-search input:focus{border-color:var(--blue,var(--link));animation:none;box-shadow:none}
-@media(prefers-reduced-motion:reduce){.site-nav .nav-search input{animation:none}}
+.site-nav .nav-search input:focus{border-color:var(--blue,var(--link));box-shadow:none}
+@media(prefers-reduced-motion:reduce){.site-nav .nav-search::after{animation:none;opacity:0}}
 .site-nav .nav-sugg{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:80;background:var(--glass-bg,color-mix(in srgb,var(--card,var(--panel)) 92%,transparent));-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));border:1px solid var(--glass-brd,color-mix(in srgb,var(--ink) 12%,transparent));border-radius:13px;overflow:hidden;overflow-y:auto;max-height:60vh;box-shadow:var(--glass-shadow,0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20));display:none}
 html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55))}
 .site-nav .nav-sugg.show{display:block}
