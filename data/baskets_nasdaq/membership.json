@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-20",
+ "as_of": "2026-07-21",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -82,12 +82,12 @@
      "name": "Automatic Data Processing Inc"
     },
     {
-     "ticker": "ADBE",
-     "name": "Adobe Inc"
-    },
-    {
      "ticker": "DDOG",
      "name": "Datadog Inc"
+    },
+    {
+     "ticker": "ADBE",
+     "name": "Adobe Inc"
     },
     {
      "ticker": "CDNS",
@@ -524,12 +524,12 @@
      "name": "Automatic Data Processing Inc"
     },
     {
-     "ticker": "ADBE",
-     "name": "Adobe Inc"
-    },
-    {
      "ticker": "DDOG",
      "name": "Datadog Inc"
+    },
+    {
+     "ticker": "ADBE",
+     "name": "Adobe Inc"
     },
     {
      "ticker": "CDNS",
