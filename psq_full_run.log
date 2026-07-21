@@ -1,0 +1,14 @@
+INFO run_prophet_stage_quality: PSQ: building universe under /Users/chriswong/Documents/Cluade/Macro Dashboard/data
+INFO run_prophet_stage_quality: PSQ: 52078 total fires across 2811 names with prices
+INFO run_prophet_stage_quality: PSQ: wrote /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-acd06d6c505aeadc4/data/research/psq_results.json
+INFO run_prophet_stage_quality: PSQ: wrote /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-acd06d6c505aeadc4/data/research/psf_fires.parquet (1.8 MB) — within 20 MB limit, committed
+INFO run_prophet_stage_quality: PSQ: wrote /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-acd06d6c505aeadc4/research/reports/PROPHET_STAGE_QUALITY_RESULTS.md
+============================================================
+PSQ MECHANICAL VERDICTS
+============================================================
+PSQ_H1: PASS  |  CI=[0.015671785420015877, 0.04018981108803949]  |  diff=0.027943063150397962
+PSQ_H2: PASS  |  CI=[0.009801330956768719, 0.045230796108973424]  |  diff=0.02717371836046334
+PSQ_H3: FAIL  |  CI=[0.0, 0.0]  |  diff=0.0
+KILL_PSQ: not triggered
+============================================================
+PROXY (PSF §0): Prophet has NO backtestable history (5 live entries post-2026-07-10). This is a FUSION-MECHANISM test on the repo's backing-artifact-backed T1-T4 confluence cascade as a PIT-replayable Prophet-family timing entry — NOT a Prophet replay. A positive result is evidence the mechanism helps Prophet's own entries, to be confirmed forward on live Prophet from go-live (~Dec 2026). Results are display-tier until operator-ratified promotion.

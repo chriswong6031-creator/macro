@@ -142,4 +142,4 @@ affected re-run.
 
 | Amendment | Date | Change | Reason |
 |---|---|---|---|
-| — | — | — | — |
+| A1 | 2026-07-20 | §0's "the SAME fires this test will re-grade" corrected post-run: the re-grade ran on a re-generated universe snapshot (live globs 2,759→2,520, fires 56,237→52,078, ~9% churn from nightly store mutation), not PSF's literal fire set; arm definitions/filters/ruler unchanged. Disclosure added to results doc §0 + generator. No estimator, threshold, or arm change. | Opus review round 1 finding (undisclosed drift); post-run DISCLOSURE amendment — labeled as such since §7 requires amendments before re-runs; the falsifier machinery it describes was frozen pre-run and is unaffected |

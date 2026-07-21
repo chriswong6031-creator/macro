@@ -13,6 +13,16 @@ Spec: `research/PROPHET_STAGE_QUALITY_PREREG.md` · generated 2026-07-20T23:57:4
 > The point estimates below were known before registration; only the CI machinery
 > and pass lines were not.
 
+> **UNIVERSE-DRIFT DISCLOSURE (review round 1):** this re-grade runs on a
+> RE-GENERATED universe snapshot, not PSF's literal fire set: nightly store churn
+> moves the union universe between runs (PSF run: 2,759 live globs / 56,237 fires;
+> the 2026-07-20 PSQ run: 2,520 / 52,078, ~9% live-glob churn). Arm definitions,
+> filters, and ruler are frozen by reference (prereg §2); the FIRES are a drifted
+> snapshot of the same construction. On the PSQ snapshot the hypothesis-generating
+> shift reads A→C 2.29%→5.08% (vs 1.8%→4.7% on PSF's snapshot — both quoted
+> deliberately; prereg amendment A1). Reviewer robustness: 50× jackknife dropping
+> 10% of names kept the H1 diff in [+2.14, +3.09]pp, always above the +1.5pp floor.
+
 > **PROXY DISCLOSURE (PSF §0 applies verbatim):** PROXY (PSF §0): Prophet has NO backtestable history (5 live entries post-2026-07-10). This is a FUSION-MECHANISM test on the repo's backing-artifact-backed T1-T4 confluence cascade as a PIT-replayable Prophet-family timing entry — NOT a Prophet replay. A positive result is evidence the mechanism helps Prophet's own entries, to be confirmed forward on live Prophet from go-live (~Dec 2026). Results are display-tier until operator-ratified promotion.
 
 ## Universe
@@ -125,7 +135,7 @@ Spec: `research/PROPHET_STAGE_QUALITY_PREREG.md` · generated 2026-07-20T23:57:4
 
 ## Per-fire dump (reproducibility artifact)
 
-- Per-fire parquet committed at `/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-acd06d6c505aeadc4/data/research/psf_fires.parquet` (1.8 MB).
+- Per-fire parquet committed at `data/research/psf_fires.parquet` (1.8 MB; name per prereg §4).
 
 ## PSF win-rate falsifiers (carried from predecessor test — context only)
 
@@ -135,4 +145,33 @@ Spec: `research/PROPHET_STAGE_QUALITY_PREREG.md` · generated 2026-07-20T23:57:4
 
 ## Adjudication (main loop)
 
-PENDING
+Ruled 2026-07-20 by main-loop Fable, after an opus adversarial stats review whose
+independent reimplementation reproduced every reported statistic to reporting precision
+from the committed per-fire parquet (H1/H2/H3 CIs, decompositions, de-overlap leg,
+regime table, win-rates), verified the H3 aggregator fix and its regression test, and
+ordered the universe-drift disclosure now carried in §0.
+
+- **PSQ-H1 PASS stands.** Median `fwd_ret_126` tilt C−A = **+2.79pp, CI [+1.57, +4.02]**,
+  above the pre-registered +1.5pp economic floor; de-overlapped robustness +3.19pp
+  CI [+1.42, +5.08]; survives the 10%-name-churn jackknife. PSQ-H2 supports (EA +2.72pp,
+  CI-clean). PSQ-H3 FAIL is filed as-is: stopped-rate −1.97pp with CI upper +0.31% —
+  directionally favorable, not CI-clean. **The tilt's case rests on return quality, not
+  loss avoidance.**
+- **Promotion granted per prereg §6 — PROVISIONAL quality/hold-tilt authority** for
+  Stage-2∩EC on Prophet picks: position-size multiplier cap ≤ 1.25× and/or hold-leash
+  extension on picks Stage-2∩EC-positive at entry. **Never an entry veto; never rank
+  suppression of non-Stage picks** (PSF killed that authority; ~31% of unfiltered fires
+  still win). Implementation is chartered as its own follow-up wave — nothing in this PR
+  touches Prophet live code.
+- **Auto-demote armed:** at the forward shadow's (#3157) maturity gate (~2026-12), a
+  shadow median-tilt point estimate ≤ 0 for Stage-2∩EC-tagged picks reverts this
+  authority to display-tier automatically, no new ruling required; > 0 removes the
+  provisional label.
+- **KILL predicate not triggered**, but the regime leg is binding design input: the tilt
+  is bull-loaded (2022_bear −1.56pp, the lone negative regime). The implementation wave
+  MUST carry the regime table — the multiplier is not regime-independent, and the design
+  must decide explicitly what the tilt does in a bear tape (flat 1.0× is the default
+  posture).
+- Registry: the PSF row's LEFT-OPEN (ii) is marked RESOLVED by this test (edit landed
+  with #3161). No kill row — this is a PASS. Same-sample caveat stands in full; the
+  word "validated" is not earned and does not appear.
