@@ -1,0 +1,1535 @@
+{
+  "proxy_disclosure": "PROXY (PSF \u00a70): Prophet has NO backtestable history (5 live entries post-2026-07-10). This is a FUSION-MECHANISM test on the repo's backing-artifact-backed T1-T4 confluence cascade as a PIT-replayable Prophet-family timing entry \u2014 NOT a Prophet replay. A positive result is evidence the mechanism helps Prophet's own entries, to be confirmed forward on live Prophet from go-live (~Dec 2026). Results are display-tier until operator-ratified promotion.",
+  "spec": "research/PROPHET_STAGE_FUSION_PREREG.md",
+  "generated_utc": "2026-07-20T23:57:46.540890+00:00",
+  "universe": {
+    "n_union_universe": 2811,
+    "n_with_prices": 2811,
+    "n_late_ipo_excluded_counted": 18,
+    "min_completed_weeks_gate": 45,
+    "bench": "SPY",
+    "window": [
+      "2022-01-01",
+      "2026-07-17"
+    ],
+    "sampled": false,
+    "sample_n": 2811,
+    "sample_note": null,
+    "survivorship": {
+      "n_live_globbed": 2520,
+      "n_dead_name_added_counted": 291,
+      "n_pit_members_traded_in_window": 1889,
+      "n_pit_absent_no_price_source": 336,
+      "posture": "survivor-LEAN, not full PIT: live globs UNION delisted dead-name tickers (+291 counted); 336 S&P-1500 PIT members that traded 2022-26 have NO price source anywhere and remain absent. Falsifier verdicts are DELTA-based (A\u2192B\u2192C); survivorship inflates all arms' ABSOLUTE win-rates ~symmetrically, so the null on the delta is robust to the residual lean, while absolute win-rates are upward-biased."
+    }
+  },
+  "n_fires_total": 52078,
+  "ec_gate": 24,
+  "fire_multiplicity": {
+    "n_names": 2722,
+    "n_fires": 52078,
+    "mean_fires_per_name": 19.132255694342394,
+    "median_fires_per_name": 20.0,
+    "max_fires_per_name": 33,
+    "note": "Per-name fire multiplicity: each name fires ~N times over the window and each fire opens an OVERLAPPING 126-bar forward window, so same-name fires are strongly dependent. The Wilson CIs (on n_entries) ignore this; the month-block bootstrap and the de-overlapped robustness arm address it."
+  },
+  "params": {
+    "clean15_126": {
+      "arms": {
+        "A": {
+          "overall": {
+            "arm": "A",
+            "param": "clean15_126",
+            "n_entries": 45294,
+            "n_dates": 1002,
+            "win_rate": 0.30982028524749416,
+            "win_ci95": [
+              0.305577993537972,
+              0.3140948331316695
+            ],
+            "wins": 14033,
+            "stopped": 30259,
+            "stopped_rate": 0.668057579370336,
+            "stopped_ci95": [
+              0.6637067209146867,
+              0.6723799337626628
+            ],
+            "mean_fwd_ret_63": 0.036807494928525114,
+            "median_fwd_ret_63": 0.009623615821289455,
+            "mean_fwd_ret_126": 0.07986570512135462,
+            "median_fwd_ret_126": 0.022888895332921044,
+            "median_fwd_mdd_126": -0.14613527894628697,
+            "median_fwd_mfe_126": 0.18484081771764993,
+            "median_bars_to_liftoff": 21.0,
+            "median_bars_to_mfe_peak_126": 66.0
+          },
+          "by_regime": {
+            "2022_bear": {
+              "arm": "A",
+              "param": "clean15_126",
+              "n_entries": 11570,
+              "n_dates": 250,
+              "win_rate": 0.25064822817631804,
+              "win_ci95": [
+                0.24283496778404606,
+                0.2586270126198284
+              ],
+              "wins": 2900,
+              "stopped": 8492,
+              "stopped_rate": 0.7339671564390665,
+              "stopped_ci95": [
+                0.7258387667922728,
+                0.7419402346104
+              ],
+              "mean_fwd_ret_63": -0.009207415599096014,
+              "median_fwd_ret_63": -0.0234221119832832,
+              "mean_fwd_ret_126": -0.009408483027613634,
+              "median_fwd_ret_126": -0.04039780961667705,
+              "median_fwd_mdd_126": -0.18843426629120713,
+              "median_fwd_mfe_126": 0.15405266038767285,
+              "median_bars_to_liftoff": 16.0,
+              "median_bars_to_mfe_peak_126": 51.0
+            },
+            "2023_24_bull": {
+              "arm": "A",
+              "param": "clean15_126",
+              "n_entries": 22093,
+              "n_dates": 502,
+              "win_rate": 0.3326845607205902,
+              "win_ci95": [
+                0.3265011013013852,
+                0.3389261945509441
+              ],
+              "wins": 7350,
+              "stopped": 14249,
+              "stopped_rate": 0.6449554157425429,
+              "stopped_ci95": [
+                0.6386207476583783,
+                0.6512396838397727
+              ],
+              "mean_fwd_ret_63": 0.05703835860604908,
+              "median_fwd_ret_63": 0.023453223907939025,
+              "mean_fwd_ret_126": 0.09532428675896365,
+              "median_fwd_ret_126": 0.0341225877427036,
+              "median_fwd_mdd_126": -0.13149715511879068,
+              "median_fwd_mfe_126": 0.19634654038522603,
+              "median_bars_to_liftoff": 22.0,
+              "median_bars_to_mfe_peak_126": 67.0
+            },
+            "2025_26": {
+              "arm": "A",
+              "param": "clean15_126",
+              "n_entries": 11631,
+              "n_dates": 250,
+              "win_rate": 0.32525148310549395,
+              "win_ci95": [
+                0.31679665371646965,
+                0.3338217054259996
+              ],
+              "wins": 3783,
+              "stopped": 7518,
+              "stopped_rate": 0.6463760639669848,
+              "stopped_ci95": [
+                0.6376403708438434,
+                0.6550150995423538
+              ],
+              "mean_fwd_ret_63": 0.04415269685243871,
+              "median_fwd_ret_63": 0.014925358528601551,
+              "mean_fwd_ret_126": 0.13930822190958145,
+              "median_fwd_ret_126": 0.061416737264372134,
+              "median_fwd_mdd_126": -0.13144335408230357,
+              "median_fwd_mfe_126": 0.19634405788109444,
+              "median_bars_to_liftoff": 24.0,
+              "median_bars_to_mfe_peak_126": 83.0
+            }
+          },
+          "bootstrap_winrate": {
+            "n_boot": 2000,
+            "mean": 0.30964184831351577,
+            "se": 0.02093195112156652,
+            "ci95": [
+              0.2707840911857394,
+              0.3513997200482642
+            ],
+            "n_months": 49
+          }
+        },
+        "B": {
+          "overall": {
+            "arm": "B",
+            "param": "clean15_126",
+            "n_entries": 15199,
+            "n_dates": 933,
+            "win_rate": 0.3112704783209422,
+            "win_ci95": [
+              0.3039579915673559,
+              0.31867834154579433
+            ],
+            "wins": 4731,
+            "stopped": 10088,
+            "stopped_rate": 0.6637278768340023,
+            "stopped_ci95": [
+              0.6561766301289224,
+              0.671196381914977
+            ],
+            "mean_fwd_ret_63": 0.03080125162082232,
+            "median_fwd_ret_63": 0.011061965574326704,
+            "mean_fwd_ret_126": 0.07920402190138387,
+            "median_fwd_ret_126": 0.03304227926638448,
+            "median_fwd_mdd_126": -0.13424256406182777,
+            "median_fwd_mfe_126": 0.17845270947787162,
+            "median_bars_to_liftoff": 25.0,
+            "median_bars_to_mfe_peak_126": 72.0
+          },
+          "by_regime": {
+            "2022_bear": {
+              "arm": "B",
+              "param": "clean15_126",
+              "n_entries": 2088,
+              "n_dates": 207,
+              "win_rate": 0.2136015325670498,
+              "win_ci95": [
+                0.19655625737147125,
+                0.23169869237301743
+              ],
+              "wins": 446,
+              "stopped": 1615,
+              "stopped_rate": 0.7734674329501916,
+              "stopped_ci95": [
+                0.7550203728044648,
+                0.7909101016033898
+              ],
+              "mean_fwd_ret_63": -0.028937340316087547,
+              "median_fwd_ret_63": -0.048169103653807555,
+              "mean_fwd_ret_126": -0.027694276584386,
+              "median_fwd_ret_126": -0.049457922503249374,
+              "median_fwd_mdd_126": -0.18408558285293014,
+              "median_fwd_mfe_126": 0.12128334554660403,
+              "median_bars_to_liftoff": 18.0,
+              "median_bars_to_mfe_peak_126": 41.5
+            },
+            "2023_24_bull": {
+              "arm": "B",
+              "param": "clean15_126",
+              "n_entries": 8979,
+              "n_dates": 485,
+              "win_rate": 0.3318855106359283,
+              "win_ci95": [
+                0.3222193392075741,
+                0.3416954683909175
+              ],
+              "wins": 2980,
+              "stopped": 5757,
+              "stopped_rate": 0.641162712996993,
+              "stopped_ci95": [
+                0.631183019282558,
+                0.6510216719191062
+              ],
+              "mean_fwd_ret_63": 0.04243521130651664,
+              "median_fwd_ret_63": 0.0269750880545907,
+              "mean_fwd_ret_126": 0.07978498581766376,
+              "median_fwd_ret_126": 0.04188902384424109,
+              "median_fwd_mdd_126": -0.11939679055352748,
+              "median_fwd_mfe_126": 0.18953183122498962,
+              "median_bars_to_liftoff": 27.0,
+              "median_bars_to_mfe_peak_126": 73.0
+            },
+            "2025_26": {
+              "arm": "B",
+              "param": "clean15_126",
+              "n_entries": 4132,
+              "n_dates": 241,
+              "win_rate": 0.3158276863504356,
+              "win_ci95": [
+                0.3018308439422039,
+                0.33016665519936444
+              ],
+              "wins": 1305,
+              "stopped": 2716,
+              "stopped_rate": 0.6573088092933205,
+              "stopped_ci95": [
+                0.6426974954738717,
+                0.6716278994774828
+              ],
+              "mean_fwd_ret_63": 0.03570755751298555,
+              "median_fwd_ret_63": 0.005306052479521317,
+              "mean_fwd_ret_126": 0.13195987190961478,
+              "median_fwd_ret_126": 0.05913123928023001,
+              "median_fwd_mdd_126": -0.1356881447613465,
+              "median_fwd_mfe_126": 0.1886500710913276,
+              "median_bars_to_liftoff": 25.0,
+              "median_bars_to_mfe_peak_126": 85.0
+            }
+          },
+          "bootstrap_winrate": {
+            "n_boot": 2000,
+            "mean": 0.3110736443401698,
+            "se": 0.020415960403351634,
+            "ci95": [
+              0.2712603766335982,
+              0.3528319242486519
+            ],
+            "n_months": 49
+          }
+        },
+        "B_fresh": {
+          "overall": {
+            "arm": "B_fresh",
+            "param": "clean15_126",
+            "n_entries": 4488,
+            "n_dates": 770,
+            "win_rate": 0.3155080213903743,
+            "win_ci95": [
+              0.30207470278072207,
+              0.3292568980378933
+            ],
+            "wins": 1416,
+            "stopped": 2951,
+            "stopped_rate": 0.6575311942959001,
+            "stopped_ci95": [
+              0.643518531377434,
+              0.6712744133342069
+            ],
+            "mean_fwd_ret_63": 0.02651209900127143,
+            "median_fwd_ret_63": 0.011108632052501677,
+            "mean_fwd_ret_126": 0.08043741319754677,
+            "median_fwd_ret_126": 0.03066520940690487,
+            "median_fwd_mdd_126": -0.1308929554641135,
+            "median_fwd_mfe_126": 0.17750815731041492,
+            "median_bars_to_liftoff": 24.0,
+            "median_bars_to_mfe_peak_126": 67.5
+          },
+          "by_regime": {
+            "2022_bear": {
+              "arm": "B_fresh",
+              "param": "clean15_126",
+              "n_entries": 666,
+              "n_dates": 161,
+              "win_rate": 0.24474474474474475,
+              "win_ci95": [
+                0.2136171167991529,
+                0.2788000880143632
+              ],
+              "wins": 163,
+              "stopped": 494,
+              "stopped_rate": 0.7417417417417418,
+              "stopped_ci95": [
+                0.7071815901705301,
+                0.7735291746825519
+              ],
+              "mean_fwd_ret_63": -0.022587224791128416,
+              "median_fwd_ret_63": -0.04125062902778143,
+              "mean_fwd_ret_126": -0.02381017736677745,
+              "median_fwd_ret_126": -0.0523189686915384,
+              "median_fwd_mdd_126": -0.17061570928248004,
+              "median_fwd_mfe_126": 0.12649656315746105,
+              "median_bars_to_liftoff": 19.0,
+              "median_bars_to_mfe_peak_126": 43.0
+            },
+            "2023_24_bull": {
+              "arm": "B_fresh",
+              "param": "clean15_126",
+              "n_entries": 2649,
+              "n_dates": 413,
+              "win_rate": 0.319365798414496,
+              "win_ci95": [
+                0.3018838080222157,
+                0.337370925117612
+              ],
+              "wins": 846,
+              "stopped": 1723,
+              "stopped_rate": 0.6504341260853153,
+              "stopped_ci95": [
+                0.632069913037852,
+                0.6683626655280386
+              ],
+              "mean_fwd_ret_63": 0.02886947834909218,
+              "median_fwd_ret_63": 0.016216157235629858,
+              "mean_fwd_ret_126": 0.07524742832695044,
+              "median_fwd_ret_126": 0.028320606975626772,
+              "median_fwd_mdd_126": -0.1250823064685438,
+              "median_fwd_mfe_126": 0.1742990319596156,
+              "median_bars_to_liftoff": 25.0,
+              "median_bars_to_mfe_peak_126": 66.0
+            },
+            "2025_26": {
+              "arm": "B_fresh",
+              "param": "clean15_126",
+              "n_entries": 1173,
+              "n_dates": 196,
+              "win_rate": 0.34697357203751067,
+              "win_ci95": [
+                0.3202726424618966,
+                0.37467352270826004
+              ],
+              "wins": 407,
+              "stopped": 734,
+              "stopped_rate": 0.6257459505541347,
+              "stopped_ci95": [
+                0.5976839544298439,
+                0.6529870240515038
+              ],
+              "mean_fwd_ret_63": 0.049065766310189704,
+              "median_fwd_ret_63": 0.02811245569547527,
+              "mean_fwd_ret_126": 0.15134718748403406,
+              "median_fwd_ret_126": 0.09150019742342286,
+              "median_fwd_mdd_126": -0.1139240897899434,
+              "median_fwd_mfe_126": 0.22319696568959402,
+              "median_bars_to_liftoff": 26.0,
+              "median_bars_to_mfe_peak_126": 92.0
+            }
+          },
+          "bootstrap_winrate": {
+            "n_boot": 2000,
+            "mean": 0.3145744473734725,
+            "se": 0.021161862876012152,
+            "ci95": [
+              0.2738057359229248,
+              0.3573706428768145
+            ],
+            "n_months": 49
+          }
+        },
+        "C": {
+          "overall": {
+            "arm": "C",
+            "param": "clean15_126",
+            "n_entries": 4678,
+            "n_dates": 777,
+            "win_rate": 0.3262077811030355,
+            "win_ci95": [
+              0.3129204285432191,
+              0.3397803272808424
+            ],
+            "wins": 1526,
+            "stopped": 3033,
+            "stopped_rate": 0.6483539974348012,
+            "stopped_ci95": [
+              0.6345544844461983,
+              0.6619100610127207
+            ],
+            "mean_fwd_ret_63": 0.04402786140466825,
+            "median_fwd_ret_63": 0.019968792898224175,
+            "mean_fwd_ret_126": 0.10561693038175102,
+            "median_fwd_ret_126": 0.050831958483319006,
+            "median_fwd_mdd_126": -0.1336292371593184,
+            "median_fwd_mfe_126": 0.1977725403400845,
+            "median_bars_to_liftoff": 24.0,
+            "median_bars_to_mfe_peak_126": 76.0
+          },
+          "by_regime": {
+            "2022_bear": {
+              "arm": "C",
+              "param": "clean15_126",
+              "n_entries": 615,
+              "n_dates": 147,
+              "win_rate": 0.21300813008130082,
+              "win_ci95": [
+                0.18248216760904987,
+                0.24709709704994617
+              ],
+              "wins": 131,
+              "stopped": 475,
+              "stopped_rate": 0.7723577235772358,
+              "stopped_ci95": [
+                0.7375873257724558,
+                0.803746799834446
+              ],
+              "mean_fwd_ret_63": -0.03894615356063097,
+              "median_fwd_ret_63": -0.04773702256266743,
+              "mean_fwd_ret_126": -0.031233983054190017,
+              "median_fwd_ret_126": -0.05595704698846149,
+              "median_fwd_mdd_126": -0.20611405949051964,
+              "median_fwd_mfe_126": 0.12812679605802768,
+              "median_bars_to_liftoff": 18.0,
+              "median_bars_to_mfe_peak_126": 37.0
+            },
+            "2023_24_bull": {
+              "arm": "C",
+              "param": "clean15_126",
+              "n_entries": 2490,
+              "n_dates": 412,
+              "win_rate": 0.35943775100401604,
+              "win_ci95": [
+                0.34082060305217954,
+                0.37848793698186844
+              ],
+              "wins": 895,
+              "stopped": 1535,
+              "stopped_rate": 0.6164658634538153,
+              "stopped_ci95": [
+                0.5972015839852659,
+                0.635371339986523
+              ],
+              "mean_fwd_ret_63": 0.06719276467781786,
+              "median_fwd_ret_63": 0.04119533431814659,
+              "mean_fwd_ret_126": 0.11489990985529337,
+              "median_fwd_ret_126": 0.06959576014132307,
+              "median_fwd_mdd_126": -0.11550963836074052,
+              "median_fwd_mfe_126": 0.21645867279938735,
+              "median_bars_to_liftoff": 27.0,
+              "median_bars_to_mfe_peak_126": 82.0
+            },
+            "2025_26": {
+              "arm": "C",
+              "param": "clean15_126",
+              "n_entries": 1573,
+              "n_dates": 218,
+              "win_rate": 0.3178639542275906,
+              "win_ci95": [
+                0.295320201181164,
+                0.34129513716201887
+              ],
+              "wins": 500,
+              "stopped": 1023,
+              "stopped_rate": 0.6503496503496503,
+              "stopped_ci95": [
+                0.626443880005755,
+                0.6735228651315477
+              ],
+              "mean_fwd_ret_63": 0.03979926004008878,
+              "median_fwd_ret_63": 0.006891096107922712,
+              "mean_fwd_ret_126": 0.1444272882164511,
+              "median_fwd_ret_126": 0.0692397866918737,
+              "median_fwd_mdd_126": -0.13499999046325684,
+              "median_fwd_mfe_126": 0.20153473243671027,
+              "median_bars_to_liftoff": 22.5,
+              "median_bars_to_mfe_peak_126": 86.0
+            }
+          },
+          "bootstrap_winrate": {
+            "n_boot": 2000,
+            "mean": 0.3259761956665021,
+            "se": 0.022968679173082752,
+            "ci95": [
+              0.2819168861611048,
+              0.37120099739551327
+            ],
+            "n_months": 49
+          }
+        }
+      },
+      "falsifiers": {
+        "param": "clean15_126",
+        "PSF_H1": {
+          "verdict": "fail",
+          "primary_stat": "block_bootstrap_diff_ci (B\u2212A)",
+          "bootstrap_diff": {
+            "n_boot": 2000,
+            "diff_point": 0.001450193073448014,
+            "diff_mean": 0.001982611719579442,
+            "diff_se": 0.010474766173111478,
+            "ci95": [
+              -0.018836454299912726,
+              0.021998702355555344
+            ],
+            "n_months": 49,
+            "lower_gt_0": false,
+            "straddles_0": true
+          },
+          "delta_win_B_minus_A": 0.001450193073448014,
+          "wilson_diff_ci95_ANTICONSERVATIVE": [
+            -0.007020003036175572,
+            0.009986789380337398
+          ],
+          "n_dates_B": 933,
+          "n_dates_A": 1002,
+          "wins_B": 4731,
+          "n_B": 15199,
+          "wins_A": 14033,
+          "n_A": 45294,
+          "gate_met_n_dates_ge_25": true,
+          "note": "PRIMARY = month-block bootstrap-diff CI (n_months\u224849); Wilson diff CI is ANTI-CONSERVATIVE (overlapping obs, effective n \u2248 49 monthly blocks, not 15199). n_dates gate met (>= 25)."
+        },
+        "PSF_H3": {
+          "verdict": "pass",
+          "metric": "UNCONDITIONAL bars-to-MFE-peak over ALL matured fires (FIX-3)",
+          "median_bars_to_mfe_peak_B": 72.0,
+          "median_bars_to_mfe_peak_A": 66.0,
+          "median_bars_to_liftoff_B_conditional": 25.0,
+          "median_bars_to_liftoff_A_conditional": 21.0,
+          "stopped_rate_B": 0.6637278768340023,
+          "stopped_rate_A": 0.668057579370336,
+          "hold_worse": false,
+          "stop_worse": false,
+          "note": "H3 fails only if BOTH unconditional-hold_B<=hold_A AND STOPPED_B>=STOPPED_A. Caveat: the PASS rests on a conditional/asymmetric AND-both-legs falsifier \u2014 NOT a clean win. Do NOT overstate 'longer holds'; it is a right-shift + a lower stop rate, one leg at a time."
+        },
+        "PSF_H2": {
+          "verdict": "fail",
+          "primary_stat": "block_bootstrap_diff_ci (C\u2212B)",
+          "bootstrap_diff": {
+            "n_boot": 2000,
+            "diff_point": 0.01493730278209332,
+            "diff_mean": 0.01526236236955965,
+            "diff_se": 0.01089221798018757,
+            "ci95": [
+              -0.005926607719652449,
+              0.036175114119226436
+            ],
+            "n_months": 49,
+            "lower_gt_0": false,
+            "straddles_0": true
+          },
+          "delta_win_C_minus_B": 0.01493730278209332,
+          "wilson_diff_ci95_ANTICONSERVATIVE": [
+            -0.0002755265276365472,
+            0.03035438656178639
+          ],
+          "n_dates_C": 777,
+          "n_dates_B": 933,
+          "wins_C": 1526,
+          "n_C": 4678,
+          "wins_B": 4731,
+          "n_B": 15199,
+          "gate_met_n_dates_ge_25": true,
+          "note": "PRIMARY = month-block bootstrap-diff CI (n_months\u224849); Wilson diff CI is ANTI-CONSERVATIVE (overlapping obs, effective n \u2248 49 monthly blocks, not 4678). n_dates gate met (>= 25)."
+        },
+        "KILL": {
+          "triggered": true,
+          "negative_regimes_n_dates_ge_50": [
+            "2022_bear",
+            "2023_24_bull",
+            "2025_26"
+          ],
+          "note": "KILL iff negative (win_B-win_A) point estimate at n_dates>=50 across >=2 regimes"
+        }
+      },
+      "deoverlap_robustness": {
+        "window_bars": 126,
+        "n_fires_deoverlapped": 23485,
+        "n_fires_full": 52078,
+        "falsifiers": {
+          "param": "clean15_126",
+          "PSF_H1": {
+            "verdict": "fail",
+            "primary_stat": "block_bootstrap_diff_ci (B\u2212A)",
+            "bootstrap_diff": {
+              "n_boot": 2000,
+              "diff_point": 0.005891927364928884,
+              "diff_mean": 0.0065942760233698985,
+              "diff_se": 0.010735678668116371,
+              "ci95": [
+                -0.014211210331306113,
+                0.027378904954405495
+              ],
+              "n_months": 49,
+              "lower_gt_0": false,
+              "straddles_0": true
+            },
+            "delta_win_B_minus_A": 0.005891927364928884,
+            "wilson_diff_ci95_ANTICONSERVATIVE": [
+              -0.006742768216682335,
+              0.018664218661302308
+            ],
+            "n_dates_B": 829,
+            "n_dates_A": 976,
+            "wins_B": 2220,
+            "n_B": 6914,
+            "wins_A": 6482,
+            "n_A": 20565,
+            "gate_met_n_dates_ge_25": true,
+            "note": "PRIMARY = month-block bootstrap-diff CI (n_months\u224849); Wilson diff CI is ANTI-CONSERVATIVE (overlapping obs, effective n \u2248 49 monthly blocks, not 6914). n_dates gate met (>= 25)."
+          },
+          "PSF_H3": {
+            "verdict": "pass",
+            "metric": "UNCONDITIONAL bars-to-MFE-peak over ALL matured fires (FIX-3)",
+            "median_bars_to_mfe_peak_B": 72.0,
+            "median_bars_to_mfe_peak_A": 64.0,
+            "median_bars_to_liftoff_B_conditional": 25.0,
+            "median_bars_to_liftoff_A_conditional": 21.0,
+            "stopped_rate_B": 0.6547584610934336,
+            "stopped_rate_A": 0.662533430585947,
+            "hold_worse": false,
+            "stop_worse": false,
+            "note": "H3 fails only if BOTH unconditional-hold_B<=hold_A AND STOPPED_B>=STOPPED_A. Caveat: the PASS rests on a conditional/asymmetric AND-both-legs falsifier \u2014 NOT a clean win. Do NOT overstate 'longer holds'; it is a right-shift + a lower stop rate, one leg at a time."
+          },
+          "PSF_H2": {
+            "verdict": "fail",
+            "primary_stat": "block_bootstrap_diff_ci (C\u2212B)",
+            "bootstrap_diff": {
+              "n_boot": 2000,
+              "diff_point": 0.013341661285065254,
+              "diff_mean": 0.013667846216561459,
+              "diff_se": 0.013455342900938127,
+              "ci95": [
+                -0.01224542885527061,
+                0.038428387155637324
+              ],
+              "n_months": 49,
+              "lower_gt_0": false,
+              "straddles_0": true
+            },
+            "delta_win_C_minus_B": 0.013341661285065254,
+            "wilson_diff_ci95_ANTICONSERVATIVE": [
+              -0.009294377536100303,
+              0.03640470561619554
+            ],
+            "n_dates_C": 620,
+            "n_dates_B": 829,
+            "wins_C": 712,
+            "n_C": 2129,
+            "wins_B": 2220,
+            "n_B": 6914,
+            "gate_met_n_dates_ge_25": true,
+            "note": "PRIMARY = month-block bootstrap-diff CI (n_months\u224849); Wilson diff CI is ANTI-CONSERVATIVE (overlapping obs, effective n \u2248 49 monthly blocks, not 2129). n_dates gate met (>= 25)."
+          },
+          "KILL": {
+            "triggered": true,
+            "negative_regimes_n_dates_ge_50": [
+              "2022_bear",
+              "2023_24_bull",
+              "2025_26"
+            ],
+            "note": "KILL iff negative (win_B-win_A) point estimate at n_dates>=50 across >=2 regimes"
+          }
+        },
+        "note": "One fire per name per non-overlapping 126-bar window (removes within-name overlapping-forward-window dependence). If the null holds here, it is robust to the ~20-fires/name multiplicity."
+      }
+    },
+    "clean8_21": {
+      "arms": {
+        "A": {
+          "overall": {
+            "arm": "A",
+            "param": "clean8_21",
+            "n_entries": 50637,
+            "n_dates": 1108,
+            "win_rate": 0.3354859095128068,
+            "win_ci95": [
+              0.3313860503788048,
+              0.3396107277148585
+            ],
+            "wins": 16988,
+            "stopped": 23594,
+            "stopped_rate": 0.46594387503209117,
+            "stopped_ci95": [
+              0.4616017767238254,
+              0.47029114012660644
+            ],
+            "mean_fwd_ret_63": 0.038983602961926656,
+            "median_fwd_ret_63": 0.010860492874215755,
+            "mean_fwd_ret_126": 0.07986570512135462,
+            "median_fwd_ret_126": 0.022888895332921044,
+            "median_fwd_mdd_126": -0.14613527894628697,
+            "median_fwd_mfe_126": 0.18484081771764993,
+            "median_bars_to_liftoff": 8.0,
+            "median_bars_to_mfe_peak_126": 66.0
+          },
+          "by_regime": {
+            "2022_bear": {
+              "arm": "A",
+              "param": "clean8_21",
+              "n_entries": 11648,
+              "n_dates": 250,
+              "win_rate": 0.3318166208791209,
+              "win_ci95": [
+                0.32332225125500275,
+                0.3404218861977096
+              ],
+              "wins": 3865,
+              "stopped": 6093,
+              "stopped_rate": 0.5230940934065934,
+              "stopped_ci95": [
+                0.5140175251623539,
+                0.5321554340133584
+              ],
+              "mean_fwd_ret_63": -0.009302798581704476,
+              "median_fwd_ret_63": -0.023327387956627255,
+              "mean_fwd_ret_126": -0.009408483027613634,
+              "median_fwd_ret_126": -0.04039780961667705,
+              "median_fwd_mdd_126": -0.18843426629120713,
+              "median_fwd_mfe_126": 0.15405266038767285,
+              "median_bars_to_liftoff": 8.0,
+              "median_bars_to_mfe_peak_126": 51.0
+            },
+            "2023_24_bull": {
+              "arm": "A",
+              "param": "clean8_21",
+              "n_entries": 22277,
+              "n_dates": 502,
+              "win_rate": 0.3333931857970104,
+              "win_ci95": [
+                0.32723177439172235,
+                0.33961204684729407
+              ],
+              "wins": 7427,
+              "stopped": 9998,
+              "stopped_rate": 0.44880369888225524,
+              "stopped_ci95": [
+                0.4422817607109337,
+                0.45534329064918966
+              ],
+              "mean_fwd_ret_63": 0.05694772863687438,
+              "median_fwd_ret_63": 0.023508912013110894,
+              "mean_fwd_ret_126": 0.09532428675896365,
+              "median_fwd_ret_126": 0.0341225877427036,
+              "median_fwd_mdd_126": -0.13149715511879068,
+              "median_fwd_mfe_126": 0.19634654038522603,
+              "median_bars_to_liftoff": 8.0,
+              "median_bars_to_mfe_peak_126": 67.0
+            },
+            "2025_26": {
+              "arm": "A",
+              "param": "clean8_21",
+              "n_entries": 16712,
+              "n_dates": 356,
+              "win_rate": 0.340832934418382,
+              "win_ci95": [
+                0.3336839938281986,
+                0.34805503120947223
+              ],
+              "wins": 5696,
+              "stopped": 7503,
+              "stopped_rate": 0.4489588319770225,
+              "stopped_ci95": [
+                0.4414304153334372,
+                0.4565107081090942
+              ],
+              "mean_fwd_ret_63": 0.050288230047040514,
+              "median_fwd_ret_63": 0.018199835888134452,
+              "mean_fwd_ret_126": 0.13930822190958145,
+              "median_fwd_ret_126": 0.061416737264372134,
+              "median_fwd_mdd_126": -0.13144335408230357,
+              "median_fwd_mfe_126": 0.19634405788109444,
+              "median_bars_to_liftoff": 7.0,
+              "median_bars_to_mfe_peak_126": 83.0
+            }
+          },
+          "bootstrap_winrate": {
+            "n_boot": 2000,
+            "mean": 0.33506355287385264,
+            "se": 0.01869866763479915,
+            "ci95": [
+              0.29898168374693973,
+              0.37225521487640745
+            ],
+            "n_months": 54
+          }
+        },
+        "B": {
+          "overall": {
+            "arm": "B",
+            "param": "clean8_21",
+            "n_entries": 17619,
+            "n_dates": 1042,
+            "win_rate": 0.3153413928145752,
+            "win_ci95": [
+              0.3085213131424676,
+              0.32224197692032325
+            ],
+            "wins": 5556,
+            "stopped": 7959,
+            "stopped_rate": 0.45172824791418353,
+            "stopped_ci95": [
+              0.44439114280599795,
+              0.45908639774983534
+            ],
+            "mean_fwd_ret_63": 0.03426249923155046,
+            "median_fwd_ret_63": 0.013040454894817977,
+            "mean_fwd_ret_126": 0.07920402190138387,
+            "median_fwd_ret_126": 0.03304227926638448,
+            "median_fwd_mdd_126": -0.13424256406182777,
+            "median_fwd_mfe_126": 0.17845270947787162,
+            "median_bars_to_liftoff": 8.0,
+            "median_bars_to_mfe_peak_126": 72.0
+          },
+          "by_regime": {
+            "2022_bear": {
+              "arm": "B",
+              "param": "clean8_21",
+              "n_entries": 2097,
+              "n_dates": 210,
+              "win_rate": 0.2761087267525036,
+              "win_ci95": [
+                0.257396364533371,
+                0.29563987432345973
+              ],
+              "wins": 579,
+              "stopped": 1136,
+              "stopped_rate": 0.541726275631855,
+              "stopped_ci95": [
+                0.5203437450868212,
+                0.5629562103977951
+              ],
+              "mean_fwd_ret_63": -0.028894208776419496,
+              "median_fwd_ret_63": -0.04796270687052456,
+              "mean_fwd_ret_126": -0.027694276584386,
+              "median_fwd_ret_126": -0.049457922503249374,
+              "median_fwd_mdd_126": -0.18408558285293014,
+              "median_fwd_mfe_126": 0.12128334554660403,
+              "median_bars_to_liftoff": 8.0,
+              "median_bars_to_mfe_peak_126": 41.5
+            },
+            "2023_24_bull": {
+              "arm": "B",
+              "param": "clean8_21",
+              "n_entries": 9039,
+              "n_dates": 485,
+              "win_rate": 0.31308773094368847,
+              "win_ci95": [
+                0.3036085327242754,
+                0.3227257322976986
+              ],
+              "wins": 2830,
+              "stopped": 3925,
+              "stopped_rate": 0.434229450160416,
+              "stopped_ci95": [
+                0.42404147981570584,
+                0.44447330003369545
+              ],
+              "mean_fwd_ret_63": 0.042482332483031016,
+              "median_fwd_ret_63": 0.027065995147379174,
+              "mean_fwd_ret_126": 0.07978498581766376,
+              "median_fwd_ret_126": 0.04188902384424109,
+              "median_fwd_mdd_126": -0.11939679055352748,
+              "median_fwd_mfe_126": 0.18953183122498962,
+              "median_bars_to_liftoff": 9.0,
+              "median_bars_to_mfe_peak_126": 73.0
+            },
+            "2025_26": {
+              "arm": "B",
+              "param": "clean8_21",
+              "n_entries": 6483,
+              "n_dates": 347,
+              "win_rate": 0.331173839271942,
+              "win_ci95": [
+                0.3198204641985878,
+                0.3427271695155927
+              ],
+              "wins": 2147,
+              "stopped": 2898,
+              "stopped_rate": 0.44701527070800556,
+              "stopped_ci95": [
+                0.43494761494224704,
+                0.4591456807917145
+              ],
+              "mean_fwd_ret_63": 0.04482740777810567,
+              "median_fwd_ret_63": 0.013449288037236107,
+              "mean_fwd_ret_126": 0.13195987190961478,
+              "median_fwd_ret_126": 0.05913123928023001,
+              "median_fwd_mdd_126": -0.1356881447613465,
+              "median_fwd_mfe_126": 0.1886500710913276,
+              "median_bars_to_liftoff": 8.0,
+              "median_bars_to_mfe_peak_126": 85.0
+            }
+          },
+          "bootstrap_winrate": {
+            "n_boot": 2000,
+            "mean": 0.3152100564808651,
+            "se": 0.017783784174816963,
+            "ci95": [
+              0.2811326290949657,
+              0.3502500119468545
+            ],
+            "n_months": 54
+          }
+        },
+        "B_fresh": {
+          "overall": {
+            "arm": "B_fresh",
+            "param": "clean8_21",
+            "n_entries": 4948,
+            "n_dates": 864,
+            "win_rate": 0.31972514147130154,
+            "win_ci95": [
+              0.30687465274089526,
+              0.3328553315819736
+            ],
+            "wins": 1582,
+            "stopped": 2168,
+            "stopped_rate": 0.4381568310428456,
+            "stopped_ci95": [
+              0.4243853907965885,
+              0.452024222659463
+            ],
+            "mean_fwd_ret_63": 0.027035157114368973,
+            "median_fwd_ret_63": 0.012875534589102067,
+            "mean_fwd_ret_126": 0.08043741319754677,
+            "median_fwd_ret_126": 0.03066520940690487,
+            "median_fwd_mdd_126": -0.1308929554641135,
+            "median_fwd_mfe_126": 0.17750815731041492,
+            "median_bars_to_liftoff": 8.0,
+            "median_bars_to_mfe_peak_126": 67.5
+          },
+          "by_regime": {
+            "2022_bear": {
+              "arm": "B_fresh",
+              "param": "clean8_21",
+              "n_entries": 668,
+              "n_dates": 162,
+              "win_rate": 0.2844311377245509,
+              "win_ci95": [
+                0.2515277464217164,
+                0.31979969070082137
+              ],
+              "wins": 190,
+              "stopped": 353,
+              "stopped_rate": 0.5284431137724551,
+              "stopped_ci95": [
+                0.49053326883038634,
+                0.5660276943270568
+              ],
+              "mean_fwd_ret_63": -0.022587224791128416,
+              "median_fwd_ret_63": -0.04125062902778143,
+              "mean_fwd_ret_126": -0.02381017736677745,
+              "median_fwd_ret_126": -0.0523189686915384,
+              "median_fwd_mdd_126": -0.17061570928248004,
+              "median_fwd_mfe_126": 0.12649656315746105,
+              "median_bars_to_liftoff": 8.0,
+              "median_bars_to_mfe_peak_126": 43.0
+            },
+            "2023_24_bull": {
+              "arm": "B_fresh",
+              "param": "clean8_21",
+              "n_entries": 2677,
+              "n_dates": 417,
+              "win_rate": 0.3122898767276802,
+              "win_ci95": [
+                0.29501418115954026,
+                0.33010352332340187
+              ],
+              "wins": 836,
+              "stopped": 1147,
+              "stopped_rate": 0.4284646992902503,
+              "stopped_ci95": [
+                0.40983460347787626,
+                0.44729980529522506
+              ],
+              "mean_fwd_ret_63": 0.02868347922652828,
+              "median_fwd_ret_63": 0.016309453451985645,
+              "mean_fwd_ret_126": 0.07524742832695044,
+              "median_fwd_ret_126": 0.028320606975626772,
+              "median_fwd_mdd_126": -0.1250823064685438,
+              "median_fwd_mfe_126": 0.1742990319596156,
+              "median_bars_to_liftoff": 9.0,
+              "median_bars_to_mfe_peak_126": 66.0
+            },
+            "2025_26": {
+              "arm": "B_fresh",
+              "param": "clean8_21",
+              "n_entries": 1603,
+              "n_dates": 285,
+              "win_rate": 0.34684965689332503,
+              "win_ci95": [
+                0.32394063946781937,
+                0.37049094411830585
+              ],
+              "wins": 556,
+              "stopped": 668,
+              "stopped_rate": 0.4167186525265128,
+              "stopped_ci95": [
+                0.39281110006547726,
+                0.4410244046544728
+              ],
+              "mean_fwd_ret_63": 0.04706951699668232,
+              "median_fwd_ret_63": 0.02895173226688952,
+              "mean_fwd_ret_126": 0.15134718748403406,
+              "median_fwd_ret_126": 0.09150019742342286,
+              "median_fwd_mdd_126": -0.1139240897899434,
+              "median_fwd_mfe_126": 0.22319696568959402,
+              "median_bars_to_liftoff": 8.0,
+              "median_bars_to_mfe_peak_126": 92.0
+            }
+          },
+          "bootstrap_winrate": {
+            "n_boot": 2000,
+            "mean": 0.318499865024039,
+            "se": 0.020222101668829782,
+            "ci95": [
+              0.27974214416267457,
+              0.3569804320251014
+            ],
+            "n_months": 54
+          }
+        },
+        "C": {
+          "overall": {
+            "arm": "C",
+            "param": "clean8_21",
+            "n_entries": 5563,
+            "n_dates": 877,
+            "win_rate": 0.33327341362574153,
+            "win_ci95": [
+              0.32100515834886856,
+              0.34577177185079777
+            ],
+            "wins": 1854,
+            "stopped": 2549,
+            "stopped_rate": 0.4582060039547007,
+            "stopped_ci95": [
+              0.44514627433256876,
+              0.4713234143697734
+            ],
+            "mean_fwd_ret_63": 0.04988118705183478,
+            "median_fwd_ret_63": 0.022597637153434547,
+            "mean_fwd_ret_126": 0.10561693038175102,
+            "median_fwd_ret_126": 0.050831958483319006,
+            "median_fwd_mdd_126": -0.1336292371593184,
+            "median_fwd_mfe_126": 0.1977725403400845,
+            "median_bars_to_liftoff": 8.0,
+            "median_bars_to_mfe_peak_126": 76.0
+          },
+          "by_regime": {
+            "2022_bear": {
+              "arm": "C",
+              "param": "clean8_21",
+              "n_entries": 615,
+              "n_dates": 147,
+              "win_rate": 0.2959349593495935,
+              "win_ci95": [
+                0.2612158112996501,
+                0.333187575185925
+              ],
+              "wins": 182,
+              "stopped": 346,
+              "stopped_rate": 0.5626016260162602,
+              "stopped_ci95": [
+                0.5231272331998019,
+                0.6012988195516352
+              ],
+              "mean_fwd_ret_63": -0.03894615356063097,
+              "median_fwd_ret_63": -0.04773702256266743,
+              "mean_fwd_ret_126": -0.031233983054190017,
+              "median_fwd_ret_126": -0.05595704698846149,
+              "median_fwd_mdd_126": -0.20611405949051964,
+              "median_fwd_mfe_126": 0.12812679605802768,
+              "median_bars_to_liftoff": 8.5,
+              "median_bars_to_mfe_peak_126": 37.0
+            },
+            "2023_24_bull": {
+              "arm": "C",
+              "param": "clean8_21",
+              "n_entries": 2490,
+              "n_dates": 412,
+              "win_rate": 0.3333333333333333,
+              "win_ci95": [
+                0.315086761712891,
+                0.35209336432748023
+              ],
+              "wins": 830,
+              "stopped": 1071,
+              "stopped_rate": 0.43012048192771085,
+              "stopped_ci95": [
+                0.4107965962609732,
+                0.4496596493559536
+              ],
+              "mean_fwd_ret_63": 0.06719276467781786,
+              "median_fwd_ret_63": 0.04119533431814659,
+              "mean_fwd_ret_126": 0.11489990985529337,
+              "median_fwd_ret_126": 0.06959576014132307,
+              "median_fwd_mdd_126": -0.11550963836074052,
+              "median_fwd_mfe_126": 0.21645867279938735,
+              "median_bars_to_liftoff": 9.0,
+              "median_bars_to_mfe_peak_126": 82.0
+            },
+            "2025_26": {
+              "arm": "C",
+              "param": "clean8_21",
+              "n_entries": 2458,
+              "n_dates": 318,
+              "win_rate": 0.3425549227013832,
+              "win_ci95": [
+                0.3240528054212297,
+                0.3615483947589101
+              ],
+              "wins": 842,
+              "stopped": 1132,
+              "stopped_rate": 0.46053702196908053,
+              "stopped_ci95": [
+                0.4409091642383186,
+                0.48028803580683277
+              ],
+              "mean_fwd_ret_63": 0.055418422125342016,
+              "median_fwd_ret_63": 0.014759939633667951,
+              "mean_fwd_ret_126": 0.1444272882164511,
+              "median_fwd_ret_126": 0.0692397866918737,
+              "median_fwd_mdd_126": -0.13499999046325684,
+              "median_fwd_mfe_126": 0.20153473243671027,
+              "median_bars_to_liftoff": 7.5,
+              "median_bars_to_mfe_peak_126": 86.0
+            }
+          },
+          "bootstrap_winrate": {
+            "n_boot": 2000,
+            "mean": 0.3324540747923659,
+            "se": 0.017771782078154635,
+            "ci95": [
+              0.29750460989197813,
+              0.3660103400714873
+            ],
+            "n_months": 54
+          }
+        }
+      },
+      "falsifiers": {
+        "param": "clean8_21",
+        "PSF_H1": {
+          "verdict": "fail",
+          "primary_stat": "block_bootstrap_diff_ci (B\u2212A)",
+          "bootstrap_diff": {
+            "n_boot": 2000,
+            "diff_point": -0.02014451669823164,
+            "diff_mean": -0.019425012943975986,
+            "diff_se": 0.011777991503272599,
+            "ci95": [
+              -0.04233954180892419,
+              0.003382453793725377
+            ],
+            "n_months": 54,
+            "lower_gt_0": false,
+            "straddles_0": true
+          },
+          "delta_win_B_minus_A": -0.02014451669823164,
+          "wilson_diff_ci95_ANTICONSERVATIVE": [
+            -0.028114937762006867,
+            -0.012117879424804955
+          ],
+          "n_dates_B": 1042,
+          "n_dates_A": 1108,
+          "wins_B": 5556,
+          "n_B": 17619,
+          "wins_A": 16988,
+          "n_A": 50637,
+          "gate_met_n_dates_ge_25": true,
+          "note": "PRIMARY = month-block bootstrap-diff CI (n_months\u224854); Wilson diff CI is ANTI-CONSERVATIVE (overlapping obs, effective n \u2248 54 monthly blocks, not 17619). n_dates gate met (>= 25)."
+        },
+        "PSF_H3": {
+          "verdict": "pass",
+          "metric": "UNCONDITIONAL bars-to-MFE-peak over ALL matured fires (FIX-3)",
+          "median_bars_to_mfe_peak_B": 72.0,
+          "median_bars_to_mfe_peak_A": 66.0,
+          "median_bars_to_liftoff_B_conditional": 8.0,
+          "median_bars_to_liftoff_A_conditional": 8.0,
+          "stopped_rate_B": 0.45172824791418353,
+          "stopped_rate_A": 0.46594387503209117,
+          "hold_worse": false,
+          "stop_worse": false,
+          "note": "H3 fails only if BOTH unconditional-hold_B<=hold_A AND STOPPED_B>=STOPPED_A. Caveat: the PASS rests on a conditional/asymmetric AND-both-legs falsifier \u2014 NOT a clean win. Do NOT overstate 'longer holds'; it is a right-shift + a lower stop rate, one leg at a time."
+        },
+        "PSF_H2": {
+          "verdict": "fail",
+          "primary_stat": "block_bootstrap_diff_ci (C\u2212B)",
+          "bootstrap_diff": {
+            "n_boot": 2000,
+            "diff_point": 0.01793202081116635,
+            "diff_mean": 0.01762444864875662,
+            "diff_se": 0.010973686427482181,
+            "ci95": [
+              -0.004982328621112517,
+              0.03872351812191356
+            ],
+            "n_months": 54,
+            "lower_gt_0": false,
+            "straddles_0": true
+          },
+          "delta_win_C_minus_B": 0.01793202081116635,
+          "wilson_diff_ci95_ANTICONSERVATIVE": [
+            0.0038562207081873218,
+            0.03217008405922526
+          ],
+          "n_dates_C": 877,
+          "n_dates_B": 1042,
+          "wins_C": 1854,
+          "n_C": 5563,
+          "wins_B": 5556,
+          "n_B": 17619,
+          "gate_met_n_dates_ge_25": true,
+          "note": "PRIMARY = month-block bootstrap-diff CI (n_months\u224854); Wilson diff CI is ANTI-CONSERVATIVE (overlapping obs, effective n \u2248 54 monthly blocks, not 5563). n_dates gate met (>= 25)."
+        },
+        "KILL": {
+          "triggered": true,
+          "negative_regimes_n_dates_ge_50": [
+            "2022_bear",
+            "2023_24_bull",
+            "2025_26"
+          ],
+          "note": "KILL iff negative (win_B-win_A) point estimate at n_dates>=50 across >=2 regimes"
+        }
+      },
+      "deoverlap_robustness": {
+        "window_bars": 126,
+        "n_fires_deoverlapped": 23485,
+        "n_fires_full": 52078,
+        "falsifiers": {
+          "param": "clean8_21",
+          "PSF_H1": {
+            "verdict": "fail",
+            "primary_stat": "block_bootstrap_diff_ci (B\u2212A)",
+            "bootstrap_diff": {
+              "n_boot": 2000,
+              "diff_point": -0.018082208003503963,
+              "diff_mean": -0.017148738708776947,
+              "diff_se": 0.012447638192765531,
+              "ci95": [
+                -0.04163330882967572,
+                0.007742475077847369
+              ],
+              "n_months": 54,
+              "lower_gt_0": false,
+              "straddles_0": true
+            },
+            "delta_win_B_minus_A": -0.018082208003503963,
+            "wilson_diff_ci95_ANTICONSERVATIVE": [
+              -0.02994806391378923,
+              -0.006094959586941107
+            ],
+            "n_dates_B": 931,
+            "n_dates_A": 1080,
+            "wins_B": 2547,
+            "n_B": 7966,
+            "wins_A": 7762,
+            "n_A": 22977,
+            "gate_met_n_dates_ge_25": true,
+            "note": "PRIMARY = month-block bootstrap-diff CI (n_months\u224854); Wilson diff CI is ANTI-CONSERVATIVE (overlapping obs, effective n \u2248 54 monthly blocks, not 7966). n_dates gate met (>= 25)."
+          },
+          "PSF_H3": {
+            "verdict": "pass",
+            "metric": "UNCONDITIONAL bars-to-MFE-peak over ALL matured fires (FIX-3)",
+            "median_bars_to_mfe_peak_B": 72.0,
+            "median_bars_to_mfe_peak_A": 64.0,
+            "median_bars_to_liftoff_B_conditional": 8.0,
+            "median_bars_to_liftoff_A_conditional": 8.0,
+            "stopped_rate_B": 0.44853125784584486,
+            "stopped_rate_A": 0.46520433476955214,
+            "hold_worse": false,
+            "stop_worse": false,
+            "note": "H3 fails only if BOTH unconditional-hold_B<=hold_A AND STOPPED_B>=STOPPED_A. Caveat: the PASS rests on a conditional/asymmetric AND-both-legs falsifier \u2014 NOT a clean win. Do NOT overstate 'longer holds'; it is a right-shift + a lower stop rate, one leg at a time."
+          },
+          "PSF_H2": {
+            "verdict": "fail",
+            "primary_stat": "block_bootstrap_diff_ci (C\u2212B)",
+            "bootstrap_diff": {
+              "n_boot": 2000,
+              "diff_point": 0.01834442287193888,
+              "diff_mean": 0.01825700973666255,
+              "diff_se": 0.011550928320130298,
+              "ci95": [
+                -0.005161426477808746,
+                0.04032468710161354
+              ],
+              "n_months": 54,
+              "lower_gt_0": false,
+              "straddles_0": true
+            },
+            "delta_win_C_minus_B": 0.01834442287193888,
+            "wilson_diff_ci95_ANTICONSERVATIVE": [
+              -0.002562579927883349,
+              0.039596311516542915
+            ],
+            "n_dates_C": 695,
+            "n_dates_B": 931,
+            "wins_C": 855,
+            "n_C": 2529,
+            "wins_B": 2547,
+            "n_B": 7966,
+            "gate_met_n_dates_ge_25": true,
+            "note": "PRIMARY = month-block bootstrap-diff CI (n_months\u224854); Wilson diff CI is ANTI-CONSERVATIVE (overlapping obs, effective n \u2248 54 monthly blocks, not 2529). n_dates gate met (>= 25)."
+          },
+          "KILL": {
+            "triggered": true,
+            "negative_regimes_n_dates_ge_50": [
+              "2022_bear",
+              "2023_24_bull",
+              "2025_26"
+            ],
+            "note": "KILL iff negative (win_B-win_A) point estimate at n_dates>=50 across >=2 regimes"
+          }
+        },
+        "note": "One fire per name per non-overlapping 126-bar window (removes within-name overlapping-forward-window dependence). If the null holds here, it is robust to the ~20-fires/name multiplicity."
+      }
+    }
+  },
+  "psq": {
+    "spec": "research/PROPHET_STAGE_QUALITY_PREREG.md",
+    "param": "clean15_126",
+    "n_matured_A": 45294,
+    "n_matured_C": 4678,
+    "PSQ_H1": {
+      "verdict": "PASS",
+      "fail_reason": null,
+      "primary_stat": "median_fwd_ret_126 C\u2212A, month-block paired bootstrap",
+      "bootstrap": {
+        "stat_name": "median_fwd_ret_126",
+        "arm_hi": "C",
+        "arm_lo": "A",
+        "aggregator": "median",
+        "n_fires_hi": 4678,
+        "n_fires_lo": 45294,
+        "n_months": 49,
+        "point_hi": 0.050831958483319006,
+        "point_lo": 0.022888895332921044,
+        "diff_point": 0.027943063150397962,
+        "boot_mean": 0.02760042170119088,
+        "boot_se": 0.006303402272555194,
+        "ci95": [
+          0.015671785420015877,
+          0.04018981108803949
+        ],
+        "lower_gt_0": true,
+        "upper_lt_0": false,
+        "no_verdict": false
+      },
+      "economic_floor_pp": 0.015,
+      "note": "PRIMARY promotion-bearing falsifier. FAILs if CI-lower <= 0 OR point diff < +1.5pp. Only one comparison (C vs A). NOTE (same-sample): the point estimates were known before registration; only the CI machinery and pass lines were not \u2014 see PSQ prereg \u00a70."
+    },
+    "PSQ_H1_decompositions": {
+      "note": "B\u2212A and C\u2212B decompositions: PRINTED, no verdicts (prereg \u00a72).",
+      "B_minus_A": {
+        "stat_name": "median_fwd_ret_126(B-A decom)",
+        "arm_hi": "B",
+        "arm_lo": "A",
+        "aggregator": "median",
+        "n_fires_hi": 15199,
+        "n_fires_lo": 45294,
+        "n_months": 49,
+        "point_hi": 0.03304227926638448,
+        "point_lo": 0.022888895332921044,
+        "diff_point": 0.010153383933463433,
+        "boot_mean": 0.010393566235083421,
+        "boot_se": 0.006262655808328829,
+        "ci95": [
+          -0.0018910613850285861,
+          0.022298997074512307
+        ],
+        "lower_gt_0": false,
+        "upper_lt_0": false,
+        "no_verdict": false
+      },
+      "C_minus_B": {
+        "stat_name": "median_fwd_ret_126(C-B decom)",
+        "arm_hi": "C",
+        "arm_lo": "B",
+        "aggregator": "median",
+        "n_fires_hi": 4678,
+        "n_fires_lo": 15199,
+        "n_months": 49,
+        "point_hi": 0.050831958483319006,
+        "point_lo": 0.03304227926638448,
+        "diff_point": 0.01778967921693453,
+        "boot_mean": 0.017206855466107458,
+        "boot_se": 0.00587889462260458,
+        "ci95": [
+          0.005878626995380204,
+          0.028853188097443475
+        ],
+        "lower_gt_0": true,
+        "upper_lt_0": false,
+        "no_verdict": false
+      }
+    },
+    "PSQ_H1_deoverlapped": {
+      "note": "Robustness: H1 statistic on the de-overlapped fire subset (one fire per name per non-overlapping 126-bar window, per PSF \u00a7FIX-4 logic). Supporting only \u2014 no verdict change.",
+      "n_fires_deoverlapped": 23485,
+      "bootstrap": {
+        "stat_name": "median_fwd_ret_126_deoverlapped",
+        "arm_hi": "C",
+        "arm_lo": "A",
+        "aggregator": "median",
+        "n_fires_hi": 2129,
+        "n_fires_lo": 20565,
+        "n_months": 49,
+        "point_hi": 0.05543301800104583,
+        "point_lo": 0.023529426724302915,
+        "diff_point": 0.031903591276742915,
+        "boot_mean": 0.031159684504767186,
+        "boot_se": 0.009302323619946111,
+        "ci95": [
+          0.01419393221107464,
+          0.050784682359499504
+        ],
+        "lower_gt_0": true,
+        "upper_lt_0": false,
+        "no_verdict": false
+      }
+    },
+    "PSQ_H2": {
+      "verdict": "PASS",
+      "primary_stat": "median EA (fwd_mfe_126 + fwd_mdd_126) C\u2212A, month-block paired bootstrap",
+      "bootstrap": {
+        "stat_name": "median_EA_126",
+        "arm_hi": "C",
+        "arm_lo": "A",
+        "aggregator": "median",
+        "n_fires_hi": 4678,
+        "n_fires_lo": 45294,
+        "n_months": 49,
+        "point_hi": 0.07416264273404244,
+        "point_lo": 0.0469889243735791,
+        "diff_point": 0.02717371836046334,
+        "boot_mean": 0.027298715302820353,
+        "boot_se": 0.008921514724374016,
+        "ci95": [
+          0.009801330956768719,
+          0.045230796108973424
+        ],
+        "lower_gt_0": true,
+        "upper_lt_0": false,
+        "no_verdict": false
+      },
+      "note": "SECONDARY only \u2014 no promotion power, no kill power. EA = MFE + MDD (MFE >= 0, MDD <= 0). FAILs iff CI-lower <= 0."
+    },
+    "PSQ_H3": {
+      "verdict": "FAIL",
+      "primary_stat": "stopped_fraction C\u2212A (lower C = better), month-block paired bootstrap",
+      "bootstrap": {
+        "stat_name": "stopped_fraction",
+        "arm_hi": "C",
+        "arm_lo": "A",
+        "aggregator": "mean",
+        "n_fires_hi": 4678,
+        "n_fires_lo": 45294,
+        "n_months": 49,
+        "point_hi": 0.6483539974348012,
+        "point_lo": 0.668057579370336,
+        "diff_point": -0.019703581935534897,
+        "boot_mean": -0.020004922805056315,
+        "boot_se": 0.012416315407075369,
+        "ci95": [
+          -0.045051662949195964,
+          0.003106957308916078
+        ],
+        "lower_gt_0": false,
+        "upper_lt_0": false,
+        "no_verdict": false
+      },
+      "note": "SECONDARY only \u2014 no promotion power, no kill power. FAILs iff CI-upper >= 0 (cannot rule out C having >= A stopped rate). C\u2212A difference: negative = C better."
+    },
+    "KILL_PSQ": {
+      "triggered": false,
+      "kill_reason_overall_nonpositive": false,
+      "kill_reason_regime_negative": [
+        "2022_bear"
+      ],
+      "note": "KILL iff H1 full-sample point diff <= 0, OR negative in >= 2 regimes at n_dates >= 50. KILL appends a row to DO_NOT_REBUILD \u00a72 (construction-scoped: 'Stage-2\u2229EC as a return-quality/hold tilt on the T1/T2 timing entry'). A KILL does NOT touch the forward shadow and does NOT delete Stage/EC display surfaces."
+    },
+    "regime_leg": {
+      "note": "H1 point diff per PSF regime partition. Sign flips printed, no verdict change alone.",
+      "regimes": {
+        "2022_bear": {
+          "n_dates": 250,
+          "n_fires_C": 615,
+          "n_fires_A": 11570,
+          "median_fwd_ret_C": -0.05595704698846149,
+          "median_fwd_ret_A": -0.04039780961667705,
+          "diff_point": -0.01555923737178444
+        },
+        "2023_24_bull": {
+          "n_dates": 502,
+          "n_fires_C": 2490,
+          "n_fires_A": 22093,
+          "median_fwd_ret_C": 0.06959576014132307,
+          "median_fwd_ret_A": 0.0341225877427036,
+          "diff_point": 0.03547317239861947
+        },
+        "2025_26": {
+          "n_dates": 250,
+          "n_fires_C": 1573,
+          "n_fires_A": 11631,
+          "median_fwd_ret_C": 0.0692397866918737,
+          "median_fwd_ret_A": 0.061416737264372134,
+          "diff_point": 0.00782304942750156
+        }
+      }
+    }
+  }
+}
