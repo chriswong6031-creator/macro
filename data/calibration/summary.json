@@ -1,20 +1,20 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-19",
+  "as_of": "2026-07-20",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
-      "scored": 10,
-      "open": 32,
-      "hit_rate": 0.8,
-      "dir_accuracy": 0.9,
+      "scored": 11,
+      "open": 31,
+      "hit_rate": 0.818,
+      "dir_accuracy": 0.818,
       "conviction_monotone": null,
       "regimes": [
         "Goldilocks"
       ],
       "health": "calibrated",
-      "health_note": "hit-rate 0.8 over 10 scored; conviction ordering holds"
+      "health_note": "hit-rate 0.818 over 11 scored; conviction ordering holds"
     },
     {
       "name": "Policy Intent",
@@ -32,7 +32,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 332,
+      "open": 339,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -44,7 +44,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 114,
+      "open": 115,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -56,7 +56,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 25,
-      "open": 98,
+      "open": 94,
       "hit_rate": 0.72,
       "dir_accuracy": 0.32,
       "conviction_monotone": true,
@@ -844,8 +844,8 @@
       "name": "Prophet US \u2014 board track",
       "region": "US",
       "rel_path": "site/factordata/us_board_track.json",
-      "board_dates": 9,
-      "graded_rows": 1411,
+      "board_dates": 10,
+      "graded_rows": 1537,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",

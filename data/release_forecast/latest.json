@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-07-20T05:16:01Z",
+  "asof": "2026-07-21T03:23:00Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -27,7 +27,7 @@
       "release_type": "claims",
       "period": "2026-07-23",
       "release_date": "2026-07-23",
-      "days_to": 4,
+      "days_to": 3,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -55,7 +55,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -75,7 +75,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -90,7 +90,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-07-23_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-07-23_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -104,7 +104,7 @@
       "release_type": "pce_headline",
       "period": "2026-06",
       "release_date": "2026-07-30",
-      "days_to": 11,
+      "days_to": 10,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.2864,
@@ -114,7 +114,7 @@
         "p75": -0.2287,
         "p90": -0.167
       },
-      "confidence": 0.9144,
+      "confidence": 0.9189,
       "input_completeness": 1.0,
       "benchmark_set": {
         "naive_prior": 0.4775,
@@ -160,7 +160,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -193,7 +193,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -208,7 +208,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-06_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-06_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.875,
@@ -222,7 +222,7 @@
       "release_type": "pce_core",
       "period": "2026-06",
       "release_date": "2026-07-30",
-      "days_to": 11,
+      "days_to": 10,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0117,
@@ -277,7 +277,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -310,7 +310,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -325,7 +325,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-06_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-06_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.8571428571428571,
         "fresh_proxy_coverage": 0.8571428571428571,
@@ -339,7 +339,7 @@
       "release_type": "claims",
       "period": "2026-07-30",
       "release_date": "2026-07-30",
-      "days_to": 11,
+      "days_to": 10,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -367,7 +367,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -387,7 +387,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -402,7 +402,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-07-30_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-07-30_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -416,7 +416,7 @@
       "release_type": "claims",
       "period": "2026-08-06",
       "release_date": "2026-08-06",
-      "days_to": 18,
+      "days_to": 17,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -444,7 +444,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -464,7 +464,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -479,7 +479,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-06_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-06_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -493,7 +493,7 @@
       "release_type": "nfp",
       "period": "2026-07",
       "release_date": "2026-08-07",
-      "days_to": 19,
+      "days_to": 18,
       "target": "change_thousands",
       "projection": {
         "point": null,
@@ -556,7 +556,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -610,7 +610,7 @@
           2022,
           2023
         ],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -642,7 +642,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-07_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-07_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.75,
         "fresh_proxy_coverage": 0.5,
@@ -670,7 +670,7 @@
       "release_type": "cpi_headline",
       "period": "2026-07",
       "release_date": "2026-08-12",
-      "days_to": 24,
+      "days_to": 23,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.1325,
@@ -692,8 +692,8 @@
           "event_key": "cpi_print",
           "event_title": "Core CPI YoY - July 2026",
           "implied": "2.4%",
-          "prob_top": 0.445,
-          "asof": "2026-07-18"
+          "prob_top": 0.42,
+          "asof": "2026-07-20"
         }
       },
       "surprise_skew": {
@@ -749,7 +749,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -795,8 +795,8 @@
         "event_key": "cpi_print",
         "event_title": "Core CPI YoY - July 2026",
         "implied": "2.4%",
-        "prob_top": 0.445,
-        "asof": "2026-07-18"
+        "prob_top": 0.42,
+        "asof": "2026-07-20"
       },
       "expectation_read": {
         "tag": "below_expectations",
@@ -824,7 +824,7 @@
         "cpi_median_se_trend": "falling",
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -839,7 +839,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-07_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-07_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.7777777777777778,
@@ -849,12 +849,12 @@
       "shadows": {
         "v3_factor": {
           "display_only": true,
-          "point": -0.0682,
-          "p10": -0.2509,
-          "p25": -0.1529,
-          "p50": -0.0601,
-          "p75": 0.0517,
-          "p90": 0.1288,
+          "point": -0.0639,
+          "p10": -0.2467,
+          "p25": -0.1486,
+          "p50": -0.0558,
+          "p75": 0.0561,
+          "p90": 0.1332,
           "confidence": null,
           "input_completeness": 0.9091
         },
@@ -926,22 +926,22 @@
         },
         "mf_energy": {
           "display_only": true,
-          "point": -0.029,
-          "p10": -0.1894,
-          "p25": -0.0935,
-          "p50": -0.0156,
-          "p75": 0.0903,
-          "p90": 0.1819,
+          "point": -0.0542,
+          "p10": -0.2146,
+          "p25": -0.1187,
+          "p50": -0.0408,
+          "p75": 0.0651,
+          "p90": 0.1567,
           "confidence": 0.428,
           "input_completeness": 1.0,
           "mf_energy_components": {
-            "gasoline_mom": -5.201250745435482,
-            "energy_contrib": -0.20461607072105395,
-            "exenergy_ar": 0.15020927297625986,
+            "gasoline_mom": -5.768470960094829,
+            "energy_contrib": -0.22693039034100354,
+            "exenergy_ar": 0.15020927297626005,
             "gasoline_ri_weight": 2.895,
             "gamma": 0.039339782051580785,
             "n_gasoline_weeks_published": 2,
-            "n_gasoline_weeks_projected": 1,
+            "n_gasoline_weeks_projected": 0,
             "gasoline_wti_beta_slope": 0.0041175587738287635,
             "gasoline_wti_beta_intercept": 0.0013263564306145257,
             "gasoline_wti_n_train": 1865
@@ -949,12 +949,12 @@
         }
       },
       "combined": {
-        "combined_point": -0.071745,
-        "p10": -0.345572,
-        "p25": -0.215859,
-        "p50": -0.071745,
-        "p75": 0.072369,
-        "p90": 0.202083,
+        "combined_point": -0.076661,
+        "p10": -0.349409,
+        "p25": -0.220207,
+        "p50": -0.076661,
+        "p75": 0.066885,
+        "p90": 0.196087,
         "combined_components": {
           "inputs_used": [
             "champion",
@@ -965,9 +965,9 @@
           ],
           "points": {
             "champion": -0.1325,
-            "v3_factor": -0.0682,
+            "v3_factor": -0.0639,
             "cpi_bridge": -0.1311,
-            "mf_energy": -0.029,
+            "mf_energy": -0.0542,
             "cleveland": -0.009757
           },
           "weights": {
@@ -993,8 +993,8 @@
           },
           "MAE_pool": 0.4195,
           "sigma_champion": 0.2075,
-          "Var_w": 0.00259455,
-          "sigma_combined": 0.21366,
+          "Var_w": 0.0022355,
+          "sigma_combined": 0.212819,
           "cold_start": false,
           "k": 3.0
         },
@@ -1009,7 +1009,7 @@
       "release_type": "cpi_core",
       "period": "2026-07",
       "release_date": "2026-08-12",
-      "days_to": 24,
+      "days_to": 23,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0056,
@@ -1031,8 +1031,8 @@
           "event_key": "cpi_print",
           "event_title": "Core CPI YoY - July 2026",
           "implied": "2.4%",
-          "prob_top": 0.445,
-          "asof": "2026-07-18"
+          "prob_top": 0.42,
+          "asof": "2026-07-20"
         }
       },
       "surprise_skew": {
@@ -1085,7 +1085,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -1126,8 +1126,8 @@
         "event_key": "cpi_print",
         "event_title": "Core CPI YoY - July 2026",
         "implied": "2.4%",
-        "prob_top": 0.445,
-        "asof": "2026-07-18"
+        "prob_top": 0.42,
+        "asof": "2026-07-20"
       },
       "expectation_read": {
         "tag": "below_expectations",
@@ -1155,7 +1155,7 @@
         "cpi_median_se_trend": "falling",
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -1170,7 +1170,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-07_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-07_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.875,
@@ -1180,23 +1180,23 @@
       "shadows": {
         "v3_factor": {
           "display_only": true,
-          "point": 0.0631,
-          "p10": -0.0715,
-          "p25": -0.0008,
-          "p50": 0.0633,
-          "p75": 0.1282,
-          "p90": 0.1896,
+          "point": 0.0645,
+          "p10": -0.0702,
+          "p25": 0.0006,
+          "p50": 0.0646,
+          "p75": 0.1296,
+          "p90": 0.191,
           "confidence": null,
           "input_completeness": 0.9
         }
       },
       "combined": {
-        "combined_point": 0.088824,
-        "p10": -0.114117,
-        "p25": -0.017983,
-        "p50": 0.088824,
-        "p75": 0.19563,
-        "p90": 0.291764,
+        "combined_point": 0.089298,
+        "p10": -0.113545,
+        "p25": -0.017457,
+        "p50": 0.089298,
+        "p75": 0.196054,
+        "p90": 0.292142,
         "combined_components": {
           "inputs_used": [
             "champion",
@@ -1205,7 +1205,7 @@
           ],
           "points": {
             "champion": -0.0056,
-            "v3_factor": 0.0631,
+            "v3_factor": 0.0645,
             "cleveland": 0.211432
           },
           "weights": {
@@ -1225,8 +1225,8 @@
           },
           "MAE_pool": 0.2333,
           "sigma_champion": 0.1302,
-          "Var_w": 0.0081225,
-          "sigma_combined": 0.158349,
+          "Var_w": 0.00809852,
+          "sigma_combined": 0.158274,
           "cold_start": false,
           "k": 3.0
         },
@@ -1241,7 +1241,7 @@
       "release_type": "ppi_finaldemand",
       "period": "2026-07",
       "release_date": "2026-08-13",
-      "days_to": 25,
+      "days_to": 24,
       "target": "mom_sa_pct",
       "projection": {
         "point": 0.2941,
@@ -1291,7 +1291,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -1315,7 +1315,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -1330,7 +1330,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-07_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-07_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.8,
         "fresh_proxy_coverage": 0.6,
@@ -1344,7 +1344,7 @@
       "release_type": "claims",
       "period": "2026-08-13",
       "release_date": "2026-08-13",
-      "days_to": 25,
+      "days_to": 24,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1372,7 +1372,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -1392,7 +1392,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -1407,7 +1407,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-13_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-13_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -1421,7 +1421,7 @@
       "release_type": "claims",
       "period": "2026-08-20",
       "release_date": "2026-08-20",
-      "days_to": 32,
+      "days_to": 31,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1449,7 +1449,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -1469,7 +1469,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -1484,7 +1484,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-20_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-20_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -1498,7 +1498,7 @@
       "release_type": "pce_headline",
       "period": "2026-07",
       "release_date": "2026-08-26",
-      "days_to": 38,
+      "days_to": 37,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.2788,
@@ -1554,7 +1554,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -1587,7 +1587,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -1602,7 +1602,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-07_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-07_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.875,
@@ -1616,7 +1616,7 @@
       "release_type": "pce_core",
       "period": "2026-07",
       "release_date": "2026-08-26",
-      "days_to": 38,
+      "days_to": 37,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0117,
@@ -1671,7 +1671,7 @@
       "regime_axis": "inflation",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -1704,7 +1704,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -1719,7 +1719,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-07_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-07_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.8571428571428571,
         "fresh_proxy_coverage": 0.8571428571428571,
@@ -1733,7 +1733,7 @@
       "release_type": "claims",
       "period": "2026-08-27",
       "release_date": "2026-08-27",
-      "days_to": 39,
+      "days_to": 38,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1761,7 +1761,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -1781,7 +1781,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -1796,7 +1796,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-27_first_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-27_first_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -1848,7 +1848,7 @@
       "regime_axis": "growth",
       "policy_backdrop": {
         "fed_stance": "hawkish",
-        "gap_bp": 8,
+        "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-07-29",
         "guidance_direction": "on_hold"
@@ -1868,7 +1868,7 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-19",
+        "as_of": "2026-07-20",
         "display_only": true,
         "authority": false
       },
@@ -1883,7 +1883,7 @@
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/retail_sales_2026-07-19_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/retail_sales_2026-07-20_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -1984,8 +1984,8 @@
   ],
   "scoreboard_ref": "data/release_forecast/scoreboard.json",
   "capture_health": {
-    "asof": "2026-07-19",
-    "last_nightly_asof": "2026-07-18",
+    "asof": "2026-07-20",
+    "last_nightly_asof": "2026-07-19",
     "nightly_gap_days": 1,
     "past_due_unscored": [
       {
@@ -1997,8 +1997,8 @@
       }
     ],
     "enricher_staleness": {
-      "kalshi_releases_asof": "2026-07-20",
-      "cleveland_nowcast_asof": "2026-07-17",
+      "kalshi_releases_asof": "2026-07-21",
+      "cleveland_nowcast_asof": "2026-07-21",
       "work_stoppages_asof": "2024-10-01",
       "print_integrity_asof": "2024-01-01"
     },

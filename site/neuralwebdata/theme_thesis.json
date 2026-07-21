@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-20",
-  "generated_at": "2026-07-20T05:19:25Z",
+  "as_of": "2026-07-21",
+  "generated_at": "2026-07-21T03:24:55Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -28,10 +28,10 @@
   "theses": [
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-21",
       "thesis_id": "ai_semiconductors.v1",
-      "content_hash": "sha256:e205c811b42908a3c85546ea41b42e6c17fe099ea2de83e0c5cb7cb957f84f83",
-      "prev_content_hash": "sha256:d409a683fba3ead8ffb776bd735c54c9f6967306fd100a621141fe56b94e8e12",
+      "content_hash": "sha256:09bde81092fee9545a4c676d5d2c77b6e935791fc2d66dec7cf65530ebe401cc",
+      "prev_content_hash": "sha256:e205c811b42908a3c85546ea41b42e6c17fe099ea2de83e0c5cb7cb957f84f83",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -109,7 +109,7 @@
           "rule_en": "If crowding on the ai_semiconductors or ai_infra basket exceeds 0.7 (z-score), the risk-adjusted opportunity is diminished — variant perception has become consensus.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.315"
+          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.342"
         },
         {
           "id": "ai_semi_f4",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-19",
+      "as_of": "2026-07-21",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:c1787069a6490bcff04fe022914c509b1a6da113ddbd5b07e577cb85c41e44ba",
-      "prev_content_hash": "sha256:718dc583b8a08db018379a67e0531761d0ae505112ce514e390cc3433abf6e44",
+      "content_hash": "sha256:659b1214790e3839294f7dce44da415ea9d3d4cc7f9142a605faa306414a0d34",
+      "prev_content_hash": "sha256:c1787069a6490bcff04fe022914c509b1a6da113ddbd5b07e577cb85c41e44ba",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -534,7 +534,7 @@
           "rule_en": "If reshoring basket score falls below 30 or moves to 'avoid' label, the industrial-capex driver underpinning automation demand is weakening.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=41.0"
+          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=40.0"
         },
         {
           "id": "robo_f3",
@@ -892,10 +892,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-20",
+      "as_of": "2026-07-21",
       "thesis_id": "defense_aerospace.v1",
-      "content_hash": "sha256:ec8590d1f6c3156a12c08147ac07692c0fb841d316618529204fc4cde330db8c",
-      "prev_content_hash": "sha256:ec07ada1d93e33d2c4331b2ac6ba51693ff9a5f8a98486aaacaac4a8f6247922",
+      "content_hash": "sha256:45141535e37338b1acbe7aca15415c59fcac5154d3b235564a7a8da19941274b",
+      "prev_content_hash": "sha256:ec8590d1f6c3156a12c08147ac07692c0fb841d316618529204fc4cde330db8c",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -953,7 +953,7 @@
           "rule_en": "If revision_breadth for defense_aerospace falls below 0.0, budget headwinds or program cancellations are spreading through earnings revisions.\n",
           "state": "FIRED",
           "fired": true,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=-0.136"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=-0.22"
         },
         {
           "id": "def_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-20T05:19:25Z",
-  "inputs_hash": "sha256:679ac23c06e059b2e36a54aeffa442d905c00350c59506f41d2c522f1ab44f9d",
+  "produced_at": "2026-07-21T03:24:55Z",
+  "inputs_hash": "sha256:7db370e3798ba61cc92cb5a3076380f30b456460b3ad4b29770ff4de3f259120",
   "tier": "display"
 }

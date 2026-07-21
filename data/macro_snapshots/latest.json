@@ -1,13 +1,13 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-07-20",
+  "asof": "2026-07-21",
   "oldest_component_asof": "2026-07-17",
-  "macro_context_id": "e63016827069d12e",
+  "macro_context_id": "2af4a82c96cdbde7",
   "labels": {
     "us": {
       "us_quad": "Q1",
       "us_transition_state": "TRANSITIONING",
-      "us_fused_risk": "caution",
+      "us_fused_risk": "elevated",
       "us_vol_regime": "normalizing",
       "us_risk_radar": "caution",
       "us_rate_pressure": "pressure",
@@ -19,7 +19,7 @@
       "us_gamma_regime": null,
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
-      "us_vrp_state": "rich (vol overpriced \u2014 constructive)",
+      "us_vrp_state": "normal",
       "cross_asset_verdict": "diverge"
     },
     "market": {
@@ -45,7 +45,7 @@
       "fx_usdchf_action": "FLAT",
       "fx_audusd_action": "SHORT",
       "fx_usdcad_action": "FLAT",
-      "fx_usdmxn_action": "FLAT",
+      "fx_usdmxn_action": "SHORT",
       "fx_usdbrl_action": "FLAT",
       "fx_usdcnh_action": "FLAT",
       "fx_dxy_action": null
@@ -81,7 +81,7 @@
     },
     "canada": {
       "canada_quad": "Q1",
-      "canada_overlay_state": "Neutral",
+      "canada_overlay_state": "Risk-on",
       "canada_cycle_tag": "mid"
     },
     "dispersion": {
@@ -98,16 +98,16 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-07-17",
-    "data/market_state/latest.json": "2026-07-17",
-    "data/transmission/latest.json": "2026-07-17",
-    "data/forex/latest.json": "2026-07-20",
-    "data/bonds/bond_health.json": "2026-07-17",
-    "data/commodity/latest.json": "2026-07-19",
-    "data/china_regime/latest.json": "2026-07-17",
-    "data/hk_regime/latest.json": "2026-07-17",
-    "data/canada_regime/latest.json": "2026-07-17",
-    "data/dispersion/regime.json": "2026-07-19",
+    "data/regime/latest.json": "2026-07-20",
+    "data/market_state/latest.json": "2026-07-20",
+    "data/transmission/latest.json": "2026-07-20",
+    "data/forex/latest.json": "2026-07-21",
+    "data/bonds/bond_health.json": "2026-07-20",
+    "data/commodity/latest.json": "2026-07-20",
+    "data/china_regime/latest.json": "2026-07-20",
+    "data/hk_regime/latest.json": "2026-07-20",
+    "data/canada_regime/latest.json": "2026-07-20",
+    "data/dispersion/regime.json": "2026-07-20",
     "data/intl_regime/AU_history.parquet": "2026-07-20",
     "data/intl_regime/EZ_history.parquet": "2026-07-17",
     "data/intl_regime/GB_history.parquet": "2026-07-17",

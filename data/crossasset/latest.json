@@ -17,17 +17,16 @@
     "regime": "risk-on trends",
     "correlation": {
       "verdict": "concentrated",
-      "absorption_pctile": 0.89,
+      "absorption_pctile": 0.87,
       "n_markets": 6,
-      "absorption_ratio": 0.422,
-      "mean_abs_corr": 0.286,
+      "absorption_ratio": 0.416,
+      "mean_abs_corr": 0.279,
       "dominant_cluster": [
         "US",
         "Commodities",
         "Dollar"
       ],
       "spark_w": [
-        0.323,
         0.325,
         0.344,
         0.341,
@@ -130,9 +129,10 @@
         0.446,
         0.463,
         0.445,
-        0.422
+        0.422,
+        0.416
       ],
-      "spark_asof": "2026-07-17"
+      "spark_asof": "2026-07-24"
     },
     "breadth": 0.38,
     "trend_top": [
@@ -177,19 +177,19 @@
         "pair": "copper_gold",
         "ratio": 0.002,
         "trend": "mid",
-        "pctile": 72.0
+        "pctile": 75.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 70.583,
+        "ratio": 70.85,
         "trend": "mid",
-        "pctile": 30.0
+        "pctile": 31.0
       },
       {
         "pair": "oil_gold",
         "ratio": 0.021,
         "trend": "mid",
-        "pctile": 57.0
+        "pctile": 55.0
       },
       {
         "pair": "stocks_gold",
@@ -204,7 +204,7 @@
           "key": "rates_term",
           "label_en": "Rates term-spread (10y-3m)",
           "label_zh": "\u5229\u7387\u671f\u9650\u5229\u5dee (10\u5e74-3\u6708)",
-          "value": 0.87,
+          "value": 0.84,
           "unit": "%",
           "state": "positive carry"
         },
@@ -231,6 +231,14 @@
           "value": -0.1,
           "unit": "%/yr",
           "state": "contango (negative)"
+        },
+        {
+          "key": "roll_oil",
+          "label_en": "Oil roll yield",
+          "label_zh": "oil \u5c55\u671f\u6536\u76ca",
+          "value": 0.1,
+          "unit": "%/yr",
+          "state": "backwardation (positive)"
         }
       ],
       "note": "Current-state carry context only. Rates term-spread has deep history; commodity roll-yield is reconstructed from dated futures with <2y of history, so it is NOT backtested as a factor. Context, not a buy list."
@@ -242,40 +250,40 @@
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.344,
-          "t": 4.766,
+          "r": 0.335,
+          "t": 4.568,
           "q": 0.0
         },
         {
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.295,
-          "t": 4.548,
+          "r": 0.294,
+          "t": 4.558,
           "q": 0.0
         },
         {
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.3,
-          "t": 4.478,
+          "r": 0.299,
+          "t": 4.467,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.242,
-          "t": 3.443,
-          "q": 0.0225
+          "r": 0.238,
+          "t": 3.304,
+          "q": 0.0375
         },
         {
           "leader": "Crypto",
           "follower": "China",
           "lag": 1,
           "r": 0.196,
-          "t": 2.973,
+          "t": 2.976,
           "q": 0.087
         }
       ],
@@ -295,10 +303,10 @@
       "impulse_13w": null
     },
     "funding_stress": {
-      "asof": "2026-07-16",
+      "asof": "2026-07-17",
       "state": "calm",
-      "score": 23.0,
-      "spread_bp": -1.0
+      "score": 13.0,
+      "spread_bp": -4.0
     },
     "confirm": {
       "verdict": "diverge",
@@ -324,11 +332,11 @@
       "corr_top": [
         {
           "key": "GC=F",
-          "corr": -0.75
+          "corr": -0.73
         },
         {
           "key": "HG=F",
-          "corr": -0.66
+          "corr": -0.67
         },
         {
           "key": "SPY",
@@ -338,12 +346,12 @@
       "unstable_n": 0,
       "fx_stress": {
         "dominant": null,
-        "top_key": "em_crisis_capital_flight",
-        "top_val": 27.8
+        "top_key": "reflation_risk_on",
+        "top_val": 53.8
       }
     },
     "shadow": {
-      "pressure_pctile": 0.89,
+      "pressure_pctile": 0.87,
       "incumbent_state": "caution",
       "shadow_state": "caution",
       "escalated": false

@@ -39,3 +39,7 @@
 {"asof": "2026-07-17", "domain": "intl", "field": "intl_ez_quad", "from_value": "Q2", "to_value": "Q1", "macro_context_id": "99bd6183eeb5c8b4"}
 {"asof": "2026-07-17", "domain": "intl", "field": "intl_kr_quad", "from_value": "Q1", "to_value": "Q2", "macro_context_id": "99bd6183eeb5c8b4"}
 {"asof": "2026-07-19", "domain": "intl", "field": "intl_tw_quad", "from_value": "Q1", "to_value": "Q3", "macro_context_id": "e63016827069d12e"}
+{"asof": "2026-07-21", "domain": "us", "field": "us_fused_risk", "from_value": "caution", "to_value": "elevated", "macro_context_id": "2af4a82c96cdbde7"}
+{"asof": "2026-07-21", "domain": "us", "field": "us_vrp_state", "from_value": "rich (vol overpriced \u2014 constructive)", "to_value": "normal", "macro_context_id": "2af4a82c96cdbde7"}
+{"asof": "2026-07-21", "domain": "fx", "field": "fx_usdmxn_action", "from_value": "FLAT", "to_value": "SHORT", "macro_context_id": "2af4a82c96cdbde7"}
+{"asof": "2026-07-21", "domain": "canada", "field": "canada_overlay_state", "from_value": "Neutral", "to_value": "Risk-on", "macro_context_id": "2af4a82c96cdbde7"}

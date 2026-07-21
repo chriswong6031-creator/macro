@@ -12,8 +12,8 @@
   "held": [
     "cn_ai_compute",
     "cn_pharma_cxo",
-    "cn_robotics",
-    "cn_coal"
+    "cn_coal",
+    "cn_robotics"
   ],
   "leader": "cn_ai_compute",
   "names": {

@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-07-17",
+  "asof": "2026-07-20",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -26,15 +26,15 @@
     "assets_bn": 6743.028,
     "assets_chg_20d_bn": 6.604,
     "reserve_balances_bn": 3142.721,
-    "walcl_stale_days": 2,
+    "walcl_stale_days": 3,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-07-17"
+    "asof": "2026-07-20"
   },
   "treasury": {
-    "tga_bn": 822.51,
-    "tga_chg_20d_bn": -133.992,
-    "net_issuance_20d_bn": 183.818,
+    "tga_bn": 815.418,
+    "tga_chg_20d_bn": -99.667,
+    "net_issuance_20d_bn": 211.882,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
@@ -47,48 +47,48 @@
       "summary_en": "No TGA impulse detected.",
       "summary_zh": "未检测到TGA冲量。"
     },
-    "asof": "2026-07-16"
+    "asof": "2026-07-17"
   },
   "rrp": {
-    "rrp_bn": 0.1,
-    "rrp_chg_20d_bn": -0.151,
+    "rrp_bn": 0.03,
+    "rrp_chg_20d_bn": -3.895,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5920.418,
-    "netliq_chg_20d_bn": 99.33,
-    "netliq_chg_65d_bn": 139.38,
-    "netliq_pctile_expanding": 0.805643,
+    "netliq_bn": 5927.58,
+    "netliq_chg_20d_bn": 137.896,
+    "netliq_chg_65d_bn": 193.197,
+    "netliq_pctile_expanding": 0.809577,
     "overlay": "expanding"
   },
   "quality": {
     "label": "stress-expansion",
-    "fed_share": 0.05,
+    "fed_share": 0.04,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.71,
-      "hy_oas_z": 0.32,
+      "hy_oas_pct": 2.73,
+      "hy_oas_z": 0.47,
       "nfci": -0.538,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 2
+    "walcl_stale_days": 3
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
     "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.9116,
-    "sofr_minus_iorb_bp": -3.0,
-    "sofr_minus_iorb_d20_bp": -1.0,
-    "sofr_minus_iorb_pctile": 0.8263,
-    "sofr_99pctl_minus_iorb_bp": 5.0,
-    "sofr_99pctl_minus_iorb_d20_bp": -2.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.7445,
+    "effr_minus_iorb_pctile": 0.9117,
+    "sofr_minus_iorb_bp": -6.0,
+    "sofr_minus_iorb_d20_bp": -4.0,
+    "sofr_minus_iorb_pctile": 0.7498,
+    "sofr_99pctl_minus_iorb_bp": 2.0,
+    "sofr_99pctl_minus_iorb_d20_bp": -4.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.4693,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
-    "reserve_scarcity_state": "tightening",
-    "asof": "2026-07-16"
+    "reserve_scarcity_state": "normalizing",
+    "asof": "2026-07-17"
   },
   "components": {
     "walcl": {
@@ -98,22 +98,18 @@
       "pctile": 0.773
     },
     "rrp": {
-      "level_bn": 0.1,
-      "d20_bn": -0.2,
+      "level_bn": 0.0,
+      "d20_bn": -3.9,
       "d65_bn": -0.1,
-      "pctile": 0.0505
+      "pctile": 0.0367
     },
     "tga": {
-      "level_bn": 822.5,
-      "d20_bn": -92.6,
-      "d65_bn": -101.9,
-      "pctile": 0.9012
+      "level_bn": 815.4,
+      "d20_bn": -127.4,
+      "d65_bn": -155.7,
+      "pctile": 0.8964
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-04-20",
-        "v": 5667.2
-      },
       {
         "d": "2026-04-21",
         "v": 5675.4
@@ -360,7 +356,11 @@
       },
       {
         "d": "2026-07-17",
-        "v": 5920.4
+        "v": 5927.5
+      },
+      {
+        "d": "2026-07-20",
+        "v": 5927.6
       }
     ],
     "reserves": {
@@ -390,7 +390,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-07-20T05:16:00Z",
-  "inputs_hash": "sha256:910e5da932046868377cb361fa9928f4a27e15eade46ae09d4b61f2611107f0c",
+  "produced_at": "2026-07-21T03:22:59Z",
+  "inputs_hash": "sha256:d3e5bcee7aaf765bcfb42484f390c1d8d23ecd28a1be8097c3a879637e0c6421",
   "tier": "shadow"
 }
