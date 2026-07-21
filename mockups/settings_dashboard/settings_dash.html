@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings dashboard — design mockup</title>
+<!--
+  DESIGN MOCKUP — the large settings dashboard modal that replaces the gear
+  popover's cramped "page 2" account panel. This file is the SPEC: the sd-*
+  CSS + markup below is what gets ported into templates/theme.js (as an
+  injected-CSS string + lazily-built DOM). States are togglable via the dev
+  strip (bottom-right): auth (signed-in / signed-out / guest), theme, lang.
+
+  Porting contract highlights (full spec in the build handoff):
+  • every color rides house vars with vector-palette fallbacks:
+    var(--panel,var(--card)) / var(--panel2,var(--card)) / var(--line,var(--grid))
+    var(--link,var(--blue)) / var(--text,var(--ink)) / var(--muted,var(--ink-3))
+  • #9b5cff is the EXISTING house avatar-gradient endpoint, not a new color.
+  • ONE-SHOT animations only (laser sweep on open). No infinite loops —
+    mobile-perf law (breathing-animation sweeps #3166/#3168).
+  • mobile ≤640px = full-screen sheet, rail → horizontal tabs.
+-->
+<style>
+  /* ---- stand-in house palette (theme.css values; the port uses the real vars) */
+  :root{
+    --bg:#0b0f1a; --panel:#0e1320; --panel2:#141a28; --line:#283042;
+    --text:#e7ecf6; --muted:#8b93a7; --link:#4f8cff; --up:#23c08a; --down:#ff5c6c;
+  }
+  html[data-theme="light"]{
+    --bg:#eef2f9; --panel:#ffffff; --panel2:#f4f6fb; --line:#dde3ef;
+    --text:#17202f; --muted:#5d6a80; --link:#2f6bff; --up:#0f9d6a; --down:#d84a5a;
+  }
+  html,body{margin:0;min-height:100%}
+  body{background:var(--bg);font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text)}
+  /* fake page behind the modal so the glass reads truthfully */
+  .fakepage{position:fixed;inset:0;overflow:hidden}
+  .fakepage .fp-card{position:absolute;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+  .fakepage .fp-a{top:40px;left:40px;right:52%;height:300px}
+  .fakepage .fp-b{top:40px;left:50%;right:40px;height:180px}
+  .fakepage .fp-c{top:380px;left:40px;right:40px;height:400px}
+  .fakepage .fp-glow{position:absolute;top:-140px;left:30%;width:520px;height:420px;border-radius:50%;
+    background:radial-gradient(closest-side,color-mix(in srgb,var(--link) 22%,transparent),transparent);filter:blur(30px)}
+
+  /* ---- bilingual: same mechanism as the site (.l-en/.l-zh spans) ---- */
+  html[data-lang="en"] .l-zh{display:none}
+  html[data-lang="zh"] .l-en{display:none}
+
+  /* =====================================================================
+     SETTINGS DASHBOARD (sd-*) — the deliverable
+     ===================================================================== */
+  .sd-overlay{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:color-mix(in srgb,#04060c 66%,transparent);
+    -webkit-backdrop-filter:blur(9px) saturate(1.05);backdrop-filter:blur(9px) saturate(1.05);
+    opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility 0s linear .22s}
+  .sd-overlay.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .22s ease,visibility 0s}
+
+  .sd-card{position:relative;display:flex;width:min(720px,100%);height:min(560px,calc(100dvh - 48px));
+    box-sizing:border-box;border-radius:20px;overflow:hidden;isolation:isolate;
+    background:color-mix(in srgb,var(--panel) 82%,transparent);
+    border:1px solid color-mix(in srgb,var(--text) 14%,transparent);
+    -webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);
+    box-shadow:0 32px 90px -20px rgba(3,7,18,.8),0 10px 28px -12px rgba(3,7,18,.5),
+      inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);
+    transform:translateY(14px) scale(.985);opacity:.4;
+    transition:transform .3s cubic-bezier(.32,1.28,.5,1),opacity .22s ease;
+    color:var(--text)}
+  .sd-overlay.open .sd-card{transform:none;opacity:1}
+  html[data-theme="light"] .sd-card{box-shadow:0 30px 80px -22px rgba(20,30,50,.35),0 10px 26px -14px rgba(20,30,50,.22),
+    inset 0 1px 0 rgba(255,255,255,.75)}
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.sd-card{background:var(--panel)}}
+
+  /* laser hairline — brand-bar idiom; sweeps ONCE on open, then rests */
+  .sd-laser{position:absolute;top:0;left:0;right:0;height:2px;z-index:3;pointer-events:none;
+    background:linear-gradient(90deg,transparent 0%,var(--link) 30%,#9b5cff 62%,transparent 100%);
+    background-size:220% 100%;background-position:120% 0}
+  .sd-overlay.open .sd-laser{animation:sdLaser .9s cubic-bezier(.4,.1,.2,1) .12s forwards}
+  @keyframes sdLaser{from{background-position:120% 0}to{background-position:0% 0}}
+  @media (prefers-reduced-motion:reduce){
+    .sd-overlay,.sd-card{transition:opacity .15s ease}
+    .sd-card{transform:none}
+    .sd-overlay.open .sd-laser{animation:none;background-position:0% 0}
+  }
+
+  /* ---- left rail ---- */
+  .sd-rail{flex:none;width:200px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;
+    padding:16px 12px 14px;border-right:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+    background:color-mix(in srgb,var(--panel2) 44%,transparent)}
+  .sd-me{display:flex;align-items:center;gap:9px;padding:4px 4px 12px}
+  .sd-me-av{flex:none;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--link),color-mix(in srgb,var(--link) 55%,#9b5cff))}
+  .sd-me-main{flex:1;min-width:0}
+  .sd-me-name{display:block;font-size:12.5px;font-weight:750;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sd-me-sub{display:block;font-size:10.5px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sd-nav{display:flex;flex-direction:column;gap:3px}
+  .sd-nav-b{position:relative;display:flex;align-items:center;gap:9px;width:100%;box-sizing:border-box;
+    padding:8px 10px;border:0;border-radius:9px;background:transparent;color:var(--muted);
+    font:650 12.5px/1.3 inherit;font-family:inherit;cursor:pointer;text-align:left;
+    transition:background .16s,color .16s;-webkit-tap-highlight-color:transparent}
+  .sd-nav-b svg{width:16px;height:16px;flex:none;stroke-width:1.8}
+  .sd-nav-b:hover{background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--text)}
+  .sd-nav-b.active{background:color-mix(in srgb,var(--link) 13%,transparent);color:var(--link)}
+  .sd-nav-b.active::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;border-radius:2px;
+    background:linear-gradient(180deg,var(--link),#9b5cff)}
+  .sd-nav-b:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  .sd-rail-spacer{flex:1}
+  .sd-signout{display:flex;align-items:center;gap:9px;width:100%;box-sizing:border-box;padding:8px 10px;
+    border:0;border-radius:9px;background:transparent;color:var(--muted);
+    font:650 12.5px/1.3 inherit;font-family:inherit;cursor:pointer;text-align:left;transition:background .16s,color .16s}
+  .sd-signout svg{width:16px;height:16px;flex:none}
+  .sd-signout:hover{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down)}
+  .sd-signout:focus-visible{outline:2px solid var(--down);outline-offset:2px}
+
+  /* ---- right pane ---- */
+  .sd-pane{flex:1;min-width:0;display:flex;flex-direction:column}
+  .sd-head{flex:none;display:flex;align-items:flex-start;gap:10px;padding:18px 18px 12px 22px}
+  .sd-head-main{flex:1;min-width:0}
+  .sd-head h2{margin:0;font-size:15px;font-weight:800;letter-spacing:.01em;line-height:1.2}
+  .sd-head .sd-sub{margin:3px 0 0;font-size:11.5px;line-height:1.45;color:var(--muted)}
+  .sd-x{flex:none;width:28px;height:28px;border-radius:9px;border:1px solid transparent;background:transparent;
+    color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+    transition:background .16s,color .16s}
+  .sd-x:hover{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text)}
+  .sd-x svg{width:15px;height:15px}
+  .sd-x:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  .sd-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 18px 18px 22px}
+
+  /* section switch: one-shot rise on entry */
+  .sd-sect{display:none}
+  /* flex column so the head stays fixed and ONLY .sd-body scrolls — a block here
+     lets tall sections overflow the pane and make the overflow:hidden card scrollable */
+  .sd-sect.on{display:flex;flex-direction:column;flex:1;min-height:0;animation:sdRise .18s ease}
+  @keyframes sdRise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.sd-sect.on{animation:none}}
+
+  /* ---- the aurora ID card (signature) ---- */
+  .sd-id{position:relative;display:flex;align-items:center;gap:14px;padding:16px;margin:4px 0 14px;
+    border-radius:14px;border:1px solid color-mix(in srgb,var(--link) 22%,var(--line));overflow:hidden;
+    background:
+      radial-gradient(120% 180% at 8% 0%,color-mix(in srgb,var(--link) 13%,transparent) 0%,transparent 55%),
+      radial-gradient(90% 160% at 55% -20%,color-mix(in srgb,#9b5cff 9%,transparent) 0%,transparent 60%),
+      color-mix(in srgb,var(--panel2) 72%,transparent)}
+  .sd-id-av{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:inline-flex;
+    align-items:center;justify-content:center;font-size:21px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--link),color-mix(in srgb,var(--link) 55%,#9b5cff))}
+  .sd-id-av::after{content:"";position:absolute;inset:-4px;border-radius:50%;padding:2px;
+    background:conic-gradient(from 210deg,var(--link),#9b5cff 40%,transparent 75%,var(--link));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;opacity:.85}
+  .sd-id-main{flex:1;min-width:0}
+  .sd-id-name{display:block;font-size:17px;font-weight:800;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sd-id-mail{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sd-id-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .sd-chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--muted);
+    background:color-mix(in srgb,var(--panel) 65%,transparent);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .sd-chip svg{width:11px;height:11px}
+  .sd-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--up)}
+
+  /* ---- groups & rows (quiet .settings-row idiom, roomier) ---- */
+  .sd-group{margin:0 0 14px}
+  .sd-group-t{display:block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--muted);margin:0 2px 7px}
+  .sd-row{box-sizing:border-box;background:color-mix(in srgb,var(--panel2) 78%,transparent);
+    border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+  .sd-row + .sd-row{margin-top:7px}
+  .sd-row-line{display:flex;align-items:center;gap:11px;min-height:24px}
+  .sd-row-main{flex:1;min-width:0}
+  .sd-row-lbl{display:block;font-size:12.5px;font-weight:700}
+  .sd-row-desc{display:block;font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .sd-row-val{flex:none;max-width:45%;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sd-row-val.strong{color:var(--text)}
+  .sd-edit{flex:none;font-size:11.5px;font-weight:700;color:var(--link);background:transparent;
+    border:1px solid var(--line);border-radius:8px;padding:5px 11px;cursor:pointer;font-family:inherit;
+    transition:border-color .15s,background .15s}
+  .sd-edit:hover{border-color:var(--link);background:color-mix(in srgb,var(--link) 10%,transparent)}
+  .sd-edit:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+
+  /* inline edit expansion inside a row */
+  .sd-form{display:none;margin-top:10px}
+  .sd-row.editing .sd-form{display:block}
+  .sd-row.editing .sd-edit{display:none}
+  .sd-in{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);font-size:13.5px;font-family:inherit;outline:none;display:block;
+    transition:border-color .15s,box-shadow .15s}
+  .sd-in + .sd-in{margin-top:7px}
+  .sd-in:focus{border-color:var(--link);box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent)}
+  .sd-note{font-size:11px;color:var(--muted);line-height:1.45;margin:6px 0 0}
+  .sd-msg{font-size:11.5px;line-height:1.4;margin-top:6px;display:none}
+  .sd-msg.show{display:block}
+  .sd-msg.ok{color:var(--up)}
+  .sd-msg.err{color:var(--down)}
+  .sd-btns{display:flex;gap:7px;margin-top:9px;justify-content:flex-end}
+  .sd-btn{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;
+    border:1px solid var(--line);font-family:inherit;transition:all .15s}
+  .sd-btn:disabled{opacity:.55;cursor:default}
+  .sd-btn.primary{background:var(--link);border-color:var(--link);color:#fff}
+  .sd-btn.primary:hover:not(:disabled){filter:brightness(1.07);transform:translateY(-1px)}
+  .sd-btn.ghost{background:transparent;color:var(--text)}
+  .sd-btn.ghost:hover:not(:disabled){border-color:var(--link)}
+  .sd-btn:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+
+  /* small utility: copy button + provider chip in value slot */
+  .sd-mini{flex:none;font-size:10.5px;font-weight:700;color:var(--muted);background:transparent;
+    border:1px solid var(--line);border-radius:7px;padding:3px 9px;cursor:pointer;font-family:inherit;
+    transition:border-color .15s,color .15s}
+  .sd-mini:hover{border-color:var(--link);color:var(--link)}
+  .sd-provider{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--text);
+    background:color-mix(in srgb,var(--panel) 65%,transparent);border:1px solid var(--line);border-radius:999px;padding:4px 11px}
+  .sd-provider svg{width:12px;height:12px}
+
+  /* ---- controls (ported idioms: 3-way segment / pill toggle) ---- */
+  .sd-seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;flex:none}
+  .sd-seg-b{padding:4px 12px;border:none;border-radius:999px;font-size:11.5px;font-weight:650;cursor:pointer;
+    font-family:inherit;background:transparent;color:var(--muted);transition:background .2s,color .2s;white-space:nowrap}
+  .sd-seg-b.active{background:var(--link);color:#fff}
+  .sd-seg-b:hover:not(.active){background:color-mix(in srgb,var(--text) 9%,transparent);color:var(--text)}
+  .sd-seg-b:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  .sd-toggle{position:relative;width:44px;height:24px;border-radius:999px;border:1px solid var(--line);
+    background:var(--bg);cursor:pointer;padding:0;flex:none;transition:background .25s,border-color .25s}
+  .sd-toggle[aria-checked="true"]{background:var(--link);border-color:var(--link)}
+  .sd-toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;
+    box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.4,.5,1)}
+  .sd-toggle[aria-checked="true"] .knob{transform:translateX(20px)}
+  .sd-toggle:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+
+  /* ---- sync status card ---- */
+  .sd-sync{display:flex;align-items:center;gap:11px;padding:13px 14px;margin:4px 0 14px;border-radius:12px;
+    border:1px solid color-mix(in srgb,var(--up) 26%,var(--line));
+    background:color-mix(in srgb,var(--up) 7%,transparent)}
+  .sd-sync .dot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--up);
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 18%,transparent)}
+  .sd-sync.off{border-color:var(--line);background:color-mix(in srgb,var(--panel2) 78%,transparent)}
+  .sd-sync.off .dot{background:var(--muted);box-shadow:0 0 0 4px color-mix(in srgb,var(--muted) 14%,transparent)}
+  .sd-sync-main{flex:1;min-width:0}
+  .sd-sync-t{display:block;font-size:12.5px;font-weight:750}
+  .sd-sync-s{display:block;font-size:11px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sd-link{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--link);
+    text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:5px 11px;transition:border-color .15s,background .15s}
+  .sd-link:hover{border-color:var(--link);background:color-mix(in srgb,var(--link) 10%,transparent)}
+
+  /* ---- signed-out / guest CTA card ---- */
+  .sd-cta{text-align:center;padding:26px 18px;border-radius:14px;border:1px dashed color-mix(in srgb,var(--link) 30%,var(--line));
+    background:
+      radial-gradient(120% 160% at 50% -30%,color-mix(in srgb,var(--link) 10%,transparent) 0%,transparent 60%),
+      color-mix(in srgb,var(--panel2) 55%,transparent);margin-top:4px}
+  .sd-cta-av{width:46px;height:46px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;
+    color:var(--link);background:color-mix(in srgb,var(--link) 14%,transparent)}
+  .sd-cta-av svg{width:22px;height:22px}
+  .sd-cta-t{font-size:15px;font-weight:800;margin:0 0 6px}
+  .sd-cta-n{font-size:12px;color:var(--muted);line-height:1.55;margin:0 auto 14px;max-width:300px}
+  .sd-cta-btns{display:flex;gap:8px;justify-content:center}
+  .sd-cta-btns .sd-btn{min-width:120px}
+
+  /* mobile sign-out (rail hidden → row at the end of Account) */
+  .sd-signout-m{display:none}
+
+  /* =====================================================================
+     MOBILE ≤640px — full sheet, rail → header + horizontal tabs
+     ===================================================================== */
+  @media (max-width:640px){
+    .sd-overlay{padding:0;align-items:stretch}
+    .sd-card{flex-direction:column;width:100%;height:100dvh;border-radius:0;border-left:0;border-right:0;
+      transform:translateY(24px)}
+    .sd-overlay.open .sd-card{transform:none}
+    .sd-rail{width:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 8px;
+      padding:12px 14px 8px;border-right:0;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+    .sd-me{flex:1;min-width:0;padding:0;order:1}
+    .sd-x-m{order:2}
+    .sd-nav{order:3;flex-direction:row;width:100%;overflow-x:auto;scrollbar-width:none;gap:4px;padding:8px 0 2px}
+    .sd-nav::-webkit-scrollbar{display:none}
+    .sd-nav-b{width:auto;flex:none;padding:6px 12px;border-radius:999px}
+    .sd-nav-b.active::before{display:none}
+    .sd-rail-spacer,.sd-signout{display:none}
+    .sd-signout-m{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;
+      margin-top:14px;padding:11px;border-radius:11px;border:1px solid color-mix(in srgb,var(--down) 40%,var(--line));
+      background:transparent;color:var(--down);font:700 13px/1 inherit;font-family:inherit;cursor:pointer}
+    .sd-signout-m:hover{background:color-mix(in srgb,var(--down) 10%,transparent)}
+    .sd-signout-m svg{width:15px;height:15px;flex:none}
+    .sd-head{padding:14px 14px 10px 16px}
+    .sd-head .sd-x{display:none}          /* close lives in the header strip on mobile */
+    .sd-body{padding:2px 14px 20px 16px}
+    .sd-row-val{max-width:38%}
+  }
+  /* desktop: hide the mobile close slot */
+  .sd-x-m{display:none}
+  @media (max-width:640px){
+    .sd-x-m{display:inline-flex;flex:none;width:30px;height:30px;border-radius:9px;border:1px solid transparent;
+      background:transparent;color:var(--muted);cursor:pointer;align-items:center;justify-content:center}
+    .sd-x-m:hover{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text)}
+    .sd-x-m svg{width:16px;height:16px}
+  }
+
+  /* ---- dev harness (NOT part of the port) ---- */
+  .devbar{position:fixed;left:10px;bottom:10px;z-index:200000;display:flex;gap:6px;flex-wrap:wrap;
+    background:rgba(0,0,0,.55);border:1px solid #333;border-radius:10px;padding:8px;font-size:11px}
+  .devbar button{font:600 11px Inter,sans-serif;padding:4px 9px;border-radius:7px;border:1px solid #555;
+    background:#1c2333;color:#cfd6e4;cursor:pointer}
+  .devbar button:hover{border-color:#888}
+  .devbar.hide{display:none}
+</style>
+</head>
+<body>
+  <div class="fakepage" aria-hidden="true">
+    <div class="fp-glow"></div>
+    <div class="fp-card fp-a"></div><div class="fp-card fp-b"></div><div class="fp-card fp-c"></div>
+  </div>
+
+  <!-- ================= THE SETTINGS DASHBOARD ================= -->
+  <div class="sd-overlay open" id="sd">
+    <div class="sd-card" role="dialog" aria-modal="true" aria-label="Settings">
+      <span class="sd-laser" aria-hidden="true"></span>
+
+      <!-- rail -->
+      <aside class="sd-rail">
+        <div class="sd-me" data-auth="in guest">
+          <span class="sd-me-av" id="me-av">D</span>
+          <span class="sd-me-main">
+            <span class="sd-me-name" id="me-name">demo@mastermind.test</span>
+            <span class="sd-me-sub"><span class="l-en">Synced across devices</span><span class="l-zh">已在各设备同步</span></span>
+          </span>
+        </div>
+        <div class="sd-me" data-auth="out">
+          <span class="sd-me-av" style="background:color-mix(in srgb,var(--muted) 30%,var(--panel2));color:var(--muted)">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          </span>
+          <span class="sd-me-main">
+            <span class="sd-me-name"><span class="l-en">Not signed in</span><span class="l-zh">未登录</span></span>
+            <span class="sd-me-sub"><span class="l-en">Local settings only</span><span class="l-zh">仅保存在本设备</span></span>
+          </span>
+        </div>
+
+        <nav class="sd-nav" role="tablist" aria-label="Settings sections">
+          <button type="button" class="sd-nav-b active" data-sect="account" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            <span class="l-en">Account</span><span class="l-zh">账户</span>
+          </button>
+          <button type="button" class="sd-nav-b" data-sect="prefs" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg>
+            <span class="l-en">Preferences</span><span class="l-zh">偏好</span>
+          </button>
+          <button type="button" class="sd-nav-b" data-sect="sync" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 18.5a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.4 1.6A3.8 3.8 0 0 0 6.5 18.5z"/><path d="m10 14 2 2 2-2M12 16v-5"/></svg>
+            <span class="l-en">Sync</span><span class="l-zh">同步</span>
+          </button>
+        </nav>
+
+        <span class="sd-rail-spacer"></span>
+        <button type="button" class="sd-signout" data-auth="in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+          <span class="l-en">Sign out</span><span class="l-zh">退出登录</span>
+        </button>
+        <button type="button" class="sd-x-m" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </aside>
+
+      <!-- content pane -->
+      <section class="sd-pane">
+
+        <!-- ============ ACCOUNT ============ -->
+        <div class="sd-sect on" id="sect-account">
+          <header class="sd-head">
+            <div class="sd-head-main">
+              <h2><span class="l-en">Account</span><span class="l-zh">账户</span></h2>
+              <p class="sd-sub"><span class="l-en">One identity across the dashboard and the Terminal.</span><span class="l-zh">一个账户，通用于仪表盘与终端。</span></p>
+            </div>
+            <button type="button" class="sd-x" aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </header>
+          <div class="sd-body">
+
+            <!-- signed in -->
+            <div data-auth="in">
+              <div class="sd-id">
+                <span class="sd-id-av">D</span>
+                <span class="sd-id-main">
+                  <span class="sd-id-name">demo@mastermind.test</span>
+                  <span class="sd-id-mail" style="display:none"></span>
+                  <span class="sd-id-chips">
+                    <span class="sd-chip"><svg viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.02-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.02 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>Google</span>
+                    <span class="sd-chip"><span class="l-en">Member since Jun 27, 2026</span><span class="l-zh">注册于 2026年6月27日</span></span>
+                  </span>
+                </span>
+              </div>
+
+              <div class="sd-group">
+                <span class="sd-group-t"><span class="l-en">Profile</span><span class="l-zh">个人资料</span></span>
+                <div class="sd-row" id="row-name">
+                  <div class="sd-row-line">
+                    <span class="sd-row-main"><span class="sd-row-lbl"><span class="l-en">Display name</span><span class="l-zh">显示名称</span></span></span>
+                    <span class="sd-row-val">—</span>
+                    <button type="button" class="sd-edit" onclick="this.closest('.sd-row').classList.add('editing')"><span class="l-en">Edit</span><span class="l-zh">编辑</span></button>
+                  </div>
+                  <div class="sd-form">
+                    <input class="sd-in" type="text" placeholder="Your name">
+                    <div class="sd-btns">
+                      <button type="button" class="sd-btn ghost" onclick="this.closest('.sd-row').classList.remove('editing')"><span class="l-en">Cancel</span><span class="l-zh">取消</span></button>
+                      <button type="button" class="sd-btn primary"><span class="l-en">Save</span><span class="l-zh">保存</span></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="sd-row" id="row-email">
+                  <div class="sd-row-line">
+                    <span class="sd-row-main"><span class="sd-row-lbl"><span class="l-en">Email</span><span class="l-zh">邮箱</span></span></span>
+                    <span class="sd-row-val strong">demo@mastermind.test</span>
+                    <button type="button" class="sd-edit" onclick="this.closest('.sd-row').classList.add('editing')"><span class="l-en">Edit</span><span class="l-zh">编辑</span></button>
+                  </div>
+                  <div class="sd-form">
+                    <input class="sd-in" type="email" placeholder="new@email.com">
+                    <p class="sd-note"><span class="l-en">A confirmation link will be sent to both addresses.</span><span class="l-zh">两个邮箱地址都会收到确认链接。</span></p>
+                    <div class="sd-btns">
+                      <button type="button" class="sd-btn ghost" onclick="this.closest('.sd-row').classList.remove('editing')"><span class="l-en">Cancel</span><span class="l-zh">取消</span></button>
+                      <button type="button" class="sd-btn primary"><span class="l-en">Send confirmation</span><span class="l-zh">发送确认</span></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="sd-row" id="row-pw">
+                  <div class="sd-row-line">
+                    <span class="sd-row-main"><span class="sd-row-lbl"><span class="l-en">Password</span><span class="l-zh">密码</span></span></span>
+                    <span class="sd-row-val">••••••••</span>
+                    <button type="button" class="sd-edit" onclick="this.closest('.sd-row').classList.add('editing')"><span class="l-en">Edit</span><span class="l-zh">编辑</span></button>
+                  </div>
+                  <div class="sd-form">
+                    <input class="sd-in" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+                    <input class="sd-in" type="password" placeholder="Repeat new password" autocomplete="new-password">
+                    <div class="sd-btns">
+                      <button type="button" class="sd-btn ghost" onclick="this.closest('.sd-row').classList.remove('editing')"><span class="l-en">Cancel</span><span class="l-zh">取消</span></button>
+                      <button type="button" class="sd-btn primary"><span class="l-en">Update password</span><span class="l-zh">更新密码</span></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sd-group">
+                <span class="sd-group-t"><span class="l-en">Security</span><span class="l-zh">安全</span></span>
+                <div class="sd-row">
+                  <div class="sd-row-line">
+                    <span class="sd-row-main"><span class="sd-row-lbl"><span class="l-en">Login method</span><span class="l-zh">登录方式</span></span></span>
+                    <span class="sd-provider"><svg viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.02-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.02 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>Google</span>
+                  </div>
+                </div>
+                <div class="sd-row">
+                  <div class="sd-row-line">
+                    <span class="sd-row-main"><span class="sd-row-lbl"><span class="l-en">Last sign-in</span><span class="l-zh">上次登录</span></span></span>
+                    <span class="sd-row-val"><span class="l-en">Jul 21, 2026</span><span class="l-zh">2026年7月21日</span></span>
+                  </div>
+                </div>
+                <div class="sd-row">
+                  <div class="sd-row-line">
+                    <span class="sd-row-main"><span class="sd-row-lbl"><span class="l-en">User ID</span><span class="l-zh">用户 ID</span></span>
+                      <span class="sd-row-desc"><span class="l-en">Quote it if you ever contact support.</span><span class="l-zh">联系支持时请提供此 ID。</span></span></span>
+                    <span class="sd-row-val">9f2c…a41b</span>
+                    <button type="button" class="sd-mini"><span class="l-en">Copy</span><span class="l-zh">复制</span></button>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" class="sd-signout-m">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+                <span class="l-en">Sign out</span><span class="l-zh">退出登录</span>
+              </button>
+            </div>
+
+            <!-- signed out -->
+            <div data-auth="out" style="display:none">
+              <div class="sd-cta">
+                <span class="sd-cta-av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+                <p class="sd-cta-t"><span class="l-en">Sign in to Mastermind</span><span class="l-zh">登录 Mastermind</span></p>
+                <p class="sd-cta-n"><span class="l-en">Sync your watchlists, alerts and settings across devices — free.</span><span class="l-zh">免费同步自选、提醒与设置到你的所有设备。</span></p>
+                <div class="sd-cta-btns">
+                  <button type="button" class="sd-btn ghost"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
+                  <button type="button" class="sd-btn primary"><span class="l-en">Create account</span><span class="l-zh">注册</span></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- guest (site access password session) -->
+            <div data-auth="guest" style="display:none">
+              <div class="sd-cta">
+                <span class="sd-cta-av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+                <p class="sd-cta-t"><span class="l-en">Access session</span><span class="l-zh">访问会话</span></p>
+                <p class="sd-cta-n"><span class="l-en">You’re in with the site access password. Create a free account to manage email, password &amp; sync preferences.</span><span class="l-zh">你正通过站点访问密码登录。注册免费账户以管理邮箱、密码并同步偏好。</span></p>
+                <div class="sd-cta-btns">
+                  <button type="button" class="sd-btn primary"><span class="l-en">Create free account</span><span class="l-zh">注册免费账户</span></button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ============ PREFERENCES ============ -->
+        <div class="sd-sect" id="sect-prefs">
+          <header class="sd-head">
+            <div class="sd-head-main">
+              <h2><span class="l-en">Preferences</span><span class="l-zh">偏好</span></h2>
+              <p class="sd-sub"><span class="l-en">How the dashboard looks and behaves on this device.</span><span class="l-zh">仪表盘在此设备上的外观与行为。</span></p>
+            </div>
+            <button type="button" class="sd-x" aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </header>
+          <div class="sd-body">
+            <div class="sd-group" style="margin-top:4px">
+              <div class="sd-row">
+                <div class="sd-row-line">
+                  <span class="sd-row-main">
+                    <span class="sd-row-lbl"><span class="l-en">Appearance</span><span class="l-zh">外观</span></span>
+                    <span class="sd-row-desc"><span class="l-en">Auto follows your local time of day.</span><span class="l-zh">「自动」跟随本地时间切换。</span></span>
+                  </span>
+                  <span class="sd-seg" role="group">
+                    <button type="button" class="sd-seg-b" onclick="setTheme('light',this)"><span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+                    <button type="button" class="sd-seg-b" onclick="setTheme('auto',this)"><span class="l-en">Auto</span><span class="l-zh">自动</span></button>
+                    <button type="button" class="sd-seg-b active" onclick="setTheme('dark',this)"><span class="l-en">Dark</span><span class="l-zh">深色</span></button>
+                  </span>
+                </div>
+              </div>
+              <div class="sd-row">
+                <div class="sd-row-line">
+                  <span class="sd-row-main">
+                    <span class="sd-row-lbl"><span class="l-en">Language</span><span class="l-zh">语言</span></span>
+                    <span class="sd-row-desc"><span class="l-en">Applies to every page.</span><span class="l-zh">应用于所有页面。</span></span>
+                  </span>
+                  <span class="sd-seg" role="group">
+                    <button type="button" class="sd-seg-b active" onclick="setLangM('en',this)">EN</button>
+                    <button type="button" class="sd-seg-b" onclick="setLangM('zh',this)">中文</button>
+                  </span>
+                </div>
+              </div>
+              <div class="sd-row">
+                <div class="sd-row-line">
+                  <span class="sd-row-main">
+                    <span class="sd-row-lbl"><span class="l-en">Live prices</span><span class="l-zh">实时报价</span></span>
+                    <span class="sd-row-desc"><span class="l-en">Streaming quotes on boards that support them.</span><span class="l-zh">支持的看板将实时刷新报价。</span></span>
+                  </span>
+                  <button type="button" class="sd-toggle" role="switch" aria-checked="true"
+                    onclick="this.setAttribute('aria-checked',this.getAttribute('aria-checked')==='true'?'false':'true')"><span class="knob"></span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ SYNC ============ -->
+        <div class="sd-sect" id="sect-sync">
+          <header class="sd-head">
+            <div class="sd-head-main">
+              <h2><span class="l-en">Sync</span><span class="l-zh">同步</span></h2>
+              <p class="sd-sub"><span class="l-en">What follows your account across devices.</span><span class="l-zh">跟随账户同步到各设备的内容。</span></p>
+            </div>
+            <button type="button" class="sd-x" aria-label="Close">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </header>
+          <div class="sd-body">
+            <div class="sd-sync" data-auth="in guest">
+              <span class="dot"></span>
+              <span class="sd-sync-main">
+                <span class="sd-sync-t"><span class="l-en">Sync is on</span><span class="l-zh">同步已开启</span></span>
+                <span class="sd-sync-s"><span class="l-en">Signed in as demo@mastermind.test</span><span class="l-zh">已登录：demo@mastermind.test</span></span>
+              </span>
+            </div>
+            <div class="sd-sync off" data-auth="out" style="display:none">
+              <span class="dot"></span>
+              <span class="sd-sync-main">
+                <span class="sd-sync-t"><span class="l-en">Sync is off</span><span class="l-zh">同步未开启</span></span>
+                <span class="sd-sync-s"><span class="l-en">Sign in to turn it on.</span><span class="l-zh">登录后即可开启。</span></span>
+              </span>
+              <button type="button" class="sd-btn primary" style="flex:none"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>
+            </div>
+            <div class="sd-group">
+              <div class="sd-row">
+                <div class="sd-row-line">
+                  <span class="sd-row-main">
+                    <span class="sd-row-lbl"><span class="l-en">Theme &amp; language</span><span class="l-zh">主题与语言</span></span>
+                    <span class="sd-row-desc"><span class="l-en">Saved automatically as you change them.</span><span class="l-zh">更改后自动保存。</span></span>
+                  </span>
+                </div>
+              </div>
+              <div class="sd-row">
+                <div class="sd-row-line">
+                  <span class="sd-row-main">
+                    <span class="sd-row-lbl"><span class="l-en">Watchlists &amp; portfolio</span><span class="l-zh">自选与组合</span></span>
+                    <span class="sd-row-desc"><span class="l-en">Live wherever you sign in.</span><span class="l-zh">登录任意设备即可使用。</span></span>
+                  </span>
+                  <a class="sd-link" href="#"><span class="l-en">Open watchlist</span><span class="l-zh">打开自选</span>
+                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </div>
+
+  <!-- dev harness -->
+  <div class="devbar" id="devbar">
+    <button onclick="setAuth('in')">signed-in</button>
+    <button onclick="setAuth('out')">signed-out</button>
+    <button onclick="setAuth('guest')">guest</button>
+    <button onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">theme</button>
+    <button onclick="document.documentElement.dataset.lang=document.documentElement.dataset.lang==='en'?'zh':'en'">lang</button>
+    <button onclick="document.getElementById('devbar').classList.add('hide')">hide</button>
+  </div>
+
+<script>
+  // dev-harness only — the port drives this off _curUser / mdx-auth
+  function setAuth(mode){
+    document.querySelectorAll('[data-auth]').forEach(function(el){
+      var modes = el.getAttribute('data-auth').split(/\s+/);
+      el.style.display = modes.indexOf(mode) > -1 ? '' : 'none';
+    });
+  }
+  function setTheme(t,btn){
+    if(t!=='auto') document.documentElement.dataset.theme=t;
+    var seg=btn.closest('.sd-seg');
+    seg.querySelectorAll('.sd-seg-b').forEach(function(b){b.classList.toggle('active',b===btn)});
+  }
+  function setLangM(l,btn){
+    document.documentElement.dataset.lang=l;
+    var seg=btn.closest('.sd-seg');
+    seg.querySelectorAll('.sd-seg-b').forEach(function(b){b.classList.toggle('active',b===btn)});
+  }
+  document.querySelectorAll('.sd-nav-b').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.sd-nav-b').forEach(function(x){x.classList.toggle('active',x===b);x.setAttribute('aria-selected',x===b?'true':'false')});
+      document.querySelectorAll('.sd-sect').forEach(function(s){s.classList.remove('on')});
+      document.getElementById('sect-'+b.getAttribute('data-sect')).classList.add('on');
+    });
+  });
+  setAuth('in');
+</script>
+</body>
+</html>

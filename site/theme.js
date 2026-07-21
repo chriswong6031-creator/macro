@@ -847,7 +847,9 @@
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
     theme: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>',
     lang: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>',
-    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>'
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>',
+    // expand/maximize arrows — opens the full settings dashboard
+    maximize: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'
   };
 
   /* =======================================================================
@@ -1375,6 +1377,935 @@
   }
 
   /* ===========================================================================
+     SETTINGS DASHBOARD (sd-*) — the large modal that replaces the gear
+     popover's cramped "page 2" account panel. Ported verbatim from
+     mockups/settings_dashboard/settings_dash.html (sd-* CSS + markup are the
+     spec). A left rail (Account · Preferences · Sync) drives three sections
+     inside one glass card; the popover's own theme/lang/live controls stay
+     untouched and both stay in sync via the shared themechange event.
+
+     Built lazily on first MMSettings.open(); re-rendered on 'mdx-auth' and
+     'langchange' while built. Account data maps straight off the Supabase user
+     object (_curUser) — ZERO new network calls. All colours ride the house vars
+     with vector-palette fallbacks (var(--panel,var(--card)) etc.); #9b5cff is
+     the existing house avatar-gradient endpoint. One-shot laser sweep + section
+     rise only (mobile-perf law), both gated by prefers-reduced-motion.
+     =========================================================================*/
+  var SDASH_CSS = [
+    '.sd-overlay{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;padding:24px;background:color-mix(in srgb,#04060c 66%,transparent);-webkit-backdrop-filter:blur(9px) saturate(1.05);backdrop-filter:blur(9px) saturate(1.05);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility 0s linear .22s;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}',
+    '.sd-overlay.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .22s ease,visibility 0s}',
+    '.sd-card{position:relative;display:flex;width:min(720px,100%);height:min(560px,calc(100dvh - 48px));box-sizing:border-box;border-radius:20px;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--panel,var(--card,#0e1320)) 82%,transparent);border:1px solid color-mix(in srgb,var(--text,var(--ink,#e7ecf6)) 14%,transparent);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 32px 90px -20px rgba(3,7,18,.8),0 10px 28px -12px rgba(3,7,18,.5),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);transform:translateY(14px) scale(.985);opacity:.4;transition:transform .3s cubic-bezier(.32,1.28,.5,1),opacity .22s ease;color:var(--text,var(--ink,#e7ecf6))}',
+    '.sd-overlay.open .sd-card{transform:none;opacity:1}',
+    'html[data-theme="light"] .sd-card{box-shadow:0 30px 80px -22px rgba(20,30,50,.35),0 10px 26px -14px rgba(20,30,50,.22),inset 0 1px 0 rgba(255,255,255,.75)}',
+    '@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.sd-card{background:var(--panel,var(--card,#0e1320))}}',
+    /* laser hairline — brand-bar idiom; sweeps ONCE on open, then rests */
+    '.sd-laser{position:absolute;top:0;left:0;right:0;height:2px;z-index:3;pointer-events:none;background:linear-gradient(90deg,transparent 0%,var(--link,var(--blue,#4f8cff)) 30%,#9b5cff 62%,transparent 100%);background-size:220% 100%;background-position:120% 0}',
+    '.sd-overlay.open .sd-laser{animation:sdLaser .9s cubic-bezier(.4,.1,.2,1) .12s forwards}',
+    '@keyframes sdLaser{from{background-position:120% 0}to{background-position:0% 0}}',
+    '@media (prefers-reduced-motion:reduce){.sd-overlay,.sd-card{transition:opacity .15s ease}.sd-card{transform:none}.sd-overlay.open .sd-laser{animation:none;background-position:0% 0}}',
+    /* left rail */
+    '.sd-rail{flex:none;width:200px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:16px 12px 14px;border-right:1px solid color-mix(in srgb,var(--line,var(--grid,#283042)) 70%,transparent);background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 44%,transparent)}',
+    '.sd-me{display:flex;align-items:center;gap:9px;padding:4px 4px 12px}',
+    '.sd-me-av{flex:none;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--link,var(--blue,#4f8cff)),color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 55%,#9b5cff))}',
+    '.sd-me-av.guestav{background:color-mix(in srgb,var(--muted,var(--ink-3,#8b93a7)) 30%,var(--panel2,var(--card)));color:var(--muted,var(--ink-3,#8b93a7))}',
+    '.sd-me-main{flex:1;min-width:0}',
+    '.sd-me-name{display:block;font-size:12.5px;font-weight:750;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.sd-me-sub{display:block;font-size:10.5px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.sd-nav{display:flex;flex-direction:column;gap:3px}',
+    '.sd-nav-b{position:relative;display:flex;align-items:center;gap:9px;width:100%;box-sizing:border-box;padding:8px 10px;border:0;border-radius:9px;background:transparent;color:var(--muted,var(--ink-3,#8b93a7));font:650 12.5px/1.3 inherit;font-family:inherit;cursor:pointer;text-align:left;transition:background .16s,color .16s;-webkit-tap-highlight-color:transparent}',
+    '.sd-nav-b svg{width:16px;height:16px;flex:none;stroke-width:1.8}',
+    '.sd-nav-b:hover{background:color-mix(in srgb,var(--text,var(--ink,#fff)) 7%,transparent);color:var(--text,var(--ink))}',
+    '.sd-nav-b.active{background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 13%,transparent);color:var(--link,var(--blue,#4f8cff))}',
+    '.sd-nav-b.active::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;border-radius:2px;background:linear-gradient(180deg,var(--link,var(--blue,#4f8cff)),#9b5cff)}',
+    '.sd-nav-b:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    '.sd-rail-spacer{flex:1}',
+    '.sd-signout{display:flex;align-items:center;gap:9px;width:100%;box-sizing:border-box;padding:8px 10px;border:0;border-radius:9px;background:transparent;color:var(--muted,var(--ink-3,#8b93a7));font:650 12.5px/1.3 inherit;font-family:inherit;cursor:pointer;text-align:left;transition:background .16s,color .16s}',
+    '.sd-signout svg{width:16px;height:16px;flex:none}',
+    '.sd-signout:hover{background:color-mix(in srgb,var(--down,#ff5c6c) 10%,transparent);color:var(--down,#ff5c6c)}',
+    '.sd-signout:focus-visible{outline:2px solid var(--down,#ff5c6c);outline-offset:2px}',
+    /* right pane */
+    '.sd-pane{flex:1;min-width:0;display:flex;flex-direction:column}',
+    '.sd-head{flex:none;display:flex;align-items:flex-start;gap:10px;padding:18px 18px 12px 22px}',
+    '.sd-head-main{flex:1;min-width:0}',
+    '.sd-head h2{margin:0;font-size:15px;font-weight:800;letter-spacing:.01em;line-height:1.2;color:var(--text,var(--ink))}',
+    '.sd-head .sd-sub{margin:3px 0 0;font-size:11.5px;line-height:1.45;color:var(--muted,var(--ink-3,#8b93a7))}',
+    '.sd-x{flex:none;width:28px;height:28px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3,#8b93a7));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .16s,color .16s}',
+    '.sd-x:hover{background:color-mix(in srgb,var(--text,var(--ink,#fff)) 8%,transparent);color:var(--text,var(--ink))}',
+    '.sd-x svg{width:15px;height:15px}',
+    '.sd-x:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    '.sd-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 18px 18px 22px}',
+    /* section switch: one-shot rise on entry */
+    '.sd-sect{display:none}',
+    /* flex column so the head stays fixed and ONLY .sd-body scrolls — a block here
+       lets tall sections overflow the pane, which makes the overflow:hidden card
+       silently scrollable and a focus() on open decapitates the header */
+    '.sd-sect.on{display:flex;flex-direction:column;flex:1;min-height:0;animation:sdRise .18s ease}',
+    '@keyframes sdRise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}',
+    '@media (prefers-reduced-motion:reduce){.sd-sect.on{animation:none}}',
+    /* the aurora ID card (signature) */
+    '.sd-id{position:relative;display:flex;align-items:center;gap:14px;padding:16px;margin:4px 0 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 22%,var(--line,var(--grid,#283042)));overflow:hidden;background:radial-gradient(120% 180% at 8% 0%,color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 13%,transparent) 0%,transparent 55%),radial-gradient(90% 160% at 55% -20%,color-mix(in srgb,#9b5cff 9%,transparent) 0%,transparent 60%),color-mix(in srgb,var(--panel2,var(--card,#141a28)) 72%,transparent)}',
+    '.sd-id-av{position:relative;flex:none;width:54px;height:54px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--link,var(--blue,#4f8cff)),color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 55%,#9b5cff))}',
+    '.sd-id-av::after{content:"";position:absolute;inset:-4px;border-radius:50%;padding:2px;background:conic-gradient(from 210deg,var(--link,var(--blue,#4f8cff)),#9b5cff 40%,transparent 75%,var(--link,var(--blue,#4f8cff)));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.85}',
+    '.sd-id-main{flex:1;min-width:0}',
+    '.sd-id-name{display:block;font-size:17px;font-weight:800;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.sd-id-mail{display:block;font-size:12.5px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.sd-id-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}',
+    '.sd-chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--muted,var(--ink-3,#8b93a7));background:color-mix(in srgb,var(--panel,var(--card)) 65%,transparent);border:1px solid var(--line,var(--grid,#283042));border-radius:999px;padding:3px 9px}',
+    '.sd-chip svg{width:11px;height:11px}',
+    '.sd-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--up,#23c08a)}',
+    /* groups & rows */
+    '.sd-group{margin:0 0 14px}',
+    '.sd-group-t{display:block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,var(--ink-3,#8b93a7));margin:0 2px 7px}',
+    '.sd-row{box-sizing:border-box;background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 78%,transparent);border:1px solid var(--line,var(--grid,#283042));border-radius:11px;padding:11px 13px}',
+    '.sd-row + .sd-row{margin-top:7px}',
+    '.sd-row-line{display:flex;align-items:center;gap:11px;min-height:24px}',
+    '.sd-row-main{flex:1;min-width:0}',
+    '.sd-row-lbl{display:block;font-size:12.5px;font-weight:700;color:var(--text,var(--ink))}',
+    '.sd-row-desc{display:block;font-size:11px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:2px;line-height:1.4}',
+    '.sd-row-val{flex:none;max-width:45%;font-size:13px;color:var(--muted,var(--ink-3,#8b93a7));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.sd-row-val.strong{color:var(--text,var(--ink))}',
+    '.sd-edit{flex:none;font-size:11.5px;font-weight:700;color:var(--link,var(--blue,#4f8cff));background:transparent;border:1px solid var(--line,var(--grid,#283042));border-radius:8px;padding:5px 11px;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s}',
+    '.sd-edit:hover{border-color:var(--link,var(--blue,#4f8cff));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 10%,transparent)}',
+    '.sd-edit:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    /* inline edit expansion inside a row */
+    '.sd-form{display:none;margin-top:10px}',
+    '.sd-row.editing .sd-form{display:block}',
+    '.sd-row.editing .sd-edit{display:none}',
+    '.sd-in{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--line,var(--grid,#283042));background:var(--bg,var(--card,#0b0f1a));color:var(--text,var(--ink));font-size:13.5px;font-family:inherit;outline:none;display:block;transition:border-color .15s,box-shadow .15s}',
+    '.sd-in + .sd-in{margin-top:7px}',
+    '.sd-in:focus{border-color:var(--link,var(--blue,#4f8cff));box-shadow:0 0 0 3px color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 20%,transparent)}',
+    '.sd-note{font-size:11px;color:var(--muted,var(--ink-3,#8b93a7));line-height:1.45;margin:6px 0 0}',
+    '.sd-msg{font-size:11.5px;line-height:1.4;margin-top:6px;display:none}',
+    '.sd-msg.show{display:block}',
+    '.sd-msg.ok{color:var(--up,#23c08a)}',
+    '.sd-msg.err{color:var(--down,#ff5c6c)}',
+    '.sd-btns{display:flex;gap:7px;margin-top:9px;justify-content:flex-end}',
+    '.sd-btn{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;border:1px solid var(--line,var(--grid,#283042));font-family:inherit;transition:all .15s}',
+    '.sd-btn:disabled{opacity:.55;cursor:default}',
+    '.sd-btn.primary{background:var(--link,var(--blue,#4f8cff));border-color:var(--link,var(--blue,#4f8cff));color:#fff}',
+    '.sd-btn.primary:hover:not(:disabled){filter:brightness(1.07);transform:translateY(-1px)}',
+    '.sd-btn.ghost{background:transparent;color:var(--text,var(--ink))}',
+    '.sd-btn.ghost:hover:not(:disabled){border-color:var(--link,var(--blue,#4f8cff))}',
+    '.sd-btn:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    /* small utility: copy button + provider chip in value slot */
+    '.sd-mini{flex:none;font-size:10.5px;font-weight:700;color:var(--muted,var(--ink-3,#8b93a7));background:transparent;border:1px solid var(--line,var(--grid,#283042));border-radius:7px;padding:3px 9px;cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s}',
+    '.sd-mini:hover{border-color:var(--link,var(--blue,#4f8cff));color:var(--link,var(--blue,#4f8cff))}',
+    '.sd-mini:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    '.sd-provider{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--text,var(--ink));background:color-mix(in srgb,var(--panel,var(--card)) 65%,transparent);border:1px solid var(--line,var(--grid,#283042));border-radius:999px;padding:4px 11px}',
+    '.sd-provider svg{width:12px;height:12px}',
+    /* controls (ported idioms: 3-way segment / pill toggle) */
+    '.sd-seg{display:inline-flex;background:var(--bg,var(--card));border:1px solid var(--line,var(--grid,#283042));border-radius:999px;padding:3px;gap:2px;flex:none}',
+    '.sd-seg-b{padding:4px 12px;border:none;border-radius:999px;font-size:11.5px;font-weight:650;cursor:pointer;font-family:inherit;background:transparent;color:var(--muted,var(--ink-3,#8b93a7));transition:background .2s,color .2s;white-space:nowrap}',
+    '.sd-seg-b.active{background:var(--link,var(--blue,#4f8cff));color:#fff}',
+    '.sd-seg-b:hover:not(.active){background:color-mix(in srgb,var(--text,var(--ink,#fff)) 9%,transparent);color:var(--text,var(--ink))}',
+    '.sd-seg-b:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    '.sd-toggle{position:relative;width:44px;height:24px;border-radius:999px;border:1px solid var(--line,var(--grid,#283042));background:var(--bg,var(--card));cursor:pointer;padding:0;flex:none;transition:background .25s,border-color .25s}',
+    '.sd-toggle[aria-checked="true"]{background:var(--link,var(--blue,#4f8cff));border-color:var(--link,var(--blue,#4f8cff))}',
+    '.sd-toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.4,.5,1)}',
+    '.sd-toggle[aria-checked="true"] .knob{transform:translateX(20px)}',
+    '.sd-toggle:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    /* sync status card */
+    '.sd-sync{display:flex;align-items:center;gap:11px;padding:13px 14px;margin:4px 0 14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--up,#23c08a) 26%,var(--line,var(--grid,#283042)));background:color-mix(in srgb,var(--up,#23c08a) 7%,transparent)}',
+    '.sd-sync .dot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--up,#23c08a);box-shadow:0 0 0 4px color-mix(in srgb,var(--up,#23c08a) 18%,transparent)}',
+    '.sd-sync.off{border-color:var(--line,var(--grid,#283042));background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 78%,transparent)}',
+    '.sd-sync.off .dot{background:var(--muted,var(--ink-3,#8b93a7));box-shadow:0 0 0 4px color-mix(in srgb,var(--muted,var(--ink-3,#8b93a7)) 14%,transparent)}',
+    '.sd-sync-main{flex:1;min-width:0}',
+    '.sd-sync-t{display:block;font-size:12.5px;font-weight:750;color:var(--text,var(--ink))}',
+    '.sd-sync-s{display:block;font-size:11px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.sd-link{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--link,var(--blue,#4f8cff));text-decoration:none;border:1px solid var(--line,var(--grid,#283042));border-radius:8px;padding:5px 11px;transition:border-color .15s,background .15s}',
+    '.sd-link:hover{border-color:var(--link,var(--blue,#4f8cff));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 10%,transparent)}',
+    '.sd-link:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    /* signed-out / guest CTA card */
+    '.sd-cta{text-align:center;padding:26px 18px;border-radius:14px;border:1px dashed color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 30%,var(--line,var(--grid,#283042)));background:radial-gradient(120% 160% at 50% -30%,color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 10%,transparent) 0%,transparent 60%),color-mix(in srgb,var(--panel2,var(--card,#141a28)) 55%,transparent);margin-top:4px}',
+    '.sd-cta-av{width:46px;height:46px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:var(--link,var(--blue,#4f8cff));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 14%,transparent)}',
+    '.sd-cta-av svg{width:22px;height:22px}',
+    '.sd-cta-t{font-size:15px;font-weight:800;margin:0 0 6px;color:var(--text,var(--ink))}',
+    '.sd-cta-n{font-size:12px;color:var(--muted,var(--ink-3,#8b93a7));line-height:1.55;margin:0 auto 14px;max-width:300px}',
+    '.sd-cta-btns{display:flex;gap:8px;justify-content:center}',
+    '.sd-cta-btns .sd-btn{min-width:120px}',
+    /* mobile sign-out (rail hidden -> row at the end of Account) */
+    '.sd-signout-m{display:none}',
+    /* desktop: hide the mobile close slot */
+    '.sd-x-m{display:none}',
+    /* MOBILE <=640px — full sheet, rail -> header + horizontal tabs */
+    '@media (max-width:640px){',
+    '.sd-overlay{padding:0;align-items:stretch}',
+    '.sd-card{flex-direction:column;width:100%;height:100dvh;border-radius:0;border-left:0;border-right:0;transform:translateY(24px)}',
+    '.sd-overlay.open .sd-card{transform:none}',
+    '.sd-rail{width:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 8px;padding:12px 14px 8px;border-right:0;border-bottom:1px solid color-mix(in srgb,var(--line,var(--grid,#283042)) 70%,transparent)}',
+    '.sd-me{flex:1;min-width:0;padding:0;order:1}',
+    '.sd-x-m{order:2}',
+    '.sd-nav{order:3;flex-direction:row;width:100%;overflow-x:auto;scrollbar-width:none;gap:4px;padding:8px 0 2px}',
+    '.sd-nav::-webkit-scrollbar{display:none}',
+    '.sd-nav-b{width:auto;flex:none;padding:6px 12px;border-radius:999px}',
+    '.sd-nav-b.active::before{display:none}',
+    '.sd-rail-spacer,.sd-signout{display:none}',
+    '.sd-signout-m{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;margin-top:14px;padding:11px;border-radius:11px;border:1px solid color-mix(in srgb,var(--down,#ff5c6c) 40%,var(--line,var(--grid,#283042)));background:transparent;color:var(--down,#ff5c6c);font:700 13px/1 inherit;font-family:inherit;cursor:pointer}',
+    '.sd-signout-m:hover{background:color-mix(in srgb,var(--down,#ff5c6c) 10%,transparent)}',
+    '.sd-signout-m svg{width:15px;height:15px;flex:none}',
+    '.sd-head{padding:14px 14px 10px 16px}',
+    '.sd-head .sd-x{display:none}',
+    '.sd-body{padding:2px 14px 20px 16px}',
+    '.sd-row-val{max-width:38%}',
+    '.sd-x-m{display:inline-flex;flex:none;width:30px;height:30px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3,#8b93a7));cursor:pointer;align-items:center;justify-content:center}',
+    '.sd-x-m:hover{background:color-mix(in srgb,var(--text,var(--ink,#fff)) 8%,transparent);color:var(--text,var(--ink))}',
+    '.sd-x-m svg{width:16px;height:16px}',
+    '.sd-x-m:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    '}'
+  ].join('');
+
+  /* ---- settings-dashboard labels (EN/ZH pairs; ZH copy is the mockup's final) */
+  var SD_L = {
+    // section heads
+    acctTitle:  ['Account', '账户'],
+    acctSub:    ['One identity across the dashboard and the Terminal.', '一个账户，通用于仪表盘与终端。'],
+    prefsTitle: ['Preferences', '偏好'],
+    prefsSub:   ['How the dashboard looks and behaves on this device.', '仪表盘在此设备上的外观与行为。'],
+    syncTitle:  ['Sync', '同步'],
+    syncSub:    ['What follows your account across devices.', '跟随账户同步到各设备的内容。'],
+    // rail me-card
+    railSub:    ['Synced across devices', '已在各设备同步'],
+    notSignedIn:['Not signed in', '未登录'],
+    localOnly:  ['Local settings only', '仅保存在本设备'],
+    accessSess: ['Access session', '访问会话'],
+    signOut:    ['Sign out', '退出登录'],
+    close:      ['Close', '关闭'],
+    // ID card + chips
+    memberSince:['Member since', '注册于'],
+    provGoogle: ['Google', 'Google'],
+    provX:      ['X', 'X'],
+    provEmail:  ['Email', '邮箱'],
+    // profile group
+    profile:    ['Profile', '个人资料'],
+    dispName:   ['Display name', '显示名称'],
+    dispNamePh: ['Your name', '你的名字'],
+    email:      ['Email', '邮箱'],
+    emailPh:    ['new@email.com', 'new@email.com'],
+    emailNote:  ['A confirmation link will be sent to both addresses.', '两个邮箱地址都会收到确认链接。'],
+    sendConfirm:['Send confirmation', '发送确认'],
+    emailSent:  ['Confirmation sent to both addresses.', '确认链接已发送至两个邮箱。'],
+    password:   ['Password', '密码'],
+    newPwPh:    ['At least 8 characters', '至少 8 个字符'],
+    confirmPwPh:['Repeat new password', '再次输入新密码'],
+    updatePw:   ['Update password', '更新密码'],
+    pwOk:       ['Password updated.', '密码已更新。'],
+    pwMismatch: ['Passwords don’t match.', '两次密码不一致。'],
+    pwShort:    ['Use at least 8 characters.', '至少 8 个字符。'],
+    edit:       ['Edit', '编辑'],
+    cancel:     ['Cancel', '取消'],
+    save:       ['Save', '保存'],
+    saving:     ['Saving…', '保存中…'],
+    // security group
+    security:   ['Security', '安全'],
+    loginMethod:['Login method', '登录方式'],
+    lastSignin: ['Last sign-in', '上次登录'],
+    userId:     ['User ID', '用户 ID'],
+    userIdNote: ['Quote it if you ever contact support.', '联系支持时请提供此 ID。'],
+    copy:       ['Copy', '复制'],
+    copied:     ['Copied', '已复制'],
+    // signed-out CTA
+    ctaTitle:   ['Sign in to Mastermind', '登录 Mastermind'],
+    ctaNote:    ['Sync your watchlists, alerts and settings across devices — free.', '免费同步自选、提醒与设置到你的所有设备。'],
+    signin:     ['Sign in', '登录'],
+    createAcct: ['Create account', '注册'],
+    // guest CTA
+    guestNote:  ['You’re in with the site access password. Create a free account to manage email, password & sync preferences.', '你正通过站点访问密码登录。注册免费账户以管理邮箱、密码并同步偏好。'],
+    createFree: ['Create free account', '注册免费账户'],
+    // preferences
+    appearance: ['Appearance', '外观'],
+    appearNote: ['Auto follows your local time of day.', '「自动」跟随本地时间切换。'],
+    themeLight: ['Light', '浅色'],
+    themeAuto:  ['Auto', '自动'],
+    themeDark:  ['Dark', '深色'],
+    language:   ['Language', '语言'],
+    langNote:   ['Applies to every page.', '应用于所有页面。'],
+    liveP:      ['Live prices', '实时报价'],
+    livePNote:  ['Streaming quotes on boards that support them.', '支持的看板将实时刷新报价。'],
+    // sync section
+    syncOn:     ['Sync is on', '同步已开启'],
+    syncOff:    ['Sync is off', '同步未开启'],
+    signedInAs: ['Signed in as', '已登录：'],
+    sections:   ['Settings sections', '设置分区'],
+    signInToOn: ['Sign in to turn it on.', '登录后即可开启。'],
+    themeLang:  ['Theme & language', '主题与语言'],
+    themeLangN: ['Saved automatically as you change them.', '更改后自动保存。'],
+    watchlists: ['Watchlists & portfolio', '自选与组合'],
+    watchNote:  ['Live wherever you sign in.', '登录任意设备即可使用。'],
+    openWatch:  ['Open watchlist', '打开自选'],
+    errGen:     ['Something went wrong — please try again.', '出错了，请重试。'],
+    validEmail: ['Enter a valid email address.', '请输入有效的邮箱地址。']
+  };
+  function _sdL(k) { var p = SD_L[k]; return p ? p[curLang() === 'zh' ? 1 : 0] : ''; }
+  // bilingual dual-span (matches the site .l-en/.l-zh mechanism) for static labels
+  function _sdBl(k) {
+    var p = SD_L[k]; if (!p) return '';
+    return '<span class="l-en">' + _escHtml(p[0]) + '</span><span class="l-zh">' + _escHtml(p[1]) + '</span>';
+  }
+
+  /* ---- inline SVG icons used only by the dashboard ------------------------ */
+  var SD_ICON = {
+    account: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    prefs:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg>',
+    sync:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 18.5a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.4 1.6A3.8 3.8 0 0 0 6.5 18.5z"/><path d="m10 14 2 2 2-2M12 16v-5"/></svg>',
+    signout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>',
+    user:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    lock:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+    ctaUser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    extlink: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>',
+    maximize:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'
+  };
+  // provider mini-icon markup (Google keeps its brand colours; X/email use currentColor)
+  function _sdProviderIcon(kind) {
+    if (kind === 'google') return GOOGLE_SVG;
+    if (kind === 'twitter') return X_SVG;
+    return '';
+  }
+
+  /* ---- dashboard state ---------------------------------------------------- */
+  var _sdBuilt = false, _sdOverlay = null, _sdSect = 'account', _sdLastFocus = null,
+      _sdCopyTimer = null;
+
+  function _sdInjectCSS() {
+    if (document.getElementById('setdash-css')) return;
+    var st = document.createElement('style'); st.id = 'setdash-css'; st.textContent = SDASH_CSS;
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  // provider read off the Supabase user object (app_metadata.provider / providers[0])
+  function _sdProvider(u) {
+    var am = (u && u.app_metadata) || {};
+    var p = am.provider || (Array.isArray(am.providers) && am.providers[0]) || 'email';
+    return String(p).toLowerCase();
+  }
+  function _sdProviderLabel(p) {
+    if (p === 'google') return _sdL('provGoogle');
+    if (p === 'twitter') return _sdL('provX');
+    if (p === 'email') return _sdL('provEmail');
+    return p ? p.charAt(0).toUpperCase() + p.slice(1) : _sdL('provEmail');
+  }
+  // provider chip (for the ID-card) — brand icon when we have one, else plain label
+  function _sdProviderChip(p) {
+    var ic = _sdProviderIcon(p);
+    return '<span class="sd-chip">' + ic + _escHtml(_sdProviderLabel(p)) + '</span>';
+  }
+  function _sdProviderPill(p) {
+    var ic = _sdProviderIcon(p);
+    return '<span class="sd-provider">' + ic + _escHtml(_sdProviderLabel(p)) + '</span>';
+  }
+  function _sdDate(iso) {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleDateString(curLang() === 'zh' ? 'zh-CN' : undefined,
+        { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (e) { return ''; }
+  }
+  function _sdAuthState() {
+    if (!_authEnabled) return 'out';
+    if (!_curUser) return 'out';
+    var email = _curUser.email || (_curUser.user_metadata && _curUser.user_metadata.email) || '';
+    return email ? 'in' : 'guest';       // signed-in but no email = access-password guest
+  }
+
+  /* ---- build the dashboard shell once ------------------------------------- */
+  function _buildSDash() {
+    if (_sdBuilt) return;
+    _sdInjectCSS();
+    var ov = document.createElement('div');
+    ov.className = 'sd-overlay'; ov.id = 'setdash';
+    ov.innerHTML =
+      '<div class="sd-card" role="dialog" aria-modal="true" id="setdash-card">' +
+        '<span class="sd-laser" aria-hidden="true"></span>' +
+        '<aside class="sd-rail">' +
+          '<div class="sd-me" id="sd-me"></div>' +
+          '<nav class="sd-nav" id="sd-nav" role="tablist" aria-label="Settings sections">' +
+            '<button type="button" class="sd-nav-b" data-sect="account" role="tab" aria-selected="false" id="sd-tab-account">' +
+              SD_ICON.account + _sdBl('acctTitle') + '</button>' +
+            '<button type="button" class="sd-nav-b" data-sect="prefs" role="tab" aria-selected="false" id="sd-tab-prefs">' +
+              SD_ICON.prefs + _sdBl('prefsTitle') + '</button>' +
+            '<button type="button" class="sd-nav-b" data-sect="sync" role="tab" aria-selected="false" id="sd-tab-sync">' +
+              SD_ICON.sync + _sdBl('syncTitle') + '</button>' +
+          '</nav>' +
+          '<span class="sd-rail-spacer"></span>' +
+          '<button type="button" class="sd-signout" id="sd-signout-rail">' +
+            SD_ICON.signout + _sdBl('signOut') + '</button>' +
+          '<button type="button" class="sd-x-m" id="sd-x-m" aria-label="' + _escHtml(_sdL('close')) + '">' + SET_ICON.x + '</button>' +
+        '</aside>' +
+        '<section class="sd-pane">' +
+          '<div class="sd-sect" id="sd-sect-account"></div>' +
+          '<div class="sd-sect" id="sd-sect-prefs"></div>' +
+          '<div class="sd-sect" id="sd-sect-sync"></div>' +
+        '</section>' +
+      '</div>';
+    document.body.appendChild(ov);
+    _sdOverlay = ov;
+    _sdBuilt = true;
+    _wireSDash(ov);
+    // re-render + re-localize on auth change and language change while built
+    window.addEventListener('mdx-auth', function () { if (_sdBuilt) _renderSDash(); });
+    document.addEventListener('langchange', function () { if (_sdBuilt) { _sdRelabelAria(); _renderSDash(); } });
+    // keep the Appearance segment's active state synced with the popover's
+    document.addEventListener('themechange', function () { if (_sdBuilt) _sdSyncThemeSeg(); });
+  }
+
+  // localize the aria-labels that live in attributes (dialog + close buttons)
+  function _sdRelabelAria() {
+    if (!_sdOverlay) return;
+    var card = _sdOverlay.querySelector('.sd-card');
+    if (card) card.setAttribute('aria-label', _sdL(_sdSect === 'prefs' ? 'prefsTitle' : _sdSect === 'sync' ? 'syncTitle' : 'acctTitle'));
+    var nav = _sdOverlay.querySelector('#sd-nav');
+    if (nav) nav.setAttribute('aria-label', _sdL('sections'));
+    _sdOverlay.querySelectorAll('.sd-x,.sd-x-m').forEach(function (b) { b.setAttribute('aria-label', _sdL('close')); });
+  }
+
+  function _wireSDash(ov) {
+    var card = ov.querySelector('.sd-card');
+    // overlay click-outside closes
+    ov.addEventListener('mousedown', function (e) { if (e.target === ov) _closeSDash(); });
+    // rail tabs
+    ov.querySelector('#sd-nav').addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('.sd-nav-b') : null;
+      if (b) _sdShow(b.getAttribute('data-sect'));
+    });
+    // sign-out (rail)
+    var so = ov.querySelector('#sd-signout-rail');
+    if (so) so.addEventListener('click', function () { if (window.MDXAuth) window.MDXAuth.signOut(); });
+    // mobile close
+    var xm = ov.querySelector('#sd-x-m');
+    if (xm) xm.addEventListener('click', _closeSDash);
+    // Esc closes the dash (and only the dash)
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && ov.classList.contains('open')) { e.stopPropagation(); _closeSDash(); }
+    });
+    // light focus trap (Tab cycle) — mirrors the auth modal
+    card.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var f = card.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href],[tabindex="0"]');
+      f = Array.prototype.filter.call(f, function (el) { return el.offsetParent !== null; });  // visible only
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+  }
+
+  // switch the visible section + sync rail tab aria
+  function _sdShow(sect) {
+    if (!_sdOverlay) return;
+    if (sect !== 'account' && sect !== 'prefs' && sect !== 'sync') sect = 'prefs';
+    // Account hidden when auth is off — fall back to prefs
+    if (sect === 'account' && !_authEnabled) sect = 'prefs';
+    _sdSect = sect;
+    _sdOverlay.querySelectorAll('.sd-nav-b').forEach(function (b) {
+      var on = b.getAttribute('data-sect') === sect;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    ['account', 'prefs', 'sync'].forEach(function (s) {
+      var el = document.getElementById('sd-sect-' + s);
+      if (el) el.classList.toggle('on', s === sect);
+    });
+    _sdRelabelAria();
+  }
+
+  /* ---- render the three section bodies from current state ----------------- */
+  function _renderSDash() {
+    if (!_sdBuilt) return;
+    var state = _sdAuthState();     // 'in' | 'guest' | 'out'
+    var u = _curUser || {};
+    // rail me-card
+    var me = document.getElementById('sd-me');
+    if (me) {
+      if (state === 'out') {
+        me.innerHTML =
+          '<span class="sd-me-av guestav">' + SD_ICON.user + '</span>' +
+          '<span class="sd-me-main">' +
+            '<span class="sd-me-name">' + _sdBl('notSignedIn') + '</span>' +
+            '<span class="sd-me-sub">' + _sdBl('localOnly') + '</span>' +
+          '</span>';
+      } else {
+        var email = u.email || (u.user_metadata && u.user_metadata.email) || '';
+        var meta = u.user_metadata || {};
+        var dn = meta.display_name || '';
+        var avc = (dn ? dn.charAt(0) : (email ? email.charAt(0) : 'U')).toUpperCase();
+        var nm = state === 'guest' ? _sdL('accessSess') : (dn || email || '—');
+        me.innerHTML =
+          '<span class="sd-me-av">' + _escHtml(avc) + '</span>' +
+          '<span class="sd-me-main">' +
+            '<span class="sd-me-name">' + _escHtml(nm) + '</span>' +
+            '<span class="sd-me-sub">' + (state === 'guest' ? _sdBl('accessSess') : _sdBl('railSub')) + '</span>' +
+          '</span>';
+      }
+    }
+    // rail sign-out only when signed in with an email
+    var railSo = document.getElementById('sd-signout-rail');
+    if (railSo) railSo.style.display = (state === 'in') ? '' : 'none';
+    // Account tab hidden entirely when auth off
+    var tabAcct = document.getElementById('sd-tab-account');
+    if (tabAcct) tabAcct.style.display = _authEnabled ? '' : 'none';
+
+    _renderSDAccount(state, u);
+    _renderSDPrefs();
+    _renderSDSync(state, u);
+    _sdSyncThemeSeg();
+    _sdSyncLiveRow();
+    // if the current section is now invalid (account tab hidden), route to prefs
+    if (_sdSect === 'account' && !_authEnabled) _sdShow('prefs');
+  }
+
+  function _sdHead(titleKey, subKey) {
+    return '<header class="sd-head">' +
+      '<div class="sd-head-main">' +
+        '<h2>' + _sdBl(titleKey) + '</h2>' +
+        '<p class="sd-sub">' + _sdBl(subKey) + '</p>' +
+      '</div>' +
+      '<button type="button" class="sd-x" aria-label="' + _escHtml(_sdL('close')) + '">' + SET_ICON.x + '</button>' +
+    '</header>';
+  }
+
+  function _renderSDAccount(state, u) {
+    var host = document.getElementById('sd-sect-account');
+    if (!host) return;
+    var html = _sdHead('acctTitle', 'acctSub') + '<div class="sd-body">';
+
+    if (state === 'out') {
+      html += '<div class="sd-cta">' +
+          '<span class="sd-cta-av">' + SD_ICON.ctaUser + '</span>' +
+          '<p class="sd-cta-t">' + _sdBl('ctaTitle') + '</p>' +
+          '<p class="sd-cta-n">' + _sdBl('ctaNote') + '</p>' +
+          '<div class="sd-cta-btns">' +
+            '<button type="button" class="sd-btn ghost" data-sd-cta="signin">' + _sdBl('signin') + '</button>' +
+            '<button type="button" class="sd-btn primary" data-sd-cta="signup">' + _sdBl('createAcct') + '</button>' +
+          '</div>' +
+        '</div>';
+    } else if (state === 'guest') {
+      html += '<div class="sd-cta">' +
+          '<span class="sd-cta-av">' + SD_ICON.lock + '</span>' +
+          '<p class="sd-cta-t">' + _sdBl('accessSess') + '</p>' +
+          '<p class="sd-cta-n">' + _sdBl('guestNote') + '</p>' +
+          '<div class="sd-cta-btns">' +
+            '<button type="button" class="sd-btn primary" data-sd-cta="signup">' + _sdBl('createFree') + '</button>' +
+          '</div>' +
+        '</div>';
+    } else {
+      var email = u.email || (u.user_metadata && u.user_metadata.email) || '';
+      var meta = u.user_metadata || {};
+      var dn = meta.display_name || '';
+      var prov = _sdProvider(u);
+      var idName = dn || email;
+      var avc = (dn ? dn.charAt(0) : (email ? email.charAt(0) : 'U')).toUpperCase();
+      var since = _sdDate(u.created_at);
+      var lastIn = _sdDate(u.last_sign_in_at);
+      var uid = u.id || '';
+      var uidShort = uid.length > 10 ? (uid.slice(0, 4) + '…' + uid.slice(-4)) : uid;
+
+      // ID card (signature)
+      html += '<div class="sd-id">' +
+          '<span class="sd-id-av">' + _escHtml(avc) + '</span>' +
+          '<span class="sd-id-main">' +
+            '<span class="sd-id-name">' + _escHtml(idName) + '</span>' +
+            (dn ? '<span class="sd-id-mail">' + _escHtml(email) + '</span>' : '') +
+            '<span class="sd-id-chips">' +
+              _sdProviderChip(prov) +
+              (since ? '<span class="sd-chip">' + _sdL('memberSince') + ' ' + _escHtml(since) + '</span>' : '') +
+            '</span>' +
+          '</span>' +
+        '</div>';
+
+      // Profile group
+      html += '<div class="sd-group">' +
+          '<span class="sd-group-t">' + _sdBl('profile') + '</span>' +
+          // display name
+          '<div class="sd-row" id="sd-row-name">' +
+            '<div class="sd-row-line">' +
+              '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('dispName') + '</span></span>' +
+              '<span class="sd-row-val' + (dn ? ' strong' : '') + '" id="sd-name-val">' + _escHtml(dn || '—') + '</span>' +
+              '<button type="button" class="sd-edit" data-sd-edit="name">' + _sdBl('edit') + '</button>' +
+            '</div>' +
+            '<div class="sd-form">' +
+              '<input class="sd-in" type="text" id="sd-name-in" placeholder="' + _escHtml(_sdL('dispNamePh')) + '" value="' + _escHtml(dn) + '">' +
+              '<div class="sd-msg" id="sd-name-msg" role="alert"></div>' +
+              '<div class="sd-btns">' +
+                '<button type="button" class="sd-btn ghost" data-sd-cancel="name">' + _sdBl('cancel') + '</button>' +
+                '<button type="button" class="sd-btn primary" id="sd-name-save">' + _sdBl('save') + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          // email
+          '<div class="sd-row" id="sd-row-email">' +
+            '<div class="sd-row-line">' +
+              '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('email') + '</span></span>' +
+              '<span class="sd-row-val strong">' + _escHtml(email) + '</span>' +
+              '<button type="button" class="sd-edit" data-sd-edit="email">' + _sdBl('edit') + '</button>' +
+            '</div>' +
+            '<div class="sd-form">' +
+              '<input class="sd-in" type="email" id="sd-email-in" placeholder="' + _escHtml(_sdL('emailPh')) + '" autocomplete="email" autocapitalize="off" spellcheck="false">' +
+              '<p class="sd-note">' + _sdBl('emailNote') + '</p>' +
+              '<div class="sd-msg" id="sd-email-msg" role="alert"></div>' +
+              '<div class="sd-btns">' +
+                '<button type="button" class="sd-btn ghost" data-sd-cancel="email">' + _sdBl('cancel') + '</button>' +
+                '<button type="button" class="sd-btn primary" id="sd-email-save">' + _sdBl('sendConfirm') + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          // password
+          '<div class="sd-row" id="sd-row-pw">' +
+            '<div class="sd-row-line">' +
+              '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('password') + '</span></span>' +
+              '<span class="sd-row-val">••••••••</span>' +
+              '<button type="button" class="sd-edit" data-sd-edit="pw">' + _sdBl('edit') + '</button>' +
+            '</div>' +
+            '<div class="sd-form">' +
+              '<input class="sd-in" type="password" id="sd-pw-in" placeholder="' + _escHtml(_sdL('newPwPh')) + '" autocomplete="new-password">' +
+              '<input class="sd-in" type="password" id="sd-pw2-in" placeholder="' + _escHtml(_sdL('confirmPwPh')) + '" autocomplete="new-password">' +
+              '<div class="sd-msg" id="sd-pw-msg" role="alert"></div>' +
+              '<div class="sd-btns">' +
+                '<button type="button" class="sd-btn ghost" data-sd-cancel="pw">' + _sdBl('cancel') + '</button>' +
+                '<button type="button" class="sd-btn primary" id="sd-pw-save">' + _sdBl('updatePw') + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+
+      // Security group
+      html += '<div class="sd-group">' +
+          '<span class="sd-group-t">' + _sdBl('security') + '</span>' +
+          '<div class="sd-row"><div class="sd-row-line">' +
+            '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('loginMethod') + '</span></span>' +
+            _sdProviderPill(prov) +
+          '</div></div>' +
+          (lastIn ? '<div class="sd-row"><div class="sd-row-line">' +
+            '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('lastSignin') + '</span></span>' +
+            '<span class="sd-row-val">' + _escHtml(lastIn) + '</span>' +
+          '</div></div>' : '') +
+          '<div class="sd-row"><div class="sd-row-line">' +
+            '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('userId') + '</span>' +
+              '<span class="sd-row-desc">' + _sdBl('userIdNote') + '</span></span>' +
+            '<span class="sd-row-val">' + _escHtml(uidShort) + '</span>' +
+            '<button type="button" class="sd-mini" id="sd-copy-uid" data-uid="' + _escHtml(uid) + '">' + _sdBl('copy') + '</button>' +
+          '</div></div>' +
+        '</div>';
+
+      // mobile sign-out row
+      html += '<button type="button" class="sd-signout-m" id="sd-signout-m">' + SD_ICON.signout + _sdBl('signOut') + '</button>';
+    }
+
+    html += '</div>';  // end sd-body
+    host.innerHTML = html;
+    _wireSDAccount(host, state, u);
+  }
+
+  function _renderSDPrefs() {
+    var host = document.getElementById('sd-sect-prefs');
+    if (!host) return;
+    var showLive = (typeof window.LiveQuotes !== 'undefined');
+    host.innerHTML = _sdHead('prefsTitle', 'prefsSub') + '<div class="sd-body">' +
+      '<div class="sd-group" style="margin-top:4px">' +
+        // appearance
+        '<div class="sd-row"><div class="sd-row-line">' +
+          '<span class="sd-row-main">' +
+            '<span class="sd-row-lbl">' + _sdBl('appearance') + '</span>' +
+            '<span class="sd-row-desc">' + _sdBl('appearNote') + '</span></span>' +
+          '<span class="sd-seg" id="sd-theme-seg" role="group" aria-label="' + _escHtml(_sdL('appearance')) + '">' +
+            '<button type="button" class="sd-seg-b" data-sd-theme="light">' + _sdBl('themeLight') + '</button>' +
+            '<button type="button" class="sd-seg-b" data-sd-theme="auto">' + _sdBl('themeAuto') + '</button>' +
+            '<button type="button" class="sd-seg-b" data-sd-theme="dark">' + _sdBl('themeDark') + '</button>' +
+          '</span>' +
+        '</div></div>' +
+        // language
+        '<div class="sd-row"><div class="sd-row-line">' +
+          '<span class="sd-row-main">' +
+            '<span class="sd-row-lbl">' + _sdBl('language') + '</span>' +
+            '<span class="sd-row-desc">' + _sdBl('langNote') + '</span></span>' +
+          '<span class="sd-seg" id="sd-lang-seg" role="group" aria-label="' + _escHtml(_sdL('language')) + '">' +
+            '<button type="button" class="sd-seg-b" data-sd-lang="en">EN</button>' +
+            '<button type="button" class="sd-seg-b" data-sd-lang="zh">中文</button>' +
+          '</span>' +
+        '</div></div>' +
+        // live prices (hidden unless LiveQuotes present)
+        '<div class="sd-row" id="sd-live-row"' + (showLive ? '' : ' style="display:none"') + '><div class="sd-row-line">' +
+          '<span class="sd-row-main">' +
+            '<span class="sd-row-lbl">' + _sdBl('liveP') + '</span>' +
+            '<span class="sd-row-desc">' + _sdBl('livePNote') + '</span></span>' +
+          '<button type="button" class="sd-toggle" id="sd-live-toggle" role="switch" aria-checked="true" aria-label="' + _escHtml(_sdL('liveP')) + '"><span class="knob"></span></button>' +
+        '</div></div>' +
+      '</div>' +
+    '</div>';
+    _wireSDPrefs(host);
+  }
+
+  function _renderSDSync(state, u) {
+    var host = document.getElementById('sd-sect-sync');
+    if (!host) return;
+    var email = u.email || (u.user_metadata && u.user_metadata.email) || '';
+    var signedIn = (state === 'in' || state === 'guest');
+    // watchlist link target: derive the site-root prefix from theme.js's own
+    // <script src>, which is correct at ANY page depth (blog/ learn/ tools/
+    // sectors/ …) and under subpath hosting — a '/sectors/'-only check 404s
+    // everywhere else one level deep.
+    var pfx = '';
+    var _ts = document.querySelector('script[src$="theme.js"],script[src*="theme.js?"]');
+    if (_ts) pfx = (_ts.getAttribute('src') || '').replace(/theme\.js(\?.*)?$/, '');
+    var syncCard = signedIn
+      ? '<div class="sd-sync"><span class="dot"></span><span class="sd-sync-main">' +
+          '<span class="sd-sync-t">' + _sdBl('syncOn') + '</span>' +
+          // ZH lead ends in a full-width colon — no space after it
+          '<span class="sd-sync-s">' + _sdL('signedInAs') + (/：$/.test(_sdL('signedInAs')) ? '' : ' ') + (state === 'in' ? _escHtml(email) : _escHtml(_sdL('accessSess'))) + '</span>' +
+        '</span></div>'
+      : '<div class="sd-sync off"><span class="dot"></span><span class="sd-sync-main">' +
+          '<span class="sd-sync-t">' + _sdBl('syncOff') + '</span>' +
+          '<span class="sd-sync-s">' + _sdBl('signInToOn') + '</span>' +
+        '</span>' +
+        // no sign-in CTA when auth is disabled — openAuthModal would no-op
+        (_authEnabled ? '<button type="button" class="sd-btn primary" style="flex:none" data-sd-cta="signin">' + _sdBl('signin') + '</button>' : '') + '</div>';
+
+    host.innerHTML = _sdHead('syncTitle', 'syncSub') + '<div class="sd-body">' +
+      syncCard +
+      '<div class="sd-group">' +
+        '<div class="sd-row"><div class="sd-row-line"><span class="sd-row-main">' +
+          '<span class="sd-row-lbl">' + _sdBl('themeLang') + '</span>' +
+          '<span class="sd-row-desc">' + _sdBl('themeLangN') + '</span></span></div></div>' +
+        '<div class="sd-row"><div class="sd-row-line"><span class="sd-row-main">' +
+          '<span class="sd-row-lbl">' + _sdBl('watchlists') + '</span>' +
+          '<span class="sd-row-desc">' + _sdBl('watchNote') + '</span></span>' +
+          '<a class="sd-link" href="' + pfx + 'watchlist.html">' + _sdBl('openWatch') + SD_ICON.extlink + '</a>' +
+        '</div></div>' +
+      '</div>' +
+    '</div>';
+    _wireSDSync(host);
+  }
+
+  /* ---- section wiring ----------------------------------------------------- */
+  function _sdMsg(id, text, kind) {
+    var m = document.getElementById(id); if (!m) return;
+    if (!text) { m.className = 'sd-msg'; m.textContent = ''; return; }
+    m.textContent = text; m.className = 'sd-msg show ' + (kind || 'err');
+  }
+  function _sdSetBusy(btn, on, label) {
+    if (!btn) return;
+    if (on) { btn._sdLbl = btn.innerHTML; btn.disabled = true; if (label) btn.textContent = label; }
+    else { btn.disabled = false; if (btn._sdLbl != null) btn.innerHTML = btn._sdLbl; }
+  }
+  // shared CTA + sign-out wiring across sections
+  function _sdWireCta(host) {
+    host.querySelectorAll('[data-sd-cta]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var mode = b.getAttribute('data-sd-cta');
+        _closeSDash();
+        openAuthModal(mode === 'signup' ? 'signup' : 'signin');
+      });
+    });
+    var som = host.querySelector('#sd-signout-m');
+    if (som) som.addEventListener('click', function () { if (window.MDXAuth) window.MDXAuth.signOut(); });
+  }
+
+  function _wireSDAccount(host, state, u) {
+    _sdWireCta(host);
+    if (state !== 'in') return;
+
+    // inline-edit open/cancel
+    host.querySelectorAll('[data-sd-edit]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var row = b.closest('.sd-row'); if (!row) return;
+        row.classList.add('editing');
+        var inp = row.querySelector('input'); if (inp) inp.focus();
+      });
+    });
+    host.querySelectorAll('[data-sd-cancel]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var row = b.closest('.sd-row'); if (!row) return;
+        row.classList.remove('editing');
+        var kind = b.getAttribute('data-sd-cancel');
+        _sdMsg('sd-' + kind + '-msg', '');
+        if (kind === 'pw') { var p1 = document.getElementById('sd-pw-in'), p2 = document.getElementById('sd-pw2-in'); if (p1) p1.value = ''; if (p2) p2.value = ''; }
+        if (kind === 'email') { var e = document.getElementById('sd-email-in'); if (e) e.value = ''; }
+      });
+    });
+
+    // ---- display name (updateUser data.display_name) ----
+    var nameSave = document.getElementById('sd-name-save');
+    if (nameSave) nameSave.addEventListener('click', function () {
+      var inp = document.getElementById('sd-name-in');
+      var val = (inp && inp.value || '').trim();
+      _sdMsg('sd-name-msg', ''); _sdSetBusy(nameSave, true, _sdL('saving'));
+      getSupabaseClient().then(function (sb) {
+        if (!sb) throw new Error('no-client');
+        return sb.auth.updateUser({ data: { display_name: val } });
+      }).then(function (res) {
+        _sdSetBusy(nameSave, false);
+        if (res && res.error) throw res.error;
+        if (_curUser) { _curUser.user_metadata = _curUser.user_metadata || {}; _curUser.user_metadata.display_name = val; }
+        _renderSDash();   // reflect new name in ID card + rail
+      }).catch(function (err) {
+        _sdSetBusy(nameSave, false);
+        _sdMsg('sd-name-msg', (err && err.message) || _sdL('errGen'), 'err');
+      });
+    });
+
+    // ---- change email (updateUser email) ----
+    var emailSave = document.getElementById('sd-email-save');
+    if (emailSave) emailSave.addEventListener('click', function () {
+      var inp = document.getElementById('sd-email-in');
+      var val = (inp && inp.value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { _sdMsg('sd-email-msg', _sdL('validEmail'), 'err'); return; }
+      _sdMsg('sd-email-msg', ''); _sdSetBusy(emailSave, true, _sdL('saving'));
+      getSupabaseClient().then(function (sb) {
+        if (!sb) throw new Error('no-client');
+        return sb.auth.updateUser({ email: val });
+      }).then(function (res) {
+        _sdSetBusy(emailSave, false);
+        if (res && res.error) throw res.error;
+        _sdMsg('sd-email-msg', _sdL('emailSent'), 'ok');
+        if (inp) inp.value = '';
+      }).catch(function (err) {
+        _sdSetBusy(emailSave, false);
+        _sdMsg('sd-email-msg', (err && err.message) || _sdL('errGen'), 'err');
+      });
+    });
+
+    // ---- change password (>=8 + match) ----
+    var pwSave = document.getElementById('sd-pw-save');
+    if (pwSave) pwSave.addEventListener('click', function () {
+      var p1El = document.getElementById('sd-pw-in'), p2El = document.getElementById('sd-pw2-in');
+      var p1 = (p1El && p1El.value) || '', p2 = (p2El && p2El.value) || '';
+      if (p1.length < 8) { _sdMsg('sd-pw-msg', _sdL('pwShort'), 'err'); return; }
+      if (p1 !== p2) { _sdMsg('sd-pw-msg', _sdL('pwMismatch'), 'err'); return; }
+      _sdMsg('sd-pw-msg', ''); _sdSetBusy(pwSave, true, _sdL('saving'));
+      getSupabaseClient().then(function (sb) {
+        if (!sb) throw new Error('no-client');
+        return sb.auth.updateUser({ password: p1 });
+      }).then(function (res) {
+        _sdSetBusy(pwSave, false);
+        if (res && res.error) throw res.error;
+        _sdMsg('sd-pw-msg', _sdL('pwOk'), 'ok');
+        if (p1El) p1El.value = ''; if (p2El) p2El.value = '';
+        setTimeout(function () {
+          var row = document.getElementById('sd-row-pw');
+          if (row) row.classList.remove('editing');
+          _sdMsg('sd-pw-msg', '');
+        }, 1200);
+      }).catch(function (err) {
+        _sdSetBusy(pwSave, false);
+        _sdMsg('sd-pw-msg', (err && err.message) || _sdL('errGen'), 'err');
+      });
+    });
+
+    // ---- copy user ID (clipboard + execCommand fallback) ----
+    var copyBtn = document.getElementById('sd-copy-uid');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      var uid = copyBtn.getAttribute('data-uid') || '';
+      var flip = function () {
+        clearTimeout(_sdCopyTimer);
+        copyBtn.innerHTML = _sdBl('copied');
+        _sdCopyTimer = setTimeout(function () { copyBtn.innerHTML = _sdBl('copy'); }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(uid).then(flip).catch(function () { _sdCopyExec(uid, flip); });
+      } else { _sdCopyExec(uid, flip); }
+    });
+  }
+  function _sdCopyExec(text, done) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      if (done) done();
+    } catch (e) {}
+  }
+
+  function _wireSDPrefs(host) {
+    host.querySelectorAll('[data-sd-theme]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var t = b.getAttribute('data-sd-theme');
+        if (t === 'auto') setThemeAuto(); else setTheme(t);
+        // active state syncs via the themechange listener (_sdSyncThemeSeg)
+      });
+    });
+    host.querySelectorAll('[data-sd-lang]').forEach(function (b) {
+      b.addEventListener('click', function () { setLang(b.getAttribute('data-sd-lang')); });
+    });
+    var lt = host.querySelector('#sd-live-toggle');
+    if (lt) lt.addEventListener('click', function () {
+      var off = false; try { off = localStorage.getItem('liveOff') === '1'; } catch (e) {}
+      if (off) {
+        try { localStorage.removeItem('liveOff'); } catch (e) {}
+        if (window.LiveQuotes && typeof window.LiveQuotes.resume === 'function') window.LiveQuotes.resume();
+      } else {
+        try { localStorage.setItem('liveOff', '1'); } catch (e) {}
+        if (window.LiveQuotes && typeof window.LiveQuotes.pause === 'function') window.LiveQuotes.pause();
+      }
+      _sdSyncLiveRow();
+    });
+    _sdSyncLiveRow();
+  }
+  function _wireSDSync(host) { _sdWireCta(host); }
+
+  // sync the Appearance segment active state (mirrors _syncThemeSegNow)
+  function _sdSyncThemeSeg() {
+    if (!_sdOverlay) return;
+    var seg = _sdOverlay.querySelector('#sd-theme-seg'); if (!seg) return;
+    var isAuto = false; try { isAuto = localStorage.getItem('themeAuto') === '1'; } catch (e) {}
+    var cur = curTheme();
+    seg.querySelectorAll('.sd-seg-b').forEach(function (b) {
+      var t = b.getAttribute('data-sd-theme');
+      var on = (t === 'auto') ? isAuto : (!isAuto && cur === t);
+      b.classList.toggle('active', on);
+    });
+    // language segment reflects current lang too
+    var lseg = _sdOverlay.querySelector('#sd-lang-seg');
+    if (lseg) lseg.querySelectorAll('.sd-seg-b').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-sd-lang') === curLang());
+    });
+  }
+  // live-prices row: re-check availability + aria-checked from localStorage
+  function _sdSyncLiveRow() {
+    if (!_sdOverlay) return;
+    var row = _sdOverlay.querySelector('#sd-live-row'), t = _sdOverlay.querySelector('#sd-live-toggle');
+    if (row) row.style.display = (typeof window.LiveQuotes !== 'undefined') ? '' : 'none';
+    if (t) {
+      var off = false; try { off = localStorage.getItem('liveOff') === '1'; } catch (e) {}
+      t.setAttribute('aria-checked', off ? 'false' : 'true');
+    }
+  }
+
+  /* ---- open / close ------------------------------------------------------- */
+  function _openSDash(section) {
+    _buildSDash();
+    _renderSDash();
+    // pick the section: honour the request, but default account->prefs when auth off
+    var want = section || (_curUser ? 'account' : 'prefs');
+    if (want === 'account' && !_authEnabled) want = 'prefs';
+    _sdShow(want);
+    _sdLastFocus = document.activeElement;
+    document.documentElement.classList.add('auth-lock');
+    // re-toggle .open so the one-shot laser sweep re-runs each open
+    _sdOverlay.classList.remove('open');
+    // force reflow so removing+adding .open restarts the animation
+    void _sdOverlay.offsetWidth;
+    _sdOverlay.classList.add('open');
+    _sdRelabelAria();
+    // focus the active rail tab for keyboard users
+    setTimeout(function () {
+      var t = _sdOverlay.querySelector('.sd-nav-b.active') || _sdOverlay.querySelector('.sd-nav-b');
+      if (t) { try { t.focus({ preventScroll: true }); } catch (e) { t.focus(); } }
+    }, 90);
+  }
+  function _closeSDash() {
+    if (!_sdOverlay) return;
+    _sdOverlay.classList.remove('open');
+    document.documentElement.classList.remove('auth-lock');
+    clearTimeout(_sdCopyTimer);
+    // restoring focus into .nav-settings would re-reveal the gear popover via
+    // its :focus-within CSS — for those openers, skip the restore entirely
+    if (_sdLastFocus && _sdLastFocus.focus &&
+        !(_sdLastFocus.closest && _sdLastFocus.closest('.nav-settings'))) {
+      try { _sdLastFocus.focus(); } catch (e) {}
+    }
+  }
+  // public API — the gear popover's entry points drive this
+  window.MMSettings = { open: function (section) { _openSDash(section); }, close: _closeSDash };
+
+  /* ===========================================================================
      ACCOUNT PANEL — "page 2" inside the settings popover.
      Opens when a real Supabase signed-in user clicks "Manage account & sync ›".
      Uses supabase.auth.updateUser() directly; no external broker needed.
@@ -1430,47 +2361,8 @@
     document.addEventListener('langchange', function () { _savePrefToServer(); });
   }
 
-  /* ---- account panel state ------------------------------------------------ */
-  var _acctPanelOpen = false;
-  var _acctPanelBuilt = false;
-  var _acctBusyFlag = false;
-  var _acctClosePanelFn = null;  // set by initSettings, called from outside
-
-  /* ---- account panel labels ----------------------------------------------- */
-  var ACCT_L = {
-    back:       ['‹ Back', '‹ 返回'],
-    myAcct:     ['My account', '我的账户'],
-    memberSince:['Member since', '注册于'],
-    dispName:   ['Display name', '显示名称'],
-    dispNamePh: ['Your name', '你的名字'],
-    saveBtn:    ['Save', '保存'],
-    cancelBtn:  ['Cancel', '取消'],
-    saving:     ['Saving…', '保存中…'],
-    changeEmail:['Change email', '修改邮箱'],
-    newEmail:   ['New email address', '新邮箱地址'],
-    emailNote:  ['A confirmation link will be sent to both addresses.', '两个邮箱地址都会收到确认链接。'],
-    sendConfirm:['Send confirmation', '发送确认'],
-    emailSent:  ['Confirmation sent to both addresses.', '确认链接已发送至两个邮箱。'],
-    changePw:   ['Change password', '修改密码'],
-    newPw:      ['New password', '新密码'],
-    newPwPh:    ['At least 8 characters', '至少 8 个字符'],
-    confirmPw:  ['Confirm password', '确认密码'],
-    confirmPwPh:['Repeat new password', '再次输入新密码'],
-    updatePw:   ['Update password', '更新密码'],
-    pwOk:       ['Password updated.', '密码已更新。'],
-    pwMismatch: ['Passwords don’t match.', '两次密码不一致。'],
-    pwShort:    ['Use at least 8 characters.', '至少 8 个字符。'],
-    prefsSync:  ['Theme & language sync', '主题与语言同步'],
-    prefsSaved: ['Preferences saved to your account.', '偏好已保存至账户。'],
-    prefsNote:  ['Your theme and language follow you across devices.', '你的主题和语言会在所有设备间同步。'],
-    signOut:    ['Sign out', '退出登录'],
-    guestTitle: ['Access session', '访问会话'],
-    guestNote:  ['You’re in with the site access password. Create a free account to manage email, password & sync preferences.', '你正通过站点访问密码登录。注册免费账户以管理邮箱、密码并同步偏好。'],
-    createAcct: ['Create free account', '注册免费账户'],
-    errGen:     ['Something went wrong — please try again.', '出错了，请重试。'],
-    validEmail: ['Enter a valid email address.', '请输入有效的邮箱地址。']
-  };
-  function _AL(k) { var p = ACCT_L[k]; return p ? p[curLang() === 'zh' ? 1 : 0] : ''; }
+  /* (The old "page 2" account panel state + ACCT_L labels were removed — account
+     management now lives in the settings dashboard (SD_L / _renderSDash above).) */
   function _escHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -1492,6 +2384,7 @@
     signedin:['Manage account & sync ›', '管理账户与同步 ›'],
     signout: ['Sign out', '退出'],
     close:   ['Close settings', '关闭设置'],
+    expand:  ['Open full settings', '打开完整设置'],
     // Feature 5: three-way theme segment labels
     themeLight: ['Light', '浅色'],
     themeAuto:  ['Auto', '自动'],
@@ -1541,9 +2434,15 @@
     '}',
     '.settings-head{display:flex;align-items:center;gap:8px;margin:0;padding:0 2px 2px}',
     '.settings-head h2{margin:0;padding:0;border:0;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;line-height:1.2;color:var(--muted,var(--ink-3))}',
-    '.settings-close{margin-left:auto;width:24px;height:24px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background .18s,color .18s}',
+    '.settings-close{width:24px;height:24px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background .18s,color .18s}',
     '.settings-close:hover{background:var(--panel2,var(--card));color:var(--text,var(--ink))}',
     '.settings-close svg{width:15px;height:15px}',
+    '.settings-close:focus-visible{outline:2px solid var(--link,var(--blue));outline-offset:2px}',
+    /* expand-to-dashboard button: sits at the header end, pushed right with the close */
+    '.settings-expand{margin-left:auto;width:24px;height:24px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background .18s,color .18s}',
+    '.settings-expand:hover{background:var(--panel2,var(--card));color:var(--link,var(--blue))}',
+    '.settings-expand svg{width:15px;height:15px}',
+    '.settings-expand:focus-visible{outline:2px solid var(--link,var(--blue));outline-offset:2px}',
     '.settings-sec{margin-top:9px}',
     '.settings-sec-t{display:flex;align-items:center;gap:8px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,var(--ink-3));margin:0 0 7px;padding:0 2px}',
     '.settings-row{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:11px;background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid))}',
@@ -1601,69 +2500,10 @@
     '.set-toggle-btn[aria-checked="true"]{background:var(--link,var(--blue));border-color:var(--link,var(--blue))}',
     '.set-toggle-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.4,.5,1)}',
     '.set-toggle-btn[aria-checked="true"] .set-toggle-knob{transform:translateX(20px)}',
-    '.set-toggle-btn:focus-visible{outline:2px solid var(--link,var(--blue));outline-offset:2px}',
-    /* ---- account panel ("page 2" inside the settings-pop) ------------------
-       .set-acct-panel overlays the pane content when open: absolute fill inside
-       the already-positioned .settings-pop, with its own scroll so content can
-       overflow; slides in from the right using translateX. */
-    '.settings-pop{overflow:hidden}',
-    '.set-acct-panel{position:absolute;inset:0;z-index:10;background:color-mix(in srgb,var(--panel,var(--card)) 76%,transparent);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-radius:16px;overflow-y:auto;overscroll-behavior:contain;transform:translateX(100%);transition:transform .22s cubic-bezier(.32,1.3,.5,1);display:flex;flex-direction:column}',
-    '.set-acct-panel.open{transform:translateX(0)}',
-    '@media (prefers-reduced-motion:reduce){.set-acct-panel{transition:transform .12s ease}}',
-    '.sap-head{display:flex;align-items:center;gap:8px;padding:13px 13px 10px;flex:none;border-bottom:1px solid color-mix(in srgb,var(--line,var(--grid)) 60%,transparent)}',
-    '.sap-back{display:inline-flex;align-items:center;gap:5px;background:transparent;border:0;color:var(--link,var(--blue,#4f8cff));font-size:12.5px;font-weight:700;cursor:pointer;padding:5px 6px;border-radius:8px;font-family:inherit;transition:background .15s}',
-    '.sap-back:hover{background:color-mix(in srgb,var(--link,var(--blue)) 12%,transparent)}',
-    '.sap-head-title{flex:1;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,var(--ink-3));text-align:center}',
-    '.sap-body{padding:13px;flex:1}',
-    /* identity row */
-    '.sap-id{display:flex;align-items:center;gap:10px;padding:11px;background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid));border-radius:11px;margin-bottom:11px}',
-    '.sap-avatar{flex:none;width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--link,var(--blue,#4f8cff)),color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 55%,#9b5cff))}',
-    '.sap-id-main{flex:1;min-width:0}',
-    '.sap-id-email{display:block;font-size:13px;font-weight:700;color:var(--text,var(--ink));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    '.sap-id-since{display:block;font-size:11px;color:var(--muted,var(--ink-3));margin-top:2px}',
-    /* section rows */
-    '.sap-sec{margin-bottom:9px}',
-    '.sap-sec-t{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,var(--ink-3));margin:0 2px 6px;display:block}',
-    '.sap-row{background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid));border-radius:11px;padding:10px 11px}',
-    '.sap-row+.sap-row{margin-top:7px}',
-    '.sap-row-lbl{display:block;font-size:12px;font-weight:700;color:var(--muted,var(--ink-3));margin-bottom:6px}',
-    /* inline edit */
-    '.sap-inline{display:flex;align-items:center;gap:8px}',
-    '.sap-inline-val{flex:1;font-size:13px;color:var(--text,var(--ink));min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    '.sap-edit-btn{flex:none;font-size:11.5px;font-weight:700;color:var(--link,var(--blue,#4f8cff));background:transparent;border:1px solid var(--line,var(--grid));border-radius:8px;padding:5px 10px;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s}',
-    '.sap-edit-btn:hover{border-color:var(--link,var(--blue));background:color-mix(in srgb,var(--link,var(--blue)) 10%,transparent)}',
-    /* input fields */
-    '.sap-in{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--line,var(--grid));background:var(--bg,var(--card,#0b0f1a));color:var(--text,var(--ink));font-size:13.5px;font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;margin-top:7px;display:block}',
-    '.sap-in:focus{border-color:var(--link,var(--blue));box-shadow:0 0 0 3px color-mix(in srgb,var(--link,var(--blue)) 20%,transparent)}',
-    /* message / feedback */
-    '.sap-msg{font-size:11.5px;line-height:1.4;margin-top:6px;display:none}',
-    '.sap-msg.show{display:block}',
-    '.sap-msg.ok{color:var(--up,#23c08a)}',
-    '.sap-msg.err{color:var(--down,#ff5c6c)}',
-    '.sap-note{font-size:11px;color:var(--muted,var(--ink-3));line-height:1.45;margin-top:5px}',
-    /* action button row */
-    '.sap-btns{display:flex;gap:7px;margin-top:9px;justify-content:flex-end}',
-    '.sap-btn{font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;border:1px solid var(--line,var(--grid));font-family:inherit;transition:all .15s}',
-    '.sap-btn:disabled{opacity:.55;cursor:default}',
-    '.sap-btn.primary{background:var(--link,var(--blue));border-color:var(--link,var(--blue));color:#fff}',
-    '.sap-btn.primary:hover:not(:disabled){filter:brightness(1.07);transform:translateY(-1px)}',
-    '.sap-btn.ghost{background:transparent;color:var(--text,var(--ink))}',
-    '.sap-btn.ghost:hover:not(:disabled){border-color:var(--link,var(--blue))}',
-    '.sap-btn.danger{background:transparent;color:var(--down,#ff5c6c);border-color:var(--down,#ff5c6c)}',
-    '.sap-btn.danger:hover:not(:disabled){background:color-mix(in srgb,var(--down,#ff5c6c) 10%,transparent)}',
-    /* prefs-sync row */
-    '.sap-prefs-row{display:flex;align-items:center;justify-content:space-between;gap:10px}',
-    '.sap-prefs-row .sap-prefs-info{flex:1;min-width:0}',
-    '.sap-prefs-row .sap-prefs-lbl{font-size:13px;font-weight:700;color:var(--text,var(--ink))}',
-    '.sap-prefs-row .sap-prefs-note{font-size:11px;color:var(--muted,var(--ink-3));margin-top:2px}',
-    /* sign-out row */
-    '.sap-signout-row{margin-top:7px}',
-    /* guest note */
-    '.sap-guest{text-align:center;padding:14px 4px}',
-    '.sap-guest-title{font-size:14px;font-weight:800;color:var(--text,var(--ink));margin-bottom:7px}',
-    '.sap-guest-note{font-size:12px;color:var(--muted,var(--ink-3));line-height:1.55;margin-bottom:14px}',
-    '.sap-guest-cta{width:100%;padding:11px;border-radius:11px;background:var(--link,var(--blue));border-color:var(--link,var(--blue));color:#fff;font-size:14px;font-weight:800;cursor:pointer;border:1px solid transparent;font-family:inherit;transition:filter .18s,transform .12s ease}',
-    '.sap-guest-cta:hover{filter:brightness(1.07);transform:translateY(-1px)}'
+    '.set-toggle-btn:focus-visible{outline:2px solid var(--link,var(--blue));outline-offset:2px}'
+    /* NB: the old "page 2" account panel (.set-acct-panel/.sap-*) was removed —
+       account management now lives in the full settings dashboard (SDASH_CSS,
+       sd-*), opened from the signed-in row + the header expand button. */
   ].join('');
 
   function setLabels(root) {
@@ -1710,6 +2550,7 @@
     pop.innerHTML =
       '<div class="settings-head">' +
         '<h2 data-set="title"></h2>' +
+        '<button type="button" class="settings-expand" id="settings-expand" aria-label="Open full settings">' + SET_ICON.maximize + '</button>' +
         '<button type="button" class="settings-close" aria-label="Close settings">' + SET_ICON.x + '</button>' +
       '</div>' +
       '<div class="settings-sec">' +
@@ -1771,6 +2612,7 @@
       gear.setAttribute('aria-label', SET_L.title[lg]);
       pop.setAttribute('aria-label', SET_L.title[lg]);
       var cb = pop.querySelector('.settings-close'); if (cb) cb.setAttribute('aria-label', SET_L.close[lg]);
+      var xb = pop.querySelector('.settings-expand'); if (xb) xb.setAttribute('aria-label', SET_L.expand[lg]);
     }
     setLabels(pop); relabelSetAria();
     document.addEventListener('langchange', function () { setLabels(pop); relabelSetAria(); });
@@ -1808,12 +2650,17 @@
     }
     gear.addEventListener('click', function () { isOpen() ? close() : open(); });
     pop.querySelector('.settings-close').addEventListener('click', function () { close(); gear.focus(); });
+    // expand → open the full settings dashboard (Account when signed in, else Preferences)
+    var expandBtn = pop.querySelector('.settings-expand');
+    if (expandBtn) expandBtn.addEventListener('click', function () {
+      close(); if (window.MMSettings) window.MMSettings.open(_curUser ? 'account' : 'prefs');
+    });
     // no scrim: a click anywhere outside the gear + its dropdown closes it
     document.addEventListener('mousedown', function (e) { if (isOpen() && !wrap.contains(e.target)) close(); });
     document.addEventListener('keydown', function (e) {
       if (!isOpen() || e.key !== 'Escape') return;
-      // account "page 2" open? Escape peels back one layer, not the whole pane
-      if (_acctPanelOpen && typeof _acctClosePanelFn === 'function') { _acctClosePanelFn(); return; }
+      // account management now lives in the full settings dashboard (its own Esc
+      // handler owns closing it); here Escape simply closes the popover.
       close(); gear.focus();
     });
     // Desktop also opens the panel on hover (pure CSS above). If a stray click set
@@ -1843,344 +2690,31 @@
       if (bSignup) bSignup.addEventListener('click', function () { close(); openAuthModal('signup'); });
       if (bSignout) bSignout.addEventListener('click', function () { window.MDXAuth.signOut(); });
 
-      /* ---- ACCOUNT PANEL ("page 2" inside the pane) ---------------------- */
-      // Build the panel shell and inject it into the pane (hidden until opened).
-      var acctPanel = document.createElement('div');
-      acctPanel.className = 'set-acct-panel';
-      acctPanel.setAttribute('role', 'region');
-      acctPanel.setAttribute('aria-label', 'Account');
-      pop.appendChild(acctPanel);
+      /* ---- account management → the full settings dashboard -------------- */
+      // The old "page 2" account panel was replaced by MMSettings (the sd-* dash).
+      // Here we only keep the pref-sync hooks + wire the signed-in row to open it.
 
-      // Keep a ref to the pane's close fn so the panel can close the whole pane
-      _acctClosePanelFn = function () { _closeAcctPanelPanel(); };
-
-      function _closeAcctPanelPanel() {
-        acctPanel.classList.remove('open');
-        _acctPanelOpen = false;
-        // restore focus to the signed-in row
-        var mMain2 = pop.querySelector('#set-acct-in .sr-main');
-        if (mMain2) mMain2.focus();
-      }
-
-      // Helper: show/clear inline message inside the panel
-      function _sapMsg(id, text, kind) {
-        var m = document.getElementById(id); if (!m) return;
-        if (!text) { m.className = 'sap-msg'; m.textContent = ''; return; }
-        m.textContent = text;
-        m.className = 'sap-msg show ' + (kind || 'err');
-      }
-      // Helper: busy-state on a button (stores original label)
-      function _sapBusy(btn, on, label) {
-        if (!btn) return;
-        if (on) { btn._sapLbl = btn.textContent; btn.disabled = true; if (label) btn.textContent = label; }
-        else { btn.disabled = false; if (btn._sapLbl != null) btn.textContent = btn._sapLbl; }
-      }
-
-      // Render the panel content based on current _curUser
-      function _renderAcctPanel() {
-        if (!acctPanel) return;
-        var u = _curUser;
-        if (!u) { acctPanel.innerHTML = ''; return; }
-
-        var email = u.email || (u.user_metadata && u.user_metadata.email) || '';
-        var meta  = u.user_metadata || {};
-        var isGuest = !email;  // access-password sessions have no email in user object
-
-        // Format member-since date
-        var since = '';
-        try {
-          if (u.created_at) {
-            since = new Date(u.created_at).toLocaleDateString(
-              curLang() === 'zh' ? 'zh-CN' : undefined,
-              { year: 'numeric', month: 'short', day: 'numeric' });
-          }
-        } catch (e) {}
-
-        var initial = email ? email.charAt(0).toUpperCase() : (meta.display_name ? meta.display_name.charAt(0).toUpperCase() : 'U');
-
-        var html = '<div class="sap-head">' +
-          '<button type="button" class="sap-back" id="sap-back">' + _AL('back') + '</button>' +
-          '<span class="sap-head-title" id="sap-title">' + _AL('myAcct') + '</span>' +
-          '<span style="width:56px"></span>' +
-        '</div>' +
-        '<div class="sap-body">';
-
-        if (isGuest) {
-          // Access-password / anonymous session: show explainer + CTA
-          html += '<div class="sap-guest">' +
-            '<div class="sap-guest-title">' + _AL('guestTitle') + '</div>' +
-            '<div class="sap-guest-note">' + _AL('guestNote') + '</div>' +
-            '<button type="button" class="sap-guest-cta" id="sap-create-acct">' + _AL('createAcct') + '</button>' +
-          '</div>';
-        } else {
-          // Real Supabase session — full account management
-          // a) Identity row
-          html += '<div class="sap-id">' +
-            '<span class="sap-avatar" id="sap-avatar">' + initial + '</span>' +
-            '<span class="sap-id-main">' +
-              '<span class="sap-id-email" id="sap-id-email">' + _escHtml(email) + '</span>' +
-              (since ? '<span class="sap-id-since">' + _AL('memberSince') + ' ' + _escHtml(since) + '</span>' : '') +
-            '</span>' +
-          '</div>';
-
-          // b) Display name
-          var dispName = meta.display_name || '';
-          html += '<div class="sap-sec">' +
-            '<div class="sap-row" id="sap-name-row">' +
-              '<span class="sap-row-lbl">' + _AL('dispName') + '</span>' +
-              '<div class="sap-inline">' +
-                '<span class="sap-inline-val" id="sap-name-val">' + _escHtml(dispName || '—') + '</span>' +
-                '<button type="button" class="sap-edit-btn" id="sap-name-edit">Edit</button>' +
-              '</div>' +
-              '<input type="text" class="sap-in" id="sap-name-in" placeholder="' + _AL('dispNamePh') + '" value="' + _escHtml(dispName) + '" style="display:none">' +
-              '<div class="sap-msg" id="sap-name-msg"></div>' +
-              '<div class="sap-btns" id="sap-name-btns" style="display:none">' +
-                '<button type="button" class="sap-btn ghost" id="sap-name-cancel">' + _AL('cancelBtn') + '</button>' +
-                '<button type="button" class="sap-btn primary" id="sap-name-save">' + _AL('saveBtn') + '</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-
-          // c) Change email
-          html += '<div class="sap-sec">' +
-            '<div class="sap-row" id="sap-email-row">' +
-              '<span class="sap-row-lbl">' + _AL('changeEmail') + '</span>' +
-              '<div class="sap-inline">' +
-                '<span class="sap-inline-val">' + _escHtml(email) + '</span>' +
-                '<button type="button" class="sap-edit-btn" id="sap-email-edit">Edit</button>' +
-              '</div>' +
-              '<input type="email" class="sap-in" id="sap-email-in" placeholder="' + _AL('newEmail') + '" style="display:none">' +
-              '<div class="sap-msg" id="sap-email-msg"></div>' +
-              '<p class="sap-note" id="sap-email-note" style="display:none">' + _AL('emailNote') + '</p>' +
-              '<div class="sap-btns" id="sap-email-btns" style="display:none">' +
-                '<button type="button" class="sap-btn ghost" id="sap-email-cancel">' + _AL('cancelBtn') + '</button>' +
-                '<button type="button" class="sap-btn primary" id="sap-email-save">' + _AL('sendConfirm') + '</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-
-          // d) Change password
-          html += '<div class="sap-sec">' +
-            '<div class="sap-row" id="sap-pw-row">' +
-              '<span class="sap-row-lbl">' + _AL('changePw') + '</span>' +
-              '<div class="sap-inline">' +
-                '<span class="sap-inline-val" style="color:var(--muted,var(--ink-3))">••••••••</span>' +
-                '<button type="button" class="sap-edit-btn" id="sap-pw-edit">Edit</button>' +
-              '</div>' +
-              '<input type="password" class="sap-in" id="sap-pw-in" placeholder="' + _AL('newPwPh') + '" autocomplete="new-password" style="display:none">' +
-              '<input type="password" class="sap-in" id="sap-pw2-in" placeholder="' + _AL('confirmPwPh') + '" autocomplete="new-password" style="display:none">' +
-              '<div class="sap-msg" id="sap-pw-msg"></div>' +
-              '<div class="sap-btns" id="sap-pw-btns" style="display:none">' +
-                '<button type="button" class="sap-btn ghost" id="sap-pw-cancel">' + _AL('cancelBtn') + '</button>' +
-                '<button type="button" class="sap-btn primary" id="sap-pw-save">' + _AL('updatePw') + '</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-
-          // e) Preference sync indicator
-          html += '<div class="sap-sec">' +
-            '<div class="sap-row">' +
-              '<div class="sap-prefs-row">' +
-                '<div class="sap-prefs-info">' +
-                  '<div class="sap-prefs-lbl">' + _AL('prefsSync') + '</div>' +
-                  '<div class="sap-prefs-note">' + _AL('prefsNote') + '</div>' +
-                '</div>' +
-              '</div>' +
-              '<div class="sap-msg" id="sap-prefs-msg"></div>' +
-            '</div>' +
-          '</div>';
-
-          // f) Sign out
-          html += '<div class="sap-sec sap-signout-row">' +
-            '<button type="button" class="sap-btn danger" id="sap-signout" style="width:100%">' + _AL('signOut') + '</button>' +
-          '</div>';
-        }
-
-        html += '</div>';  // end sap-body
-        acctPanel.innerHTML = html;
-
-        // Wire back button
-        var backBtn = document.getElementById('sap-back');
-        if (backBtn) backBtn.addEventListener('click', function () { _closeAcctPanelPanel(); });
-
-        if (isGuest) {
-          // Wire create-account button
-          var ctaBtn = document.getElementById('sap-create-acct');
-          if (ctaBtn) ctaBtn.addEventListener('click', function () {
-            _closeAcctPanelPanel(); close(); openAuthModal('signup');
-          });
-          return;
-        }
-
-        // Wire sign-out
-        var soBtn = document.getElementById('sap-signout');
-        if (soBtn) soBtn.addEventListener('click', function () { window.MDXAuth.signOut(); _closeAcctPanelPanel(); });
-
-        // ---- Display name inline edit ----
-        var nameEdit = document.getElementById('sap-name-edit');
-        var nameIn   = document.getElementById('sap-name-in');
-        var nameBtns = document.getElementById('sap-name-btns');
-        var nameVal  = document.getElementById('sap-name-val');
-        if (nameEdit && nameIn && nameBtns) {
-          nameEdit.addEventListener('click', function () {
-            nameIn.style.display = ''; nameBtns.style.display = '';
-            nameEdit.style.display = 'none'; nameIn.focus();
-          });
-          var nameCancelBtn = document.getElementById('sap-name-cancel');
-          if (nameCancelBtn) nameCancelBtn.addEventListener('click', function () {
-            nameIn.style.display = 'none'; nameBtns.style.display = 'none';
-            nameEdit.style.display = ''; _sapMsg('sap-name-msg', '');
-          });
-          var nameSaveBtn = document.getElementById('sap-name-save');
-          if (nameSaveBtn) nameSaveBtn.addEventListener('click', function () {
-            var val = (nameIn.value || '').trim();
-            _sapMsg('sap-name-msg', '');
-            _sapBusy(nameSaveBtn, true, _AL('saving'));
-            getSupabaseClient().then(function (sb) {
-              if (!sb) throw new Error('no-client');
-              return sb.auth.updateUser({ data: { display_name: val } });
-            }).then(function (res) {
-              _sapBusy(nameSaveBtn, false);
-              if (res && res.error) throw res.error;
-              // optimistic UI update
-              if (nameVal) nameVal.textContent = val || '—';
-              // update _curUser metadata locally
-              if (_curUser && _curUser.user_metadata) _curUser.user_metadata.display_name = val;
-              var av = document.getElementById('sap-avatar');
-              if (av && val) av.textContent = val.charAt(0).toUpperCase();
-              nameIn.style.display = 'none'; nameBtns.style.display = 'none';
-              nameEdit.style.display = '';
-              _sapMsg('sap-name-msg', '');
-            }).catch(function (err) {
-              _sapBusy(nameSaveBtn, false);
-              var m = (err && err.message) || _AL('errGen');
-              _sapMsg('sap-name-msg', m, 'err');
-            });
-          });
-        }
-
-        // ---- Change email ----
-        var emailEdit   = document.getElementById('sap-email-edit');
-        var emailIn     = document.getElementById('sap-email-in');
-        var emailBtns   = document.getElementById('sap-email-btns');
-        var emailNote   = document.getElementById('sap-email-note');
-        if (emailEdit && emailIn && emailBtns) {
-          emailEdit.addEventListener('click', function () {
-            emailIn.style.display = ''; emailBtns.style.display = '';
-            if (emailNote) emailNote.style.display = '';
-            emailEdit.style.display = 'none'; emailIn.focus();
-          });
-          var emailCancelBtn = document.getElementById('sap-email-cancel');
-          if (emailCancelBtn) emailCancelBtn.addEventListener('click', function () {
-            emailIn.style.display = 'none'; emailBtns.style.display = 'none';
-            if (emailNote) emailNote.style.display = 'none';
-            emailEdit.style.display = ''; _sapMsg('sap-email-msg', '');
-          });
-          var emailSaveBtn = document.getElementById('sap-email-save');
-          if (emailSaveBtn) emailSaveBtn.addEventListener('click', function () {
-            var val = (emailIn.value || '').trim();
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
-              _sapMsg('sap-email-msg', _AL('validEmail'), 'err'); return;
-            }
-            _sapMsg('sap-email-msg', '');
-            _sapBusy(emailSaveBtn, true, _AL('saving'));
-            getSupabaseClient().then(function (sb) {
-              if (!sb) throw new Error('no-client');
-              return sb.auth.updateUser({ email: val });
-            }).then(function (res) {
-              _sapBusy(emailSaveBtn, false);
-              if (res && res.error) throw res.error;
-              _sapMsg('sap-email-msg', _AL('emailSent'), 'ok');
-              emailIn.value = '';
-            }).catch(function (err) {
-              _sapBusy(emailSaveBtn, false);
-              var m = (err && err.message) || _AL('errGen');
-              _sapMsg('sap-email-msg', m, 'err');
-            });
-          });
-        }
-
-        // ---- Change password ----
-        var pwEdit   = document.getElementById('sap-pw-edit');
-        var pwIn     = document.getElementById('sap-pw-in');
-        var pw2In    = document.getElementById('sap-pw2-in');
-        var pwBtns   = document.getElementById('sap-pw-btns');
-        if (pwEdit && pwIn && pw2In && pwBtns) {
-          pwEdit.addEventListener('click', function () {
-            pwIn.style.display = ''; pw2In.style.display = ''; pwBtns.style.display = '';
-            pwEdit.style.display = 'none'; pwIn.focus();
-          });
-          var pwCancelBtn = document.getElementById('sap-pw-cancel');
-          if (pwCancelBtn) pwCancelBtn.addEventListener('click', function () {
-            pwIn.style.display = 'none'; pw2In.style.display = 'none'; pwBtns.style.display = 'none';
-            pwEdit.style.display = ''; pwIn.value = ''; pw2In.value = ''; _sapMsg('sap-pw-msg', '');
-          });
-          var pwSaveBtn = document.getElementById('sap-pw-save');
-          if (pwSaveBtn) pwSaveBtn.addEventListener('click', function () {
-            var p1 = pwIn.value || '', p2 = pw2In.value || '';
-            if (p1.length < 8) { _sapMsg('sap-pw-msg', _AL('pwShort'), 'err'); return; }
-            if (p1 !== p2)     { _sapMsg('sap-pw-msg', _AL('pwMismatch'), 'err'); return; }
-            _sapMsg('sap-pw-msg', '');
-            _sapBusy(pwSaveBtn, true, _AL('saving'));
-            getSupabaseClient().then(function (sb) {
-              if (!sb) throw new Error('no-client');
-              return sb.auth.updateUser({ password: p1 });
-            }).then(function (res) {
-              _sapBusy(pwSaveBtn, false);
-              if (res && res.error) throw res.error;
-              _sapMsg('sap-pw-msg', _AL('pwOk'), 'ok');
-              pwIn.value = ''; pw2In.value = '';
-              setTimeout(function () {
-                pwIn.style.display = 'none'; pw2In.style.display = 'none'; pwBtns.style.display = 'none';
-                pwEdit.style.display = ''; _sapMsg('sap-pw-msg', '');
-              }, 1200);
-            }).catch(function (err) {
-              _sapBusy(pwSaveBtn, false);
-              var m = (err && err.message) || _AL('errGen');
-              _sapMsg('sap-pw-msg', m, 'err');
-            });
-          });
-        }
-      }  // end _renderAcctPanel
-
-      // Open the account panel (slide in page 2)
-      function _openAcctPanel() {
-        if (!_authEnabled || !_curUser) return;
-        _renderAcctPanel();
-        acctPanel.classList.add('open');
-        _acctPanelOpen = true;
-        var backBtn2 = document.getElementById('sap-back');
-        if (backBtn2) setTimeout(function () { backBtn2.focus(); }, 80);
-      }
-
-      // Hook: apply server prefs on sign-in, then show prefs-saved toast on change
+      // Hook: apply server prefs on sign-in (SIGNED_OUT re-renders the dash itself
+      // via its own 'mdx-auth' listener — no panel to close here anymore).
       window.addEventListener('mdx-auth', function (e) {
         var detail = e && e.detail;
         if (detail && detail.event === 'SIGNED_IN' && detail.user) {
           _applyServerPrefs(detail.user);
-        }
-        // If panel is open and user signed out, close the panel
-        if (detail && detail.event === 'SIGNED_OUT' && _acctPanelOpen) {
-          _closeAcctPanelPanel();
         }
       });
 
       // Wire pref sync hooks (once per page)
       _hookPrefSync();
 
-      // clicking the signed-in row opens the account panel (page 2)
+      // clicking the signed-in row opens the full settings dashboard on Account
       var mMain = pop.querySelector('#set-acct-in .sr-main');
       if (mMain) {
         mMain.style.cursor = 'pointer';
         mMain.setAttribute('role', 'button'); mMain.setAttribute('tabindex', '0');
-        var _openMgr = function () { _openAcctPanel(); };
+        var _openMgr = function () { close(); if (window.MMSettings) window.MMSettings.open('account'); };
         mMain.addEventListener('click', _openMgr);
         mMain.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _openMgr(); } });
       }
-
-      // (Escape handling for the panel lives in the pane's own keydown handler,
-      // which peels the panel layer first — same-node listener order made a
-      // separate handler here fire too late to stop the pane from closing.)
 
       window.addEventListener('mdx-auth', _renderAcct);
       _renderAcct();
