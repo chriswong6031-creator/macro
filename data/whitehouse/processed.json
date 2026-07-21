@@ -287,6 +287,18 @@
       "at": "2026-07-21T03:45:35.830405+00:00",
       "activated": false,
       "importance": 10
+    },
+    "https://www.whitehouse.gov/?p=45409": {
+      "id": "wh-2026-07-21-fact-sheet-president-donald-j-trump-announces-trade-deal-with-jordan",
+      "at": "2026-07-21T16:41:25.815107+00:00",
+      "activated": false,
+      "importance": 15
+    },
+    "https://www.whitehouse.gov/?p=45411": {
+      "id": "wh-2026-07-21-agreement-between-the-united-states-of-america-and-the-hashemite-kingdom-of-jord",
+      "at": "2026-07-21T16:41:35.918438+00:00",
+      "activated": false,
+      "importance": 25
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
