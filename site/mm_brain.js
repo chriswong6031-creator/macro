@@ -94,6 +94,15 @@
   #mmb-panel.max .mmb-threads{width:236px}
   .mmb-th-h{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px}
   .mmb-th-h span{font:700 11px/1 var(--mmb-font);letter-spacing:.08em;text-transform:uppercase;color:var(--mmb-muted)}
+  .mmb-search{display:none;align-items:center;gap:8px;margin:2px 10px 8px;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,#fff 5%,transparent);border:1px solid var(--mmb-line)}
+  .mmb-search.on{display:flex}
+  .mmb-search>svg{width:15px;height:15px;stroke:var(--mmb-muted);fill:none;stroke-width:1.8;flex:none}
+  .mmb-search input{flex:1;min-width:0;border:none;background:none;outline:none;color:var(--mmb-text);font:13px/1.2 var(--mmb-font)}
+  .mmb-search input::placeholder{color:var(--mmb-muted)}
+  .mmb-search .x{border:none;background:none;cursor:pointer;color:var(--mmb-muted);display:grid;place-items:center;padding:2px;border-radius:6px;flex:none;transition:color .12s,opacity .12s}
+  .mmb-search .x:hover{color:var(--mmb-text)}
+  .mmb-search .x svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+  .mmb-search input:placeholder-shown~.x{opacity:0;pointer-events:none}
   .mmb-ti{margin:2px 8px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mmb-ti:hover{background:color-mix(in srgb,#fff 6%,transparent)}
   .mmb-ti.on{background:color-mix(in srgb,var(--mmb-info) 14%,transparent);border-color:color-mix(in srgb,var(--mmb-info) 30%,transparent)}
@@ -263,11 +272,14 @@
     '<div id="mmb-panel"><div class="mmb-body">' +
       '<div class="mmb-rail"><div class="logo">' + ORB + '</div>' +
         '<button class="mmb-icon" data-act="new" title="New chat">' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
-        '<button class="mmb-icon" title="Search">' + ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>') + '</button>' +
+        '<button class="mmb-icon" data-act="search" title="Search">' + ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>') + '</button>' +
         '<button class="mmb-icon" data-act="home" title="Dashboard">' + ic('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>') + '</button>' +
         '<div class="sp"></div>' +
       '</div>' +
       '<div class="mmb-threads"><div class="mmb-th-h"><span>' + L('Chats', '对话') + '</span></div>' +
+        '<div class="mmb-search" id="mmb-search">' + ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>') +
+          '<input id="mmb-search-in" type="text" autocomplete="off" placeholder="' + L('Search chats', '搜索对话') + '">' +
+          '<button class="x" data-act="search-clear" title="Clear">' + ic('<path d="M6 6l12 12M18 6L6 18"/>') + '</button></div>' +
         '<div id="mmb-tlist"><div class="mmb-th-empty">' + L('Your conversations appear here.', '你的对话会显示在这里。') + '</div></div>' +
       '</div>' +
       '<div class="mmb-main"><div class="mmb-sidescrim" data-act="side"></div>' +
@@ -304,7 +316,8 @@
   var scrim = $('#mmb-scrim'), panel = $('#mmb-panel'), scroll = $('#mmb-scroll'),
       ta = $('#mmb-ta'), sendBtn = $('#mmb-send'), qEl = $('#mmb-q'), ctxEl = $('#mmb-ctx'),
       upgradeEl = $('#mmb-upgrade'), tlist = $('#mmb-tlist'), launch = $('#mmb-launch'),
-      researchBtn = $('.mmb-rpill'), thumbsEl = $('#mmb-thumbs'), fileEl = $('#mmb-file');
+      researchBtn = $('.mmb-rpill'), thumbsEl = $('#mmb-thumbs'), fileEl = $('#mmb-file'),
+      searchWrap = $('#mmb-search'), searchIn = $('#mmb-search-in');
 
   /* ── state ── */
   var lane = 'fast', researchMode = false, threadId = null, streaming = false,
@@ -365,16 +378,29 @@
       .then(function (r) { return r.ok ? r.json() : { threads: [] }; })
       .then(function (d) { renderThreads((d && d.threads) || []); }).catch(function () {});
   }
-  function renderThreads(threads) {
-    if (!threads.length) { tlist.innerHTML = '<div class="mmb-th-empty">' + L('Your conversations appear here.', '你的对话会显示在这里。') + '</div>'; return; }
+  var allThreads = [];
+  function buildThreadItem(t) {
+    var d = DOC.createElement('div'); d.className = 'mmb-ti' + (t.id === threadId ? ' on' : ''); d.dataset.id = t.id;
+    var date = ''; try { date = new Date(t.updated_at).toLocaleDateString(); } catch (e) {}
+    d.innerHTML = '<div class="tt">' + esc(t.title || L('Untitled', '未命名')) + '</div><div class="tm">' + esc(t.lane || 'fast') + ' · ' + esc(date) + '</div>';
+    d.addEventListener('click', function () { openThread(t.id); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); });
+    return d;
+  }
+  function paintThreads() {
+    if (!allThreads.length) { tlist.innerHTML = '<div class="mmb-th-empty">' + L('Your conversations appear here.', '你的对话会显示在这里。') + '</div>'; return; }
+    var q = ((searchIn && searchIn.value) || '').trim().toLowerCase();
+    var items = q ? allThreads.filter(function (t) { return (t.title || '').toLowerCase().indexOf(q) !== -1; }) : allThreads;
+    if (!items.length) { tlist.innerHTML = '<div class="mmb-th-empty">' + L('No chats match your search.', '没有匹配的对话。') + '</div>'; return; }
     tlist.innerHTML = '';
-    threads.forEach(function (t) {
-      var d = DOC.createElement('div'); d.className = 'mmb-ti' + (t.id === threadId ? ' on' : ''); d.dataset.id = t.id;
-      var date = ''; try { date = new Date(t.updated_at).toLocaleDateString(); } catch (e) {}
-      d.innerHTML = '<div class="tt">' + esc(t.title || L('Untitled', '未命名')) + '</div><div class="tm">' + esc(t.lane || 'fast') + ' · ' + esc(date) + '</div>';
-      d.addEventListener('click', function () { openThread(t.id); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); });
-      tlist.appendChild(d);
-    });
+    items.forEach(function (t) { tlist.appendChild(buildThreadItem(t)); });
+  }
+  function renderThreads(threads) { allThreads = threads || []; paintThreads(); }
+  function toggleSearch(force) {
+    if (!searchWrap) return;
+    var open = typeof force === 'boolean' ? force : !searchWrap.classList.contains('on');
+    searchWrap.classList.toggle('on', open);
+    if (open) { setTimeout(function () { searchIn && searchIn.focus(); }, 0); }
+    else if (searchIn) { searchIn.value = ''; paintThreads(); }
   }
   function openThread(id) {
     threadId = id;
@@ -637,11 +663,17 @@
     if (a === 'close') close(); else if (a === 'max') toggleMax(); else if (a === 'side') toggleSide();
     else if (a === 'new') newChat(); else if (a === 'research') setResearch(!researchMode);
     else if (a === 'home') location.href = (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'macro.html';
+    else if (a === 'search') toggleSearch();
+    else if (a === 'search-clear') { searchIn.value = ''; paintThreads(); searchIn.focus(); }
     else if (a === 'voice') startVoice();
     else if (a === 'attach') { if (proEligible) fileEl.click(); else showUpgrade({ feature: 'vision' }); }
     else if (a === 'signin') { if (window.MDXAuth) window.MDXAuth.open('signin'); }
   });
   fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
+  if (searchIn) {
+    searchIn.addEventListener('input', paintThreads);
+    searchIn.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); toggleSearch(false); } });
+  }
   if (launch) launch.addEventListener('click', open);
   scrim.addEventListener('click', close);
   sendBtn.addEventListener('click', function () { send(); });
