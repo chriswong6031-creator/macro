@@ -292,7 +292,7 @@
     if(!full && !strip) return;
     fetch(JSON_URL,{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json();})
       .then(function(d){_data=d; if(full)render(full); if(strip)drawStrip(strip);})
-      .catch(function(){ if(full)full.innerHTML='<div class="sr-empty">'+L('Could not load rotation data.','无法加载轮动数据。')+'</div>'; if(strip)strip.style.display='none'; });
+      .catch(function(_e){ try{console.error('subsector_rotation render failed:', _e && _e.stack || _e);}catch(_){}; if(full)full.innerHTML='<div class="sr-empty">'+L('Could not load rotation data.','无法加载轮动数据。')+'</div>'; if(strip)strip.style.display='none'; });
   }
 
   /* ---------- compact strip (embedded on the heatmap page) ---------- */
@@ -336,7 +336,7 @@
     }).join('');
     // D-10: replace title= with data-tip-en/zh per house law
     var misses=(tr.recent_misses||[]).slice(0,8).map(function(mi){
-      return '<span class="sr-miss" data-tip-en="'+_esc(mi.theme_en||mi.theme||'')+'" data-tip-zh="'+_esc(mi.theme_zh||mi.theme||'')+'"><b>'+_esc(mi.name)+'</b> '
+      return '<span class="sr-miss" data-tip-en="'+esc(mi.theme_en||mi.theme||'')+'" data-tip-zh="'+esc(mi.theme_zh||mi.theme||'')+'"><b>'+esc(mi.name)+'</b> '
         +'<i class="'+(mi.stage==='emerging'?'dn':'up')+'">'+(mi.fwd_rel>0?'+':'')+(mi.fwd_rel*100).toFixed(1)+'%</i></span>';
     }).join('');
     el.innerHTML=''
@@ -360,8 +360,8 @@
         +L('A scorecard of this page\'s own calls, checked against what happened next. Until a time-window has enough history, it\'s still measuring — read it as "measuring", not proof.',
            '本页自身判断的记分卡，对照后续实际走势检验。在某一周期积累足够历史前仍为「测量中」——请视为「测量」，而非定论。')
         +' <span class="rcf-help" tabindex="0" role="button" style="cursor:help;"'
-        +' data-tip-en="'+_esc(tr.disclaimer||'')+'"'
-        +' data-tip-zh="'+_esc(tr.disclaimer_zh||tr.disclaimer||'')+'"'
+        +' data-tip-en="'+esc(tr.disclaimer||'')+'"'
+        +' data-tip-zh="'+esc(tr.disclaimer_zh||tr.disclaimer||'')+'"'
         +'>?</span>'
         +'</div>';
   }
@@ -745,10 +745,10 @@
       var accelCls=r.accel_sign==='pos'?'up':(r.accel_sign==='neg'?'dn':'');
       /* flow_5d_mn is already in $millions from engine (do NOT divide by 1e6) */
       var flowCell=r.flow&&r.flow.flow_5d_mn!=null
-        ?'$'+(r.flow.flow_5d_mn).toFixed(0)+'M'+(r.flow.flow_asof?' <span style="font-size:9px;color:var(--muted);">('+_esc(r.flow.flow_asof)+')</span>':'')
+        ?'$'+(r.flow.flow_5d_mn).toFixed(0)+'M'+(r.flow.flow_asof?' <span style="font-size:9px;color:var(--muted);">('+esc(r.flow.flow_asof)+')</span>':'')
         :'—';
       return '<tr>'
-        +'<td>'+_esc(isZh()?(r.label_zh||r.series):r.label_en||r.series)+'</td>'
+        +'<td>'+esc(isZh()?(r.label_zh||r.series):r.label_en||r.series)+'</td>'
         +'<td class="num '+pcCls(rs.d5)+'">'+pc2(rs.d5)+'</td>'
         +'<td class="num '+pcCls(rs.d10)+'">'+pc2(rs.d10)+'</td>'
         +'<td class="num '+pcCls(rs.d20)+'">'+pc2(rs.d20)+'</td>'
@@ -763,7 +763,7 @@
         +' <span style="font-size:10px;color:var(--muted);">'+L('context, not signals','参考，非信号')+'</span>'
       +'</summary>'
       +'<div class="sr-vb-inner">'
-        +(asof?'<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">as of '+_esc(asof)+'</div>':'')
+        +(asof?'<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">as of '+esc(asof)+'</div>':'')
         +'<div style="overflow-x:auto;">'
         +'<table class="sr-table" style="font-size:11px;">'
         +'<thead><tr>'

@@ -46,6 +46,8 @@ CN_OHLC_DIR = "subsectorohlc_china"
 CN_SIG_DIR = "subsector_signals_china"
 CN_DETAIL_DIR = "subsector_china"
 CN_BOARD_JSON = "marketdata/subsector_confluence_china.json"
+# Members-stripped copy the browser fetches — see main_china() for why the full file is ~6.6MB.
+CN_BOARD_LIGHT_JSON = "marketdata/subsector_confluence_china.board.json"
 
 
 # ----------------------------------------------------------------- helpers ----
@@ -275,6 +277,13 @@ def main_china() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("subsectors_china: AI-semis confirmer failed (%s)", e)
     _write_json(site / CN_BOARD_JSON, cn)
+    # Browser board copy — strip the per-member arrays (behaves_as cross-refs etc., ~6.4MB across
+    # ~237 concepts). The board page renders only basket-level aggregates; the per-member "which
+    # names are firing" detail is baked into the pre-rendered detail pages (render_china_pages
+    # below still reads the full file). Keeps subsectors_china.html a ~0.28MB load, not ~6.6MB.
+    cn_light = dict(cn, baskets=[{k: v for k, v in b.items() if k != "members"}
+                                 for b in cn.get("baskets", [])])
+    _write_json(site / CN_BOARD_LIGHT_JSON, cn_light)
     n = render_china_pages(site, _env(), generated)
     log.info("subsector_confluence[CHINA]: %d THS concepts (%d entry-now), %d pages — as_of %s",
              len(cn.get("baskets", [])), len(cn.get("entry_now", [])), n, cn.get("as_of"))

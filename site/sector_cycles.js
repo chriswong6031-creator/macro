@@ -991,6 +991,7 @@
   function toggleFocus(id) { setFocus(state.focus === id ? null : id); }
   function setFocus(id) {
     clearFirstHint();                              // any focus change = the user has engaged
+    if (id && window.SC_LAZY_EXTRAS) _scheduleExtras();  // host deferred extras — load on first focus
     // focusing a basket-like record implies selecting it onto the chart
     if (id && byId[id] && isBasketRec(byId[id]) && !basketShown[id]) {
       basketShown[id] = true; updateBasketSel(); applyVisibility();
@@ -1950,7 +1951,7 @@
       setFocus(h);
     }, 350);
     else { guideEntry(); showFirstHint(); }   // novice entry: highlight one line + a tap hint
-    _scheduleExtras();
+    if (!window.SC_LAZY_EXTRAS) _scheduleExtras();  // eager unless the host page defers to first focus
     loadRotation();
   }
   // Rotation Command RC-R3: fetch the two rotation artifacts, index them by lowercase
