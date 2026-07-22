@@ -10,42 +10,53 @@
 
 {% block estate_css %}
   .lh-hero{max-width:1120px; margin:22px auto 0; padding:0 24px;}
-  .lh-wrap{max-width:1120px; margin:26px auto 0; padding:0 24px;}
+  .lh-wrap{max-width:1120px; margin:30px auto 0; padding:0 24px;}
 
   /* flagship — the field manual, given the full-width lead card it earns */
   .lh-flag{display:grid; grid-template-columns:1fr auto; align-items:center; gap:22px;
-    border:1px solid color-mix(in srgb,var(--link) 28%,var(--line)); border-radius:18px;
-    padding:24px 26px; text-decoration:none; position:relative; overflow:hidden;
-    background:
+    border:1px solid color-mix(in srgb,var(--link) 28%,var(--hair-strong)); border-radius:var(--r-lg);
+    border-left:3px solid var(--rail); padding:24px 26px; text-decoration:none; position:relative;
+    overflow:hidden; box-shadow:var(--ms); background:
       radial-gradient(140% 160% at 0% 0%, color-mix(in srgb,var(--link) 11%,transparent), transparent 56%),
       var(--panel);
     transition:transform .2s,border-color .2s,box-shadow .2s;}
   .lh-flag:hover{transform:translateY(-2px); border-color:var(--link);
     box-shadow:0 20px 44px -22px color-mix(in srgb,var(--link) 46%,transparent); text-decoration:none;}
-  .lh-flag .fg-k{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--link);}
-  .lh-flag .fg-t{font-family:var(--serif); font-size:26px; font-weight:600; color:var(--text); margin:5px 0 0; line-height:1.18;}
-  .lh-flag .fg-d{font-family:var(--serif); font-size:16px; color:var(--muted); margin:9px 0 0; max-width:62ch;}
+  .lh-flag .fg-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.07em; text-transform:uppercase; color:var(--link);}
+  .lh-flag .fg-t{font-family:var(--font-ui); font-size:calc(var(--fs-num-lg) + 4px); font-weight:800; color:var(--ink-1);
+    margin:5px 0 0; line-height:1.18; letter-spacing:-.02em;}
+  html[data-lang="zh"] .lh-flag .fg-t{letter-spacing:0;}
+  .lh-flag .fg-d{font-family:var(--font-ui); font-size:var(--fs-md); color:var(--ink-2); margin:9px 0 0; max-width:62ch;}
   .lh-flag .fg-btn{flex:none; font-family:var(--font-ui);}
-  /* a longer plotted line ranging across the flagship — the field manual is the plotted series */
-  .lh-flag .fg-plot{position:absolute; right:0; bottom:0; width:280px; height:96px; opacity:.5; pointer-events:none;}
-  .lh-flag .fg-plot path{fill:none; stroke:var(--link); stroke-width:1.5; stroke-linecap:round;
+  /* ambient hairline curve across the flagship — quiet, monochrome furniture */
+  .lh-flag .fg-plot{position:absolute; right:0; bottom:0; width:280px; height:96px; opacity:.28; pointer-events:none;}
+  .lh-flag .fg-plot path{fill:none; stroke:var(--ink-3); stroke-width:1.4; stroke-linecap:round;
     stroke-linejoin:round; vector-effect:non-scaling-stroke;}
   @media (max-width:640px){ .lh-flag{grid-template-columns:1fr;} .lh-flag .fg-btn{justify-self:start;} .lh-flag .fg-plot{display:none;} }
 
-  /* tracks */
+  /* tracks — each header wears the regime rail */
   .lh-track{margin-top:38px;}
-  .lh-track-h{font-family:var(--font-ui); font-size:11.5px; font-weight:700; letter-spacing:.11em;
-    text-transform:uppercase; color:var(--muted); margin:0 0 4px; display:flex; align-items:baseline; gap:10px;}
-  .lh-track-h .n{font-family:var(--font-mono); color:var(--link); opacity:.9;}
-  .lh-track-rule{max-width:180px; height:12px; margin:2px 0 16px;}
+  .lh-track-h{display:flex; align-items:center; gap:11px; margin:0 0 16px;
+    padding:0 0 var(--sp-3); border-bottom:1px solid var(--hair-strong);}
+  .lh-track-h::before{content:""; flex:none; align-self:center; width:3px; height:18px; border-radius:2px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 35%,transparent));}
+  .lh-track-h .n{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-label);
+    font-weight:700; letter-spacing:.06em; color:var(--ink-3);}
+  .lh-track-h .lbl{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+    letter-spacing:-.01em; color:var(--ink-1);}
+  html[data-lang="zh"] .lh-track-h .lbl{letter-spacing:0;}
+  .lh-track-rule{display:none;}
   .lh-lessons{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
-  .lh-lesson{display:block; border:1px solid var(--line); border-radius:13px; padding:16px 18px;
-    background:var(--panel); text-decoration:none; transition:transform .18s,border-color .18s,box-shadow .18s;}
-  .lh-lesson:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--line));
+  .lh-lesson{display:block; border:1px solid var(--hair-strong); border-radius:var(--r-md); padding:16px 18px;
+    background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+    transition:transform .18s,border-color .18s,box-shadow .18s;}
+  .lh-lesson:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
     box-shadow:0 16px 32px -20px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
-  .lh-lesson .ll-t{font-family:var(--serif); font-size:18px; font-weight:600; color:var(--text); line-height:1.28; margin:0;}
-  .lh-lesson .ll-d{font-family:var(--serif); font-size:14.5px; line-height:1.5; color:var(--muted); margin:7px 0 0;}
-  .lh-lesson .ll-go{font-family:var(--font-mono); font-size:11px; color:var(--link); margin-top:11px; display:inline-block;}
+  .lh-lesson .ll-t{font-family:var(--font-ui); font-size:calc(var(--fs-md) + 2px); font-weight:700; color:var(--ink-1);
+    line-height:1.28; margin:0; letter-spacing:-.01em;}
+  html[data-lang="zh"] .lh-lesson .ll-t{letter-spacing:0;}
+  .lh-lesson .ll-d{font-family:var(--font-ui); font-size:var(--fs-body); line-height:1.5; color:var(--ink-2); margin:7px 0 0;}
+  .lh-lesson .ll-go{font-family:var(--num); font-size:var(--fs-sm); color:var(--link); margin-top:11px; display:inline-block;}
 {% endblock %}
 
 {% block main %}
@@ -80,10 +91,7 @@
 
   {% for tr in tracks %}
   <div class="lh-track">
-    <h2 class="lh-track-h"><span class="n">{{ '%02d' % loop.index }}</span> {{ tr.label }}</h2>
-    <svg class="plot-line lh-track-rule" viewBox="0 0 180 12" preserveAspectRatio="none" aria-hidden="true" style="--pl-len:190; color:var(--rule);">
-      <path d="M2 8 C 30 8, 44 4, 70 6 S 128 4, 178 5"/>
-    </svg>
+    <h2 class="lh-track-h"><span class="n">{{ '%02d' % loop.index }}</span> <span class="lbl">{{ tr.label }}</span></h2>
     <div class="lh-lessons">
       {% for ls in tr.lessons %}
       <a class="lh-lesson" href="{{ rel }}{{ ls.url_path.lstrip('/') }}">

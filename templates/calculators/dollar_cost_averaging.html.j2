@@ -1,0 +1,214 @@
+{#=============================================================================
+  calculators/dollar_cost_averaging.html.j2 — DCA calculator
+  Clones the flagship position_size.html.j2 STRUCTURE (CONTRACT §6 DOM + §6 JS
+  contract: pure compute() + WORKED_EXAMPLES self-check). Implements the
+  ordinary-annuity future-value formula for a fixed contribution invested at a
+  regular cadence. Explainer follows §8 structure: direct answer → formula →
+  worked example → common trap → where it breaks → links. Fully bilingual
+  EN/ZH via t() (the sanctioned calculator dual-DOM exception, §8).
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('dollar-cost-averaging', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter how much you invest each period, how often, for how many years, and an expected annual return. You get the projected end value, what you actually put in, and the growth on top.',
+   '填入每期投入金额、投入频率、投入年数，以及一个预期年化回报，即可得到期末的预估价值、你实际投入的本金，以及在此之上的增长。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Contribution per period ($)', '每期投入（$）') }}</span>
+    <input id="contrib" inputmode="decimal" autocomplete="off" placeholder="500"></label>
+  <div class="ci">
+    <span class="ci-l">{{ t('Frequency', '投入频率') }} <span class="hint">{{ t('how often you invest', '多久投一次') }}</span></span>
+    <div class="ci-seg" role="radiogroup" data-name="freq" id="freq">
+      <button type="button" class="on" data-v="12">{{ t('Monthly', '每月') }}</button><button type="button" data-v="52">{{ t('Weekly', '每周') }}</button><button type="button" data-v="4">{{ t('Quarterly', '每季') }}</button>
+    </div>
+  </div>
+  <label class="ci"><span class="ci-l">{{ t('Number of years', '投入年数') }}</span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="5"></label>
+  <label class="ci"><span class="ci-l">{{ t('Expected annual return (%)', '预期年化回报（%）') }} <span class="hint">{{ t('a hypothetical rate', '一个假设的回报率') }}</span></span>
+    <input id="rate" inputmode="decimal" autocomplete="off" placeholder="8"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('projected value', '预估价值') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in all four fields to project the plan.', '填入四个字段即可推算这个计划。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Total invested', '总投入本金') }}</dt><dd id="out-invested">—</dd></div>
+    <div><dt>{{ t('Investment gain', '投资增长') }}</dt><dd id="out-gain">—</dd></div>
+    <div><dt>{{ t('Return on invested', '本金回报率') }}</dt><dd id="out-return">—</dd></div>
+    <div><dt>{{ t('Number of buys', '买入次数') }}</dt><dd id="out-buys">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('Dollar-cost averaging invests a <strong>fixed amount at a fixed cadence</strong> — say $500 every month — no matter what the price is doing. Because the dollar amount is fixed, that money buys <em>more</em> shares when the price is low and <em>fewer</em> when it is high, so your average cost per share is pulled toward the cheaper end. This calculator projects where a steady plan lands if it earns a given annual return, treating each contribution as an ordinary annuity.',
+   '定投（成本平均法）以<strong>固定的金额、固定的节奏</strong>投入——比如每月 $500——无论价格如何波动。由于投入的金额固定，价格低时这笔钱能买到<em>更多</em>的份额，价格高时买到<em>更少</em>的份额，于是你的每股平均成本会被拉向较低的一端。本计算器在给定年化回报下，把每期投入视作一笔普通年金，推算一个稳定计划最终的落点。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>f</strong> = periods per year (12 monthly · 52 weekly · 4 quarterly)', '<strong>f</strong> = 每年期数（每月 12 · 每周 52 · 每季 4）') }}<br>
+{{ t('<strong>N</strong> = years × f &nbsp;·&nbsp; <strong>i</strong> = return% ÷ 100 ÷ f', '<strong>N</strong> = 年数 × f &nbsp;·&nbsp; <strong>i</strong> = 回报% ÷ 100 ÷ f') }}<br>
+{{ t('<strong>Final value</strong> = c × ( (1 + i)^N − 1 ) ÷ i', '<strong>期末价值</strong> = c × ( (1 + i)^N − 1 ) ÷ i') }}<br>
+{{ t('Total invested = c × N &nbsp;·&nbsp; Gain = Final − Invested', '总投入 = c × N &nbsp;·&nbsp; 增长 = 期末 − 投入') }}
+</div>
+<p>{{ t('This is the future value of an <em>ordinary annuity</em> — each contribution arrives at the <em>end</em> of its period and then compounds for the periods that remain. When the return is exactly zero, the money still stacks up: the final value is simply c × N, the total you put in.',
+   '这是<em>普通年金</em>的终值——每期投入在该期的<em>期末</em>到账，之后为剩余的期数复利增长。当回报恰好为零时，本金依然累积：期末价值就等于 c × N，也就是你投入的总额。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a trader invests <span class="num">$500</span> every month for <span class="num">5 years</span> at a hypothetical <span class="num">8%</span> annual return.',
+   '假设一位交易者每月投入 <span class="num">$500</span>，持续 <span class="num">5 年</span>，假设年化回报为 <span class="num">8%</span>。') }}</p>
+<ul>
+<li>{{ t('Periods N = <span class="num">5 × 12 = 60</span>, per-period rate i = <span class="num">8 ÷ 100 ÷ 12 ≈ 0.006667</span>', '期数 N = <span class="num">5 × 12 = 60</span>，每期利率 i = <span class="num">8 ÷ 100 ÷ 12 ≈ 0.006667</span>') }}</li>
+<li>{{ t('Final value = <span class="num">500 × ((1.006667)^60 − 1) ÷ 0.006667 ≈ $36,738</span>', '期末价值 = <span class="num">500 × ((1.006667)^60 − 1) ÷ 0.006667 ≈ $36,738</span>') }}</li>
+<li>{{ t('Total invested = <span class="num">500 × 60 = $30,000</span>', '总投入 = <span class="num">500 × 60 = $30,000</span>') }}</li>
+<li>{{ t('Gain = <span class="num">36,738 − 30,000 ≈ $6,738</span> — about <span class="num">22%</span> on the money invested.', '增长 = <span class="num">36,738 − 30,000 ≈ $6,738</span>——约为投入本金的 <span class="num">22%</span>。') }}</li>
+</ul>
+</div>
+<p>{{ t('Notice that the gain lags a lump sum earning the same rate: most of the money was invested recently and has had little time to compound. That is the honest trade-off of spreading purchases out over time.',
+   '注意，这笔增长低于以相同回报率一次性投入所能得到的收益：大部分资金是近期才投入的，复利的时间很短。这正是把买入分摊到较长时间里所要付出的、诚实的代价。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Treating the return as a promise', '把回报当作承诺') }}</span>
+<p>{{ t('The expected-return input is a <em>hypothetical constant</em>, not a forecast. Real markets deliver that average as a jagged path — losing stretches, then recoveries — and the end value depends heavily on the order those returns arrive in, especially near the finish when the balance is largest. A plan that averages 8% can still end a five-year window down if the last year is bad. Use this projection to compare cadences and horizons, not to bank on a specific dollar figure.',
+   '预期回报这个输入是一个<em>假设的常数</em>，而非预测。真实市场是以崎岖的路径来兑现这个平均值的——先是下跌，再是复苏——期末价值高度依赖这些回报到来的<em>顺序</em>，尤其在临近终点、余额最大的时候。一个平均 8% 的计划，若最后一年很糟，五年下来仍可能是亏损的。用这个推算去比较不同的节奏与期限，而不要押注于某个具体的金额数字。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('The formula is clean; reality adds friction the math leaves out. A few honest limits:',
+   '公式是干净的，但现实会加入这套算法所忽略的摩擦。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>A constant return.</strong> The model assumes every period earns the same rate. Real returns vary, and their sequence changes the result — the same average can end higher or lower depending on when the good and bad periods fall.',
+   '<strong>恒定的回报。</strong>模型假设每一期都赚取相同的回报率。真实回报会波动，其顺序会改变结果——同样的平均值，好期与坏期出现的时点不同，期末可能更高，也可能更低。') }}</li>
+<li>{{ t('<strong>No costs or taxes.</strong> Fees, spreads, and taxes on gains all pull the real end value below the projection. Frequent small buys can also mean more transactions to pay for.',
+   '<strong>不含成本与税费。</strong>手续费、买卖价差，以及对收益征收的税，都会把真实的期末价值拉到推算值之下。频繁的小额买入还可能意味着要支付更多笔交易。') }}</li>
+<li>{{ t('<strong>Fixed, not inflation-adjusted.</strong> The end value is in future dollars. If prices rise over the horizon, its purchasing power is lower than the number suggests.',
+   '<strong>固定金额，未计通胀。</strong>期末价值以未来的名义货币计。若期间物价上涨，其购买力会低于这个数字所显示的水平。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Averaging in trades a shot at the perfect entry for a steady hand and a lower emotional cost — it smooths the path, it does not remove the risk.',
+   '分批投入，是用错过完美入场点的机会，换取一双稳定的手和更低的情绪成本——它平滑了路径，却不会消除风险。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how a single lump sum grows with the <a href="', '看看一次性本金如何增长，试试 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or turn an end value into an annual rate with the <a href="', '，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', 'CAGR 计算器') }}</a>{{ t('.', '把期末价值换算成年化回报率。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (DCA — ordinary annuity, end-of-period) ───────────────────
+  // inputs: {c contribution, f periods/year, yrs years, r annualPct}. Returns
+  // an outputs object, or {ok:false, msg} for invalid input. No NaN/Infinity.
+  function compute(inp){
+    var c=inp.c, f=inp.f, yrs=inp.yrs, r=inp.r;
+    if(!(c>0)) return {ok:false, msg:"Enter a contribution above zero."};
+    if(!(f>0)) return {ok:false, msg:"Pick how often you invest."};
+    if(!(yrs>0)) return {ok:false, msg:"Enter how many years you'll invest."};
+    if(!isFinite(r)) return {ok:false, msg:"Enter an expected annual return."};
+    var N = Math.round(yrs * f);
+    if(!(N>0)) return {ok:false, msg:"That horizon is too short to make a single contribution."};
+    var i = r / 100 / f;
+    var fv = (i === 0) ? (c * N) : (c * (Math.pow(1 + i, N) - 1) / i);
+    var invested = c * N;
+    var gain = fv - invested;
+    var returnPct = invested > 0 ? (100 * gain / invested) : 0;
+    if(!isFinite(fv) || !isFinite(gain)) return {ok:false, msg:"Those numbers are out of range — try a smaller horizon or return."};
+    return { ok:true, N:N, fv:fv, invested:invested, gain:gain, returnPct:returnPct };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{c:500, f:12, yrs:5,  r:8}, want:{N:60,  fv:36738, invested:30000, gain:6738} },
+    { in:{c:200, f:12, yrs:10, r:0}, want:{N:120, fv:24000, invested:24000, gain:0} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("dollar-cost-averaging self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 1 && got[k] !== w[k]){
+        console.error("dollar-cost-averaging self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { contrib:$("contrib"), years:$("years"), rate:$("rate") };
+    var freqWrap = $("freq");
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outInv=$("out-invested"), outGain=$("out-gain"), outRet=$("out-return"), outBuys=$("out-buys"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    var freq = 12; // default: monthly (matches the .on button)
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function money0(n){ return "$" + Math.round(n).toLocaleString("en-US"); }
+    function dash(){ outMain.textContent="—";
+      [outInv,outGain,outRet,outBuys].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ c:numFrom(els.contrib), f:freq, yrs:numFrom(els.years), r:numFrom(els.rate) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent = money0(res.fv);
+      outInv.textContent  = money(res.invested);
+      outGain.textContent = money(res.gain);
+      outGain.className   = res.gain > 0 ? "pos" : (res.gain < 0 ? "neg" : "");
+      outRet.textContent  = res.returnPct.toFixed(res.returnPct<10 ? 1 : 0) + "%";
+      outRet.className    = res.returnPct > 0 ? "pos" : (res.returnPct < 0 ? "neg" : "");
+      outBuys.textContent = res.N.toLocaleString("en-US");
+      // Law 3: plain-word interpretation under the number
+      var plain = "Investing " + money0(inp.c) + " across " + res.N.toLocaleString("en-US") +
+        " buys projects to " + money0(res.fv) + " — " + money0(res.invested) +
+        " invested plus " + money0(res.gain) + " of growth at this hypothetical rate.";
+      outPlain.textContent = plain; outPlain.className="co-plain";
+    }
+
+    // segmented frequency toggle
+    if(freqWrap){
+      freqWrap.addEventListener("click", function(e){
+        var b = e.target.closest("button[data-v]"); if(!b) return;
+        freq = parseFloat(b.getAttribute("data-v")) || 12;
+        [].slice.call(freqWrap.querySelectorAll("button")).forEach(function(x){ x.classList.toggle("on", x===b); });
+        render();
+      });
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "DCA plan: " + money0(last.fv) + " projected · " + money0(last.invested) +
+        " invested · " + money0(last.gain) + " growth (" +
+        last.returnPct.toFixed(last.returnPct<10 ? 1 : 0) + "% on invested) — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["contrib","years","rate"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

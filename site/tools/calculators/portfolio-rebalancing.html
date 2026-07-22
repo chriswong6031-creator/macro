@@ -1,0 +1,887 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Rebalancing Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/portfolio-rebalancing.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Portfolio Rebalancing Calculator">
+<meta property="og:description" content="Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/portfolio-rebalancing.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Portfolio Rebalancing Calculator">
+<meta name="twitter:description" content="Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Portfolio Rebalancing Calculator"}]}</script>
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
+   The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
+   deep canvas, hairline-precise panels, tabular mono numerals, Inter UI, and a
+   regime-rail section-header system. All tokens are SCOPED to body.estate so
+   the rest of the site is byte-untouched; theme.css (shared/global) is never
+   edited. Colour routes through house vars so dark/light + the zh red/green
+   swap propagate at paint. Aesthetic north star: reads in 2 seconds; colour
+   spent only on signal.
+   ══════════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;}
+body.estate{
+  /* deepened terminal canvas — richer "screen" black, scoped to the estate */
+  --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+  /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+  --num:"SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono",
+        "Roboto Mono", Menlo, Consolas, monospace;
+  /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+     genuine captions only (highest-leverage readability fix, per macro) */
+  --ink-1: var(--text);
+  --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+  --ink-3: var(--muted);
+  /* hairlines + inset surface material */
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --hair-strong: var(--line);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --rule: var(--hair-strong);                    /* legacy alias — section rules */
+  --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
+        0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+  /* type scale — the macro 10-step scale (estate prose runs a touch larger:
+     --fs-md/15px reading copy since /learn + /blog are long-form) */
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
+  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* spacing grid (4px) + radii + eyebrow tracking */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+  /* the single regime/accent rail on every section header */
+  --rail: var(--link);
+  --measure: 70ch;                               /* long-form reading line length */
+}
+html[data-theme="light"] body.estate{
+  /* restore the airy light canvas (mirrors macro's light override) */
+  --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+  --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --hair: color-mix(in srgb, var(--line) 90%, transparent);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
+        0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+}
+html body.estate{
+  background:var(--bg); color:var(--ink-1);
+  font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.6;
+  margin:0; padding:0 0 72px;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+html,body{overflow-x:clip;}                                 /* 390px bleed guard */
+body.estate a{color:var(--link); text-decoration:none;}
+body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
+.mono,body.estate .mono{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
+.est-wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
+
+/* ── the section-header signature: the REGIME RAIL ──────────────────────────
+   Every section title in the estate wears the macro rail — a 3px gradient bar
+   before a strong sentence-case title, a mono eyebrow above, a hairline rule to
+   the edge. This single shared rhythm is the motif that unifies hub, calculator
+   and article (it replaces the old plotted-line underline). Applied to the
+   estate section-header classes below. */
+.est-sec-rule{border:none; height:1px; background:var(--hair-strong); margin:0;}
+
+/* ── glyph family (.egl) — bespoke per-calculator line-art, macro idiom ──────
+   Hairline strokes, monochrome + one --link accent, draw-on reveal. Geometry
+   lives in _estate_glyphs.html.j2; styling is here so both variants share it. */
+.egl{color:var(--ink-2); overflow:visible;}
+.egl [class^="egl-"], .egl [class*=" egl-"]{
+  stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.egl path.egl-still, .egl path.egl-draw, .egl path.egl-draw2,
+.egl path.egl-mark, .egl path.egl-up, .egl path.egl-down{fill:none;}
+.egl .egl-still{stroke:var(--ink-3); stroke-width:1.5; opacity:.6;}
+.egl .egl-still-dot{fill:var(--ink-3); opacity:.7;}
+.egl .egl-draw, .egl .egl-draw2{stroke:var(--ink-1); stroke-width:1.7;}
+.egl .egl-fill{fill:color-mix(in srgb,var(--ink-2) 22%,transparent);
+  stroke:var(--ink-2); stroke-width:1.4;}
+/* the single accent — the --link mark (node, arrow, cap, ramp arc) */
+.egl .egl-mark, .egl .egl-mark-dot, .egl .egl-draw-fill{stroke:var(--link);}
+.egl .egl-mark{stroke-width:1.7;}
+.egl .egl-mark-dot{fill:var(--link); stroke:none;}
+.egl .egl-draw-fill{fill:color-mix(in srgb,var(--link) 22%,transparent); stroke-width:1.5;}
+.egl .egl-up{stroke:var(--up); stroke-width:1.7;}
+.egl .egl-down{stroke:var(--down); stroke-width:1.7;}
+.egl .egl-down-dot{fill:var(--down); stroke:none;}
+/* draw-on-reveal ink (traced lines) */
+.egl .egl-draw, .egl .egl-draw2{stroke-dasharray:120; stroke-dashoffset:120;
+  animation:eglDraw 1000ms cubic-bezier(.33,.62,.26,1) 140ms forwards;}
+.egl .egl-draw2{animation-delay:260ms;}
+.egl .egl-mark-dot, .egl .egl-down-dot{opacity:0;
+  animation:eglPop .01s linear 1140ms forwards;}
+@keyframes eglDraw{to{stroke-dashoffset:0;}}
+@keyframes eglPop{to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){
+  .egl .egl-draw, .egl .egl-draw2{animation:none; stroke-dashoffset:0;}
+  .egl .egl-mark-dot, .egl .egl-down-dot{animation:none; opacity:1;}
+}
+
+/* ── estate top bar (slim; own toggles reuse house .theme-switch/.lang-toggle) ── */
+.est-bar{position:sticky; top:0; z-index:60; background:color-mix(in srgb,var(--bg) 84%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px);
+  border-bottom:1px solid var(--line);}
+.est-bar-in{max-width:1120px; margin:0 auto; padding:9px 24px;
+  display:flex; align-items:center; gap:16px;}
+.est-brand{display:inline-flex; align-items:center; gap:9px; flex:none; text-decoration:none;
+  padding:3px 8px 3px 4px; border-radius:10px; transition:background .18s;}
+.est-brand:hover{background:color-mix(in srgb,var(--link) 10%,transparent); text-decoration:none;}
+.est-brand .glyph{width:26px; height:26px; flex:none; filter:drop-shadow(0 2px 6px rgba(40,56,128,.30));}
+.est-brand .word{font-family:var(--font-ui); font-weight:900; font-size:13px; letter-spacing:.06em;
+  color:var(--text); white-space:nowrap;}
+.est-brand .word .sub{display:block; font-weight:600; font-size:9px; letter-spacing:.14em;
+  color:var(--muted); margin-top:1px;}
+.est-nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex-wrap:wrap; min-width:0;}
+.est-nav a{font-family:var(--font-ui); font-size:13.5px; font-weight:500; color:var(--muted);
+  padding:6px 10px; border-radius:8px; text-decoration:none; white-space:nowrap;
+  transition:color .16s,background .16s;}
+.est-nav a:hover,.est-nav a[aria-current="page"]{color:var(--text);
+  background:color-mix(in srgb,var(--link) 11%,var(--panel2)); text-decoration:none;}
+.est-ctrls{margin-left:auto; display:flex; align-items:center; gap:9px; flex:none;}
+.est-ctrls .est-cta{font-family:var(--font-ui);}
+.est-ctrls .est-cta .cta-short{display:none;}
+/* the house animated toggles are styled by theme.css? No — those visuals live in
+   nav CSS the estate doesn't load. Give .theme-switch / .lang-toggle a compact,
+   self-contained skin here so the class-bound theme.js listeners still fire. */
+.est-ctrls .theme-switch{font:600 12px/1 var(--font-ui); cursor:pointer;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  border-radius:999px; padding:6px 10px; display:inline-flex; align-items:center; gap:5px;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:color .16s,border-color .16s;}
+.est-ctrls .theme-switch:hover{color:var(--text); border-color:var(--gbtn-brd-hover);}
+.est-ctrls .theme-switch .ic{font-size:13px; line-height:1;}
+.est-ctrls .theme-switch .sun{display:none;} .est-ctrls .theme-switch .moon{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .sun{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .moon{display:none;}
+.est-ctrls .theme-switch .knob{display:none;}
+.est-ctrls .lang-toggle{position:relative; display:inline-flex; cursor:pointer; user-select:none;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); border-radius:999px; overflow:hidden;
+  font:600 11.5px/1 var(--font-ui);}
+.est-ctrls .lang-toggle .opt{padding:6px 9px; color:var(--muted); transition:color .16s;}
+.est-ctrls .lang-toggle .pill{display:none;}
+html:not([data-lang="zh"]) .est-ctrls .lang-toggle .en-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+:where(.est-brand,.est-nav a,.est-ctrls .theme-switch,.est-ctrls .lang-toggle,.est-cta):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--link) 70%,transparent); outline-offset:2px;}
+@media (max-width:720px){
+  .est-bar-in{flex-wrap:wrap; gap:8px 12px; padding:8px 16px;}
+  .est-nav{order:3; width:100%; margin-left:0; gap:1px;}
+  .est-nav a{padding:6px 9px; font-size:13px;}
+  .est-ctrls{gap:7px;}
+  /* compact CTA on phones: hide the long label, show the short bilingual one */
+  .est-ctrls .est-cta .cta-long{display:none;}
+  .est-ctrls .est-cta .cta-short{display:inline;}
+}
+
+/* ── breadcrumb ─────────────────────────────────────────────────────────────── */
+.est-crumb{max-width:1120px; margin:18px auto 0; padding:0 24px;
+  font-family:var(--font-ui); font-size:12.5px; color:var(--muted);}
+.est-crumb ol{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:7px;}
+.est-crumb a{color:var(--muted);} .est-crumb a:hover{color:var(--text);}
+.est-crumb .sep{opacity:.4;}
+.est-crumb li[aria-current="page"]{color:var(--text);}
+
+/* ── shared prose vocabulary (CONTRACT §4 body classes) — terminal, not serif ── */
+.est-prose{font-size:var(--fs-md); line-height:1.72; color:var(--ink-1);}
+.est-prose > *{max-width:var(--measure);}
+/* h2 wears the REGIME RAIL — the estate-wide section signature. A 3px gradient
+   bar leads a strong sentence-case title with a hairline rule to the edge; the
+   mono "01/02" mark sits after the rail. This is the macro header idiom. */
+.est-prose h2{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 4px); font-weight:700;
+  line-height:1.28; letter-spacing:-.01em; margin:38px 0 14px; scroll-margin-top:76px;
+  display:flex; align-items:center; gap:11px; padding:0 0 var(--sp-3);
+  border-bottom:1px solid var(--hair-strong);}
+.est-prose h2::before{content:""; flex:none; align-self:center; width:3px; height:19px;
+  border-radius:2px; background:linear-gradient(180deg, var(--rail),
+    color-mix(in srgb, var(--rail) 35%, transparent));}
+.est-prose h2 .est-h2-mark{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--ink-3); flex:none;}
+html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
+.est-prose h3{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:700;
+  margin:26px 0 6px; color:var(--ink-1); letter-spacing:-.005em;}
+.est-prose p{margin:12px 0; color:var(--ink-1);}
+.est-prose ul,.est-prose ol{margin:12px 0; padding-left:24px;}
+.est-prose li{margin:7px 0;}
+.est-prose li::marker{color:var(--ink-3);}
+.est-prose strong{font-weight:700; color:var(--ink-1);}
+.est-prose em{font-style:italic;}
+.est-prose code{font-family:var(--num); font-size:.88em; background:var(--panel2);
+  border:1px solid var(--hair-strong); border-radius:5px; padding:1px 6px;}
+.est-prose a{border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-prose a:hover{border-bottom-color:var(--link); text-decoration:none;}
+.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rail);
+  color:var(--ink-1); font-style:italic; opacity:.94;}
+
+/* callouts — lead / warn / key (house colours, mono heading label) */
+.est-prose .callout{border-radius:var(--r-md); padding:15px 18px; margin:18px 0;
+  border:1px solid var(--hair-strong); background:var(--panel2); position:relative; max-width:var(--measure);}
+.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+.est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
+.est-prose .callout.lead{border-left:4px solid var(--link);}
+.est-prose .callout.lead .co-h{color:var(--link);}
+.est-prose .callout.warn{border-left:4px solid var(--warn);
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel2));}
+.est-prose .callout.warn .co-h{color:var(--warn);}
+.est-prose .callout.key{border-left:4px solid var(--ok);
+  background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
+.est-prose .callout.key .co-h{color:var(--ok);}
+
+/* formula — the desk's chalk line. Mono, on a faint tile with an accent edge. */
+.est-prose .formula{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:var(--fs-md); line-height:1.7; background:var(--tile);
+  border:1px solid var(--hair-strong); border-left:3px solid var(--rail);
+  border-radius:var(--r-md); padding:16px 18px; margin:18px 0; overflow-x:auto;
+  max-width:var(--measure); color:var(--ink-1); letter-spacing:.005em;}
+.est-prose .formula strong{color:var(--link); font-weight:700;}
+
+/* worked example — a machined tile with a mono heading + top hairline. */
+.est-prose .worked{border:1px solid var(--hair-strong); border-radius:var(--r-md); margin:18px 0;
+  padding:16px 18px; max-width:var(--measure); box-shadow:var(--ms);
+  background:linear-gradient(var(--hair-strong),var(--hair-strong)) 0 0/100% 1px no-repeat, var(--panel);}
+.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);}
+.est-prose .worked .num,.est-prose .worked code{font-family:var(--num); font-variant-numeric:tabular-nums;}
+
+/* data table — the terminal ruled column (mono body, mono caps head) */
+.est-prose table.data{border-collapse:collapse; width:100%; max-width:var(--measure);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm); margin:18px 0;}
+.est-prose table.data th{text-align:left; padding:9px 12px; background:var(--panel2);
+  color:var(--ink-3); font-family:var(--num); font-weight:700; font-size:var(--fs-micro);
+  letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid var(--hair-strong);}
+.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--hair); vertical-align:top; color:var(--ink-1);}
+.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--link) 6%,transparent);}
+.est-prose table.data .num{font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right;}
+.est-tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:18px 0; max-width:var(--measure);}
+.est-tbl-scroll table.data{margin:0;}
+
+.est-prose figure{margin:20px 0; max-width:var(--measure);}
+.est-prose figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin-top:8px;}
+
+/* ── related rail + CTA (shared by article + calculator layouts) ────────────── */
+.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--hair-strong);}
+.est-related .rel-h{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 12px;}
+.est-related .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+.est-relcard{display:block; border:1px solid var(--hair-strong); border-radius:var(--r-md); padding:13px 15px;
+  background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
+.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
+  box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-relcard .rc-kind{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.09em;
+  text-transform:uppercase; color:var(--link);}
+.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--font-ui); font-size:var(--fs-md);
+  font-weight:700; color:var(--ink-1); line-height:1.32; letter-spacing:-.005em;}
+
+.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--hair-strong));
+  border-radius:var(--r-lg); padding:22px 24px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
+    var(--panel); box-shadow:var(--ms); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
+.est-cta-block .cta-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--link);}
+.est-cta-block .cta-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+  margin:3px 0 0; line-height:1.3; letter-spacing:-.01em; color:var(--ink-1);}
+.est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
+
+/* ── estate footer ──────────────────────────────────────────────────────────── */
+.est-footer{max-width:1120px; margin:56px auto 0; padding:24px 24px 8px;
+  border-top:1px solid var(--hair-strong); font-family:var(--font-ui);}
+.est-foot-links{display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:14px;}
+.est-foot-col{display:flex; flex-direction:column; gap:5px; min-width:150px;}
+.est-foot-col .fh{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:3px;}
+.est-foot-col a{font-size:var(--fs-sm); color:var(--ink-2); text-decoration:none;}
+.est-foot-col a:hover{color:var(--ink-1);}
+.est-foot-disc{font-size:var(--fs-sm); color:var(--ink-3); line-height:1.6;
+  border-top:1px solid var(--hair-strong); padding-top:13px; margin-top:6px;}
+.est-foot-disc .mono{opacity:.85;}
+
+/* ── page header — the estate hero: mono kicker + terminal title + dek ────────
+   The plotted-line signature is retired (the regime rail is the new motif);
+   .est-kicker-plot / .plot-line are hidden so the inlined SVGs collapse cleanly
+   without touching every template. The eyebrow now wears a short accent rule. */
+.plot-line, .est-kicker-plot{display:none !important;}
+.est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+.est-kicker{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk);
+  text-transform:uppercase; color:var(--link); display:inline-flex; align-items:center; gap:9px;
+  margin:0 0 12px;}
+.est-kicker::before{content:""; width:22px; height:2px; border-radius:1px;
+  background:linear-gradient(90deg, var(--link), color-mix(in srgb,var(--link) 20%,transparent));}
+.est-title{font-family:var(--font-ui); font-size:clamp(28px,4.4vw,var(--fs-display)); font-weight:800;
+  line-height:1.06; letter-spacing:-.025em; margin:0; color:var(--ink-1);}
+html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
+.est-dek{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); line-height:1.5; color:var(--ink-2);
+  margin:14px 0 0; max-width:62ch;}
+.est-meta{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin:16px 0 0;
+  display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
+.est-meta .dot{opacity:.4;}
+
+@media (max-width:600px){
+  html body.estate{font-size:var(--fs-body);}
+  .est-wrap,.est-head,.est-crumb,.est-footer{padding-left:16px; padding-right:16px;}
+  .est-prose{font-size:var(--fs-md);}
+  .est-prose h2{font-size:var(--fs-h2); margin:30px 0 10px;}
+  .est-prose h3{font-size:var(--fs-body);}
+  .est-dek{font-size:var(--fs-md);}
+  .est-cta-block{padding:18px; gap:14px;}
+}
+
+  .cx-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+  .cx-shell{max-width:1120px; margin:22px auto 0; padding:0 24px;
+    display:grid; grid-template-columns:minmax(0,1fr) 210px; gap:44px; align-items:start;}
+  .cx-main{min-width:0;}
+  .cx-toc{position:sticky; top:76px; font-family:var(--font-ui); font-size:var(--fs-sm);
+    border-left:1px solid var(--hair-strong); padding-left:15px;}
+  .cx-toc .toc-h{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink-3); margin:0 0 9px;}
+  .cx-toc a{display:block; color:var(--ink-2); padding:5px 0 5px 14px; margin-left:-15px; line-height:1.35;
+    border-left:2px solid transparent; transition:color .15s,border-color .15s;}
+  .cx-toc a:hover{color:var(--ink-1);} .cx-toc a.active{color:var(--ink-1); border-left-color:var(--link); font-weight:700;}
+
+  /* ── the calculator card — the desk instrument, above the fold ──────────────
+     A machined terminal panel (hairline frame, inset top edge, house shadow)
+     crowned by the calculator's OWN glyph so it reads as one family with the
+     hub card that led here. */
+  .calc-card{position:relative; border:1px solid var(--hair-strong); border-radius:var(--r-lg);
+    background:var(--panel); box-shadow:var(--ms); padding:18px 22px 22px; overflow:hidden;}
+  .calc-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 20%,transparent));}
+  /* the crown row: a mono eyebrow + the per-calculator glyph */
+  .calc-card .cc-crown{display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin:0 0 14px; padding:0 0 12px; border-bottom:1px solid var(--hair);}
+  .calc-card .cc-eyebrow{font-family:var(--num); font-size:var(--fs-label); font-weight:700;
+    letter-spacing:var(--trk); text-transform:uppercase; color:var(--ink-3);}
+  .calc-card .cc-glyph{flex:none; width:72px; height:40px;}
+  .calc-card .cc-lede{font-family:var(--font-ui); font-size:var(--fs-md); color:var(--ink-2); margin:0 0 16px; line-height:1.5;}
+
+  .calc-in{display:grid; grid-template-columns:repeat(2,1fr); gap:14px 18px;}
+  @media (max-width:560px){ .calc-in{grid-template-columns:1fr;} }
+  .ci{display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .ci.ci-wide{grid-column:1 / -1;}
+  .ci-l{font-family:var(--font-ui); font-size:var(--fs-sm); font-weight:600; color:var(--ink-2); letter-spacing:.005em;}
+  .ci-l .hint{font-weight:400; color:var(--ink-3);}
+  .ci input, .ci select{font-family:var(--num); font-size:16px; font-variant-numeric:tabular-nums;
+    background:var(--tile); border:1px solid var(--hair-strong); border-radius:var(--r-md); color:var(--ink-1);
+    padding:11px 13px; width:100%; outline:none; transition:border-color .16s,box-shadow .16s;}
+  .ci input:focus, .ci select:focus{border-color:var(--link);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent);}
+  .ci input::placeholder{color:var(--ink-3); opacity:.7;}
+
+  /* segmented toggle (§6) — long/short, forward/inverse, etc. */
+  .ci-seg{display:inline-flex; background:var(--tile); border:1px solid var(--hair-strong); border-radius:var(--r-md);
+    padding:3px; gap:3px; align-self:start;}
+  .ci-seg button{font-family:var(--font-ui); font-size:var(--fs-sm); font-weight:600; color:var(--ink-3);
+    background:transparent; border:none; border-radius:7px; padding:8px 16px; cursor:pointer;
+    transition:color .16s,background .16s;}
+  .ci-seg button:hover{color:var(--ink-1);}
+  .ci-seg button.on{color:var(--ink-1); background:color-mix(in srgb,var(--link) 18%,var(--panel2));}
+  .ci-seg button:focus-visible{outline:2px solid var(--link); outline-offset:2px;}
+
+  /* ── the readout — the terminal signature: a big mono-tabular number ──────── */
+  .calc-out{margin:20px 0 0; padding:18px 20px; border-radius:var(--r-md); border:1px solid var(--hair-strong);
+    border-left:3px solid var(--rail); background:var(--panel2);}
+  .co-main{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;}
+  .co-main #out-main, .co-main [data-out-main]{font-family:var(--num); font-variant-numeric:tabular-nums;
+    font-feature-settings:"tnum" 1; font-size:clamp(var(--fs-num-xl),7vw,52px); font-weight:800; line-height:1;
+    letter-spacing:-.02em; color:var(--ink-1);}
+  .co-main .co-unit{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:600; color:var(--ink-3);}
+  /* Law 3: the big number ALWAYS carries a plain-word interpretation sentence */
+  .co-plain{font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.5; color:var(--ink-1); margin:10px 0 0; max-width:60ch;}
+  .co-plain.warn{color:var(--warn);}
+  .co-rows{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 20px;
+    margin:16px 0 0; padding-top:14px; border-top:1px solid var(--hair);}
+  .co-rows > div{display:flex; flex-direction:column; gap:2px;}
+  .co-rows dt{font-family:var(--num); font-size:var(--fs-label); color:var(--ink-3); letter-spacing:.04em; text-transform:uppercase;}
+  .co-rows dd{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-num-lg); font-weight:800;
+    color:var(--ink-1); margin:0; line-height:1.1;}
+  .co-rows dd.pos{color:var(--up);} .co-rows dd.neg{color:var(--down);}
+
+  .calc-actions{margin:16px 0 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .calc-actions .copied{font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--ok); opacity:0;
+    transition:opacity .2s;}
+  .calc-actions .copied.show{opacity:1;}
+  .calc-actions .gbtn{font-family:var(--font-ui);}
+
+  .cx-explainer{margin:40px 0 0;}
+  @media (max-width:900px){
+    .cx-shell{grid-template-columns:1fr; gap:12px;}
+    .cx-toc{position:static; top:auto; border-left:none; padding:12px 14px; margin:22px 0 2px; order:2;
+      display:flex; flex-wrap:wrap; gap:6px; border:1px solid var(--hair-strong); border-radius:var(--r-md); background:var(--panel2);}
+    .cx-toc .toc-h{flex-basis:100%; margin:0 0 2px;}
+    .cx-toc a{border:1px solid var(--hair-strong); border-radius:999px; padding:6px 11px; margin:0; color:var(--ink-2);}
+    .cx-toc a.active{border-color:var(--link); color:var(--ink-1);}
+    .cx-main{order:1;}
+  }
+  @media (max-width:560px){ .calc-card{padding:16px 16px 18px;} }
+
+</style>
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Portfolio Rebalancing Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Portfolio Rebalancing Calculator</h1>
+  <p class="est-dek">Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <path class="egl-still" d="M8 16 h48" stroke-dasharray="3 3"/>
+  <rect class="egl-fill" x="13" y="9" width="8" height="23" rx="1"/>
+  <path class="egl-down" d="M17 9 v-3 M15.5 8 l1.5 -2 l1.5 2"/>
+  <rect class="egl-draw-fill" x="28" y="16" width="8" height="16" rx="1"/>
+  <rect class="egl-draw" x="43" y="24" width="8" height="8" rx="1"/>
+  <path class="egl-up" d="M47 24 v-3 M45.5 22 l1.5 -2 l1.5 2"/>
+  <path class="egl-mark" d="M6 16 h4 M54 16 h4"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter what each holding is worth today and the weight you want it to carry. Add any new cash you’re putting in. You get the exact dollar buys and sells that pull the portfolio back to your targets.</span><span class="l-zh">填入每个持仓当前的价值和你希望它占的比重，再加上你打算投入的新增现金，即可得到——把组合拉回目标权重所需的——每笔确切的买入与卖出金额。</span></p>
+
+<div class="calc-in prc-in">
+  <div class="ci ci-wide prc-head" aria-hidden="true">
+    <span class="prc-hcol"><span class="l-en">Holding</span><span class="l-zh">持仓</span></span>
+    <span class="prc-hcol"><span class="l-en">Current value ($)</span><span class="l-zh">当前价值（$）</span></span>
+    <span class="prc-hcol"><span class="l-en">Target weight (%)</span><span class="l-zh">目标权重（%）</span></span>
+  </div>
+
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="0" autocomplete="off" placeholder="A">
+    <input class="prc-val"  data-i="0" inputmode="decimal" autocomplete="off" placeholder="6,000">
+    <input class="prc-tgt"  data-i="0" inputmode="decimal" autocomplete="off" placeholder="50">
+  </div>
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="1" autocomplete="off" placeholder="B">
+    <input class="prc-val"  data-i="1" inputmode="decimal" autocomplete="off" placeholder="4,000">
+    <input class="prc-tgt"  data-i="1" inputmode="decimal" autocomplete="off" placeholder="50">
+  </div>
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="2" autocomplete="off" placeholder="C (optional)">
+    <input class="prc-val"  data-i="2" inputmode="decimal" autocomplete="off" placeholder="">
+    <input class="prc-tgt"  data-i="2" inputmode="decimal" autocomplete="off" placeholder="">
+  </div>
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="3" autocomplete="off" placeholder="D (optional)">
+    <input class="prc-val"  data-i="3" inputmode="decimal" autocomplete="off" placeholder="">
+    <input class="prc-tgt"  data-i="3" inputmode="decimal" autocomplete="off" placeholder="">
+  </div>
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="4" autocomplete="off" placeholder="E (optional)">
+    <input class="prc-val"  data-i="4" inputmode="decimal" autocomplete="off" placeholder="">
+    <input class="prc-tgt"  data-i="4" inputmode="decimal" autocomplete="off" placeholder="">
+  </div>
+
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">New cash to add ($)</span><span class="l-zh">新增现金（$）</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <input id="newcash" inputmode="decimal" autocomplete="off" placeholder="0"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Enter at least two holdings with a value and a target weight.</span><span class="l-zh">至少填入两个持仓的价值和目标权重。</span></p>
+  <dl class="co-rows" id="out-list"></dl>
+  <div class="prc-foot" id="out-foot" hidden>
+    <div><span class="prc-flabel"><span class="l-en">Portfolio total</span><span class="l-zh">组合总值</span></span><span class="prc-fval" id="out-total">—</span></div>
+    <div><span class="prc-flabel"><span class="l-en">Total to trade</span><span class="l-zh">需交易总额</span></span><span class="prc-fval" id="out-turnover">—</span></div>
+  </div>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+<style>
+  .prc-head, .prc-row{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,.9fr); gap:10px; align-items:center;}
+  .prc-head{padding:0 2px 2px;}
+  .prc-hcol{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3);}
+  .prc-hcol:not(:first-child){text-align:right;}
+  .prc-row input{font-family:var(--num); font-size:16px; font-variant-numeric:tabular-nums;
+    background:var(--tile); border:1px solid var(--hair-strong); border-radius:var(--r-md); color:var(--ink-1);
+    padding:10px 12px; width:100%; outline:none; transition:border-color .16s,box-shadow .16s;}
+  .prc-row input:focus{border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent);}
+  .prc-row input::placeholder{color:var(--ink-3); opacity:.7;}
+  .prc-row .prc-name{font-family:var(--font-ui); text-align:left;}
+  .prc-row .prc-val, .prc-row .prc-tgt{text-align:right;}
+  .prc-foot{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 20px;
+    margin:16px 0 0; padding-top:14px; border-top:1px solid var(--hair);}
+  .prc-foot > div{display:flex; flex-direction:column; gap:2px;}
+  .prc-flabel{font-family:var(--num); font-size:var(--fs-label); color:var(--ink-3); letter-spacing:.04em; text-transform:uppercase;}
+  .prc-fval{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-num-lg); font-weight:800; color:var(--ink-1); line-height:1.1;}
+  .co-rows dd.buy{color:var(--up);} .co-rows dd.sell{color:var(--down);}
+  .co-rows .prc-sub{font-family:var(--font-ui); font-size:var(--fs-sm); font-weight:400; color:var(--ink-3); text-transform:none; letter-spacing:0;}
+  @media (max-width:560px){
+    .prc-head{display:none;}
+    .prc-row{grid-template-columns:1fr 1fr; gap:8px;}
+    .prc-row .prc-name{grid-column:1 / -1;}
+  }
+</style>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Rebalancing trades are the gap between what each holding is worth <strong>now</strong> and what it <strong>should</strong> be worth at your target weight. Add up every holding (plus any new cash), multiply that total by each target weight to get a dollar goal, and the difference from today’s value is your buy or sell. Positions that have run ahead get trimmed; positions that have lagged get topped up.</span><span class="l-zh">再平衡交易，就是每个持仓<strong>现在</strong>的价值与它按目标权重<strong>应有</strong>价值之间的差额。把所有持仓（加上新增现金）相加得到总值，用总值乘以每个目标权重得到金额目标，与今天价值的差就是该买还是该卖。涨过头的持仓被减仓，落后的持仓被补仓。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Total</strong> = Σ current values + new cash</span><span class="l-zh"><strong>总值</strong> = Σ 当前价值 + 新增现金</span><br>
+<span class="l-en"><strong>Target value</strong> = Total × Target% ÷ 100</span><span class="l-zh"><strong>目标价值</strong> = 总值 × 目标% ÷ 100</span><br>
+<span class="l-en"><strong>Action</strong> = Target value − Current value</span><span class="l-zh"><strong>操作金额</strong> = 目标价值 − 当前价值</span><br>
+<span class="l-en">Positive = buy · Negative = sell</span><span class="l-zh">正值 = 买入 · 负值 = 卖出</span><br>
+<span class="l-en"><strong>Drift</strong> = Current% − Target%</span><span class="l-zh"><strong>偏移</strong> = 当前% − 目标%</span>
+</div>
+<p><span class="l-en">Drift is how far a holding has wandered from its target weight — the number that tells you <em>why</em> a trade is needed. A holding at 60% of the book against a 50% target has drifted +10 points; the sell brings it home. Target weights should add up to 100%; if they don’t, the tool flags it rather than quietly assuming the rest is cash.</span><span class="l-zh">偏移衡量一个持仓离目标权重漂移了多远——它告诉你<em>为什么</em>需要这笔交易。一个占组合 60%、目标为 50% 的持仓，偏移了 +10 个百分点；卖出把它拉回原位。目标权重应加总为 100%；若不满足，工具会提示，而不会默默假设其余是现金。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader holds <span class="num">$6,000</span> of A and <span class="num">$4,000</span> of B, and wants each at <span class="num">50%</span>. No new cash is added.</span><span class="l-zh">假设一位交易者持有 <span class="num">$6,000</span> 的 A 和 <span class="num">$4,000</span> 的 B，希望两者各占 <span class="num">50%</span>，且不投入新增现金。</span></p>
+<ul>
+<li><span class="l-en">Total = <span class="num">6,000 + 4,000 = $10,000</span></span><span class="l-zh">总值 = <span class="num">6,000 + 4,000 = $10,000</span></span></li>
+<li><span class="l-en">A target value = <span class="num">10,000 × 50 ÷ 100 = $5,000</span>; action = <span class="num">5,000 − 6,000 = −$1,000</span> → sell $1,000</span><span class="l-zh">A 目标价值 = <span class="num">10,000 × 50 ÷ 100 = $5,000</span>；操作 = <span class="num">5,000 − 6,000 = −$1,000</span> → 卖出 $1,000</span></li>
+<li><span class="l-en">B target value = <span class="num">$5,000</span>; action = <span class="num">5,000 − 4,000 = +$1,000</span> → buy $1,000</span><span class="l-zh">B 目标价值 = <span class="num">$5,000</span>；操作 = <span class="num">5,000 − 4,000 = +$1,000</span> → 买入 $1,000</span></li>
+<li><span class="l-en">A had drifted to <span class="num">60%</span> (+10), B to <span class="num">40%</span> (−10). Selling $1,000 of A and buying $1,000 of B lands both at 50/50.</span><span class="l-zh">A 已漂移至 <span class="num">60%</span>（+10），B 至 <span class="num">40%</span>（−10）。卖出 $1,000 的 A、买入 $1,000 的 B，两者回到 50/50。</span></li>
+</ul>
+</div>
+<p><span class="l-en">Notice the trades net to zero here because no cash was added — every dollar sold funds a dollar bought. When you add new cash, the tool can often reach the targets by buying only, with no sells at all: fresh money flows first to the most underweight holdings.</span><span class="l-zh">注意这里的买卖净额为零，因为没有投入现金——每卖出一元都用于买入一元。当你投入新增现金时，工具往往可以只靠买入达到目标、完全无需卖出：新钱会优先流向最被低配的持仓。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Rebalancing too often, and ignoring the cost</span><span class="l-zh">再平衡过于频繁，且忽视成本</span></span>
+<p><span class="l-en">Every rebalance is a real transaction — it can trigger commissions, bid-ask spreads, and, in a taxable account, capital-gains tax on the winners you trim. Chasing an exact target after every small wiggle can quietly cost more than the drift it corrects. Many long-term portfolios rebalance on a schedule (say, once or twice a year) or only when a holding drifts past a set band (for example ±5 points), not on every fluctuation. This tool shows the trades; whether the drift is worth acting on is a separate judgment about cost and taxes.</span><span class="l-zh">每一次再平衡都是一笔真实交易——可能产生佣金、买卖价差，在应税账户中还会对减仓的盈利部分征收资本利得税。每有小幅波动就去追求精确目标，其代价可能悄然超过它所纠正的偏移。许多长期组合按固定周期再平衡（比如每年一到两次），或只在持仓偏移超出设定区间（例如 ±5 个百分点）时才动手，而非每次波动都调整。本工具展示交易金额；这点偏移是否值得动手，是关于成本与税务的另一重判断。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">The math splits a total cleanly into target slices. It does not know the frictions of moving real money. A few honest limits:</span><span class="l-zh">这套算法能把一个总值干净地切成目标份额，但它并不了解真实资金流动中的摩擦。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>Whole shares and lot sizes.</strong> A $1,000 buy of a $340 stock isn’t exactly three shares. Real orders round to whole shares (or fixed lots), so you’ll land near the target dollar amount, not precisely on it.</span><span class="l-zh"><strong>整股与最小交易单位。</strong>用 $1,000 买一只 $340 的股票并不正好是三股。真实下单要取整到整股（或固定手数），因此你只能落在接近目标的金额附近，而非精确命中。</span></li>
+<li><span class="l-en"><strong>Taxes and costs aren’t modeled.</strong> The action amounts are pre-tax and pre-fee. In a taxable account, selling a winner to rebalance can realize a gain; weigh that before trimming.</span><span class="l-zh"><strong>未计入税费。</strong>操作金额是税前、费前的。在应税账户中，为再平衡而卖出盈利持仓可能实现应税收益；减仓前请权衡这一点。</span></li>
+<li><span class="l-en"><strong>Target weights, not a view.</strong> This tool executes the weights you type — it takes no position on <em>whether</em> those weights are wise. Deciding the target allocation is the harder, prior question.</span><span class="l-zh"><strong>只是目标权重，而非观点。</strong>本工具执行你填入的权重——它不评判这些权重<em>是否</em>明智。决定目标配置本身，是更难、更靠前的一步。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Rebalancing sells what has grown and buys what has lagged — a discipline, not a forecast. The trades are simple; the judgment is when they’re worth the cost.</span><span class="l-zh">再平衡卖出涨多的、买入落后的——这是一种纪律，而非预测。交易本身很简单；难的是判断何时值得为之付出成本。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Size each new buy with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">, or read the lesson on <a href="</span><span class="l-zh">为每笔新买入定仓，或阅读关于 <a href="</span>../../learn/risk/position-sizing.html"><span class="l-en">position sizing</span><span class="l-zh">仓位管理</span></a><span class="l-en">.</span><span class="l-zh"> 的课程。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/sharpe-ratio.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Sharpe Ratio Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (CONTRACT §7-style — do not re-derive) ────────────────────
+  // inputs: { holdings:[{name, value, target}], newCash }.
+  // total = Σvalue + newCash; per holding target$ = total*target/100;
+  // action = target$ - value (>0 buy, <0 sell); currentPct = 100*value/Σvalue;
+  // drift = currentPct - target. Returns outputs object or {ok:false,msg}.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var raw = (inp.holdings || []).filter(function(h){ return h && (h.value>0) && (h.target>0); });
+    if(raw.length < 2) return {ok:false, msg:"Enter at least two holdings, each with a value and a target weight."};
+    var newCash = (inp.newCash>0) ? inp.newCash : 0;
+    var sumVal = 0, sumTgt = 0, i;
+    for(i=0;i<raw.length;i++){ sumVal += raw[i].value; sumTgt += raw[i].target; }
+    if(!(sumVal>0)) return {ok:false, msg:"Enter a current value above zero for at least two holdings."};
+    var total = sumVal + newCash;
+    var rows = [], turnover = 0;
+    for(i=0;i<raw.length;i++){
+      var h = raw[i];
+      var targetVal = total * h.target / 100;
+      var action = targetVal - h.value;           // >0 buy, <0 sell
+      var currentPct = 100 * h.value / sumVal;
+      var drift = currentPct - h.target;
+      turnover += Math.abs(action);
+      rows.push({
+        name: h.name || ("#" + (i+1)),
+        value: h.value, target: h.target,
+        targetVal: targetVal, action: action,
+        side: action > 0.005 ? "buy" : (action < -0.005 ? "sell" : "hold"),
+        currentPct: currentPct, drift: drift
+      });
+    }
+    var targetsOff = Math.abs(sumTgt - 100) > 0.5;
+    return {
+      ok:true, rows:rows, total:total, sumVal:sumVal, newCash:newCash,
+      sumTargets:sumTgt, targetsOff:targetsOff, turnover:turnover
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    // A $6,000 t50, B $4,000 t50, no cash → sell $1,000 A, buy $1,000 B; total 10,000
+    { in:{ holdings:[{name:"A",value:6000,target:50},{name:"B",value:4000,target:50}], newCash:0 },
+      want:{ total:10000, action0:-1000, action1:1000, turnover:2000 } },
+    // add $2,000 cash → total 12,000, each target 6,000; A buy 0, B buy 2,000
+    { in:{ holdings:[{name:"A",value:6000,target:50},{name:"B",value:4000,target:50}], newCash:2000 },
+      want:{ total:12000, action0:0, action1:2000, turnover:2000 } }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, idx){
+      var got = compute(ex.in), w = ex.want;
+      if(!got.ok){ console.error("portfolio-rebalancing self-check "+idx+": compute failed", got); return; }
+      var checks = {
+        total: got.total, action0: got.rows[0].action, action1: got.rows[1].action, turnover: got.turnover
+      };
+      for(var k in w){ if(Math.abs(checks[k] - w[k]) > 0.5){
+        console.error("portfolio-rebalancing self-check "+idx+" mismatch on "+k+": got "+checks[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var names = [].slice.call(document.querySelectorAll(".prc-name"));
+    var vals  = [].slice.call(document.querySelectorAll(".prc-val"));
+    var tgts  = [].slice.call(document.querySelectorAll(".prc-tgt"));
+    var cashEl = $("newcash");
+    var outMain=$("out-main"), outPlain=$("out-plain"), outList=$("out-list"),
+        outFoot=$("out-foot"), outTotal=$("out-total"), outTurn=$("out-turnover"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money0(n){ return "$" + Math.round(n).toLocaleString("en-US"); }
+    function money2(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function readHoldings(){
+      var out=[];
+      for(var i=0;i<vals.length;i++){
+        out.push({ name:(names[i] && names[i].value ? names[i].value.trim() : ""),
+                   value:numFrom(vals[i]), target:numFrom(tgts[i]) });
+      }
+      return out;
+    }
+
+    var last=null;
+    function render(){
+      var inp={ holdings:readHoldings(), newCash:numFrom(cashEl) };
+      var res=compute(inp); last=res;
+      if(!res.ok){
+        outMain.textContent="—";
+        outPlain.textContent=res.msg; outPlain.className="co-plain";
+        outList.innerHTML=""; outFoot.hidden=true;
+        return;
+      }
+
+      // per-holding rows
+      outList.innerHTML="";
+      res.rows.forEach(function(r){
+        var div=document.createElement("div");
+        var dt=document.createElement("dt");
+        dt.textContent=r.name;
+        var dd=document.createElement("dd");
+        if(r.side==="hold"){ dd.textContent="Hold"; }
+        else {
+          dd.textContent=(r.side==="buy"?"Buy ":"Sell ")+money0(Math.abs(r.action));
+          dd.className=r.side;
+        }
+        var sub=document.createElement("span");
+        sub.className="prc-sub";
+        var driftTxt=(r.drift>=0?"+":"")+r.drift.toFixed(r.drift===0?0:1);
+        sub.textContent=" · "+r.currentPct.toFixed(0)+"% now vs "+r.target.toFixed(r.target%1?1:0)+"% target ("+driftTxt+")";
+        dd.appendChild(sub);
+        div.appendChild(dt); div.appendChild(dd);
+        outList.appendChild(div);
+      });
+
+      // headline sentence in #out-main (this calc's co-main is a sentence)
+      var moves = res.rows.filter(function(r){ return r.side!=="hold"; })
+        .sort(function(a,b){ return Math.abs(b.action)-Math.abs(a.action); });
+      var lead;
+      if(!moves.length){
+        lead = "Already on target — no trades needed.";
+      } else {
+        var parts = moves.slice(0,3).map(function(r){
+          return (r.side==="buy"?"buy ":"sell ")+money0(Math.abs(r.action))+" "+r.name;
+        });
+        lead = parts.join(", ");
+        if(moves.length>3) lead += ", …";
+        lead = lead.charAt(0).toUpperCase()+lead.slice(1);
+        lead += ".";
+      }
+      outMain.textContent = lead;
+
+      // Law 3: plain-word interpretation
+      var plain;
+      if(!moves.length){
+        plain = "Every holding already sits at its target weight, so nothing needs to be traded.";
+      } else {
+        plain = "These trades move each holding to its target weight, turning over "
+          + money0(res.turnover) + " across the portfolio.";
+        if(res.newCash>0) plain += " Your new cash is put to work first.";
+      }
+      if(res.targetsOff){
+        plain = "Heads up: your target weights add to " + res.sumTargets.toFixed(res.sumTargets%1?1:0)
+          + "%, not 100% — the rest is treated as staying uninvested. " + plain;
+        outPlain.className="co-plain warn";
+      } else {
+        outPlain.className="co-plain";
+      }
+      outPlain.textContent = plain;
+
+      outTotal.textContent = money2(res.total);
+      outTurn.textContent  = money2(res.turnover);
+      outFoot.hidden=false;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var moves=last.rows.filter(function(r){return r.side!=="hold";})
+        .sort(function(a,b){return Math.abs(b.action)-Math.abs(a.action);});
+      if(!moves.length) return "Portfolio rebalancing: already on target — no trades needed. — mastermind-x.com";
+      var parts=moves.map(function(r){
+        return (r.side==="buy"?"Buy ":"Sell ")+money0(Math.abs(r.action))+" "+r.name;
+      });
+      return "Rebalance: " + parts.join(" · ")
+        + " · turnover " + money0(last.turnover)
+        + " (total " + money0(last.total) + ") — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    names.concat(vals).concat(tgts).concat([cashEl]).forEach(function(el){
+      el.addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js"></script>
+</body>
+</html>

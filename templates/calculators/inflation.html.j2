@@ -1,0 +1,218 @@
+{#=============================================================================
+  calculators/inflation.html.j2 — cloned from position_size.html.j2 (exemplar).
+  Implements CONTRACT §7-style inflation / purchasing-power math + the §6
+  WORKED_EXAMPLES self-check. Explainer body follows §8 structure: direct
+  answer → formula → worked example → common trap → where it breaks → links.
+
+  Context set by the builder (per CONTRACT §5): page{slug:'inflation',
+  family:'page', title, description, canonical, url_path, section:'tools',
+  breadcrumbs}, rel, site, toc, related, cta.
+
+  Math (spec): futureCost = A·(1+i/100)^n  (what the same basket will cost)
+               purchasingPower = A/(1+i/100)^n  (today's dollars, n years on)
+               erosion% = 100·(1 − 1/(1+i/100)^n)
+  compute() is PURE (no DOM); wire() does all DOM reads/writes; WORKED_EXAMPLES
+  runs each fixture through compute() on load and console.error's any mismatch.
+  Never render NaN/Infinity; empty/invalid → plain-word sentence + "—". Commas ok.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('inflation', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter an amount, an annual inflation rate and a number of years. You get what that same basket will cost later, and what today’s money will actually be worth once prices have climbed.',
+   '填入一笔金额、年通胀率和年数，即可得到——同样一篮子商品未来的价格，以及在物价上涨之后，今天这笔钱实际还值多少。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Amount today ($)', '今日金额（$）') }}</span>
+    <input id="amount" inputmode="decimal" autocomplete="off" placeholder="1,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Annual inflation rate (%)', '年通胀率（%）') }} <span class="hint">{{ t('per year', '每年') }}</span></span>
+    <input id="rate" inputmode="decimal" autocomplete="off" placeholder="3"></label>
+  <label class="ci ci-wide"><span class="ci-l">{{ t('Years', '年数') }}</span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('future cost', '未来成本') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in all three fields to see how prices and purchasing power move.', '填入三个字段，即可看到价格与购买力的变化。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Purchasing power', '购买力') }}</dt><dd id="out-power">—</dd></div>
+    <div><dt>{{ t('Value lost', '损失价值') }}</dt><dd id="out-lost">—</dd></div>
+    <div><dt>{{ t('Erosion', '侵蚀比例') }}</dt><dd id="out-erosion">—</dd></div>
+    <div><dt>{{ t('Total price rise', '价格总涨幅') }}</dt><dd id="out-rise">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('Money loses value when prices rise. Multiply an amount by <strong>(1 + inflation)</strong> for each year and you get the <strong>future cost</strong> — what the same basket of goods will run later. Divide instead and you get <strong>purchasing power</strong> — what today’s amount will actually buy after prices have climbed. Same rate, opposite directions.',
+   '当物价上涨时，货币会贬值。把一笔金额按每年 <strong>(1 + 通胀率)</strong> 连乘，得到的是<strong>未来成本</strong>——同样一篮子商品日后要花的钱。反过来相除，得到的是<strong>购买力</strong>——在物价上涨之后，今天这笔钱实际能买到的东西。同一个利率，方向相反。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Future cost</strong> = Amount × (1 + i ÷ 100)<sup>n</sup>', '<strong>未来成本</strong> = 金额 × (1 + i ÷ 100)<sup>n</sup>') }}<br>
+{{ t('<strong>Purchasing power</strong> = Amount ÷ (1 + i ÷ 100)<sup>n</sup>', '<strong>购买力</strong> = 金额 ÷ (1 + i ÷ 100)<sup>n</sup>') }}<br>
+{{ t('<strong>Erosion</strong> = 100 × ( 1 − 1 ÷ (1 + i ÷ 100)<sup>n</sup> )', '<strong>侵蚀比例</strong> = 100 × ( 1 − 1 ÷ (1 + i ÷ 100)<sup>n</sup> )') }}
+<br>{{ t('where i = annual inflation %, n = years', '其中 i = 年通胀率 %，n = 年数') }}
+</div>
+<p>{{ t('Notice that erosion is never quite as large as the price rise. If prices climb 34%, purchasing power does not fall 34% — it falls to 1 ÷ 1.34, a loss closer to 25%. The two percentages describe the same gap seen from opposite ends, and the smaller one is always the drop in what your money buys.',
+   '请注意，侵蚀比例永远不会和价格涨幅一样大。如果物价上涨 34%，购买力并不会下降 34%——而是降到 1 ÷ 1.34，损失更接近 25%。这两个百分比从相反的两端描述同一段差距，而其中较小的那个，始终是你的钱所能购买之物的下降幅度。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a basket costs <span class="num">$1,000</span> today, inflation runs <span class="num">3%</span> a year, and we look <span class="num">10</span> years ahead.',
+   '假设一篮子商品今天价值 <span class="num">$1,000</span>，通胀率为每年 <span class="num">3%</span>，我们展望 <span class="num">10</span> 年之后。') }}</p>
+<ul>
+<li>{{ t('Growth factor = <span class="num">(1.03)<sup>10</sup> = 1.3439</span>', '增长系数 = <span class="num">(1.03)<sup>10</sup> = 1.3439</span>') }}</li>
+<li>{{ t('Future cost = <span class="num">1,000 × 1.3439 = $1,343.92</span>', '未来成本 = <span class="num">1,000 × 1.3439 = $1,343.92</span>') }}</li>
+<li>{{ t('Purchasing power = <span class="num">1,000 ÷ 1.3439 = $744.09</span>', '购买力 = <span class="num">1,000 ÷ 1.3439 = $744.09</span>') }}</li>
+<li>{{ t('Erosion = <span class="num">100 × (1 − 744.09 ÷ 1,000) ≈ 25.6%</span> — prices rose 34%, buying power fell 25.6%.',
+   '侵蚀比例 = <span class="num">100 × (1 − 744.09 ÷ 1,000) ≈ 25.6%</span>——物价上涨 34%，购买力下降 25.6%。') }}</li>
+</ul>
+</div>
+<p>{{ t('So $1,000 stuffed in a drawer for a decade would still read “$1,000”, but it would stretch like $744 does now. The dollar figure never changed; what it commands did. That silent gap is what inflation actually costs.',
+   '所以，把 $1,000 塞进抽屉存放十年，上面依然写着「$1,000」，但它的购买力只相当于今天的 $744。数字从未改变，改变的是它能买到什么。这段无声的差距，正是通胀真正的代价。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Subtracting the rate instead of compounding it', '用减法代替连乘') }}</span>
+<p>{{ t('A frequent shortcut is to take “3% a year for 10 years” and subtract 30% of purchasing power. But inflation compounds — each year’s rise stacks on a base already lifted by the year before — so the price rise is 34%, not 30%. And because purchasing power is the <em>reciprocal</em>, the drop is 25.6%, not 30% either. Over long horizons or high rates the gap between the quick subtraction and the real math grows wide enough to change a plan.',
+   '一个常见的捷径是把「每年 3%、共 10 年」直接减去 30% 的购买力。但通胀是连乘的——每一年的上涨都叠加在前一年已经抬高的基础之上——所以价格涨幅是 34%，而非 30%。又因为购买力是其<em>倒数</em>，下降幅度是 25.6%，同样不是 30%。在较长的时间跨度或较高的利率下，这种快速减法与真实计算之间的差距会大到足以改变一个计划。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('This tool assumes one steady rate every year, which real inflation never obeys. A few honest limits:',
+   '本工具假设每年都是一个稳定的利率，而真实的通胀从不遵守这一点。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>A single average rate.</strong> Real inflation swings year to year. Use a long-run average as a rough guide, not a forecast of any single future year.',
+   '<strong>单一平均利率。</strong>真实通胀逐年波动。请把长期平均值当作粗略参照，而非对某一具体未来年份的预测。') }}</li>
+<li>{{ t('<strong>Your basket isn’t the index.</strong> Headline inflation is an average across many goods. Rent, tuition and healthcare can run far hotter than the number, so your personal erosion may differ.',
+   '<strong>你的篮子不是指数。</strong>公布的通胀是许多商品的平均值。房租、学费和医疗的涨幅可能远高于这个数字，因此你个人感受到的侵蚀可能不同。') }}</li>
+<li>{{ t('<strong>It ignores what the money earns.</strong> This is purchasing power on idle cash. Money invested at a return above inflation grows in real terms — the erosion here is the hurdle a return has to clear, not a verdict on saving.',
+   '<strong>它忽略了资金的收益。</strong>这里算的是闲置现金的购买力。以高于通胀的回报进行投资的资金，其实际价值是增长的——此处的侵蚀是回报必须跨越的门槛，而非对储蓄的评判。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Inflation doesn’t shrink the number on the bill — it shrinks what the number can buy. Judge cash by its purchasing power, not its face value.',
+   '通胀不会缩小账单上的数字——它缩小的是这个数字能买到什么。衡量现金要看它的购买力，而非它的面值。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how a return can outrun inflation with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or turn two values into a growth rate with the <a href="', '看看回报如何跑赢通胀，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', '年化增长率计算器') }}</a>{{ t('.', '把两个数值换算成增长率。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (spec math — do not re-derive) ────────────────────────────
+  // inputs: {A amount, i annualInflation%, n years}. Returns an outputs object,
+  // or {ok:false, msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var A=inp.A, i=inp.i, n=inp.n;
+    if(!(A>0)) return {ok:false, msg:"Enter an amount above zero."};
+    if(i===undefined || i===null || !isFinite(i)) return {ok:false, msg:"Enter an annual inflation rate."};
+    if(!(n>0)) return {ok:false, msg:"Enter a number of years above zero."};
+    if(i <= -100) return {ok:false, msg:"An inflation rate of −100% or lower would erase all prices — enter a rate above −100%."};
+    var factor = Math.pow(1 + i/100, n);
+    if(!isFinite(factor) || factor <= 0) return {ok:false, msg:"That combination is too extreme to compute — try a smaller rate or fewer years."};
+    var futureCost = A * factor;
+    var power = A / factor;
+    var lost = A - power;
+    var erosionPct = 100 * (1 - 1/factor);   // = 100·(1 − power/A)
+    var risePct = 100 * (factor - 1);
+    return {
+      ok:true, futureCost:futureCost, power:power, lost:lost,
+      erosionPct:erosionPct, risePct:risePct, deflation: i < 0
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{A:1000, i:3,  n:10}, want:{futureCost:1343.92, power:744.09, erosionPct:25.6} },
+    { in:{A:10000, i:0, n:20}, want:{futureCost:10000,   power:10000,  erosionPct:0} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("inflation self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.1){
+        console.error("inflation self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { amount:$("amount"), rate:$("rate"), years:$("years") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outPower=$("out-power"), outLost=$("out-lost"), outErosion=$("out-erosion"), outRise=$("out-rise"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function pct(n){ return n.toFixed(1) + "%"; }   // one decimal, matches the prose
+    function dash(){ outMain.textContent="—";
+      [outPower,outLost,outErosion,outRise].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ A:numFrom(els.amount), i:numFrom(els.rate), n:numFrom(els.years) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent  = money(res.futureCost);
+      outPower.textContent = money(res.power);
+      outLost.textContent  = money(res.lost);
+      outErosion.textContent = pct(res.erosionPct);
+      outRise.textContent  = pct(res.risePct);
+      outErosion.className = res.erosionPct > 0 ? "neg" : (res.erosionPct < 0 ? "pos" : "");
+      // Law 3: plain-word interpretation under the number
+      var plain;
+      if(res.deflation){
+        plain = "With prices falling, this basket would cost " + money(res.futureCost) +
+          " later — and " + money(inp.A) + " held as cash would then buy what " + money(res.power) +
+          " buys today, a gain of " + pct(-res.erosionPct) + " in purchasing power.";
+        outPlain.className="co-plain";
+      } else if(res.erosionPct === 0){
+        plain = "At 0% inflation nothing changes — the same basket still costs " + money(res.futureCost) +
+          ", and " + money(inp.A) + " keeps its full purchasing power.";
+        outPlain.className="co-plain";
+      } else {
+        plain = "This basket costs " + money(res.futureCost) + " after " + inp.n + " year" +
+          (inp.n===1?"":"s") + ". The " + money(inp.A) + " you hold as cash would then buy only what " +
+          money(res.power) + " buys today — about " + pct(res.erosionPct) + " of its purchasing power gone.";
+        outPlain.className="co-plain warn";
+      }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Inflation: future cost " + money(last.futureCost) +
+        " · purchasing power " + money(last.power) +
+        " · " + pct(last.erosionPct) + " erosion — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["amount","rate","years"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

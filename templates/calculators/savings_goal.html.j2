@@ -1,0 +1,303 @@
+{#=============================================================================
+  calculators/savings_goal.html.j2 — Savings Goal Calculator
+  Clones the position_size.html.j2 exemplar (structure identical). Implements
+  the savings-goal formulas EXACTLY + the §6 WORKED_EXAMPLES self-check.
+  Explainer body follows §8 structure: direct answer → formula → worked example
+  → common trap → where it breaks → links.
+
+  Two modes (segmented toggle "mode"):
+    by-date  → input years n, solve for required monthly contribution c
+    by-contrib → input monthly contribution c, solve for months/years to reach
+
+  compute() is PURE (no DOM); wire() does all DOM reads/writes; WORKED_EXAMPLES
+  runs the fixtures through compute() on load and console.error's any mismatch
+  (silent when green). Never render NaN/Infinity; empty/invalid → plain-word
+  sentence in .co-plain and "—" in the number. Inputs accept commas.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('savings-goal', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Set a savings target, your starting balance and an expected return. Choose a deadline to get the monthly amount to save, or a monthly amount to get the time it takes to arrive.',
+   '设定一个储蓄目标、初始余额与预期回报。选「按期限」得出每月应存金额，或选「按供款」得出达成目标所需的时间。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Goal amount ($)', '目标金额（$）') }}</span>
+    <input id="goal" inputmode="decimal" autocomplete="off" placeholder="100,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Current savings ($)', '当前储蓄（$）') }}</span>
+    <input id="current" inputmode="decimal" autocomplete="off" placeholder="10,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Expected annual return (%)', '预期年回报（%）') }} <span class="hint">{{ t('0 = plain cash', '0 = 纯现金') }}</span></span>
+    <input id="rate" inputmode="decimal" autocomplete="off" placeholder="6"></label>
+  <div class="ci ci-wide">
+    <span class="ci-l">{{ t('Solve for', '求解目标') }}</span>
+    <div class="ci-seg" role="radiogroup" data-name="mode" aria-label="Solve for">
+      <button type="button" class="on" data-v="date" role="radio" aria-checked="true">{{ t('By date', '按期限') }}</button>
+      <button type="button" data-v="contrib" role="radio" aria-checked="false">{{ t('By contribution', '按供款') }}</button>
+    </div>
+  </div>
+  <label class="ci ci-wide" id="row-years"><span class="ci-l">{{ t('Target horizon (years)', '目标期限（年）') }}</span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+  <label class="ci ci-wide" id="row-monthly" hidden><span class="ci-l">{{ t('Monthly contribution ($)', '每月供款（$）') }}</span>
+    <input id="monthly" inputmode="decimal" autocomplete="off" placeholder="500"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit" id="out-unit">{{ t('per month', '每月') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in the fields to plan the goal.', '填入各字段即可规划目标。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Still to save', '尚需储蓄') }}</dt><dd id="out-gap">—</dd></div>
+    <div><dt>{{ t('Total you contribute', '你的供款总额') }}</dt><dd id="out-contrib">—</dd></div>
+    <div><dt>{{ t('Growth from returns', '回报带来的增长') }}</dt><dd id="out-growth">—</dd></div>
+    <div><dt>{{ t('Time to reach', '达成所需时间') }}</dt><dd id="out-time">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('To reach a savings goal by a set date, you save the <strong>gap</strong> between your goal and where compounding will carry your current balance, spread over the months — as a level monthly deposit. Flip the question and a fixed monthly deposit tells you <strong>how long</strong> the goal takes instead. The expected return does the quiet work: the higher it is, the less of the goal your own deposits have to cover.',
+   '要在设定的日期达成储蓄目标，你需要填补目标金额与「复利把当前余额带到的水平」之间的<strong>缺口</strong>，并把它摊到各个月份——即一笔固定的每月存款。把问题反过来，一笔固定的每月存款则告诉你达成目标<strong>需要多久</strong>。预期回报在暗中发力：回报越高，需要靠你自己存款覆盖的部分就越少。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Monthly rate</strong> i = annual% ÷ 100 ÷ 12,  months m = years × 12', '<strong>月利率</strong> i = 年利率% ÷ 100 ÷ 12，  月数 m = 年数 × 12') }}<br><br>
+{{ t('<strong>By date</strong> — solve the deposit c:', '<strong>按期限</strong>——求解每月存款 c：') }}<br>
+{{ t('c = ( Goal − Current × (1+i)<sup>m</sup> ) × i ÷ ( (1+i)<sup>m</sup> − 1 )', 'c = ( 目标 − 当前 × (1+i)<sup>m</sup> ) × i ÷ ( (1+i)<sup>m</sup> − 1 )') }}<br>
+{{ t('when i = 0:  c = ( Goal − Current ) ÷ m', '当 i = 0 时：c = ( 目标 − 当前 ) ÷ m') }}<br><br>
+{{ t('<strong>By contribution</strong> — solve the months m:', '<strong>按供款</strong>——求解月数 m：') }}<br>
+{{ t('m = ln( (Goal·i + c) ÷ (Current·i + c) ) ÷ ln(1+i)', 'm = ln( (目标·i + c) ÷ (当前·i + c) ) ÷ ln(1+i)') }}<br>
+{{ t('when i = 0:  m = ( Goal − Current ) ÷ c', '当 i = 0 时：m = ( 目标 − 当前 ) ÷ c') }}
+</div>
+<p>{{ t('This treats deposits as arriving at the <em>end</em> of each month (an ordinary annuity) and the return as compounding monthly. It is the same future-value machinery as a savings account or a systematic investment plan, run in reverse to find the missing piece.',
+   '这里把存款视为在每月<em>末</em>存入（普通年金），回报按月复利。它与储蓄账户或定期定额投资计划背后的终值公式相同，只是反过来求那个缺失的量。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose your goal is <span class="num">$100,000</span>, you already hold <span class="num">$10,000</span>, you expect <span class="num">6%</span> a year, and you want to arrive in <span class="num">10 years</span>.',
+   '假设你的目标是 <span class="num">$100,000</span>，已经持有 <span class="num">$10,000</span>，预期年回报 <span class="num">6%</span>，希望在 <span class="num">10 年</span>内达成。') }}</p>
+<ul>
+<li>{{ t('i = <span class="num">6 ÷ 100 ÷ 12 = 0.005</span>,  m = <span class="num">10 × 12 = 120</span>', 'i = <span class="num">6 ÷ 100 ÷ 12 = 0.005</span>，  m = <span class="num">10 × 12 = 120</span>') }}</li>
+<li>{{ t('(1+i)<sup>m</sup> = <span class="num">1.005<sup>120</sup> ≈ 1.8194</span>', '(1+i)<sup>m</sup> = <span class="num">1.005<sup>120</sup> ≈ 1.8194</span>') }}</li>
+<li>{{ t('Your $10,000 grows to <span class="num">10,000 × 1.8194 ≈ $18,194</span> on its own', '你的 $10,000 自行增长到 <span class="num">10,000 × 1.8194 ≈ $18,194</span>') }}</li>
+<li>{{ t('c = <span class="num">(100,000 − 18,194) × 0.005 ÷ 0.8194 ≈ $499</span> per month', 'c = <span class="num">(100,000 − 18,194) × 0.005 ÷ 0.8194 ≈ $499</span> 每月') }}</li>
+</ul>
+</div>
+<p>{{ t('Over the ten years those deposits add up to about <span class="num">$59,900</span>, your starting balance is <span class="num">$10,000</span>, and the remaining <span class="num">~$30,100</span> is growth the return did for you — roughly a third of the goal you never had to deposit.',
+   '十年间这些存款累计约 <span class="num">$59,900</span>，起始余额 <span class="num">$10,000</span>，其余 <span class="num">约 $30,100</span> 是回报替你创造的增长——约占目标的三分之一，是你无需存入的部分。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Assuming a steady return you may not get', '假设一个未必兑现的稳定回报') }}</span>
+<p>{{ t('A single return number pretends the market delivers the same percentage every month. Real returns arrive in a jagged sequence — a rough early stretch, when the balance is small, hurts far less than a rough stretch near the deadline, when the balance is large. Two plans with the same average return can land in very different places. Treat the return as a planning assumption, not a promise, and revisit the deposit as the real balance drifts from the smooth curve.',
+   '单一的回报数字假装市场每个月都交出相同的百分比。真实回报以参差的序列出现——余额还小时的早期低迷，远不如临近期限、余额已大时的低迷伤人。两个平均回报相同的计划，可能落到截然不同的位置。把回报当作一项规划假设，而非承诺；当实际余额偏离这条平滑曲线时，及时调整每月存款。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('The math plans one goal on clean assumptions. A few honest limits:',
+   '这套算法在干净的假设下规划单一目标。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>Inflation.</strong> A $100,000 goal set today buys less in ten years. If the goal is a future cost, either grow the target for inflation or read the expected return as a <em>real</em> (after-inflation) rate.',
+   '<strong>通胀。</strong>今天设定的 $100,000 目标，十年后能买的东西更少。若目标是一笔未来的支出，要么按通胀上调目标，要么把预期回报理解为<em>实际</em>（扣除通胀后）利率。') }}</li>
+<li>{{ t('<strong>Taxes and fees.</strong> Returns in a taxable account are trimmed by tax on gains, and fund fees quietly lower the rate that actually compounds. The plan uses the gross rate you type in.',
+   '<strong>税与费用。</strong>应税账户中的回报会被收益税削减，基金费用也会悄悄拉低真正参与复利的利率。本计划使用你输入的毛回报率。') }}</li>
+<li>{{ t('<strong>Timing of deposits.</strong> This assumes deposits at each month’s end. Depositing at the start of the month, or contributing yearly instead of monthly, shifts the answer slightly.',
+   '<strong>存款时点。</strong>这里假设在每月末存入。若在月初存入，或按年而非按月供款，答案会略有变化。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Compounding covers part of any long goal — the longer the horizon and the higher the return, the smaller the slice you have to deposit yourself.',
+   '复利会覆盖任何长期目标的一部分——期限越长、回报越高，需要你亲自存入的那一份就越小。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how a balance grows deposit by deposit with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or turn a start and end value into a rate with the <a href="', '看余额如何随每笔存款增长，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', '复合年增长率计算器') }}</a>{{ t('.', '把起止金额换算成回报率。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (do not re-derive) ───────────────────────────────────────
+  // inputs: {G goal, P current, r annualPct, mode 'date'|'contrib',
+  //          n years (date mode), c monthly (contrib mode)}.
+  // Returns an outputs object, or {ok:false, msg} for invalid input.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var G=inp.G, P=inp.P, r=inp.r;
+    if(!(G>0)) return {ok:false, msg:"Enter a goal amount above zero."};
+    if(!(P>=0)) return {ok:false, msg:"Enter your current savings (0 if starting from nothing)."};
+    if(!isFinite(r) || r<0) return {ok:false, msg:"Enter an expected annual return of zero or more."};
+    var i = r/100/12;
+
+    if(inp.mode === "date"){
+      var n = inp.n;
+      if(!(n>0)) return {ok:false, msg:"Enter a target horizon in years."};
+      var m = n*12;
+      // already met?
+      if(P >= G) return {ok:false, msg:"Your current savings already meet the goal — nothing more to save."};
+      var c;
+      if(i === 0){
+        c = (G - P) / m;
+      } else {
+        var f = Math.pow(1+i, m);
+        c = (G - P*f) * i / (f - 1);
+      }
+      if(!isFinite(c)) return {ok:false, msg:"That combination doesn't resolve — check your inputs."};
+      if(c < 0) c = 0; // growth alone already overshoots the goal within the horizon
+      var contributed = P + c*m;
+      var growth = G - contributed;
+      return {
+        ok:true, mode:"date", monthly:c, gap:(G-P), months:m,
+        contributed:contributed, growth:growth
+      };
+    } else {
+      var cc = inp.c;
+      if(!(cc>0)) return {ok:false, msg:"Enter a monthly contribution above zero."};
+      if(P >= G) return {ok:false, msg:"Your current savings already meet the goal — nothing more to save."};
+      var months;
+      if(i === 0){
+        months = (G - P) / cc;
+      } else {
+        var num = G*i + cc, den = P*i + cc;
+        if(!(num>0) || !(den>0) || num<=den){
+          return {ok:false, msg:"At this rate the goal isn't reachable — raise the contribution."};
+        }
+        months = Math.log(num/den) / Math.log(1+i);
+      }
+      if(!isFinite(months) || months<=0){
+        return {ok:false, msg:"At this rate the goal isn't reachable — raise the contribution."};
+      }
+      var totContrib = P + cc*months;
+      var grw = G - totContrib;
+      return {
+        ok:true, mode:"contrib", months:months, monthly:cc, gap:(G-P),
+        contributed:totContrib, growth:grw
+      };
+    }
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    // by date: G=100000, P=10000, r=6, n=10 → ≈ $499/mo
+    { in:{G:100000, P:10000, r:6, mode:"date", n:10}, want:{monthly:499, months:120} },
+    // by contribution, same plan run the other way → ~120 months
+    { in:{G:100000, P:10000, r:6, mode:"contrib", c:499.18}, want:{months:120} },
+    // zero-return by date: pure gap ÷ months
+    { in:{G:50000, P:5000, r:0, mode:"date", n:5}, want:{monthly:750, months:60} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("savings-goal self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 1){
+        console.error("savings-goal self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { goal:$("goal"), current:$("current"), rate:$("rate"), years:$("years"), monthly:$("monthly") };
+    var seg = document.querySelector('.ci-seg[data-name="mode"]');
+    var rowYears=$("row-years"), rowMonthly=$("row-monthly");
+    var outMain=$("out-main"), outUnit=$("out-unit"), outPlain=$("out-plain"),
+        outGap=$("out-gap"), outContrib=$("out-contrib"), outGrowth=$("out-growth"), outTime=$("out-time"),
+        copyBtn=$("copy-result"), copied=$("copied");
+    var mode = "date";
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0}); }
+    function money2(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function timeText(months){
+      var whole = Math.round(months*10)/10;
+      var yrs = Math.floor(months/12), mo = Math.round(months - yrs*12);
+      if(mo === 12){ yrs += 1; mo = 0; }
+      var parts=[];
+      if(yrs>0) parts.push(yrs + (yrs===1?" year":" years"));
+      if(mo>0) parts.push(mo + (mo===1?" month":" months"));
+      if(!parts.length) parts.push("under a month");
+      return parts.join(" ") + " (" + whole + " mo)";
+    }
+    function dash(){ outMain.textContent="—";
+      [outGap,outContrib,outGrowth,outTime].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ G:numFrom(els.goal), P:numFrom(els.current), r:numFrom(els.rate), mode:mode,
+                n:numFrom(els.years), c:numFrom(els.monthly) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outGap.textContent     = money(res.gap);
+      outContrib.textContent = money(res.contributed);
+      outGrowth.textContent  = money(res.growth);
+      if(res.growth >= 0){ outGrowth.className="pos"; } else { outGrowth.className="neg"; }
+
+      if(res.mode === "date"){
+        outMain.textContent = money(res.monthly);
+        outUnit.textContent = "per month";
+        outTime.textContent = timeText(res.months);
+        var plain = "Save about " + money2(res.monthly) + " a month to reach " +
+          money(inp.G) + " in " + timeText(res.months) + ". Of that, " + money(res.growth) +
+          " comes from returns — the rest is money you put in.";
+        outPlain.textContent = plain; outPlain.className="co-plain";
+      } else {
+        outMain.textContent = timeText(res.months);
+        outUnit.textContent = "to reach the goal";
+        outTime.textContent = timeText(res.months);
+        var plain2 = "At " + money2(res.monthly) + " a month you reach " +
+          money(inp.G) + " in " + timeText(res.months) + ". " + money(res.growth) +
+          " of the goal comes from returns along the way.";
+        outPlain.textContent = plain2; outPlain.className="co-plain";
+      }
+    }
+
+    function setMode(m){
+      mode = m;
+      var btns = seg.querySelectorAll("button");
+      btns.forEach(function(b){
+        var on = b.getAttribute("data-v")===m;
+        b.classList.toggle("on", on); b.setAttribute("aria-checked", on?"true":"false");
+      });
+      if(m==="date"){ rowYears.hidden=false; rowMonthly.hidden=true; }
+      else { rowYears.hidden=true; rowMonthly.hidden=false; }
+      render();
+    }
+    seg.addEventListener("click", function(e){
+      var b = e.target.closest("button[data-v]"); if(!b) return;
+      setMode(b.getAttribute("data-v"));
+    });
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      if(last.mode==="date"){
+        return "Savings goal: save " + money2(last.monthly) + "/mo to reach " +
+          money(numFrom(els.goal)) + " in " + timeText(last.months) + " — mastermind-x.com";
+      }
+      return "Savings goal: at " + money2(last.monthly) + "/mo you reach " +
+        money(numFrom(els.goal)) + " in " + timeText(last.months) + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["goal","current","rate","years","monthly"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    setMode("date");
+  });
+})();
+</script>
+{% endblock %}

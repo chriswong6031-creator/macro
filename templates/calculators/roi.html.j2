@@ -1,0 +1,218 @@
+{#=============================================================================
+  calculators/roi.html.j2 — ROI Calculator (Free Estate)
+  Cloned from the flagship exemplar (position_size.html.j2). Implements the
+  CONTRACT §7-style ROI formulas + the §6 WORKED_EXAMPLES self-check. Explainer
+  body follows §8 structure: direct answer → formula → worked example →
+  common trap → where it breaks → links. Bilingual EN/ZH via t() (§8 ratified
+  calculator dual-DOM exception).
+
+  Formulas: netProfit = V − C; roiPct = 100·(V−C)/C;
+  annualizedPct = 100·((V/C)^(1/n) − 1) when n>0 (requires V>0, C>0).
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('roi', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter what you put in and what it’s worth now. You get the return as a percentage, the dollar profit, and — if you add a holding period — the return expressed per year.',
+   '填入你投入的本金与如今的价值，即可得到以百分比表示的回报、美元利润，以及——若填入持有年限——折算成的年化回报。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Initial investment ($)', '初始投资（$）') }}</span>
+    <input id="cost" inputmode="decimal" autocomplete="off" placeholder="1,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Final value ($)', '最终价值（$）') }}</span>
+    <input id="value" inputmode="decimal" autocomplete="off" placeholder="1,500"></label>
+  <label class="ci ci-wide"><span class="ci-l">{{ t('Holding period (years)', '持有年限（年）') }} <span class="hint">{{ t('optional — for annualized return', '可选——用于年化回报') }}</span></span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="2"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('ROI', '投资回报率') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Enter what you invested and what it’s worth now.', '填入你的投资本金与现值即可计算。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Net profit', '净利润') }}</dt><dd id="out-profit">—</dd></div>
+    <div><dt>{{ t('Return %', '回报率') }}</dt><dd id="out-roi">—</dd></div>
+    <div><dt>{{ t('Annualized return', '年化回报') }}</dt><dd id="out-annual">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('Return on investment is your <strong>profit</strong> divided by what you <strong>put in</strong>, shown as a percent. Profit is simply the final value minus the initial investment; dividing it by the initial investment turns a raw dollar gain into a rate you can compare across trades of any size. Add a holding period and the same figures become an <em>annualized</em> return — the rate per year that would grow the initial investment to its final value.',
+   '投资回报率（ROI）是你的<strong>利润</strong>除以<strong>投入本金</strong>，以百分比表示。利润就是最终价值减去初始投资；用它除以初始投资，便把绝对的美元收益变成一个可以跨不同规模交易比较的比率。再填入持有年限，同样的数字就成了<em>年化</em>回报——即能让初始投资增长到最终价值的每年增长率。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Net profit</strong> = Final value − Initial investment', '<strong>净利润</strong> = 最终价值 − 初始投资') }}<br>
+{{ t('<strong>ROI</strong> = 100 × ( Final − Initial ) ÷ Initial', '<strong>投资回报率</strong> = 100 × ( 最终 − 初始 ) ÷ 初始') }}<br>
+{{ t('<strong>Annualized</strong> = 100 × ( ( Final ÷ Initial ) ^ (1 ÷ years) − 1 )', '<strong>年化回报</strong> = 100 × ( ( 最终 ÷ 初始 ) ^ (1 ÷ 年限) − 1 )') }}
+</div>
+<p>{{ t('The plain ROI treats the whole gain as one lump, no matter how long it took. The annualized figure spreads that gain across time and compounds it — which is why it is the only fair way to compare a return earned in three months against one earned over five years.',
+   '普通 ROI 把整段收益视为一个整体，不论花了多久。年化数字则把这段收益摊到时间上并按复利计算——这也是为什么它是把三个月赚到的回报与五年赚到的回报公平比较的唯一方式。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a trader invests <span class="num">$1,000</span> and, some time later, the position is worth <span class="num">$1,500</span>.',
+   '假设一位交易者投入 <span class="num">$1,000</span>，一段时间后，该仓位价值 <span class="num">$1,500</span>。') }}</p>
+<ul>
+<li>{{ t('Net profit = <span class="num">1,500 − 1,000 = $500</span>', '净利润 = <span class="num">1,500 − 1,000 = $500</span>') }}</li>
+<li>{{ t('ROI = <span class="num">100 × 500 ÷ 1,000 = 50%</span>', '投资回报率 = <span class="num">100 × 500 ÷ 1,000 = 50%</span>') }}</li>
+<li>{{ t('If that gain took <span class="num">2 years</span>: annualized = <span class="num">100 × (1.5^0.5 − 1) ≈ 22.47%</span> per year.',
+   '若这段收益历时 <span class="num">2 年</span>：年化 = <span class="num">100 × (1.5^0.5 − 1) ≈ 22.47%</span> 每年。') }}</li>
+</ul>
+</div>
+<p>{{ t('The headline 50% and the 22.47% per year describe the <em>same</em> trade. Over two years, earning about 22.47% each year and letting it compound lands you exactly at a 50% total gain. Neither number is “wrong” — they answer different questions.',
+   '醒目的 50% 与每年 22.47% 描述的是<em>同一</em>笔交易。两年内每年约赚 22.47% 并让其复利，最终恰好是 50% 的总收益。两个数字都没有「错」——它们回答的是不同的问题。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Comparing raw ROIs across different time spans', '拿不同时间跨度的原始 ROI 作比较') }}</span>
+<p>{{ t('A 50% return sounds better than a 20% return — until you learn the 50% took eight years and the 20% took one. Over a year, that 20% compounds to more than a 50% gain stretched across eight. Raw ROI hides time entirely, so a slow winner can masquerade as a fast one. Whenever the holding periods differ, compare the <em>annualized</em> figures, not the headline percentages.',
+   '50% 的回报听起来比 20% 好——直到你发现那 50% 花了八年，而 20% 只用了一年。一年内，20% 复利下来会超过摊在八年里的 50%。原始 ROI 完全掩盖了时间，因此一个缓慢的赢家可能伪装成快速的赢家。只要持有期不同，就该比较<em>年化</em>数字，而非醒目的百分比。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('This math cleanly measures a <em>single, closed</em> investment from one dollar in to one dollar out. It does not know about anything more complicated. A few honest limits:',
+   '这套算法能干净地衡量<em>单笔、已了结</em>的投资——从投入的一元到取出的一元。它并不了解任何更复杂的情形。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>Cash flows in between.</strong> If you added money, took some out, or reinvested dividends partway through, a simple final-minus-initial ROI misstates the result. Money-weighted returns (IRR) exist for that.',
+   '<strong>中途的现金流。</strong>若你中途加仓、部分取出或再投资分红，简单的「最终减初始」ROI 会失真。资金加权回报（内部收益率 IRR）正是为此而生。') }}</li>
+<li>{{ t('<strong>Fees, taxes and inflation.</strong> The formula reads gross value. Commissions, spreads, taxes on gains, and the erosion of purchasing power all sit outside it — a real, spendable return is smaller than the number here.',
+   '<strong>费用、税收与通胀。</strong>公式读取的是毛值。佣金、点差、收益税以及购买力的侵蚀都在其之外——真正可支配的回报要小于这里的数字。') }}</li>
+<li>{{ t('<strong>Annualizing very short holds.</strong> Compounding a two-week gain out to a full year assumes you can repeat it fifty more times. A single lucky trade annualized to a huge rate is arithmetic, not a forecast.',
+   '<strong>年化极短的持有期。</strong>把两周的收益折算成整年，等于假设你还能再重复五十次。把一笔运气好的交易年化成一个巨大的比率，只是算术，而非预测。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('ROI tells you how much a trade returned; annualized return tells you how fast. Only the second lets you compare trades that took different amounts of time.',
+   'ROI 告诉你一笔交易赚了多少；年化回报告诉你赚得多快。只有后者能让你比较耗时不同的交易。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a percentage into money-per-year with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', 'CAGR 计算器') }}</a>{{ t(', or see how repeated gains stack up in the <a href="', ' 把百分比折算成年增长率，或在 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t('.', ' 中查看反复收益如何累积。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (ROI — do not re-derive) ─────────────────────────────────
+  // inputs: {C initial, V final, n years (optional, 0 = not given)}.
+  // Returns an outputs object, or {ok:false,msg} for invalid input.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var C=inp.C, V=inp.V, n=inp.n;
+    if(!(C>0)) return {ok:false, msg:"Enter your initial investment (above zero)."};
+    if(!isFinite(V)) return {ok:false, msg:"Enter what the investment is worth now."};
+    var netProfit = V - C;
+    var roiPct = 100 * netProfit / C;
+    var annualPct = null;
+    var shortHold = false;
+    if(isFinite(n) && n > 0){
+      // annualized needs a positive final value (V/C)^(1/n) is only real when V>0
+      if(V > 0){ annualPct = 100 * (Math.pow(V / C, 1 / n) - 1); }
+      if(n < 1) shortHold = true;
+    }
+    return {
+      ok:true, netProfit:netProfit, roiPct:roiPct,
+      annualPct:annualPct, shortHold:shortHold, gain:(netProfit>=0)
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{C:1000, V:1500, n:0}, want:{netProfit:500, roiPct:50} },
+    { in:{C:1000, V:1500, n:2}, want:{netProfit:500, roiPct:50, annualPct:22.4745} },
+    { in:{C:5000, V:4000, n:0}, want:{netProfit:-1000, roiPct:-20} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("roi self-check "+i+": compute failed", got); return; }
+      for(k in w){
+        if(got[k] == null || Math.abs(got[k] - w[k]) > 0.01){
+          console.error("roi self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]);
+        }
+      }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { cost:$("cost"), value:$("value"), years:$("years") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outProfit=$("out-profit"), outRoi=$("out-roi"), outAnnual=$("out-annual"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var s=(el.value||"").replace(/,/g,"").trim();
+      if(s==="") return NaN; var v=parseFloat(s); return isFinite(v)?v:NaN; }
+    function money(n){ return (n<0?"-$":"$") + Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function pct(n){ return (n>=0?"+":"") + n.toFixed(Math.abs(n)<10?2:1) + "%"; }
+    function dash(){ outMain.textContent="—";
+      [outProfit,outRoi,outAnnual].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ C:numFrom(els.cost), V:numFrom(els.value), n:numFrom(els.years) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      var cls = res.gain ? "pos" : "neg";
+      outMain.textContent = pct(res.roiPct);
+      outMain.className = "";
+      outProfit.textContent = money(res.netProfit); outProfit.className = cls;
+      outRoi.textContent    = pct(res.roiPct);      outRoi.className = cls;
+      if(res.annualPct != null){
+        outAnnual.textContent = pct(res.annualPct);
+        outAnnual.className = (res.annualPct>=0?"pos":"neg");
+      } else {
+        outAnnual.textContent = "—"; outAnnual.className = "";
+      }
+
+      // Law 3: plain-word interpretation under the number
+      var verb = res.gain ? "gained" : "lost";
+      var plain = "This investment " + verb + " " + money(Math.abs(res.netProfit)) +
+        " — a " + pct(res.roiPct) + " return on what was put in.";
+      if(res.annualPct != null){
+        plain += " That works out to " + pct(res.annualPct) + " per year over the holding period.";
+      }
+      if(res.shortHold){
+        plain += " The period is under a year, so the annualized figure extrapolates a short result.";
+        outPlain.className = "co-plain warn";
+      } else {
+        outPlain.className = "co-plain";
+      }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var line = "ROI: " + pct(last.roiPct) + " · net " + money(last.netProfit);
+      if(last.annualPct != null){ line += " · " + pct(last.annualPct) + "/yr annualized"; }
+      return line + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["cost","value","years"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

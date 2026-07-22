@@ -1,0 +1,210 @@
+{#=============================================================================
+  calculators/forex_pip_value.html.j2 — Forex Pip Value Calculator
+  Clones the position_size.html.j2 flagship structure exactly (CONTRACT §6 DOM
+  + §6 WORKED_EXAMPLES self-check). Formula: pipValueQuote = pipSize · U (in the
+  quote currency); pipValueAccount = pipValueQuote · q, where q converts one unit
+  of the quote currency into the account currency (q=1 when they are the same).
+
+  compute() is PURE (no DOM); wire() does all DOM reads/writes; WORKED_EXAMPLES
+  runs each fixture through compute() on load and console.error's any mismatch
+  (silent when green). Never renders NaN/Infinity; empty/invalid → a plain-word
+  sentence in .co-plain and "—" in the numbers. Inputs accept commas.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('forex-pip-value', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter your position size, the pip size for the pair, and the rate that turns the quote currency into your account currency. You get the cash value of a one-pip move.',
+   '填入仓位规模、货币对的一个点大小，以及把报价货币换算成账户货币的汇率，即可得到一个点波动所对应的现金价值。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Position size (units)', '仓位规模（单位）') }} <span class="hint">{{ t('100,000 = 1 standard lot', '100,000 = 1 标准手') }}</span></span>
+    <input id="units" inputmode="decimal" autocomplete="off" placeholder="100,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Quote → account rate', '报价→账户 汇率') }} <span class="hint">{{ t('1 if quote = account currency', '报价与账户货币相同则为 1') }}</span></span>
+    <input id="qrate" inputmode="decimal" autocomplete="off" placeholder="1"></label>
+  <div class="ci ci-wide">
+    <span class="ci-l">{{ t('Pip size', '一个点大小') }} <span class="hint">{{ t('0.01 for JPY-quoted pairs', 'JPY 报价货币对为 0.01') }}</span></span>
+    <div class="ci-seg" role="radiogroup" data-name="pipsize" aria-label="Pip size">
+      <button class="on" type="button" data-v="0.0001" role="radio" aria-checked="true">{{ t('0.0001 standard', '0.0001 标准') }}</button>
+      <button type="button" data-v="0.01" role="radio" aria-checked="false">{{ t('0.01 JPY pairs', '0.01 日元对') }}</button>
+    </div>
+  </div>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('per pip (account)', '每点（账户货币）') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in the fields to value one pip.', '填入字段即可计算一个点的价值。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Pip value (quote ccy)', '每点价值（报价货币）') }}</dt><dd id="out-quote">—</dd></div>
+    <div><dt>{{ t('Pip value (account)', '每点价值（账户货币）') }}</dt><dd id="out-account">—</dd></div>
+    <div><dt>{{ t('Per 0.1 lot', '每 0.1 手') }}</dt><dd id="out-mini">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('The value of one pip is your <strong>pip size</strong> times your <strong>position size</strong>, expressed in the quote currency, then converted into your account currency. On a standard 100,000-unit lot of a pair quoted in your own currency, one pip is worth about <span class="num">10</span> of that currency — and that number scales straight up and down with the size you trade.',
+   '一个点的价值等于<strong>一个点大小</strong>乘以<strong>仓位规模</strong>，先以报价货币表示，再换算成你的账户货币。对于以你自身货币报价的一手 100,000 单位标准仓位，一个点约值该货币的 <span class="num">10</span> 个单位——而这个数字会随着交易规模等比例增减。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Pip value (quote)</strong> = Pip size × Position size', '<strong>每点价值（报价）</strong> = 一个点大小 × 仓位规模') }}<br>
+{{ t('<strong>Pip value (account)</strong> = Pip value (quote) × Quote→account rate', '<strong>每点价值（账户）</strong> = 每点价值（报价） × 报价→账户 汇率') }}<br>
+{{ t('Per 0.1 lot (10,000 units) = Pip size × 10,000 × Quote→account rate', '每 0.1 手（10,000 单位） = 一个点大小 × 10,000 × 报价→账户 汇率') }}
+</div>
+<p>{{ t('A pip is the standard smallest quoted step of an exchange rate — <span class="num">0.0001</span> for most pairs, and <span class="num">0.01</span> for pairs quoted in Japanese yen, where prices carry fewer decimals. The pip value falls out of the currency the pair is <em>quoted</em> in (the second one, e.g. the USD in EUR/USD); the rate then carries that into the currency your account is denominated in. When the quote currency already <em>is</em> your account currency, the rate is <span class="num">1</span> and the two figures match.',
+   '一个点是汇率报价的标准最小变动单位——多数货币对为 <span class="num">0.0001</span>，而以日元报价的货币对为 <span class="num">0.01</span>，因为其价格小数位更少。每点价值由货币对的<em>报价</em>货币决定（即第二种货币，例如 EUR/USD 中的 USD）；汇率再把它换算成你账户所计价的货币。当报价货币本身<em>就是</em>你的账户货币时，汇率为 <span class="num">1</span>，两个数值相等。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a trader holds one standard lot — <span class="num">100,000</span> units — of a USD-quoted pair, and their account is also in USD (so the rate is <span class="num">1</span>).',
+   '假设一位交易者持有一手标准仓位——<span class="num">100,000</span> 单位——的以美元报价的货币对，且账户同样以美元计价（因此汇率为 <span class="num">1</span>）。') }}</p>
+<ul>
+<li>{{ t('Pip value (quote) = <span class="num">0.0001 × 100,000 = $10.00</span>', '每点价值（报价） = <span class="num">0.0001 × 100,000 = $10.00</span>') }}</li>
+<li>{{ t('Pip value (account) = <span class="num">10.00 × 1 = $10.00</span>', '每点价值（账户） = <span class="num">10.00 × 1 = $10.00</span>') }}</li>
+<li>{{ t('Trade a mini lot (<span class="num">10,000</span> units) instead and one pip is worth <span class="num">$1.00</span>; a micro lot (<span class="num">1,000</span>) makes it <span class="num">$0.10</span>.',
+   '若改为交易一手迷你仓位（<span class="num">10,000</span> 单位），一个点值 <span class="num">$1.00</span>；一手微型仓位（<span class="num">1,000</span> 单位）则为 <span class="num">$0.10</span>。') }}</li>
+</ul>
+<p>{{ t('For a yen pair — pip size <span class="num">0.01</span>, one standard lot — a pip is worth <span class="num">1,000 JPY</span>. If the account is in USD and one USD buys ~150 JPY, the rate is <span class="num">1 ÷ 150 ≈ 0.006667</span>, so the pip is <span class="num">1,000 × 0.006667 ≈ $6.67</span>.',
+   '对于日元货币对——一个点大小 <span class="num">0.01</span>，一手标准仓位——一个点值 <span class="num">1,000 日元</span>。若账户以美元计价，且 1 美元约兑 150 日元，则汇率为 <span class="num">1 ÷ 150 ≈ 0.006667</span>，因此一个点约为 <span class="num">1,000 × 0.006667 ≈ $6.67</span>。') }}</p>
+</div>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Using the wrong rate — or forgetting it entirely', '用错汇率——或干脆忘了它') }}</span>
+<p>{{ t('The rate here converts the <em>quote</em> currency into your account currency, not the base currency. On EUR/USD with a USD account, that rate is simply <span class="num">1</span> and often gets dropped without harm. But on a cross where neither currency is your account currency — say GBP/JPY held in a USD account — the pip is first worth a number of yen, and you must convert <em>from the yen</em> into dollars. Plug in the base-currency rate by mistake and the pip value can be off by a wide margin.',
+   '这里的汇率是把<em>报价</em>货币换算成你的账户货币，而不是基准货币。对于以美元计价账户的 EUR/USD，该汇率就是 <span class="num">1</span>，省略也无妨。但对于两种货币都不是你账户货币的交叉盘——比如以美元账户持有的 GBP/JPY——一个点先以若干日元计价，你必须<em>从日元</em>换算成美元。若误填基准货币的汇率，每点价值可能相差甚远。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('This math gives the pip value cleanly for a single position at a single moment. A few honest limits:',
+   '这套算法能干净地算出单一仓位在某一时刻的每点价值。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>The rate moves.</strong> Your quote→account rate is itself an exchange rate that drifts through the session, so the pip value shifts slightly as it does. For sizing, the value at entry is close enough; for a precise mark, use the current rate.',
+   '<strong>汇率是变动的。</strong>报价→账户汇率本身也是一个会在盘中漂移的汇率，因此每点价值也会随之小幅变化。用于定仓时，入场时的数值已足够接近；若需精确计价，请使用当前汇率。') }}</li>
+<li>{{ t('<strong>Fractional pips and spreads.</strong> Many brokers quote a fifth decimal (a "pipette", one-tenth of a pip). This tool values a whole pip; the spread you pay is a separate cost, not part of the pip value.',
+   '<strong>零点几个点与点差。</strong>许多经纪商报第五位小数（即“分点”，等于一个点的十分之一）。本工具计算的是一个整点的价值；你支付的点差是一项独立成本，不计入每点价值。') }}</li>
+<li>{{ t('<strong>Contract-size quirks.</strong> A "lot" is a convention, not a law — some instruments and CFDs use non-standard contract sizes. Enter the actual number of units you hold rather than assuming 100,000.',
+   '<strong>合约规模的特殊情形。</strong>“手”是一种约定俗成，而非硬性规则——某些品种和差价合约采用非标准合约规模。请填入你实际持有的单位数，而不要默认为 100,000。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Pip value scales one-for-one with position size, and it lands in the quote currency before it lands in yours.',
+   '每点价值与仓位规模一一对应地缩放，且它先落在报价货币上，再落到你的账户货币上。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a pip value into a risk-based share of your account with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t(', or read the lesson on <a href="', '把每点价值换算成占账户的风险比例，或阅读 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t('.', ' 这节课。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (do not re-derive) ────────────────────────────────────────
+  // inputs: {U units, p pipSize, q quote→account rate}. Returns an outputs
+  // object, or {ok:false, msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var U=inp.U, p=inp.p, q=inp.q;
+    if(!(U>0)) return {ok:false, msg:"Enter a position size above zero (100,000 = 1 standard lot)."};
+    if(!(p>0)) return {ok:false, msg:"Choose a pip size."};
+    if(!(q>0)) return {ok:false, msg:"Enter the quote→account rate (use 1 if the quote currency is your account currency)."};
+    var pipQuote = p * U;
+    var pipAccount = pipQuote * q;
+    // a mini lot is a fixed 10,000 units (0.1 standard lot) — a reference figure
+    // that does NOT depend on the size entered above
+    var perMiniLot = p * 10000 * q;
+    return {
+      ok:true, pipQuote:pipQuote, pipAccount:pipAccount, perMiniLot:perMiniLot,
+      sameCcy: Math.abs(q - 1) < 1e-9
+    };
+  }
+
+  // ── self-check: run the canonical fixtures on load, console.error on drift ──
+  var WORKED_EXAMPLES = [
+    { in:{U:100000, p:0.0001, q:1},          want:{pipQuote:10,   pipAccount:10,   perMiniLot:1} },
+    { in:{U:10000,  p:0.0001, q:1},          want:{pipQuote:1,    pipAccount:1,    perMiniLot:1} },
+    { in:{U:100000, p:0.01,   q:1/150},      want:{pipQuote:1000, pipAccount:6.6667, perMiniLot:0.66667} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("forex-pip-value self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.01){
+        console.error("forex-pip-value self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { units:$("units"), qrate:$("qrate") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outQuote=$("out-quote"), outAccount=$("out-account"), outMini=$("out-mini"),
+        copyBtn=$("copy-result"), copied=$("copied");
+    var seg = document.querySelector('.ci-seg[data-name="pipsize"]');
+    var pipSize = 0.0001;
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function plain(n){ return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function dash(){ outMain.textContent="—";
+      [outQuote,outAccount,outMini].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ U:numFrom(els.units), p:pipSize, q:numFrom(els.qrate) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent   = money(res.pipAccount);
+      outQuote.textContent  = plain(res.pipQuote);
+      outAccount.textContent= money(res.pipAccount);
+      outMini.textContent   = money(res.perMiniLot);
+      // Law 3: plain-word interpretation under the number
+      var line = "One pip moves this position by " + money(res.pipAccount) + " in your account currency";
+      if(res.sameCcy){
+        line += " — the quote currency is your account currency, so the two figures match.";
+      } else {
+        line += " (" + plain(res.pipQuote) + " in the quote currency, converted at your rate).";
+      }
+      outPlain.textContent = line; outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Pip value: " + money(last.pipAccount) + " per pip (account) · " +
+        plain(last.pipQuote) + " in quote currency · " + money(last.perMiniLot) +
+        " per 0.1 lot — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    if(seg){
+      seg.addEventListener("click", function(e){
+        var b=e.target.closest("button[data-v]"); if(!b) return;
+        pipSize = parseFloat(b.getAttribute("data-v"));
+        [].forEach.call(seg.querySelectorAll("button"), function(x){
+          var on = x===b; x.classList.toggle("on", on); x.setAttribute("aria-checked", on?"true":"false"); });
+        render();
+      });
+    }
+    ["units","qrate"].forEach(function(id){ els[id].addEventListener("input", render); });
+    render();
+  });
+})();
+</script>
+{% endblock %}

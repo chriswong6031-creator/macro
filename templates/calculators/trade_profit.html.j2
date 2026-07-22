@@ -8,6 +8,9 @@
   toc, related, cta.
 =============================================================================#}
 {% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('trade-profit', 'crown') }}{% endblock %}
 
 {% block calc_form %}
 <p class="cc-lede">{{ t('Choose direction, fill in your prices and quantity. Add dates to see an annualized return — useful for comparing trades of different lengths.',

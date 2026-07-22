@@ -58,6 +58,26 @@ _URL_MAP: frozenset[str] = frozenset({
     "/tools/calculators/compounding.html",
     "/tools/calculators/cagr.html",
     "/tools/calculators/drawdown-recovery.html",
+    "/tools/calculators/retirement.html",
+    "/tools/calculators/roi.html",
+    "/tools/calculators/dividend.html",
+    "/tools/calculators/dollar-cost-averaging.html",
+    "/tools/calculators/rule-of-72.html",
+    "/tools/calculators/percentage-gain-loss.html",
+    "/tools/calculators/savings-goal.html",
+    "/tools/calculators/inflation.html",
+    "/tools/calculators/net-worth.html",
+    "/tools/calculators/options-profit.html",
+    "/tools/calculators/stock-average.html",
+    "/tools/calculators/margin.html",
+    "/tools/calculators/forex-pip-value.html",
+    "/tools/calculators/short-selling.html",
+    "/tools/calculators/covered-call.html",
+    "/tools/calculators/stop-loss-take-profit.html",
+    "/tools/calculators/kelly-criterion.html",
+    "/tools/calculators/sharpe-ratio.html",
+    "/tools/calculators/portfolio-rebalancing.html",
+    "/tools/calculators/risk-of-ruin.html",
     "/tools/spreadsheets/trading-journal.html",
     "/assets/downloads/mastermind-trading-journal.xlsx",
     "/learn/index.html",
@@ -827,6 +847,26 @@ _CALC_TEMPLATES = [
     "compounding",
     "cagr",
     "drawdown_recovery",
+    "retirement",
+    "roi",
+    "dividend",
+    "dollar_cost_averaging",
+    "rule_of_72",
+    "percentage_gain_loss",
+    "savings_goal",
+    "inflation",
+    "net_worth",
+    "options_profit",
+    "stock_average",
+    "margin",
+    "forex_pip_value",
+    "short_selling",
+    "covered_call",
+    "stop_loss_take_profit",
+    "kelly_criterion",
+    "sharpe_ratio",
+    "portfolio_rebalancing",
+    "risk_of_ruin",
 ]
 
 
@@ -948,6 +988,11 @@ def render_all(out_dir: Path) -> None:
     # Calculator templates live at templates/calculators/<slug>.html.j2
     calc_tmpl_dir = _TEMPLATES_DIR / "calculators"
     if calc_registry and calc_tmpl_dir.exists():
+        # cluster -> ordered slugs, for sibling "Keep going" links (SEO internal
+        # linking; registry order is display order so this is deterministic)
+        _by_cluster: dict[str, list[str]] = {}
+        for _s, _e in calc_registry.items():
+            _by_cluster.setdefault(_e.get("cluster", ""), []).append(_s)
         for slug, entry in calc_registry.items():
             tmpl_name = f"calculators/{slug.replace('-', '_')}.html.j2"
             try:
@@ -969,6 +1014,17 @@ def render_all(out_dir: Path) -> None:
             lesson_title = slug_title_map.get(related_lesson_slug, related_lesson_slug)
 
             calc_related: dict[str, Any] = {}
+            # sibling calculators from the same cluster (up to 3) — internal
+            # linking that fills the "Keep going" rail even when there is no
+            # matching lesson
+            cluster = entry.get("cluster", "")
+            siblings = [s for s in _by_cluster.get(cluster, []) if s != slug][:3]
+            if siblings:
+                calc_related["calculators"] = [
+                    {"href": f"/tools/calculators/{s}.html",
+                     "title": calc_registry[s].get("title", s)}
+                    for s in siblings
+                ]
             if lesson_href:
                 calc_related["lessons"] = [{"href": lesson_href, "title": lesson_title}]
             # Always include trading journal as a live link

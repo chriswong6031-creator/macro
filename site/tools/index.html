@@ -2,7 +2,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="../data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tools — Mastermind</title>
@@ -21,13 +20,384 @@
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="../apple-touch-icon.png"><link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png"><link rel="stylesheet" href="../theme.css"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools"}]}</script>
 
-<link rel="stylesheet" href="../theme.css?v=de86232e"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools"}]}</script>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
+   The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
+   deep canvas, hairline-precise panels, tabular mono numerals, Inter UI, and a
+   regime-rail section-header system. All tokens are SCOPED to body.estate so
+   the rest of the site is byte-untouched; theme.css (shared/global) is never
+   edited. Colour routes through house vars so dark/light + the zh red/green
+   swap propagate at paint. Aesthetic north star: reads in 2 seconds; colour
+   spent only on signal.
+   ══════════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;}
+body.estate{
+  /* deepened terminal canvas — richer "screen" black, scoped to the estate */
+  --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+  /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+  --num:"SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono",
+        "Roboto Mono", Menlo, Consolas, monospace;
+  /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+     genuine captions only (highest-leverage readability fix, per macro) */
+  --ink-1: var(--text);
+  --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+  --ink-3: var(--muted);
+  /* hairlines + inset surface material */
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --hair-strong: var(--line);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --rule: var(--hair-strong);                    /* legacy alias — section rules */
+  --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
+        0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+  /* type scale — the macro 10-step scale (estate prose runs a touch larger:
+     --fs-md/15px reading copy since /learn + /blog are long-form) */
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
+  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* spacing grid (4px) + radii + eyebrow tracking */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+  /* the single regime/accent rail on every section header */
+  --rail: var(--link);
+  --measure: 70ch;                               /* long-form reading line length */
+}
+html[data-theme="light"] body.estate{
+  /* restore the airy light canvas (mirrors macro's light override) */
+  --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+  --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --hair: color-mix(in srgb, var(--line) 90%, transparent);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
+        0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+}
+html body.estate{
+  background:var(--bg); color:var(--ink-1);
+  font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.6;
+  margin:0; padding:0 0 72px;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+html,body{overflow-x:clip;}                                 /* 390px bleed guard */
+body.estate a{color:var(--link); text-decoration:none;}
+body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
+.mono,body.estate .mono{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
+.est-wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
 
-<link rel="stylesheet" href="../assets/css/c816e0da.css?v=c816e0da">
+/* ── the section-header signature: the REGIME RAIL ──────────────────────────
+   Every section title in the estate wears the macro rail — a 3px gradient bar
+   before a strong sentence-case title, a mono eyebrow above, a hairline rule to
+   the edge. This single shared rhythm is the motif that unifies hub, calculator
+   and article (it replaces the old plotted-line underline). Applied to the
+   estate section-header classes below. */
+.est-sec-rule{border:none; height:1px; background:var(--hair-strong); margin:0;}
+
+/* ── glyph family (.egl) — bespoke per-calculator line-art, macro idiom ──────
+   Hairline strokes, monochrome + one --link accent, draw-on reveal. Geometry
+   lives in _estate_glyphs.html.j2; styling is here so both variants share it. */
+.egl{color:var(--ink-2); overflow:visible;}
+.egl [class^="egl-"], .egl [class*=" egl-"]{
+  stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.egl path.egl-still, .egl path.egl-draw, .egl path.egl-draw2,
+.egl path.egl-mark, .egl path.egl-up, .egl path.egl-down{fill:none;}
+.egl .egl-still{stroke:var(--ink-3); stroke-width:1.5; opacity:.6;}
+.egl .egl-still-dot{fill:var(--ink-3); opacity:.7;}
+.egl .egl-draw, .egl .egl-draw2{stroke:var(--ink-1); stroke-width:1.7;}
+.egl .egl-fill{fill:color-mix(in srgb,var(--ink-2) 22%,transparent);
+  stroke:var(--ink-2); stroke-width:1.4;}
+/* the single accent — the --link mark (node, arrow, cap, ramp arc) */
+.egl .egl-mark, .egl .egl-mark-dot, .egl .egl-draw-fill{stroke:var(--link);}
+.egl .egl-mark{stroke-width:1.7;}
+.egl .egl-mark-dot{fill:var(--link); stroke:none;}
+.egl .egl-draw-fill{fill:color-mix(in srgb,var(--link) 22%,transparent); stroke-width:1.5;}
+.egl .egl-up{stroke:var(--up); stroke-width:1.7;}
+.egl .egl-down{stroke:var(--down); stroke-width:1.7;}
+.egl .egl-down-dot{fill:var(--down); stroke:none;}
+/* draw-on-reveal ink (traced lines) */
+.egl .egl-draw, .egl .egl-draw2{stroke-dasharray:120; stroke-dashoffset:120;
+  animation:eglDraw 1000ms cubic-bezier(.33,.62,.26,1) 140ms forwards;}
+.egl .egl-draw2{animation-delay:260ms;}
+.egl .egl-mark-dot, .egl .egl-down-dot{opacity:0;
+  animation:eglPop .01s linear 1140ms forwards;}
+@keyframes eglDraw{to{stroke-dashoffset:0;}}
+@keyframes eglPop{to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){
+  .egl .egl-draw, .egl .egl-draw2{animation:none; stroke-dashoffset:0;}
+  .egl .egl-mark-dot, .egl .egl-down-dot{animation:none; opacity:1;}
+}
+
+/* ── estate top bar (slim; own toggles reuse house .theme-switch/.lang-toggle) ── */
+.est-bar{position:sticky; top:0; z-index:60; background:color-mix(in srgb,var(--bg) 84%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px);
+  border-bottom:1px solid var(--line);}
+.est-bar-in{max-width:1120px; margin:0 auto; padding:9px 24px;
+  display:flex; align-items:center; gap:16px;}
+.est-brand{display:inline-flex; align-items:center; gap:9px; flex:none; text-decoration:none;
+  padding:3px 8px 3px 4px; border-radius:10px; transition:background .18s;}
+.est-brand:hover{background:color-mix(in srgb,var(--link) 10%,transparent); text-decoration:none;}
+.est-brand .glyph{width:26px; height:26px; flex:none; filter:drop-shadow(0 2px 6px rgba(40,56,128,.30));}
+.est-brand .word{font-family:var(--font-ui); font-weight:900; font-size:13px; letter-spacing:.06em;
+  color:var(--text); white-space:nowrap;}
+.est-brand .word .sub{display:block; font-weight:600; font-size:9px; letter-spacing:.14em;
+  color:var(--muted); margin-top:1px;}
+.est-nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex-wrap:wrap; min-width:0;}
+.est-nav a{font-family:var(--font-ui); font-size:13.5px; font-weight:500; color:var(--muted);
+  padding:6px 10px; border-radius:8px; text-decoration:none; white-space:nowrap;
+  transition:color .16s,background .16s;}
+.est-nav a:hover,.est-nav a[aria-current="page"]{color:var(--text);
+  background:color-mix(in srgb,var(--link) 11%,var(--panel2)); text-decoration:none;}
+.est-ctrls{margin-left:auto; display:flex; align-items:center; gap:9px; flex:none;}
+.est-ctrls .est-cta{font-family:var(--font-ui);}
+.est-ctrls .est-cta .cta-short{display:none;}
+/* the house animated toggles are styled by theme.css? No — those visuals live in
+   nav CSS the estate doesn't load. Give .theme-switch / .lang-toggle a compact,
+   self-contained skin here so the class-bound theme.js listeners still fire. */
+.est-ctrls .theme-switch{font:600 12px/1 var(--font-ui); cursor:pointer;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  border-radius:999px; padding:6px 10px; display:inline-flex; align-items:center; gap:5px;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:color .16s,border-color .16s;}
+.est-ctrls .theme-switch:hover{color:var(--text); border-color:var(--gbtn-brd-hover);}
+.est-ctrls .theme-switch .ic{font-size:13px; line-height:1;}
+.est-ctrls .theme-switch .sun{display:none;} .est-ctrls .theme-switch .moon{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .sun{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .moon{display:none;}
+.est-ctrls .theme-switch .knob{display:none;}
+.est-ctrls .lang-toggle{position:relative; display:inline-flex; cursor:pointer; user-select:none;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); border-radius:999px; overflow:hidden;
+  font:600 11.5px/1 var(--font-ui);}
+.est-ctrls .lang-toggle .opt{padding:6px 9px; color:var(--muted); transition:color .16s;}
+.est-ctrls .lang-toggle .pill{display:none;}
+html:not([data-lang="zh"]) .est-ctrls .lang-toggle .en-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+:where(.est-brand,.est-nav a,.est-ctrls .theme-switch,.est-ctrls .lang-toggle,.est-cta):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--link) 70%,transparent); outline-offset:2px;}
+@media (max-width:720px){
+  .est-bar-in{flex-wrap:wrap; gap:8px 12px; padding:8px 16px;}
+  .est-nav{order:3; width:100%; margin-left:0; gap:1px;}
+  .est-nav a{padding:6px 9px; font-size:13px;}
+  .est-ctrls{gap:7px;}
+  /* compact CTA on phones: hide the long label, show the short bilingual one */
+  .est-ctrls .est-cta .cta-long{display:none;}
+  .est-ctrls .est-cta .cta-short{display:inline;}
+}
+
+/* ── breadcrumb ─────────────────────────────────────────────────────────────── */
+.est-crumb{max-width:1120px; margin:18px auto 0; padding:0 24px;
+  font-family:var(--font-ui); font-size:12.5px; color:var(--muted);}
+.est-crumb ol{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:7px;}
+.est-crumb a{color:var(--muted);} .est-crumb a:hover{color:var(--text);}
+.est-crumb .sep{opacity:.4;}
+.est-crumb li[aria-current="page"]{color:var(--text);}
+
+/* ── shared prose vocabulary (CONTRACT §4 body classes) — terminal, not serif ── */
+.est-prose{font-size:var(--fs-md); line-height:1.72; color:var(--ink-1);}
+.est-prose > *{max-width:var(--measure);}
+/* h2 wears the REGIME RAIL — the estate-wide section signature. A 3px gradient
+   bar leads a strong sentence-case title with a hairline rule to the edge; the
+   mono "01/02" mark sits after the rail. This is the macro header idiom. */
+.est-prose h2{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 4px); font-weight:700;
+  line-height:1.28; letter-spacing:-.01em; margin:38px 0 14px; scroll-margin-top:76px;
+  display:flex; align-items:center; gap:11px; padding:0 0 var(--sp-3);
+  border-bottom:1px solid var(--hair-strong);}
+.est-prose h2::before{content:""; flex:none; align-self:center; width:3px; height:19px;
+  border-radius:2px; background:linear-gradient(180deg, var(--rail),
+    color-mix(in srgb, var(--rail) 35%, transparent));}
+.est-prose h2 .est-h2-mark{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--ink-3); flex:none;}
+html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
+.est-prose h3{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:700;
+  margin:26px 0 6px; color:var(--ink-1); letter-spacing:-.005em;}
+.est-prose p{margin:12px 0; color:var(--ink-1);}
+.est-prose ul,.est-prose ol{margin:12px 0; padding-left:24px;}
+.est-prose li{margin:7px 0;}
+.est-prose li::marker{color:var(--ink-3);}
+.est-prose strong{font-weight:700; color:var(--ink-1);}
+.est-prose em{font-style:italic;}
+.est-prose code{font-family:var(--num); font-size:.88em; background:var(--panel2);
+  border:1px solid var(--hair-strong); border-radius:5px; padding:1px 6px;}
+.est-prose a{border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-prose a:hover{border-bottom-color:var(--link); text-decoration:none;}
+.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rail);
+  color:var(--ink-1); font-style:italic; opacity:.94;}
+
+/* callouts — lead / warn / key (house colours, mono heading label) */
+.est-prose .callout{border-radius:var(--r-md); padding:15px 18px; margin:18px 0;
+  border:1px solid var(--hair-strong); background:var(--panel2); position:relative; max-width:var(--measure);}
+.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+.est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
+.est-prose .callout.lead{border-left:4px solid var(--link);}
+.est-prose .callout.lead .co-h{color:var(--link);}
+.est-prose .callout.warn{border-left:4px solid var(--warn);
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel2));}
+.est-prose .callout.warn .co-h{color:var(--warn);}
+.est-prose .callout.key{border-left:4px solid var(--ok);
+  background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
+.est-prose .callout.key .co-h{color:var(--ok);}
+
+/* formula — the desk's chalk line. Mono, on a faint tile with an accent edge. */
+.est-prose .formula{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:var(--fs-md); line-height:1.7; background:var(--tile);
+  border:1px solid var(--hair-strong); border-left:3px solid var(--rail);
+  border-radius:var(--r-md); padding:16px 18px; margin:18px 0; overflow-x:auto;
+  max-width:var(--measure); color:var(--ink-1); letter-spacing:.005em;}
+.est-prose .formula strong{color:var(--link); font-weight:700;}
+
+/* worked example — a machined tile with a mono heading + top hairline. */
+.est-prose .worked{border:1px solid var(--hair-strong); border-radius:var(--r-md); margin:18px 0;
+  padding:16px 18px; max-width:var(--measure); box-shadow:var(--ms);
+  background:linear-gradient(var(--hair-strong),var(--hair-strong)) 0 0/100% 1px no-repeat, var(--panel);}
+.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);}
+.est-prose .worked .num,.est-prose .worked code{font-family:var(--num); font-variant-numeric:tabular-nums;}
+
+/* data table — the terminal ruled column (mono body, mono caps head) */
+.est-prose table.data{border-collapse:collapse; width:100%; max-width:var(--measure);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm); margin:18px 0;}
+.est-prose table.data th{text-align:left; padding:9px 12px; background:var(--panel2);
+  color:var(--ink-3); font-family:var(--num); font-weight:700; font-size:var(--fs-micro);
+  letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid var(--hair-strong);}
+.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--hair); vertical-align:top; color:var(--ink-1);}
+.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--link) 6%,transparent);}
+.est-prose table.data .num{font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right;}
+.est-tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:18px 0; max-width:var(--measure);}
+.est-tbl-scroll table.data{margin:0;}
+
+.est-prose figure{margin:20px 0; max-width:var(--measure);}
+.est-prose figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin-top:8px;}
+
+/* ── related rail + CTA (shared by article + calculator layouts) ────────────── */
+.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--hair-strong);}
+.est-related .rel-h{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 12px;}
+.est-related .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+.est-relcard{display:block; border:1px solid var(--hair-strong); border-radius:var(--r-md); padding:13px 15px;
+  background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
+.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
+  box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-relcard .rc-kind{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.09em;
+  text-transform:uppercase; color:var(--link);}
+.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--font-ui); font-size:var(--fs-md);
+  font-weight:700; color:var(--ink-1); line-height:1.32; letter-spacing:-.005em;}
+
+.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--hair-strong));
+  border-radius:var(--r-lg); padding:22px 24px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
+    var(--panel); box-shadow:var(--ms); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
+.est-cta-block .cta-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--link);}
+.est-cta-block .cta-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+  margin:3px 0 0; line-height:1.3; letter-spacing:-.01em; color:var(--ink-1);}
+.est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
+
+/* ── estate footer ──────────────────────────────────────────────────────────── */
+.est-footer{max-width:1120px; margin:56px auto 0; padding:24px 24px 8px;
+  border-top:1px solid var(--hair-strong); font-family:var(--font-ui);}
+.est-foot-links{display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:14px;}
+.est-foot-col{display:flex; flex-direction:column; gap:5px; min-width:150px;}
+.est-foot-col .fh{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:3px;}
+.est-foot-col a{font-size:var(--fs-sm); color:var(--ink-2); text-decoration:none;}
+.est-foot-col a:hover{color:var(--ink-1);}
+.est-foot-disc{font-size:var(--fs-sm); color:var(--ink-3); line-height:1.6;
+  border-top:1px solid var(--hair-strong); padding-top:13px; margin-top:6px;}
+.est-foot-disc .mono{opacity:.85;}
+
+/* ── page header — the estate hero: mono kicker + terminal title + dek ────────
+   The plotted-line signature is retired (the regime rail is the new motif);
+   .est-kicker-plot / .plot-line are hidden so the inlined SVGs collapse cleanly
+   without touching every template. The eyebrow now wears a short accent rule. */
+.plot-line, .est-kicker-plot{display:none !important;}
+.est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+.est-kicker{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk);
+  text-transform:uppercase; color:var(--link); display:inline-flex; align-items:center; gap:9px;
+  margin:0 0 12px;}
+.est-kicker::before{content:""; width:22px; height:2px; border-radius:1px;
+  background:linear-gradient(90deg, var(--link), color-mix(in srgb,var(--link) 20%,transparent));}
+.est-title{font-family:var(--font-ui); font-size:clamp(28px,4.4vw,var(--fs-display)); font-weight:800;
+  line-height:1.06; letter-spacing:-.025em; margin:0; color:var(--ink-1);}
+html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
+.est-dek{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); line-height:1.5; color:var(--ink-2);
+  margin:14px 0 0; max-width:62ch;}
+.est-meta{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin:16px 0 0;
+  display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
+.est-meta .dot{opacity:.4;}
+
+@media (max-width:600px){
+  html body.estate{font-size:var(--fs-body);}
+  .est-wrap,.est-head,.est-crumb,.est-footer{padding-left:16px; padding-right:16px;}
+  .est-prose{font-size:var(--fs-md);}
+  .est-prose h2{font-size:var(--fs-h2); margin:30px 0 10px;}
+  .est-prose h3{font-size:var(--fs-body);}
+  .est-dek{font-size:var(--fs-md);}
+  .est-cta-block{padding:18px; gap:14px;}
+}
+
+  .th-hero{max-width:1120px; margin:22px auto 0; padding:0 24px;}
+  .th-tools{max-width:1120px; margin:30px auto 0; padding:0 24px;}
+
+  /* ── regime-rail section header (the estate signature) ─────────────────────── */
+  .th-sech{display:flex; align-items:center; gap:11px; margin:0 0 16px;
+    padding:0 0 var(--sp-3); border-bottom:1px solid var(--hair-strong);}
+  .th-sech::before{content:""; flex:none; align-self:center; width:3px; height:18px; border-radius:2px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 35%,transparent));}
+  .th-sech .sh-n{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-label);
+    font-weight:700; letter-spacing:.06em; color:var(--ink-3);}
+  .th-sech .sh-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+    letter-spacing:-.01em; color:var(--ink-1);}
+  html[data-lang="zh"] .th-sech .sh-t{letter-spacing:0;}
+  .th-sech .sh-count{margin-left:auto; font-family:var(--num); font-variant-numeric:tabular-nums;
+    font-size:var(--fs-label); font-weight:700; letter-spacing:.06em; color:var(--ink-3);
+    text-transform:uppercase;}
+
+  /* ── calculator cards — machined hairline panels, one glyph each ──────────── */
+  .th-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(288px,1fr)); gap:16px;}
+  .th-card{display:flex; flex-direction:column; border:1px solid var(--hair-strong); border-radius:var(--r-lg);
+    padding:18px 20px 18px; background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+    position:relative; overflow:hidden; transition:transform .2s cubic-bezier(.2,.7,.3,1),border-color .2s,box-shadow .2s;}
+  .th-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 22%,transparent));
+    opacity:0; transition:opacity .2s;}
+  .th-card:hover{transform:translateY(-3px); border-color:color-mix(in srgb,var(--link) 46%,var(--hair-strong));
+    box-shadow:0 18px 38px -20px color-mix(in srgb,var(--link) 42%,transparent); text-decoration:none;}
+  .th-card:hover::before{opacity:1;}
+  .th-card .tc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .th-card .tc-glyph{flex:none; width:56px; height:36px; margin:-1px -2px 0 0;}
+  .th-card .tc-title{font-family:var(--font-ui); font-size:calc(var(--fs-md) + 3px); font-weight:700;
+    color:var(--ink-1); line-height:1.24; letter-spacing:-.01em; margin:0;}
+  html[data-lang="zh"] .th-card .tc-title{letter-spacing:0;}
+  .th-card .tc-blurb{font-family:var(--font-ui); font-size:var(--fs-body); line-height:1.5;
+    color:var(--ink-2); margin:8px 0 0;}
+  .th-card .tc-go{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm);
+    letter-spacing:.02em; color:var(--link); margin:16px 0 0 0; display:inline-flex; align-items:center; gap:6px;
+    padding-top:12px; border-top:1px solid var(--hair);}
+  .th-card .tc-go .arw{transition:transform .2s;}
+  .th-card:hover .tc-go .arw{transform:translateX(3px);}
+
+  /* ── featured spreadsheet — a wider machined panel with accent edge ───────── */
+  .th-feat{display:grid; grid-template-columns:1fr auto; align-items:center; gap:22px;
+    border:1px solid color-mix(in srgb,var(--link) 26%,var(--hair-strong)); border-radius:var(--r-lg);
+    border-left:3px solid var(--rail); padding:22px 24px; box-shadow:var(--ms); background:
+      radial-gradient(130% 150% at 100% 0%, color-mix(in srgb,var(--link) 9%,transparent), transparent 58%),
+      var(--panel);
+    text-decoration:none; transition:transform .2s,border-color .2s,box-shadow .2s;}
+  .th-feat:hover{transform:translateY(-2px); border-color:var(--link);
+    box-shadow:0 18px 40px -22px color-mix(in srgb,var(--link) 45%,transparent); text-decoration:none;}
+  .th-feat .ft-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.07em;
+    text-transform:uppercase; color:var(--link);}
+  .th-feat .ft-t{font-family:var(--font-ui); font-size:calc(var(--fs-num-lg) + 1px); font-weight:800;
+    color:var(--ink-1); margin:5px 0 0; line-height:1.18; letter-spacing:-.015em;}
+  html[data-lang="zh"] .th-feat .ft-t{letter-spacing:0;}
+  .th-feat .ft-d{font-family:var(--font-ui); font-size:var(--fs-md); color:var(--ink-2); margin:9px 0 0; max-width:62ch;}
+  .th-feat .ft-btn{flex:none; font-family:var(--font-ui);}
+  @media (max-width:640px){ .th-feat{grid-template-columns:1fr;} .th-feat .ft-btn{justify-self:start;} }
+
+</style>
 
 </head>
 <body class="estate est-tools">
@@ -42,7 +412,7 @@
               stroke-linecap="round" stroke-linejoin="round" fill="none"/>
         <circle cx="25" cy="13" r="2" fill="var(--link)"/>
       </svg>
-      <span class="word">MASTERMIND<span class="sub"><span class="l-en">READING ROOM</span><span class="l-zh">阅览室</span></span></span>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
     </a>
     <nav class="est-nav" aria-label="Estate sections">
       <a href="../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
@@ -85,78 +455,393 @@
 
 <div class="th-hero">
   <div class="est-head" style="max-width:none; margin:0; padding:0;">
-    <span class="est-kicker"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></span>
-    <svg class="plot-line est-kicker-plot" viewBox="0 0 220 14" preserveAspectRatio="none" aria-hidden="true"
-         style="--pl-len:230;">
-      <path d="M2 11 C 40 11, 55 4, 90 7 S 150 3, 178 5 S 210 4, 218 3"/>
-      <circle class="dot" cx="218" cy="3" r="2.6"/>
-    </svg>
-    <h1 class="est-title"><span class="l-en">Free trading &amp; risk calculators</span><span class="l-zh">免费交易与风险计算器</span></h1>
-    <p class="est-dek"><span class="l-en">Six tools that answer one question each, show the math, and never ask you to sign up. Position size, risk-to-reward, compounding — worked out in front of you.</span><span class="l-zh">六款工具，每款只回答一个问题，把算式摆在你面前，且无需注册。仓位、盈亏比、复利——当场为你算清。</span></p>
+    <span class="est-kicker"><span class="l-en">Free calculators</span><span class="l-zh">免费计算器</span></span>
+    <h1 class="est-title"><span class="l-en">Trading &amp; risk calculators</span><span class="l-zh">交易与风险计算器</span></h1>
+    <p class="est-dek"><span class="l-en">Calculators that answer one question each, show the math, and never ask you to sign up — position sizing, options, dividends, risk of ruin and more, worked out in front of you.</span><span class="l-zh">每款计算器只回答一个问题，把算式摆在你面前，且无需注册——仓位管理、期权、股息、破产风险等等，当场为你算清。</span></p>
   </div>
 </div>
 
 <section class="th-tools" aria-label="Calculators">
-  <h2 class="th-sech"><span class="n">01</span> <span class="l-en">Calculators</span><span class="l-zh">计算器</span></h2>
+  <div class="th-sech">
+    <span class="sh-n">01</span>
+    <span class="sh-t"><span class="l-en">Calculators</span><span class="l-zh">计算器</span></span>
+    <span class="sh-count">26 <span class="l-en">tools</span><span class="l-zh">款</span></span>
+  </div>
   <div class="th-grid">
     
     <a class="th-card" href="../tools/calculators/position-size.html">
-      <svg class="tc-plot" viewBox="0 0 56 20" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M1 15 L11 9 L21 12 L32 4 L44 8 L55 3"/>
-        <circle class="d" cx="55" cy="3" r="2"/>
-      </svg>
-      <div class="tc-top"><h3 class="tc-title">Position Size Calculator</h3></div>
+      <div class="tc-top">
+        <h2 class="tc-title">Position Size Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M10 30 h44"/>
+  <rect class="egl-still" x="12" y="22" width="7" height="8" rx="1"/>
+  <rect class="egl-still" x="23" y="17" width="7" height="13" rx="1"/>
+  <rect class="egl-still" x="34" y="12" width="7" height="18" rx="1"/>
+  <rect class="egl-fill" x="45" y="20" width="7" height="10" rx="1"/>
+  <path class="egl-draw" d="M8 12 h48"/>
+  <path class="egl-mark" d="M12 9 v6 M52 9 v6"/></svg></span>
+      </div>
       <p class="tc-blurb">Shares to buy from account size, risk % and stop.</p>
       <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
     </a>
     
     <a class="th-card" href="../tools/calculators/risk-reward.html">
-      <svg class="tc-plot" viewBox="0 0 56 20" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M1 15 L11 9 L21 12 L32 4 L44 8 L55 3"/>
-        <circle class="d" cx="55" cy="3" r="2"/>
-      </svg>
-      <div class="tc-top"><h3 class="tc-title">Risk-Reward Calculator</h3></div>
+      <div class="tc-top">
+        <h2 class="tc-title">Risk-Reward Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 20 h48"/>
+  <rect class="egl-fill" x="20" y="20" width="9" height="9" rx="1"/>
+  <rect class="egl-draw-fill" x="35" y="4" width="9" height="16" rx="1"/>
+  <path class="egl-mark" d="M39.5 4 l-3 3 M39.5 4 l3 3"/>
+  <path class="egl-still" d="M24.5 29 l-2.5 -3 M24.5 29 l2.5 -3"/></svg></span>
+      </div>
       <p class="tc-blurb">R:R ratio, breakeven win rate and expectancy from entry, stop and target.</p>
       <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
     </a>
     
     <a class="th-card" href="../tools/calculators/trade-profit.html">
-      <svg class="tc-plot" viewBox="0 0 56 20" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M1 15 L11 9 L21 12 L32 4 L44 8 L55 3"/>
-        <circle class="d" cx="55" cy="3" r="2"/>
-      </svg>
-      <div class="tc-top"><h3 class="tc-title">Trade Profit &amp; Loss Calculator</h3></div>
+      <div class="tc-top">
+        <h2 class="tc-title">Trade Profit &amp; Loss Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 20 h48"/>
+  <path class="egl-draw" d="M20 20 L46 8"/>
+  <path class="egl-up" d="M46 8 l-6 0.5 M46 8 l-1 6"/>
+  <path class="egl-draw2" d="M20 20 L46 32"/>
+  <path class="egl-down" d="M46 32 l-6 -0.5 M46 32 l-1 -6"/>
+  <circle class="egl-mark-dot" cx="20" cy="20" r="2.4"/></svg></span>
+      </div>
       <p class="tc-blurb">P/L, return % and annualized rate for long or short trades.</p>
       <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
     </a>
     
     <a class="th-card" href="../tools/calculators/compounding.html">
-      <svg class="tc-plot" viewBox="0 0 56 20" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M1 15 L11 9 L21 12 L32 4 L44 8 L55 3"/>
-        <circle class="d" cx="55" cy="3" r="2"/>
-      </svg>
-      <div class="tc-top"><h3 class="tc-title">Compound Interest Calculator</h3></div>
+      <div class="tc-top">
+        <h2 class="tc-title">Compound Interest Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M10 32 h46"/>
+  <path class="egl-draw" d="M10 31 C 28 30, 40 26, 48 15 S 54 7, 55 6"/>
+  <circle class="egl-mark-dot" cx="55" cy="6" r="2.6"/>
+  <circle class="egl-still-dot" cx="10" cy="31" r="1.8"/></svg></span>
+      </div>
       <p class="tc-blurb">Future value of principal plus regular contributions over time.</p>
       <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
     </a>
     
     <a class="th-card" href="../tools/calculators/cagr.html">
-      <svg class="tc-plot" viewBox="0 0 56 20" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M1 15 L11 9 L21 12 L32 4 L44 8 L55 3"/>
-        <circle class="d" cx="55" cy="3" r="2"/>
-      </svg>
-      <div class="tc-top"><h3 class="tc-title">CAGR Calculator</h3></div>
+      <div class="tc-top">
+        <h2 class="tc-title">CAGR Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M10 32 h46"/>
+  <path class="egl-draw" d="M12 30 C 26 27, 34 15, 54 9"/>
+  <circle class="egl-still-dot" cx="12" cy="30" r="2.4"/>
+  <circle class="egl-mark-dot" cx="54" cy="9" r="2.6"/>
+  <path class="egl-mark" d="M40 20 a10 10 0 0 1 8 -6"/></svg></span>
+      </div>
       <p class="tc-blurb">Find CAGR from begin/end values, or project a future value at a set rate.</p>
       <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
     </a>
     
     <a class="th-card" href="../tools/calculators/drawdown-recovery.html">
-      <svg class="tc-plot" viewBox="0 0 56 20" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M1 15 L11 9 L21 12 L32 4 L44 8 L55 3"/>
-        <circle class="d" cx="55" cy="3" r="2"/>
-      </svg>
-      <div class="tc-top"><h3 class="tc-title">Drawdown Recovery Calculator</h3></div>
+      <div class="tc-top">
+        <h2 class="tc-title">Drawdown Recovery Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 11 h48" stroke-dasharray="3 3"/>
+  <path class="egl-draw" d="M10 11 L22 11 L34 30 L54 12"/>
+  <circle class="egl-still-dot" cx="22" cy="11" r="2"/>
+  <circle class="egl-down-dot" cx="34" cy="30" r="2.2"/>
+  <circle class="egl-mark-dot" cx="54" cy="12" r="2.6"/></svg></span>
+      </div>
       <p class="tc-blurb">Required gain and recovery time from any drawdown percentage.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/retirement.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Retirement Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <rect class="egl-still" x="12" y="26" width="7" height="6" rx="1"/>
+  <rect class="egl-still" x="23" y="21" width="7" height="11" rx="1"/>
+  <rect class="egl-fill" x="34" y="15" width="7" height="17" rx="1"/>
+  <path class="egl-draw" d="M11 29 L26 24 L41 16 L52 9"/>
+  <path class="egl-mark" d="M52 9 v23"/>
+  <path class="egl-mark" d="M52 9 h9 v6 h-9"/>
+  <circle class="egl-mark-dot" cx="52" cy="9" r="2.2"/></svg></span>
+      </div>
+      <p class="tc-blurb">Nest egg from savings, monthly adds and expected return.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/roi.html">
+      <div class="tc-top">
+        <h2 class="tc-title">ROI Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <circle class="egl-still-dot" cx="12" cy="30" r="2.2"/>
+  <path class="egl-draw" d="M12 30 C 26 30, 34 16, 48 12"/>
+  <path class="egl-up" d="M48 12 l-6 1 M48 12 l-1 6"/>
+  <circle class="egl-mark-dot" cx="48" cy="12" r="3"/></svg></span>
+      </div>
+      <p class="tc-blurb">ROI percent, dollar profit, and annualized return from cost and final value.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/dividend.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Dividend Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><circle class="egl-mark-dot" cx="14" cy="20" r="3"/>
+  <path class="egl-draw" d="M17 20 h30"/>
+  <circle class="egl-still-dot" cx="24" cy="20" r="1.6"/>
+  <circle class="egl-still-dot" cx="33" cy="20" r="1.6"/>
+  <circle class="egl-still-dot" cx="42" cy="20" r="1.6"/>
+  <circle class="egl-mark-dot" cx="50" cy="20" r="2.4"/>
+  <path class="egl-draw2" d="M50 22 C 50 32, 14 34, 14 24"/>
+  <path class="egl-up" d="M14 24 l-3 3 M14 24 l3 3"/></svg></span>
+      </div>
+      <p class="tc-blurb">Yearly and monthly dividend income, plus a reinvestment growth projection.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/dollar-cost-averaging.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Dollar-Cost Averaging (DCA) Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M6 32 h52"/>
+  <path class="egl-draw" d="M8 22 C 16 14, 22 26, 30 20 S 44 10, 56 15"/>
+  <path class="egl-mark" d="M14 32 v-13 M26 32 v-9 M38 32 v-16 M50 32 v-18"/>
+  <circle class="egl-mark-dot" cx="14" cy="19" r="1.9"/>
+  <circle class="egl-mark-dot" cx="26" cy="23" r="1.9"/>
+  <circle class="egl-mark-dot" cx="38" cy="16" r="1.9"/>
+  <circle class="egl-mark-dot" cx="50" cy="14" r="1.9"/></svg></span>
+      </div>
+      <p class="tc-blurb">Project a DCA plan&#39;s end value from a fixed contribution, cadence and return.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/rule-of-72.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Rule of 72 Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 20 h9"/>
+  <rect class="egl-fill" x="17" y="14" width="8" height="12" rx="1"/>
+  <path class="egl-draw" d="M29 20 h6"/>
+  <path class="egl-mark" d="M31.5 17 l3 3 l-3 3"/>
+  <rect class="egl-draw-fill" x="39" y="8" width="7" height="24" rx="1"/>
+  <rect class="egl-draw-fill" x="49" y="8" width="7" height="24" rx="1"/>
+  <path class="egl-mark" d="M40 6 h16"/></svg></span>
+      </div>
+      <p class="tc-blurb">Years to double from a return, or the return to double in N years — plus exact math.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/percentage-gain-loss.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Percentage Gain/Loss Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 30 h48"/>
+  <circle class="egl-still-dot" cx="14" cy="27" r="2.4"/>
+  <path class="egl-draw" d="M14 27 L50 12"/>
+  <circle class="egl-mark-dot" cx="50" cy="12" r="2.6"/>
+  <path class="egl-up" d="M50 12 l-6 1 M50 12 l0 6"/>
+  <path class="egl-mark" d="M30 20 a3 3 0 1 0 0.1 0 M37 22 a3 3 0 1 0 0.1 0 M31.5 25 L36.5 18"/></svg></span>
+      </div>
+      <p class="tc-blurb">Percent change between two prices, plus dollar P/L and break-even recovery.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/savings-goal.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Savings Goal Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><rect class="egl-still" x="8" y="22" width="46" height="9" rx="4.5"/>
+  <rect class="egl-fill" x="8" y="22" width="28" height="9" rx="4.5"/>
+  <path class="egl-draw" d="M36 21 v11"/>
+  <path class="egl-still" d="M50 31 V9"/>
+  <path class="egl-mark" d="M50 9 h9 l-3 3.5 l3 3.5 h-9"/>
+  <circle class="egl-mark-dot" cx="50" cy="31" r="2"/></svg></span>
+      </div>
+      <p class="tc-blurb">Monthly amount to hit a savings goal by a date, or the time a fixed deposit takes.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/inflation.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Inflation &amp; Purchasing Power Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 34 h48"/><path class="egl-still" d="M8 34 v-4 M56 34 v-3"/><circle class="egl-draw" cx="16" cy="21" r="9"/><path class="egl-draw" d="M16 16 v10 M13 19 h6"/><circle class="egl-draw2" cx="35" cy="24" r="6"/><circle class="egl-down" cx="52" cy="27" r="3.4"/><path class="egl-mark" d="M27 12 C 38 12, 46 16, 51 22"/><path class="egl-mark" d="M51 22 l0.6 -4 M51 22 l-4 -0.6"/></svg></span>
+      </div>
+      <p class="tc-blurb">Future cost and lost purchasing power from an amount, inflation rate and years.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/net-worth.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Net Worth Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M32 8 v26"/>
+  <rect class="egl-up" x="16" y="14" width="9" height="14" rx="1"/>
+  <rect class="egl-down" x="39" y="20" width="9" height="8" rx="1"/>
+  <path class="egl-still" d="M14 28 h36"/>
+  <path class="egl-draw" d="M20.5 14 L43.5 20"/>
+  <circle class="egl-mark-dot" cx="32" cy="17" r="2.6"/></svg></span>
+      </div>
+      <p class="tc-blurb">Net worth, assets, liabilities and debt-to-asset ratio from what you own and owe.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/options-profit.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Options Profit Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 28 h48"/>
+  <path class="egl-still" d="M32 8 v22" stroke-dasharray="3 3"/>
+  <path class="egl-draw" d="M10 28 H32"/>
+  <path class="egl-up" d="M32 28 L56 10"/>
+  <path class="egl-up" d="M56 10 l-6 0.8 M56 10 l-0.6 6"/>
+  <circle class="egl-mark-dot" cx="32" cy="28" r="2.4"/></svg></span>
+      </div>
+      <p class="tc-blurb">Single-leg call or put P/L, break-even and max loss at expiration.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/stock-average.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Stock Average (Average Down) Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <rect class="egl-still" x="14" y="12" width="8" height="20" rx="1"/>
+  <rect class="egl-fill" x="40" y="22" width="8" height="10" rx="1"/>
+  <path class="egl-draw" d="M18 12 C 26 12, 31 17, 44 17"/>
+  <path class="egl-mark" d="M8 17 h48"/>
+  <circle class="egl-mark-dot" cx="31" cy="17" r="2.4"/></svg></span>
+      </div>
+      <p class="tc-blurb">Blend up to 5 buys into one average cost and break-even.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/margin.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Margin &amp; Buying Power Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <rect class="egl-fill" x="10" y="24" width="10" height="8" rx="1"/>
+  <path class="egl-still" d="M22 28 h9"/>
+  <path class="egl-mark" d="M31 32 l3 -5 l3 5"/>
+  <rect class="egl-draw-fill" x="40" y="10" width="16" height="22" rx="1"/>
+  <path class="egl-mark" d="M44 10 l4 -4 l4 4"/></svg></span>
+      </div>
+      <p class="tc-blurb">Turn account equity into buying power, leverage, and a margin-call price.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/forex-pip-value.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Forex Pip Value Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 28 h48"/><path class="egl-still" d="M12 24 v8 M20 26 v6 M28 24 v8 M36 26 v6 M44 24 v8 M52 26 v6"/><circle class="egl-still" cx="30" cy="18" r="9"/><path class="egl-draw" d="M30 24 v-12 M24 18 h12"/><line class="egl-mark" x1="36.4" y1="24.4" x2="46" y2="34"/><circle class="egl-mark-dot" cx="30" cy="18" r="2.4"/></svg></span>
+      </div>
+      <p class="tc-blurb">Pip value from position size, pip size and quote-to-account rate.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/short-selling.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Short Selling Profit Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 30 h48"/><path class="egl-fill" d="M16 12 L48 26 L48 30 L16 30 Z"/><path class="egl-draw" d="M16 12 L48 26"/><circle class="egl-mark-dot" cx="16" cy="12" r="2.6"/><path class="egl-down" d="M48 26 l-6 0.8 M48 26 l-0.8 -6"/></svg></span>
+      </div>
+      <p class="tc-blurb">Short-sale profit or loss, net of the stock borrow fee.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/covered-call.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Covered Call Return Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <path class="egl-still" d="M10 14 h44" stroke-dasharray="3 3"/>
+  <path class="egl-draw" d="M12 30 C 24 27, 30 18, 40 14"/>
+  <path class="egl-mark" d="M40 14 L52 14"/>
+  <circle class="egl-mark-dot" cx="40" cy="14" r="2.4"/>
+  <rect class="egl-fill" x="46" y="22" width="9" height="7" rx="1.5"/></svg></span>
+      </div>
+      <p class="tc-blurb">Income if flat vs. return if called, break-even, and annualized — per 100 shares.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/stop-loss-take-profit.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Stop-Loss &amp; Take-Profit Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 20 h48"/>
+  <rect class="egl-up" x="16" y="8" width="32" height="5" rx="1" opacity="0.9"/>
+  <rect class="egl-down" x="16" y="27" width="32" height="5" rx="1" opacity="0.9"/>
+  <path class="egl-draw" d="M8 20 h48"/>
+  <path class="egl-up" d="M52 10.5 l3 0 M52 10.5 l-1.5 -2.5 M52 10.5 l-1.5 2.5"/>
+  <path class="egl-down" d="M52 29.5 l3 0 M52 29.5 l-1.5 -2.5 M52 29.5 l-1.5 2.5"/>
+  <circle class="egl-mark-dot" cx="16" cy="20" r="2.4"/></svg></span>
+      </div>
+      <p class="tc-blurb">Exact stop &amp; target prices from entry, % distances and side — plus reward:risk.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/kelly-criterion.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Kelly Criterion Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 30 h48"/>
+  <rect class="egl-still" x="8" y="16" width="48" height="14" rx="1"/>
+  <rect class="egl-fill" x="8" y="16" width="17" height="14" rx="1"/>
+  <path class="egl-mark" d="M25 12 v22"/>
+  <circle class="egl-mark-dot" cx="25" cy="10" r="2.4"/>
+  <path class="egl-draw" d="M8 16 v14 M56 16 v14"/></svg></span>
+      </div>
+      <p class="tc-blurb">Optimal capital fraction to stake from win rate and win/loss ratio.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/sharpe-ratio.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Sharpe Ratio Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><rect class="egl-fill" x="8" y="19" width="48" height="10" rx="1"/>
+  <path class="egl-still" d="M8 24 h48"/>
+  <path class="egl-draw" d="M12 30 L50 10"/>
+  <path class="egl-up" d="M50 10 l-6 0.7 M50 10 l-0.7 6"/>
+  <circle class="egl-mark-dot" cx="12" cy="30" r="2.4"/></svg></span>
+      </div>
+      <p class="tc-blurb">Excess return per unit of risk, from return, risk-free rate and volatility.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/portfolio-rebalancing.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Portfolio Rebalancing Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <path class="egl-still" d="M8 16 h48" stroke-dasharray="3 3"/>
+  <rect class="egl-fill" x="13" y="9" width="8" height="23" rx="1"/>
+  <path class="egl-down" d="M17 9 v-3 M15.5 8 l1.5 -2 l1.5 2"/>
+  <rect class="egl-draw-fill" x="28" y="16" width="8" height="16" rx="1"/>
+  <rect class="egl-draw" x="43" y="24" width="8" height="8" rx="1"/>
+  <path class="egl-up" d="M47 24 v-3 M45.5 22 l1.5 -2 l1.5 2"/>
+  <path class="egl-mark" d="M6 16 h4 M54 16 h4"/></svg></span>
+      </div>
+      <p class="tc-blurb">Buys and sells to pull your holdings back to their target weights.</p>
+      <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
+    </a>
+    
+    <a class="th-card" href="../tools/calculators/risk-of-ruin.html">
+      <div class="tc-top">
+        <h2 class="tc-title">Risk of Ruin Calculator</h2>
+        <span class="tc-glyph"><svg class="egl egl-card" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 30 h48" stroke-dasharray="3 3"/>
+  <path class="egl-draw" d="M8 12 L18 15 L26 13 L34 20 L42 18 L50 27 L56 30"/>
+  <path class="egl-down" d="M56 30 l-5 -1 M56 30 l-1 -5"/>
+  <circle class="egl-mark-dot" cx="8" cy="12" r="2.2"/></svg></span>
+      </div>
+      <p class="tc-blurb">Odds a fixed-fractional plan blows past a ruin threshold, from win rate and risk.</p>
       <span class="tc-go"><span class="l-en">Open calculator</span><span class="l-zh">打开计算器</span> <span class="arw">→</span></span>
     </a>
     
@@ -164,7 +849,10 @@
 </section>
 
 <section class="th-tools" aria-label="Spreadsheets" style="margin-top:34px;">
-  <h2 class="th-sech"><span class="n">02</span> <span class="l-en">Spreadsheets</span><span class="l-zh">电子表格</span></h2>
+  <div class="th-sech">
+    <span class="sh-n">02</span>
+    <span class="sh-t"><span class="l-en">Spreadsheets</span><span class="l-zh">电子表格</span></span>
+  </div>
   <a class="th-feat" href="../tools/spreadsheets/trading-journal.html">
     <div>
       <span class="ft-k"><span class="l-en">Free download · Excel</span><span class="l-zh">免费下载 · Excel</span></span>
@@ -203,7 +891,6 @@
 </footer>
 
 
-<script src="../theme.js?v=e63903ba" defer></script>
-<script defer data-whb data-root="../" src="../wh_banner.js?v=37bf40aa"></script>
+<script src="../theme.js"></script>
 </body>
 </html>

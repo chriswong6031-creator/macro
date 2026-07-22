@@ -1,0 +1,234 @@
+{#=============================================================================
+  calculators/stock_average.html.j2 — Stock Average (Average Down) Calculator
+  Clones the FLAGSHIP exemplar (position_size.html.j2) structure exactly:
+  page structure identical; only the fields, compute()/render()/copyLine() +
+  WORKED_EXAMPLES, and the explainer prose change.
+
+  Concept: average cost across up to 5 lots. Blank/zero rows ignored.
+    totalShares = Σ shares ; totalCost = Σ (shares·price) ; avgCost = totalCost/totalShares.
+  Break-even price = avgCost. compute() is PURE (no DOM); wire() does all DOM
+  reads/writes; WORKED_EXAMPLES runs each fixture through compute() on load and
+  console.error's any drift (silent when green). Never render NaN/Infinity;
+  empty/invalid → a plain-word sentence in .co-plain and "—" in the number.
+  Inputs accept commas.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('stock-average', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter each buy — the number of shares and the price you paid. The calculator blends them into one average cost per share, which is also your break-even price.',
+   '逐笔填入你的买入——股数与成交价。计算器会把它们合成一个平均成本价，这也就是你的保本价。') }}</p>
+
+<div class="calc-in">
+  <div class="ci ci-wide"><span class="ci-l">{{ t('Lot 1', '第 1 笔') }} <span class="hint">{{ t('shares · price ($)', '股数 · 价格（$）') }}</span></span>
+    <div class="lot-row">
+      <input id="s1" inputmode="decimal" autocomplete="off" placeholder="100" aria-label="Lot 1 shares">
+      <input id="p1" inputmode="decimal" autocomplete="off" placeholder="50" aria-label="Lot 1 price">
+    </div></div>
+  <div class="ci ci-wide"><span class="ci-l">{{ t('Lot 2', '第 2 笔') }} <span class="hint">{{ t('shares · price ($)', '股数 · 价格（$）') }}</span></span>
+    <div class="lot-row">
+      <input id="s2" inputmode="decimal" autocomplete="off" placeholder="100" aria-label="Lot 2 shares">
+      <input id="p2" inputmode="decimal" autocomplete="off" placeholder="40" aria-label="Lot 2 price">
+    </div></div>
+  <div class="ci ci-wide"><span class="ci-l">{{ t('Lot 3', '第 3 笔') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <div class="lot-row">
+      <input id="s3" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 3 shares">
+      <input id="p3" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 3 price">
+    </div></div>
+  <div class="ci ci-wide"><span class="ci-l">{{ t('Lot 4', '第 4 笔') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <div class="lot-row">
+      <input id="s4" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 4 shares">
+      <input id="p4" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 4 price">
+    </div></div>
+  <div class="ci ci-wide"><span class="ci-l">{{ t('Lot 5', '第 5 笔') }} <span class="hint">{{ t('optional', '可选') }}</span></span>
+    <div class="lot-row">
+      <input id="s5" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 5 shares">
+      <input id="p5" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 5 price">
+    </div></div>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('avg / share', '均价 / 股') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in at least two lots to blend your average cost.', '至少填入两笔买入即可计算平均成本。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Total shares', '总股数') }}</dt><dd id="out-shares">—</dd></div>
+    <div><dt>{{ t('Total cost', '总成本') }}</dt><dd id="out-cost">—</dd></div>
+    <div><dt>{{ t('Break-even price', '保本价') }}</dt><dd id="out-be">—</dd></div>
+    <div><dt>{{ t('Lots counted', '计入笔数') }}</dt><dd id="out-lots">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+
+<style>
+  .lot-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+</style>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('Your average cost per share is the <strong>total dollars spent</strong> divided by the <strong>total shares held</strong> — not the average of the prices. A buy of 100 shares at $50 and another 100 at $40 blends to $45.00, because both lots are the same size; weight the price by the shares and the number falls out on its own. That blended figure is also your <strong>break-even</strong>: the price the stock must reclaim before the whole position is above water.',
+   '你的每股平均成本，是<strong>总投入金额</strong>除以<strong>总持有股数</strong>——而不是各价格的简单平均。以 $50 买入 100 股、再以 $40 买入 100 股，合成后为 $45.00，因为两笔规模相同；用股数为价格加权，结果自然得出。这个合成价也是你的<strong>保本价</strong>：股价必须重回该位，整个仓位才回本。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Total shares</strong> = Σ shares of each lot', '<strong>总股数</strong> = Σ 各笔股数') }}<br>
+{{ t('<strong>Total cost</strong> = Σ ( shares × price )', '<strong>总成本</strong> = Σ ( 股数 × 价格 )') }}<br>
+{{ t('<strong>Average cost</strong> = Total cost ÷ Total shares', '<strong>平均成本</strong> = 总成本 ÷ 总股数') }}<br>
+{{ t('Break-even price = Average cost', '保本价 = 平均成本') }}
+</div>
+<p>{{ t('This is a <em>share-weighted</em> mean. A large lot pulls the average toward its price and a small one barely moves it — which is why adding a few shares at a much lower price lowers your basis only a little, while a big add near the lows lowers it a lot.',
+   '这是一个<em>按股数加权</em>的平均值。大笔买入会把均价拉向它的价格，小笔则几乎不动它——这就是为什么在低位补几股只能略微拉低成本，而在低位重仓补入才能大幅拉低成本。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a trader buys <span class="num">100</span> shares at <span class="num">$50.00</span>, then the stock falls and they add <span class="num">100</span> more at <span class="num">$40.00</span>.',
+   '假设一位交易者以 <span class="num">$50.00</span> 买入 <span class="num">100</span> 股，随后股价下跌，又在 <span class="num">$40.00</span> 补入 <span class="num">100</span> 股。') }}</p>
+<ul>
+<li>{{ t('Total shares = <span class="num">100 + 100 = 200</span>', '总股数 = <span class="num">100 + 100 = 200</span>') }}</li>
+<li>{{ t('Total cost = <span class="num">(100 × 50) + (100 × 40) = $9,000</span>', '总成本 = <span class="num">(100 × 50) + (100 × 40) = $9,000</span>') }}</li>
+<li>{{ t('Average cost = <span class="num">9,000 ÷ 200 = $45.00</span>', '平均成本 = <span class="num">9,000 ÷ 200 = $45.00</span>') }}</li>
+<li>{{ t('Break-even = <span class="num">$45.00</span> — the stock only needs to climb from $40 back to $45, not all the way to $50, for the blended position to break even.',
+   '保本价 = <span class="num">$45.00</span>——股价只需从 $40 回升到 $45，而非一路涨回 $50，整个仓位即可回本。') }}</li>
+</ul>
+</div>
+<p>{{ t('Averaging down does two things at once: it lowers the basis <em>and</em> it enlarges the position. The lower break-even is the appealing half; the bigger position is the half that gets ignored.',
+   '摊低成本同时做了两件事：拉低成本价，<em>并且</em>放大仓位。更低的保本价是诱人的一半；更大的仓位则是常被忽略的另一半。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Averaging into a broken thesis', '向一个已破的逻辑里摊平') }}</span>
+<p>{{ t('A lower average cost feels like progress, but it is only progress if the reason you bought is still intact. Adding shares because the price fell — rather than because the thesis got stronger — turns one losing position into a larger losing position, and quietly makes it the biggest weight in the book. The number this tool prints goes down; the risk goes up. Decide in advance how much you are willing to commit to a name in total, and let the average cost be a consequence of that plan, not the reason to keep adding.',
+   '更低的平均成本让人感觉在进步，但只有当你当初买入的理由依然成立时，它才算进步。因价格下跌——而非因逻辑变强——而补仓，只会把一个亏损仓位变成更大的亏损仓位，并悄悄让它成为账簿中最重的一笔。本工具打印的数字在下降，风险却在上升。请事先决定你愿意在一只标的上总共投入多少，让平均成本成为该计划的结果，而非继续加码的理由。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('The arithmetic is exact, but it describes a bare cost basis — not the full picture a real account carries. A few honest limits:',
+   '这套算法在数学上是精确的，但它描述的只是一个裸露的成本价——而非一个真实账户所承载的全貌。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>Fees and commissions.</strong> This blends the price you paid; it does not add per-trade fees or bid-ask slippage. On thin names or many small lots, your true basis sits a little above what this shows.',
+   '<strong>费用与佣金。</strong>本工具合成的是你的成交价，不包含每笔手续费或买卖价差滑点。在流动性差的标的或多笔小额买入上，你的真实成本会略高于此处显示。') }}</li>
+<li>{{ t('<strong>Cost-basis method for taxes.</strong> Brokers may track lots by FIFO, specific-identification, or average cost, and the method changes your <em>taxable</em> gain when you sell part of the position. This calculator shows the plain share-weighted average only.',
+   '<strong>报税的成本计算法。</strong>券商可能按先进先出、指定批次或平均成本来记账，而在你卖出部分仓位时，所选方法会改变你的<em>应税</em>收益。本计算器仅展示朴素的按股加权平均。') }}</li>
+<li>{{ t('<strong>Break-even is not a target.</strong> Reclaiming your average cost only means the loss is erased — it is not a reason to sell, nor a promise the price will get there. Size and thesis decide that, not the basis line.',
+   '<strong>保本价不是目标价。</strong>重回平均成本只意味着亏损被抹平——它既不是卖出的理由，也不保证价格会到那里。决定这一切的是仓位与逻辑，而非成本线。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Averaging down lowers your cost and raises your size at the same time. A lower break-even is only worth having if the reason you own the stock is still true.',
+   '摊低成本会在拉低成本价的同时放大你的仓位。只有当你持有这只股票的理由依然成立时，更低的保本价才值得拥有。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a cost basis into a plan with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t(', or measure a completed trade with the <a href="', '把成本价化为计划，或用 <a href="') }}{{ rel }}tools/calculators/trade-profit.html">{{ t('trade profit calculator', '交易盈亏计算器') }}</a>{{ t('.', '衡量一笔已完成的交易。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (share-weighted average cost) ─────────────────────────────
+  // inputs: {lots:[{s shares, p price}, ...up to 5]}. Blank/zero rows ignored.
+  // Returns an outputs object, or {ok:false, msg}. Never returns NaN/Infinity.
+  function compute(inp){
+    var lots = inp.lots || [], totalShares = 0, totalCost = 0, counted = 0, i, s, p, sawPartial = false;
+    for(i=0; i<lots.length; i++){
+      s = lots[i].s; p = lots[i].p;
+      var haveS = isFinite(s) && s > 0, haveP = isFinite(p) && p > 0;
+      if(!haveS && !haveP) continue;          // fully blank row — ignore
+      if(!haveS || !haveP){ sawPartial = true; continue; } // half-filled — flag, ignore
+      totalShares += s;
+      totalCost   += s * p;
+      counted++;
+    }
+    if(counted === 0) return {ok:false, msg:"Fill in at least two lots to blend your average cost."};
+    if(counted === 1) return {ok:false, msg:"Add a second lot — with one buy, the average is just that price.", partial:sawPartial};
+    if(!(totalShares > 0)) return {ok:false, msg:"Total shares must be above zero."};
+    var avgCost = totalCost / totalShares;
+    return {
+      ok:true, avgCost:avgCost, totalShares:totalShares, totalCost:totalCost,
+      breakEven:avgCost, counted:counted, partial:sawPartial
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{lots:[{s:100,p:50},{s:100,p:40}]},          want:{avgCost:45, totalShares:200, totalCost:9000, counted:2} },
+    { in:{lots:[{s:100,p:50},{s:100,p:40},{s:200,p:30}]}, want:{avgCost:37.5, totalShares:400, totalCost:15000, counted:3} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("stock-average self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.005){
+        console.error("stock-average self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var ids = ["s1","p1","s2","p2","s3","p3","s4","p4","s5","p5"];
+    var els = {}; ids.forEach(function(id){ els[id] = $(id); });
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outShares=$("out-shares"), outCost=$("out-cost"), outBE=$("out-be"), outLots=$("out-lots"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function intFmt(n){ return n.toLocaleString("en-US",{maximumFractionDigits:4}); }
+    function dash(){ outMain.textContent="—";
+      [outShares,outCost,outBE,outLots].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var lots=[];
+      for(var i=1;i<=5;i++){ lots.push({ s:numFrom(els["s"+i]), p:numFrom(els["p"+i]) }); }
+      var res=compute({lots:lots}); last=res;
+      if(!res.ok){
+        dash();
+        outPlain.textContent = res.msg;
+        outPlain.className = res.partial ? "co-plain warn" : "co-plain";
+        return;
+      }
+      outMain.textContent   = money(res.avgCost);
+      outShares.textContent = intFmt(res.totalShares);
+      outCost.textContent   = money(res.totalCost);
+      outBE.textContent     = money(res.breakEven);
+      outLots.textContent   = String(res.counted);
+      // Law 3: plain-word interpretation under the number
+      var plain = "Your average cost across " + res.counted + " lots is " + money(res.avgCost) +
+        " on " + intFmt(res.totalShares) + " shares. The position breaks even at " + money(res.breakEven) + ".";
+      if(res.partial){
+        plain += " A half-filled lot (only shares or only price) was skipped.";
+        outPlain.className="co-plain warn";
+      } else { outPlain.className="co-plain"; }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Average cost: " + money(last.avgCost) + " on " + intFmt(last.totalShares) +
+        " shares · total " + money(last.totalCost) + " · break-even " + money(last.breakEven) +
+        " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ids.forEach(function(id){ els[id].addEventListener("input", render); });
+    render();
+  });
+})();
+</script>
+{% endblock %}
