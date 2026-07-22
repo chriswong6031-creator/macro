@@ -878,7 +878,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <div class="term-mid">
           <div class="term-chart">
             <span class="oracle" data-zh="<i></i><b>入场闸口</b>自7月14日关闭 — 观望，别追高"><i></i><b>ENTRY GATE</b>shut since Jul 14 — watch, don't chase</span>
-            <svg id="candles" viewBox="0 0 680 300" aria-label="Live candlestick chart preview with a price axis, time axis, volume, a 20-day average, and a shaded entry zone."></svg>
+            <svg id="candles" viewBox="0 0 680 400" aria-label="Live candlestick chart preview with a price axis, time axis, volume, a 20-day average, and a shaded entry zone."></svg>
           </div>
           <div class="term-rail">
             <p class="rl" data-zh="自选">WATCHLIST</p>
@@ -1444,9 +1444,9 @@ const STILL = document.documentElement.classList.contains('still');
   const svg = document.getElementById('candles'); if (!svg) return;
   // plot geometry (viewBox 0 0 680 300)
   const N=46, PX0=6, PX1=610;                 // plot x-span 604px
-  const CT=10, CB=232;                        // candle band (top/bottom)
-  const VT=238, VB=278;                       // volume band (top/bottom)
-  const TIME_Y=294;                           // time-axis label baseline
+  const CT=10, CB=330;                        // candle band (top/bottom)
+  const VT=336, VB=378;                       // volume band (top/bottom)
+  const TIME_Y=394;                           // time-axis label baseline
   const AXIS_X=614, TICK_X=620, TAG_X=616;    // right price axis
   const gap=4.73, bw=(PX1-PX0)/N-gap;         // slot 604/46 ≈ 13.13 → bar width ≈ 8.4
   const AX='#6d7f9e', TIMEC='#56688c', MONO='ui-monospace,monospace';
