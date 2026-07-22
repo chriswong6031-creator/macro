@@ -42,6 +42,13 @@
   --up: #45b873; --down: #e06464; --orange: #e08b45;
   --info: #5b9bf0; --link: #7aa7e0;
   --g-cold: #4d8df0; --g-hot: #e0a23c; --g-mid: #3a4150;
+  /* ── prophet-card verb hues (_prophet_card.html.j2) ─────────────────────────
+     One hue per card state: buy/near/wait/hold/avoid. These are direction-STABLE
+     brand tokens — deliberately NOT flipped by html[data-lang="zh"] (unlike
+     --up/--down): a Buy card must stay green in zh mode. Do not alias to
+     --up/--down or the zh swap would paint Buy cards red. */
+  --pv-buy: #45b873; --pv-near: #63c08d; --pv-wait: #e0a030;
+  --pv-hold: #8b93a1; --pv-avoid: #e06464;
   --chart-bg: transparent;
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
   --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
@@ -99,6 +106,9 @@ html[data-theme="light"] {
   --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
   --info: #285fff; --link: #285fff;
   --g-cold: #285fff; --g-hot: #c2841f; --g-mid: #cdd5e0;
+  /* prophet-card verb hues — light variants (see :root note; never zh-flipped) */
+  --pv-buy: #1f9a55; --pv-near: #3aad72; --pv-wait: #b9791a;
+  --pv-hold: #5d6b7e; --pv-avoid: #cf4040;
   --chart-bg: #11151c;            /* keep dark-rendered Plotly charts legible */
   --card-shadow: 0 1px 3px rgba(20,30,50,.07);
   /* soft, light popover shadow — the dark theme's heavy 50%-black drop shadow

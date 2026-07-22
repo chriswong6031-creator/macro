@@ -1,3 +1,4 @@
+{% import "_prophet_card.html.j2" as pv %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -1833,6 +1834,7 @@
   {# W8-G: table view mount point #}
   <div id="stocktable-wrap"></div>
   {# W8-G: grid section (hidden in table mode by CSS .nb-grid-section) #}
+  {{ pv.pv_css() }}
   <div class="nb-grid-section">
   <div class="cards" data-showmore-rows="3">
     {% for s in setups.buy %}
@@ -1844,140 +1846,58 @@
       </span>
     </div>
     {% endif %}
+    {# ═══ PROPHET CARD (flagship redesign 2026-07-21) — Canada Branch-B grid. Old card
+       retired; Branch-B honesty KEPT: the composite score stays suppressed — the Edge slot
+       renders the within-group rank pill (#N, ratified copy in its tooltip) instead of a
+       number. Mechanism lead (§7.1), tier badge, insider/oil/alignment evidence → verb-chip
+       tooltip; no-confluence / extended / earnings / base-broken / cautions → ⚠N popover;
+       sizing + axes + pullback-zone detail → canada_stock analyzer. Group dividers above,
+       watch-strip + laggards below are untouched. #}
     {% set c = s.conviction %}
-    {# entry-window state drives the card accent (§7.4): open-now warm / pullback cool /
-       wait muted — read from the entry-timing gauge's status. #}
-    {% set _est = (s.entry_signal.status if s.entry_signal else none) %}
-    {% set _ent = 'ent-open' if _est in ['buy_now','partial'] else ('ent-pullback' if _est in ['wait_pullback','buy_soon'] else ('ent-wait' if _est else '')) %}
-    <div class="card {{ _ent }}">
-      <div class="row" style="gap:8px">
-        {# BRANCH B: composite 0-100 chip is SUPPRESSED; a small rank pill takes its place.
-           The pill is a within-group order (#1, #2…), NOT a score/probability. #}
-        <span class="rankpill" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。">#{{ s.board_pos }}</span>
-        <a href="canada_stock.html#{{ s.ticker }}"><b>{{ s.name or s.ticker }}</b></a>
-        <span class="muted small">{{ s.ticker }}</span>
-        <span style="flex:1"></span>
-        {% if s.label %}<span class="lad {{ 'up' if s.dir=='up' else ('down' if s.dir=='down' else 'flat') }}">{{ td(s.label) }}</span>{% endif %}
-      </div>
-      {# mechanism-first card lead (§7.1): primary factor-beta driver + momentum SCREEN z
-         (accruing) + insider cluster + entry window — built from fields already on the row. #}
-      {% if s.lead_en %}<p class="nb-lead"><span class="l-en">{{ s.lead_en }}</span><span class="l-zh">{{ s.lead_zh or s.lead_en }}</span></p>{% endif %}
-      <div class="row small muted" style="gap:10px; margin:5px 0">
-        {% if s.alpha is not none %}<span data-tip-en="Momentum screen reading. Not a validated score." data-tip-zh="动量筛选读数。不是经验证评分。">{{ t('mom screen', '动量筛选') }} <b class="{{ 'pos' if s.alpha>=0 else 'neg' }}">{{ '%+.2f'|format(s.alpha) }}</b></span>{% endif %}
-        {% if s.sector_rank %}<span>#{{ s.sector_rank }}/{{ s.sector_n }} {{ td(s.sector) }}</span>{% endif %}
-        {% if s.off_high is not none %}<span>{{ '%.0f'|format(s.off_high) }}% {{ t('off high', '距高点') }}</span>{% endif %}
-      </div>
-      {# BRANCH-B tier badge line (replaces the composite score): honest one-liner, long
-         form in the title tooltip. C1 oil context chip + extension log-and-grade chip. #}
-      {# ── WHY-NOW evidence-tag chips (§7.4): each chip is colour-keyed to its evidence
-         tier (accruing = dashed · oil-regime · insider · earnings-catalyst · extended),
-         with a report-citing tooltip. Context/accruing legs, never rank inputs. ── #}
-      <div class="nb-vf" style="margin-top:2px">
-        {# CA2 tier badge — the confluence T1→T4 verdict per name. A FRESH MACD-2D × StochRSI-3D
-           cross today reads T1..T4 (green); no fresh cross reads an honest "no confluence" chip
-           so the reader sees the gate RAN and found nothing, not a missing badge. #}
-        {% set _sig = s.signal %}
-        {% if _sig and _sig.tier %}
-        <span class="nb-vchip gate-tier gt-{{ _sig.tier|lower }}" data-tip-en="{{ _sig.tier }}: fresh multi-timeframe buy cross today." data-tip-zh="{{ _sig.tier }}：今日新鲜多周期买入金叉。">🎯 {{ _sig.tier }}{% if _sig.sub %} · {{ _sig.sub }}{% endif %}</span>
-        {% elif _sig %}
-        <span class="nb-vchip gate-none" data-tip-en="No fresh entry cross today. Wait; don't chase." data-tip-zh="今日无新鲜入场金叉。等待，勿追。">○ {{ t('no confluence cross', '无汇合金叉') }}</span>
-        {% endif %}
-        <span class="nb-vchip ev-accrue" data-tip-en="Useful screen, still unproven as an edge." data-tip-zh="有用筛选，但尚未证明为优势。">{{ t('momentum screen · unproven', '动量筛选 · 未验证') }}</span>
-        {% if s.oil_tailwind %}<span class="nb-vchip ev-oil" data-tip-en="Oil is a live tailwind for this name." data-tip-zh="油价对该股形成当前顺风。">🛢 {{ t('oil tailwind', '油价顺风') }}</span>{% endif %}
-        {% if s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0 %}<span class="nb-vchip ev-insider" data-tip-en="Insiders have been net buyers. Context only." data-tip-zh="内部人近期净买入。仅作背景。">👤 {{ t('insider buying', '内部人买入') }} {{ s.insider.n_buys }}/{{ s.insider.n_sells }}</span>{% endif %}
-        {% if s.earnings and s.earnings.days_to is defined and s.earnings.days_to is not none and s.earnings.days_to <= 21 %}<span class="nb-vchip ev-earn" data-tip-en="Earnings soon. Timing context only." data-tip-zh="财报将近。仅择时背景。">📅 {{ t('reports in', '财报还有') }} {{ s.earnings.days_to }}{{ t('d', '天') }}</span>{% endif %}
-        {% if s.extended %}<span class="nb-vchip vf-exp" data-tip-en="Stretched vs trend. Chasing risk is higher." data-tip-zh="相对趋势偏高。追高风险更大。">📐 {{ t('extended', '偏离') }}{% if s.extended.ext_z is not none %} z{{ '%+.1f'|format(s.extended.ext_z) }}{% endif %}</span>{% endif %}
-      </div>
-      {% if s.spark_svg %}{{ s.spark_svg | safe }}{% endif %}
-      {% if c %}
-      {# composite 0-100 chip SUPPRESSED under Branch B — only the honest verdict text
-         remains (desaturation applies to the SCORE chip only, never the narrative). #}
-      <div class="nb-conv">
-        <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
-      </div>
-      {% set al = c.alignment %}
-      {% if al and al.line %}
-      {# multi-timeframe ENTRY gate (engine.cycles.mtf_alignment): a low-risk SWING entry
-         must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross from
-         oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed; 🟡 Approaching =
-         early backfill (not yet a buy). The reason states WHY it qualifies. #}
-      <div class="nb-align{{ ' nba-near' if s.align_tier == 'near' else '' }}" data-tip-en="{{ al.line }}" data-tip-zh="{{ al.line_zh }}">
-        <span class="nba-mark">{{ '🟡' if s.align_tier == 'near' else '🟢' }}</span>
-        <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
-        {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
-      </div>
-      {% endif %}
-      <div class="nb-axes">
-        {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
-        {# HARD freshness gate: when the tailwind panel is >3 trading days stale the
-           tailwind axis is SUPPRESSED (shown as no-data), never filled from stale prices. #}
-        {% set a = {'pct': none} if (ax == 'tailwind' and setups.tailwind_suppressed) else c.axes[ax] %}
-        <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if ax == 'tailwind' and setups.tailwind_suppressed %} — suppressed (panel stale){% elif a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
-          <div class="axl">{{ t(lbl, lbl_zh) }}</div>
-          <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
-        </div>
-        {% endfor %}
-      </div>
-      {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended, with the
-         actual buy-zone price + cycle position. WHEN/AT-WHAT-PRICE — never the conviction score. #}
-      {% set es = s.entry_signal %}
-      {% if es %}
-      <div class="nb-entry nbe-{{ es.status }}" title="ENTRY timing (gauge 2) — when & at what price to buy. {{ es.action }}">
-        <div class="nbe-head">
-          <span class="nbe-dot a{{ es.act_level }}"></span>
-          <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
-        </div>
-        {% if es.buy_zone and es.buy_zone.high is not none %}
-        <div class="nbe-zone">
-          <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
-          <span class="nbe-px">${{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–${{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
-          {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
-        </div>
-        {% endif %}
-        {# CA2 port — PULLBACK ZONE (engine/pullback_zone): a don't-chase leader's concrete
-           pullback price range, enriching the entry window. Log-and-grade, close-only, no
-           rank effect. Presence-guarded (self-gates to None outside don't-chase territory). #}
-        {% set _pz = s.pullback_zone %}
-        {% if _pz and _pz.levels %}
-        <div class="nbe-zone nbe-pull" data-tip-en="Possible pullback entry area." data-tip-zh="可能的回撤入场区。">
-          <span class="nbe-lbl">{% if _pz.stance == 'chase' %}{{ t('Don\'t chase — reset', '勿追 — 回撤至') }}{% else %}{{ t('Pullback zone', '回撤区') }}{% endif %}</span>
-          <span class="nbe-px">{% for lv in _pz.levels %}${{ '%.2f'|format(lv.price) }}{% if lv.pull_pct is not none %} <span class="muted">({{ '%+.1f'|format(lv.pull_pct) }}%)</span>{% endif %}{{ '' if loop.last else ' · ' }}{% endfor %}</span>
-        </div>
-        {% endif %}
-      </div>
-      {% endif %}
-      {# CA2 port chips — HOLD basing-state note + DANNYTRADES vol-compression. Both
-         log-and-grade context, never a rank/eligibility input (extension-demote idiom). #}
-      {% if s.hold or s.dt_contra %}
-      <div class="nb-vf">
-        {% set _hd = s.hold %}
-        {% if _hd and _hd.state %}
-        <span class="nb-vchip {{ 'vf-coil' if _hd.state == 'intact' else ('vf-up' if _hd.state == 'launched' else 'vf-down') }}" data-tip-en="Tracks whether the base is intact, launched, or broken." data-tip-zh="跟踪筑底是否完好、启动或破位。">{% if _hd.state == 'intact' %}🪨 {{ t('basing', '筑底中') }} {{ _hd.days_basing }}d{% elif _hd.state == 'launched' %}🚀 {{ t('launched', '已启动') }}{% else %}💔 {{ t('base broken', '筑底破位') }}{% endif %}</span>
-        {% endif %}
-        {% set _dt = s.dt_contra %}
-        {% if _dt and _dt.state and _dt.state != 'neutral' %}
-        <span class="nb-vchip {{ 'vf-down' if _dt.state == 'fade' else 'vf-coil' }}" data-tip-en="Crowding or washout context." data-tip-zh="拥挤或洗盘背景。">{% if _dt.state == 'fade' %}🌡 {{ t('crowded — fade', '拥挤 — 谨防回吐') }}{% else %}💧 {{ t('washed — bounce', '超卖 — 反弹') }}{% endif %}</span>
-        {% endif %}
-      </div>
-      {% endif %}
-      {# vol-managed inverse-vol SIZE chip (engine/risk_sizing) — HOW MUCH to own (risk),
-         separate from the conviction score (WHAT) and the entry gauge (WHEN). #}
-      {% set _rs = s.risk_sizing %}
-      {% if _rs and _rs.size_mult is not none %}
-      <div class="nb-bot">
-        <span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Suggested size: less for volatile names, more for calmer names." data-tip-zh="建议仓位：波动大少配，波动小多配。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>
-      </div>
-      {% endif %}
-      {# volatility black hole (vol_squeeze) chip #}
-      {% set _vs = c.vol_squeeze %}
-      {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
-      <div class="nb-vf">
-        <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="{{ 'Volatility is compressed; a move may be setting up.' if _vs.state=='COILED' else 'Volatility has already expanded; quiet entry may be gone.' }}" data-tip-zh="{{ '波动压缩，可能在酝酿行情。' if _vs.state=='COILED' else '波动已扩张，安静入场点可能已过。' }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
-      </div>{% endif %}
-      {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
-      {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
-      {% endif %}
-    </div>
+    {% set es = s.entry_signal %}
+    {% set _st = es.status if (es and es.status) else none %}
+    {% set _verb = 'buy' if _st in ('buy_now','partial')
+             else ('near' if _st in ('buy_soon','await_confluence')
+             else ('hold' if _st in ('hold','topping')
+             else ('avoid' if _st in ('exit','avoid')
+             else ('wait' if _st else 'near')))) %}
+    {% set _lbl = (s.label or '')|upper %}
+    {% set _hd = s.hold %}
+    {% set _stage = 4 if ((_hd and _hd.state == 'launched') or 'RALLY' in _lbl or 'UPTREND' in _lbl)
+             else (3 if (_st in ('buy_now','partial') or s.group == 'entry_open')
+             else (1 if ((_hd and _hd.state == 'intact') or 'BOTTOM' in _lbl or 'BOUNCE' in _lbl) else 2)) %}
+    {% set _sig = s.signal %}
+    {% set _vs = c.vol_squeeze if c else none %}
+    {% set _fl = namespace(rows=[]) %}
+    {% if c %}{% for cau in (c.cautions or []) %}{% set _z = c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau %}{% set _fl.rows = _fl.rows + [(cau, _z)] %}{% endfor %}{% endif %}
+    {% if _sig and not _sig.tier %}{% set _fl.rows = _fl.rows + [("No fresh entry cross today — wait, don't chase", '今日无新鲜入场金叉 — 等待，勿追') ] %}{% endif %}
+    {% if _vs and _vs.state in ('FIRED_UP','EXPANSION') %}{% set _fl.rows = _fl.rows + [("Already moving — don't chase above the zone", '已在异动 — 勿在买区上方追高')] %}{% endif %}
+    {% if s.extended %}{% set _fl.rows = _fl.rows + [('Stretched vs trend — chasing risk is higher', '相对趋势偏高 — 追高风险更大')] %}{% endif %}
+    {% if s.earnings and s.earnings.days_to is defined and s.earnings.days_to is not none and s.earnings.days_to <= 21 %}{% set _fl.rows = _fl.rows + [('Reports in ' ~ s.earnings.days_to ~ 'd — timing context', '财报还有' ~ s.earnings.days_to ~ '天 — 择时背景')] %}{% endif %}
+    {% if _hd and _hd.state == 'broken' %}{% set _fl.rows = _fl.rows + [('Base broken', '筑底破位')] %}{% endif %}
+    {% set _al = c.alignment if c else none %}
+    {% set _ctx_en = ((' — ' ~ s.lead_en) if s.lead_en else '') ~ ((' · ' ~ _sig.tier ~ ' fresh cross') if (_sig and _sig.tier) else '') ~ (' · insider buying' if (s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0) else '') ~ (' · oil tailwind' if s.oil_tailwind else '') ~ ' · momentum screen · unproven' %}
+    {% set _ctx_zh = ((' — ' ~ (s.lead_zh or s.lead_en)) if s.lead_en else '') ~ ((' · ' ~ _sig.tier ~ ' 新鲜金叉') if (_sig and _sig.tier) else '') ~ (' · 内部人买入' if (s.insider and s.insider.lean == 'buying' and (s.insider.n_buys or 0) > 0) else '') ~ (' · 油价顺风' if s.oil_tailwind else '') ~ ' · 动量筛选 · 未验证' %}
+    {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
+    {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
+    {% set _bz = es.buy_zone if es else none %}
+    {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
+    {{ pv.pv_card({
+      'href': 'canada_stock.html#' ~ s.ticker, 'tk': s.ticker, 'mkt': 'ca',
+      'name': s.name, 'sec': s.sector, 'sec_zh': s.sector,
+      'price_txt': ('$' ~ ('%.2f'|format(s.price))) if (s.price is defined and s.price is not none) else none,
+      'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+      'edge': none, 'edge_txt': ('#' ~ s.board_pos) if s.board_pos is defined and s.board_pos is not none else none,
+      'edge_label_en': 'Rank', 'edge_label_zh': '排名',
+      'edge_tip_en': 'Rank within this group, not a score.',
+      'edge_tip_zh': '组内顺序，不是分数。',
+      'stage': _stage, 'spark': s.get('spark_svg'),
+      'zone_kind': _zk,
+      'zone_lo': ('$' ~ ('%.2f'|format(_bz.low))) if (_bz and _bz.low is not none) else none,
+      'zone_hi': ('$' ~ ('%.2f'|format(_bz.high))) if (_bz and _bz.high is not none) else none,
+      'date': (s.get('signal') or {}).get('asof') or setups.get('as_of'),
+      'flags': _fl.rows
+    }) }}
     {% endfor %}
   </div>
   {# ===== WATCH strip (W6 parity R6/R7/R8) — strong momentum SCREEN, blocked entry
