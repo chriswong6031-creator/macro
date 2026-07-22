@@ -31,6 +31,7 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -204,6 +205,11 @@ _BRAIN_TOOLS = frozenset({
     "set_chart_timeframe",
     "toggle_chart_indicator",
     "run_chart_detection",
+    # Chart Mastermind v2 (CMX W2): terminal page only
+    "emit_chart_command",   # typed v2 command envelope (draw/scene/ai ops)
+    "chart_digest",         # deterministic structural digest (Eyes)
+    "measure_line",         # server-side pre-draw trendline fit checker
+    "read_chart_state",     # read the live chart session (capabilities/drawings)
     # CXI-R23a internals tools (schemas added only for allowlisted sessions)
     "context_search",
     "context_open",
@@ -237,14 +243,24 @@ _BRAIN_ONLY_TOOLS = frozenset({
     "set_chart_timeframe",
     "toggle_chart_indicator",
     "run_chart_detection",
+    # Chart Mastermind v2 (CMX W2)
+    "emit_chart_command",
+    "chart_digest",
+    "measure_line",
+    "read_chart_state",
 })
 
-# Chart-command tool names (offered ONLY when context.page == 'terminal')
+# Chart-command tool names (offered ONLY when context.page == 'terminal').
+# These produce a client-executed 'command' SSE event (v1 flat actions + the v2 envelope).
+# The CMX W2 read tools (chart_digest/measure_line/read_chart_state) are ALSO terminal-only
+# but are NOT here — they return data, not a 'command' event, so they must not hit the
+# command-emit gate. Their terminal gating happens in _chart_command_tool_schemas().
 _CHART_COMMAND_TOOLS = frozenset({
     "set_chart_symbol",
     "set_chart_timeframe",
     "toggle_chart_indicator",
     "run_chart_detection",
+    "emit_chart_command",   # CMX W2 — typed v2 envelope, same SSE channel
 })
 
 # ---------------------------------------------------------------------------
@@ -537,6 +553,110 @@ def _chart_command_tool_schemas() -> list[dict]:
                 },
                 "required": ["kind"],
             },
+        },
+        # ── Chart Mastermind v2 (CMX W2) ──────────────────────────────────────
+        {
+            "name": "emit_chart_command",
+            "description": (
+                "CLIENT-EXECUTED: draw on or configure the user's chart with a typed command. "
+                "Use this to mark levels, trendlines, zones, fibs, paths, labels, risk boxes, or to "
+                "set symbol/timeframe/indicators/range on the Terminal chart. The stroke appears on "
+                "the user's live chart. Server emits a 'command' SSE event; no filesystem/network "
+                "action is performed. Prefer this over the older set_chart_* tools for anything you "
+                "want the user to SEE being drawn. Call chart_digest first to ground the geometry, and "
+                "measure_line before asserting a trendline. Only offered when page=terminal."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "enum": list(_CHART_V2_OPS),
+                        "description": "The command op (e.g. 'draw.trendline', 'draw.hline', 'chart.set_symbol').",
+                    },
+                    "id": {
+                        "type": "string",
+                        "description": "Object id, namespaced ai_* (e.g. 'ai_tl_1'). Required for draw.* ops you may later update/clear.",
+                    },
+                    "args": {
+                        "type": "object",
+                        "description": (
+                            "Op arguments. Points are {t: <epoch seconds>, p: <price>}. "
+                            "draw.trendline: {p1, p2, extend?, text?}. draw.hline: {p}. "
+                            "draw.zone: {top, bottom}. chart.set_symbol: {symbol}. chart.set_tf: {tf}. "
+                            "chart.set_indicators: {indicators:[...]}. Prices must be positive."
+                        ),
+                    },
+                    "caption": {
+                        "type": "string",
+                        "description": "One short plain sentence describing what this stroke shows (max 140 chars).",
+                    },
+                },
+                "required": ["op"],
+            },
+        },
+        {
+            "name": "chart_digest",
+            "description": (
+                "Read a deterministic structural digest of a symbol's price action: swing pivots, "
+                "trend segments, support/resistance levels, trendline candidates, unfilled gaps, a "
+                "volatility/distance context, and a weekly snapshot. This is your EYES — call it "
+                "before drawing or reading structure. Daily ('1D') or weekly ('1W'). Returns compact "
+                "typed data with plain-word labels. Only offered when page=terminal."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "symbol": {"type": "string", "description": "Ticker symbol (e.g. 'NVDA')"},
+                    "tf": {"type": "string", "enum": ["1D", "1W"], "description": "Timeframe: '1D' or '1W'"},
+                    "sections": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional subset: swings, trend, levels, trendlines, gaps, context, weekly.",
+                    },
+                },
+                "required": ["symbol"],
+            },
+        },
+        {
+            "name": "measure_line",
+            "description": (
+                "Check how well a trendline through two points fits the real bars BEFORE you draw or "
+                "assert it. Returns touch count, max deviation (in volatility units), and a verdict: "
+                "'holds', 'weak', or 'invalid'. Require a 'holds' verdict before you claim a trendline "
+                "is real. Points are {t: <epoch seconds>, p: <price>}. Only offered when page=terminal."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "symbol": {"type": "string", "description": "Ticker symbol (e.g. 'NVDA')"},
+                    "tf": {"type": "string", "enum": ["1D", "1W"], "description": "Timeframe: '1D' or '1W'"},
+                    "p1": {
+                        "type": "object",
+                        "properties": {"t": {"type": "number"}, "p": {"type": "number"}},
+                        "required": ["t", "p"],
+                        "description": "First anchor {t: epoch seconds, p: price}.",
+                    },
+                    "p2": {
+                        "type": "object",
+                        "properties": {"t": {"type": "number"}, "p": {"type": "number"}},
+                        "required": ["t", "p"],
+                        "description": "Second anchor {t: epoch seconds, p: price}.",
+                    },
+                },
+                "required": ["symbol", "p1", "p2"],
+            },
+        },
+        {
+            "name": "read_chart_state",
+            "description": (
+                "Read what's currently on the user's live chart: the active symbol, timeframe, "
+                "indicators, visible range, the chart's CAPABILITIES (which timeframes and indicators "
+                "it supports), and existing drawings. Choose indicators and timeframes ONLY from the "
+                "reported capabilities. Returns {connected: false} when no live chart is attached. "
+                "Only offered when page=terminal."
+            ),
+            "input_schema": {"type": "object", "properties": {}},
         },
     ]
 
@@ -1875,9 +1995,286 @@ def _tool_run_chart_detection(params: dict) -> dict:
 def _flat_command(result: dict) -> dict:
     """Flat 'command' SSE event from a chart-command tool result — mirrors the annotate
     emitter (fields at top level, not nested under 'payload'). The Terminal reads
-    ev.symbol / ev.tf / ev.indicator / ev.on / ev.kind directly, so internal-only keys
-    (client_executed, note) are stripped and the rest kept flat."""
+    ev.symbol / ev.tf / ev.indicator / ev.on / ev.kind directly (v1) or the v2 envelope
+    (ev.op / ev.id / ev.args / ev.caption) so internal-only keys (client_executed, note)
+    are stripped and the rest kept flat."""
     return {k: v for k, v in result.items() if k not in ("client_executed", "note")}
+
+
+# ---------------------------------------------------------------------------
+# CMX W2 — Chart Bus v2 command envelope (masterplan §2.1)
+# ---------------------------------------------------------------------------
+# The v2 command tool emits a typed envelope through the SAME 'command' SSE channel as the
+# v1 chart-command tools. Server-side validation happens BEFORE emit: an invalid op/id/arg
+# returns a tool-error dict (no client_executed) so the loop never collects/emits it — the
+# model sees the rejection and self-corrects, exactly the #2982/#2984 shape-contract lesson.
+
+# Ops enum — verbatim from masterplan §2.1 (order preserved for the schema enum).
+_CHART_V2_OPS = (
+    "chart.set_symbol", "chart.set_tf", "chart.set_indicators", "chart.set_range",
+    "draw.trendline", "draw.ray", "draw.hline", "draw.zone", "draw.channel",
+    "draw.fib", "draw.path", "draw.label", "draw.marker", "draw.risk_box",
+    "scene.begin", "scene.end", "ai.clear", "ai.undo",
+)
+_CHART_V2_OPS_SET = frozenset(_CHART_V2_OPS)
+
+_AI_ID_RE = re.compile(r"^ai_[A-Za-z0-9_-]{1,40}$")
+_CAPTION_MAX = 140
+_BATCH_OP_CAP = 24
+
+# Args keys that carry price numbers — validated finite AND > 0 (masterplan §2.1 "prices > 0").
+_PRICE_KEYS = frozenset({"p", "price", "top", "bottom", "level", "entry", "stop", "target"})
+# Args keys that carry time numbers — validated finite (any sign; epoch seconds).
+_TIME_KEYS = frozenset({"t", "from", "to", "t1", "t2"})
+
+
+def _num_ok(x: Any) -> bool:
+    """True iff x is a finite real number (int/float, not bool, not NaN/inf)."""
+    if isinstance(x, bool):
+        return False
+    if not isinstance(x, (int, float)):
+        return False
+    try:
+        return not (x != x) and x not in (float("inf"), float("-inf"))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _validate_point(pt: Any) -> str | None:
+    """Return an error string if a {t, p} point is malformed, else None."""
+    if not isinstance(pt, dict):
+        return "point must be an object"
+    if not _num_ok(pt.get("t")):
+        return "point.t must be a finite number"
+    p = pt.get("p")
+    if not _num_ok(p) or p <= 0:
+        return "point.p must be a finite price > 0"
+    return None
+
+
+def _validate_v2_args(args: Any) -> str | None:
+    """Shallow-validate a v2 op's args: finite numbers, positive prices, sane nested points.
+
+    Deliberately permissive on which keys appear (op-specific shape is the Terminal zod's
+    job); this gateway guard rejects the classes the masterplan names: non-finite numbers,
+    non-positive prices, and malformed t/p points. Returns an error string or None.
+    """
+    if args is None:
+        return None
+    if not isinstance(args, dict):
+        return "args must be an object"
+    for key, val in args.items():
+        # Nested {t,p} points (p1/p2/point/points[]).
+        if key in ("p1", "p2", "point"):
+            err = _validate_point(val)
+            if err:
+                return f"{key}: {err}"
+            continue
+        if key in ("points", "path") and isinstance(val, list):
+            for i, pt in enumerate(val):
+                err = _validate_point(pt)
+                if err:
+                    return f"{key}[{i}]: {err}"
+            continue
+        if key in _PRICE_KEYS:
+            if not _num_ok(val) or val <= 0:
+                return f"{key} must be a finite price > 0"
+            continue
+        if key in _TIME_KEYS:
+            if not _num_ok(val):
+                return f"{key} must be a finite number"
+            continue
+        # Any other bare number must at least be finite.
+        if isinstance(val, (int, float)) and not isinstance(val, bool) and not _num_ok(val):
+            return f"{key} must be finite"
+    return None
+
+
+def _tool_chart_command(params: dict) -> dict:
+    """CLIENT-EXECUTED (v2): validate a Chart Bus v2 command envelope, then emit it.
+
+    Masterplan §2.1. Server-side validation BEFORE emit — any failure returns an error dict
+    with NO client_executed key, so the tool-loop never emits it (the model gets the reason
+    and retries). On success returns the flat envelope the Terminal's CFG.onCommand consumes.
+    Server performs no filesystem/network action.
+    """
+    op = str(params.get("op") or "").strip()
+    if op not in _CHART_V2_OPS_SET:
+        return {"error": f"unknown op {op!r}; allowed: {list(_CHART_V2_OPS)}"}
+
+    obj_id = params.get("id")
+    if obj_id is not None:
+        if not isinstance(obj_id, str) or not _AI_ID_RE.match(obj_id):
+            return {"error": "id must match ^ai_[A-Za-z0-9_-]{1,40}$"}
+
+    caption = params.get("caption")
+    if caption is not None:
+        if not isinstance(caption, str):
+            return {"error": "caption must be a string"}
+        if len(caption) > _CAPTION_MAX:
+            return {"error": f"caption exceeds {_CAPTION_MAX} chars"}
+
+    args = params.get("args")
+    args_err = _validate_v2_args(args)
+    if args_err:
+        return {"error": args_err}
+
+    envelope: dict[str, Any] = {
+        "client_executed": True,
+        "type": "command",
+        "v": 2,
+        "op": op,
+    }
+    if obj_id is not None:
+        envelope["id"] = obj_id
+    if isinstance(args, dict):
+        envelope["args"] = args
+    if caption is not None:
+        envelope["caption"] = caption
+    # Optional batch coordination fields, passed through when present and well-typed.
+    for opt_key in ("batch_id", "seq"):
+        v = params.get(opt_key)
+        if opt_key == "seq" and isinstance(v, int) and not isinstance(v, bool):
+            envelope[opt_key] = v
+        elif opt_key == "batch_id" and isinstance(v, str) and v[:40]:
+            envelope[opt_key] = v[:40]
+    envelope["note"] = "display only — server performed no action"
+    return envelope
+
+
+def validate_v2_batch(ops: list) -> str | None:
+    """Validate a batch of v2 op envelopes against the per-batch cap (masterplan §2.1).
+
+    Exposed for the shape tests + any future batch entry point. Returns an error string
+    (reject the whole batch — never silent-drop) or None. Individual op validation reuses
+    _tool_chart_command's checks.
+    """
+    if not isinstance(ops, list):
+        return "batch must be a list"
+    if len(ops) > _BATCH_OP_CAP:
+        return f"batch exceeds {_BATCH_OP_CAP} ops"
+    for i, op in enumerate(ops):
+        if not isinstance(op, dict):
+            return f"op[{i}] must be an object"
+        res = _tool_chart_command(op)
+        if "error" in res:
+            return f"op[{i}]: {res['error']}"
+    return None
+
+
+# ---------------------------------------------------------------------------
+# CMX W2 — ChartSession store (in-process, TTL, thread-safe; masterplan §2.2)
+# ---------------------------------------------------------------------------
+# Latest chart state POST per (user_id, client), kept in memory only (no DB, no files).
+# read_chart_state reads it; the POST /api/brain/chart/state route writes it. TTL prunes
+# stale sessions on access so the dict cannot grow unbounded.
+
+_CHART_STATE_TTL = 600.0          # seconds a session is considered live
+_CHART_STATE_CAP = 4000           # hard cap on stored sessions (oldest evicted)
+_chart_state_store: dict[tuple[str, str], dict] = {}
+_chart_state_lock = threading.Lock()
+
+
+def _chart_state_key(user_id: str, client: str) -> tuple[str, str]:
+    return (str(user_id or ""), str(client or ""))
+
+
+def put_chart_state(user_id: str, client: str, session: dict) -> dict:
+    """Store the latest chart-state POST for (user_id, client). Returns the stored record.
+
+    Overwrites any prior state for the pair and stamps a monotonic updated_at. Prunes
+    expired entries and enforces the cap on write. Never raises.
+    """
+    now = time.monotonic()
+    key = _chart_state_key(user_id, client)
+    record = {"session": session, "updated_at": now}
+    with _chart_state_lock:
+        # Prune expired.
+        expired = [k for k, v in _chart_state_store.items() if now - v.get("updated_at", 0) > _CHART_STATE_TTL]
+        for k in expired:
+            _chart_state_store.pop(k, None)
+        # Cap: evict oldest-inserted if at ceiling and this is a new key.
+        if key not in _chart_state_store and len(_chart_state_store) >= _CHART_STATE_CAP:
+            try:
+                _chart_state_store.pop(next(iter(_chart_state_store)))
+            except StopIteration:
+                pass
+        _chart_state_store[key] = record
+    return record
+
+
+def get_chart_state(user_id: str, client: str) -> dict | None:
+    """Return the live session dict for (user_id, client), or None if absent/expired."""
+    now = time.monotonic()
+    key = _chart_state_key(user_id, client)
+    with _chart_state_lock:
+        rec = _chart_state_store.get(key)
+        if rec is None:
+            return None
+        if now - rec.get("updated_at", 0) > _CHART_STATE_TTL:
+            _chart_state_store.pop(key, None)
+            return None
+        return rec.get("session")
+
+
+def _tool_read_chart_state(user_id: str, client: str) -> dict:
+    """Read the caller's live chart state (masterplan §2.2/§2.3).
+
+    Terminal client only: the dashboard has no live chart, so a non-terminal client always
+    gets {connected: false}. When connected, returns the stored session (symbol/tf/indicators/
+    visible_range/capabilities/drawings) so the agent chooses indicators & TFs from the
+    reported capabilities rather than hallucinating names.
+    """
+    if (client or "").strip().lower() != "terminal":
+        return {"connected": False}
+    session = get_chart_state(user_id, "terminal")
+    if not session:
+        return {"connected": False}
+    return {"connected": True, "session": session}
+
+
+# ---------------------------------------------------------------------------
+# CMX W2 — Eyes: deterministic digest tools (chart_perception, lazy-imported)
+# ---------------------------------------------------------------------------
+
+def _tool_chart_digest(params: dict, root: Path) -> dict:
+    """Deterministic structural digest of a symbol (masterplan §3). Lazy-imports
+    chart_perception so an absent numeric dep returns a soft error, never crashes the loop."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    if not symbol:
+        return {"error": "symbol required"}
+    tf = str(params.get("tf") or "1D").strip()
+    sections = params.get("sections")
+    if sections is not None and not isinstance(sections, list):
+        sections = None
+    try:
+        from engine.neuralweb import chart_perception as cp  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001 — absent deps → soft error, loop survives
+        return {"error": f"chart perception unavailable: {exc}"}
+    try:
+        return cp.chart_digest(symbol, tf=tf, sections=sections, root=root)
+    except Exception as exc:  # noqa: BLE001 — defense-in-depth; the digest already never raises
+        return {"error": f"digest failed: {exc}"}
+
+
+def _tool_measure_line(params: dict, root: Path) -> dict:
+    """Server-side pre-draw fit checker for a trendline (masterplan §2.3/§3). Lazy-import."""
+    symbol = _safe_symbol(params.get("symbol") or "")
+    if not symbol:
+        return {"error": "symbol required"}
+    tf = str(params.get("tf") or "1D").strip()
+    p1 = params.get("p1")
+    p2 = params.get("p2")
+    if not isinstance(p1, dict) or not isinstance(p2, dict):
+        return {"error": "p1 and p2 must be objects with t and p"}
+    try:
+        from engine.neuralweb import chart_perception as cp  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"chart perception unavailable: {exc}"}
+    try:
+        return cp.measure_line(symbol, tf, p1, p2, root=root)
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"measure failed: {exc}"}
 
 
 def _tool_annotate_chart(params: dict) -> dict:
@@ -2161,6 +2558,7 @@ def _dispatch_brain_tool(
     terminal_hub_url: str,
     user_id: str = "",
     internals_ok: bool = False,
+    chart_client: str = "",
 ) -> dict:
     """Dispatch a brain gateway tool call.
 
@@ -2170,6 +2568,8 @@ def _dispatch_brain_tool(
     internals_ok (CXI-R23a): when False, context_* tool names are excluded from the
     disclosed available_tools list AND are refused at execution (defense-in-depth:
     schema-omission alone is insufficient — the execution boundary must also gate).
+    chart_client (CMX W2): the caller's chart client ('terminal' on the Terminal page),
+    used by read_chart_state to fetch the right ChartSession.
     """
     if tool_name not in _BRAIN_TOOLS:
         log.warning("brain_gateway: REFUSED tool %r (not in allowlist)", tool_name)
@@ -2229,6 +2629,15 @@ def _dispatch_brain_tool(
             return _tool_toggle_chart_indicator(tool_params)
         if tool_name == "run_chart_detection":
             return _tool_run_chart_detection(tool_params)
+        # Chart Mastermind v2 (CMX W2)
+        if tool_name == "emit_chart_command":
+            return _tool_chart_command(tool_params)
+        if tool_name == "chart_digest":
+            return _tool_chart_digest(tool_params, root)
+        if tool_name == "measure_line":
+            return _tool_measure_line(tool_params, root)
+        if tool_name == "read_chart_state":
+            return _tool_read_chart_state(user_id, chart_client)
 
     # CXI-R23a internals tools — authorization enforced at execution boundary, not just
     # by schema-omission.  A non-allowlisted session that somehow names an internals tool
@@ -2270,10 +2679,19 @@ def _all_brain_tool_schemas(root: Path, page: str = "", internals_allowed: bool 
 _CHART_COMMAND_SYSTEM_DIRECTIVE = """
 CHART CONTROL (Terminal only):
 You can drive the user's chart with client-side DISPLAY ACTIONS: set_chart_symbol,
-set_chart_timeframe, toggle_chart_indicator, run_chart_detection. Use them when the user
-asks to show, switch, mark, or draw something on the chart (e.g. "show NVDA weekly with
-RSI", "mark support & resistance"). These are DISPLAY ACTIONS ONLY — they never constitute
-a buy/sell/hold recommendation and perform no server-side action.
+set_chart_timeframe, toggle_chart_indicator, run_chart_detection, and emit_chart_command
+(for drawing trendlines, levels, zones, labels — the user watches it appear). Use them when
+the user asks to show, switch, mark, or draw something on the chart (e.g. "show NVDA weekly
+with RSI", "mark support & resistance"). These are DISPLAY ACTIONS ONLY — they never
+constitute a buy/sell/hold recommendation and perform no server-side action.
+
+READING THE CHART BEFORE YOU DRAW:
+- Call chart_digest first to see the real structure (swings, levels, trendline candidates)
+  before you mark anything — draw what the bars show, not what you remember.
+- Before you call a line a trendline, run measure_line and only assert it when the verdict
+  is "holds"; if it comes back "weak" or "invalid", say so plainly instead.
+- Pick timeframes and indicators only from what read_chart_state reports the chart can do.
+- Every drawing caption is one short plain sentence — what it shows, no jargon.
 """
 
 
@@ -3126,7 +3544,7 @@ def _run_brain_loop(
             tool_params = block.input or {}
             tool_id = block.id
 
-            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok)
+            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok, chart_client=("terminal" if safe_page == "terminal" else ""))
 
             # Collect annotate_chart payloads for the response
             if tool_name == "annotate_chart" and result.get("client_executed"):
@@ -3336,7 +3754,7 @@ def _run_brain_loop_stream(
             # Emit tool progress event
             yield f"data: {json.dumps({'type': 'tool', 'name': tool_name})}\n\n"
 
-            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok)
+            result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok, chart_client=("terminal" if safe_page == "terminal" else ""))
 
             if tool_name == "annotate_chart" and result.get("client_executed"):
                 annotations.append(result)

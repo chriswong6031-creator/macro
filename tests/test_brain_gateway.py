@@ -2496,7 +2496,7 @@ def test_run_brain_loop_accepts_user_id_kwarg(tmp_path):
     client = _MockClient([tool_resp, text_resp])
     seen = {}
 
-    def _spy_dispatch(name, params, root_, tdd, thu, user_id="", internals_ok=False):
+    def _spy_dispatch(name, params, root_, tdd, thu, user_id="", internals_ok=False, chart_client=""):
         seen["user_id"] = user_id
         return {"available": False, "note": "stub"}
 
@@ -2936,3 +2936,337 @@ def test_get_user_quotas_unlimited_operator():
             with _patch.object(gw, "_brain_quota_dir", return_value=__import__("pathlib").Path("/tmp")):
                 q2 = gw.get_user_quotas("uidB", user_email="someone@else.com")
         assert q2["tier"] == "free"  # non-allowlisted unaffected
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# CMX W2 — Chart Mastermind Eyes + Bus v2 (masterplan §2, §3)
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ── v2 command envelope validation (accept/reject matrix) ─────────────────────
+
+def test_v2_command_accepts_valid_trendline():
+    """A well-formed draw.trendline envelope is accepted and emits client_executed=True."""
+    res = gw._tool_chart_command({
+        "op": "draw.trendline", "id": "ai_tl_1",
+        "args": {"p1": {"t": 1721606400, "p": 118.42}, "p2": {"t": 1737244800, "p": 96.10},
+                 "extend": "right", "text": "Rising support"},
+        "caption": "Marking the demand shelf under June's range",
+    })
+    assert res.get("client_executed") is True
+    assert res.get("v") == 2
+    assert res.get("op") == "draw.trendline"
+    assert res.get("id") == "ai_tl_1"
+    assert res.get("caption")
+    # Flat emission strips only internal keys; the envelope survives.
+    flat = gw._flat_command(res)
+    assert "client_executed" not in flat and "note" not in flat
+    assert flat["op"] == "draw.trendline" and flat["v"] == 2
+
+
+def test_v2_command_rejects_unknown_op():
+    """Unknown op → error dict with NO client_executed (never emitted)."""
+    res = gw._tool_chart_command({"op": "draw.rocket"})
+    assert "error" in res
+    assert "client_executed" not in res
+
+
+def test_v2_command_rejects_bad_id_namespace():
+    """ids must match ^ai_[A-Za-z0-9_-]{1,40}$ — a non-ai_ id is rejected."""
+    res = gw._tool_chart_command({"op": "draw.hline", "id": "u_1", "args": {"p": 100.0}})
+    assert "error" in res and "client_executed" not in res
+    # An over-long ai_ id is also rejected.
+    res2 = gw._tool_chart_command({"op": "draw.hline", "id": "ai_" + "x" * 41, "args": {"p": 100.0}})
+    assert "error" in res2
+
+
+def test_v2_command_rejects_caption_over_140():
+    """caption > 140 chars → rejected."""
+    res = gw._tool_chart_command({"op": "ai.clear", "caption": "x" * 141})
+    assert "error" in res and "client_executed" not in res
+    # Exactly 140 is fine.
+    ok = gw._tool_chart_command({"op": "ai.clear", "caption": "x" * 140})
+    assert ok.get("client_executed") is True
+
+
+def test_v2_command_rejects_nonpositive_price():
+    """Prices must be finite and > 0."""
+    res = gw._tool_chart_command({"op": "draw.hline", "id": "ai_h1", "args": {"p": -5.0}})
+    assert "error" in res
+    res0 = gw._tool_chart_command({"op": "draw.hline", "id": "ai_h2", "args": {"p": 0}})
+    assert "error" in res0
+
+
+def test_v2_command_rejects_nonfinite_number():
+    """Non-finite numbers (inf/nan) in args are rejected."""
+    res = gw._tool_chart_command({"op": "draw.hline", "id": "ai_h3", "args": {"p": float("inf")}})
+    assert "error" in res
+    res2 = gw._tool_chart_command({"op": "draw.trendline", "id": "ai_h4",
+                                   "args": {"p1": {"t": float("nan"), "p": 10.0}, "p2": {"t": 2, "p": 12.0}}})
+    assert "error" in res2
+
+
+def test_v2_command_accepts_all_ops():
+    """Every op in the masterplan enum validates with minimal args."""
+    minimal = {
+        "chart.set_symbol": {"args": {"symbol": "NVDA"}},
+        "chart.set_tf": {"args": {"tf": "1D"}},
+        "chart.set_indicators": {"args": {"indicators": ["EMA"]}},
+        "chart.set_range": {"args": {"from": 1, "to": 2}},
+        "draw.trendline": {"id": "ai_a", "args": {"p1": {"t": 1, "p": 10.0}, "p2": {"t": 2, "p": 12.0}}},
+        "draw.ray": {"id": "ai_b", "args": {"p1": {"t": 1, "p": 10.0}, "p2": {"t": 2, "p": 12.0}}},
+        "draw.hline": {"id": "ai_c", "args": {"p": 10.0}},
+        "draw.zone": {"id": "ai_d", "args": {"top": 12.0, "bottom": 10.0}},
+        "draw.channel": {"id": "ai_e", "args": {"p1": {"t": 1, "p": 10.0}, "p2": {"t": 2, "p": 12.0}}},
+        "draw.fib": {"id": "ai_f", "args": {"p1": {"t": 1, "p": 10.0}, "p2": {"t": 2, "p": 12.0}}},
+        "draw.path": {"id": "ai_g", "args": {"points": [{"t": 1, "p": 10.0}, {"t": 2, "p": 11.0}]}},
+        "draw.label": {"id": "ai_h", "args": {"point": {"t": 1, "p": 10.0}}, "caption": "hi"},
+        "draw.marker": {"id": "ai_i", "args": {"point": {"t": 1, "p": 10.0}}},
+        "draw.risk_box": {"id": "ai_j", "args": {"entry": 10.0, "stop": 9.0, "target": 12.0}},
+        "scene.begin": {"args": {"title": "Plan"}},
+        "scene.end": {},
+        "ai.clear": {},
+        "ai.undo": {"args": {"n": 1}},
+    }
+    for op in gw._CHART_V2_OPS:
+        params = {"op": op, **minimal.get(op, {})}
+        res = gw._tool_chart_command(params)
+        assert res.get("client_executed") is True, f"op {op} rejected: {res}"
+
+
+def test_v2_batch_rejects_over_cap():
+    """A batch above the 24-op cap is rejected wholesale (never silent-drop)."""
+    ops = [{"op": "ai.undo"} for _ in range(25)]
+    err = gw.validate_v2_batch(ops)
+    assert err is not None and "24" in err
+    # Exactly 24 valid ops pass.
+    assert gw.validate_v2_batch([{"op": "ai.undo"} for _ in range(24)]) is None
+
+
+def test_v2_batch_rejects_bad_member():
+    """A batch with one invalid op is rejected and names the offending index."""
+    ops = [{"op": "ai.clear"}, {"op": "draw.bogus"}]
+    err = gw.validate_v2_batch(ops)
+    assert err is not None and "op[1]" in err
+
+
+# ── emit_chart_command in the tool loop → 'command' SSE event ─────────────────
+
+def test_v2_command_emitted_as_sse_event_in_stream(tmp_path):
+    """emit_chart_command on the terminal page emits a v2 'command' SSE event."""
+    root = _make_temp_root()
+    cmd_block = _MockBlock("tool_use", name="emit_chart_command",
+                           input_={"op": "draw.hline", "id": "ai_h1",
+                                   "args": {"p": 112.5}, "caption": "prior high"}, id_="c1")
+    turn1 = _MockResponse([cmd_block], "tool_use")
+    turn2 = _MockResponse([_MockBlock("text", "Marked it. is_context_only: true — display-tier pending FDR.")], "end_turn")
+    providers = [{"client": _MockClient([turn1, turn2]), "model": "deepseek-chat"}]
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        events = list(gw.chat_stream("mark the prior high", "userX", lane="fast",
+                                                     context={"page": "terminal"}, root=root))
+    parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+    cmds = [p for p in parsed if p.get("type") == "command" and p.get("v") == 2]
+    assert cmds, f"no v2 command event: {parsed}"
+    assert cmds[0]["op"] == "draw.hline"
+    assert cmds[0]["args"]["p"] == 112.5
+    assert "payload" not in cmds[0]
+
+
+def test_v2_invalid_command_not_emitted(tmp_path):
+    """An invalid emit_chart_command (unknown op) produces NO 'command' SSE event."""
+    root = _make_temp_root()
+    bad_block = _MockBlock("tool_use", name="emit_chart_command",
+                           input_={"op": "draw.teleport"}, id_="c1")
+    turn1 = _MockResponse([bad_block], "tool_use")
+    turn2 = _MockResponse([_MockBlock("text", "I can't do that. is_context_only: true — display-tier pending FDR.")], "end_turn")
+    providers = [{"client": _MockClient([turn1, turn2]), "model": "deepseek-chat"}]
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        events = list(gw.chat_stream("do a barrel roll", "userX", lane="fast",
+                                                     context={"page": "terminal"}, root=root))
+    parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+    cmds = [p for p in parsed if p.get("type") == "command"]
+    assert cmds == [], f"invalid command leaked to SSE: {cmds}"
+
+
+# ── Chart tool schema gating (terminal only) ──────────────────────────────────
+
+def test_chart_v2_tools_offered_on_terminal_only():
+    """emit_chart_command / chart_digest / measure_line / read_chart_state appear ONLY on
+    the terminal page."""
+    root = _make_temp_root()
+    term = {s["name"] for s in gw._all_brain_tool_schemas(root, page="terminal")}
+    chat = {s["name"] for s in gw._all_brain_tool_schemas(root, page="chat")}
+    empty = {s["name"] for s in gw._all_brain_tool_schemas(root, page="")}
+    for tool in ("emit_chart_command", "chart_digest", "measure_line", "read_chart_state"):
+        assert tool in term, f"{tool} missing on terminal"
+        assert tool not in chat, f"{tool} leaked to chat"
+        assert tool not in empty, f"{tool} leaked to empty page"
+
+
+def test_chart_digest_schema_enumerates_tf():
+    """chart_digest's tf param is enum-constrained to 1D/1W (no hallucinated TFs)."""
+    root = _make_temp_root()
+    schemas = {s["name"]: s for s in gw._all_brain_tool_schemas(root, page="terminal")}
+    tf = schemas["chart_digest"]["input_schema"]["properties"]["tf"]
+    assert set(tf["enum"]) == {"1D", "1W"}
+    # emit_chart_command's op enum matches the masterplan ops exactly.
+    op_enum = schemas["emit_chart_command"]["input_schema"]["properties"]["op"]["enum"]
+    assert list(op_enum) == list(gw._CHART_V2_OPS)
+
+
+# ── ChartSession store: TTL + read_chart_state default ────────────────────────
+
+def test_chart_state_put_get_roundtrip():
+    """A stored session is read back for the same (user, client)."""
+    gw.put_chart_state("u-rt", "terminal", {"symbol": "NVDA", "tf": "1D"})
+    got = gw.get_chart_state("u-rt", "terminal")
+    assert got == {"symbol": "NVDA", "tf": "1D"}
+
+
+def test_chart_state_ttl_expiry(monkeypatch):
+    """A session older than the TTL is treated as absent (and pruned)."""
+    import time as _t
+    base = 1000.0
+    monkeypatch.setattr(gw.time, "monotonic", lambda: base)
+    gw.put_chart_state("u-ttl", "terminal", {"symbol": "AAPL"})
+    # Jump past the TTL.
+    monkeypatch.setattr(gw.time, "monotonic", lambda: base + gw._CHART_STATE_TTL + 1)
+    assert gw.get_chart_state("u-ttl", "terminal") is None
+
+
+def test_read_chart_state_default_disconnected():
+    """read_chart_state returns {connected: false} for a non-terminal client or absent session."""
+    # Non-terminal client → always disconnected.
+    assert gw._tool_read_chart_state("anyone", "dashboard") == {"connected": False}
+    # Terminal client with no stored session → disconnected.
+    assert gw._tool_read_chart_state("ghost-user-xyz", "terminal") == {"connected": False}
+
+
+def test_read_chart_state_connected_returns_session():
+    """When a terminal session exists, read_chart_state returns it under 'session'."""
+    gw.put_chart_state("u-conn", "terminal",
+                       {"symbol": "TSLA", "tf": "1W",
+                        "capabilities": {"tfs": ["1D", "1W"], "indicators": ["EMA"]}})
+    out = gw._tool_read_chart_state("u-conn", "terminal")
+    assert out["connected"] is True
+    assert out["session"]["symbol"] == "TSLA"
+    assert "capabilities" in out["session"]
+
+
+def test_read_chart_state_dispatch_off_terminal(tmp_path):
+    """Via the dispatcher: read_chart_state with a non-terminal chart_client is disconnected."""
+    root = _make_temp_root()
+    res = gw._dispatch_brain_tool("read_chart_state", {}, root, tmp_path, "http://localhost:3100",
+                                  user_id="u-disp", chart_client="")
+    assert res == {"connected": False}
+
+
+# ── chart_digest / measure_line tools: soft-error + null paths ────────────────
+
+def test_chart_digest_tool_requires_symbol(tmp_path):
+    """chart_digest tool returns an error dict when symbol is missing."""
+    root = _make_temp_root()
+    res = gw._tool_chart_digest({}, root)
+    assert "error" in res
+
+
+def test_measure_line_tool_requires_points(tmp_path):
+    """measure_line tool rejects non-object p1/p2."""
+    root = _make_temp_root()
+    res = gw._tool_measure_line({"symbol": "NVDA", "p1": "bad", "p2": {"t": 1, "p": 2.0}}, root)
+    assert "error" in res
+
+
+def test_chart_digest_tool_no_data_is_soft(tmp_path):
+    """chart_digest over a symbol with no parquet returns available=False, never raises."""
+    root = _make_temp_root()  # temp root has no data/stocks/*.parquet
+    res = gw._tool_chart_digest({"symbol": "ZZZZ", "tf": "1D"}, root)
+    assert res.get("available") is False
+
+
+# ── Route: POST /api/brain/chart/state (auth + happy path via TestClient) ──────
+# NOTE (repo memory fastapi-includedrouter-route-verify): this fastapi wraps routes in
+# _IncludedRouter, so verify endpoints via TestClient RESPONSES (401/200), never by
+# scanning app.routes for .path.
+
+def _brain_state_client():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    return TestClient(app), app
+
+
+def test_chart_state_route_401_unauthenticated():
+    """No bearer token → 401 (auth identical to the other brain routes)."""
+    client, app = _brain_state_client()
+    resp = client.post("/api/brain/chart/state",
+                       json={"client": "terminal", "session": {"symbol": "NVDA", "tf": "1D"}})
+    assert resp.status_code == 401
+
+
+def test_chart_state_route_happy_path_stores():
+    """A verified user POST → 200 {ok:true} and the session is stored + readable."""
+    from app.main import require_user
+    client, app = _brain_state_client()
+    app.dependency_overrides[require_user] = lambda: {"id": "route-user", "email": "r@x.com"}
+    try:
+        resp = client.post("/api/brain/chart/state",
+                           json={"client": "terminal",
+                                 "session": {"symbol": "MSFT", "tf": "1D",
+                                             "capabilities": {"tfs": ["1D", "1W"]}}})
+        assert resp.status_code == 200
+        assert resp.json() == {"ok": True}
+        # The gateway store now has it for (route-user, terminal).
+        assert gw.get_chart_state("route-user", "terminal")["symbol"] == "MSFT"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_chart_state_route_rejects_oversized_body():
+    """A body exceeding the ~64KB cap → 422 (pydantic validation), never stored."""
+    from app.main import require_user
+    client, app = _brain_state_client()
+    app.dependency_overrides[require_user] = lambda: {"id": "big-user", "email": "b@x.com"}
+    try:
+        big_session = {"blob": "v" * 70000}
+        resp = client.post("/api/brain/chart/state",
+                           json={"client": "terminal", "session": big_session})
+        assert resp.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_chart_state_route_no_quota_debit():
+    """The state route does not touch the brain quota ledger (it's telemetry, not a turn)."""
+    from app.main import require_user
+    client, app = _brain_state_client()
+    app.dependency_overrides[require_user] = lambda: {"id": "quota-user", "email": "q@x.com"}
+    called = {"quota": False}
+
+    def _spy(*a, **k):
+        called["quota"] = True
+        return None
+
+    try:
+        # If any quota increment were wired, this spy would trip. It must stay False.
+        with patch.object(gw, "_increment_quota", _spy) if hasattr(gw, "_increment_quota") else _noop_ctx():
+            resp = client.post("/api/brain/chart/state",
+                               json={"client": "terminal", "session": {"symbol": "AMD", "tf": "1D"}})
+        assert resp.status_code == 200
+        assert called["quota"] is False
+    finally:
+        app.dependency_overrides.clear()
+
+
+class _noop_ctx:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
