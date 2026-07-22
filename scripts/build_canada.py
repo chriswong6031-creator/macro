@@ -374,6 +374,71 @@ def _breadth() -> dict | None:
     return breadth_summary(store.read("canada_breadth", "breadth"), full=False)
 
 
+def _ca_sentiment_proxy(breadth: dict | None) -> dict | None:
+    """A 0-100 *participation* composite for the Market Sentiment odometer.
+
+    This is a COMPUTED BREADTH READ, not a claimed fear/greed index — the honest
+    thing the odometer measures is "how much of the TSX is actually participating"
+    (the same question _breadth() answers), rolled into a single dial number so a
+    glance reads broad / mixed / thin. It is display-only and never scored.
+
+    Blend (weights sum to 1.0), each term normalized to 0-100:
+      * pct_above_50   × .45  — short-term participation (names above their 50d line)
+      * pct_above_200  × .30  — structural trend health (names above their 200d line)
+      * adv/(adv+dec)  × .15  — today's up-vs-down balance on the tape
+      * 50 + 2·chg20   × .10  — whether participation is improving (20d Δ of %>50d),
+                                clamped 0-100 so a big swing can't dominate the dial.
+
+    Returns None when breadth is unavailable so the odometer shows the doctrine
+    null-state ("watch — not enough data yet", greyed dial). Zone bands mirror the
+    breadth state thresholds (>60 broad / <40 thin / else mixed) so the dial and the
+    breadth card never disagree. Labels name PARTICIPATION, never emotion.
+    """
+    if not breadth:
+        return None
+    pa50 = breadth.get("pct_above_50")
+    pa200 = breadth.get("pct_above_200")
+    if pa50 is None or pa200 is None:
+        return None
+    try:
+        pa50 = float(pa50)
+        pa200 = float(pa200)
+    except (TypeError, ValueError):
+        return None
+
+    def _clamp(x: float) -> float:
+        return max(0.0, min(100.0, x))
+
+    adv = float(breadth.get("adv", 0) or 0)
+    dec = float(breadth.get("dec", 0) or 0)
+    ad_ratio = (adv / (adv + dec) * 100.0) if (adv + dec) > 0 else 50.0
+    chg20 = float(breadth.get("pct50_chg20", 0) or 0)
+    mom = _clamp(50.0 + 2.0 * chg20)
+
+    score = _clamp(0.45 * pa50 + 0.30 * pa200 + 0.15 * ad_ratio + 0.10 * mom)
+    score_i = int(round(score))
+
+    if score_i >= 60:
+        zone, label_en, label_zh = "broad", "Broad participation", "参与广泛"
+    elif score_i < 40:
+        zone, label_en, label_zh = "thin", "Thin participation", "参与稀薄"
+    else:
+        zone, label_en, label_zh = "mixed", "Mixed participation", "参与中性"
+
+    return {
+        "score": score_i,
+        "label_en": label_en,
+        "label_zh": label_zh,
+        "zone": zone,
+        # receipt fields (Tier-2 hover in the template) — the honest inputs
+        "pct_above_50": round(pa50, 1),
+        "pct_above_200": round(pa200, 1),
+        "ad_ratio": round(ad_ratio, 1),
+        "chg20": round(chg20, 1),
+        "asof": breadth.get("asof"),
+    }
+
+
 def _benchmark_card() -> dict | None:
     """Headline cycle card for the S&P/TSX Composite (deep history)."""
     from engine.cycles import analyze
@@ -668,11 +733,15 @@ def main() -> int:
 
     try:
         sectors = _sector_cards(latest)
+        _breadth_read = _breadth()
         vm = {
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "sectors": sectors,
-            "breadth": _breadth(),
+            "breadth": _breadth_read,
+            # Market Sentiment odometer — a computed participation composite from the
+            # breadth read above (display-only; None when breadth is unavailable).
+            "ca_sentiment": _ca_sentiment_proxy(_breadth_read),
             "benchmark": _benchmark_card(),
             "pair": latest.get("pair_ratios", {}),
             "pref": latest.get("preference_check", {}),

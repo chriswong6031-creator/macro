@@ -2,9 +2,11 @@
    risk-state (site/live/china_risk_state.json, written by scripts/build_china_risk_state.py
    every ~30 min during HKEX RTH) and patch the China Market State board on china.html.
 
-   Scoped to china.html only — deliberately lighter than risk_state_live.js (no mx5-*
-   v5 gauge/path code; china.html has none of that). Ships as a PAIRED plain-copy asset:
-   templates/china_risk_state_live.js must byte-match site/china_risk_state_live.js.
+   Scoped to china.html only — lighter than risk_state_live.js. china.html's hero now
+   carries the ported US mx5 semicircle gauge (id mx5-gauge-needle / mx5-gauge-arc-fill /
+   mx5-score-numeral, geometry in the SVG's data-gauge-* attrs); we patch those in place.
+   Ships as a PAIRED plain-copy asset: templates/china_risk_state_live.js must byte-match
+   site/china_risk_state_live.js.
 
    Additive + defensive: no-ops when the file or the target elements are absent.
    Honest freshness: only lights the "live" pill when realtime:true (delayed_min==0);
@@ -70,20 +72,33 @@
     if (col) arr.textContent = GLYPH[col] || "▶";
     word.appendChild(arr);
 
-    /* #ms-score */
+    /* #ms-score + in-gauge numeral */
     var sc = document.getElementById("ms-score");
     if (sc && disp.score != null) sc.textContent = disp.score;
+    var scNum = document.getElementById("mx5-score-numeral");
+    if (scNum && disp.score != null) scNum.textContent = disp.score;
 
     /* gauge needle + arc fill follow the live score (else the baked needle
        points at last night's number while #ms-score shows the live one).
-       Geometry contract with china.html.j2: arc centre (60,68), needle
-       rotate = score*1.8-90, arc dasharray = score*1.57 of 200. */
+       Geometry is read from the SVG's data-gauge-* attrs (US mx5 gauge idiom:
+       centre cx,cy; arc-len = π·radius; needle rotate = score/100*180-90) so the
+       contract lives in ONE place — the SVG — and never drifts from china.html.j2.
+       These are GEOMETRY attrs (transform/dasharray), not colour, so setAttribute is
+       correct here; colour stays CSS-driven (.ms-* → --ok/--warn/--act) and is untouched. */
     if (disp.score != null) {
-      var ndl = document.querySelector(".cnx-gauge-needle");
-      if (ndl) ndl.setAttribute("transform",
-        "rotate(" + ((disp.score * 1.8) - 90).toFixed(1) + " 60 68)");
-      var arc = document.querySelector(".cnx-gauge-fill");
-      if (arc) arc.setAttribute("stroke-dasharray", (disp.score * 1.57).toFixed(1) + " 200");
+      var g = document.getElementById("mx5-gauge-arc-fill");
+      var svg = g ? g.ownerSVGElement : null;
+      var cx = svg ? (+svg.getAttribute("data-gauge-cx") || 70) : 70;
+      var cy = svg ? (+svg.getAttribute("data-gauge-cy") || 75) : 75;
+      var arcLen = svg ? (+svg.getAttribute("data-gauge-arc-len") || 175.93) : 175.93;
+      var deg = ((disp.score / 100 * 180) - 90).toFixed(1);
+      var ndl = document.getElementById("mx5-gauge-needle");
+      if (ndl) ndl.setAttribute("transform", "rotate(" + deg + " " + cx + " " + cy + ")");
+      if (g) {
+        var filled = (disp.score / 100 * arcLen).toFixed(1);
+        var gap = (arcLen - filled).toFixed(1);
+        g.setAttribute("stroke-dasharray", filled + " " + gap);
+      }
     }
 
     /* #ms-tick left% */
