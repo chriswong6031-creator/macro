@@ -28,22 +28,46 @@ def build() -> dict | None:
         from engine import china_intel_hub
         cmd = china_intel_hub.load_and_build()
 
-        # FALSIFIABLE TRACK-RECORD (CN) + SIGNAL GOVERNOR — the measure→act loop, CN mirror.
-        # Grade the CN hub's own claims CSI300-relative (was ungraded), persist, then recompute
-        # the de-escalation trust map. Applied on the NEXT build (1-build lag). Degrade-safe.
+        # FALSIFIABLE TRACK-RECORD (CN) + CN RADAR IC + SIGNAL GOVERNOR
+        # ── measure→act loop, CN mirror (degrade-safe, additive) ──────────────────
+        # Step 1: grade CN hub's OWN claims (opportunity/stage) CSI300-relative.
         try:
             track = china_intel_hub.compute_track_record()
             tp = config.ROOT / "data" / "china_hub" / "track_record.json"
             tp.parent.mkdir(parents=True, exist_ok=True)
             tp.write_text(json.dumps(track, indent=2, default=str))
             cmd["track_record"] = track
+        except Exception as e:  # noqa: BLE001
+            log.warning("china_intel_hub: track-record step failed (%s)", e)
+
+        # Step 2: grade CN RADAR sector events CSI300-relative → data/china_hub/radar_ic.json.
+        # The signal governor reads this file via _REGIONS["cn"]["radar"].
+        # CN ledger is sparse (~16 events as of 2026-07-22) → ic_daily_hac is dormant
+        # ({n_days:<6}) and governor stays at trust=1.0. Accrues nightly going forward.
+        try:
+            from engine import china_radar_ic
+            cn_radar_ic = china_radar_ic.compute_ic()
+            cmd["cn_radar_ic"] = {
+                "n_events": cn_radar_ic.get("n_events"),
+                "n_matured": cn_radar_ic.get("n_matured"),
+                "note": (cn_radar_ic.get("note") or "")[:120],
+            }
+            log.info(
+                "china_radar_ic: n_events=%d n_matured=%d",
+                cn_radar_ic.get("n_events", 0), cn_radar_ic.get("n_matured", 0),
+            )
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china_radar_ic: step failed (%s)", e)
+
+        # Step 3: recompute CN signal governor (reads both track_record.json + radar_ic.json).
+        try:
             from engine import signal_governor
             gov = signal_governor.compute(persist=True, region="cn")
             cmd["signal_governor"] = gov
             if gov.get("n_demoted"):
                 log.info("china signal governor: %s", gov.get("note"))
         except Exception as e:  # noqa: BLE001 — additive, never fatal to the CN build
-            log.warning("china_intel_hub: track-record/governor step failed (%s)", e)
+            log.warning("china_intel_hub: governor step failed (%s)", e)
 
         out_dir = _site_dir() / "china_intel"
         out_dir.mkdir(parents=True, exist_ok=True)
