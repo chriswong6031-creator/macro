@@ -133,7 +133,11 @@ CHANNEL_WEIGHTS: dict[str, float] = {
     "clinical_phase3_start": 0.35,  # new Phase-3 trial registration (biotech pipeline advancing)
     "hf_model_momentum":  0.35,   # Hugging Face model-download velocity (AI adoption proxy)
     "github_momentum":    0.30,   # GitHub star velocity (developer-mindshare proxy)
-    "earnings_beat":      0.30,   # Finnhub earnings surprise — single beat is weak context
+    # earnings_beat: no convergence weight (#3211) — the earnings feed is now a NON-directional
+    # catalyst clock that lands as the days_to_earnings metric only, so channel_records never
+    # emits an earnings_beat channel and it can never score here. The name survives downstream as
+    # an altdata_ledger family channel (_FAMILY_CHANNELS -> altdata_event); that path reads
+    # weights.get(c, 0.2), so the 0.2 default covers the routing with no entry needed here.
     "lobbying":           0.30,   # lobbying present (no spike)
     "short_squeeze":      0.30,   # FINRA high days-to-cover — squeeze FUEL, confirms a buy channel
     "bill_catalyst":      0.30,   # pending legislation tied to the name's sector
