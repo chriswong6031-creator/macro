@@ -625,10 +625,12 @@
 })();
 </script>
 {# the embedded cycle-map overlay — sector_cycles_data.js (core) is loaded first async=false,
-   then mm_charts.js and sector_cycles.js, so the board renders instantly on DOMContentLoaded
-   while the heavier narr+dna chunks load lazily via sector_cycles.js SC_EXTRA_DATA path. #}
+   then mm_charts.js and sector_cycles.js, so the board renders instantly on DOMContentLoaded.
+   The heavier narr+dna chunks (~2.2MB) are NOT loaded up front — SC_LAZY_EXTRAS defers them so
+   sector_cycles.js injects them on the first sector focus, keeping this page's initial load light. #}
 <script>
 (function(){
+  window.SC_LAZY_EXTRAS=true;  // defer the ~2.2MB narr+dna to first sector focus (see sector_cycles.js)
   window.SC_EXTRA_DATA=['sector_cycles_narr_data.js','sector_cycles_dna_data.js'];
   var files=['sector_cycles_data.js','mm_charts.js?v=4','sector_cycles.js'];
   var head=document.head;

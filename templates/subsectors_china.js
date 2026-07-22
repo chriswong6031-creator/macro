@@ -232,7 +232,7 @@
     var appEl = document.getElementById('sc-app');
     if (appEl) appEl.addEventListener('click', onMoreClick);
     if (window.addEventListener) window.addEventListener('resize', function () { updateCardCollapses(document.getElementById('sc-app')); });
-    fetch('marketdata/subsector_confluence_china.json', { cache: 'no-cache' })
+    fetch('marketdata/subsector_confluence_china.board.json', { cache: 'no-cache' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { DATA = d; render(); })
       .catch(function () { DATA = null; render(); });
