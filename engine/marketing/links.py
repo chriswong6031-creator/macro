@@ -139,6 +139,13 @@ def _base_re(base_url: str | None = None) -> re.Pattern[str]:
     """
     base = (base_url or DEFAULT_BASE_URL).rstrip("/") + "/"
     host = urlsplit(base).netloc or base.split("/")[2]
+    # DEFAULT_BASE_URL is the www canonical host (#3140). Strip a leading "www."
+    # so the optional (?:www\.)? prefix below matches BOTH the bare and the www
+    # form; otherwise host="www.mastermind-x.com" compiles to the pattern
+    # "(?:www\.)?www\.mastermind-x\.com", which no longer matches a bare
+    # "mastermind-x.com" mention in copy and would leak it untagged.
+    if host.startswith("www."):
+        host = host[len("www."):]
     if host not in _BASE_RE_CACHE:
         escaped = re.escape(host)
         # Match optional scheme+www, the host, optional path/query (non-space chars),
