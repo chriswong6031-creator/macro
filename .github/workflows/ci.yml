@@ -44,6 +44,11 @@ on:
       - "scripts/check_interfonts_sync.py"
       - "templates/**"
       - ".github/workflows/ci.yml"
+      # Research Vault (RV W1) ingestion spine: sidecar contract, corpus FTS,
+      # catalog, and the idempotent never-raise ingest pipeline.
+      - "engine/research_vault/**"
+      - "scripts/ingest_research.py"
+      - "tests/test_research_vault.py"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
@@ -2423,3 +2428,22 @@ jobs:
         run: pip install pytest fastapi
       - name: identity capture unit tests
         run: python -m pytest tests/test_collect_identity.py -v
+
+  research-vault:
+    # RV W1 ingestion spine: the sidecar contract normalization + every fallback
+    # (missing/blank/bad-JSON, never-drop), catalog upsert ordering + institutions
+    # rollup, corpus FTS5 build + a BODY-only search (proves body is searchable) +
+    # institution/date facets, and the end-to-end ingest via the LOCAL store backend
+    # (idempotency: a 2nd run ingests 0; receipts; needs_metadata path). No R2, no
+    # poppler — LocalStore + a monkeypatched pdftotext keep the suite fully offline.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        # Pure stdlib engine (sqlite3 + subprocess); pytest is the only need.
+        run: pip install pytest
+      - name: research vault ingestion-spine unit tests
+        run: python -m pytest tests/test_research_vault.py -q
