@@ -79,6 +79,7 @@ jobs:
           LOBE_INPUT: ${{ github.event.inputs.lobe }}
           CYCLE_INPUT: ${{ github.event.inputs.cycle_id }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          AI_COSTS_SHARD: "${{ github.workflow }}-${{ github.run_id }}-${{ github.run_attempt }}"
           CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
           CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
           CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
@@ -141,7 +142,7 @@ jobs:
           git checkout -b "$BRANCH"
           # Only metabolism artifacts + the (non-immutable) trial ledger travel here.
           # FIX-4: `data/metabolism` glob covers key_ledger.jsonl (key pool durability).
-          git add data/metabolism data/trial_ledger.jsonl 2>/dev/null || true
+          git add data/ai_costs/usage.d data/metabolism data/trial_ledger.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no docket changes staged — nothing to propose."
             exit 0
@@ -186,7 +187,7 @@ jobs:
           mkdir -p data/metabolism/journal || true
           cp -f "$_JSAVE"/*.json data/metabolism/journal/ 2>/dev/null || true
           # (d) Commit + push (tolerate no-change).
-          git add data/metabolism/journal/ 2>/dev/null || true
+          git add data/ai_costs/usage.d data/metabolism/journal/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no journal changes to push to main — skip."
             exit 0

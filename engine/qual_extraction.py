@@ -364,9 +364,17 @@ def _call_model(body: str, context: str, cfg: dict, model: str) -> tuple[str | N
         try:
             kw["seed"] = 0
             resp = client.messages.create(**kw)
+            from lib import ai_costs as _ac  # noqa: PLC0415
+            _prov, _basis = _ac.infer_provider(cfg.get("llm_base_url") or cfg.get("base_url"))
+            _ac.record_response_usage(lane="qual-extraction", response=resp, model=model,
+                                      provider=_prov, cost_basis=_basis)
         except TypeError:
             del kw["seed"]
             resp = client.messages.create(**kw)
+            from lib import ai_costs as _ac  # noqa: PLC0415
+            _prov, _basis = _ac.infer_provider(cfg.get("llm_base_url") or cfg.get("base_url"))
+            _ac.record_response_usage(lane="qual-extraction", response=resp, model=model,
+                                      provider=_prov, cost_basis=_basis)
         if getattr(resp, "stop_reason", None) in ("refusal", "max_tokens"):
             return None, f"stop_{resp.stop_reason}"
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")

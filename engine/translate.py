@@ -99,6 +99,11 @@ def _translate_one_batch(client, texts: list[str], cfg: dict) -> list[str | None
             system=_SYSTEM,
             messages=[{"role": "user", "content": user}],
         )
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        _prov, _basis = _ac.infer_provider(cfg.get("base_url"))
+        _ac.record_response_usage(lane="translate-profiles", response=resp,
+                                  model=cfg.get("model", "deepseek-chat"),
+                                  provider=_prov, cost_basis=_basis)
         if getattr(resp, "stop_reason", None) in ("refusal", "max_tokens"):
             log.warning("translation batch stopped (%s) — keeping English", resp.stop_reason)
             return none

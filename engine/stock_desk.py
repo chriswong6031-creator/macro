@@ -237,7 +237,7 @@ def _build_user(state: dict) -> str:
 
 
 def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
-    cfg = cfg or _cfg()
+    cfg = {**(cfg or _cfg()), "usage_stage": "stock-desk"}  # cost drill-down tag
     call = call or (lambda system, user, c: master_brain._call_model(system, user, c))
     payload = {"as_of": state.get("as_of"), "picks": state.get("picks"),
                "track_record": state.get("track_record")}

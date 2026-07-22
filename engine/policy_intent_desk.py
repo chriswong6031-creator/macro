@@ -301,7 +301,8 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         # as an earned edge. Set here so every return path (incl. degraded) carries it.
         "passport": _desk._desk_passport("policy_intent"),
     }
-    reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
+    reply, reason = (call or _mb._call_model)(
+        _SYSTEM, _build_user(state), {**(cfg or {}), "usage_stage": "policy-desk"})
     brief["raw_text"] = reply
     if reply is None:
         brief["degraded_reason"] = reason

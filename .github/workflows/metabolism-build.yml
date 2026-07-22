@@ -102,6 +102,7 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           # Fallback single-key (V2-A compat)
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          AI_COSTS_SHARD: "${{ github.workflow }}-${{ github.run_id }}-${{ github.run_attempt }}"
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # FIX-5 (MINOR-11): prefer METABOLISM_MERGE_PAT for draft PR creation so the
           # resulting PR triggers pull_request CI workflows.  GITHUB_TOKEN-created PRs are
@@ -192,7 +193,7 @@ jobs:
           # _failed_attempts retry counter + running/failed markers — without
           # committing it, every fresh checkout resets the counter and the
           # park/re-attempt mechanism is dead code.
-          git add data/metabolism/claims.jsonl data/metabolism/key_ledger.jsonl data/metabolism/journal docs/ACTIVE_BUILD_MAP.md 2>/dev/null || true
+          git add data/ai_costs/usage.d data/metabolism/claims.jsonl data/metabolism/key_ledger.jsonl data/metabolism/journal docs/ACTIVE_BUILD_MAP.md 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "metabolism: BUILD claims + ACTIVE_BUILD_MAP $CYCLE_ID ($_built_ok docket(s)) [Phase V2-B]" \
                        -m "Loop-Authored: build run=${GITHUB_RUN_ID:-local}"
@@ -248,7 +249,7 @@ jobs:
           mkdir -p data/metabolism/journal || true
           cp -f "$_JSAVE"/*.json data/metabolism/journal/ 2>/dev/null || true
           # (d) Commit + push (tolerate no-change).
-          git add data/metabolism/journal/ 2>/dev/null || true
+          git add data/ai_costs/usage.d data/metabolism/journal/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no journal changes to push to main — skip."
             exit 0

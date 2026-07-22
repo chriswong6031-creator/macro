@@ -872,6 +872,32 @@ tr.lab-cell-floor td { opacity: .72; }
 .meter .top { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
 .meter .top b { font-weight: 700; font-size: 14px; }
 
+/* AI Cost — lobe leaderboard disclosure rows */
+.lobe-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  transition: border-color var(--dur) var(--ease);
+}
+.lobe-row[open] { border-color: var(--accent); }
+.lobe-row > summary {
+  cursor: pointer;
+  list-style: none;
+  outline: none;
+}
+.lobe-row > summary::-webkit-details-marker { display: none; }
+.lobe-row .lobe-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.lobe-row .lobe-head > b { font-size: 14px; }
+.lobe-row .meter { margin-bottom: 0; }
+.lobe-row table { margin-top: 10px; }
+
 .svc {
   display: flex;
   align-items: center;

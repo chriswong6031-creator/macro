@@ -37,7 +37,67 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "ai_costs.usage.v1"
 _LEDGER_REL = "data/ai_costs/usage.jsonl"
+_SHARD_REL = "data/ai_costs/usage.d"          # per-writer shard dir (merge-on-read)
 _PRICING_REL = "config/ai_pricing.yml"
+
+
+# ── Lobe taxonomy ─────────────────────────────────────────────────────────────
+# Every usage `lane` belongs to exactly one lobe.  The AI Cost page rolls spend
+# up to the lobe so the operator can see, at a glance, which subsystem is
+# burning the most tokens (and decide whether to throttle it).  A lane with no
+# rule falls through to "Other" — add it here when a new lane is instrumented.
+
+LOBE_ORDER: list[str] = [
+    "Metabolism", "Master Brain", "Mastermind", "Marketing", "Prophet",
+    "News", "Risk", "Narrative", "Altdata", "Qual", "Research",
+    "Whitehouse", "Translate", "Special Situations", "Codex", "Other",
+]
+
+_LANE_LOBE_EXACT: dict[str, str] = {
+    "master-brain": "Master Brain",
+    "brain-fast": "Mastermind", "brain-pro": "Mastermind",
+    "ask-brain": "Mastermind", "cortex": "Mastermind",
+    "orchestrator-chat": "Mastermind",
+    "narrative-brain": "Narrative",
+    "whitehouse": "Whitehouse",
+    "altdata-brain": "Altdata", "influence-extract": "Altdata",
+    "foresight-analyst": "Altdata",
+    "earnings_qual": "Qual", "extraction-drift": "Qual",
+    "qual-extraction": "Qual",
+    "commodity-news": "News", "news-llm": "News", "catalyst-tone": "News",
+    "china-news": "News", "macro-news": "News", "china-news-intel": "News",
+    "news-translate": "News",
+    "causal-brainstorm": "Research", "signal-foundry": "Research",
+    "translate": "Translate", "translate-profiles": "Translate",
+    "special-situations": "Special Situations",
+    "prophet-autopsy": "Prophet",
+}
+
+# Ordered prefix rules — first match wins; keep more specific prefixes first.
+_LANE_LOBE_PREFIX: list[tuple[str, str]] = [
+    ("metabolism-", "Metabolism"),
+    ("marketing-", "Marketing"),
+    ("prophet-", "Prophet"),
+    ("risk-", "Risk"),
+    ("brain-", "Mastermind"),
+    ("narrative-", "Narrative"),
+    ("altdata-", "Altdata"),
+    ("news-", "News"),
+    ("codex", "Codex"),
+]
+
+
+def lobe_for_lane(lane: str | None) -> str:
+    """Map a usage `lane` string to its owning lobe.  Never raises."""
+    if not lane:
+        return "Other"
+    key = str(lane).strip().lower()
+    if key in _LANE_LOBE_EXACT:
+        return _LANE_LOBE_EXACT[key]
+    for prefix, lobe in _LANE_LOBE_PREFIX:
+        if key.startswith(prefix):
+            return lobe
+    return "Other"
 
 
 # ── Path helpers ──────────────────────────────────────────────────────────────
@@ -50,6 +110,35 @@ def _repo_root() -> Path:
 def _ledger_path(root: Path | None = None) -> Path:
     base = root if root is not None else _repo_root()
     return base / _LEDGER_REL
+
+
+def _shard_dir(root: Path | None = None) -> Path:
+    base = root if root is not None else _repo_root()
+    return base / _SHARD_REL
+
+
+def _sanitize_shard(name: str) -> str:
+    """Keep only filename-safe chars so a shard token can't escape the dir.
+
+    Dots are disallowed too (collapsed to '-') so a token can never form a
+    '..' traversal component; the '.jsonl' suffix is appended separately.
+    """
+    return "".join(c if (c.isalnum() or c in "-_") else "-" for c in name)[:120]
+
+
+def _write_ledger_path(root: Path | None = None) -> Path:
+    """Where record_usage should append.
+
+    When AI_COSTS_SHARD is set (CI / multi-writer environments) each writer
+    appends to its OWN shard file under data/ai_costs/usage.d/<shard>.jsonl so
+    parallel GitHub-Actions lanes never merge-conflict on the shared ledger.
+    read_usage() merges the main ledger + every shard, so the split is
+    invisible to consumers.  Unset (local/dev) → the canonical usage.jsonl.
+    """
+    shard = os.environ.get("AI_COSTS_SHARD", "").strip()
+    if shard:
+        return _shard_dir(root) / f"{_sanitize_shard(shard)}.jsonl"
+    return _ledger_path(root)
 
 
 def _pricing_path(root: Path | None = None) -> Path:
@@ -195,13 +284,81 @@ def record_usage(
             "note": note,
         }
 
-        ledger = _ledger_path(root)
+        ledger = _write_ledger_path(root)
         ledger.parent.mkdir(parents=True, exist_ok=True)
         with open(ledger, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(row, separators=(",", ":")) + "\n")
         return True
     except Exception as exc:  # noqa: BLE001
         log.warning("ai_costs.record_usage: %s", exc)
+        return False
+
+
+def infer_provider(base_url: str | None, *, oauth: bool = False) -> tuple[str, str]:
+    """Infer (provider, cost_basis) for a direct-SDK call site.
+
+    Direct-client engines default to DeepSeek (base_url set) but are operator-
+    switchable to a Claude credential.  Centralised so every call site tags
+    spend the same way.  Never raises.
+        oauth=True                 → ("claude_oauth", "subscription")
+        base_url contains deepseek → ("deepseek", "metered")
+        other non-anthropic base   → ("openai_compat", "metered")   # local/qwen
+        else                       → ("claude_api", "metered")
+    """
+    try:
+        b = (base_url or "").lower()
+        if oauth:
+            return "claude_oauth", "subscription"
+        if "deepseek" in b:
+            return "deepseek", "metered"
+        if b and "anthropic" not in b:
+            return "openai_compat", "metered"
+        return "claude_api", "metered"
+    except Exception:  # noqa: BLE001
+        return "claude_api", "metered"
+
+
+def record_response_usage(
+    *,
+    lane: str,
+    response: Any,
+    model: str | None = None,
+    provider: str = "claude_api",
+    cost_basis: str = "metered",
+    key_id: str | None = None,
+    cycle_id: str = "",
+    stage: str = "",
+    note: str = "",
+    root: Path | None = None,
+) -> bool:
+    """Extract token usage from an anthropic-style response and record one row.
+
+    Convenience for direct-SDK call sites that do NOT route through
+    engine.llm_auth.make_call (which captures usage automatically).  Reads the
+    standard anthropic Usage attributes off `response.usage`.  Returns False
+    (no row) when the response carries no usage object.  Never raises.
+    """
+    try:
+        u = getattr(response, "usage", None)
+        if u is None:
+            return False
+        return record_usage(
+            lane=lane,
+            provider=provider,
+            model=model,
+            key_id=key_id,
+            input_tokens=int(getattr(u, "input_tokens", 0) or 0),
+            output_tokens=int(getattr(u, "output_tokens", 0) or 0),
+            cache_read_tokens=int(getattr(u, "cache_read_input_tokens", 0) or 0),
+            cache_creation_tokens=int(getattr(u, "cache_creation_input_tokens", 0) or 0),
+            cost_basis=cost_basis,
+            cycle_id=cycle_id,
+            stage=stage,
+            note=note,
+            root=root,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("ai_costs.record_response_usage: %s", exc)
         return False
 
 
@@ -212,32 +369,50 @@ def read_usage(root: Path | None = None, days: int | None = None) -> list[dict]:
     rows whose ts falls within the last `days` calendar days (UTC).
     """
     try:
-        p = _ledger_path(root)
-        if not p.exists():
+        # Merge the canonical ledger + every per-writer shard (see
+        # _write_ledger_path).  Sorted for deterministic ordering across runs.
+        sources: list[Path] = []
+        main = _ledger_path(root)
+        if main.exists():
+            sources.append(main)
+        shard_dir = _shard_dir(root)
+        if shard_dir.is_dir():
+            sources.extend(sorted(shard_dir.glob("*.jsonl")))
+        if not sources:
             return []
+
         rows: list[dict] = []
         cutoff: datetime | None = None
         if days is not None:
             from datetime import timedelta
             cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
-        for line in p.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line:
-                continue
+        for p in sources:
             try:
-                row = json.loads(line)
-            except Exception:  # noqa: BLE001 — corrupt line, skip
-                log.warning("ai_costs.read_usage: skipping corrupt line")
+                text = p.read_text(encoding="utf-8")
+            except Exception:  # noqa: BLE001 — unreadable shard, skip
+                log.warning("ai_costs.read_usage: skipping unreadable %s", p.name)
                 continue
-            if cutoff is not None:
+            for line in text.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
                 try:
-                    ts = datetime.fromisoformat(row.get("ts", "").replace("Z", "+00:00"))
-                    if ts < cutoff:
-                        continue
-                except Exception:  # noqa: BLE001
-                    pass
-            rows.append(row)
+                    row = json.loads(line)
+                except Exception:  # noqa: BLE001 — corrupt line, skip
+                    log.warning("ai_costs.read_usage: skipping corrupt line")
+                    continue
+                if cutoff is not None:
+                    try:
+                        ts = datetime.fromisoformat(row.get("ts", "").replace("Z", "+00:00"))
+                        if ts < cutoff:
+                            continue
+                    except Exception:  # noqa: BLE001
+                        pass
+                rows.append(row)
+
+        # Global chronological order (shards interleave with the main ledger).
+        rows.sort(key=lambda r: r.get("ts", ""))
         return rows
     except Exception as exc:  # noqa: BLE001
         log.warning("ai_costs.read_usage: %s", exc)
@@ -257,17 +432,56 @@ def _add_row_to_bucket(bucket: dict[str, Any], row: dict) -> None:
     bucket["calls"] += 1
 
 
+def _pct(part: float, whole: float) -> float:
+    """Percentage of `whole`, rounded to 1 dp.  0.0 when whole is 0."""
+    return round(100.0 * part / whole, 1) if whole else 0.0
+
+
+def _add_pcts(bucket: dict[str, Any], tot_usd: float, tot_tok: int, tot_calls: int) -> None:
+    """Annotate one aggregate bucket with pct_usd / pct_tokens / pct_calls."""
+    tok = int(bucket.get("input_tokens", 0)) + int(bucket.get("output_tokens", 0))
+    bucket["tokens"] = tok
+    bucket["pct_usd"] = _pct(float(bucket.get("usd", 0.0)), tot_usd)
+    bucket["pct_tokens"] = _pct(tok, tot_tok)
+    bucket["pct_calls"] = _pct(int(bucket.get("calls", 0)), tot_calls)
+
+
+def _rank(mapping: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return buckets as a USD-descending list, each carrying its `name`."""
+    out = [{"name": k, **v} for k, v in mapping.items()]
+    out.sort(key=lambda b: (float(b.get("usd", 0.0)), b.get("tokens", 0)), reverse=True)
+    return out
+
+
+def _cost_basis_bucketname(row: dict) -> str:
+    """Group a row into 'subscription' (OAuth/CLI flat-fee) or 'metered' (API/DeepSeek)."""
+    cb = str(row.get("cost_basis") or "").lower()
+    if cb in ("subscription", "estimated"):
+        return "subscription"
+    if cb == "metered":
+        return "metered"
+    # Fall back on provider when cost_basis is missing/unknown.
+    prov = str(row.get("provider") or "").lower()
+    return "subscription" if prov in ("claude_oauth", "claude_cli") else "metered"
+
+
 def summarize(root: Path | None = None) -> dict[str, Any]:
-    """Aggregate usage statistics.
+    """Aggregate usage statistics across the ledger + all shards.
 
     Returns a dict with keys:
         today, d7, d30 — each {usd, input_tokens, output_tokens, calls}
-        by_lane, by_provider, by_key, by_model — each a dict of 30-day aggregates
-            keyed by the dimension value; each value is {usd, input_tokens,
-            output_tokens, calls}
+        by_lane, by_provider, by_key, by_model, by_cost_basis — 30-day
+            aggregates keyed by the dimension value; each value is
+            {usd, input_tokens, output_tokens, calls, tokens, pct_usd,
+             pct_tokens, pct_calls}
+        by_lobe — {lobe: {...aggregate..., lanes: {lane: {...aggregate...,
+            stages: {stage: {...aggregate...}}}}}}, rolled up via lobe_for_lane
+        lobe_order — the canonical lobe display order
+        totals_30d — {usd, input_tokens, output_tokens, tokens, calls}
         recent — last 50 rows, newest first
 
-    Never raises; returns an empty-bucket structure on any error.
+    All aggregate buckets are also exposed pre-ranked (USD desc) under the
+    *_ranked keys for direct rendering.  Never raises.
     """
     try:
         from datetime import timedelta
@@ -286,6 +500,9 @@ def summarize(root: Path | None = None) -> dict[str, Any]:
         by_provider: dict[str, Any] = {}
         by_key: dict[str, Any] = {}
         by_model: dict[str, Any] = {}
+        by_cost_basis: dict[str, Any] = {}
+        # lane -> stage -> bucket (for lobe drill-down)
+        lane_stages: dict[str, dict[str, Any]] = {}
 
         for row in all_rows:
             ts_str = row.get("ts", "")
@@ -318,12 +535,53 @@ def summarize(root: Path | None = None) -> dict[str, Any]:
                 by_model.setdefault(model, _empty_bucket())
                 _add_row_to_bucket(by_model[model], row)
 
-        # Round USD buckets to 6 dp to avoid FP noise in comparisons
+                cbn = _cost_basis_bucketname(row)
+                by_cost_basis.setdefault(cbn, _empty_bucket())
+                _add_row_to_bucket(by_cost_basis[cbn], row)
+
+                stage = (row.get("stage") or "").strip()
+                if stage:
+                    lane_stages.setdefault(lane, {})
+                    lane_stages[lane].setdefault(stage, _empty_bucket())
+                    _add_row_to_bucket(lane_stages[lane][stage], row)
+
+        # 30d totals form the percentage base for every breakdown.
+        tot_usd = float(d30_b["usd"])
+        tot_tok = int(d30_b["input_tokens"]) + int(d30_b["output_tokens"])
+        tot_calls = int(d30_b["calls"])
+
+        # Round the window totals + annotate pct on every breakdown bucket.
         for b in [today_b, d7_b, d30_b]:
             b["usd"] = round(b["usd"], 6)
-        for mapping in (by_lane, by_provider, by_key, by_model):
+            b["tokens"] = int(b["input_tokens"]) + int(b["output_tokens"])
+        for mapping in (by_lane, by_provider, by_key, by_model, by_cost_basis):
             for b in mapping.values():
                 b["usd"] = round(b["usd"], 6)
+                _add_pcts(b, tot_usd, tot_tok, tot_calls)
+
+        # Roll lanes up into lobes (lobe -> lanes -> stages).
+        by_lobe: dict[str, Any] = {}
+        for lane, lb in by_lane.items():
+            lobe = lobe_for_lane(lane)
+            lobe_b = by_lobe.setdefault(lobe, {**_empty_bucket(), "lanes": {}})
+            for fld in ("usd", "input_tokens", "output_tokens", "calls"):
+                lobe_b[fld] += lb[fld]
+            lane_entry = {k: lb[k] for k in ("usd", "input_tokens", "output_tokens",
+                                             "calls", "tokens", "pct_usd",
+                                             "pct_tokens", "pct_calls")}
+            # attach stage drill-down (ranked) when the lane carries stages
+            stages = lane_stages.get(lane) or {}
+            if stages:
+                for sb in stages.values():
+                    sb["usd"] = round(sb["usd"], 6)
+                    _add_pcts(sb, float(lb["usd"]) or 0.0,
+                              int(lb["tokens"]) or 0, int(lb["calls"]) or 0)
+                lane_entry["stages"] = _rank(stages)
+            lobe_b["lanes"][lane] = lane_entry
+        for lobe_b in by_lobe.values():
+            lobe_b["usd"] = round(lobe_b["usd"], 6)
+            _add_pcts(lobe_b, tot_usd, tot_tok, tot_calls)
+            lobe_b["lanes_ranked"] = _rank(lobe_b["lanes"])
 
         recent = list(reversed(all_rows))[:50]
 
@@ -331,10 +589,26 @@ def summarize(root: Path | None = None) -> dict[str, Any]:
             "today": today_b,
             "d7": d7_b,
             "d30": d30_b,
+            "totals_30d": {
+                "usd": round(tot_usd, 6), "tokens": tot_tok,
+                "input_tokens": int(d30_b["input_tokens"]),
+                "output_tokens": int(d30_b["output_tokens"]),
+                "calls": tot_calls,
+            },
             "by_lane": by_lane,
             "by_provider": by_provider,
             "by_key": by_key,
             "by_model": by_model,
+            "by_cost_basis": by_cost_basis,
+            "by_lobe": by_lobe,
+            "lobe_order": LOBE_ORDER,
+            "lobe_ranked": _rank({k: {kk: vv for kk, vv in v.items()
+                                      if kk not in ("lanes",)}
+                                  for k, v in by_lobe.items()}),
+            "by_lane_ranked": _rank(by_lane),
+            "by_provider_ranked": _rank(by_provider),
+            "by_model_ranked": _rank(by_model),
+            "by_key_ranked": _rank(by_key),
             "recent": recent,
         }
     except Exception as exc:  # noqa: BLE001
@@ -344,9 +618,19 @@ def summarize(root: Path | None = None) -> dict[str, Any]:
             "today": empty,
             "d7": _empty_bucket(),
             "d30": _empty_bucket(),
+            "totals_30d": {"usd": 0.0, "tokens": 0, "input_tokens": 0,
+                           "output_tokens": 0, "calls": 0},
             "by_lane": {},
             "by_provider": {},
             "by_key": {},
             "by_model": {},
+            "by_cost_basis": {},
+            "by_lobe": {},
+            "lobe_order": LOBE_ORDER,
+            "lobe_ranked": [],
+            "by_lane_ranked": [],
+            "by_provider_ranked": [],
+            "by_model_ranked": [],
+            "by_key_ranked": [],
             "recent": [],
         }

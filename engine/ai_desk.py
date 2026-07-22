@@ -547,7 +547,7 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
     """Run the analyst over a gathered state. Always returns a brief record (degraded
     fields flagged); never raises. `call` is injectable (defaults to
     master_brain._call_model) so tests run without an API key."""
-    cfg = cfg or _cfg()
+    cfg = {**(cfg or _cfg()), "usage_stage": "ai-desk"}  # cost drill-down tag
     asof = state.get("as_of")
     brief = {
         "schema": SCHEMA, "is_context_only": True,

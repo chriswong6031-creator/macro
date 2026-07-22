@@ -412,7 +412,7 @@ def _call_model(source_text: str, context: str, cfg: dict) -> tuple[str | None, 
 
     env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
     providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
-                  "client": client, "model": model}]
+                  "client": client, "model": model, "usage_lane": "catalyst-tone"}]
 
     def _do_call(_client, _model: str):
         kw: dict = {
@@ -429,9 +429,9 @@ def _call_model(source_text: str, context: str, cfg: dict) -> tuple[str | None, 
             del kw["seed"]
             resp = _client.messages.create(**kw)
         if getattr(resp, "stop_reason", None) in ("refusal", "max_tokens"):
-            return None, f"stop_{resp.stop_reason}"
+            return None, f"stop_{resp.stop_reason}", resp
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-        return (text or None), (None if text else "empty_reply")
+        return (text or None), (None if text else "empty_reply"), resp
 
     try:
         text, reason, _ = llm_auth.make_call(providers, _do_call, context="catalyst_tone")

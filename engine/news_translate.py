@@ -173,6 +173,11 @@ def _translate_batch(client, texts: list[str], cfg: dict) -> list[str | None]:
             system=SYSTEM_ZH,
             messages=[{"role": "user", "content": user}],
         )
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        _prov, _basis = _ac.infer_provider(cfg.get("base_url"))
+        _ac.record_response_usage(lane="news-translate", response=resp,
+                                  model=cfg.get("model", "deepseek-chat"),
+                                  provider=_prov, cost_basis=_basis)
         text = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text")
     except Exception as e:  # noqa: BLE001
         log.warning("news translation batch failed: %s", e)
@@ -268,6 +273,11 @@ def _translate_batch_en(client, texts: list[str], cfg: dict) -> list[str | None]
             system=SYSTEM_EN,
             messages=[{"role": "user", "content": user}],
         )
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        _prov, _basis = _ac.infer_provider(cfg.get("base_url"))
+        _ac.record_response_usage(lane="news-translate", response=resp,
+                                  model=cfg.get("model", "deepseek-chat"),
+                                  provider=_prov, cost_basis=_basis)
         text = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text")
     except Exception as e:  # noqa: BLE001
         log.warning("news EN-translation batch failed: %s", e)

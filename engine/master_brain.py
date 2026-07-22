@@ -1539,7 +1539,9 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
     env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
     providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
                   "client": client, "model": model,
-                  "usage_lane": "master-brain"}]
+                  "usage_lane": "master-brain",
+                  # sub-component drill-down (macro/china/btc lens, ai-desk, etc.)
+                  "usage_stage": str(cfg.get("usage_stage") or "")}]
 
     # NB: no caching here — synthesize() is the SOLE cache reader/writer, so only
     # FINAL post-lint text ever lands under the prompt hash (a raw pre-lint reply
@@ -1750,7 +1752,8 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
         log.debug("master_brain: reply cache HIT (%s)", phash[:12])
         reply, reason = cached, None
     else:
-        reply, reason = _call_model(system, user, cfg)
+        # Tag the lens (macro/china/btc) as the usage stage for cost drill-down.
+        reply, reason = _call_model(system, user, {**cfg, "usage_stage": lens})
 
     brief["raw_text"] = reply
     if reply is None:
@@ -1777,7 +1780,7 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
                     "replacing every banned token with plain language a non-finance "
                     "reader understands. Return only the JSON."
                 )
-                rw_reply, _rw_reason = _call_model(rewrite_system, reply, cfg)
+                rw_reply, _rw_reason = _call_model(rewrite_system, reply, {**cfg, "usage_stage": lens})
                 if rw_reply:
                     rw_parsed = _extract_json(rw_reply)
                     if isinstance(rw_parsed, dict):

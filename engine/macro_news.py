@@ -1329,6 +1329,11 @@ def macro_brief(headlines: list[dict] | None, regime_line: str = "",
         resp = client.messages.create(
             model=cfg.get("llm_model", "deepseek-chat"), max_tokens=220,
             system=BRIEF_SYSTEM, messages=[{"role": "user", "content": user}])
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        _prov, _basis = _ac.infer_provider(base)
+        _ac.record_response_usage(lane="macro-news", response=resp,
+                                  model=cfg.get("llm_model", "deepseek-chat"),
+                                  provider=_prov, cost_basis=_basis)
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
         if not text:
             return None
