@@ -6294,6 +6294,16 @@ RENDER.mastermind_ai = async () => {
   const lastLoops = d.last_loops || [];
   const lastLoop = lastLoops[lastLoops.length - 1] || {};   /* status().last_loops is oldest-first */
   const refl = d.reflection || {};
+  /* Bot-loop LIVENESS — the hero showed the loop summary but never its AGE, so an
+     8-day-stale loop looked identical to one that ran overnight. Compute age from the
+     newest recorded cycle's timestamp and flag it stale (the loop-strip below shows the
+     unrelated metabolism/codex pipelines, not the bot's own cadence). */
+  const loopTs = lastLoop.ts || lastLoop.asof || null;
+  const loopAgeH = loopTs ? Math.max(0, (Date.now() - new Date(loopTs).getTime()) / 3.6e6) : null;
+  const loopStale = loopAgeH != null && loopAgeH > 48;   /* healthy cadence is at least every couple days */
+  const loopAgeChip = loopAgeH == null
+    ? `<span class="statpill s-mut">last cycle: unknown</span>`
+    : `<span class="statpill ${loopStale ? "s-bad" : "s-ok"}" title="newest recorded self-improvement cycle (${esc(String(loopTs))})">last cycle ${fmtAge(loopAgeH)} ago${loopStale ? " · STALE" : ""}</span>`;
   const dia = d.dialogue;   /* status "dialogue" block — absent on older bots, degrade to "—" */
 
   /* honest tri-state: never claim "loop on" when the bot didn't report the setting */
@@ -6310,11 +6320,13 @@ RENDER.mastermind_ai = async () => {
     </div>
     <div class="sub" style="margin-top:6px">${esc(lastLoop.summary || (d.last_review && d.last_review.summary) || "No loop summary reported yet.")}</div>
     <div class="mb-hero-chips">
+      ${loopAgeChip}
       <span class="statpill s-mut">loop #${d.loop_n != null ? d.loop_n : "—"}</span>
       ${nudgesN != null ? `<span class="statpill ${nudgesN ? "s-warn" : "s-mut"}" title="coded fix-requests published to the NW orchestrator">${nudgesN} nudge${nudgesN === 1 ? "" : "s"}</span>` : ""}
       ${refl.contract_drift_n != null ? `<span class="statpill ${refl.contract_drift_n ? "s-bad" : "s-mut"}" title="NW context fields the bot's decision rules need but cannot use">${refl.contract_drift_n} contract drift${refl.contract_drift_n === 1 ? "" : "s"}</span>` : ""}
       ${countChips(typeof flagsObj === "object" && !Array.isArray(flagsObj) ? flagsObj : null)}
     </div>
+    ${loopStale ? `<div class="sub" style="margin-top:6px;color:var(--bad)">⚠︎ The bot hasn't completed a self-improvement cycle in ${fmtAge(loopAgeH)} — its cron may have stopped or the bot may be down. "Loop on" is only the setting, not proof it's running.</div>` : ""}
   </div>
   <div class="note muted" style="margin:0 0 20px;line-height:1.5">Every night the bot audits the Neural Web data it trades against. A contract-drift finding means a data field its decision rules consume is missing or dead in the published artifact. A nudge is the fix request it publishes back to the macro pipeline. Nudges flow out automatically. Formal directives are queued from open findings automatically each cycle when "Auto-act on findings" is on — or by hand via "Act on findings" / the composer below.</div>`;
 
