@@ -649,13 +649,19 @@ def _discovery_dossier(cand: dict, catalyst: dict | None,
     surfaced purely by a leading scan (radar QUIET-accumulating / federal velocity)."""
     t = (cand.get("ticker") or "").upper()
     dsc = _f(cand.get("disc_score")) or 0.0
+    # UNCAPPED strength (insider clusters carry it; others fall back to disc_score). Orders same-
+    # cap discovery names via the ranked tie-break (composite_conviction) WITHOUT lifting the
+    # opportunity ceiling above the source's display cap — so a strong insider cluster surfaces
+    # above a marginal one, and neither out-ranks a validated lead.
+    strength = _f(cand.get("cluster_strength"))
+    strength = strength if strength is not None else dsc
     edge = round(_clamp01(0.55 + 0.4 * dsc), 3)            # off-desk leading signal ⇒ room
     opp = round(min(100.0, 100.0 * (dsc * 0.7) * edge * 1.15), 1)
     flags = ["discovery"] + (["catalyst"] if (catalyst and catalyst.get("live")) else [])
     nulls = {"news": None, "alt": None, "radar": None, "standout": None, "policy": None}
     return {
         "ticker": t, "name": t, "sectors": [], "baskets": [],
-        "composite_conviction": round(dsc * 60, 1), "lean": 1,
+        "composite_conviction": round(strength * 60, 1), "lean": 1,
         "opportunity_score": opp, "edge_remaining": edge,
         "edge_drivers": [cand.get("reason") or "off-desk leading signal"],
         "edge_components": 1, "stage": "discovery",
@@ -874,6 +880,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         # top — the cross-sectional IC must see the whole ranking). Stripped before site write.
         "track_rows": [{"t": d["ticker"], "opp": d["opportunity_score"],
                         "edge": d["edge_remaining"], "stage": d["stage"], "lean": d["lean"],
+                        "source": (d.get("discovery") or {}).get("source"),   # feed for per-source IC (None = on-desk)
                         "engine_version": ENGINE_VERSION}
                        for d in dossiers],
         "discovery": _diversify_by_source(

@@ -46,8 +46,14 @@ This is the authorized doctrine change (context→action), scoped to de-escalati
 4. **Wire into `intel_hub.py`** — downward-only: a demoted feeder that is *bullishly driving* a name scales that name's `opportunity` by `trust` (provably ≤ ungoverned — the scalar-on-final-score form, NOT weight-scaling inside the edge average, which is non-monotone). Behind file-presence gate; `load_trust` re-clamps ≤ 1.0. ✅ SHIPPED.
 5. **Tests** (`tests/test_signal_governor.py`, 15) — gate arms ONLY on significant wrong-sign + min-N + valid HAC; degenerate long horizon refused; de-escalation invariant; degrade-safe; downward-only through a real `_dossier`. ✅ SHIPPED.
 
-### Phase 2 — Add a real-edge selection signal (follow-on PR)
-From the graded V2 BUILD list, cheapest real edge first: **insider opportunistic-cluster buying** (`engine/insider_factor.py`, built, FDR-surviving as a long-only confirmer) and/or **deepen the special-situations fusion** (already half-wired at `intel_hub.py:905`). Phase-0 event-study gate before it can promote (display-tier freely per the epistemics law).
+### Phase 2 — Insider-cluster selection edge — SHIPPED (PR #3)
+**Premise correction (verified against the repo's OWN deep validation):** the V2 note called insider clusters "FDR-surviving," but `data/research/insider_lh_ruler_p_results.parquet` shows they do NOT survive — `rejected_bh=False`, `_display_only=True`, `survivorship_biased=True` for every insider feature. So insider clusters are honestly **display-tier**, never a promoter. And they were already wired + flowing into the hub via `intel_discovery.scan_insider_clusters` (the docstring's "neither consumed by the hub today" was stale — 123 candidates surface live).
+
+Two real gaps found and fixed, both epistemics-clean:
+1. **Strength ordering (display-tier).** The scan flattened every strong cluster at the `disc_score` cap 0.45 and the injection sorted by raw buyer count — so a 19-buyer/1-officer cluster beat a 7-buyer/**7-officer** one. Added an uncapped `cluster_strength` (breadth + officer-fraction + $ + per-buyer conviction; no mcap — none exists for off-desk names) that orders the clusters and drives the bounded off-desk injection + the ranked tie-break (`composite_conviction`), while `disc_score` stays capped (never out-ranks a validated lead). Now the genuinely high-conviction accumulation (unanimous-officer clusters) surfaces.
+2. **Per-feed measurement.** `hub_track_record` snapshots now carry the discovery `source`; `compute` adds a `by_source` forward-performance breakdown ("do insider-cluster names actually outperform?") — the evidence a display-tier feed needs to EARN promotion (or be dropped). Likely dormant near-term (quarterly-lagged panel) but starts the clock. US-only (insider = SEC Form 4; CN has no equivalent feed).
+
+*(Not done: deepening the special-situations fusion at `intel_hub.py:905` — separate follow-on.)*
 
 ### Phase 3 — Recalibrate the accountable-lean layer (follow-on PR)
 Fix the "cautious dir 0.353" problem: the `_reconcile` clamp forces caution on high-momentum Extended names that keep running at 21d. Options: momentum-aware horizon; allow "neutral" (not forced "cautious") on strong-momentum-but-extended; lengthen horizon where mean-reversion dominates. Recalibrate conviction to the (now loop-fed) track record.

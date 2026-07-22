@@ -89,6 +89,8 @@ def snapshot(track_rows: list | None, today: date | str | None = None,
                    "edge": r.get("edge"), "stage": r.get("stage"), "lean": r.get("lean")}
             if r.get("engine_version"):        # additive era-stamp — old rows stay valid without it
                 row["engine_version"] = r.get("engine_version")
+            if r.get("source"):                # discovery feed (insider_cluster/activist/…) → per-source IC
+                row["source"] = r.get("source")
             new.append(row)
             existing.add(f"{today_str}|{t}")
         if not new:
@@ -209,6 +211,27 @@ def _by_stage(rows: list) -> dict:
     return out
 
 
+def _by_source(rows: list) -> dict:
+    """Forward performance of each DISCOVERY feed (insider_cluster / activist_ownership /
+    federal_velocity / radar_quiet). Discovery candidates are bullish-intended (off-desk leading
+    accumulation), so a hit is a POSITIVE SPY-relative forward return. This is the evidence a
+    display-tier feed needs to EARN a promotion — or to be dropped: 'do this feed's names
+    actually outperform?' Only rows carrying a ``source`` participate (on-desk rows are None)."""
+    by: dict[str, list] = {}
+    for r in rows:
+        s = r.get("source")
+        if s:
+            by.setdefault(s, []).append(r["fwd"])
+    out: dict[str, dict] = {}
+    for s, fwds in by.items():
+        n = len(fwds)
+        mean = sum(fwds) / n if n else 0.0
+        hit = (sum(1 for f in fwds if f > 0) / n) if n else None
+        out[s] = {"n": n, "mean_fwd_rel": round(mean, 4),
+                  "hit_rate": round(hit, 3) if hit is not None else None}
+    return out
+
+
 def compute(today: date | str | None = None, root: Path | None = None,
             horizons=_HORIZONS, *, rows: list | None = None, fwd_rel_fn=None,
             bench: str = _BENCH) -> dict:
@@ -234,6 +257,7 @@ def compute(today: date | str | None = None, root: Path | None = None,
                 "opportunity_ic": opp_daily.get("mean_ic"),   # headline = the rigorous mean IC
                 "edge_ic_pooled": _pooled_ic(*_signed(mat, "edge")),
                 "by_stage": _by_stage(mat),
+                "by_source": _by_source(mat),     # per discovery-feed forward performance (promotion evidence)
             }
             out_h[str(h)] = entry
             # lead-time = the horizon whose per-date HAC IC is significant AND largest (never a

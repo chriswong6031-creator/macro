@@ -137,6 +137,25 @@ def test_insider_cluster_excludes_junk_grants_sales_and_thin():
     assert got == set()                                         # all correctly excluded
 
 
+def test_insider_cluster_strength_orders_officer_conviction_over_raw_count():
+    """Phase 2A: a NARROW but all-officer cluster (max conviction) must out-rank a WIDER but
+    shallow one — cluster_strength (breadth + officer-fraction + $ + per-buyer conviction), not
+    raw buyer count, is the ordering key. disc_score stays CAPPED at the display tier (insider is
+    _display_only per the deep FDR panel), so it can never out-rank a validated lead."""
+    pd = pytest.importorskip("pandas")
+    base = {"trans_date": "2026-03-20", "usd": 4e5}
+    wide = [{**base, "ticker": "WIDE", "code": "P", "rptownercik": i, "is_officer": (i == 0)}
+            for i in range(15)]                               # 15 buyers, only 1 officer (shallow)
+    narrow = [{**base, "ticker": "NARR", "code": "P", "rptownercik": 100 + i, "is_officer": True}
+              for i in range(5)]                              # 5 buyers, ALL officers (max conviction)
+    cands = D.scan_insider_clusters(_panel(wide + narrow), min_buyers=3, min_usd=1e5)
+    by = {c["ticker"]: c for c in cands}
+    assert by["NARR"]["n_officer_buyers"] == 5 and by["WIDE"]["n_officer_buyers"] == 1
+    assert by["NARR"]["cluster_strength"] > by["WIDE"]["cluster_strength"]   # conviction beats raw count
+    assert cands[0]["ticker"] == "NARR"                        # strongest surfaces first (wins injection)
+    assert all(c["disc_score"] <= D._INSIDER_CAP for c in cands)   # display cap preserved on ALL
+
+
 def test_build_marks_off_desk_and_dedups():
     radar = [_quiet("INUNI", channels=["congress_buy", "material_8k"]),
              _quiet("OFF", channels=["clinical_phase3_start", "fda_label_expansion"])]

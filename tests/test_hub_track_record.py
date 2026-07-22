@@ -108,3 +108,35 @@ def test_proven_requires_enough_matured(tmp_path, monkeypatch):
     monkeypatch.setattr(H, "_fwd_rel", lambda t, root, start, h: 0.02)
     out = H.compute(_NOW, root=tmp_path)
     assert not any(out["proven"].values())              # n_matured (12) < _MIN_PROVEN_N (40)
+
+
+def test_snapshot_persists_source(tmp_path):
+    """Phase 2B: a discovery row's feed source is recorded; on-desk rows (no source) stay lean
+    and backward-compatible."""
+    import json
+    H.snapshot([{"t": "AAA", "opp": 80, "edge": 0.7, "stage": "discovery", "lean": 1,
+                 "source": "insider_cluster"},
+                {"t": "BBB", "opp": 50, "edge": 0.5, "stage": "consensus", "lean": 1}],  # on-desk, no source
+               _OLD, root=tmp_path)
+    recs = {}
+    for ln in (tmp_path / "data" / "hub" / "signal_snapshots.jsonl").read_text().splitlines():
+        r = json.loads(ln)
+        recs[r["t"]] = r
+    assert recs["AAA"].get("source") == "insider_cluster"
+    assert "source" not in recs["BBB"]                  # on-desk rows stay lean (old rows unaffected)
+
+
+def test_by_source_grades_discovery_feeds():
+    """Phase 2B: _by_source measures each discovery feed's forward performance (mean SPY-relative +
+    hit-rate); on-desk rows (source None) are excluded — the evidence a display-tier feed needs to
+    earn promotion, or to be dropped."""
+    rows = [{"source": "insider_cluster", "fwd": 0.03},
+            {"source": "insider_cluster", "fwd": -0.01},
+            {"source": "insider_cluster", "fwd": 0.05},
+            {"source": "radar_quiet", "fwd": -0.02},
+            {"source": None, "fwd": 0.10}]              # on-desk — must NOT be graded as a feed
+    bs = H._by_source(rows)
+    assert set(bs) == {"insider_cluster", "radar_quiet"}
+    assert bs["insider_cluster"]["n"] == 3
+    assert bs["insider_cluster"]["hit_rate"] == round(2 / 3, 3)
+    assert bs["insider_cluster"]["mean_fwd_rel"] == round((0.03 - 0.01 + 0.05) / 3, 4)

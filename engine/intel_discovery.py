@@ -239,21 +239,37 @@ def scan_insider_clusters(panel, recent_days: int = 90, min_buyers: int = 3,
             usd = float(g["usd"].sum())
             if opp_buyers < min_buyers or usd < min_usd:
                 continue
-            officer_led = bool(g.get("is_officer").any()) if "is_officer" in g else False
+            # cluster STRENGTH components (panel-only — no mcap for off-desk names):
+            #   breadth      how many distinct insiders (the CMP cluster headline)
+            #   officer_frac fraction of buyers who are officers (higher conviction than a 10%-holder)
+            #   usd_score    total $ committed
+            #   conviction   avg $ per insider (a big average = higher individual conviction)
+            n_officer = int(g[g["is_officer"] == True]["rptownercik"].nunique()) if "is_officer" in g else 0  # noqa: E712
+            officer_led = n_officer > 0
+            officer_frac = _clamp01(n_officer / opp_buyers) if opp_buyers else 0.0
             breadth = _clamp01((opp_buyers - 2) / 6.0)
             usd_score = _clamp01(math.log1p(usd) / math.log1p(5.0e6))
-            score = min(_INSIDER_CAP, 0.50 * breadth + 0.30 * (1.0 if officer_led else 0.6) + 0.20 * usd_score)
+            conviction = _clamp01(math.log1p(usd / opp_buyers) / math.log1p(5.0e5))
+            # UNCAPPED strength — orders clusters against each other so the STRONGEST accumulation
+            # surfaces first. disc_score stays CAPPED (display-tier — insider is _display_only per the
+            # deep FDR panel, a lagging quarterly confirmer, and must never out-rank a validated lead).
+            strength = round(0.40 * breadth + 0.25 * officer_frac + 0.20 * usd_score + 0.15 * conviction, 3)
+            score = min(_INSIDER_CAP, strength)
             out.append({
                 "ticker": t, "source": "insider_cluster",
-                "disc_score": round(score, 3), "opp_buyers": opp_buyers,
+                "disc_score": round(score, 3), "cluster_strength": strength,
+                "opp_buyers": opp_buyers, "n_officer_buyers": n_officer,
                 "usd": round(usd, 0), "officer_led": officer_led, "lag_days": lag_days,
                 "reason": (f"{opp_buyers} insiders bought open-market"
-                           + (" (officer-led)" if officer_led else "")
+                           + (f" ({n_officer} officer{'s' if n_officer != 1 else ''})" if n_officer else "")
                            + (f" · {lag_days}d-lagged filing" if lag_days else "")),
             })
           except Exception:  # noqa: BLE001 — skip a malformed group, keep the good ones
             continue
-        out.sort(key=lambda d: (d["disc_score"], d["opp_buyers"]), reverse=True)
+        # sort by the CAP then by uncapped strength — so among the many clusters pinned at the
+        # display cap, the strongest (broad + officer-led + high-conviction) surface first and win
+        # the bounded off-desk injection slots in the hub's ranked list.
+        out.sort(key=lambda d: (d["disc_score"], d["cluster_strength"]), reverse=True)
     except Exception as e:  # noqa: BLE001
         log.debug("insider cluster scan failed (%s)", e)
     return out
@@ -498,10 +514,13 @@ def build(radar_tickers: list | None, obligations=None, insider=None,
         else:                                            # keep the best, note the 2nd source
             cur.setdefault("also", []).append(c["source"])
     # secondary magnitude key so ties at a capped disc_score (esp. insider 0.45) keep the
-    # STRONGEST by breadth/$/channels, not an arbitrary alphabetical subset at the cap boundary
+    # STRONGEST candidates, not an arbitrary subset at the cap boundary. Insider carries an
+    # uncapped cluster_strength (breadth + officer-fraction + $ + per-buyer conviction) — prefer
+    # it over raw buyer count so a broad, officer-led, high-conviction cluster beats a wider but
+    # shallower one for the bounded off-desk injection slots.
     def _mag(d):
-        return (d.get("opp_buyers") or d.get("recent_usd") or d.get("n_channels")
-                or d.get("n_13d") or 0)
+        return (d.get("cluster_strength") or d.get("opp_buyers") or d.get("recent_usd")
+                or d.get("n_channels") or d.get("n_13d") or 0)
     cands = sorted(by_ticker.values(), key=lambda d: (d["disc_score"], _mag(d)), reverse=True)
     off_desk = [c for c in cands if c["off_desk"]]
     return {
