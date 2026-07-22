@@ -56,9 +56,17 @@ KINDS: frozenset[str] = frozenset({
 })
 
 # Status machine — only these transitions are legal.
+#
+# "posting" is the in-flight state the W1 live publisher
+# (scripts/marketing_publisher.py) sets AFTER an item is approved but BEFORE
+# the network call, so a crash mid-post leaves a durable "posting" marker that
+# is REPORTED and never auto-reposted (no-double-post guarantee). approved may
+# still go straight to posted/failed so the W0 dry-run actuator and its tests
+# keep working — the extra target is purely additive.
 TRANSITIONS: dict[str, frozenset[str]] = {
     "queued":      frozenset({"approved", "quarantined"}),
-    "approved":    frozenset({"posted", "failed", "quarantined"}),
+    "approved":    frozenset({"posting", "posted", "failed", "quarantined"}),
+    "posting":     frozenset({"posted", "failed", "quarantined"}),
     "failed":      frozenset({"approved", "quarantined"}),
     "posted":      frozenset(),   # terminal
     "quarantined": frozenset(),   # terminal
