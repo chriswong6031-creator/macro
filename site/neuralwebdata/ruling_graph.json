@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.ruling_graph.v1",
-  "source_sha256": "289fd0ac6e1940465b25a2897a529d5067c968a5299c01d72c9e13ddedd21c8e",
+  "source_sha256": "6d66cd396c7ebde7e522c2617a45d9715e57f1a71f15371179658acb9ff20e95",
   "precedence_order": [
     "constitution_standing_law",
     "fable_adjudication_doc",
