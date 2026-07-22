@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-22 17:46:52 UTC",
+  "built": "2026-07-22 18:56:03 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-22 13:46 EDT"
+    "local_time": "2026-07-22 14:56 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -17,12 +17,12 @@
   "n_live_symbols": 12,
   "movers": [
     {
-      "sym": "SPY",
-      "chg_pct": 0.12
+      "sym": "QQQ",
+      "chg_pct": -0.3
     },
     {
       "sym": "VIX",
-      "chg_pct": -1.64
+      "chg_pct": -0.47
     }
   ],
   "display": {
@@ -46,7 +46,7 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 54,
+      "top_score": 55,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": {
