@@ -153,6 +153,7 @@ const ICONS = {
   marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
   marketing_outbox:      NAV_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
+  marketing_publish:     NAV_ICO('<path d="M21 4L3 11l6 2.5L11 20l3.5-6L21 4Z"/><path d="M9 13.5L21 4"/>'),
   marketing_sentinel:    NAV_ICO('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4"/>'),
   marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
   marketing_radar:       NAV_ICO('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.4-6.4"/><circle cx="16.2" cy="7.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15" r="1" fill="currentColor" stroke="none"/>'),
@@ -161,7 +162,7 @@ const ICONS = {
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -4537,6 +4538,170 @@ function sentVerdict(d) {
     error:              { cls: "sent-plan-bad",  word: "Gate errored — treat as held" },
   }[ps] || { cls: "sent-plan-mut", word: ps ? `Plan: ${ps}` : "Plan not yet gated" };
   return { live, planMeta };
+}
+
+/* ---- Publisher (D02 W1) — the live-publish control plane ------------------ */
+RENDER.marketing_publish = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/publish");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Publisher unavailable", (d && d.error) || "panel error"); return; }
+
+  const cfg = d.config || {};
+  const sc = d.status_counts || {};
+  const armed = cfg.token_present && cfg.any_channel_set;
+
+  /* Header — honest arm-state pill in plain words. Nothing here posts; the
+     workflow/runner does, and only when MARKETING_PUBLISH_ENABLED=1 + --live. */
+  const asOfChip = d.as_of ? `<span class="cnt">queue as of ${esc(d.as_of)}</span>` : "";
+  const armPill = armed
+    ? `<span class="obx-shadow-pill" style="color:var(--warn)"><span class="obx-shadow-dot" style="background:var(--warn)"></span>Ready to arm — posts only with the kill-switch on</span>`
+    : `<span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Dark — no token/channel; nothing can post</span>`;
+  const header = `<div class="section">Publisher ${asOfChip}${armPill}</div>
+  <div class="obx-lede">The publisher posts APPROVED, DUE outbox items to X through Buffer. It stays dark until the operator sets <code>MARKETING_PUBLISH_ENABLED=1</code> and a channel id. Run a dry-run below to see exactly what the next live run would post — no network, no writes.</div>`;
+
+  /* Status strip — one tile per publisher state. */
+  const tileDefs = [
+    ["queued", "Queued", null],
+    ["approved", "Approved", "var(--ok)"],
+    ["posting", "Posting", "var(--warn)"],
+    ["posted", "Posted", "var(--muted)"],
+    ["failed", "Failed", "var(--bad)"],
+    ["quarantined", "Quarantined", "var(--bad)"],
+  ];
+  const tiles = `<div class="metric-tiles-row">
+    ${tileDefs.map(([k, lbl, color]) => {
+      const val = sc[k] != null ? sc[k] : 0;
+      return `<div class="metric-tile"${val === 0 ? ' style="opacity:.55"' : ""}>
+        <div class="eyebrow">${esc(lbl)}</div>
+        <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>
+      </div>`;
+    }).join("")}
+  </div>`;
+
+  /* Config strip — read-only echo of config/marketing.yml publish + token
+     presence (boolean only; the token value is NEVER surfaced). */
+  const chSet = cfg.channels_set || {};
+  const chLine = Object.keys(chSet).length
+    ? Object.entries(chSet).map(([a, on]) =>
+        `<span class="pub-cfg-chip ${on ? "on" : "off"}">${esc(a)}: ${on ? "channel set" : "no channel"}</span>`).join("")
+    : `<span class="note muted">no accounts configured</span>`;
+  const cfgCard = `<div class="card">
+    <div class="section">Configuration <span class="cnt">config/marketing.yml · read-only</span></div>
+    <div class="pub-cfg-grid">
+      <div><span class="eyebrow">Backend</span> <b>${esc(cfg.backend || "buffer")}</b></div>
+      <div><span class="eyebrow">Daily cap</span> <b>${cfg.cap != null ? cfg.cap : "—"}</b> / account</div>
+      <div><span class="eyebrow">Require approval</span> <b>${cfg.require_approval ? "yes" : "no"}</b></div>
+      <div><span class="eyebrow">Auto-approve</span> <b>${cfg.auto_approve ? "ON" : "off"}</b></div>
+      <div><span class="eyebrow">Buffer token</span> <b style="color:${cfg.token_present ? "var(--ok)" : "var(--muted)"}">${cfg.token_present ? "present" : "not set"}</b></div>
+    </div>
+    <div class="pub-cfg-channels">${chLine}</div>
+  </div>`;
+
+  /* PROMINENT callout — anything stuck in 'posting' (a crashed in-flight post)
+     or quarantined needs a human look. Loud, above the fold. */
+  const stuck = d.stuck_posting || [];
+  const quar = d.quarantined || [];
+  let callout = "";
+  if (stuck.length || quar.length) {
+    const stuckRows = stuck.map(r => `<div class="pub-alert-row">
+      <span class="pub-alert-tag warn">stuck posting</span>
+      <code>${esc(r.id)}</code> <span class="muted">${esc(r.account || "")}</span>
+      <span class="pub-alert-note">${esc(r.note || "in-flight from a crashed run — never auto-reposted")}</span>
+    </div>`).join("");
+    const quarRows = quar.map(r => `<div class="pub-alert-row">
+      <span class="pub-alert-tag bad">quarantined</span>
+      <code>${esc(r.id)}</code> <span class="muted">${esc(r.account || "")}</span>
+      <span class="pub-alert-note">${esc(r.note || "no reason recorded")}</span>
+    </div>`).join("");
+    callout = `<div class="card pub-callout">
+      <div class="section">Needs attention <span class="cnt">${stuck.length} stuck · ${quar.length} quarantined</span></div>
+      ${stuck.length ? `<div class="note muted" style="margin-bottom:6px">Items left in <b>posting</b> are in-flight markers from a crashed run. The runner reports them and NEVER reposts (no-double-post). Confirm on X, then resolve manually.</div>` : ""}
+      ${stuckRows}${quarRows}
+    </div>`;
+  }
+
+  /* Recent posted table — with receipts (external id + link when present). */
+  const posted = d.recent_posted || [];
+  let postedCard;
+  if (posted.length) {
+    const rows = posted.map(r => {
+      const idCell = r.external_url
+        ? `<a href="${esc(r.external_url)}" target="_blank" rel="noopener">${esc(r.external_id || "post")}</a>`
+        : (r.external_id ? esc(r.external_id) : `<span class="muted">—</span>`);
+      return `<tr>
+        <td class="muted">${esc(r.at || "")}</td>
+        <td>${esc(r.account || "")}</td>
+        <td class="pub-text">${esc((r.text || "").slice(0, 120))}</td>
+        <td>${esc(r.backend || "")}</td>
+        <td><code>${idCell}</code></td>
+      </tr>`;
+    }).join("");
+    postedCard = `<div class="card">
+      <div class="section">Recent posts <span class="cnt">last ${posted.length} · newest first</span></div>
+      <table class="tbl pub-tbl"><thead><tr><th>at</th><th>desk</th><th>post</th><th>via</th><th>receipt</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>`;
+  } else {
+    postedCard = `<div class="card"><div class="section">Recent posts</div>
+      <div class="note muted">Nothing posted yet. Live posts land here with their Buffer receipt once the publisher is armed and runs.</div></div>`;
+  }
+
+  /* Dry-run action + result zone. */
+  const actionCard = `<div class="card">
+    <div class="section">Dry-run preview</div>
+    <div class="note muted" style="margin-bottom:8px">See exactly what the next <code>--live</code> run would post right now. Runs in-process: no network call, no ledger write.</div>
+    <button class="btn primary" id="pub-dryrun-btn" onclick="pubRunDryRun(this)">Run dry-run</button>
+    <div id="pub-dryrun-out" style="margin-top:10px"></div>
+  </div>`;
+
+  /* Activity strip — publisher run tallies. */
+  const activity = d.activity || [];
+  const actStrip = activity.length ? `<div class="card"><div class="section">Recent runs</div>
+    ${activity.map(a => `<div class="pub-act-row"><span class="muted">${esc(a.at || "")}</span>
+      <span class="pub-act-lane">${esc(a.lane || "")}</span>
+      posted ${a.posted || 0} · would_post ${a.would_post || 0} · quarantined ${a.quarantined || 0}${a.auto_approved ? ` · auto ${a.auto_approved}` : ""}</div>`).join("")}
+  </div>` : "";
+
+  /* Cold outbox → honest note (still show config + action so the operator can arm). */
+  if (d.note && !posted.length && !stuck.length && !quar.length) {
+    v.innerHTML = header + tiles + cfgCard + `<div class="card"><div class="note muted">${esc(d.note)}</div></div>` + actionCard;
+    return;
+  }
+
+  v.innerHTML = header + tiles + callout + cfgCard + postedCard + actionCard + actStrip;
+};
+
+/* POST the dry-run and render the "would post" report into #pub-dryrun-out. */
+async function pubRunDryRun(btn) {
+  const out = document.getElementById("pub-dryrun-out");
+  if (btn) { btn.disabled = true; btn.textContent = "Running…"; }
+  const d = await post("/api/marketing/publish/dryrun", {});
+  if (btn) { btn.disabled = false; btn.textContent = "Run dry-run"; }
+  if (!out) return;
+  if (!d || !d.ok) { out.innerHTML = `<div class="note err">${esc((d && d.error) || "dry-run failed")}</div>`; return; }
+
+  const c = d.counts || {};
+  const wp = d.would_post || [];
+  const q = d.quarantine || [];
+  const wa = d.would_auto_approve || [];
+  const killWord = d.kill_switch
+    ? `<span style="color:var(--warn)">kill-switch ON — a live run WOULD post</span>`
+    : `<span class="muted">kill-switch off — a live run stays dry</span>`;
+
+  const summary = `<div class="note" style="margin-bottom:8px">
+    <b>${wp.length}</b> would post · <b>${q.length}</b> would quarantine · <b>${c.skipped_cap || 0}</b> capped · <b>${c.skipped_no_channel || 0}</b> no-channel${d.auto_approve ? ` · <b>${wa.length}</b> would auto-approve` : ""}. ${killWord}.</div>`;
+
+  const wpRows = wp.length ? `<table class="tbl pub-tbl"><thead><tr><th>desk</th><th>chars</th><th>sched</th><th>preview</th></tr></thead>
+    <tbody>${wp.map(p => `<tr><td>${esc(p.account || "")}</td><td>${p.chars}</td><td class="muted">${esc(p.scheduled_at || "immediate")}</td><td class="pub-text">${esc(p.preview || "")}</td></tr>`).join("")}</tbody></table>`
+    : `<div class="note muted">Nothing is APPROVED and DUE right now — nothing would post.</div>`;
+
+  const qRows = q.length ? `<div class="note muted" style="margin-top:8px">Would quarantine:</div>
+    ${q.map(x => `<div class="pub-alert-row"><span class="pub-alert-tag bad">${esc((x.reasons || []).join(", "))}</span><code>${esc(x.id)}</code> <span class="muted">${esc(x.account || "")}</span></div>`).join("")}` : "";
+
+  const waRows = (d.auto_approve && wa.length) ? `<div class="note muted" style="margin-top:8px">Would auto-approve (queued → approved): ${wa.map(x => `<code>${esc(x.id)}</code>`).join(" ")}</div>` : "";
+
+  out.innerHTML = summary + wpRows + qRows + waRows;
 }
 
 RENDER.marketing_sentinel = async () => {

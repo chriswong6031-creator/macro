@@ -1,0 +1,396 @@
+"""tests/test_marketing_publisher_autoapprove.py — W1 wiring-layer tests.
+
+Covers the auto-approve gate added to scripts/marketing_publisher.py plus the
+writeless dry-run report entrypoint and the admin marketing.publisher() shape.
+
+Mirrors tests/test_marketing_social_publisher.py conventions: tmp_path for all
+I/O, injected now= for determinism, ZERO live network (a fully fake publisher),
+and the engine/runner modules imported INSIDE each test function.
+
+Auto-approve contract under test:
+  * config OFF and flag OFF        → NO queued→approved mutation
+  * flag ON (live)                 → queued items passing ALL gates → approved
+  * config ON (live)               → same, via config not flag
+  * DRY-RUN + auto-approve         → reports what it WOULD approve, mutates NOTHING
+  * an item failing a gate (over-280, no channel, over cap) is NOT auto-approved
+  * dry_run_report() makes NO ledger writes (ledger byte-identical before/after)
+  * admin marketing.publisher() returns the frozen shape and NEVER echoes a token
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pytest
+
+
+_FIXED_NOW = datetime(2026, 7, 19, 12, 0, 0, tzinfo=timezone.utc)
+_AS_OF = "2026-07-19"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fixtures / helpers (mirrors test_marketing_social_publisher.py)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _seed_queued_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-day. Watching now.",
+                      account: str = "flagship", as_of: str = _AS_OF,
+                      scheduled_at: str = "immediate") -> str:
+    """Enqueue one item, leaving it in the 'queued' state. Returns its id."""
+    from engine.marketing.outbox import make_item, enqueue
+    item = make_item(
+        account=account, kind="signal", text=text, as_of=as_of,
+        scheduled_at=scheduled_at, provenance="content_studio", now=_FIXED_NOW,
+    )
+    enqueue(item, root=tmp_path, max_per_account_day=99)
+    return item["id"]
+
+
+def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
+                       links_allowed: bool = True, auto_approve: bool = False,
+                       cap: int = 2) -> None:
+    """Write a minimal config/marketing.yml with publish + sentinel blocks."""
+    cfg_dir = tmp_path / "config"
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    (cfg_dir / "marketing.yml").write_text(
+        "sentinel:\n"
+        f"  max_posts_per_account_per_day: {cap}\n"
+        "publish:\n"
+        "  backend: buffer\n"
+        "  require_approval: true\n"
+        f"  auto_approve: {'true' if auto_approve else 'false'}\n"
+        "  channels:\n"
+        f"    flagship: \"{channel}\"\n"
+        "  links_allowed:\n"
+        f"    flagship: {'true' if links_allowed else 'false'}\n",
+        encoding="utf-8",
+    )
+
+
+class _FakePublisher:
+    """Stand-in backend that records calls and never touches the network."""
+
+    backend = "buffer"
+
+    def __init__(self, *, ok: bool = True, external_id: str = "buf-post-1") -> None:
+        self._ok = ok
+        self._external_id = external_id
+        self.calls: list[dict] = []
+
+    def publish(self, **kwargs):
+        from engine.marketing.social_publisher import Receipt
+        self.calls.append(kwargs)
+        at_iso = (kwargs.get("now") or _FIXED_NOW).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if self._ok:
+            return Receipt(True, self._external_id, None, None, self.backend, at_iso)
+        return Receipt(False, None, None, "boom", self.backend, at_iso)
+
+    def list_channels(self):
+        return [{"id": "buf-chan-123", "service": "twitter", "name": "Flagship"}]
+
+
+def _run_publisher(monkeypatch, tmp_path: Path, argv: list[str], *,
+                   fake_publisher: _FakePublisher | None = None,
+                   kill_switch: bool = False, now: str = "2026-07-19T13:00:00Z") -> int:
+    """Invoke the runner main() in-process with a controlled environment."""
+    import scripts.marketing_publisher as pub
+    monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1" if kill_switch else "0")
+    monkeypatch.setenv("BUFFER_TOKEN", "test-token")
+    if fake_publisher is not None:
+        monkeypatch.setattr(pub, "_make_publisher",
+                            lambda backend, *, token, cfg: fake_publisher)
+    full_argv = list(argv) + ["--root", str(tmp_path), "--now", now]
+    return pub.main(full_argv)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Auto-approve OFF (default) — no mutation
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_auto_approve_off_by_default_no_mutation(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=False)
+    qid = _seed_queued_item(tmp_path)
+
+    fake = _FakePublisher()
+    # --live + kill-switch, but NO --auto-approve and config auto_approve=false.
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert fake.calls == []                       # nothing was approved → nothing posts
+    assert current_statuses(tmp_path)[qid] == "queued"   # untouched
+
+
+def test_auto_approve_flag_off_config_off_stays_queued(monkeypatch, tmp_path):
+    """Neither the flag nor config → queued items are never advanced."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=False)
+    qid = _seed_queued_item(tmp_path)
+
+    # No --live either — pure dry-run, no flag.
+    rc = _run_publisher(monkeypatch, tmp_path, [], kill_switch=False)
+    assert rc == 0
+    assert current_statuses(tmp_path)[qid] == "queued"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. Auto-approve ON via flag / config (live) — gates pass → approved
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_auto_approve_flag_on_live_approves_and_posts(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses, read_ledger
+    _write_publish_cfg(tmp_path, auto_approve=False)   # config off; flag drives it
+    qid = _seed_queued_item(tmp_path)
+
+    fake = _FakePublisher(ok=True, external_id="buf-777")
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--auto-approve"],
+                        fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    # queued → approved (auto) → posting → posted, in one run.
+    assert current_statuses(tmp_path)[qid] == "posted"
+    tos = [r["to"] for r in read_ledger(tmp_path) if r.get("id") == qid]
+    assert tos == ["approved", "posting", "posted"]
+    # The auto-approval transition was stamped by the publisher-autoapprove actor.
+    appr = next(r for r in read_ledger(tmp_path) if r.get("id") == qid and r["to"] == "approved")
+    assert appr["actor"] == "publisher-autoapprove"
+    assert len(fake.calls) == 1
+
+
+def test_auto_approve_config_on_live_approves(monkeypatch, tmp_path):
+    """config publish.auto_approve: true enables it without the CLI flag."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True)
+    qid = _seed_queued_item(tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert current_statuses(tmp_path)[qid] == "posted"
+    assert len(fake.calls) == 1
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. DRY-RUN + auto-approve — reports, mutates NOTHING
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_auto_approve_dry_run_does_not_mutate(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses, read_ledger
+    _write_publish_cfg(tmp_path, auto_approve=True)
+    qid = _seed_queued_item(tmp_path)
+
+    ledger_before = read_ledger(tmp_path)
+    fake = _FakePublisher(ok=True)
+    # --auto-approve but NO --live (and kill-switch off) → dry-run.
+    rc = _run_publisher(monkeypatch, tmp_path, ["--auto-approve"],
+                        fake_publisher=fake, kill_switch=False)
+
+    assert rc == 0
+    assert fake.calls == []                              # nothing posted
+    assert current_statuses(tmp_path)[qid] == "queued"   # NOT approved
+    # No status transitions written by the dry-run auto-approve pass.
+    assert read_ledger(tmp_path) == ledger_before
+
+
+def test_auto_approve_live_flag_without_killswitch_stays_dry(monkeypatch, tmp_path):
+    """--live --auto-approve but kill-switch OFF must degrade to dry-run: no mutation."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True)
+    qid = _seed_queued_item(tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--auto-approve"],
+                        fake_publisher=fake, kill_switch=False)
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[qid] == "queued"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Gate-failing items are NOT auto-approved
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_auto_approve_skips_over_280(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True)
+    bad = _seed_queued_item(tmp_path, text="x" * 300)   # over the 280 cap
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert fake.calls == []
+    # Failing validation → NOT auto-approved; it stays queued (the publisher only
+    # quarantines items that are already APPROVED, never queued ones).
+    assert current_statuses(tmp_path)[bad] == "queued"
+
+
+def test_auto_approve_skips_when_no_channel(monkeypatch, tmp_path):
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, channel="", auto_approve=True)   # no channel id
+    qid = _seed_queued_item(tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[qid] == "queued"
+
+
+def test_auto_approve_respects_daily_cap(monkeypatch, tmp_path):
+    """cap=2 → of three gate-clean queued items, only two are auto-approved."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=2)
+    ids = [
+        _seed_queued_item(tmp_path, text="First queued post here."),
+        _seed_queued_item(tmp_path, text="Second queued post here."),
+        _seed_queued_item(tmp_path, text="Third queued post here."),
+    ]
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    posted = [i for i in ids if statuses[i] == "posted"]
+    queued = [i for i in ids if statuses[i] == "queued"]
+    # cap=2 bounds the whole pipeline: exactly two post, one stays queued.
+    assert len(posted) == 2
+    assert len(queued) == 1
+    assert len(fake.calls) == 2
+
+
+def test_auto_approve_skips_held_item(monkeypatch, tmp_path):
+    """A queued item the operator put on hold is NOT auto-approved."""
+    from engine.marketing.outbox import current_statuses, record_decision
+    _write_publish_cfg(tmp_path, auto_approve=True)
+    qid = _seed_queued_item(tmp_path)
+    assert record_decision(qid, "hold", actor="admin", root=tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[qid] == "queued"   # held → left alone
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. dry_run_report() — writeless structured report
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_dry_run_report_shape_and_no_writes(monkeypatch, tmp_path):
+    from engine.marketing.outbox import make_item, enqueue, transition, read_ledger
+    import scripts.marketing_publisher as pub
+    _write_publish_cfg(tmp_path, auto_approve=False)
+
+    # One APPROVED + DUE item → should land in would_post.
+    it = make_item(account="flagship", kind="signal", text="Approved and due post.",
+                   as_of=_AS_OF, provenance="content_studio", now=_FIXED_NOW)
+    enqueue(it, root=tmp_path, max_per_account_day=99)
+    transition(it["id"], "approved", actor="t", root=tmp_path)
+
+    ledger_before = read_ledger(tmp_path)
+    rep = pub.dry_run_report(root=tmp_path, now=_FIXED_NOW)
+
+    assert rep["ok"] is True
+    assert rep["mode"] == "dry_run"
+    assert rep["backend"] == "buffer"
+    for key in ("counts", "would_post", "quarantine", "would_auto_approve", "stuck_posting"):
+        assert key in rep
+    assert rep["counts"]["would_post"] == 1
+    assert rep["would_post"][0]["id"] == it["id"]
+    assert rep["would_post"][0]["account"] == "flagship"
+    # No ledger writes whatsoever.
+    assert read_ledger(tmp_path) == ledger_before
+
+
+def test_dry_run_report_previews_auto_approve(monkeypatch, tmp_path):
+    import scripts.marketing_publisher as pub
+    _write_publish_cfg(tmp_path, auto_approve=True)
+    qid = _seed_queued_item(tmp_path)
+
+    rep = pub.dry_run_report(root=tmp_path, now=_FIXED_NOW)
+    assert rep["auto_approve"] is True
+    assert rep["counts"]["would_auto_approve"] == 1
+    assert rep["would_auto_approve"][0]["id"] == qid
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Admin marketing.publisher() — shape + token safety
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_admin_publisher_empty_state(monkeypatch, tmp_path):
+    from admin import marketing
+    _write_publish_cfg(tmp_path)
+    monkeypatch.delenv("BUFFER_TOKEN", raising=False)
+
+    d = marketing.publisher(root=tmp_path)
+    assert d["ok"] is True
+    assert "note" in d                       # cold outbox → honest note
+    assert d["config"]["backend"] == "buffer"
+    assert d["config"]["token_present"] is False
+    assert d["recent_posted"] == []
+    assert d["stuck_posting"] == []
+    # Status keys present and zeroed.
+    for k in ("queued", "approved", "posting", "posted", "failed", "quarantined"):
+        assert d["status_counts"][k] == 0
+
+
+def test_admin_publisher_surfaces_posted_receipt_and_stuck(monkeypatch, tmp_path):
+    from admin import marketing
+    from engine.marketing.outbox import make_item, enqueue, transition
+    _write_publish_cfg(tmp_path)
+
+    # A posted item with a receipt.
+    posted = make_item(account="flagship", kind="signal", text="Posted item.",
+                       as_of=_AS_OF, provenance="content_studio", now=_FIXED_NOW)
+    enqueue(posted, root=tmp_path, max_per_account_day=99)
+    transition(posted["id"], "approved", actor="t", root=tmp_path)
+    transition(posted["id"], "posting", actor="t", root=tmp_path)
+    transition(posted["id"], "posted", actor="t", root=tmp_path,
+               receipt={"backend": "buffer", "external_id": "buf-42", "external_url": None})
+
+    # A stuck-in-posting item (crashed mid-post).
+    stuck = make_item(account="flagship", kind="signal", text="Stuck item.",
+                      as_of=_AS_OF, provenance="content_studio", now=_FIXED_NOW)
+    enqueue(stuck, root=tmp_path, max_per_account_day=99)
+    transition(stuck["id"], "approved", actor="t", root=tmp_path)
+    transition(stuck["id"], "posting", actor="t", root=tmp_path)
+
+    d = marketing.publisher(root=tmp_path)
+    assert d["ok"] is True
+    assert d["status_counts"]["posted"] == 1
+    assert d["status_counts"]["posting"] == 1
+    # Receipt surfaced on the recent-posted row.
+    rp = next(r for r in d["recent_posted"] if r["id"] == posted["id"])
+    assert rp["external_id"] == "buf-42"
+    assert rp["backend"] == "buffer"
+    # Stuck item surfaced prominently.
+    assert any(r["id"] == stuck["id"] for r in d["stuck_posting"])
+
+
+def test_admin_publisher_never_echoes_token(monkeypatch, tmp_path):
+    """token_present is a bool; the raw token value must appear NOWHERE in the payload."""
+    import json
+    from admin import marketing
+    _write_publish_cfg(tmp_path)
+    monkeypatch.setenv("BUFFER_TOKEN", "super-secret-token-value")
+
+    d = marketing.publisher(root=tmp_path)
+    assert d["config"]["token_present"] is True
+    assert "super-secret-token-value" not in json.dumps(d)
+
+
+def test_admin_publisher_dryrun_wrapper_no_writes(monkeypatch, tmp_path):
+    from admin import marketing
+    from engine.marketing.outbox import read_ledger
+    _write_publish_cfg(tmp_path, auto_approve=True)
+    _seed_queued_item(tmp_path)
+
+    ledger_before = read_ledger(tmp_path)
+    d = marketing.publisher_dryrun(root=tmp_path)
+    assert d["ok"] is True
+    assert d["mode"] == "dry_run"
+    assert read_ledger(tmp_path) == ledger_before

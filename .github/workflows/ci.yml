@@ -657,6 +657,15 @@ on:
       - "scripts/build_vol_regime.py"
       - "tests/test_opex_risk.py"
       - "data/opex_windows/.gitkeep"
+      # D02 W1 live social publisher: backend-agnostic publisher + Buffer adapter,
+      # the live runner, and the outbox status machine it drives (posting state).
+      - "engine/marketing/social_publisher.py"
+      - "engine/marketing/outbox.py"
+      - "scripts/marketing_publisher.py"
+      - "tests/test_marketing_social_publisher.py"
+      - "tests/test_marketing_outbox.py"
+      # W1 wiring layer: auto-approve gate + writeless dry-run report + admin panel.
+      - "tests/test_marketing_publisher_autoapprove.py"
   workflow_dispatch:
 
 permissions:
@@ -2423,3 +2432,20 @@ jobs:
         run: pip install pytest fastapi
       - name: identity capture unit tests
         run: python -m pytest tests/test_collect_identity.py -v
+
+  marketing-social-publisher:
+    # D02 W1 live social publisher: tweet_length/validate_postable, the Buffer
+    # adapter (all HTTP mocked via _transport), and the live runner (kill-switch
+    # + --live gating, approved→posting→posted, idempotency, no-double-post).
+    # test_marketing_outbox is co-run because W1 extended its status machine.
+    # DARK BY DEFAULT: zero live network — every transport path is mocked.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml
+      - name: social publisher + outbox + wiring-layer unit tests
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py -q
