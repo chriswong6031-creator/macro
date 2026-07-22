@@ -61,12 +61,15 @@ LOCK_STATUS = {
     "locked": ("🔒 locked", "🔒 锁定中", C["muted"]),
     "expired": ("expired", "已解禁", C["faint"]),
 }
-# price-revision (partial-adjustment) label → (EN, ZH, colour)
+# price-revision (partial-adjustment) label → (EN, ZH, colour). Colour = the page's
+# dark-aware CSS custom properties, NOT baked hex: the ipo page softens --red to #e06464
+# in dark mode, so a baked #D30B0B chip would vibrate on the dark bg while every other red
+# uses var(--red). Vars also inherit any zh direction-colour flip for free.
 REV_LABEL = {
-    "above-range": ("▲ above range", "▲ 高于区间", "#1FA971"),
-    "top-half": ("top of range", "区间上沿", "#1FA971"),
-    "bottom-half": ("bottom of range", "区间下沿", C["amber"]),
-    "below-range": ("▼ below range", "▼ 低于区间", C["red"]),
+    "above-range": ("▲ above range", "▲ 高于区间", "var(--green)"),
+    "top-half": ("top of range", "区间上沿", "var(--green)"),
+    "bottom-half": ("bottom of range", "区间下沿", "var(--amber)"),
+    "below-range": ("▼ below range", "▼ 低于区间", "var(--red)"),
 }
 HK_VERDICT_ZH = {"receptive": "接纳", "mixed": "混合", "poor": "低迷", "unavailable": "不可用"}
 HK_VERDICT_COLOR = {"receptive": "#1FA971", "mixed": C["amber"], "poor": C["red"], "unavailable": C["muted"]}
@@ -640,10 +643,10 @@ def build() -> str:
     recent = []
     for r in snap["recent"]:
         rev = r.get("revision")
-        rev_en, rev_zh, rev_col = ("—", "—", C["muted"])
+        rev_en, rev_zh, rev_col = ("—", "—", "var(--muted)")
         rev_pct = ""
         if rev:
-            rev_en, rev_zh, rev_col = REV_LABEL.get(rev["label"], ("—", "—", C["muted"]))
+            rev_en, rev_zh, rev_col = REV_LABEL.get(rev["label"], ("—", "—", "var(--muted)"))
             if rev.get("pct") is not None:
                 rev_pct = f" {rev['pct'] * 100:+.0f}%"
         recent.append({
@@ -658,6 +661,11 @@ def build() -> str:
             "rev_en": rev_en, "rev_zh": rev_zh, "rev_col": rev_col, "rev_pct": rev_pct,
             "has_rev": bool(rev),
         })
+    # gate the display-only "Demand (vs range)" column on real coverage (engine helper):
+    # the marketed range accrues only for deals seen pre-pricing, so it is near-empty on
+    # historical priced rows — show the column only once >REV_MIN_COVERAGE recent deals
+    # carry a revision, and disclose N-of-M honestly either way.
+    rev_gate = ir.revision_gate(snap["recent"])
     upcoming = []
     for r in snap["upcoming"]:
         rng = ("—" if r["range_low"] is None else
@@ -687,6 +695,8 @@ def build() -> str:
         "as_of": as_of or "—", "built": snap["built"],
         "window": window, "aftermarket": aftermarket, "pipeline": pipeline,
         "recent": recent, "upcoming": upcoming,
+        "rev_show": rev_gate["show"], "rev_coverage": rev_gate["coverage"],
+        "rev_total": rev_gate["total"],
         "lockups": lockvm["rows"], "lockup_summary": lk_summary,
         "lockup_phase0": lockvm.get("phase0"),
         "lockup_timeline": lockup_timeline,

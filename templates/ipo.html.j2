@@ -445,7 +445,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="sh-body">
         <div class="tbl-wrap">
           <table class="tbl">
-            <thead><tr><th scope="col">{{ t('Priced','定价日') }}</th><th scope="col">{{ t('Ticker','代码') }}</th><th scope="col">{{ t('Company','公司') }}</th><th class="n" scope="col">{{ t('Offer','发行价') }}</th><th class="n" scope="col">{{ t('Size','规模') }}</th></tr></thead>
+            <thead><tr><th scope="col">{{ t('Priced','定价日') }}</th><th scope="col">{{ t('Ticker','代码') }}</th><th scope="col">{{ t('Company','公司') }}</th><th class="n" scope="col">{{ t('Offer','发行价') }}</th><th class="n" scope="col">{{ t('Size','规模') }}</th>{% if rev_show %}<th scope="col">{{ t('Demand (vs range)','需求（对比区间）') }}{{ qtip('Partial-adjustment demand proxy: the final offer price vs the marketed prospectus range. Pricing above the range = strong book demand (the single strongest day-1 pop predictor in the literature); below = weak. DISPLAY-ONLY, never scored — it is finalised the night before trading and the pop accrues to allocation, so it is context, not a buy signal.','部分调整需求代理：最终发行价对比招股书营销区间。定价高于区间＝认购需求强劲（文献中首日涨幅最强的单一预测因子）；低于区间＝需求疲弱。仅供展示，从不计分 —— 它在交易前一晚才确定，涨幅归于配售，故为背景而非买入信号。') }}</th>{% endif %}</tr></thead>
             <tbody>
             {% for r in recent %}
             <tr>
@@ -454,11 +454,17 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
               <td>{{ r.company }}{% if r.is_spac %}<span class="spac">SPAC</span>{% endif %}</td>
               <td class="n">{{ r.offer_price }}</td>
               <td class="n">{{ r.size }}</td>
+              {% if rev_show %}<td><span style="color:{{ r.rev_col }}">{{ t(r.rev_en, r.rev_zh) }}{{ r.rev_pct }}</span></td>{% endif %}
             </tr>
             {% endfor %}
             </tbody>
           </table>
         </div>
+        {% if rev_show %}
+        <div class="mini">{{ t('“Demand (vs range)” is the final offer price vs the marketed prospectus range — pricing above the range signals strong book demand (the strongest day-1 pop predictor in the literature), below signals weak. Covers','“需求（对比区间）”为最终发行价对比招股书营销区间 —— 定价高于区间＝认购需求强劲（文献中首日涨幅最强的预测因子），低于＝疲弱。覆盖') }} {{ rev_coverage }}/{{ rev_total }} {{ t('recent deals · display-only, never scored.','近期交易 · 仅供展示，从不计分。') }}</div>
+        {% elif rev_total %}
+        <div class="mini" style="opacity:.85">{{ t('“Demand vs range” (final offer price vs the marketed prospectus range) is the strongest day-1 pop predictor in the literature, but a marketed range accrues only for deals captured before they price — covers','“需求对比区间”（最终发行价对比招股书营销区间）是文献中首日涨幅最强的预测因子，但营销区间仅对定价前已捕获的交易累积 —— 目前覆盖') }} {{ rev_coverage }}/{{ rev_total }} {{ t('recent deals so far, so the column is held back until coverage builds. Display-only, never scored.','近期交易，故在覆盖累积前暂不显示该列。仅供展示，从不计分。') }}</div>
+        {% endif %}
         <div class="mini">{{ t('SPACs are flagged, never dropped: they price at $10, rarely pop, and distort IPO base rates. Per-name price return vs the offer is shown only where we already hold the series — most fresh IPOs are outside our coverage, so we don’t fabricate it.','SPAC 被标记而非剔除：它们以 $10 定价、极少爆涨，会扭曲新股基准比率。相对发行价的个股回报仅在我们已持有序列时显示 —— 多数新上市公司不在覆盖范围内，故不会虚构。') }}</div>
       </div>
     </details>

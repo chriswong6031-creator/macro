@@ -256,6 +256,25 @@ def price_revision(offer, mlo, mhi) -> dict | None:
             "low": round(mlo, 2), "high": round(mhi, 2), "mid": round(mid, 2)}
 
 
+# Coverage gate for the display-only "Demand (vs range)" column. The marketed range is
+# the strongest day-1 predictor in the literature, but it accrues only for deals we
+# observe BEFORE they price — Nasdaq's free feed carries a range while a deal is
+# upcoming/filed and drops it to a single price once priced, so a marketed range exists
+# only where the pre-pricing range was captured and carried forward. Most historical
+# priced rows therefore have none, and the column stays hidden until enough recent deals
+# carry a revision. > (not >=) so the column needs to genuinely *exceed* the floor.
+REV_MIN_COVERAGE = 10
+
+
+def revision_gate(recent: list[dict], min_coverage: int = REV_MIN_COVERAGE) -> dict:
+    """How many recent deals carry a partial-adjustment revision, and whether that is
+    enough to surface the column. Display-only, never scored — a null here NEVER blocks
+    anything; it just gates a context column and prints an honest N-of-M disclosure."""
+    total = len(recent)
+    coverage = sum(1 for r in recent if r.get("revision"))
+    return {"coverage": coverage, "total": total, "show": coverage > min_coverage}
+
+
 def recent_listings(cal: pd.DataFrame | None = None, days: int = 120,
                     limit: int = 30) -> list[dict]:
     cal = _load() if cal is None else cal
