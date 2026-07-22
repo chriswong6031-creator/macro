@@ -105,3 +105,11 @@
 {"ts": "2026-07-19T15:23:18+00:00", "episode": "TMDX_2023", "status": "pr_closed_ci_failed", "pr_url": null, "detail": "auto-resolved: CI checks failed (dag-conformance)"}
 {"ts": "2026-07-19T15:32:10+00:00", "episode": "ASTS_2021", "status": "pr_opened", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/3079", "detail": "PR opened: https://github.com/chriswong6031-creator/macro/pull/3079"}
 {"ts": "2026-07-19T15:41:36+00:00", "episode": "IONQ_2025", "status": "audit_failed", "pr_url": null, "detail": "audit_failed: ['LANGUAGE: Section 8 contains prohibited buy/sell language: \u201cNeither absence is evidence of buying, selling, or conviction.\u201d Additionally, an Investing.com source URL contains \u201cmaintains-buy.\u201d']"}
+{"ts": "2026-07-22T08:14:10+00:00", "episode": "ALT_2021", "status": "pr_exists_closed", "pr_url": null, "detail": "operator-rejected PR at https://github.com/chriswong6031-creator/macro/pull/3083"}
+{"ts": "2026-07-22T08:14:10+00:00", "episode": "DNN_2021", "status": "pr_exists_closed", "pr_url": null, "detail": "operator-rejected PR at https://github.com/chriswong6031-creator/macro/pull/3080"}
+{"ts": "2026-07-22T08:14:11+00:00", "episode": "IONQ_2025", "status": "pr_exists_closed", "pr_url": null, "detail": "operator-rejected PR at https://github.com/chriswong6031-creator/macro/pull/3082"}
+{"ts": "2026-07-22T08:14:16+00:00", "episode": "SQM_2008", "status": "pr_closed_ci_failed", "pr_url": null, "detail": "auto-resolved: CI checks failed (dag-conformance)"}
+{"ts": "2026-07-22T08:14:22+00:00", "episode": "MSTR_2025", "status": "pr_closed_ci_failed", "pr_url": null, "detail": "auto-resolved: CI checks failed (dag-conformance)"}
+{"ts": "2026-07-22T08:25:09+00:00", "episode": "RBLX_2022", "status": "pr_opened", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/3200", "detail": "PR opened: https://github.com/chriswong6031-creator/macro/pull/3200"}
+{"ts": "2026-07-22T08:25:11+00:00", "episode": "UAMY_2025", "status": "pr_exists_closed", "pr_url": null, "detail": "operator-rejected PR at https://github.com/chriswong6031-creator/macro/pull/3081"}
+{"ts": "2026-07-22T08:31:29+00:00", "episode": "OKLO_2025", "status": "pr_opened", "pr_url": "https://github.com/chriswong6031-creator/macro/pull/3201", "detail": "PR opened: https://github.com/chriswong6031-creator/macro/pull/3201"}
