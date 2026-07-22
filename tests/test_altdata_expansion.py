@@ -118,8 +118,11 @@ def test_special_situations_handshake_lights_channels():
     assert recs["AAA"]["channels"] == ["activist_13d"]
     assert "Elliott" in recs["AAA"]["channel_detail"]["activist_13d"]
     assert recs["BBB"]["channels"] == ["special_situation"]
-    # the activist 13D handshake outweighs a generic special-situation
-    assert M.CHANNEL_WEIGHTS["activist_13d"] > M.CHANNEL_WEIGHTS["special_situation"]
+    # activist_13d is GAUNTLET-CAPPED to the context tier (activist_ownership.gate.v1 = negative
+    # post-filing drift, scored:false / weight 0.0), so it sits at the news_sentiment floor and no
+    # longer out-votes a live special_situation event on the convergence board.
+    assert M.CHANNEL_WEIGHTS["activist_13d"] <= M.CHANNEL_WEIGHTS["news_sentiment"]
+    assert M.CHANNEL_WEIGHTS["activist_13d"] < M.CHANNEL_WEIGHTS["special_situation"]
 
 
 def test_special_situations_reader_drops_low_confidence(tmp_path, monkeypatch):
