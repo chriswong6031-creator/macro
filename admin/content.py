@@ -62,7 +62,51 @@ def _ci_built(target) -> bool:
 # Whole local tree is ~3k pages; these are offline file reads off the hot path, so the
 # default ceiling covers everything (only a runaway tree would truncate). `truncated`
 # lets the UI say "scanned N of M" honestly when the cap ever does bite.
+
+# A full scan reads+parses ~3k pages (~17s) and blocks the single-threaded server, but the
+# result only changes when the site/ tree does. Cache it, keyed on a cheap tree signature
+# (html-file count + newest mtime) — statting files is far cheaper than reading every one,
+# so a repeat panel load returns instantly instead of re-running the crawl.
+_link_cache: dict = {}  # (max_pages, count, max_mtime) -> result dict
+
+
+def _tree_sig(max_pages: int):
+    """Cheap cache key: (max_pages, html-file count, newest mtime) over site/. Stat-only —
+    no file reads — so any add/remove/edit of a page flips the key and forces a rescan."""
+    count = 0
+    newest = 0.0
+    for p in SITE.rglob("*.html"):
+        try:
+            m = p.stat().st_mtime
+        except OSError:
+            continue
+        count += 1
+        if m > newest:
+            newest = m
+    return (max_pages, count, newest)
+
+
 def link_check(max_pages: int = 10000) -> dict:
+    """Cached wrapper around the offline nav-integrity scan (see `_link_check`).
+
+    The scan reads+parses the whole local tree (~17s); here we return a memoized result
+    whenever the site/ tree signature (page count + newest mtime) is unchanged, so repeat
+    panel loads are near-instant instead of re-running the crawl on the single-threaded
+    server. Returns the identical dict `_link_check` produces.
+    """
+    if not SITE.is_dir():
+        return _link_check(max_pages)
+    key = _tree_sig(max_pages)
+    cached = _link_cache.get(key)
+    if cached is not None:  # tree unchanged -> reuse
+        return cached
+    result = _link_check(max_pages)
+    _link_cache.clear()  # only the current tree state is ever relevant; bound the dict
+    _link_cache[key] = result
+    return result
+
+
+def _link_check(max_pages: int = 10000) -> dict:
     """Offline page-to-page nav-integrity check: internal links to a `.html` page that
     doesn't exist in the local site/ tree (the '404 nav link' class). Scans real markup
     only (script/style stripped); external / anchor / data links and non-HTML asset

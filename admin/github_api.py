@@ -137,6 +137,40 @@ def get_repo_variable(name: str) -> str | None:
         return None
 
 
+def list_repo_variables() -> dict[str, str] | None:
+    """Return {name: value} for all GitHub Actions repository variables, or None.
+
+    Fetches the full variable list in ONE API call (a single page of 100 covers
+    the handful of METAB_*/AUTONOMY_*/CODEX_* vars this repo uses), collapsing
+    what used to be N sequential get_repo_variable() round-trips into one.
+
+    Returns None (not {}) when no token is configured, requests is unavailable,
+    the owner/repo cannot be detected, or the API returns a non-200 — callers
+    then fall back to per-variable get_repo_variable() reads.  Never raises.
+    """
+    if requests is None:
+        return None
+    if not token():
+        return None
+    owner, name_repo = repo()
+    if not (owner and name_repo):
+        return None
+    url = f"{API}/repos/{owner}/{name_repo}/actions/variables"
+    try:
+        resp = requests.get(url, headers=_headers(),
+                            params={"per_page": 100}, timeout=12)
+        if resp.status_code != 200:
+            return None
+        out: dict[str, str] = {}
+        for v in resp.json().get("variables", []):
+            n = v.get("name")
+            if isinstance(n, str):
+                out[n] = v.get("value")
+        return out
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def set_repo_variable(name: str, value: str) -> bool:
     """Set (or create) a GitHub Actions repository variable.
 

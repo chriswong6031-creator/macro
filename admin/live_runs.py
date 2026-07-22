@@ -166,8 +166,14 @@ def _read_last_heartbeat() -> dict | None:
         return None
 
 
+# Bot reachability probe timeout. A healthy localhost bot answers in <50ms;
+# a 2s timeout used to block the whole request thread when the bot is down.
+# 0.5s is ample for a local answer while capping the worst-case stall.
+_BOT_PROBE_TIMEOUT_S = 0.5
+
+
 def _probe_bot(base: str) -> bool:
-    """GET {base}/api/mastermind_ai with a 2s timeout.
+    """GET {base}/api/mastermind_ai with a short timeout (_BOT_PROBE_TIMEOUT_S).
 
     Returns True only on HTTP 200. Any error, timeout, or non-200 → False.
     Never logs or includes token values.
@@ -178,7 +184,7 @@ def _probe_bot(base: str) -> bool:
         return False
     url = f"{base.rstrip('/')}/api/mastermind_ai"
     try:
-        resp = _req.get(url, timeout=2)
+        resp = _req.get(url, timeout=_BOT_PROBE_TIMEOUT_S)
         return resp.status_code == 200
     except Exception:  # noqa: BLE001
         return False

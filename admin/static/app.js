@@ -1484,12 +1484,24 @@ async function toggleFlag(el, path, value, label) {
 }
 
 /* ---- BUILD & DEPLOY ----------------------------------------------------- */
+let _dispatching = false;   /* re-entry guard — a second dispatch mid-flight can cancel an in-flight Pages deploy */
 async function dispatch(workflow) {
   const names = { "daily.yml": "full rebuild + deploy", "pages.yml": "redeploy committed site", "weekly.yml": "weekly deep rebuild" };
+  if (_dispatching) { toast("A deploy is already being dispatched — wait for it to finish.", true); return; }
   if (!confirm(`Trigger ${names[workflow] || workflow} on main? This runs GitHub Actions and may update the live site.`)) return;
-  const r = await post("/api/deploy/dispatch", { workflow, confirm: true });
-  if (r.ok) { toast(`Dispatched ${workflow}`); setTimeout(() => { if (CURRENT === "deploy") RENDER.deploy(); }, 1500); }
-  else toast(r.error || "dispatch failed", true);
+  _dispatching = true;
+  // disable every deploy trigger (overview quick-actions + the Build & Deploy tab) so a
+  // rapid double-click can't fire a second run that cancels the first.
+  const btns = document.querySelectorAll("#depActions button, #qa button");
+  btns.forEach(b => { b.disabled = true; });
+  try {
+    const r = await post("/api/deploy/dispatch", { workflow, confirm: true });
+    if (r.ok) { toast(`Dispatched ${workflow}`); setTimeout(() => { if (CURRENT === "deploy") RENDER.deploy(); }, 1500); }
+    else toast(r.error || "dispatch failed", true);
+  } finally {
+    _dispatching = false;
+    btns.forEach(b => { b.disabled = false; });
+  }
 }
 const STATUS_PILL = (r) => {
   if (r.status !== "completed") return `<span class="statpill s-warn">${esc(r.status)}</span>`;
