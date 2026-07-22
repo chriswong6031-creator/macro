@@ -106,16 +106,40 @@
   .mmb-search .x:hover{color:var(--mmb-text)}
   .mmb-search .x svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
   .mmb-search input:placeholder-shown~.x{opacity:0;pointer-events:none}
-  .mmb-ti{margin:2px 8px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mmb-ti{position:relative;display:flex;align-items:center;margin:2px 8px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid transparent}
   .mmb-ti:hover{background:color-mix(in srgb,#fff 6%,transparent)}
   .mmb-ti.on{background:color-mix(in srgb,var(--mmb-info) 14%,transparent);border-color:color-mix(in srgb,var(--mmb-info) 30%,transparent)}
+  .mmb-ti-body{flex:1;min-width:0}
   .mmb-ti .tt{font:600 13px/1.3 var(--mmb-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mmb-ti .tm{font:500 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;text-transform:capitalize}
+  .mmb-ti .tm{font:500 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* row action buttons (rename/delete) — reveal on hover; always 0.7 on coarse */
+  .mmb-ti-acts{display:flex;gap:2px;flex:none;margin-left:6px;opacity:0;transition:opacity .13s}
+  .mmb-ti:hover .mmb-ti-acts,.mmb-ti:focus-within .mmb-ti-acts{opacity:1}
+  @media(hover:none),(pointer:coarse){.mmb-ti-acts{opacity:.7}}
+  .mmb-ti.confirming .mmb-ti-acts{display:none}
+  .mmb-ti-act{width:22px;height:22px;border:none;background:transparent;border-radius:6px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;padding:0;transition:color .12s,background .12s}
+  .mmb-ti-act:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 9%,transparent)}
+  .mmb-ti-act svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7}
+  /* inline rename input (replaces the title in place) */
+  .mmb-ti-input{width:100%;border:1px solid color-mix(in srgb,var(--mmb-info) 40%,transparent);background:color-mix(in srgb,#000 22%,transparent);color:var(--mmb-text);font:600 13px/1.3 var(--mmb-font);border-radius:7px;padding:4px 7px;outline:none}
+  /* delete-confirm state: dim title, show Delete? + ✓/✕ */
+  .mmb-ti.confirming .mmb-ti-body{opacity:.4}
+  .mmb-ti-confirm{display:none;align-items:center;gap:4px;flex:none;margin-left:6px}
+  .mmb-ti.confirming .mmb-ti-confirm{display:flex}
+  .mmb-ti-q{font:600 11.5px/1 var(--mmb-font);color:#e0716b;margin-right:2px}
+  .mmb-ti-yes,.mmb-ti-no{width:22px;height:22px;border:none;border-radius:6px;cursor:pointer;display:grid;place-items:center;padding:0;background:color-mix(in srgb,#fff 6%,transparent);transition:background .12s,color .12s}
+  .mmb-ti-yes{color:#e0716b}.mmb-ti-yes:hover{background:color-mix(in srgb,#e05555 22%,transparent);color:#fff}
+  .mmb-ti-no{color:var(--mmb-muted)}.mmb-ti-no:hover{background:color-mix(in srgb,#fff 12%,transparent);color:var(--mmb-text)}
+  .mmb-ti-yes svg,.mmb-ti-no svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2}
   .mmb-th-empty{color:var(--mmb-muted);font:400 12.5px/1.5 var(--mmb-font);padding:14px 16px}
   .mmb-main{flex:1;display:flex;flex-direction:column;min-width:0}
   .mmb-head{display:flex;align-items:center;gap:8px;padding:14px 14px;flex:none;border-bottom:1px solid color-mix(in srgb,var(--mmb-line) 45%,transparent)}
   .mmb-head .ttl{font:650 14px/1 var(--mmb-font);display:flex;align-items:center;gap:8px}
-  .mmb-head .dot{width:7px;height:7px;border-radius:50%;background:#3da564;box-shadow:0 0 8px #3da564}
+  .mmb-head .dot{width:7px;height:7px;border-radius:50%;background:#3da564;box-shadow:0 0 8px #3da564;transition:background .2s}
+  /* streaming: violet + soft opacity pulse (opacity-only, house perf law) */
+  .mmb-head .dot.busy{background:var(--mmb-violet);box-shadow:0 0 8px var(--mmb-violet);animation:mmb-dotpulse 1s ease-in-out infinite}
+  @keyframes mmb-dotpulse{0%,100%{opacity:1}50%{opacity:.45}}
+  @media(prefers-reduced-motion:reduce){.mmb-head .dot.busy{animation:none}}
   .mmb-head .sp{flex:1}
   .mmb-rpill{display:inline-flex;align-items:center;gap:6px;font:600 11.5px/1 var(--mmb-font);cursor:pointer;
     color:color-mix(in srgb,var(--mmb-violet) 84%,#fff);background:color-mix(in srgb,var(--mmb-violet) 12%,transparent);
@@ -130,7 +154,13 @@
   #mmb-panel:not(.max).show-side .mmb-threads{transform:none;box-shadow:10px 0 40px -12px rgba(0,0,0,.6)}
   #mmb-panel:not(.max) .mmb-sidescrim{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.32);opacity:0;pointer-events:none;transition:opacity .2s ease}
   #mmb-panel:not(.max).show-side .mmb-sidescrim{opacity:1;pointer-events:auto}
-  .mmb-scroll{flex:1;overflow-y:auto;padding:20px clamp(18px,6%,64px);display:flex;flex-direction:column;gap:15px}
+  .mmb-scroll{flex:1;overflow-y:auto;overflow-anchor:none;padding:20px clamp(18px,6%,64px);display:flex;flex-direction:column;gap:15px}
+  /* thin violet-tinted scrollbars (scroller + threads) */
+  .mmb-scroll,.mmb-threads,.mmb-code pre,.mmb-table{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--mmb-violet) 40%,transparent) transparent}
+  .mmb-scroll::-webkit-scrollbar,.mmb-threads::-webkit-scrollbar{width:8px;height:8px}
+  .mmb-scroll::-webkit-scrollbar-thumb,.mmb-threads::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--mmb-violet) 34%,transparent);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+  .mmb-scroll::-webkit-scrollbar-thumb:hover,.mmb-threads::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--mmb-violet) 52%,transparent);background-clip:padding-box}
+  .mmb-scroll::-webkit-scrollbar-track,.mmb-threads::-webkit-scrollbar-track{background:transparent}
   #mmb-panel.max .mmb-scroll{padding:26px clamp(24px,10%,120px)}
   .mmb-empty{flex:1;display:flex;flex-direction:column;justify-content:center}
   .mmb-hero h1{margin:0;font:800 clamp(22px,3vw,38px)/1.1 var(--mmb-font);letter-spacing:-.02em}
@@ -155,17 +185,76 @@
   .mmb-cardp .ci svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
   /* messages */
   .mmb-msg{display:flex;flex-direction:column;gap:4px;max-width:88%}
-  .mmb-msg.user{align-self:flex-end;align-items:flex-end}
-  .mmb-msg.assistant{align-self:flex-start;align-items:flex-start;max-width:100%}
-  .mmb-bub{padding:12px 15px;border-radius:16px;font:14.5px/1.62 var(--mmb-font);word-break:break-word}
-  .mmb-msg.user .mmb-bub{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));color:#fff;border-bottom-right-radius:5px;box-shadow:0 8px 22px -10px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
-  .mmb-msg.assistant .mmb-bub{background:color-mix(in srgb,var(--mmb-panel) 60%,transparent);border:1px solid color-mix(in srgb,#fff 9%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom-left-radius:5px;box-shadow:0 10px 30px -18px rgba(0,0,0,.5)}
+  .mmb-msg.user{align-self:flex-end;align-items:flex-end;max-width:78%;animation:mmb-pop .2s ease-out both}
+  .mmb-msg.assistant{align-self:flex-start;align-items:flex-start;max-width:100%;width:100%}
+  @keyframes mmb-pop{from{opacity:0;transform:translateY(4px) scale(.96)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.mmb-msg.user{animation:none}}
+  .mmb-bub{font:14.5px/1.62 var(--mmb-font);word-break:break-word}
+  /* USER: keep the violet-tinted gradient bubble */
+  .mmb-msg.user .mmb-bub{padding:12px 15px;border-radius:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));color:#fff;border-bottom-right-radius:5px;box-shadow:0 8px 22px -10px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
+  /* ASSISTANT: ghost block — NO per-message background/border/blur (the panel blurs once,
+     so a per-bubble backdrop-filter is a needless repaint). Orb glyph anchors top-left. */
+  .mmb-msg.assistant .mmb-bub{position:relative;width:100%;padding:2px 0 0 28px;background:none;border:none;box-shadow:none}
+  .mmb-orbmark{position:absolute;left:0;top:1px;width:18px;height:18px;display:grid;place-items:center;pointer-events:none}
+  .mmb-orbmark svg{width:18px;height:18px;fill:color-mix(in srgb,var(--mmb-violet) 85%,transparent)}
   .mmb-bub p{margin:0 0 9px}.mmb-bub p:last-child{margin-bottom:0}
   .mmb-bub ul,.mmb-bub ol{margin:7px 0 9px 20px;padding:0}.mmb-bub li{margin:4px 0}
   .mmb-bub strong{font-weight:700;color:color-mix(in srgb,var(--mmb-text) 92%,#fff)}
+  .mmb-bub em{font-style:italic;color:color-mix(in srgb,var(--mmb-text) 88%,var(--mmb-muted))}
+  .mmb-bub h4{margin:14px 0 6px;font:700 15.5px/1.3 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 95%,#fff)}
+  .mmb-bub h5{margin:12px 0 5px;font:700 14.5px/1.3 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 92%,#fff)}
+  .mmb-bub h4:first-child,.mmb-bub h5:first-child{margin-top:0}
+  .mmb-bub code{font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:color-mix(in srgb,#fff 7%,transparent);border-radius:6px;padding:1.5px 6px}
+  .mmb-bub a{color:var(--mmb-info);text-decoration:none}.mmb-bub a:hover{text-decoration:underline}
+  .mmb-hr{border:none;border-top:1px solid color-mix(in srgb,#fff 8%,transparent);margin:12px 0}
+  .mmb-bq{margin:8px 0;padding:2px 0 2px 12px;border-left:2px solid var(--mmb-violet);color:var(--mmb-muted)}
+  /* fenced code block */
+  .mmb-code{margin:10px 0;border-radius:10px;border:1px solid color-mix(in srgb,#fff 8%,transparent);background:color-mix(in srgb,#fff 5%,transparent);overflow:hidden}
+  .mmb-code-bar{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;border-bottom:1px solid color-mix(in srgb,#fff 7%,transparent)}
+  .mmb-code-lang{font:600 10.5px/1 ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--mmb-muted)}
+  .mmb-code-copy{border:none;background:transparent;color:var(--mmb-muted);font:600 11px/1 var(--mmb-font);cursor:pointer;padding:3px 6px;border-radius:6px;transition:color .12s,background .12s}
+  .mmb-code-copy:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 8%,transparent)}
+  .mmb-code pre{margin:0;padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .mmb-code code{background:none;padding:0;border-radius:0;tab-size:2;-moz-tab-size:2;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:color-mix(in srgb,var(--mmb-text) 94%,#fff);white-space:pre}
+  /* pipe table */
+  .mmb-table{border-collapse:collapse;margin:10px 0;font:13px/1.45 var(--mmb-font);width:100%;display:block;overflow-x:auto}
+  .mmb-table th,.mmb-table td{border:1px solid color-mix(in srgb,#fff 8%,transparent);padding:6px 10px;text-align:left;white-space:nowrap}
+  .mmb-table th{font-weight:700;background:color-mix(in srgb,#fff 4%,transparent);color:color-mix(in srgb,var(--mmb-text) 94%,#fff)}
+  /* open-block streaming: plain text + per-frame fade-in ink spans */
+  .mmb-open{white-space:pre-wrap;word-break:break-word}
+  .mmb-ink{animation:mmb-inkin .16s ease both}
+  @keyframes mmb-inkin{from{opacity:0}to{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.mmb-ink{animation:none}}
+  /* streaming caret */
+  .mmb-caret{display:inline-block;width:2px;height:15px;vertical-align:-2px;margin-left:1px;border-radius:2px;background:var(--mmb-violet);animation:mmb-caret 1s ease-in-out infinite}
+  @keyframes mmb-caret{0%,100%{opacity:1}50%{opacity:.25}}
+  @media(prefers-reduced-motion:reduce){.mmb-caret{animation:none}}
+  .mmb-stopped{color:var(--mmb-muted);font-style:italic;font-size:13px}
   .mmb-bub .mmb-chart{margin:10px 0 2px;border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,#fff 8%,transparent);background:#0E1420}
   .mmb-bub .mmb-chart svg{display:block;width:100%;height:auto}
   .mmb-txt:empty,.mmb-charts:empty{display:none}
+  /* assistant action row (copy · regenerate · timestamp) — space always reserved */
+  .mmb-actions{display:flex;align-items:center;gap:6px;height:22px;margin-top:5px;opacity:0;transition:opacity .14s ease}
+  .mmb-msg.assistant:hover .mmb-actions,.mmb-msg.assistant:focus-within .mmb-actions{opacity:1}
+  @media(hover:none),(pointer:coarse){.mmb-actions{opacity:.75}}
+  .mmb-abtn{width:22px;height:22px;border:none;background:transparent;border-radius:7px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;padding:0;transition:color .12s,background .12s}
+  .mmb-abtn:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 7%,transparent)}
+  .mmb-abtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
+  .mmb-abtn.mmb-copy svg{width:14px;height:14px}
+  .mmb-regen{display:none}
+  .mmb-msg.assistant.mmb-last .mmb-regen{display:grid}
+  .mmb-time{font:11px/1 var(--mmb-font);color:var(--mmb-muted);margin-left:2px}
+  /* day separator between history messages */
+  .mmb-daysep{display:flex;align-items:center;justify-content:center;margin:6px 0 2px}
+  .mmb-daysep span{font:600 10.5px/1 var(--mmb-font);letter-spacing:.05em;color:var(--mmb-muted);background:color-mix(in srgb,#fff 4%,transparent);border-radius:999px;padding:4px 12px}
+  /* inline error / retry card */
+  .mmb-errcard{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,#e05555 8%,color-mix(in srgb,var(--mmb-panel) 55%,transparent));border:1px solid color-mix(in srgb,#e05555 26%,transparent)}
+  .mmb-errline{font:400 13.5px/1.5 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 90%,var(--mmb-muted))}
+  .mmb-retry{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--mmb-line);background:color-mix(in srgb,#fff 5%,transparent);color:var(--mmb-text);font:600 12.5px/1 var(--mmb-font);border-radius:9px;padding:7px 13px;cursor:pointer;transition:border-color .13s,background .13s}
+  .mmb-retry:hover{border-color:color-mix(in srgb,var(--mmb-info) 42%,transparent);background:color-mix(in srgb,var(--mmb-info) 8%,transparent)}
+  .mmb-retry svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+  /* visually-hidden live region */
+  .mmb-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   @media print{#mmb-root{display:none!important}}
   .mmb-tool{font:12px/1.3 var(--mmb-font);color:var(--mmb-muted);display:flex;align-items:center;gap:7px;padding:1px 4px}
   .mmb-tool::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--mmb-info);box-shadow:0 0 8px var(--mmb-info);animation:mmb-pulse 1.4s ease-in-out infinite}
@@ -182,7 +271,7 @@
     background:color-mix(in srgb,#e0a030 12%,color-mix(in srgb,var(--mmb-panel) 55%,transparent));border:1px solid color-mix(in srgb,#e0a030 34%,transparent)}
   .mmb-upgrade a{color:var(--mmb-info);font-weight:700;text-decoration:underline}
   /* composer */
-  .mmb-comp{flex:none;padding:14px clamp(18px,6%,64px) 14px}
+  .mmb-comp{position:relative;flex:none;padding:14px clamp(18px,6%,64px) 14px}
   #mmb-panel.max .mmb-comp{padding:14px clamp(24px,10%,120px) 16px}
   .mmb-box{border-radius:18px;border:1px solid var(--mmb-line);background:color-mix(in srgb,var(--mmb-panel2) 60%,transparent);
     -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 14px 40px -18px rgba(0,0,0,.6);overflow:hidden}
@@ -215,10 +304,37 @@
   .mmb-tbtn{width:34px;height:34px;border:none;background:transparent;border-radius:10px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center}
   .mmb-tbtn:hover{background:color-mix(in srgb,#fff 7%,transparent);color:var(--mmb-text)}
   .mmb-tbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
-  .mmb-send{width:36px;height:36px;border:none;border-radius:12px;cursor:pointer;display:grid;place-items:center;color:#fff;
+  .mmb-send{position:relative;width:36px;height:36px;border:none;border-radius:12px;cursor:pointer;display:grid;place-items:center;color:#fff;
     background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));box-shadow:0 6px 18px -6px color-mix(in srgb,var(--mmb-info) 75%,transparent)}
   .mmb-send:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
-  .mmb-send svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}
+  .mmb-send svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;transition:opacity .14s ease}
+  /* streaming: arrow crossfades to a rounded stop square (opacity-only morph) */
+  .mmb-send::after{content:'';position:absolute;width:12px;height:12px;border-radius:3px;background:#fff;opacity:0;transition:opacity .14s ease;pointer-events:none}
+  .mmb-send.mmb-stop{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-violet) 92%,#fff),var(--mmb-violet));box-shadow:0 6px 18px -6px color-mix(in srgb,var(--mmb-violet) 75%,transparent);opacity:1}
+  .mmb-send.mmb-stop svg{opacity:0}
+  .mmb-send.mmb-stop::after{opacity:1}
+  /* jump-to-latest pill (violet glass, above composer) */
+  .mmb-jump{position:absolute;left:50%;bottom:calc(100% + 12px);transform:translate(-50%,6px);z-index:8;display:inline-flex;align-items:center;gap:5px;
+    border:1px solid color-mix(in srgb,var(--mmb-violet) 34%,transparent);border-radius:999px;padding:6px 13px 6px 10px;cursor:pointer;
+    color:color-mix(in srgb,var(--mmb-violet) 88%,#fff);background:color-mix(in srgb,var(--mmb-violet) 14%,color-mix(in srgb,var(--mmb-panel) 82%,transparent));
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font:600 12px/1 var(--mmb-font);opacity:0;pointer-events:none;
+    box-shadow:0 10px 30px -12px rgba(0,0,0,.6);transition:opacity .2s ease,transform .2s ease}
+  .mmb-jump.on{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+  .mmb-jump svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+  .mmb-main{position:relative}
+  @media(prefers-reduced-motion:reduce){.mmb-jump{transition:opacity .2s ease}}
+  /* char counter reuses the .mmb-q slot */
+  .mmb-q.mmb-count{color:var(--mmb-muted)}.mmb-q.mmb-count.warn{color:#e05555}
+  /* slash palette (above composer, inside the box) */
+  .mmb-slash{display:flex;flex-direction:column;padding:6px;gap:2px;border-bottom:1px solid color-mix(in srgb,#fff 7%,transparent)}
+  .mmb-slash-i{display:grid;grid-template-columns:24px auto 1fr;align-items:center;gap:9px;border:none;background:transparent;border-radius:9px;padding:8px 10px;cursor:pointer;text-align:left;font-family:var(--mmb-font);color:var(--mmb-text)}
+  .mmb-slash-i.on{background:color-mix(in srgb,var(--mmb-info) 12%,transparent)}
+  .mmb-slash-i .si{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--mmb-info);background:color-mix(in srgb,var(--mmb-info) 12%,transparent)}
+  .mmb-slash-i .si svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
+  .mmb-slash-i .sn{font:700 12.5px/1 var(--mmb-font);color:var(--mmb-text)}
+  .mmb-slash-i .sh{font:400 11.5px/1 var(--mmb-font);color:var(--mmb-muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* focus-visible rings on new controls (house style) */
+  .mmb-abtn:focus-visible,.mmb-retry:focus-visible,.mmb-jump:focus-visible,.mmb-slash-i:focus-visible,.mmb-code-copy:focus-visible,.mmb-ti-act:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
   /* signed-out */
   .mmb-gate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 22px;gap:14px}
   .mmb-gate .mmb-orb{width:64px;height:64px}.mmb-gate .mmb-orb svg{width:30px;height:30px}
@@ -231,18 +347,15 @@
     #mmb-panel.open{transform:none} .mmb-cards,#mmb-panel.max .mmb-cards{grid-template-columns:1fr}
     /* mobile is compact-only: no large mode (the overlay isn't responsive there) */
     .mmb-icon[data-act="max"]{display:none!important}
-    #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{display:none}}
+    #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{display:none}
+    /* iOS: composer font MUST be ≥16px or Safari zooms the viewport on focus */
+    .mmb-ta{font-size:16px}
+    .mmb-comp{padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
   /* follow-up suggestion chips (rendered under the latest reply) */
   .mmb-sugg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
   .mmb-sug{font:12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted));background:color-mix(in srgb,#fff 4%,transparent);border:1px solid var(--mmb-line);border-radius:12px;padding:7px 12px;text-align:left;cursor:pointer;max-width:100%;transition:border-color .13s,background .13s,color .13s}
   .mmb-sug:hover{border-color:color-mix(in srgb,var(--mmb-info) 40%,transparent);background:color-mix(in srgb,var(--mmb-info) 8%,transparent);color:var(--mmb-text)}
   .mmb-sug .g{color:var(--mmb-muted);margin-right:6px}
-  /* copy-answer affordance (top-right of each assistant bubble) */
-  .mmb-msg.assistant .mmb-bub{position:relative}
-  .mmb-copy{position:absolute;top:6px;right:6px;width:24px;height:24px;border:none;background:transparent;border-radius:7px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .13s,color .13s,background .13s}
-  .mmb-bub:hover .mmb-copy{opacity:.85;pointer-events:auto}
-  .mmb-copy:hover{opacity:1;color:var(--mmb-text);background:color-mix(in srgb,#fff 7%,transparent)}
-  .mmb-copy svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
   /* "explain this panel" hover affordance on dashboard island cards */
   .mmb-exp{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;cursor:pointer;padding:0;
     background:color-mix(in srgb,var(--mmb-panel) 72%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
@@ -295,7 +408,8 @@
           '<button class="mmb-icon" data-act="new" title="New chat">' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
           '<button class="mmb-icon" data-act="close" title="Close">' + ic('<path d="M6 6l12 12M18 6L6 18"/>') + '</button>' +
         '</div>' +
-        '<div class="mmb-scroll" id="mmb-scroll"></div>' +
+        '<div class="mmb-scroll" id="mmb-scroll" role="log" aria-label="' + L('Conversation', '对话') + '" tabindex="0"></div>' +
+        '<div id="mmb-live" class="mmb-sr" aria-live="polite" role="status"></div>' +
         '<div class="mmb-comp"><div class="mmb-upgrade" id="mmb-upgrade"></div>' +
           '<div class="mmb-box"><div class="mmb-ctx" id="mmb-ctx"></div>' +
             '<div class="mmb-thumbs" id="mmb-thumbs"></div>' +
@@ -329,19 +443,261 @@
   var explainPanel = null; /* set by MMBrain.explain(); attached once to the next send()'s context */
 
   function esc(s) { var d = DOC.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
-  /* markdown-lite: paragraphs, bold, bullet lists — all HTML-escaped */
-  function renderMd(t) {
-    var lines = String(t || '').split('\n'), out = [], list = null;
-    function flush() { if (list) { out.push('<ul>' + list.join('') + '</ul>'); list = null; } }
-    for (var i = 0; i < lines.length; i++) {
-      var ln = lines[i], m = ln.match(/^\s*[-*•]\s+(.*)/);
-      var f = function (x) { return esc(x).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'); };
-      if (m) { if (!list) list = []; list.push('<li>' + f(m[1]) + '</li>'); }
-      else if (/^\s*#{1,4}\s+/.test(ln)) { flush(); out.push('<p><strong>' + f(ln.replace(/^\s*#{1,4}\s+/, '')) + '</strong></p>'); }
-      else if (ln.trim()) { flush(); out.push('<p>' + f(ln) + '</p>'); }
-      else flush();
+  function el(tag, cls) { var e = DOC.createElement(tag); if (cls) e.className = cls; return e; }
+
+  /* ── Markdown engine (GFM-lite, DOM-only) ──────────────────────────────────
+     Every node is built with createElement/textContent — model text NEVER touches
+     innerHTML, so injection is impossible by construction. The SAME functions render
+     streamed CLOSED blocks, the final done re-render, and loaded history — so a reply
+     looks byte-identical whether it streamed live or was rehydrated from a thread. */
+
+  /* inline: **bold**, *italic*, `code`, [text](url) (https/http only). Appends to `parent`. */
+  var MD_INLINE = /(\*\*([^*]+)\*\*)|(\*([^*\n]+)\*)|(`([^`]+)`)|(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))/;
+  function mdInline(parent, text) {
+    text = String(text == null ? '' : text);
+    var m;
+    while (text && (m = MD_INLINE.exec(text))) {
+      if (m.index > 0) parent.appendChild(DOC.createTextNode(text.slice(0, m.index)));
+      if (m[1]) { var b = el('strong'); b.textContent = m[2]; parent.appendChild(b); }
+      else if (m[3]) { var it = el('em'); it.textContent = m[4]; parent.appendChild(it); }
+      else if (m[5]) { var c = el('code'); c.textContent = m[6]; parent.appendChild(c); }
+      else if (m[7]) { var a = el('a'); a.textContent = m[8]; a.href = m[9]; a.target = '_blank'; a.rel = 'noopener noreferrer'; parent.appendChild(a); }
+      text = text.slice(m.index + m[0].length);
     }
-    flush(); return out.join('');
+    if (text) parent.appendChild(DOC.createTextNode(text));
+    return parent;
+  }
+  function isTableSep(ln) { return /^\s*\|?[\s:|-]*-[\s:|-]*\|?\s*$/.test(ln) && ln.indexOf('-') !== -1 && ln.indexOf('|') !== -1; }
+  function splitRow(ln) {
+    var s = ln.trim().replace(/^\|/, '').replace(/\|$/, '');
+    return s.split('|').map(function (c) { return c.trim(); });
+  }
+  /* Render ONE closed block's text into a DOM node (or null for blank). */
+  function mdBlock(block) {
+    var lines = block.replace(/\s+$/, '').split('\n');
+    var first = lines[0] || '';
+    /* fenced code — caller passes the whole ```…``` block including fences */
+    var fence = first.match(/^```(\S*)/);
+    if (fence) {
+      var wrap = el('div', 'mmb-code');
+      var lang = fence[1] || '';
+      var bar = el('div', 'mmb-code-bar');
+      var lab = el('span', 'mmb-code-lang'); lab.textContent = lang || 'code'; bar.appendChild(lab);
+      var cp = el('button', 'mmb-code-copy'); cp.type = 'button'; cp.title = 'Copy code'; cp.setAttribute('aria-label', L('Copy code', '复制代码')); cp.textContent = L('Copy', '复制'); bar.appendChild(cp);
+      var body = lines.slice(1);
+      if (body.length && /^```/.test(body[body.length - 1])) body = body.slice(0, -1);
+      var pre = el('pre'); var code = el('code'); code.textContent = body.join('\n'); pre.appendChild(code);
+      cp.addEventListener('click', function (e) {
+        e.stopPropagation();
+        try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code.textContent).then(function () { cp.textContent = L('Copied', '已复制'); setTimeout(function () { cp.textContent = L('Copy', '复制'); }, 1200); }).catch(function () {}); } catch (e2) {}
+      });
+      wrap.appendChild(bar); wrap.appendChild(pre); return wrap;
+    }
+    /* horizontal rule */
+    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(block)) return el('hr', 'mmb-hr');
+    /* table — needs a header row + a separator line under it */
+    if (lines.length >= 2 && first.indexOf('|') !== -1 && isTableSep(lines[1])) {
+      var tbl = el('table', 'mmb-table');
+      var thead = el('thead'), htr = el('tr');
+      splitRow(first).forEach(function (c) { var th = el('th'); mdInline(th, c); htr.appendChild(th); });
+      thead.appendChild(htr); tbl.appendChild(thead);
+      var tb = el('tbody');
+      for (var r = 2; r < lines.length; r++) {
+        if (!lines[r].trim()) continue;
+        var tr = el('tr');
+        splitRow(lines[r]).forEach(function (c) { var td = el('td'); mdInline(td, c); tr.appendChild(td); });
+        tb.appendChild(tr);
+      }
+      tbl.appendChild(tb); return tbl;
+    }
+    /* blockquote */
+    if (/^\s*>\s?/.test(first)) {
+      var bq = el('blockquote', 'mmb-bq');
+      var qt = lines.map(function (l) { return l.replace(/^\s*>\s?/, ''); }).join('\n');
+      mdInline(bq, qt); return bq;
+    }
+    /* heading — ## → h4, ###+ → h5 */
+    var hm = first.match(/^(#{2,6})\s+(.*)/);
+    if (hm && lines.length === 1) { var h = el(hm[1].length <= 2 ? 'h4' : 'h5'); mdInline(h, hm[2]); return h; }
+    /* ordered list */
+    if (/^\s*\d+\.\s+/.test(first)) {
+      var ol = el('ol');
+      lines.forEach(function (l) { var mm = l.match(/^\s*\d+\.\s+(.*)/); if (mm) { var li = el('li'); mdInline(li, mm[1]); ol.appendChild(li); } });
+      if (ol.childNodes.length) return ol;
+    }
+    /* bullet list */
+    if (/^\s*[-*•]\s+/.test(first)) {
+      var ul = el('ul');
+      lines.forEach(function (l) { var mm = l.match(/^\s*[-*•]\s+(.*)/); if (mm) { var li = el('li'); mdInline(li, mm[1]); ul.appendChild(li); } });
+      if (ul.childNodes.length) return ul;
+    }
+    /* paragraph (soft line breaks preserved) */
+    if (!block.trim()) return null;
+    var p = el('p');
+    lines.forEach(function (l, i) { if (i) p.appendChild(el('br')); mdInline(p, l); });
+    return p;
+  }
+  /* line kind for block-boundary detection: list item, heading, quote, or 'text'.
+     A change of kind starts a new block even without a blank line — models routinely
+     omit the blank between a lead-in sentence and its bullet list. */
+  function lineKind(ln) {
+    if (/^\s*([-*•]|\d+\.)\s+/.test(ln)) return 'list';
+    if (/^\s*#{1,6}\s+/.test(ln)) return 'head';
+    if (/^\s*>\s?/.test(ln)) return 'quote';
+    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(ln)) return 'rule';
+    return 'text';
+  }
+  /* Split raw markdown into block strings on blank lines, respecting ``` fences and
+     kind transitions. A fenced block stays whole even across blanks. Returns block texts. */
+  function mdSplit(text) {
+    var lines = String(text || '').split('\n'), blocks = [], cur = [], inFence = false, curKind = null;
+    function push() { if (cur.length) { blocks.push(cur.join('\n')); cur = []; curKind = null; } }
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      if (/^```/.test(ln)) {
+        if (!inFence) { push(); inFence = true; cur.push(ln); }
+        else { cur.push(ln); push(); inFence = false; }
+        continue;
+      }
+      if (inFence) { cur.push(ln); continue; }
+      if (!ln.trim()) { push(); continue; }
+      var k = lineKind(ln);
+      /* break when kind changes (text→list, list→text, heading→anything, etc.); a heading
+         and a rule are always solo blocks so they never absorb a following line */
+      if (cur.length && (k !== curKind || curKind === 'head' || curKind === 'rule' || k === 'head' || k === 'rule')) push();
+      cur.push(ln); curKind = k;
+    }
+    push(); return blocks;
+  }
+  /* Full render of `text` into `container` (cleared first). History + final correctness. */
+  function renderMdInto(container, text) {
+    container.textContent = '';
+    mdSplit(text).forEach(function (blk) { var node = mdBlock(blk); if (node) container.appendChild(node); });
+    return container;
+  }
+  /* Kept name (history load, non-stream). Routes through the same engine → returns a
+     DocumentFragment so callers can append without ever touching innerHTML. */
+  function renderMd(text) {
+    var frag = DOC.createDocumentFragment();
+    mdSplit(text).forEach(function (blk) { var node = mdBlock(blk); if (node) frag.appendChild(node); });
+    return frag;
+  }
+
+  /* ── MdStream: append-only incremental renderer + smooth-reveal writer ────────
+     Owned per assistant message. `push(chunk)` accumulates raw text into a buffer that
+     one rAF loop drains into the visible text at a typed pace. CLOSED blocks (a blank
+     line closed them) render ONCE into permanent DOM and are never touched again. The
+     OPEN (last) block streams as plain-text `mmb-ink` fade spans while it grows, then
+     converts to parsed DOM the moment it closes. `finalize()` re-renders the whole raw
+     string through renderMdInto for correctness (bold/links in the last block, any open
+     table). Injection-proof: only textContent + createElement, never innerHTML. */
+  function MdStream(container) {
+    var raw = '';               // full accumulated markdown (source of truth)
+    var pending = '';           // drained-pending chars not yet revealed
+    var revealed = '';          // chars already shown
+    var committedLen = 0;       // length of `revealed` already turned into CLOSED block DOM
+    var openText = null;        // the live text node for the currently-open block
+    var caret = null;
+    var raf = 0, doneFlush = false, onDrained = null;
+    var reduced = reduceMotion();
+
+    function ensureOpenText() {
+      if (openText && openText.parentNode) return openText;
+      openText = el('div', 'mmb-blk mmb-open');
+      container.appendChild(openText);
+      if (caret) container.appendChild(caret);   // caret trails the open block
+      return openText;
+    }
+    // Render everything in `revealed` after committedLen: commit any newly-closed blocks
+    // as permanent DOM, then (re)draw the trailing open block as plain text + fade span.
+    function paint(freshChunk) {
+      var tail = revealed.slice(committedLen);
+      // find the last blank-line boundary that is NOT inside an open fence
+      var fences = (tail.match(/```/g) || []).length;
+      var openFence = (fences % 2) === 1;
+      var lastBlank = -1;
+      if (!openFence) {
+        var mBlank = /\n[ \t]*\n/g, mm;
+        while ((mm = mBlank.exec(tail))) lastBlank = mm.index + mm[0].length;
+      }
+      if (lastBlank > 0) {
+        var closedText = tail.slice(0, lastBlank);
+        mdSplit(closedText).forEach(function (blk) { var node = mdBlock(blk); if (node) { node.classList && node.classList.add('mmb-blk'); container.insertBefore(node, openText); } });
+        committedLen += closedText.length;
+        if (openText) { openText.parentNode && openText.parentNode.removeChild(openText); openText = null; }
+        tail = revealed.slice(committedLen);
+      }
+      // draw the (possibly reset) open block as plain streaming text
+      var node2 = ensureOpenText();
+      var priorLen = node2.textContent.length;
+      var full = tail;
+      if (full.length < priorLen || full.slice(0, priorLen) !== node2.textContent) {
+        // block reset or diverged — rebuild plain
+        node2.textContent = full;
+      } else if (full.length > priorLen) {
+        var add = full.slice(priorLen);
+        if (reduced || !freshChunk) { node2.appendChild(DOC.createTextNode(add)); }
+        else { var ink = el('span', 'mmb-ink'); ink.textContent = add; node2.appendChild(ink); }
+      }
+    }
+    function tick() {
+      raf = 0;
+      if (!pending.length) {
+        if (doneFlush) { doneFlush = false; if (onDrained) { var cb = onDrained; onDrained = null; cb(); } }
+        return;
+      }
+      var backlog = pending.length;
+      var factor = doneFlush ? 0.72 : 0.12;   // ×6 catch-up on done
+      var n = Math.max(2, Math.min(48, Math.round(backlog * factor)));
+      if (doneFlush) n = Math.max(n, Math.min(backlog, 96));
+      var chunk = pending.slice(0, n); pending = pending.slice(n);
+      revealed += chunk;
+      paint(true);
+      if (streaming || pending.length || doneFlush) stickAfter();
+      raf = requestAnimationFrame(tick);
+    }
+    function schedule() { if (!raf) raf = requestAnimationFrame(tick); }
+
+    return {
+      startCaret: function () {
+        if (reduced || caret) return;
+        caret = el('span', 'mmb-caret'); container.appendChild(caret);
+      },
+      push: function (chunk) {
+        if (!chunk) return;
+        raw += chunk;
+        if (reduced) { revealed += chunk; paint(false); stickAfter(); return; }
+        pending += chunk; schedule();
+      },
+      raw: function () { return raw; },
+      // drain fast then run cb, then full re-render for correctness
+      finalize: function (cb) {
+        var done = false;
+        var finish = function () {
+          if (done) return; done = true;
+          if (safety) { clearTimeout(safety); safety = 0; }
+          if (raf) { cancelAnimationFrame(raf); raf = 0; }
+          renderMdInto(container, raw);
+          revealed = raw; committedLen = raw.length; pending = ''; openText = null; doneFlush = false;
+          if (caret) { caret.parentNode && caret.parentNode.removeChild(caret); caret = null; }
+          if (cb) cb();
+        };
+        if (reduced || !pending.length) { revealed += pending; pending = ''; finish(); return; }
+        doneFlush = true; onDrained = finish; schedule();
+        /* rAF-independent safety net: if the smooth drain stalls (e.g. the tab is hidden
+           and requestAnimationFrame is throttled to zero), force the final render anyway
+           so a completed reply is never left blank. */
+        var safety = setTimeout(finish, 1400);
+      },
+      // stop: keep partial, drop caret, no re-render (partial stays as-is)
+      stop: function () {
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        revealed += pending; pending = ''; doneFlush = false;
+        paint(false);
+        if (caret) { caret.parentNode && caret.parentNode.removeChild(caret); caret = null; }
+      },
+      cancel: function () { if (raf) { cancelAnimationFrame(raf); raf = 0; } if (caret) { caret.parentNode && caret.parentNode.removeChild(caret); caret = null; } }
+    };
   }
 
   /* ── gateway auth: attach the Supabase Bearer token (gateway ignores the cookie) ── */
@@ -390,13 +746,83 @@
       .then(function (d) { renderThreads((d && d.threads) || []); }).catch(function () {});
   }
   var allThreads = [];
+  var PENCIL = '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
+  var TRASH = '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/>';
   function buildThreadItem(t) {
-    var d = DOC.createElement('div'); d.className = 'mmb-ti' + (t.id === threadId ? ' on' : ''); d.dataset.id = t.id;
+    var d = el('div', 'mmb-ti' + (t.id === threadId ? ' on' : '')); d.dataset.id = t.id;
     var date = ''; try { date = new Date(t.updated_at).toLocaleDateString(); } catch (e) {}
-    d.innerHTML = '<div class="tt">' + esc(t.title || L('Untitled', '未命名')) + '</div><div class="tm">' + esc(t.lane || 'fast') + ' · ' + esc(date) + '</div>';
-    d.addEventListener('click', function () { openThread(t.id); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); });
+    var body = el('div', 'mmb-ti-body');
+    var tt = el('div', 'tt'); tt.textContent = t.title || L('Untitled', '未命名');
+    var tm = el('div', 'tm'); tm.textContent = (t.lane || 'fast') + ' · ' + date;
+    body.appendChild(tt); body.appendChild(tm);
+    /* row-open (guarded so action clicks don't also open the thread) */
+    body.addEventListener('click', function () { openThread(t.id); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); });
+    d.appendChild(body);
+
+    var acts = el('div', 'mmb-ti-acts');
+    var ren = el('button', 'mmb-ti-act'); ren.type = 'button'; ren.title = 'Rename'; ren.setAttribute('aria-label', L('Rename chat', '重命名对话')); ren.innerHTML = ic(PENCIL);
+    ren.addEventListener('click', function (e) { e.stopPropagation(); startRename(d, t, tt); });
+    var del = el('button', 'mmb-ti-act'); del.type = 'button'; del.title = 'Delete'; del.setAttribute('aria-label', L('Delete chat', '删除对话')); del.innerHTML = ic(TRASH);
+    del.addEventListener('click', function (e) { e.stopPropagation(); enterDelete(d, t); });
+    acts.appendChild(ren); acts.appendChild(del); d.appendChild(acts);
+
+    /* confirm-delete overlay (hidden until armed) */
+    var confirm = el('div', 'mmb-ti-confirm');
+    var q = el('span', 'mmb-ti-q'); q.textContent = L('Delete?', '删除？'); confirm.appendChild(q);
+    var yes = el('button', 'mmb-ti-yes'); yes.type = 'button'; yes.title = 'Confirm delete'; yes.setAttribute('aria-label', L('Confirm delete', '确认删除')); yes.innerHTML = ic('<path d="M5 12.5l4 4 10-10"/>');
+    var no = el('button', 'mmb-ti-no'); no.type = 'button'; no.title = 'Cancel'; no.setAttribute('aria-label', L('Cancel', '取消')); no.innerHTML = ic('<path d="M6 6l12 12M18 6L6 18"/>');
+    yes.addEventListener('click', function (e) { e.stopPropagation(); doDelete(d, t); });
+    no.addEventListener('click', function (e) { e.stopPropagation(); leaveDelete(d); });
+    confirm.appendChild(yes); confirm.appendChild(no); d.appendChild(confirm);
     return d;
   }
+  /* ── rename: swap title for an inline input (Enter=save, Esc=cancel, blur=save-if-changed) ── */
+  function startRename(row, t, tt) {
+    if (row.querySelector('.mmb-ti-input')) return;
+    var inp = el('input', 'mmb-ti-input'); inp.type = 'text'; inp.maxLength = 80; inp.value = t.title || '';
+    var orig = t.title || '';
+    tt.style.display = 'none'; tt.parentNode.insertBefore(inp, tt);
+    var done = false;
+    function save(commit) {
+      if (done) return; done = true;
+      var v = inp.value.trim().slice(0, 80);
+      inp.remove(); tt.style.display = '';
+      if (commit && v && v !== orig) { tt.textContent = v; t.title = v; patchThread(t.id, v, orig, tt); }
+    }
+    inp.addEventListener('keydown', function (e) {
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); save(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); save(false); }
+    });
+    inp.addEventListener('click', function (e) { e.stopPropagation(); });
+    inp.addEventListener('blur', function () { save(true); });
+    setTimeout(function () { inp.focus(); inp.select(); }, 0);
+  }
+  function patchThread(id, title, orig, tt) {
+    withAuth({ 'Content-Type': 'application/json' })
+      .then(function (h) { return fetch(API + '/api/brain/threads/' + id, { method: 'PATCH', headers: h, credentials: 'include', body: JSON.stringify({ title: title }) }); })
+      .then(function (r) { if (!r.ok) throw 0; })
+      .catch(function () { /* revert on 401/404/error */ if (tt) tt.textContent = orig || L('Untitled', '未命名'); var th = findThread(id); if (th) th.title = orig; loadThreads(); });
+  }
+  /* ── delete: row enters a confirm state (auto-reverts after 4s) ── */
+  function enterDelete(row, t) {
+    root.querySelectorAll('.mmb-ti.confirming').forEach(function (r) { if (r !== row) leaveDelete(r); });
+    row.classList.add('confirming');
+    if (row._delTimer) clearTimeout(row._delTimer);
+    row._delTimer = setTimeout(function () { leaveDelete(row); }, 4000);
+  }
+  function leaveDelete(row) { row.classList.remove('confirming'); if (row._delTimer) { clearTimeout(row._delTimer); row._delTimer = 0; } }
+  function doDelete(row, t) {
+    if (row._delTimer) { clearTimeout(row._delTimer); row._delTimer = 0; }
+    var id = t.id;
+    row.style.display = 'none';                              /* optimistic remove */
+    allThreads = allThreads.filter(function (x) { return x.id !== id; });
+    if (id === threadId) newChat();
+    withAuth().then(function (h) { return fetch(API + '/api/brain/threads/' + id, { method: 'DELETE', headers: h, credentials: 'include' }); })
+      .then(function (r) { if (!r.ok) throw 0; })
+      .catch(function () { loadThreads(); });                /* 401/404/error → reload truth */
+  }
+  function findThread(id) { for (var i = 0; i < allThreads.length; i++) if (allThreads[i].id === id) return allThreads[i]; return null; }
   function paintThreads() {
     if (guestMode) { paintGuestThreads(); return; }   /* guests see the sign-in prompt, not the (empty) list */
     if (!allThreads.length) { tlist.innerHTML = '<div class="mmb-th-empty">' + L('Your conversations appear here.', '你的对话会显示在这里。') + '</div>'; return; }
@@ -415,45 +841,118 @@
     else if (searchIn) { searchIn.value = ''; paintThreads(); }
   }
   function openThread(id) {
+    abortStream();   /* switching threads mid-stream must tear the old stream down first */
     threadId = id;
     root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.toggle('on', el.dataset.id === id); });
     withAuth().then(function (h) { return fetch(API + '/api/brain/threads/' + id, { headers: h, credentials: 'include' }); })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { if (!d) return; clearMsgs(); (d.messages || []).forEach(function (m) { appendMsg(m.role, m.content); }); }).catch(function () {});
+      .then(function (d) {
+        if (!d) return;
+        clearMsgs(); scroll.textContent = '';
+        var lastDay = '';
+        (d.messages || []).forEach(function (m) {
+          var ms = 0; try { ms = m.created_at ? new Date(m.created_at).getTime() : 0; } catch (e) {}
+          if (ms) { var dk = new Date(ms).toDateString(); if (dk !== lastDay) { addDaySep(ms); lastDay = dk; } }
+          appendMsg(m.role, m.content, ms || undefined);
+        });
+        markLastAssistant(); pinned = true; scroll.scrollTop = scroll.scrollHeight;
+        ta.value = ''; autosize(); syncSend(); updateCounter(); restoreDraft();
+      }).catch(function () {});
   }
 
   /* ── messages ── */
-  function clearMsgs() { scroll.innerHTML = ''; renderEmpty(); }
-  function appendMsg(role, content) {
-    var es = $('#mmb-emptystate'); if (es) es.remove();
-    var d = DOC.createElement('div'); d.className = 'mmb-msg ' + role;
-    var b = DOC.createElement('div'); b.className = 'mmb-bub';
-    /* assistant bubbles keep charts (a sibling container) separate from the streamed
-       text node, so replacing the text HTML on each delta never wipes an inline chart. */
-    b.innerHTML = role === 'user' ? '<p>' + esc(content) + '</p>'
-      : '<div class="mmb-charts"></div><div class="mmb-txt">' + renderMd(content) + '</div>';
-    if (role === 'assistant') addCopyBtn(b);
-    d.appendChild(b); scroll.appendChild(d); stick(); return b;
+  function clearMsgs() { scroll.textContent = ''; renderEmpty(); pinned = true; hideJump(); }
+  /* Relative timestamp (11px muted). now/2m/1h/Yesterday/date. */
+  function relTime(ms) {
+    var d = ms ? new Date(ms) : new Date(), now = Date.now(), diff = Math.floor((now - d.getTime()) / 1000);
+    if (isNaN(diff)) return '';
+    if (diff < 45) return L('just now', '刚刚');
+    if (diff < 3600) return (Math.max(1, Math.round(diff / 60))) + L('m', ' 分钟前');
+    if (diff < 86400) return (Math.round(diff / 3600)) + L('h', ' 小时前');
+    var y = new Date(now); y.setDate(y.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return L('Yesterday', '昨天');
+    try { return d.toLocaleDateString(zh() ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric' }); } catch (e) { return d.toLocaleDateString(); }
   }
-  /* copy-answer affordance — a small clipboard button pinned top-right inside the bubble.
-     Copies the rendered text (not charts) plus a short attribution line. */
-  function addCopyBtn(b) {
-    var cb = DOC.createElement('button'); cb.className = 'mmb-copy'; cb.title = 'Copy'; cb.innerHTML = CLIP;
-    cb.addEventListener('click', function (e) {
+  function dayLabel(ms) {
+    var d = new Date(ms), now = new Date();
+    if (d.toDateString() === now.toDateString()) return L('Today', '今天');
+    var y = new Date(); y.setDate(y.getDate() - 1);
+    if (d.toDateString() === y.toDateString()) return L('Yesterday', '昨天');
+    try { return d.toLocaleDateString(zh() ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }); } catch (e) { return d.toLocaleDateString(); }
+  }
+  function addDaySep(ms) {
+    var sep = el('div', 'mmb-daysep'); var s = el('span'); s.textContent = dayLabel(ms); sep.appendChild(s); scroll.appendChild(sep);
+  }
+  /* Build the assistant action row: copy · regenerate (last only) · timestamp.
+     Space is always reserved (opacity reveal on hover) so nothing shifts. */
+  function buildActions(bub, ts) {
+    var row = el('div', 'mmb-actions');
+    var copy = el('button', 'mmb-abtn mmb-copy'); copy.type = 'button'; copy.title = 'Copy'; copy.setAttribute('aria-label', L('Copy answer', '复制回答')); copy.innerHTML = CLIP;
+    copy.addEventListener('click', function (e) {
       e.stopPropagation();
-      var txt = (b.querySelector('.mmb-txt') || b).innerText || '';
-      var payload = txt.trim() + '\n\n— Mastermind Brain · mastermind-x.com';
+      var payload = String(bub._raw != null ? bub._raw : ((bub.querySelector('.mmb-txt') || bub).innerText || '')).trim();
       try {
         if (!(navigator.clipboard && navigator.clipboard.writeText)) return;
-        navigator.clipboard.writeText(payload).then(function () {
-          cb.innerHTML = CHECK; setTimeout(function () { cb.innerHTML = CLIP; }, 1200);
-        }).catch(function () {});
+        navigator.clipboard.writeText(payload).then(function () { copy.innerHTML = CHECK; setTimeout(function () { copy.innerHTML = CLIP; }, 1200); }).catch(function () {});
       } catch (e2) {}
     });
-    b.appendChild(cb);
+    row.appendChild(copy);
+    var regen = el('button', 'mmb-abtn mmb-regen'); regen.type = 'button'; regen.title = 'Regenerate'; regen.setAttribute('aria-label', L('Regenerate reply', '重新生成'));
+    regen.innerHTML = ic('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>');
+    regen.addEventListener('click', function (e) { e.stopPropagation(); regenerate(); });
+    row.appendChild(regen);
+    var time = el('span', 'mmb-time'); time._ts = ts || Date.now(); time.textContent = relTime(time._ts);
+    row.appendChild(time);
+    return row;
+  }
+  /* Only the LAST assistant message shows its regenerate button (client resend of the
+     last user turn). Called whenever messages change. */
+  function markLastAssistant() {
+    var msgs = scroll.querySelectorAll('.mmb-msg.assistant');
+    for (var i = 0; i < msgs.length; i++) msgs[i].classList.toggle('mmb-last', i === msgs.length - 1);
+  }
+  function appendMsg(role, content, ts) {
+    var es = $('#mmb-emptystate'); if (es) es.remove();
+    var d = el('div', 'mmb-msg ' + role);
+    var b = el('div', 'mmb-bub');
+    if (role === 'user') {
+      var p = el('p'); p.textContent = content == null ? '' : String(content); b.appendChild(p);
+    } else {
+      /* assistant: ghost block, orb glyph, charts sibling kept separate from the text
+         node so a delta re-render never wipes an inline chart. */
+      var orb = el('span', 'mmb-orbmark'); orb.innerHTML = '<svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg>'; b.appendChild(orb);
+      var charts = el('div', 'mmb-charts'); b.appendChild(charts);
+      var txt = el('div', 'mmb-txt'); if (content) renderMdInto(txt, content); b.appendChild(txt);
+      b._raw = content || '';
+      b.appendChild(buildActions(b, ts));
+    }
+    d.appendChild(b); scroll.appendChild(d);
+    if (role === 'assistant') markLastAssistant();
+    stick(); return b;
   }
   function bubTxt(b) { return b.querySelector('.mmb-txt') || b; }
-  function stick() { if (scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 90) scroll.scrollTop = scroll.scrollHeight; }
+
+  /* ── scroll pinning + jump pill ──────────────────────────────────────────────
+     "pinned" = user is riding the bottom (within 90px). Scrolling up unpins; when
+     unpinned and new content lands, a "↓ Latest" pill fades in above the composer. */
+  var pinned = true, jumpPill = null;
+  function atBottom() { return (scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight) < 90; }
+  function stick() { if (pinned) scroll.scrollTop = scroll.scrollHeight; }
+  function stickAfter() { if (pinned) scroll.scrollTop = scroll.scrollHeight; else showJump(); }
+  function toBottom() { pinned = true; scroll.scrollTop = scroll.scrollHeight; hideJump(); }
+  function showJump() {
+    if (!jumpPill) {
+      jumpPill = el('button', 'mmb-jump'); jumpPill.type = 'button';
+      jumpPill.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
+      var lbl = el('span', 'mmb-l'); lbl.setAttribute('data-en', 'Latest'); lbl.setAttribute('data-zh', '最新'); lbl.textContent = L('Latest', '最新'); jumpPill.appendChild(lbl);
+      jumpPill.setAttribute('aria-label', L('Jump to latest', '跳到最新'));
+      jumpPill.addEventListener('click', toBottom);
+      /* anchored to the composer wrapper so it sits just above the input, not off the top */
+      root.querySelector('.mmb-comp').appendChild(jumpPill);
+    }
+    jumpPill.classList.add('on');
+  }
+  function hideJump() { if (jumpPill) jumpPill.classList.remove('on'); }
 
   /* [icon-paths, EN, ZH] — kept dual-language so the chips re-localize on a live
      language switch (the array is built once at load; text is picked at render). */
@@ -493,7 +992,11 @@
     renderQuota();     /* refresh the meter's title in the new language sense */
   }
 
-  /* ── send (SSE) ── */
+  /* ── send (SSE) ──────────────────────────────────────────────────────────────
+     send() builds a payload from the live composer + attaches the user bubble, then
+     hands off to runStream(). runStream() is payload-only so Regenerate and Retry can
+     replay the exact same turn (text + images + lane + thread) with no backend change. */
+  var lastTurn = null;   // { text, imgs, lane, mode } — last user turn, for regenerate
   function send(text) {
     text = (text || ta.value).trim();
     var imgs = pendingImages.slice();
@@ -501,34 +1004,54 @@
     /* Guests may send (Fast lane) without the sign-in modal; only fully-gated (non-guest,
        signed-out) sessions are bounced to sign-in. */
     if (!authed && !guestMode && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
-    /* only the latest reply carries follow-up chips — clear any stale rows */
-    root.querySelectorAll('.mmb-sugg').forEach(function (el) { el.remove(); });
-    var ub = appendMsg('user', text);
-    if (imgs.length) { /* show the attached images at the top of the user bubble */
-      var iw = DOC.createElement('div'); iw.className = 'mmb-imgs';
-      imgs.forEach(function (s) { var im = DOC.createElement('img'); im.src = s; iw.appendChild(im); });
-      ub.insertBefore(iw, ub.firstChild);
-    }
-    pendingImages = []; renderThumbs();
-    ta.value = ''; autosize(); sendBtn.disabled = true; streaming = true; upgradeEl.style.display = 'none';
-    var typing = DOC.createElement('div'); typing.className = 'mmb-msg assistant'; typing.innerHTML = '<div class="mmb-bub"><span class="mmb-typing"><span></span><span></span><span></span></span></div>';
-    scroll.appendChild(typing); stick();
-    var bub = null, acc = '', steps = null, suggestions = null;
     var ctx = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) ctx.symbol = ctxSymbol;
     /* an "explain this panel" request carries the panel key once, then clears */
     if (explainPanel) { ctx.panel = explainPanel; explainPanel = null; }
-    var apiText = text || L('Please analyze the attached image.', '请分析所附图片。');
-    var body = JSON.stringify({ message: apiText, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', thread_id: threadId || undefined, context: ctx, images: imgs.length ? imgs : undefined });
-    if (streamAbort) streamAbort.abort();
+    var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx };
+    lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode };
+    pendingImages = []; renderThumbs();
+    ta.value = ''; autosize(); clearDraft(); syncSend(); updateCounter(); closeSlash();
+    pinned = true; hideJump();
+    runStream(payload, true);
+  }
+  /* Replay the last user turn on the same thread/lane (client resend, no backend change). */
+  function regenerate() {
+    if (streaming || !lastTurn) return;
+    runStream({ text: lastTurn.text, imgs: (lastTurn.imgs || []).slice(), lane: lastTurn.lane, mode: lastTurn.mode,
+                ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) c.symbol = ctxSymbol; return c; })() }, false);
+  }
+  /* runStream(payload, showUser): runs one SSE turn. showUser=false skips drawing a new
+     user bubble (used by regenerate — the user turn is already on screen). */
+  function runStream(payload, showUser) {
+    /* only the latest reply carries follow-up chips — clear any stale rows */
+    root.querySelectorAll('.mmb-sugg').forEach(function (n) { n.remove(); });
+    if (showUser) {
+      var ub = appendMsg('user', payload.text);
+      if (payload.imgs && payload.imgs.length) {
+        var iw = el('div', 'mmb-imgs');
+        payload.imgs.forEach(function (s) { var im = el('img'); im.src = s; im.alt = ''; im.addEventListener('load', stickAfter); iw.appendChild(im); });
+        ub.insertBefore(iw, ub.firstChild);
+      }
+    }
+    sendBtn.disabled = true; streaming = true; upgradeEl.style.display = 'none';
+    setBusy(true);
+    var typing = el('div', 'mmb-msg assistant');
+    typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span><span class="mmb-typing"><span></span><span></span><span></span></span></div>';
+    scroll.appendChild(typing); stick();
+    var bub = null, stream = null, steps = null, suggestions = null, sawDelta = false, doneSeen = false;
+    var apiText = payload.text || L('Please analyze the attached image.', '请分析所附图片。');
+    var body = JSON.stringify({ message: apiText, lane: payload.lane, mode: payload.mode, thread_id: threadId || undefined, context: payload.ctx, images: (payload.imgs && payload.imgs.length) ? payload.imgs : undefined });
+    if (streamAbort) { try { streamAbort.abort(); } catch (e) {} }
     var ac = (typeof AbortController !== 'undefined') ? new AbortController() : null; streamAbort = ac;
+    function ensureBub() { if (!bub) { if (typing.parentNode) typing.remove(); bub = appendMsg('assistant', ''); stream = MdStream(bubTxt(bub)); stream.startCaret(); markLastAssistant(); } return bub; }
+    function endStream() { streaming = false; streamAbort = null; setBusy(false); syncSend(); }
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
       return fetch(API + '/api/brain/stream', { method: 'POST', headers: h, credentials: 'include', body: body, signal: ac ? ac.signal : undefined });
     }).then(function (res) {
-      if (res.status === 401) { typing.remove(); streaming = false; syncSend(); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); else if (CFG.onAuthRequired) { try { CFG.onAuthRequired(); } catch (e) {} } return; }
-      if (res.status === 402) { typing.remove(); streaming = false; syncSend(); return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
-      if (!res.ok || !res.body) { typing.remove(); bub = appendMsg('assistant', ''); bub.innerHTML = '<p>' + L('Something went wrong. Please try again.', '出错了，请重试。') + '</p>'; streaming = false; syncSend(); return; }
+      if (res.status === 401) { if (typing.parentNode) typing.remove(); endStream(); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); else if (CFG.onAuthRequired) { try { CFG.onAuthRequired(); } catch (e) {} } return; }
+      if (res.status === 402) { if (typing.parentNode) typing.remove(); endStream(); return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
+      if (!res.ok || !res.body) { if (typing.parentNode) typing.remove(); endStream(); errorCard(payload, ''); return; }
       var reader = res.body.getReader(), dec = new TextDecoder(), buf = '';
-      function ensureBub() { if (!bub) { typing.remove(); bub = appendMsg('assistant', ''); } return bub; }
       function pump() {
         return reader.read().then(function (r) {
           if (r.done) { finish(); return; }
@@ -537,24 +1060,92 @@
             ln = ln.trim(); if (ln.indexOf('data:') !== 0) return; var data = ln.slice(5).trim(); if (!data) return;
             var j; try { j = JSON.parse(data); } catch (e) { return; }
             if (j.type === 'meta') { if (j.thread_id) threadId = j.thread_id; if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } }
-            else if (j.type === 'tool') { ensureBub(); if (!steps) { steps = DOC.createElement('div'); steps.className = 'mmb-tool'; steps.textContent = L('Reading ', '正在读取 ') + (j.name || '') + '…'; bub.parentNode.insertBefore(steps, bub); } else steps.textContent = L('Reading ', '正在读取 ') + (j.name || '') + '…'; stick(); }
-            else if (j.type === 'chart' && j.svg) { ensureBub(); var cw = DOC.createElement('div'); cw.className = 'mmb-chart'; cw.innerHTML = j.svg; (bub.querySelector('.mmb-charts') || bub).appendChild(cw); stick(); }
-            else if (j.type === 'delta') { ensureBub(); if (steps) { steps.remove(); steps = null; } acc += j.text; bubTxt(bub).innerHTML = renderMd(acc); stick(); }
+            else if (j.type === 'tool') { ensureBub(); if (!steps) { steps = el('div', 'mmb-tool'); steps.textContent = L('Reading ', '正在读取 ') + (j.name || '') + '…'; bub.insertBefore(steps, bubTxt(bub)); } else steps.textContent = L('Reading ', '正在读取 ') + (j.name || '') + '…'; stickAfter(); }
+            else if (j.type === 'chart' && j.svg) { ensureBub(); var cw = el('div', 'mmb-chart'); cw.innerHTML = j.svg; (bub.querySelector('.mmb-charts') || bub).appendChild(cw); stickAfter(); }
+            else if (j.type === 'delta') { ensureBub(); if (steps) { steps.remove(); steps = null; } sawDelta = true; bub._raw = (bub._raw || '') + j.text; stream.push(j.text); }
             else if (j.type === 'suggest') { if (j.items && j.items.length) suggestions = j.items.slice(0, 3); }
             /* host bridges (Terminal): chart-command + annotate events are executed by the
                host page, not the widget — forward them to the CFG callbacks when provided. */
             else if (j.type === 'command') { try { if (CFG.onCommand) CFG.onCommand(j); } catch (e) {} }
             else if (j.type === 'annotate') { try { if (CFG.onAnnotate) CFG.onAnnotate(j); } catch (e) {} }
-            else if (j.type === 'done') { ensureBub(); if (steps) { steps.remove(); steps = null; } if (acc) bubTxt(bub).innerHTML = renderMd(acc); if (j.citations && j.citations.length) addCites(bub, j.citations); if (suggestions && suggestions.length) addSuggest(bub, suggestions); if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } stick(); }
-            else if (j.type === 'error') { ensureBub(); acc += (acc ? '\n\n' : '') + '_' + (j.message || 'error') + '_'; bubTxt(bub).innerHTML = renderMd(acc); }
+            else if (j.type === 'done') { finalizeDone(j); }
+            else if (j.type === 'error') {
+              if (!sawDelta && !(bub && bub._raw)) { if (typing.parentNode) typing.remove(); endStream(); errorCard(payload, j.message || ''); }
+              else { ensureBub(); bub._raw = (bub._raw || '') + '\n\n_' + (j.message || 'error') + '_'; stream.push('\n\n_' + (j.message || 'error') + '_'); }
+            }
           });
           return pump();
         });
       }
-      function finish() { streaming = false; syncSend(); loadThreads(); }
+      function finalizeDone(j) {
+        if (doneSeen) return; doneSeen = true;
+        ensureBub(); if (steps) { steps.remove(); steps = null; }
+        stream.finalize(function () {
+          if (j && j.citations && j.citations.length) addCites(bub, j.citations);
+          if (suggestions && suggestions.length) addSuggest(bub, suggestions);
+          bumpTime(bub); stickAfter();
+        });
+        if (j && j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); }
+      }
+      function finish() {
+        /* stream ended. If a `done` event already finalized (with cites/suggs), don't
+           finalize again — a second finalize would clobber the first's pending callback. */
+        if (!doneSeen) {
+          if (bub && stream) { doneSeen = true; stream.finalize(function () { bumpTime(bub); stickAfter(); }); }
+          else if (!bub) { if (typing.parentNode) typing.remove(); errorCard(payload, ''); }
+        }
+        endStream(); loadThreads(); announceDone();
+      }
       return pump();
-    }).catch(function () { typing.remove(); streaming = false; syncSend(); });
+    }).catch(function (err) {
+      /* AbortError = user pressed Stop; keep partial, no error card. */
+      var aborted = err && (err.name === 'AbortError');
+      if (aborted) { endStream(); return; }
+      if (typing.parentNode) typing.remove();
+      if (bub && stream && (sawDelta || bub._raw)) { stream.finalize(function () { bumpTime(bub); stickAfter(); }); }
+      else { errorCard(payload, ''); }
+      endStream();
+    });
+    /* expose the live stream to stopStream() so the Stop button can finalize the partial */
+    activeStream = { get bub() { return bub; }, get stream() { return stream; }, get typing() { return typing; }, payload: payload };
   }
+  var activeStream = null;
+  /* Stop: abort the reader, keep partial text, append a muted "· stopped" tag, finalize. */
+  function stopStream() {
+    if (!streaming) return;
+    if (streamAbort) { try { streamAbort.abort(); } catch (e) {} }
+    var a = activeStream;
+    if (a && a.stream && a.bub) {
+      a.stream.stop();
+      var txt = a.bub.querySelector('.mmb-txt') || a.bub;
+      var s = el('span', 'mmb-stopped'); s.textContent = L(' · stopped', ' · 已停止'); txt.appendChild(s);
+      bumpTime(a.bub); markLastAssistant();
+    } else if (a && a.typing && a.typing.parentNode) { a.typing.remove(); }
+    streaming = false; streamAbort = null; setBusy(false); syncSend(); stickAfter();
+  }
+  /* Header busy dot + send↔stop button morph. */
+  function setBusy(on) {
+    var dot = root.querySelector('.mmb-head .dot'); if (dot) dot.classList.toggle('busy', on);
+    sendBtn.classList.toggle('mmb-stop', on);
+    sendBtn.disabled = on ? false : ((!ta.value.trim() && !pendingImages.length));
+    sendBtn.title = on ? 'Stop' : 'Send';
+    sendBtn.setAttribute('aria-label', on ? L('Stop', '停止') : L('Send', '发送'));
+  }
+  function bumpTime(bub) { var t = bub && bub.querySelector('.mmb-time'); if (t) t.textContent = relTime(t._ts); }
+  /* Inline error card in the assistant slot with a Retry that replays the same payload. */
+  function errorCard(payload, msg) {
+    var d = el('div', 'mmb-msg assistant'); var b = el('div', 'mmb-bub');
+    var orb = el('span', 'mmb-orbmark'); orb.innerHTML = '<svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg>'; b.appendChild(orb);
+    var card = el('div', 'mmb-errcard');
+    var line = el('div', 'mmb-errline'); line.textContent = L("The reply didn't make it through.", '回复没有送达。'); card.appendChild(line);
+    var retry = el('button', 'mmb-retry'); retry.type = 'button';
+    retry.innerHTML = ic('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>') + '<span class="mmb-l" data-en="Retry" data-zh="重试">' + L('Retry', '重试') + '</span>';
+    retry.setAttribute('aria-label', L('Retry', '重试'));
+    retry.addEventListener('click', function () { if (streaming) return; d.remove(); runStream(payload, false); });
+    card.appendChild(retry); b.appendChild(card); d.appendChild(b); scroll.appendChild(d); stickAfter();
+  }
+  /* a11y: announce completion once per done via the polite live region. */
+  function announceDone() { try { var lr = $('#mmb-live'); if (lr) { lr.textContent = ''; lr.textContent = L('Reply finished', '回复完成'); } } catch (e) {} }
   /* follow-up suggestion chips — up to 3, appended after the latest assistant bubble.
      A click sends that question and removes the whole chip row (only the newest reply carries them). */
   function addSuggest(bub, items) {
@@ -567,16 +1158,18 @@
       btn.addEventListener('click', function () { wrap.remove(); send(String(q)); });
       wrap.appendChild(btn);
     });
-    if (wrap.childNodes.length) { bub.parentNode.appendChild(wrap); stick(); }
+    if (wrap.childNodes.length) { insertBeforeActions(bub, wrap); stickAfter(); }
   }
+  /* Cites/suggestions flow INSIDE the assistant content, above the action row. */
+  function insertBeforeActions(bub, node) { var act = bub.querySelector('.mmb-actions'); if (act) bub.insertBefore(node, act); else bub.appendChild(node); }
   function addCites(bub, cites) {
     var wrap = DOC.createElement('div'); wrap.className = 'mmb-cites';
     cites.slice(0, 8).forEach(function (c) {
       var a = DOC.createElement('a'); a.className = 'mmb-cite'; a.textContent = String(c).replace(/\.(json|parquet)$/, '').split('/').pop();
-      var page = citeToPage(c); if (page) { a.href = page; a.target = '_blank'; }
+      var page = citeToPage(c); if (page) { a.href = page; a.target = '_blank'; a.rel = 'noopener noreferrer'; }
       wrap.appendChild(a);
     });
-    bub.parentNode.appendChild(wrap); stick();
+    insertBeforeActions(bub, wrap); stickAfter();
   }
   function citeToPage(c) {
     c = String(c);
@@ -628,9 +1221,19 @@
     }
     if (authed) { loadThreads(); loadQuotas(); }
     else { loadQuotas(); }   /* guests refresh their daily meter; a 401 keeps the gate */
+    restoreDraft();
     setTimeout(function () { ta.focus(); }, 260);
   }
-  function close() { if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; streaming = false; } if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
+  /* Tear down any in-flight stream: abort the fetch reader, drop the caret, and reset the
+     streaming flags + send button. Called by close/newChat/openThread so switching context
+     mid-stream never leaves the composer wedged (streaming stuck true → send disabled). */
+  function abortStream() {
+    if (!streaming && !streamAbort) return;
+    if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; }
+    if (activeStream && activeStream.stream) { try { activeStream.stream.cancel(); } catch (e) {} }
+    activeStream = null; streaming = false; setBusy(false);
+  }
+  function close() { abortStream(); if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
   function toggle() { panel.classList.contains('open') ? close() : open(); }
   /* ── FLIP morph: animate the compact↔max resize with a transform ONLY (GPU compositor,
      60fps, zero reflow). Measure First rect → apply the class (panel snaps to Last geometry)
@@ -670,7 +1273,7 @@
     });
   }
   function toggleSide() { panel.classList.toggle('show-side'); }
-  function newChat() { threadId = null; pendingImages = []; renderThumbs(); root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
+  function newChat() { abortStream(); threadId = null; pendingImages = []; renderThumbs(); root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); ta.value = ''; autosize(); syncSend(); updateCounter(); closeSlash(); restoreDraft(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
 
   /* ── auth wiring ── */
   function onAuth(user) {
@@ -747,7 +1350,7 @@
   fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
   if (searchIn) {
     searchIn.addEventListener('input', paintThreads);
-    searchIn.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); toggleSearch(false); } });
+    searchIn.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); toggleSearch(false); } });
   }
   /* follow the host's language switch live — dashboard fires 'langchange' on the
      document (theme.js setLang), the Terminal fires 'mm:lang' on window (i18n.tsx). */
@@ -755,15 +1358,32 @@
   window.addEventListener('mm:lang', relabel);
   if (launch) launch.addEventListener('click', open);
   scrim.addEventListener('click', close);
-  sendBtn.addEventListener('click', function () { send(); });
-  ta.addEventListener('input', function () { autosize(); syncSend(); });
-  ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+  /* Send button doubles as Stop mid-stream (the arrow morphs to a square). */
+  sendBtn.addEventListener('click', function () { if (streaming) stopStream(); else send(); });
+  ta.addEventListener('input', function () { autosize(); syncSend(); updateCounter(); slashSync(); saveDraft(); });
+  ta.addEventListener('keydown', function (e) {
+    if (slashKeydown(e)) return;                             // palette owns ↑/↓/Enter/Esc while open
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); return; }   // Cmd/Ctrl+Enter always sends
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
   ta.addEventListener('paste', function (e) { /* paste a screenshot straight in */
     var items = (e.clipboardData && e.clipboardData.items) || []; var files = [];
     for (var i = 0; i < items.length; i++) { if (items[i].type && items[i].type.indexOf('image/') === 0) { var f = items[i].getAsFile(); if (f) files.push(f); } }
     if (files.length) { e.preventDefault(); addFiles(files); }
   });
-  DOC.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+  /* Single Esc chain (priority): slash palette → stream → search → close. */
+  DOC.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || !panel.classList.contains('open')) return;
+    if (slashOpen()) { e.preventDefault(); closeSlash(); return; }
+    if (streaming) { e.preventDefault(); stopStream(); return; }
+    if (searchWrap && searchWrap.classList.contains('on')) { e.preventDefault(); toggleSearch(false); return; }
+    e.preventDefault(); close();
+  });
+  /* Scroll pinning: any upward move (wheel/touch/scroll away from bottom) unpins;
+     returning to the bottom re-pins and clears the jump pill. */
+  scroll.addEventListener('scroll', function () { if (atBottom()) { pinned = true; hideJump(); } else { pinned = false; } }, { passive: true });
+  scroll.addEventListener('wheel', function (e) { if (e.deltaY < 0) pinned = false; }, { passive: true });
+  scroll.addEventListener('touchmove', function () { if (!atBottom()) pinned = false; }, { passive: true });
 
   /* ── vision: attach + downscale images ── */
   function addFiles(files) {
@@ -812,11 +1432,84 @@
   function syncSend() { sendBtn.disabled = (!ta.value.trim() && !pendingImages.length) || streaming; }
 
   /* ── voice (best-effort Web Speech) ── */
+  function voiceSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
   function startVoice() {
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return;
     var r = new SR(); r.lang = zh() ? 'zh-CN' : 'en-US'; r.interimResults = false;
-    r.onresult = function (ev) { ta.value = (ta.value + ' ' + ev.results[0][0].transcript).trim(); autosize(); sendBtn.disabled = !ta.value.trim(); };
+    r.onresult = function (ev) { ta.value = (ta.value + ' ' + ev.results[0][0].transcript).trim(); autosize(); syncSend(); updateCounter(); };
     try { r.start(); } catch (e) {}
+  }
+  /* Hide the mic entirely where Web Speech is unsupported (rather than a dead button). */
+  (function () { if (!voiceSupported()) { var vb = root.querySelector('[data-act="voice"]'); if (vb) vb.style.display = 'none'; } })();
+
+  /* ── char counter (muted, appears near the cap) ── */
+  var MAXLEN = 2000;
+  function updateCounter() {
+    var n = ta.value.length;
+    if (n > 1800) { qEl.classList.add('mmb-count'); qEl.textContent = n + ' / ' + MAXLEN; qEl.classList.toggle('warn', n > 1950); qEl.classList.remove('empty'); qEl.removeAttribute('title'); }
+    else if (qEl.classList.contains('mmb-count')) { qEl.classList.remove('mmb-count', 'warn'); renderQuota(); }
+  }
+
+  /* ── drafts (persist composer text per thread) ── */
+  function draftKey() { return 'mmb_draft_' + (threadId || 'new'); }
+  var draftTimer = 0;
+  function saveDraft() {
+    if (draftTimer) clearTimeout(draftTimer);
+    draftTimer = setTimeout(function () {
+      try { var v = ta.value; if (v) localStorage.setItem(draftKey(), v); else localStorage.removeItem(draftKey()); } catch (e) {}
+    }, 400);
+  }
+  function clearDraft() { try { localStorage.removeItem(draftKey()); } catch (e) {} }
+  function restoreDraft() {
+    try { var v = localStorage.getItem(draftKey()); if (v && !ta.value) { ta.value = v; autosize(); syncSend(); updateCounter(); } } catch (e) {}
+  }
+
+  /* ── slash palette (typing "/" as the first char) ────────────────────────────
+     A 3-item glass menu above the composer. ↑/↓ move, Enter/click select, Esc or
+     backspace-to-empty closes. Each item inserts a templated prompt (ZH variants). */
+  var slashEl = null, slashItems = [], slashIdx = 0;
+  function slashDefs() {
+    var sym = ctxSymbol || 'AAPL';
+    return [
+      { key: 'chart', icon: '<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>', name: LB('/chart', '/图表'), hint: LB('Map structure, levels & what to watch', '结构、关键位与关注点'),
+        run: function () { insertText(L('Map the structure on ' + sym + ' — trend, key levels, and what to watch.', '梳理 ' + sym + ' 的结构 — 趋势、关键价位与需关注之处。')); } },
+      { key: 'research', icon: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/>', name: LB('/research', '/研究'), hint: LB('Deep-dive with Deep Research', '开启深度研究'),
+        run: function () { if (proEligible) { if (!researchMode) setResearch(true); insertText(L('Deep-dive: ', '深度研究：')); } else { closeSlash(); showUpgrade(guestMode ? { feature: 'pro' } : {}); } } },
+      { key: 'explain', icon: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3 2.4c-.6.2-1 .8-1 1.6M12 17h.01"/>', name: LB('/explain', '/解释'), hint: LB('Read this page right now', '解读当前页面'),
+        run: function () { insertText(L('Explain this page — what is it telling me right now?', '解读这个页面 — 它现在告诉我什么？')); } }
+    ];
+  }
+  function insertText(t) { closeSlash(); ta.value = t; autosize(); ta.focus(); syncSend(); updateCounter(); saveDraft(); }
+  function slashOpen() { return !!slashEl; }
+  function openSlash() {
+    if (slashEl) return;
+    slashItems = slashDefs(); slashIdx = 0;
+    slashEl = el('div', 'mmb-slash');
+    slashItems.forEach(function (it, i) {
+      var b = el('button', 'mmb-slash-i' + (i === 0 ? ' on' : '')); b.type = 'button'; b.dataset.i = i;
+      b.innerHTML = '<span class="si">' + ic(it.icon) + '</span><span class="sn">' + it.name + '</span><span class="sh">' + it.hint + '</span>';
+      b.addEventListener('mouseenter', function () { slashIdx = i; paintSlash(); });
+      b.addEventListener('click', function (e) { e.preventDefault(); it.run(); });
+      slashEl.appendChild(b);
+    });
+    root.querySelector('.mmb-box').insertBefore(slashEl, root.querySelector('.mmb-box').firstChild);
+  }
+  function paintSlash() { if (!slashEl) return; [].forEach.call(slashEl.children, function (c, i) { c.classList.toggle('on', i === slashIdx); }); }
+  function closeSlash() { if (slashEl) { slashEl.remove(); slashEl = null; slashItems = []; } }
+  /* open when the field starts with "/" and is a single token; close otherwise */
+  function slashSync() {
+    var v = ta.value;
+    if (v.charAt(0) === '/' && v.indexOf('\n') === -1 && v.indexOf(' ') === -1) openSlash();
+    else closeSlash();
+  }
+  function slashKeydown(e) {
+    if (!slashEl) return false;
+    if (e.key === 'ArrowDown') { e.preventDefault(); slashIdx = (slashIdx + 1) % slashItems.length; paintSlash(); return true; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); slashIdx = (slashIdx - 1 + slashItems.length) % slashItems.length; paintSlash(); return true; }
+    if (e.key === 'Enter') { e.preventDefault(); slashItems[slashIdx].run(); return true; }
+    if (e.key === 'Escape') { e.preventDefault(); closeSlash(); return true; }
+    if (e.key === 'Backspace' && ta.value.length <= 1) { closeSlash(); return false; }
+    return false;
   }
 
   /* ── context (active ticker) ── */
