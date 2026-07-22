@@ -260,10 +260,12 @@ def _extract_stock_context(sd: dict, ticker: str) -> dict:
     else:
         ctx["obv_slope_up"] = None
 
-    # mktcap_bn
+    # mktcap_bn + sector (display context)
     profile = sd.get("profile") or {}
     mktcap = profile.get("mktcap_bn") or profile.get("market_cap_bn")
     ctx["mktcap_bn"] = float(mktcap) if mktcap is not None and not pd.isna(mktcap) else None
+    sec = profile.get("sector")
+    ctx["sector"] = str(sec) if sec else None
 
     # earnings.next_date → days_to_earnings
     earnings = sd.get("earnings") or {}
@@ -793,6 +795,7 @@ def _build_ticker_record(
         "days_to_earnings": stock_ctx.get("days_to_earnings"),
         "trailing_pe": stock_ctx.get("trailing_pe"),
         "mktcap_bn": stock_ctx.get("mktcap_bn"),
+        "sector": stock_ctx.get("sector"),
         "rs_1m": stock_ctx.get("rs_1m"),
         "high52w_prox": stock_ctx.get("high52w_prox"),
         "rel_volume": stock_ctx.get("rel_volume"),
@@ -928,10 +931,13 @@ def build(
                 as_of=as_of,
                 stale=stale,
             )
-            # Route to board A (recurrence-sorted) and board B (inflection-sorted)
-            # A row can appear on both boards
+            # Board A is recurrence-sorted (money that keeps landing). Board B is
+            # the "turned back up" board — only names that actually inflected (a
+            # real washout-turn) belong there, not the whole universe. A name may
+            # qualify for both; a name that never flipped belongs on neither's turn list.
             board_a_rows.append(rec)
-            board_b_rows.append(rec)
+            if rec.get("days_since_inflection") is not None:
+                board_b_rows.append(rec)
         except Exception as e:  # noqa: BLE001
             log.warning("build_flow_leaders: ticker %s failed (skipped): %s", ticker, e)
 
