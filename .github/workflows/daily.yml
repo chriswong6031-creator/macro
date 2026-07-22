@@ -1526,6 +1526,17 @@ jobs:
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_us_board --nightly || true
+      - name: Bottom Ledger (accrue bottom-class flags + mature at H=60; policy-free instrument)
+        # Bottom Ledger P1: the policy-free bottom-calling learning instrument (design PR #3182).
+        # Sole forward advancer of this ledger (nightly-only). Accrues board buy-lane +
+        # washout WAIT + Prophet-plan flags from snapshots.jsonl (runs AFTER grade_us_board so
+        # today's snapshot is present), matures rows at H=60 trading days, and emits
+        # site/factordata/us_bottom_ledger.json. Display-tier; no exits/stops/authority. Both
+        # the rows store (data/bottom_ledger/rows.parquet) and the site/ display artifact are
+        # landed by the "commit engine outputs" step below (git add data/ site/) — like every
+        # sibling forward ledger, the committed store is what lets cohorts accrue night to
+        # night. Idempotent per as_of. Resilient.
+        run: python -m scripts.grade_bottom_calls --nightly || true
       - name: Options-state stamp on board ledger (Options Alpha W1.3; context-only)
         # Stamps the freshly-graded + accumulated retro_grades.parquet with the eight nullable
         # opt_* options-state columns (PIT: only positioning data with as-of ≤ each fire's as_of).
