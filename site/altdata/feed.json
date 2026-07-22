@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-22T03:32:00.806543+00:00",
+  "generated_utc": "2026-07-22T02:07:42.264617+00:00",
   "as_of": "2026-07-22",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -6294,14 +6294,6 @@
         "top_agency": "Department of Transportation"
       },
       {
-        "ticker": "F",
-        "total_usd": 10946519.0,
-        "contracts": 223,
-        "agencies": 1,
-        "accel_x": 2.2,
-        "top_agency": "General Services Administration"
-      },
-      {
         "ticker": "IBM",
         "total_usd": 8803093.0,
         "contracts": 1,
@@ -6485,7 +6477,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 20,
         "items": "8.01"
       },
       {

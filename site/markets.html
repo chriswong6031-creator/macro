@@ -407,12 +407,12 @@
      a pinned ref is SKIPPED by the pass, stays synchronous, and races ahead of the
      deferred data (that blanked cycle.html). Inline consumers below run on
      DOMContentLoaded (fires after every defer script). -->
-<script src="regimedata/regime_prior.js"></script>
-<script src="markets_i18n.js"></script>
-<script src="markets_data.js"></script>
-<script src="marketsdata/markets_engine.js"></script>
-<script src="mm_charts.js"></script>
-<script src="markets_app.js"></script>
+<script src="regimedata/regime_prior.js?v=1c2f3d83" defer></script>
+<script src="markets_i18n.js?v=85a87240" defer></script>
+<script src="markets_data.js?v=fd2ad24f" defer></script>
+<script src="marketsdata/markets_engine.js?v=51c4754a" defer></script>
+<script src="mm_charts.js?v=244eb769" defer></script>
+<script src="markets_app.js?v=e660b9cf" defer></script>
 <script>document.addEventListener('DOMContentLoaded',function(){try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}});</script>
 <script>
 /* W4.5 regime-prior reconciliation banner for markets.html.
