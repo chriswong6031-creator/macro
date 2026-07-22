@@ -25,7 +25,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=5c8e95e7">
+<link rel="stylesheet" href="theme.css?v=a1aa8c55">
 <link rel="stylesheet" href="assets/css/fa854d96.css?v=fa854d96">
 </head>
 <body class="page-macro">
@@ -251,6 +251,8 @@
   
   <script src="live_config.js?v=0add7ac4" defer></script>
   <script src="live.js?v=2758e158" defer></script>
+  
+  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -394,7 +396,7 @@
               <stop offset="100%" stop-color="var(--down)"/>
             </linearGradient>
           </defs>
-          <g id="gneedle-fg" style="transform:rotate(-3.5999999999999943deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
+          <g id="gneedle-fg" style="transform:rotate(0.0deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
             <line x1="60" y1="68" x2="60" y2="26"
               stroke="var(--warn)"
               stroke-width="2.5" stroke-linecap="round"
@@ -691,7 +693,7 @@
   
   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px">
     <div>
-      <div style="font-size:32px;font-weight:800;font-family:var(--num)">48</div>
+      <div style="font-size:32px;font-weight:800;font-family:var(--num)">50</div>
       <div class="muted sm">/ 100</div>
     </div>
     <div>
@@ -699,7 +701,7 @@
       <div class="muted sm" style="margin-top:4px">11 <span class="l-en">legs driving it</span><span class="l-zh">项指标合成</span></div>
     </div>
     <div style="flex:1;min-width:100px">
-      <div class="pgauge"><i style="left:48%"></i></div>
+      <div class="pgauge"><i style="left:50%"></i></div>
       <div class="pends"><span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span></div>
     </div>
   </div>
@@ -723,8 +725,8 @@
   
   <div class="leg">
     <span style="flex:0 0 130px;font-size:12.5px"><span class="l-en">SPX momentum (vs 125d MA)</span><span class="l-zh">标普动量（对比125日均线）</span></span>
-    <div class="leg-bar"><i style="width:12.433333333333334%;background:var(--up)"></i></div>
-    <span class="muted sm" style="flex:0 0 60px;text-align:right">+0.4</span>
+    <div class="leg-bar"><i style="width:16.766666666666666%;background:var(--up)"></i></div>
+    <span class="muted sm" style="flex:0 0 60px;text-align:right">+0.5</span>
   </div>
   
   
@@ -745,9 +747,9 @@
         
         <tr>
           <td class="l"><b><span class="l-en">SPX momentum (vs 125d MA)</span><span class="l-zh">标普动量（对比125日均线）</span></b></td>
-          <td>4.89 <span class="muted sm">% above/below MA</span></td>
-          <td class=" sm">+0.37</td>
-          <td class="sm muted">8424</td>
+          <td>5.67 <span class="muted sm">% above/below MA</span></td>
+          <td class="pos sm">+0.50</td>
+          <td class="sm muted">8425</td>
         </tr>
         
         <tr>
@@ -773,30 +775,30 @@
         
         <tr>
           <td class="l"><b><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span></b></td>
-          <td>2.32 <span class="muted sm">20d ret diff %</span></td>
-          <td class=" sm">+0.28</td>
-          <td class="sm muted">6011</td>
+          <td>2.99 <span class="muted sm">20d ret diff %</span></td>
+          <td class=" sm">+0.38</td>
+          <td class="sm muted">6012</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></b></td>
-          <td>18.60 <span class="muted sm">VIX points</span></td>
-          <td class=" sm">+0.10</td>
-          <td class="sm muted">9205</td>
+          <td>17.00 <span class="muted sm">VIX points</span></td>
+          <td class=" sm">+0.31</td>
+          <td class="sm muted">9206</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span></b></td>
-          <td>1.87 <span class="muted sm">VIX 20d delta</span></td>
-          <td class=" sm">-0.36</td>
-          <td class="sm muted">9185</td>
+          <td>-0.23 <span class="muted sm">VIX 20d delta</span></td>
+          <td class=" sm">+0.04</td>
+          <td class="sm muted">9186</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></b></td>
-          <td>0.91 <span class="muted sm">ratio (&gt;=1=backwardation)</span></td>
-          <td class=" sm">-0.08</td>
-          <td class="sm muted">5033</td>
+          <td>0.87 <span class="muted sm">ratio (&gt;=1=backwardation)</span></td>
+          <td class=" sm">+0.46</td>
+          <td class="sm muted">5034</td>
         </tr>
         
         <tr>
@@ -1015,8 +1017,8 @@
         <span class="l-en">above trend</span><span class="l-zh">趋势上方</span>
         <span class="help">?<span class="tip"><span class="l-en">RSI(14): 64 · 50d: above</span><span class="l-zh">RSI(14): 64 · 50日: 上方</span></span></span>
       </td>
-      <td class="neg">-19.5%</td>
-      <td class="neg">-25.2%</td>
+      <td class="neg">-19.4%</td>
+      <td class="neg">-25.0%</td>
     </tr>
     
     <tr>
@@ -1025,7 +1027,7 @@
         <span class="l-en">above trend</span><span class="l-zh">趋势上方</span>
         <span class="help">?<span class="tip"><span class="l-en">RSI(14): 63 · 50d: above</span><span class="l-zh">RSI(14): 63 · 50日: 上方</span></span></span>
       </td>
-      <td class="pos">+10.2%</td>
+      <td class="pos">+10.1%</td>
       <td class="">-1.8%</td>
     </tr>
     
@@ -1433,7 +1435,7 @@
     setNeedle('gneedle-inflation', 36.0);
     
     
-    setNeedle('gneedle-fg', -3.6);
+    setNeedle('gneedle-fg', 0.0);
     
     
     setNeedle('gneedle-vix', -5.8);

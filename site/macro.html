@@ -46,7 +46,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=5c8e95e7">
+<link rel="stylesheet" href="theme.css?v=a1aa8c55">
 
 <link rel="stylesheet" href="assets/css/8ddfa241.css?v=8ddfa241">
 </head>
@@ -269,6 +269,8 @@
   
   <script src="live_config.js?v=0add7ac4" defer></script>
   <script src="live.js?v=2758e158" defer></script>
+  
+  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -475,7 +477,7 @@
     <div class="mxfs">
       <div class="mxfs-hd">
         <span class="l-en">What could change the regime call</span><span class="l-zh">什么会改变周期判断</span>
-        <span class="help">?<span class="tip"><span class="l-en">Drawn only from today&#39;s regime-engine readings, shown as-is. Weakest support: the component still supporting the call — slope z 1.21 vs its ±0.45 cutoff, margin 0.76. Drift: how the model&#39;s regime probabilities moved over the last 5 sessions. How firmly held: 0–1 = probability behind the label × how much the inputs agree. Conditional context only — nothing here predicts a flip.</span><span class="l-zh">仅取自今日周期引擎的读数，原样展示。最弱支撑：仍支撑当前判断的最弱分量 — 斜率 z 1.21，阈值 ±0.45（边际 0.76）。漂移方向：模型周期概率近 5 个交易日的变化。把握程度：0–1 = 标签背后的概率 × 输入一致度。仅为条件性参考 — 并非预测翻转。</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Drawn only from today&#39;s regime-engine readings, shown as-is. Weakest support: the component still supporting the call — slope z 1.2 vs its ±0.45 cutoff, margin 0.75. Drift: how the model&#39;s regime probabilities moved over the last 5 sessions. How firmly held: 0–1 = probability behind the label × how much the inputs agree. Conditional context only — nothing here predicts a flip.</span><span class="l-zh">仅取自今日周期引擎的读数，原样展示。最弱支撑：仍支撑当前判断的最弱分量 — 斜率 z 1.2，阈值 ±0.45（边际 0.75）。漂移方向：模型周期概率近 5 个交易日的变化。把握程度：0–1 = 标签背后的概率 × 输入一致度。仅为条件性参考 — 并非预测翻转。</span></span></span>
         <span class="mxfs-badge"><span class="l-en">Context — not a forecast</span><span class="l-zh">情景参考 — 非预测</span></span>
       </div>
       <div class="mxfs-subtitle"><span class="l-en">About the regime label — not the 0-100 risk score.</span><span class="l-zh">指上方周期标签——并非 0-100 风险评分。</span></div>
@@ -767,7 +769,7 @@
             <span class="l-en">Held loosely — weakest support is <b>copper vs gold</b>.</span>
             <span class="l-zh">把握较松 — 最弱支撑为<b>铜对黄金</b>。</span>
           </span>
-          <span class="help">?<span class="tip"><span class="l-en">conviction 0.17 / 1 · cushion 0.76 · drift measured over 5 sessions</span><span class="l-zh">把握 0.17 / 1 · 缓冲 0.76 · 漂移基于近 5 个交易日</span></span></span>
+          <span class="help">?<span class="tip"><span class="l-en">conviction 0.17 / 1 · cushion 0.75 · drift measured over 5 sessions</span><span class="l-zh">把握 0.17 / 1 · 缓冲 0.75 · 漂移基于近 5 个交易日</span></span></span>
         </div>
         
         
@@ -3658,7 +3660,7 @@
         <g filter="url(#dialGlow5)">
           <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
                 stroke="#f59e0b" stroke-width="4" stroke-linecap="round"
-                transform="rotate(-3.6, 190, 185)"/>
+                transform="rotate(0.0, 190, 185)"/>
           <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="#f59e0b" stroke-width="2.5"/>
           <circle class="fg-mark-f" cx="190" cy="185" r="4"  fill="#f59e0b"/>
         </g>
@@ -3674,8 +3676,8 @@
       <span class="l-zh">中性</span>
     </div>
     <div class="mx5-sentiment-label">
-      <span class="l-en">Composite at 48 &middot; neutral zone</span>
-      <span class="l-zh">综合指数 48 &middot; 中性区间</span>
+      <span class="l-en">Composite at 50 &middot; neutral zone</span>
+      <span class="l-zh">综合指数 50 &middot; 中性区间</span>
     </div>
     
     
@@ -3804,7 +3806,7 @@
         
         
         <div class="mx5-sector-heat-col" data-tip-en="Health Care (Equal-Weight) — cooling" data-tip-zh="医疗保健（等权） — 退潮">
-          <div class="mx5-sector-heat-bar" style="height:17px;background:rgba(239,68,68,0.22);"></div>
+          <div class="mx5-sector-heat-bar" style="height:16px;background:rgba(239,68,68,0.22);"></div>
         </div>
         
         
@@ -4538,7 +4540,7 @@
         
         <span class="mx5-ai-ticker-pill">USO</span>
         
-        <span class="mx5-ai-ticker-pill">NVDA</span>
+        <span class="mx5-ai-ticker-pill">GLD</span>
         
         <span class="mx5-ai-ticker-pill">XLF</span>
         
@@ -5461,19 +5463,19 @@
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
               <span class="mx5-dlg-sector-name"><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></span>
-              <span class="mx5-dlg-sector-rk">#8</span>
-            </div>
-            
-            <div class="mx5-dlg-sector-row">
-              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span>
               <span class="mx5-dlg-sector-rk">#9</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span>
+              <span class="mx5-dlg-sector-rk">#10</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
               <span class="mx5-dlg-sector-name"><span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span></span>
-              <span class="mx5-dlg-sector-rk">#12</span>
+              <span class="mx5-dlg-sector-rk">#11</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
@@ -7030,9 +7032,9 @@
               
               
               
-              <span class="rkc-mood-needle n-b" style="--rkc-pos:calc(48% - 2px)"></span>
-              <span class="rkc-mood-flag f-below" style="--rkc-pos:48%">
-                <span class="rkc-mood-flag-val">48</span>
+              <span class="rkc-mood-needle n-b" style="--rkc-pos:calc(50% - 2px)"></span>
+              <span class="rkc-mood-flag f-below" style="--rkc-pos:50%">
+                <span class="rkc-mood-flag-val">50</span>
                 <span class="rkc-mood-flag-name"><span class="l-en">Sentiment mix</span><span class="l-zh">情绪合成</span></span>
               </span>
               
@@ -7415,11 +7417,11 @@
 
         
         <button type="button"
-          class="igd-risk-xref caution"
+          class="igd-risk-xref watch"
           onclick="mx5OpenDlg('dlg-risk')"
           aria-haspopup="dialog">
-          <span class="l-en">Risk Radar: Caution</span>
-          <span class="l-zh">风险雷达：警惕</span>
+          <span class="l-en">Risk Radar: Watch</span>
+          <span class="l-zh">风险雷达：关注</span>
         </button>
         <div class="igd-action-ptr" style="margin-top:4px">
           <span class="l-en">Risk first when both speak.</span>
@@ -8145,7 +8147,7 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
               <span class="nb-htitle"><span class="l-en">SpaceX snaps 7-day losing streak, sets earnings date that triggers first big share unlock</span><span class="l-zh">SpaceX snaps 7-day losing streak, sets earnings date that triggers first big share unlock</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://www.cnbc.com/2026/07/21/spacex-spcx-earnings-lock-up-expiration.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://www.cnbc.com/2026/07/16/unitedhealth-group-unh-earnings-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -8185,6 +8187,17 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
           
           <details class="nb-item">
             <summary class="nb-sum">
+              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nb-htitle"><span class="l-en">Dave Stock Has Doubled in the Past Year and Has Tantalizing Growth in Revenue, Earnings, and Cash Flow</span><span class="l-zh">Dave Stock Has Doubled in the Past Year and Has Tantalizing Growth in Revenue, Earnings, and Cash Flow</span></span>
+            </summary>
+            <div class="nb-body">
+              <a class="nb-read" href="https://finance.yahoo.com/markets/stocks/articles/dave-stock-doubled-past-tantalizing-151502501.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+            </div>
+          </details>
+          
+          
+          <details class="nb-item">
+            <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
               <span class="nb-htitle"><span class="l-en">Oklo, X-Energy to join Trump administration effort to speed nuclear reactors for AI - Bloomberg</span><span class="l-zh">Oklo, X-Energy to join Trump administration effort to speed nuclear reactors for AI - Bloomberg</span></span>
             </summary>
@@ -8197,21 +8210,10 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
           <details class="nb-item">
             <summary class="nb-sum">
               <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Alphabet Reports Q2 Earnings on July 22. Here’s Why Analysts Remain Bullish.</span><span class="l-zh">Alphabet Reports Q2 Earnings on July 22. Here’s Why Analysts Remain Bullish.</span></span>
+              <span class="nb-htitle"><span class="l-en">AAR expects Q1 FY2027 sales growth of 21% to 23% excluding legacy commercial programs, while targeting margin expansion</span><span class="l-zh">AAR expects Q1 FY2027 sales growth of 21% to 23% excluding legacy commercial programs, while targeting margin expansion</span></span>
             </summary>
             <div class="nb-body">
-              <a class="nb-read" href="https://finance.yahoo.com/markets/stocks/articles/alphabet-reports-q2-earnings-july-141921232.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-            </div>
-          </details>
-          
-          
-          <details class="nb-item">
-            <summary class="nb-sum">
-              <span class="nb-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nb-htitle"><span class="l-en">Super Micro’s stock soars as its margins unexpectedly double</span><span class="l-zh">Super Micro’s stock soars as its margins unexpectedly double</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="https://www.marketwatch.com/story/super-micros-stock-soars-as-its-margins-unexpectedly-double-8aa83784?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+              <a class="nb-read" href="https://seekingalpha.com/news/4616272-aar-expects-q1-fy2027-sales-growth-of-21-percent-to-23-percent-excluding-legacy-commercial?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
             </div>
           </details>
           
@@ -8812,7 +8814,7 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
         
         
         <div class="fg-neutral sg-hero">
-          <div class="sg-hero-num" style="color:var(--fg-col, #f59e0b)">48</div>
+          <div class="sg-hero-num" style="color:var(--fg-col, #f59e0b)">50</div>
           <div>
             <div class="sg-hero-band" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
             <div class="sg-hero-sub"><span class="l-en">Composite of 11 market gauges — a mood read, not a signal.</span><span class="l-zh">11 项市场指标合成 — 情绪参考，非交易信号。</span></div>
@@ -8823,7 +8825,7 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
             <span class="sg-track-tick" style="left:40%"></span>
             <span class="sg-track-tick" style="left:60%"></span>
           </div>
-          <div class="sg-track-marker" style="--sg-pos:48%"></div>
+          <div class="sg-track-marker" style="--sg-pos:50%"></div>
           <div class="sg-track-axis"><span>0 · <span class="l-en">Fear</span><span class="l-zh">恐慌</span></span><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span> · 100</span></div>
         </div>
         <div class="mx5-dlg-sep"></div>
@@ -8848,8 +8850,8 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:62.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">62</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:69.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">69</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
@@ -8863,10 +8865,10 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(21.6 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(34.2 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">62</div>
+<div class="sg-dial-val">69</div>
 <div class="sg-dial-cap">Greed</div>
 </div></div>
             <div class="sg-pop-expl">
@@ -8885,14 +8887,14 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,15.54 5.42,13.44 10.85,13.11 16.27,14.61 21.69,14.7 27.12,12.24 32.54,11.7 37.97,12.66 43.39,10.89 48.81,7.86 54.24,8.7 59.66,7.26 65.08,7.05 70.51,7.41 75.93,6.63 81.36,5.67 86.78,7.56 92.2,7.8 97.63,10.14 103.05,7.98 108.47,7.77 113.9,7.32 119.32,6.45 124.75,6.63 130.17,6.0 135.59,5.79 141.02,5.52 146.44,5.46 151.86,6.57 157.29,6.18 162.71,11.61 168.14,11.22 173.56,12.06 178.98,16.44 184.41,12.09 189.83,10.92 195.25,7.29 200.68,8.58 206.1,11.82 211.53,9.51 216.95,10.44 222.37,14.22 227.8,14.58 233.22,14.28 238.64,16.53 244.07,12.24 249.49,10.5 254.92,11.04 260.34,11.58 265.76,9.63 271.19,10.95 276.61,11.88 282.03,9.96 287.46,9.15 292.88,11.16 298.31,10.44 303.73,9.66 309.15,11.19 314.58,13.77 320.0,14.37 "/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,13.44 5.42,13.11 10.85,14.61 16.27,14.7 21.69,12.24 27.12,11.7 32.54,12.66 37.97,10.89 43.39,7.86 48.81,8.7 54.24,7.26 59.66,7.05 65.08,7.41 70.51,6.63 75.93,5.67 81.36,7.56 86.78,7.8 92.2,10.14 97.63,7.98 103.05,7.77 108.47,7.32 113.9,6.45 119.32,6.63 124.75,6.0 130.17,5.79 135.59,5.52 141.02,5.46 146.44,6.57 151.86,6.18 157.29,11.61 162.71,11.22 168.14,12.06 173.56,16.44 178.98,12.09 184.41,10.92 189.83,7.29 195.25,8.58 200.68,11.82 206.1,9.51 211.53,10.44 216.95,14.22 222.37,14.58 227.8,14.28 233.22,16.53 238.64,12.24 244.07,10.5 249.49,11.04 254.92,11.58 260.34,9.63 265.76,10.95 271.19,11.88 276.61,9.96 282.03,9.15 287.46,11.16 292.88,10.44 298.31,9.66 303.73,11.19 309.15,13.77 314.58,14.37 320.0,12.45 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 4.89 · 62/100 in its own history</span>
-              <span class="l-zh">读数：4.89 · 历史百分位 62/100</span>
+              <span class="l-en">Reading: 5.67 · 69/100 in its own history</span>
+              <span class="l-zh">读数：5.67 · 历史百分位 69/100</span>
             </div>
           </span>
         </div>
@@ -9088,34 +9090,34 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
         
         
         
-        <div class="mx5-dlg-factor-row fg-neutral" style="--sg-c:#f59e0b" data-rpop tabindex="0" role="button" aria-label="Safe haven demand (SPY − TLT 20d) — sentiment gauge detail">
+        <div class="mx5-dlg-factor-row fg-greed" style="--sg-c:#22d97a" data-rpop tabindex="0" role="button" aria-label="Safe haven demand (SPY − TLT 20d) — sentiment gauge detail">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span><span class="sg-hint" aria-hidden="true">i</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)">
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)">
               <span class="l-en">Leaning to stocks, mildly</span><span class="l-zh">小幅偏向股票</span>
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:60.0%;background:var(--fg-col, #f59e0b)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">60</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:65.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">65</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
               <span class="row-pop-name"><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span></span>
-              <span class="row-pop-tag warn"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="row-pop-tag up"><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
             </div>
             <div class="row-pop-div"></div>
-            <div class="sg-pop-dialwrap"><div class="sg-dial" style="--sg-c:#f59e0b">
+            <div class="sg-pop-dialwrap"><div class="sg-dial" style="--sg-c:#22d97a">
 <svg viewBox="0 0 132 74" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
 <path class="sg-dial-track" d="M14 64 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(18.0 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(27.0 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">60</div>
-<div class="sg-dial-cap">Neutral</div>
+<div class="sg-dial-val">65</div>
+<div class="sg-dial-cap">Greed</div>
 </div></div>
             <div class="sg-pop-expl">
               
@@ -9133,14 +9135,14 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,5.55 5.42,4.32 10.85,3.63 16.27,3.42 21.69,4.08 27.12,3.96 32.54,3.84 37.97,3.93 43.39,3.87 48.81,4.62 54.24,5.07 59.66,4.92 65.08,4.86 70.51,5.04 75.93,5.37 81.36,5.58 86.78,5.73 92.2,5.52 97.63,5.7 103.05,6.54 108.47,6.51 113.9,7.5 119.32,8.16 124.75,7.59 130.17,8.64 135.59,10.26 141.02,9.69 146.44,9.78 151.86,11.16 157.29,12.3 162.71,18.03 168.14,16.86 173.56,21.03 178.98,24.81 184.41,25.47 189.83,25.23 195.25,22.38 200.68,24.75 206.1,26.64 211.53,25.62 216.95,24.6 222.37,26.85 227.8,28.56 233.22,28.17 238.64,28.8 244.07,27.51 249.49,25.08 254.92,24.6 260.34,24.3 265.76,22.71 271.19,16.26 276.61,18.42 282.03,14.37 287.46,10.26 292.88,11.73 298.31,13.05 303.73,16.89 309.15,15.27 314.58,15.15 320.0,15.15 "/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,4.32 5.42,3.63 10.85,3.42 16.27,4.08 21.69,3.96 27.12,3.84 32.54,3.93 37.97,3.87 43.39,4.62 48.81,5.07 54.24,4.92 59.66,4.86 65.08,5.04 70.51,5.37 75.93,5.58 81.36,5.73 86.78,5.52 92.2,5.7 97.63,6.54 103.05,6.51 108.47,7.5 113.9,8.16 119.32,7.59 124.75,8.64 130.17,10.26 135.59,9.69 141.02,9.78 146.44,11.16 151.86,12.3 157.29,18.03 162.71,16.86 168.14,21.03 173.56,24.81 178.98,25.47 184.41,25.23 189.83,22.38 195.25,24.75 200.68,26.64 206.1,25.62 211.53,24.6 216.95,26.85 222.37,28.56 227.8,28.17 233.22,28.8 238.64,27.51 244.07,25.08 249.49,24.6 254.92,24.3 260.34,22.71 265.76,16.26 271.19,18.42 276.61,14.37 282.03,10.26 287.46,11.73 292.88,13.05 298.31,16.89 303.73,15.27 309.15,15.15 314.58,15.15 320.0,13.47 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 2.32 · 60/100 in its own history</span>
-              <span class="l-zh">读数：2.32 · 历史百分位 60/100</span>
+              <span class="l-en">Reading: 2.99 · 65/100 in its own history</span>
+              <span class="l-zh">读数：2.99 · 历史百分位 65/100</span>
             </div>
           </span>
         </div>
@@ -9158,8 +9160,8 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:44.0%;background:var(--fg-col, #f59e0b)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">44</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:53.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">53</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
@@ -9173,10 +9175,10 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-10.8 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(5.4 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">44</div>
+<div class="sg-dial-val">53</div>
 <div class="sg-dial-cap">Neutral</div>
 </div></div>
             <div class="sg-pop-expl">
@@ -9195,14 +9197,14 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,18.72 5.42,18.36 10.85,19.95 16.27,16.68 21.69,16.89 27.12,19.11 32.54,17.58 37.97,17.61 43.39,17.07 48.81,17.25 54.24,19.26 59.66,18.66 65.08,18.45 70.51,17.37 75.93,19.32 81.36,18.36 86.78,18.78 92.2,17.7 97.63,16.41 103.05,16.29 108.47,15.99 113.9,16.92 119.32,15.33 124.75,14.1 130.17,13.23 135.59,14.79 141.02,14.16 146.44,14.79 151.86,13.38 157.29,23.97 162.71,20.16 168.14,21.63 173.56,24.84 178.98,20.94 184.41,18.12 189.83,15.12 195.25,15.63 200.68,19.35 206.1,15.6 211.53,16.47 216.95,17.43 222.37,21.06 227.8,19.71 233.22,20.1 238.64,19.32 244.07,18.06 249.49,15.72 254.92,15.99 260.34,15.0 265.76,13.74 271.19,14.97 276.61,16.68 282.03,14.28 287.46,12.66 292.88,17.22 298.31,15.84 303.73,13.95 309.15,16.35 314.58,19.98 320.0,19.77 "/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,18.36 5.42,19.95 10.85,16.68 16.27,16.89 21.69,19.11 27.12,17.58 32.54,17.61 37.97,17.07 43.39,17.25 48.81,19.26 54.24,18.66 59.66,18.45 65.08,17.37 70.51,19.32 75.93,18.36 81.36,18.78 86.78,17.7 92.2,16.41 97.63,16.29 103.05,15.99 108.47,16.92 113.9,15.33 119.32,14.1 124.75,13.23 130.17,14.79 135.59,14.16 141.02,14.79 146.44,13.38 151.86,23.97 157.29,20.16 162.71,21.63 168.14,24.84 173.56,20.94 178.98,18.12 184.41,15.12 189.83,15.63 195.25,19.35 200.68,15.6 206.1,16.47 211.53,17.43 216.95,21.06 222.37,19.71 227.8,20.1 233.22,19.32 238.64,18.06 244.07,15.72 249.49,15.99 254.92,15.0 260.34,13.74 265.76,14.97 271.19,16.68 276.61,14.28 282.03,12.66 287.46,17.22 292.88,15.84 298.31,13.95 303.73,16.35 309.15,19.98 314.58,19.77 320.0,17.01 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 18.6 · 44/100 in its own history</span>
-              <span class="l-zh">读数：18.6 · 历史百分位 44/100</span>
+              <span class="l-en">Reading: 17.0 · 53/100 in its own history</span>
+              <span class="l-zh">读数：17.0 · 历史百分位 53/100</span>
             </div>
           </span>
         </div>
@@ -9212,34 +9214,34 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
         
         
         
-        <div class="mx5-dlg-factor-row fg-fear" style="--sg-c:#ef4444" data-rpop tabindex="0" role="button" aria-label="VIX trend (20d change) — sentiment gauge detail">
+        <div class="mx5-dlg-factor-row fg-neutral" style="--sg-c:#f59e0b" data-rpop tabindex="0" role="button" aria-label="VIX trend (20d change) — sentiment gauge detail">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span><span class="sg-hint" aria-hidden="true">i</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #ef4444)">
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)">
               <span class="l-en">Ticking up — a little more nervous</span><span class="l-zh">小幅上行 — 略显紧张</span>
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:25.0%;background:var(--fg-col, #ef4444)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #ef4444)">25</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:49.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">49</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
               <span class="row-pop-name"><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span></span>
-              <span class="row-pop-tag dn"><span class="l-en">Fear</span><span class="l-zh">恐慌</span></span>
+              <span class="row-pop-tag warn"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
             </div>
             <div class="row-pop-div"></div>
-            <div class="sg-pop-dialwrap"><div class="sg-dial" style="--sg-c:#ef4444">
+            <div class="sg-pop-dialwrap"><div class="sg-dial" style="--sg-c:#f59e0b">
 <svg viewBox="0 0 132 74" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
 <path class="sg-dial-track" d="M14 64 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-45.0 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-1.8 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">25</div>
-<div class="sg-dial-cap">Fear</div>
+<div class="sg-dial-val">49</div>
+<div class="sg-dial-cap">Neutral</div>
 </div></div>
             <div class="sg-pop-expl">
               
@@ -9257,14 +9259,14 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linejoin="round" points="0.0,3.27 5.42,3.3 10.85,4.77 16.27,4.14 21.69,4.5 27.12,5.16 32.54,3.84 37.97,7.59 43.39,10.17 48.81,11.22 54.24,15.99 59.66,17.61 65.08,18.0 70.51,16.29 75.93,22.83 81.36,14.67 86.78,13.2 92.2,13.08 97.63,9.78 103.05,11.28 108.47,13.26 113.9,15.69 119.32,9.87 124.75,14.31 130.17,12.42 135.59,10.65 141.02,12.66 146.44,13.62 151.86,12.36 157.29,29.58 162.71,21.45 168.14,25.56 173.56,29.61 178.98,26.31 184.41,15.99 189.83,12.6 195.25,12.48 200.68,22.98 206.1,17.73 211.53,19.65 216.95,21.96 222.37,26.88 227.8,26.61 233.22,28.14 238.64,28.05 244.07,24.87 249.49,21.93 254.92,21.42 260.34,22.11 265.76,5.1 271.19,9.12 276.61,8.76 282.03,4.8 287.46,6.63 292.88,17.04 298.31,20.43 303.73,16.02 309.15,12.24 314.58,26.7 320.0,25.53 "/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,3.3 5.42,4.77 10.85,4.14 16.27,4.5 21.69,5.16 27.12,3.84 32.54,7.59 37.97,10.17 43.39,11.22 48.81,15.99 54.24,17.61 59.66,18.0 65.08,16.29 70.51,22.83 75.93,14.67 81.36,13.2 86.78,13.08 92.2,9.78 97.63,11.28 103.05,13.26 108.47,15.69 113.9,9.87 119.32,14.31 124.75,12.42 130.17,10.65 135.59,12.66 141.02,13.62 146.44,12.36 151.86,29.58 157.29,21.45 162.71,25.56 168.14,29.61 173.56,26.31 178.98,15.99 184.41,12.6 189.83,12.48 195.25,22.98 200.68,17.73 206.1,19.65 211.53,21.96 216.95,26.88 222.37,26.61 227.8,28.14 233.22,28.05 238.64,24.87 244.07,21.93 249.49,21.42 254.92,22.11 260.34,5.1 265.76,9.12 271.19,8.76 276.61,4.8 282.03,6.63 287.46,17.04 292.88,20.43 298.31,16.02 303.73,12.24 309.15,26.7 314.58,25.53 320.0,18.3 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 1.87 · 25/100 in its own history</span>
-              <span class="l-zh">读数：1.87 · 历史百分位 25/100</span>
+              <span class="l-en">Reading: -0.23 · 49/100 in its own history</span>
+              <span class="l-zh">读数：-0.23 · 历史百分位 49/100</span>
             </div>
           </span>
         </div>
@@ -9274,34 +9276,34 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
         
         
         
-        <div class="mx5-dlg-factor-row fg-neutral" style="--sg-c:#f59e0b" data-rpop tabindex="0" role="button" aria-label="VIX term structure (VIX/VIX3M) — sentiment gauge detail">
+        <div class="mx5-dlg-factor-row fg-greed" style="--sg-c:#22d97a" data-rpop tabindex="0" role="button" aria-label="VIX term structure (VIX/VIX3M) — sentiment gauge detail">
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span><span class="sg-hint" aria-hidden="true">i</span></div>
-            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #f59e0b)">
+            <div class="mx5-dlg-factor-read" style="color:var(--fg-col, #22d97a)">
               <span class="l-en">Near term calmer than later — steady</span><span class="l-zh">近期比远期更平静 — 稳定</span>
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:41.0%;background:var(--fg-col, #f59e0b)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">41</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:65.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">65</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
               <span class="row-pop-name"><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></span>
-              <span class="row-pop-tag warn"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="row-pop-tag up"><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
             </div>
             <div class="row-pop-div"></div>
-            <div class="sg-pop-dialwrap"><div class="sg-dial" style="--sg-c:#f59e0b">
+            <div class="sg-pop-dialwrap"><div class="sg-dial" style="--sg-c:#22d97a">
 <svg viewBox="0 0 132 74" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
 <path class="sg-dial-track" d="M14 64 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-16.2 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(27.0 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">41</div>
-<div class="sg-dial-cap">Neutral</div>
+<div class="sg-dial-val">65</div>
+<div class="sg-dial-cap">Greed</div>
 </div></div>
             <div class="sg-pop-expl">
               
@@ -9319,14 +9321,14 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,18.18 5.42,14.76 10.85,12.96 16.27,13.47 21.69,16.5 27.12,8.91 32.54,7.95 37.97,13.23 43.39,8.04 48.81,9.6 54.24,8.64 59.66,8.52 65.08,12.63 70.51,11.13 75.93,9.3 81.36,7.2 86.78,12.3 92.2,10.59 97.63,11.13 103.05,8.7 108.47,8.43 113.9,7.89 119.32,11.16 124.75,8.37 130.17,6.75 135.59,6.48 141.02,6.99 146.44,5.31 151.86,5.64 157.29,4.71 162.71,28.65 168.14,20.04 173.56,22.95 178.98,27.36 184.41,19.65 189.83,12.21 195.25,8.28 200.68,8.79 206.1,17.55 211.53,8.49 216.95,14.28 222.37,22.08 227.8,20.67 233.22,22.56 238.64,20.64 244.07,19.08 249.49,12.75 254.92,12.75 260.34,10.05 265.76,7.35 271.19,10.08 276.61,13.2 282.03,7.98 287.46,5.34 292.88,14.16 298.31,11.16 303.73,7.32 309.15,11.64 314.58,20.55 320.0,20.64 "/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,14.76 5.42,12.96 10.85,13.47 16.27,16.5 21.69,8.91 27.12,7.95 32.54,13.23 37.97,8.04 43.39,9.6 48.81,8.64 54.24,8.52 59.66,12.63 65.08,11.13 70.51,9.3 75.93,7.2 81.36,12.3 86.78,10.59 92.2,11.13 97.63,8.7 103.05,8.43 108.47,7.89 113.9,11.16 119.32,8.37 124.75,6.75 130.17,6.48 135.59,6.99 141.02,5.31 146.44,5.64 151.86,4.71 157.29,28.65 162.71,20.04 168.14,22.95 173.56,27.36 178.98,19.65 184.41,12.21 189.83,8.28 195.25,8.79 200.68,17.55 206.1,8.49 211.53,14.28 216.95,22.08 222.37,20.67 227.8,22.56 233.22,20.64 238.64,19.08 244.07,12.75 249.49,12.75 254.92,10.05 260.34,7.35 265.76,10.08 271.19,13.2 276.61,7.98 282.03,5.34 287.46,14.16 292.88,11.16 298.31,7.32 303.73,11.64 309.15,20.55 314.58,20.64 320.0,13.62 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 0.914 · 41/100 in its own history</span>
-              <span class="l-zh">读数：0.914 · 历史百分位 41/100</span>
+              <span class="l-en">Reading: 0.87 · 65/100 in its own history</span>
+              <span class="l-zh">读数：0.87 · 历史百分位 65/100</span>
             </div>
           </span>
         </div>
@@ -9540,26 +9542,26 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
         
         
         
-        <div class="mx5-dlg-factor-row vsb-vw-row" data-vsb-chip="vix_level" style="--sg-wx-c:var(--warn,#f59e0b)">
-          <div class="sg-wx" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h10a3 3 0 1 0-2.9-3.8"/><path d="M4 12h14a3 3 0 1 1-2.9 3.8"/><path d="M6 16h9a2.4 2.4 0 1 1-2.3 3"/></svg></div>
+        <div class="mx5-dlg-factor-row vsb-vw-row" data-vsb-chip="vix_level" style="--sg-wx-c:var(--info,#4d8ef5)">
+          <div class="sg-wx" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h9a2.5 2.5 0 1 0-2.4-3.2"/><path d="M4 13h13a2.5 2.5 0 1 1-2.4 3.2"/><path d="M4 17h7"/></svg></div>
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Volatility is in a normal range. &middot; higher than 70% of days</span>
-              <span class="l-zh">波动率处于正常区间。 &middot; 高于历史 70% 的交易日</span>
+              <span class="l-en">Volatility is in a normal range. &middot; lower than 51% of days</span>
+              <span class="l-zh">波动率处于正常区间。 &middot; 低于历史 51% 的交易日</span>
             </div>
             
           </div>
           <div class="sg-pos-wrap">
             
-            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:70%"></span></div>
+            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:49%"></span></div>
             <div class="sg-pos-axis"><span><span class="l-en">Low</span><span class="l-zh">低</span></span><span><span class="l-en">High</span><span class="l-zh">高</span></span></div>
             
           </div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            18.6
+            17.0
             
           </div>
         </div>
@@ -9578,20 +9580,20 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX velocity (5d change)</span><span class="l-zh">VIX 速度（5日变动）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Volatility change is within normal daily variation. &middot; higher than 80% of days</span>
-              <span class="l-zh">波动率变化处于正常日常波动范围内。 &middot; 高于历史 80% 的交易日</span>
+              <span class="l-en">Volatility change is within normal daily variation. &middot; higher than 63% of days</span>
+              <span class="l-zh">波动率变化处于正常日常波动范围内。 &middot; 高于历史 63% 的交易日</span>
             </div>
             
           </div>
           <div class="sg-pos-wrap">
             
-            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:80%"></span></div>
+            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:63%"></span></div>
             <div class="sg-pos-axis"><span><span class="l-en">Low</span><span class="l-zh">低</span></span><span><span class="l-en">High</span><span class="l-zh">高</span></span></div>
             
           </div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            1.49
+            0.55
             
           </div>
         </div>
@@ -9604,26 +9606,26 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
         
         
         
-        <div class="mx5-dlg-factor-row vsb-vw-row" data-vsb-chip="term_slope" style="--sg-wx-c:var(--warn,#f59e0b)">
-          <div class="sg-wx" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h10a3 3 0 1 0-2.9-3.8"/><path d="M4 12h14a3 3 0 1 1-2.9 3.8"/><path d="M6 16h9a2.4 2.4 0 1 1-2.3 3"/></svg></div>
+        <div class="mx5-dlg-factor-row vsb-vw-row" data-vsb-chip="term_slope" style="--sg-wx-c:var(--info,#4d8ef5)">
+          <div class="sg-wx" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h9a2.5 2.5 0 1 0-2.4-3.2"/><path d="M4 13h13a2.5 2.5 0 1 1-2.4 3.2"/><path d="M4 17h7"/></svg></div>
           <div>
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX term slope (9D / 3M)</span><span class="l-zh">VIX 期限斜率（9D / 3M）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Term structure is normal — vol market shows no unusual stress. &middot; higher than 77% of days</span>
-              <span class="l-zh">期限结构正常，波动率市场无异常压力。 &middot; 高于历史 77% 的交易日</span>
+              <span class="l-en">Term structure is normal — vol market shows no unusual stress. &middot; higher than 58% of days</span>
+              <span class="l-zh">期限结构正常，波动率市场无异常压力。 &middot; 高于历史 58% 的交易日</span>
             </div>
             
           </div>
           <div class="sg-pos-wrap">
             
-            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:77%"></span></div>
+            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:58%"></span></div>
             <div class="sg-pos-axis"><span><span class="l-en">Low</span><span class="l-zh">低</span></span><span><span class="l-en">High</span><span class="l-zh">高</span></span></div>
             
           </div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            0.872
+            0.79
             
           </div>
         </div>
@@ -9859,7 +9861,7 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
           <span><span class="l-en">Sentiment context only — display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.</span><span class="l-zh">仅为情绪参考 — 公开市场指标的仅展示合成。不计分，不进入周期引擎，无前瞻性判断。贪婪/恐惧读数若无周期背景，不构成反向信号。</span></span>
           
           
-          <span class="sg-foot-asof" style="margin-left:auto"><span class="l-en">As of 2026-07-20</span><span class="l-zh">数据日期 2026-07-20</span></span>
+          <span class="sg-foot-asof" style="margin-left:auto"><span class="l-en">As of 2026-07-21</span><span class="l-zh">数据日期 2026-07-21</span></span>
           
         </div>
         
@@ -9952,7 +9954,7 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
             <span class="mx5-dlg-sector-arr cool">&#9660;</span>
             <span class="mx5-dlg-sector-name"><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-3<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-4<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
           </div>
           
@@ -9961,7 +9963,7 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
             <span class="mx5-dlg-sector-arr cool">&#9660;</span>
             <span class="mx5-dlg-sector-name"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-3<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-4<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
           </div>
           
@@ -9970,7 +9972,7 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
             <span class="mx5-dlg-sector-arr cool">&#9660;</span>
             <span class="mx5-dlg-sector-name"><span class="l-en">Financials (Equal-Weight)</span><span class="l-zh">金融（等权）</span></span>
             
-            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-5<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
+            <span class="mx5-dlg-sector-rk" style="color:rgba(239,68,68,.7)">-4<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
             
           </div>
           
@@ -11800,9 +11802,9 @@ That unwind is not happening in isolation. The bond market&#39;s credit spreads 
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-21 22:44 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-21 23:08 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-21 22:44 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-21 23:08 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
