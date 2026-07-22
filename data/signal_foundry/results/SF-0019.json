@@ -1,0 +1,154 @@
+{
+  "spec": {
+    "id": "SF-0019",
+    "name": "Mortgage-Treasury transmission wedge",
+    "name_zh": "\u623f\u8d37\u56fd\u503a\u4f20\u5bfc\u6954\u5b50",
+    "market": "US macro",
+    "thesis": "A rapid widening of the thirty-year mortgage rate over the ten-year Treasury yield predicts SPY drawdown onset because housing credit is tightening beyond the move in the risk-free curve.",
+    "mechanism": "The mortgage-minus-Treasury spread is a proxy for duration, convexity, and intermediation costs embedded in household borrowing; a sharp widening restrains housing turnover and construction while signaling constrained lender balance sheets, creating a slower earnings and credit drag on equities.",
+    "seed_provenance": {
+      "source": "engine/signal_lab.py",
+      "ref": "SPVector diversified sleeves (SPY + duration)"
+    },
+    "data": [
+      {
+        "path": "data/fred/MORTGAGE30US.parquet",
+        "column": "mortgage_30y",
+        "pit": "release_lag"
+      },
+      {
+        "path": "data/fred/DGS10.parquet",
+        "column": "us10y",
+        "pit": "clean"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "spread",
+          {}
+        ],
+        [
+          "diff",
+          {
+            "n": 4
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 260
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 2
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "drawdown_onset",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "flat",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This is a household-credit transmission wedge rather than a Treasury yield level, yield-curve slope, high-yield spread, repo-rate dispersion measure, or duration allocation rule.",
+    "evidence_note": "Fuster and coauthors (2013) show that widening mortgage intermediation spreads contain information about capacity constraints; intermediary-balance-sheet research links such constraints to broader asset-risk premia.",
+    "registered_at": "2026-07-22",
+    "construction_hash": "18bd1513c04fd4adf735",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-22T07:22:53+00:00",
+    "iso_week": "2026-W30",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 1710,
+    "effective_months": 400,
+    "full_ic": 0.0045,
+    "hac": {
+      "mean": 0.15748,
+      "se": 0.0509,
+      "t": 3.094,
+      "p": 0.002,
+      "n": 28
+    },
+    "split_half": {
+      "h1_ic": -0.0374,
+      "h2_ic": 0.0501,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": -0.0352,
+      "post_ic": 0.0486,
+      "era_n_pre": 862,
+      "era_n_post": 848,
+      "sign_flip": true
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.0539,
+      "ci_97p5": 0.0652,
+      "boot_mean": 0.0056,
+      "n_draws": 200,
+      "block_size": 41,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.1891,
+      "sr_daily": 0.185362,
+      "sr_annual": 2.94,
+      "sr0_daily": 0.349234,
+      "sr0_annual": 5.54,
+      "n_trials": 19,
+      "T": 28,
+      "skew": 0.407,
+      "kurt": 2.067,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.08,
+      "obs_ic": 0.0045,
+      "placebo_pct_ge_abs_obs": 0.92,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.0696,
+      "obs_ic_same_window": 0.0064,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "era_specific",
+  "verdict_reasons": [
+    "era split sign flip: pre_2010 IC=-0.0352, post_2010 IC=0.0486 (DT-R16)"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-22",
+  "ledger_n_at_run": 19
+}

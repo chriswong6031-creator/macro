@@ -1,0 +1,170 @@
+{
+  "spec": {
+    "id": "SF-0021",
+    "name": "Housing authorization replenishment gap",
+    "name_zh": "\u4f4f\u623f\u8bb8\u53ef\u8865\u5145\u7f3a\u53e3",
+    "market": "US macro",
+    "thesis": "A falling permits-to-starts ratio predicts weaker medium-horizon SPY returns because new authorizations are no longer replenishing current residential construction activity.",
+    "mechanism": "Building permits represent the authorized pipeline while housing starts represent projects entering production; a sustained decline in their smoothed ratio indicates that the forward project queue is thinning relative to present activity, foreshadowing weaker residential investment and cyclical demand.",
+    "seed_provenance": {
+      "source": "engine/signal_lab.py",
+      "ref": "Constructive-base scanner (IBD pivot)"
+    },
+    "data": [
+      {
+        "path": "data/fred/PERMIT.parquet",
+        "column": "building_permits",
+        "pit": "release_lag"
+      },
+      {
+        "path": "data/fred/HOUST.parquet",
+        "column": "housing_starts",
+        "pit": "release_lag"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "ratio",
+          {}
+        ],
+        [
+          "sma",
+          {
+            "window": 3
+          }
+        ],
+        [
+          "diff",
+          {
+            "n": 3
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 120
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 2
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "absolute_return",
+      "horizon_d": 126
+    },
+    "universe": "single_series",
+    "baseline": "buy_and_hold",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This is a non-price authorization-to-activity stock-flow measure; it does not reuse technical pivot proximity, house-price momentum, mortgage-rate changes, or the claims-based recession composite.",
+    "evidence_note": "Leamer (2007) documents housing's leading role in the business cycle, and building permits are a longstanding leading-indicator component because authorization precedes construction spending.",
+    "registered_at": "2026-07-22",
+    "construction_hash": "d937d4c0e1a0c218133c",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-22T07:22:53+00:00",
+    "iso_week": "2026-W30",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 255,
+    "effective_months": 255,
+    "full_ic": 0.0246,
+    "hac": {
+      "mean": null,
+      "se": null,
+      "t": null,
+      "p": null,
+      "n": 3
+    },
+    "split_half": {
+      "h1_ic": 0.0964,
+      "h2_ic": -0.0474,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": 0.0999,
+      "post_ic": -0.0573,
+      "era_n_pre": 130,
+      "era_n_post": 125,
+      "sign_flip": true
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.0801,
+      "ci_97p5": 0.1213,
+      "boot_mean": 0.0226,
+      "n_draws": 200,
+      "block_size": 15,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.5898,
+      "sr_daily": 0.155686,
+      "sr_annual": 2.47,
+      "sr0_daily": 0.139245,
+      "sr0_annual": 2.21,
+      "n_trials": 21,
+      "T": 255,
+      "skew": -1.601,
+      "kurt": 14.821,
+      "dsr_series": "strategy_net_return"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.225,
+      "obs_ic": 0.0246,
+      "placebo_pct_ge_abs_obs": 0.775,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.1305,
+      "obs_ic_same_window": 0.0967,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {
+    "net_sharpe": 2.471,
+    "gross_sharpe": 2.588,
+    "hold_sharpe": 4.367,
+    "cagr_net": 3.099,
+    "cagr_gross": 3.4285,
+    "max_dd": -0.3755,
+    "cost_bps": 8.0,
+    "baseline": "buy_and_hold",
+    "years": 32.83
+  },
+  "verdict": "insufficient_power",
+  "verdict_reasons": [
+    "n_obs=255 < 25 or HAC t unavailable"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-22",
+  "ledger_n_at_run": 21
+}

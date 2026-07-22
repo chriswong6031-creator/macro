@@ -73,3 +73,7 @@
 {"ts": "2026-07-20T04:04:57+00:00", "lane": "both", "iteration": 1, "results": {}, "stop_reason": "budget_gate (iteration 1): budget:primary:86.0%"}
 {"ts": "2026-07-20T07:29:38+00:00", "lane": "both", "iteration": 1, "results": {}, "stop_reason": "budget_gate (iteration 1): budget:primary:86.0%"}
 {"ts": "2026-07-20T11:14:45+00:00", "lane": "both", "iteration": 1, "results": {}, "stop_reason": "budget_gate (iteration 1): budget:primary:87.0%"}
+{"ts": "2026-07-22T07:22:57+00:00", "lane": "signals", "iteration": 1, "results": {"signals": {"ok": true, "action": "brainstorm_done", "detail": "specs=5 admitted=5 rejected=0", "n_admitted": 5, "n_rejected": 0}}, "stop_reason": null}
+{"ts": "2026-07-22T07:22:58+00:00", "lane": "signals", "iteration": 2, "results": {"signals": {"ok": true, "action": "weekly_cap_reached", "detail": "SF-R6: 5/5 filed this ISO week", "n_admitted": 0, "n_rejected": 0}}, "stop_reason": null}
+{"ts": "2026-07-22T07:22:58+00:00", "lane": "signals", "iteration": 3, "results": {"signals": {"ok": true, "action": "weekly_cap_reached", "detail": "SF-R6: 5/5 filed this ISO week", "n_admitted": 0, "n_rejected": 0}}, "stop_reason": null}
+{"ts": "2026-07-22T07:22:58+00:00", "lane": "signals", "iteration": 4, "results": {}, "stop_reason": "no_progress (2 consecutive unproductive iterations)"}

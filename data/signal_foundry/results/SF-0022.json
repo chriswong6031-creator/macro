@@ -1,0 +1,154 @@
+{
+  "spec": {
+    "id": "SF-0022",
+    "name": "Household-model inflation disagreement",
+    "name_zh": "\u5bb6\u5ead\u4e0e\u6a21\u578b\u901a\u80c0\u5206\u6b67",
+    "market": "US macro",
+    "thesis": "Widening household one-year inflation expectations relative to model-based one-year expectations predicts higher forward SPY volatility because disagreement amplifies consumption, wage-setting, and policy uncertainty.",
+    "mechanism": "Subtracting the model-based one-year expectation from the Michigan household survey isolates cross-agent disagreement rather than the common inflation level; persistent positive gaps indicate that household decisions are being made under a more inflationary view than the financial-model benchmark, increasing uncertainty around demand and policy transmission.",
+    "seed_provenance": {
+      "source": "engine/signal_lab.py",
+      "ref": "SPVector diversified sleeves (SPY + duration)"
+    },
+    "data": [
+      {
+        "path": "data/fred/MICH.parquet",
+        "column": "umich_infl_exp",
+        "pit": "release_lag"
+      },
+      {
+        "path": "data/fred/EXPINF1YR.parquet",
+        "column": "infl_exp_1y",
+        "pit": "proxy"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "spread",
+          {}
+        ],
+        [
+          "sma",
+          {
+            "window": 3
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 120
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 2
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "forward_vol",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "flat",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This is cross-agent inflation disagreement, not an inflation level, sticky-versus-flexible composition, breakeven-curve twist, sentiment extreme, or stock-bond allocation rule.",
+    "evidence_note": "Mankiw, Reis, and Wolfers (2004) document economically meaningful inflation-expectation disagreement; disagreement and uncertainty provide a basis for testing subsequent risk-premium and volatility effects.",
+    "registered_at": "2026-07-22",
+    "construction_hash": "ea3291aa18938d3b4e04",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-22T07:22:53+00:00",
+    "iso_week": "2026-W30",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 256,
+    "effective_months": 256,
+    "full_ic": 0.0603,
+    "hac": {
+      "mean": null,
+      "se": null,
+      "t": null,
+      "p": null,
+      "n": 5
+    },
+    "split_half": {
+      "h1_ic": -0.2025,
+      "h2_ic": 0.2581,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": -0.202,
+      "post_ic": 0.2552,
+      "era_n_pre": 130,
+      "era_n_post": 126,
+      "sign_flip": true
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.2487,
+      "ci_97p5": 0.371,
+      "boot_mean": 0.0542,
+      "n_draws": 200,
+      "block_size": 16,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.0158,
+      "sr_daily": -0.104152,
+      "sr_annual": -1.65,
+      "sr0_daily": 0.980355,
+      "sr0_annual": 15.56,
+      "n_trials": 22,
+      "T": 5,
+      "skew": 0.17,
+      "kurt": 1.473,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.205,
+      "obs_ic": 0.0603,
+      "placebo_pct_ge_abs_obs": 0.795,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.1301,
+      "obs_ic_same_window": 0.0201,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "insufficient_power",
+  "verdict_reasons": [
+    "n_obs=256 < 25 or HAC t unavailable"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-22",
+  "ledger_n_at_run": 22
+}

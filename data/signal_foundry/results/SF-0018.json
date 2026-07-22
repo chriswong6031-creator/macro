@@ -1,0 +1,160 @@
+{
+  "spec": {
+    "id": "SF-0018",
+    "name": "Equity-duration hedge instability",
+    "name_zh": "\u80a1\u503a\u5bf9\u51b2\u4e0d\u7a33\u5b9a\u6027",
+    "market": "US macro",
+    "thesis": "Rising volatility in daily SPY-to-TLT relative returns predicts higher near-term SPY volatility because an unstable equity-duration hedge induces broader risk-budget cuts.",
+    "mechanism": "The SPY-to-TLT ratio isolates relative equity-versus-duration performance; volatility of its daily changes rises when the conventional duration hedge becomes unreliable, prompting leveraged portfolios to reduce aggregate exposure and propagating volatility into equities.",
+    "seed_provenance": {
+      "source": "engine/signal_lab.py",
+      "ref": "SPVector diversified sleeves (SPY + duration)"
+    },
+    "data": [
+      {
+        "path": "data/yahoo/SPY.parquet",
+        "column": "close",
+        "pit": "clean"
+      },
+      {
+        "path": "data/yahoo/TLT.parquet",
+        "column": "close",
+        "pit": "clean"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "ratio",
+          {}
+        ],
+        [
+          "pct_change",
+          {
+            "n": 1
+          }
+        ],
+        [
+          "rolling_vol",
+          {
+            "window": 63
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 504
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 1
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "forward_vol",
+      "horizon_d": 21
+    },
+    "universe": "single_series",
+    "baseline": "flat",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This forecasts equity variance from instability in the equity-duration hedge pair; it neither adds a Treasury allocation sleeve nor duplicates the bond-health level gauge, stock-price trend, or an inflation regime label.",
+    "evidence_note": "Baele, Bekaert, and Inghelbrecht (2010) document time-varying stock-bond comovement, while the volatility-clustering literature supports persistence in cross-asset relative-return turbulence.",
+    "registered_at": "2026-07-22",
+    "construction_hash": "d3692e04f81bfd75a803",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-22T07:22:53+00:00",
+    "iso_week": "2026-W30",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 5869,
+    "effective_months": 281,
+    "full_ic": 0.3631,
+    "hac": {
+      "mean": 0.40808,
+      "se": 0.16988,
+      "t": 2.402,
+      "p": 0.0163,
+      "n": 280
+    },
+    "split_half": {
+      "h1_ic": 0.3722,
+      "h2_ic": 0.3318,
+      "split_half_sign_flip": false
+    },
+    "era_split": {
+      "pre_ic": 0.4276,
+      "post_ic": 0.3302,
+      "era_n_pre": 1729,
+      "era_n_post": 4140,
+      "sign_flip": false
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": 0.2633,
+      "ci_97p5": 0.451,
+      "boot_mean": 0.3616,
+      "n_draws": 200,
+      "block_size": 21,
+      "ci_straddles_0": false
+    },
+    "dsr": {
+      "dsr": 1.0,
+      "sr_daily": 0.257212,
+      "sr_annual": 4.08,
+      "sr0_daily": 0.051232,
+      "sr0_annual": 0.81,
+      "n_trials": 18,
+      "T": 280,
+      "skew": 6.732,
+      "kurt": 58.114,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.99,
+      "obs_ic": 0.3631,
+      "placebo_pct_ge_abs_obs": 0.01,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": 0.5667,
+      "obs_ic_same_window": 0.3649,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "null",
+  "verdict_reasons": [
+    "negative-lag placebo fires: future-shifted IC 0.5667 >= observed IC 0.3649 \u2014 reverse-causation concern"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-22",
+  "ledger_n_at_run": 18
+}

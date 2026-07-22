@@ -1,0 +1,151 @@
+{
+  "spec": {
+    "id": "SF-0020",
+    "name": "Supplier-delivery bottleneck persistence",
+    "name_zh": "\u4f9b\u5e94\u4ea4\u4ed8\u74f6\u9888\u6301\u7eed\u6027",
+    "market": "US macro",
+    "thesis": "Persistent acceleration in supplier delivery times predicts SPY drawdown onset because bottlenecks raise working-capital needs and inflation pressure before earnings fully absorb the margin damage.",
+    "mechanism": "The Philadelphia Fed delivery-time diffusion index rises when manufacturers report longer waits; smoothing and differencing it isolates a sustained bottleneck acceleration that can restrict output, delay revenue recognition, and lift input and financing costs.",
+    "seed_provenance": {
+      "source": "engine/signal_lab.py",
+      "ref": "Commodity carry as single-asset timing"
+    },
+    "data": [
+      {
+        "path": "data/fred/DTCISA156MSFRBPHI.parquet",
+        "column": "deliv_time_philly",
+        "pit": "release_lag"
+      }
+    ],
+    "feature": {
+      "pipeline": [
+        [
+          "ema",
+          {
+            "span": 3
+          }
+        ],
+        [
+          "diff",
+          {
+            "n": 3
+          }
+        ],
+        [
+          "zscore",
+          {
+            "window": 120
+          }
+        ],
+        [
+          "lag",
+          {
+            "n": 2
+          }
+        ]
+      ]
+    },
+    "target": {
+      "path": "data/yahoo/SPY.parquet",
+      "kind": "drawdown_onset",
+      "horizon_d": 63
+    },
+    "universe": "single_series",
+    "baseline": "flat",
+    "gates": {
+      "min_t_hac": 2.0,
+      "fdr_q": 0.1,
+      "dsr": 0.9
+    },
+    "horizon_role": "swing",
+    "orthogonality_note": "This measures reported physical supply-chain delay rather than commodity carry, commodity price trend, inflation compensation, manufacturing backlog liquidation, or a broad macro regime composite.",
+    "evidence_note": "Benigno and coauthors' global supply-chain-pressure work uses delivery-time information to identify bottlenecks, and the related empirical literature links those bottlenecks to output restraint and inflation pressure.",
+    "registered_at": "2026-07-22",
+    "construction_hash": "d9407c51587284457ac8",
+    "gates_hash": "20ff1fd34b1c7546",
+    "status": "registered",
+    "proposed_at": "2026-07-22T07:22:53+00:00",
+    "iso_week": "2026-W30",
+    "provenance": {
+      "generator": "codex_chatgpt"
+    },
+    "screen_result": {
+      "verdict": "admitted",
+      "gates_passed": [
+        "data_path_tracked",
+        "pit_plan",
+        "sample_5y",
+        "baseline_named",
+        "novelty",
+        "orthogonality_noted",
+        "evidence_noted"
+      ],
+      "gates_failed": []
+    }
+  },
+  "stats": {
+    "n_obs": 256,
+    "effective_months": 256,
+    "full_ic": -0.0469,
+    "hac": {
+      "mean": null,
+      "se": null,
+      "t": null,
+      "p": null,
+      "n": 5
+    },
+    "split_half": {
+      "h1_ic": 0.0223,
+      "h2_ic": -0.1068,
+      "split_half_sign_flip": true
+    },
+    "era_split": {
+      "pre_ic": 0.0113,
+      "post_ic": -0.1013,
+      "era_n_pre": 130,
+      "era_n_post": 126,
+      "sign_flip": true
+    },
+    "block_bootstrap_ci": {
+      "ci_2p5": -0.1497,
+      "ci_97p5": 0.0783,
+      "boot_mean": -0.0428,
+      "n_draws": 200,
+      "block_size": 16,
+      "ci_straddles_0": true
+    },
+    "dsr": {
+      "dsr": 0.1909,
+      "sr_daily": 0.622142,
+      "sr_annual": 9.88,
+      "sr0_daily": 1.152307,
+      "sr0_annual": 18.29,
+      "n_trials": 20,
+      "T": 5,
+      "skew": -0.676,
+      "kurt": 1.512,
+      "dsr_series": "z_product_ic_proxy"
+    }
+  },
+  "placebos": {
+    "time_shift": {
+      "shift_pctile": 0.445,
+      "obs_ic": -0.0469,
+      "placebo_pct_ge_abs_obs": 0.555,
+      "n_draws": 200
+    },
+    "negative_lag": {
+      "neg_lag_ic": -0.0117,
+      "obs_ic_same_window": 0.0012,
+      "neg_dominates": true
+    }
+  },
+  "backtest": {},
+  "verdict": "insufficient_power",
+  "verdict_reasons": [
+    "n_obs=256 < 25 or HAC t unavailable"
+  ],
+  "battery_version": "sf-battery-1",
+  "ran_at": "2026-07-22",
+  "ledger_n_at_run": 20
+}
