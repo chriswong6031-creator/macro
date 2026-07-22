@@ -67,6 +67,21 @@ _STAGES_ALLOWED = {"full", "sense", "through-adjudicate"}
 _LOBE_RE = re.compile(r"^[a-z0-9-]{0,40}$")
 
 
+def _read_var(name: str, vars_cache: dict | None) -> str | None:
+    """Read a repo variable, preferring a pre-fetched batch dict.
+
+    When vars_cache is a dict, the value is served from it (a batched
+    list_repo_variables() call made once per panel() request), avoiding a
+    per-variable API round-trip.  When vars_cache is None — the default for
+    direct throttle()/_run_until_value() callers and tests that mock only
+    get_repo_variable — the read falls through to the single-variable getter,
+    preserving the original per-call behaviour exactly.
+    """
+    if vars_cache is not None:
+        return vars_cache.get(name)
+    return github_api.get_repo_variable(name)
+
+
 def _armed_state(variable_value: str | None) -> tuple[bool, str]:
     """Return (armed: bool, state: str) from a raw variable value.
 
@@ -190,18 +205,22 @@ def _freezes_7d() -> int:
 # V10 Throttle & Key Economy
 # ---------------------------------------------------------------------------
 
-def throttle(root: Path | None = None) -> dict:  # noqa: ARG001
+def throttle(root: Path | None = None,
+             vars_cache: dict | None = None) -> dict:  # noqa: ARG001
     """Return the current METAB_* throttle variable state.
 
     Reads METAB_INTENSITY, METAB_PACE, METAB_KEYS_ENABLED from GitHub repo
-    variables (fail-soft: each None-tolerates).  Resolves effective values
-    via engine.metabolism.throttle helpers (guarded import; fails to defaults
-    + note string).  Never raises.
+    variables (fail-soft: each None-tolerates).  When vars_cache is supplied
+    (a batched list_repo_variables() dict from panel()), the three reads come
+    from it instead of three separate API calls; when None, each falls through
+    to github_api.get_repo_variable (preserving direct-caller/test behaviour).
+    Resolves effective values via engine.metabolism.throttle helpers (guarded
+    import; fails to defaults + note string).  Never raises.
     """
-    # Read raw variable values from GitHub — each None when absent/error.
-    intensity_raw = github_api.get_repo_variable("METAB_INTENSITY")
-    pace_raw = github_api.get_repo_variable("METAB_PACE")
-    keys_raw = github_api.get_repo_variable("METAB_KEYS_ENABLED")
+    # Read raw variable values — each None when absent/error.
+    intensity_raw = _read_var("METAB_INTENSITY", vars_cache)
+    pace_raw = _read_var("METAB_PACE", vars_cache)
+    keys_raw = _read_var("METAB_KEYS_ENABLED", vars_cache)
 
     # Resolve effective values via throttle engine helpers.
     engine_note: str | None = None
@@ -519,13 +538,15 @@ def _budget_status(root: Path | None = None) -> dict | None:
         return None
 
 
-def _run_until_value(root: Path | None = None) -> str:  # noqa: ARG001
+def _run_until_value(root: Path | None = None,
+                     vars_cache: dict | None = None) -> str:  # noqa: ARG001
     """Return the current METAB_RUN_UNTIL repo variable value.
 
+    Reads from vars_cache when supplied (batched), else via get_repo_variable.
     Returns "off" when absent or unreadable.  Never raises.
     """
     try:
-        v = github_api.get_repo_variable("METAB_RUN_UNTIL")
+        v = _read_var("METAB_RUN_UNTIL", vars_cache)
         if v in _RUNUNTIL_ALLOWED:
             return v
         return "off"
@@ -554,17 +575,24 @@ def panel(root: Path | None = None) -> dict:
     """
     try:
         has_token = bool(github_api.token())
-        variable_value = github_api.get_repo_variable(_VAR_NAME)
+        # Batch all repo-variable reads into ONE API call.  This panel reads
+        # AUTONOMY_PAUSED, METAB_INTENSITY, METAB_PACE, METAB_KEYS_ENABLED and
+        # METAB_RUN_UNTIL — previously 5 sequential get_repo_variable() round
+        # trips.  list_repo_variables() returns None on no-token / API error,
+        # in which case every _read_var() falls back to the single-variable
+        # getter (identical behaviour, just un-batched).
+        vars_cache = github_api.list_repo_variables()
+        variable_value = _read_var(_VAR_NAME, vars_cache)
         armed, state = _armed_state(variable_value)
         # Fetch enough runs to feed the duration calculator (needs completed cycle runs)
         runs = _recent_metabolism_runs(cap=15)
         organism = _organism_summary()
         key_health = _key_health(root)
         freezes = _freezes_7d()
-        throttle_data = throttle(root)
+        throttle_data = throttle(root, vars_cache=vars_cache)
         loop_dur = _median_cycle_duration(runs)
         budget_st = _budget_status(root)
-        run_until_val = _run_until_value(root)
+        run_until_val = _run_until_value(root, vars_cache=vars_cache)
 
         return {
             "variable_value": variable_value,

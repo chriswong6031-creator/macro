@@ -19,6 +19,13 @@ except Exception:  # noqa: BLE001
 
 _API = "https://api.supabase.com/v1"
 
+# Exclude soft-deleted, banned, and anonymous rows from every roster count so the
+# primary totals reflect real, active accounts. deleted_at (soft-delete),
+# banned_until (temp/perm bans), and is_anonymous are the three auth.users flags.
+_ACTIVE = ("deleted_at is null "
+           "and coalesce(is_anonymous, false) = false "
+           "and (banned_until is null or banned_until < now())")
+
 
 def status() -> dict:
     pat = settings.supabase_pat()
@@ -67,15 +74,27 @@ def summary() -> dict:
             "count(*) filter (where last_sign_in_at > now() - interval '7 days')::int as active_7d, "
             "count(*) filter (where email_confirmed_at is not null)::int as confirmed, "
             "max(created_at) as newest "
-            "from auth.users")
+            f"from auth.users where {_ACTIVE}")
+        # Excluded (banned/anon/deleted) surfaced separately — never folded into totals.
+        excluded = _query(
+            f"select count(*)::int as excluded from auth.users where not ({_ACTIVE})")
+        # Zero-filled 30-day calendar: a generate_series scaffold LEFT JOINed to the
+        # per-day counts, so every day 0..29 appears (n=0 where none) and gap days
+        # can't shift later bars left.
         series = _query(
-            "select to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as day, "
-            "count(*)::int as n from auth.users "
-            "where created_at > now() - interval '30 days' group by 1 order by 1")
+            "select to_char(d.day, 'YYYY-MM-DD') as day, coalesce(c.n, 0)::int as n "
+            "from generate_series("
+            "date_trunc('day', now()) - interval '29 days', "
+            "date_trunc('day', now()), interval '1 day') as d(day) "
+            "left join (select date_trunc('day', created_at) as day, count(*)::int as n "
+            f"from auth.users where {_ACTIVE} "
+            "and created_at > now() - interval '30 days' group by 1) as c "
+            "on c.day = d.day order by d.day")
         providers = _query(
             "select coalesce(raw_app_meta_data->>'provider','email') as provider, "
-            "count(*)::int as n from auth.users group by 1 order by 2 desc")
+            f"count(*)::int as n from auth.users where {_ACTIVE} group by 1 order by 2 desc")
         return {"ok": True, "summary": (agg or [{}])[0],
+                "excluded": (excluded or [{}])[0].get("excluded", 0),
                 "signups_daily": series or [], "providers": providers or []}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
@@ -92,7 +111,7 @@ def recent(limit: int = 30) -> dict:
             "to_char(created_at,'YYYY-MM-DD HH24:MI') as created_at, "
             "to_char(last_sign_in_at,'YYYY-MM-DD HH24:MI') as last_sign_in_at, "
             "(email_confirmed_at is not null) as confirmed "
-            f"from auth.users order by created_at desc limit {n}")
+            f"from auth.users where {_ACTIVE} order by created_at desc limit {n}")
         return {"ok": True, "users": rows or []}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
