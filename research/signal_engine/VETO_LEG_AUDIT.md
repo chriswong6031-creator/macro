@@ -121,3 +121,65 @@ closed-week discipline at Friday's close → strict `W+` then. dd252 = −67% (a
 bucket: watch, don't chase; a −5% stop on current CRCL bar-width is near-certain to wick).
 Separately, CRCL is outside the S&P 1500 and thus outside the alpha panel entirely — universe
 admission is Lane A of this program and is required before *any* shelf could show it.
+
+---
+
+# Addendum — washout trigger-ladder study (operator directive 2026-07-22)
+
+Operator ruling on the shelf proposal: **YES to washout surfacing, NO to a separate
+display-only board — integrate into the existing standouts board's WAIT (watch) lane**, with
+1W-crossover indication and a 2W crossover as a higher tier. Open design question raised: even
+the 2D MACD cross felt ~20% late on CRCL — can the bottom be called earlier (fixed % bounce?
+beta/Sharpe normalization?).
+
+**First-principles frame.** A bottom cannot be known before demand shows; the earliest honest
+EOD evidence is the first demand print. So the right shape is STATE + TRIGGER LADDER: the
+washout state (weekly StochRSI floored ≥3 of last 6 closed weeks ≤10) is the standing context,
+and each trigger rung is measured for LATENESS (median % off the trailing-20d low at first
+knowable close) and stop economics — instead of pretending any one crossover "calls" the low.
+Beta/Sharpe were considered and rejected as trigger inputs: bar-width (ATR), not beta, is the
+correct per-name normalizer for a bounce test, and both are already implicit in the two rulers
+below. Study: `washout_ladder_study.py` (pre-registered defs in docstring).
+
+## Results (232-file house panel)
+
+SINCE 2023-06 (n=1,867): `late%` = median % off 20d low at fire; `stop5%` = −5% intrabar stop;
+`sstop%` = floor-stop touch rate; `risk%` = median entry-to-floor distance.
+
+| Rung | n | late% | stop5% | clean% | MFE med | sstop% | risk% |
+|---|---|---|---|---|---|---|---|
+| W0 thrust (≥max(5%,1.5·ATR) up-bar, top-40% close, 1.5× vol) | 116 | 16.0 | 36.2 | **56.0** | **8.30** | **10.3** | 14.6 |
+| **W1 2D StochRSI ×up from OS** | 357 | **4.7** | **36.4** | 52.1 | 7.21 | 46.2 | 4.9 |
+| W2 2D RSI-MACD ×up (current cascade rung) | 447 | 6.1 | 39.8 | 46.5 | 6.53 | 37.4 | 6.4 |
+| W3 1W StochRSI ×up | 404 | 5.9 | 38.4 | 46.8 | 6.67 | 37.6 | 6.2 |
+| W4 2W StochRSI ×up | 543 | 9.7 | 40.9 | 46.6 | 6.15 | **26.3** | 9.9 |
+
+Deep washouts only (dd252 ≤ −30%, full hist): every rung stops out 63–68% under −5%; MFE
+medians are 10–12%; the thrust rung under a FLOOR stop survives 79.5% with median risk 19.6%.
+
+## Read (what the ladder says)
+
+1. **The earliest honest rung is the 2D StochRSI cross, not a bounce rule** — median +4.7% off
+   the low, better stop-survival AND clean% than the 2D MACD rung it precedes. CRCL's "+20%
+   late" was CRCL's bar-width (crypto-beta bars), not the rung's typical lateness (panel median
+   +6%). No construction tested calls the low earlier without paying for it in stop-outs.
+2. **The thrust bar is the ALERT, not the entry**: fired same-day it is +16% off the low with
+   the worst tight-stop economics — but the best clean% (56) and MFE (8.3) and near-immunity to
+   the floor stop (10.3%). Demand day = "the washout is live"; chase-entry on it is the mistake.
+3. **Stop design dominates trigger design in this class.** −5% fixed stops are wicked at every
+   rung in deep washouts (63–68%). The floor stop (washout low) survives — at the price of a
+   disclosed 5–20% unit risk. The surface must therefore show risk-to-floor and say plainly:
+   size for the floor stop, don't run a −5% stop on wide bars.
+4. **Operator's 1W/2W hierarchy confirmed with one refinement**: 1W ≈ 2D-MACD grade
+   (mid-ladder); the 2W cross is the durability tier — latest (+9.7%) but the most
+   floor-secure oscillator rung (26.3% floor-touch). Higher score for 2W is honest as a
+   CONFIRMATION tier, not an earliness tier.
+
+## Revised deliverable (supersedes the standalone-shelf shape; same promotion prereg)
+
+WAIT-lane integration on the existing standouts board: washout STATE chip (weeks at floor) +
+rung chips (Demand day / Turning 2D / Confirming 2D-MACD·1W / Confirmed 2W) + lateness ("+X%
+off the floor") + risk-to-floor line + plain-word stance ("watch — early turn; wide bars, size
+for the floor stop"). Display-tier; never buy-lane; no Prophet origination; accrues through the
+nightly board snapshots from day one; promotion gate unchanged (≥100 matured, ≥60td,
+stop% ≤ P and clean% ≥ P on the forward ledger).
