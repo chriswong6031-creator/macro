@@ -40,13 +40,13 @@ _ACTIVE_VERDICT = {
                        "the first half big and is a near-tie in the second.",
                        "全样本在三项上均真实跑赢（年化 + 夏普 + 回撤），平均杠杆 <1x。风险调整后的优势稳健；年化的跑赢集中在趋势性时代"
                        "——前半段大幅领先，后半段接近持平。"),
-    "cm_silver_active": ("ROBUST: beats silver buy-&-hold on CAGR in BOTH out-of-sample halves, with a higher Sharpe "
-                         "throughout. The gold/silver-ratio mean-reversion is genuine alpha that the leverage amplifies.",
-                         "稳健：在两个样本外半段均在年化上跑赢白银买入持有，且全程夏普更高。金银比均值回归是真实阿尔法，由杠杆放大。"),
-    "cm_copper_active": ("ROBUST: beats copper buy-&-hold on CAGR with Sharpe ≥ B&H in BOTH halves. The global-growth "
-                         "tilt (China credit + industrial production) is genuine timing alpha, not just leverage.",
-                         "稳健：在两个半段均以 ≥ 买入持有的夏普跑赢铜买入持有的年化。全球增长倾斜（中国信用 + 工业生产）是真实的择时阿尔法，"
-                         "而非单纯杠杆。"),
+    "cm_silver_active": ("PROMISING but MARGINAL: beats silver buy-&-hold on CAGR in both out-of-sample halves with a higher Sharpe "
+                         "throughout, but its multiple-testing-adjusted Sharpe (DSR 0.92) sits just under the 0.95 robust bar. The gold/silver-ratio mean-reversion is a real tilt leverage amplifies — provisional, not gauntlet-cleared.",
+                         "有前景但边际：在两个样本外半段均在年化上跑赢白银买入持有且全程夏普更高，但多重检验调整后的夏普（DSR 0.92）略低于 0.95 的稳健门槛。金银比均值回归是杠杆放大的真实倾斜——暂定，未经考验。"),
+    "cm_copper_active": ("MIXED — does not clear the robustness bar: beats copper buy-&-hold on CAGR, but its multiple-testing-adjusted Sharpe fails the gate (DSR 0.75; gold & silver clear 0.90+) and it is weak leave-one-crisis-out. The global-growth "
+                         "tilt (China credit + industrial production) is suggestive context, not a proven timing edge — shown experimental, not gauntlet-cleared.",
+                         "混合——未跨过稳健门槛：在年化上跑赢铜买入持有，但多重检验调整后的夏普未通过门槛（DSR 0.75；金、银在 0.90+ 通过），且逐危机剔除偏弱。全球增长倾斜（中国信用 + 工业生产）具提示性，"
+                         "而非经证实的择时优势——属实验性展示，未经考验。"),
 }
 _ACTIVE_CAV = ("Active, leverage-capable model — leverage amplifies losses as well as gains. Continuous "
                "front-month total-return close; net of 3 bps cost + a 1% financing spread on the levered part; "
