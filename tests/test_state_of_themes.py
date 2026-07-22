@@ -57,6 +57,20 @@ def _render(root: Path) -> str:
     return sot.render(root)
 
 
+# Partials the template {% include %}s — every synthetic root must mirror them
+# (neither has transitive includes of its own).
+_SUPPORT_PARTIALS = ("_navlinks.html.j2", "_seo_head.html.j2")
+
+
+def _copy_support_partials(templates_dir: Path) -> None:
+    """Copy the template's include-partials into a synthetic templates/ dir."""
+    templates_dir.mkdir(parents=True, exist_ok=True)
+    for name in _SUPPORT_PARTIALS:
+        src = REPO_ROOT / "templates" / name
+        if src.exists():
+            (templates_dir / name).write_bytes(src.read_bytes())
+
+
 # ---------------------------------------------------------------------------
 # 1. Live render — non-empty matrix from real artifacts
 # ---------------------------------------------------------------------------
@@ -95,9 +109,7 @@ def test_missing_theme_state_graceful():
         (root / "templates").mkdir()
         src_tpl = REPO_ROOT / "templates" / "state_of_themes.html.j2"
         (root / "templates" / "state_of_themes.html.j2").write_bytes(src_tpl.read_bytes())
-        nav = REPO_ROOT / "templates" / "_navlinks.html.j2"
-        if nav.exists():
-            (root / "templates" / "_navlinks.html.j2").write_bytes(nav.read_bytes())
+        _copy_support_partials(root / "templates")
         # No site/neuralwebdata dir → all artifacts missing
         (root / "site").mkdir()
         import scripts.build_state_of_themes as sot
@@ -119,9 +131,7 @@ def _make_root_with_only(artifact_name: str, content: dict) -> Path:
     (root / "templates").mkdir()
     tpl = REPO_ROOT / "templates" / "state_of_themes.html.j2"
     (root / "templates" / "state_of_themes.html.j2").write_bytes(tpl.read_bytes())
-    nav = REPO_ROOT / "templates" / "_navlinks.html.j2"
-    if nav.exists():
-        (root / "templates" / "_navlinks.html.j2").write_bytes(nav.read_bytes())
+    _copy_support_partials(root / "templates")
     nwd = root / "site" / "neuralwebdata"
     nwd.mkdir(parents=True)
     (nwd / artifact_name).write_text(json.dumps(content), encoding="utf-8")
@@ -137,9 +147,7 @@ def test_missing_thesis_graceful():
         (root / "templates").mkdir()
         tpl = REPO_ROOT / "templates" / "state_of_themes.html.j2"
         (root / "templates" / "state_of_themes.html.j2").write_bytes(tpl.read_bytes())
-        nav = REPO_ROOT / "templates" / "_navlinks.html.j2"
-        if nav.exists():
-            (root / "templates" / "_navlinks.html.j2").write_bytes(nav.read_bytes())
+        _copy_support_partials(root / "templates")
         nwd = root / "site" / "neuralwebdata"
         nwd.mkdir(parents=True)
         # Copy only theme_state + theme_asymmetry
@@ -160,9 +168,7 @@ def test_missing_asymmetry_graceful():
         (root / "templates").mkdir()
         tpl = REPO_ROOT / "templates" / "state_of_themes.html.j2"
         (root / "templates" / "state_of_themes.html.j2").write_bytes(tpl.read_bytes())
-        nav = REPO_ROOT / "templates" / "_navlinks.html.j2"
-        if nav.exists():
-            (root / "templates" / "_navlinks.html.j2").write_bytes(nav.read_bytes())
+        _copy_support_partials(root / "templates")
         nwd = root / "site" / "neuralwebdata"
         nwd.mkdir(parents=True)
         for f in ["theme_state.json", "theme_thesis.json"]:
@@ -356,9 +362,7 @@ def _make_sot_root(
     (tmp_path / "templates").mkdir(exist_ok=True)
     tpl_src = REPO_ROOT / "templates" / "state_of_themes.html.j2"
     (tmp_path / "templates" / "state_of_themes.html.j2").write_bytes(tpl_src.read_bytes())
-    nav = REPO_ROOT / "templates" / "_navlinks.html.j2"
-    if nav.exists():
-        (tmp_path / "templates" / "_navlinks.html.j2").write_bytes(nav.read_bytes())
+    _copy_support_partials(tmp_path / "templates")
 
     # neuralwebdata
     nwd = tmp_path / "site" / "neuralwebdata"
