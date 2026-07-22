@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "produced_by": "engine/neuralweb/query.py",
-  "produced_at": "2026-07-21T03:11:46Z",
-  "inputs_hash": "sha256:c872cd610342f5bcd7df88ac8dff769355c32a03545a6f787a2e4836d31202c5",
+  "produced_at": "2026-07-22T03:30:14Z",
+  "inputs_hash": "sha256:375336f312d5cf445c208ec2fa6b5324456942c2c4c805f07464ecd4dc8ca6a0",
   "tier": "infrastructure",
   "artifact_path": "data/neuralweb/spine_index.parquet",
-  "byte_sha256": "sha256:c872cd610342f5bcd7df88ac8dff769355c32a03545a6f787a2e4836d31202c5"
+  "byte_sha256": "sha256:375336f312d5cf445c208ec2fa6b5324456942c2c4c805f07464ecd4dc8ca6a0"
 }

@@ -1,7 +1,7 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-07-21",
-  "built": "2026-07-21T02:20:38Z",
+  "asof": "2026-07-22",
+  "built": "2026-07-22T02:42:01Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -23,6 +23,49 @@
     "spy_weeks": 12
   },
   "top_stage2": [
+    {
+      "ticker": "SFBS",
+      "company": "ServisFirst Bancshares, Inc.",
+      "sector": "Financials",
+      "stage": 2,
+      "weeks_in_stage": 8,
+      "fresh": true,
+      "sga_score": 76,
+      "ma30_slope_pct5w": 3.119,
+      "pct_vs_ma30": 10.17,
+      "mansfield_rs": 2.58,
+      "vol_ratio": 1.25,
+      "event": "pullback_resume",
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.35,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.7222222222222222,
+        "performance": 10.0,
+        "tone_word": "confident",
+        "tags": [],
+        "quarter": "Q1",
+        "summary": "Positive outlook based on strongest-ever loan pipeline, moderating loan payoffs, continued NIM expansion guidance of 7-9 bps, disciplined expense control, and promising growth from the new Texas franchise."
+      },
+      "why": [
+        "Early in its climb — 8 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 8 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 4.237,
+      "atr_ext": 1.895,
+      "atr_pct_price": 0.04873,
+      "sata_score": 8,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": null
+    },
     {
       "ticker": "HYLN",
       "company": "Hyliion Holdings Corp",
@@ -104,49 +147,6 @@
       "atr_pct_price": 0.06183,
       "sata_score": 7,
       "sata_change_1w": 1,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "ITGR",
-      "company": "Integer Holdings Corporation",
-      "sector": "Health Care",
-      "stage": 2,
-      "weeks_in_stage": 7,
-      "fresh": true,
-      "sga_score": 62,
-      "ma30_slope_pct5w": 4.21,
-      "pct_vs_ma30": 9.33,
-      "mansfield_rs": -1.76,
-      "vol_ratio": 0.82,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.3375,
-      "earnings": {
-        "present": true,
-        "sentiment": -0.5,
-        "performance": 0.0,
-        "tone_word": "downbeat",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "Lowered full-year 2026 guidance for revenue, EPS, and other profit metrics, citing recent customer forecast reductions, primarily in the electrophysiology market segment, and additional management risk adjustments."
-      },
-      "why": [
-        "Early in its climb — 7 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 7 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 6.3329,
-      "atr_ext": 1.286,
-      "atr_pct_price": 0.06637,
-      "sata_score": 6,
-      "sata_change_1w": 0,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
     },
@@ -1879,6 +1879,49 @@
       "industry_percentile": null
     },
     {
+      "ticker": "FLWS",
+      "company": "1-800 Flowers.com Inc",
+      "sector": "Consumer Cyclical",
+      "stage": 2,
+      "weeks_in_stage": 7,
+      "fresh": true,
+      "sga_score": 51,
+      "ma30_slope_pct5w": 0.989,
+      "pct_vs_ma30": 5.91,
+      "mansfield_rs": -10.06,
+      "vol_ratio": 0.65,
+      "event": null,
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.3375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.3333333333333333,
+        "performance": 7.083333333333334,
+        "tone_word": "confident",
+        "tags": [],
+        "quarter": "Q3",
+        "summary": "For fiscal 2026, the company expects revenue to decline by 10-12% and adjusted EBITDA to be approximately breakeven (+/- $2M), which includes ~$22M in incentive and consultant costs."
+      },
+      "why": [
+        "Early in its climb — 7 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 7 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 0.7057,
+      "atr_ext": 0.325,
+      "atr_pct_price": 0.17171,
+      "sata_score": 5,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
+    },
+    {
       "ticker": "FRBA",
       "company": "First Bank (NJ)",
       "sector": "Financial",
@@ -1998,47 +2041,6 @@
       "atr_pct_price": 0.10335,
       "sata_score": 6,
       "sata_change_1w": -2,
-      "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "SFBS",
-      "company": "ServisFirst Bancshares, Inc.",
-      "sector": "Financials",
-      "stage": 2,
-      "weeks_in_stage": 8,
-      "fresh": true,
-      "sga_score": 51,
-      "ma30_slope_pct5w": 3.119,
-      "pct_vs_ma30": 10.17,
-      "mansfield_rs": 2.58,
-      "vol_ratio": 1.25,
-      "event": "pullback_resume",
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.7222222222222222,
-        "performance": 10.0,
-        "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "Positive outlook based on strongest-ever loan pipeline, moderating loan payoffs, continued NIM expansion guidance of 7-9 bps, disciplined expense control, and promising growth from the new Texas franchise."
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "位于 30 周均线之上 — 趋势向好"
-      ],
-      "atr_14w": 4.237,
-      "atr_ext": 1.895,
-      "atr_pct_price": 0.04873,
-      "sata_score": 8,
-      "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
     },
@@ -2498,16 +2500,10 @@
   ],
   "warnings_stage3": [
     {
-      "ticker": "STRT",
-      "company": "Strattec Security Corp",
-      "weeks_in_stage": 1,
-      "sga_score": 44
-    },
-    {
-      "ticker": "CBOE",
-      "company": "Cboe Global Markets",
-      "weeks_in_stage": 3,
-      "sga_score": 36
+      "ticker": "BRSP",
+      "company": "BrightSpire Capital Inc",
+      "weeks_in_stage": 2,
+      "sga_score": 40
     },
     {
       "ticker": "TXNM",
@@ -2528,16 +2524,22 @@
       "sga_score": 31
     },
     {
+      "ticker": "ASO",
+      "company": "Academy Sports + Outdoors",
+      "weeks_in_stage": 2,
+      "sga_score": 28
+    },
+    {
       "ticker": "LAND",
       "company": "Gladstone Land Corp",
       "weeks_in_stage": 6,
       "sga_score": 28
     },
     {
-      "ticker": "UMH",
-      "company": "UMH Properties Inc",
-      "weeks_in_stage": 3,
-      "sga_score": 27
+      "ticker": "PNRG",
+      "company": "PrimeEnergy Resources Corp",
+      "weeks_in_stage": 1,
+      "sga_score": 28
     },
     {
       "ticker": "AFRI",
@@ -2558,15 +2560,21 @@
       "sga_score": 25
     },
     {
-      "ticker": "CNR",
-      "company": "Core Natural Resources, Inc.",
-      "weeks_in_stage": 11,
-      "sga_score": 25
-    },
-    {
       "ticker": "COGT",
       "company": "Cogent Biosciences Inc",
       "weeks_in_stage": 2,
+      "sga_score": 25
+    },
+    {
+      "ticker": "FPI",
+      "company": "Farmland Partners Inc",
+      "weeks_in_stage": 2,
+      "sga_score": 25
+    },
+    {
+      "ticker": "GM",
+      "company": "General Motors",
+      "weeks_in_stage": 1,
       "sga_score": 25
     },
     {
@@ -2594,6 +2602,12 @@
       "sga_score": 25
     },
     {
+      "ticker": "SD",
+      "company": "Sandridge Energy Inc",
+      "weeks_in_stage": 3,
+      "sga_score": 25
+    },
+    {
       "ticker": "FBK",
       "company": "FB Financial Corp.",
       "weeks_in_stage": 17,
@@ -2604,18 +2618,6 @@
       "company": "OceanFirst Financial Corp",
       "weeks_in_stage": 3,
       "sga_score": 22
-    },
-    {
-      "ticker": "IRMD",
-      "company": "Iradimed Corp",
-      "weeks_in_stage": 1,
-      "sga_score": 20
-    },
-    {
-      "ticker": "LZB",
-      "company": "La-Z-Boy, Inc.",
-      "weeks_in_stage": 1,
-      "sga_score": 20
     }
   ],
   "sectors": [
@@ -13569,7 +13571,7 @@
     "n": 0
   },
   "prev_state": {
-    "asof": "2026-07-20",
+    "asof": "2026-07-21",
     "by_key": {
       "A": {
         "stage": 4,

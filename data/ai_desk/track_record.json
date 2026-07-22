@@ -1,16 +1,16 @@
 {
   "schema": "ai_desk_track_record.v1",
-  "as_of": "2026-07-20",
-  "scored_total": 11,
-  "open": 31,
+  "as_of": "2026-07-21",
+  "scored_total": 13,
+  "open": 32,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 11,
-    "hits": 9,
+    "n": 13,
+    "hits": 11,
     "misses": 2,
-    "hit_rate": 0.818,
-    "dir_accuracy": 0.818
+    "hit_rate": 0.846,
+    "dir_accuracy": 0.846
   },
   "by_conviction": {
     "high": {
@@ -28,20 +28,20 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 11,
-      "hits": 9,
+      "n": 13,
+      "hits": 11,
       "misses": 2,
-      "hit_rate": 0.818,
-      "dir_accuracy": 0.818
+      "hit_rate": 0.846,
+      "dir_accuracy": 0.846
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 9,
-      "hits": 9,
+      "n": 11,
+      "hits": 11,
       "misses": 0,
       "hit_rate": 1.0,
-      "dir_accuracy": 0.889
+      "dir_accuracy": 0.909
     },
     "level": {
       "n": 2,
@@ -53,15 +53,33 @@
   },
   "by_regime": {
     "Goldilocks": {
-      "n": 4,
-      "hits": 4,
+      "n": 6,
+      "hits": 6,
       "misses": 0,
       "hit_rate": 1.0,
-      "dir_accuracy": 0.75
+      "dir_accuracy": 0.833
     }
   },
-  "calibration_note": "11 scored, hit-rate 0.818 (directional accuracy 0.818).",
+  "calibration_note": "13 scored, hit-rate 0.846 (directional accuracy 0.846).",
   "recent": [
+    {
+      "id": "2026-06-23-2",
+      "subject": "Consumer Staples",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.016,
+      "check_by": "2026-07-21"
+    },
+    {
+      "id": "2026-06-23-1",
+      "subject": "Materials",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0352,
+      "check_by": "2026-07-21"
+    },
     {
       "id": "2026-06-22-1",
       "subject": "Consumer Discretionary",
@@ -133,25 +151,7 @@
       "outcome": "hit",
       "realized": -0.0236,
       "check_by": "2026-07-14"
-    },
-    {
-      "id": "2026-06-15-1",
-      "subject": "Information Technology",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0451,
-      "check_by": "2026-07-03"
-    },
-    {
-      "id": "2026-06-15-2",
-      "subject": "Energy",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0171,
-      "check_by": "2026-06-29"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 11 \u6761\uff0c\u547d\u4e2d\u7387 0.818\uff08\u65b9\u5411\u51c6\u786e\u7387 0.818\uff09\u3002"
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 13 \u6761\uff0c\u547d\u4e2d\u7387 0.846\uff08\u65b9\u5411\u51c6\u786e\u7387 0.846\uff09\u3002"
 }

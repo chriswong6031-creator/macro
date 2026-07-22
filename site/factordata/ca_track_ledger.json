@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "CA",
- "as_of": "2026-07-20",
+ "as_of": "2026-07-21",
  "state": "accruing",
  "bench": {
   "code": "_GSPTSE",
@@ -10,8 +10,8 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 163,
-  "n_logged": 145,
+  "n_calls": 181,
+  "n_logged": 163,
   "n_matured": 0,
   "n_beat": 0,
   "n_lag": 0,
@@ -23,9 +23,351 @@
  },
  "rows": [
   {
-   "t": "SAP.TO",
+   "t": "TIH.TO",
    "nm": null,
    "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 1,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "TKO.TO",
+   "nm": "TREKOR METALS LIMITED",
+   "sec": "Materials",
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 2,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "PXT.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 3,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "LB.TO",
+   "nm": "LAURENTIAN BANK",
+   "sec": "Financials",
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 4,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EMP-A.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 5,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "PEY.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 6,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "CTC-A.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 7,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "TVK.TO",
+   "nm": "TERRAVEST INDUSTRIES INC",
+   "sec": "Energy",
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 8,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "AQN.TO",
+   "nm": "ALGONQUIN POWER AND UTILITIES C",
+   "sec": "Utilities",
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 9,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "BIR.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 10,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "CLS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 11,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "QBR-B.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 12,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "VNP.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 13,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EFX.TO",
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
+   "grp": "watch",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 14,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ALS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 15,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "HPS-A.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 16,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "FCR-UN.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 17,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ATZ.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-20",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 18,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "SAP.TO",
+   "nm": "SAPUTO INC.",
+   "sec": "Consumer Staples",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -195,8 +537,8 @@
   },
   {
    "t": "BIR.TO",
-   "nm": "BIRCHCLIFF ENERGY LTD.",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -252,8 +594,8 @@
   },
   {
    "t": "EFX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-17",
    "e": null,
@@ -271,8 +613,8 @@
   },
   {
    "t": "TIH.TO",
-   "nm": "TOROMONT IND",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-17",
    "e": null,
@@ -385,8 +727,8 @@
   },
   {
    "t": "MG.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "MAGNA INTERNATIONAL INC",
+   "sec": "Consumer Discretionary",
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -480,8 +822,8 @@
   },
   {
    "t": "BTO.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "B2GOLD CORP.",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -537,8 +879,8 @@
   },
   {
    "t": "BIR.TO",
-   "nm": "BIRCHCLIFF ENERGY LTD.",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -613,8 +955,8 @@
   },
   {
    "t": "TIH.TO",
-   "nm": "TOROMONT IND",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,
@@ -632,8 +974,8 @@
   },
   {
    "t": "EFX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,
@@ -708,8 +1050,8 @@
   },
   {
    "t": "BIR.TO",
-   "nm": "BIRCHCLIFF ENERGY LTD.",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-07-13",
    "e": null,
@@ -721,9 +1063,7 @@
    "m": false,
    "rk": 1,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ARE.TO",
@@ -740,9 +1080,7 @@
    "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "DPM.TO",
@@ -759,9 +1097,7 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "DIR-UN.TO",
@@ -778,9 +1114,7 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "KXS.TO",
@@ -797,31 +1131,10 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "PEY.TO",
-   "nm": "PEYTO EXPLORATION AND DVLPMNT C",
-   "sec": "Energy",
-   "grp": "setting_up",
-   "d": "2026-07-13",
-   "e": null,
-   "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
-   "rk": 6,
-   "tr": null,
-   "fl": [
-    "susp"
-   ]
-  },
-  {
-   "t": "LUG.TO",
    "nm": null,
    "sec": null,
    "grp": "setting_up",
@@ -833,11 +1146,26 @@
    "dy": null,
    "st": "early",
    "m": false,
+   "rk": 6,
+   "tr": null,
+   "fl": []
+  },
+  {
+   "t": "LUG.TO",
+   "nm": "LUNDIN GOLD INC",
+   "sec": "Materials",
+   "grp": "setting_up",
+   "d": "2026-07-13",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "CCA.TO",
@@ -854,9 +1182,7 @@
    "m": false,
    "rk": 8,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BHC.TO",
@@ -873,9 +1199,7 @@
    "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BN.TO",
@@ -892,9 +1216,7 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "CLS.TO",
@@ -911,9 +1233,7 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VNP.TO",
@@ -930,14 +1250,12 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TIH.TO",
-   "nm": "TOROMONT IND",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-13",
    "e": null,
@@ -949,9 +1267,7 @@
    "m": false,
    "rk": 13,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "FCR-UN.TO",
@@ -968,14 +1284,12 @@
    "m": false,
    "rk": 14,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EFX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-13",
    "e": null,
@@ -987,9 +1301,7 @@
    "m": false,
    "rk": 15,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HPS-A.TO",
@@ -1006,9 +1318,7 @@
    "m": false,
    "rk": 16,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HBM.TO",
@@ -1025,9 +1335,7 @@
    "m": false,
    "rk": 17,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TFII.TO",
@@ -1044,9 +1352,7 @@
    "m": false,
    "rk": 18,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "MRU.TO",
@@ -1288,8 +1594,8 @@
   },
   {
    "t": "TIH.TO",
-   "nm": "TOROMONT IND",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-10",
    "e": null,
@@ -1322,8 +1628,8 @@
   },
   {
    "t": "EFX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-10",
    "e": null,
@@ -1356,8 +1662,8 @@
   },
   {
    "t": "BIR.TO",
-   "nm": "BIRCHCLIFF ENERGY LTD.",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-07-09",
    "e": null,
@@ -1526,8 +1832,8 @@
   },
   {
    "t": "TIH.TO",
-   "nm": "TOROMONT IND",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-09",
    "e": null,
@@ -1594,8 +1900,8 @@
   },
   {
    "t": "EFX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-09",
    "e": null,
@@ -1747,8 +2053,8 @@
   },
   {
    "t": "BIR.TO",
-   "nm": "BIRCHCLIFF ENERGY LTD.",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-06",
    "e": null,
@@ -1815,8 +2121,8 @@
   },
   {
    "t": "TIH.TO",
-   "nm": "TOROMONT IND",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-06",
    "e": null,
@@ -1866,8 +2172,8 @@
   },
   {
    "t": "EFX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-06",
    "e": null,
@@ -1883,8 +2189,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "FINNING INTL",
+   "sec": "Industrials",
    "grp": "watch",
    "d": "2026-07-06",
    "e": null,
@@ -2121,8 +2427,8 @@
   },
   {
    "t": "TIH.TO",
-   "nm": "TOROMONT IND",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
@@ -2172,8 +2478,8 @@
   },
   {
    "t": "EFX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
@@ -2189,8 +2495,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "FINNING INTL",
+   "sec": "Industrials",
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
@@ -2223,8 +2529,8 @@
   },
   {
    "t": "TIH.TO",
-   "nm": "TOROMONT IND",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-06-30",
    "e": null,
@@ -2512,8 +2818,8 @@
   },
   {
    "t": "EFX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ENERFLEX LTD",
+   "sec": "Energy",
    "grp": "watch",
    "d": "2026-06-30",
    "e": null,
@@ -2529,8 +2835,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "FINNING INTL",
+   "sec": "Industrials",
    "grp": "watch",
    "d": "2026-06-30",
    "e": null,
@@ -2597,7 +2903,7 @@
   }
  ],
  "meta": {
-  "n_total": 145,
+  "n_total": 163,
   "truncated": 0,
   "grain": "board_day",
   "survivorship": {

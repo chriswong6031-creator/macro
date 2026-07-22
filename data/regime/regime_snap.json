@@ -1,25 +1,62 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.55,
+  "roro": 0.82,
   "cap_recent": false,
   "fear_built": 0.319,
-  "roro_velocity": -0.287,
-  "vel_pctile": 0.085,
-  "legs_up": 0,
+  "roro_velocity": 0.298,
+  "vel_pctile": 0.917,
+  "legs_up": 3,
   "legs_total": 7,
-  "flipped_legs": [],
-  "days_since_last_snap": 26,
+  "flipped_legs": [
+    "vix",
+    "vix_term",
+    "copper_gold"
+  ],
+  "days_since_last_snap": 27,
   "fear_rebuilding": true,
-  "vix_term": 0.914,
-  "status": "dormant",
+  "vix_term": 0.87,
+  "status": "building",
   "gates": {
-    "velocity": false,
+    "velocity": true,
     "legs": false,
     "fear": false,
     "washout": false
   },
   "min_legs": 4,
-  "flipped_legs_named": [],
-  "magnitude_band": null
+  "flipped_legs_named": [
+    {
+      "key": "vix",
+      "en": "VIX",
+      "zh": "\u6ce2\u52a8\u7387 VIX"
+    },
+    {
+      "key": "vix_term",
+      "en": "VIX term structure",
+      "zh": "VIX \u671f\u9650\u7ed3\u6784"
+    },
+    {
+      "key": "copper_gold",
+      "en": "Copper/Gold",
+      "zh": "\u94dc\uff0f\u91d1 \u6bd4"
+    }
+  ],
+  "magnitude_band": null,
+  "veto": {
+    "schema": "regime_snap_veto.v1",
+    "is_context_only": true,
+    "lean": "fragile",
+    "confidence": "medium",
+    "checks": {
+      "catalyst": "Earnings beats and mixed sector moves; no structural policy or deal shift \u2014 just rate-sensitive and stock-specific drivers, easily reversed.",
+      "premium": "Fear built is low (0.319), so the fear premium already unwound is minimal; very little left to unwind further.",
+      "washout": "No recent capitulation (cap_recent false); fear built is shallow, not a true washout \u2014 the snap is forming from a mild dip.",
+      "follow_through": "With mixed drivers, building snap, and no capitulation base, cross-asset confirmation is likely to fade quickly in the next session."
+    },
+    "read": "Relief is building off a shallow dip with no capitulation, driven by stock-specific earnings beats rather than a structural macro catalyst. Low fear premium and mixed signals suggest this is likely a dead-cat bounce, not a durable dip.",
+    "model": "deepseek-v4-pro",
+    "generated_at": "2026-07-22T02:03:11.401891+00:00",
+    "degraded_reason": null,
+    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
+  }
 }

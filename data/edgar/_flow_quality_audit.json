@@ -1,5 +1,5 @@
 {
-"applied": "2026-07-14T08:06:07.842546+00:00",
+"applied": "2026-07-22T02:02:17.313795+00:00",
 "rows_flagged": 102,
 "tickers_flagged": 26,
 "by_flag": {
@@ -1924,14 +1924,14 @@
 "ticker": "STEP",
 "fy": 2021,
 "col": "ni",
-"panel": 193885000.0,
+"panel": 484281000.0,
 "statements": 62634000.0
 },
 {
 "ticker": "STEP",
 "fy": 2025,
 "col": "ni",
-"panel": -535808000.0,
+"panel": -743276000.0,
 "statements": -179563000.0
 },
 {
@@ -3977,6 +3977,13 @@
 "col": "op_income",
 "panel": 50500000.0,
 "statements": 167200000.0
+},
+{
+"ticker": "MLKN",
+"fy": 2025,
+"col": "op_income",
+"panel": 198300000.0,
+"statements": 50500000.0
 },
 {
 "ticker": "MNRO",

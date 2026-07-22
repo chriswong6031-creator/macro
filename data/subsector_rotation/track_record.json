@@ -1,40 +1,40 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-21",
-  "generated_at": "2026-07-21T01:42:01.359803+00:00",
+  "as_of": "2026-07-22",
+  "generated_at": "2026-07-22T02:09:02.355627+00:00",
   "is_context_only": true,
-  "n_snapshots": 4563,
-  "n_days": 17,
+  "n_snapshots": 4832,
+  "n_days": 18,
   "horizons": {
     "5": {
-      "n_matured": 2873,
-      "score_ic": 0.2609,
-      "score_ic_t_hac": 2.49,
+      "n_matured": 3114,
+      "score_ic": 0.2048,
+      "score_ic_t_hac": 2.631,
       "score_ic_detail": {
-        "mean_ic": 0.2609,
-        "ic_vol": 0.3734,
-        "ic_ir": 0.699,
-        "ic_ir_ann": 2.209,
-        "t_hac": 2.49,
-        "p_hac": 0.0128,
-        "hit": 0.833,
-        "n": 12
+        "mean_ic": 0.2048,
+        "ic_vol": 0.4106,
+        "ic_ir": 0.499,
+        "ic_ir_ann": 1.577,
+        "t_hac": 2.631,
+        "p_hac": 0.0085,
+        "hit": 0.769,
+        "n": 13
       },
       "by_stage": {
         "emerging": {
-          "n": 110,
-          "mean_fwd_rel": 0.0059,
-          "hit_rate": 0.609
+          "n": 122,
+          "mean_fwd_rel": 0.0044,
+          "hit_rate": 0.582
         },
         "neutral": {
-          "n": 2631,
-          "mean_fwd_rel": -0.0025,
+          "n": 2849,
+          "mean_fwd_rel": -0.0022,
           "hit_rate": null
         },
         "fading": {
-          "n": 132,
-          "mean_fwd_rel": -0.0308,
-          "hit_rate": 0.811
+          "n": 143,
+          "mean_fwd_rel": -0.0251,
+          "hit_rate": 0.755
         }
       }
     },
@@ -71,26 +71,26 @@
       }
     },
     "21": {
-      "n_matured": 478,
+      "n_matured": 717,
       "score_ic": null,
       "score_ic_t_hac": null,
       "score_ic_detail": {
-        "n_days": 2
+        "n_days": 3
       },
       "by_stage": {
         "emerging": {
-          "n": 16,
-          "mean_fwd_rel": 0.0128,
-          "hit_rate": 0.5
+          "n": 25,
+          "mean_fwd_rel": 0.0188,
+          "hit_rate": 0.6
         },
         "neutral": {
-          "n": 440,
+          "n": 659,
           "mean_fwd_rel": -0.0099,
           "hit_rate": null
         },
         "fading": {
-          "n": 22,
-          "mean_fwd_rel": -0.1081,
+          "n": 33,
+          "mean_fwd_rel": -0.0989,
           "hit_rate": 1.0
         }
       }
@@ -105,8 +105,8 @@
       "by_stage": {}
     }
   },
-  "lead_time_d": 5,
-  "peak_score_ic": 0.2609,
+  "lead_time_d": 10,
+  "peak_score_ic": 0.2374,
   "proven": {
     "5": true,
     "10": true,
@@ -115,9 +115,27 @@
   },
   "any_matured": true,
   "verdict": "validated",
-  "note": "Emerging-score IC is significant at the 5d horizon (measured). Context-only \u2014 informs the read, never sizes.",
-  "note_zh": "\u5347\u6e29\u8bc4\u5206\u7684\u4fe1\u606f\u7cfb\u6570\u5728 5 \u5929\u5468\u671f\u4e0a\u663e\u8457\uff08\u5df2\u6d4b\u5f97\uff09\u3002\u4ec5\u4f9b\u53c2\u8003\u2014\u2014\u8f85\u52a9\u7814\u5224\uff0c\u4ece\u4e0d\u7528\u4e8e\u4ed3\u4f4d\u3002",
+  "note": "Emerging-score IC is significant at the 10d horizon (measured). Context-only \u2014 informs the read, never sizes.",
+  "note_zh": "\u5347\u6e29\u8bc4\u5206\u7684\u4fe1\u606f\u7cfb\u6570\u5728 10 \u5929\u5468\u671f\u4e0a\u663e\u8457\uff08\u5df2\u6d4b\u5f97\uff09\u3002\u4ec5\u4f9b\u53c2\u8003\u2014\u2014\u8f85\u52a9\u7814\u5224\uff0c\u4ece\u4e0d\u7528\u4e8e\u4ed3\u4f4d\u3002",
   "recent_misses": [
+    {
+      "date": "2026-06-30",
+      "key": "healthcaremetabolic",
+      "name": "Metabolic",
+      "theme": "Healthcare & Biotech",
+      "stage": "emerging",
+      "fwd_rel": -0.0196,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-06-30",
+      "key": "healthcaregenomics",
+      "name": "Genomics",
+      "theme": "Healthcare & Biotech",
+      "stage": "emerging",
+      "fwd_rel": -0.008,
+      "horizon_d": 21
+    },
     {
       "date": "2026-06-29",
       "key": "transportationaircargo",
@@ -170,24 +188,6 @@
       "theme": "Healthcare & Biotech",
       "stage": "emerging",
       "fwd_rel": -0.0152,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-28",
-      "key": "longevityagingpharma",
-      "name": "Aging Pharma",
-      "theme": "Aging Population & Longevity",
-      "stage": "emerging",
-      "fwd_rel": -0.011,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-28",
-      "key": "healthcaregenomics",
-      "name": "Genomics",
-      "theme": "Healthcare & Biotech",
-      "stage": "emerging",
-      "fwd_rel": -0.0071,
       "horizon_d": 21
     }
   ],

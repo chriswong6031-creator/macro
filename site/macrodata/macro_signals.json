@@ -1,15 +1,15 @@
 {
   "date": "2026-07-21",
-  "generated_utc": "2026-07-22 00:25",
+  "generated_utc": "2026-07-22 01:53",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
     "tiers": {
       "leading": {
         "asof": "2026-07-31",
-        "index": 94.77033203028492,
-        "mom6": 0.3296574151362819,
-        "trend": 0.5859317773500172,
+        "index": 94.77697815194998,
+        "mom6": 0.3363035368013385,
+        "trend": 0.5878306692543191,
         "diffusion": 75.0,
         "n_legs": 4,
         "direction": "rising",
@@ -385,7 +385,7 @@
           0.69,
           1.04,
           0.55,
-          0.33
+          0.34
         ],
         "spark_trend": [
           -2.0,
@@ -1133,7 +1133,7 @@
           94.61,
           94.88,
           94.69,
-          94.77
+          94.78
         ]
       },
       "coincident": {
@@ -4032,22 +4032,22 @@
       "stlfsi": -0.882
     },
     "systemic_stress": {
-      "ofr_fsi": -2.526,
-      "ofr_fsi_pctile": 0.08055555555555556,
-      "ofr_fsi_change_13w": -0.436,
+      "ofr_fsi": -2.305,
+      "ofr_fsi_pctile": 0.1595238095238095,
+      "ofr_fsi_change_13w": -0.215,
       "state": "calm",
       "trend": "easing",
       "functional": {
-        "credit": -1.184,
-        "equity_valuation": -0.571,
-        "safe_assets": -0.316,
-        "funding": -0.015,
-        "volatility": -0.439
+        "credit": -1.182,
+        "equity_valuation": -0.529,
+        "safe_assets": -0.317,
+        "funding": -0.097,
+        "volatility": -0.179
       },
       "regional": {
-        "united_states": -1.232,
-        "other_advanced": -0.751,
-        "emerging_markets": -0.542
+        "united_states": -1.218,
+        "other_advanced": -0.565,
+        "emerging_markets": -0.522
       },
       "leading_driver": null,
       "leading_driver_key": null,
@@ -4069,8 +4069,8 @@
         "ebp_level": 19.20634920634921,
         "claims": 0.0
       },
-      "curve_raw": 0.39,
-      "curve_tp_adjusted": 0.39,
+      "curve_raw": 0.37,
+      "curve_tp_adjusted": 1.1486999999999998,
       "sahm": 0.07,
       "ebp": -0.297648271615362,
       "ny_fed_prob": 0.54,
@@ -4090,9 +4090,9 @@
       "indeed_postings": 101.17,
       "indeed_chg_3m_pct": -1.6716882107104647,
       "indeed_trend": "falling",
-      "withheld_tax_yoy_pct": 1.054701917169898,
+      "withheld_tax_yoy_pct": 2.509961226064461,
       "income_trend": "rising",
-      "read": "labor mixed"
+      "read": "labor firm"
     },
     "inflation_nowcast": {
       "sticky_ann": 0.22770786500000006,
@@ -4110,11 +4110,11 @@
       "vix_term": 0.8703419655057122,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
-      "skew": 147.28,
-      "skew_pctile": 0.5198412698412699,
-      "stock_bond_corr": 0.5456285485618415,
+      "skew": 146.05,
+      "skew_pctile": 0.4722222222222222,
+      "stock_bond_corr": 0.5463479770294949,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.7545576405624538,
+      "roro": 0.8202568074440346,
       "roro_state": "risk-on",
       "vol_target_scalar": 1.0265605839450296,
       "news_sentiment": 0.010867821983993053,
@@ -4122,7 +4122,7 @@
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
-      "score": 15.891498511412506,
+      "score": 15.415150512735693,
       "band": "low",
       "dd10_prob_pct": 10,
       "base_rate_pct": 19,
@@ -4164,9 +4164,9 @@
       "vix_term": 0.8703419655057122,
       "breadth_div": false,
       "spy_high_prox": 0.9876742724878648,
-      "breadth_above200_pctile": 0.6537698412698413,
+      "breadth_above200_pctile": 0.628968253968254,
       "credit_widen": true,
-      "hy_oas_chg_21d_bp": 8.0,
+      "hy_oas_chg_21d_bp": 4.0,
       "lead_lag": "leading",
       "breadth_div_caution": false,
       "caution": false,
@@ -4174,7 +4174,7 @@
       "caution_reason_zh": null
     },
     "style_tilt": {
-      "yield_chg_1m_bp": 4.0,
+      "yield_chg_1m_bp": 9.0,
       "tilt": "neutral",
       "driver": "10y yield direction",
       "measured": "rising 10y -> value (+0.84%/63d, t=+3.0, all 4 sub-periods); Q1->value, Q4->growth"
@@ -4223,9 +4223,9 @@
     }
   },
   "fear_euphoria": {
-    "fe_score": 89,
-    "band": "Greed",
-    "roro": 0.7545576405624538,
+    "fe_score": 98,
+    "band": "Euphoria",
+    "roro": 0.8202568074440346,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -4240,16 +4240,16 @@
         "key": "hy_oas",
         "name_en": "HY credit spread",
         "name_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee",
-        "value": 0.972,
-        "pct": 66,
+        "value": 1.211,
+        "pct": 75,
         "lean": "risk-on"
       },
       {
         "key": "skew",
         "name_en": "SKEW (tail pricing)",
         "name_zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7",
-        "value": -0.245,
-        "pct": 39,
+        "value": -0.029,
+        "pct": 46,
         "lean": "risk-off"
       },
       {
@@ -4272,7 +4272,7 @@
         "key": "copper_gold",
         "name_en": "Copper/Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 2.668,
+        "value": 2.77,
         "pct": 100,
         "lean": "risk-on"
       },
@@ -5199,8 +5199,8 @@
       }
     ],
     "n_legs_qualifying": 11,
-    "as_of": "2026-07-20",
-    "generated_utc": "2026-07-21T23:22:13Z",
+    "as_of": "2026-07-21",
+    "generated_utc": "2026-07-21T23:44:48Z",
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
@@ -5820,8 +5820,8 @@
         ]
       }
     ],
-    "as_of": "2026-07-20",
-    "generated_utc": "2026-07-21T23:22:14Z",
+    "as_of": "2026-07-21",
+    "generated_utc": "2026-07-21T23:44:49Z",
     "n_young": 0,
     "disclaimer_en": "Display-only context \u2014 volatility surface indicators from public CBOE / Yahoo data. Never scored, no forward claim. These chips describe the current vol environment; they do not predict direction.",
     "disclaimer_zh": "\u4ec5\u4f9b\u5c55\u793a\u7684\u80cc\u666f \u2014 \u6765\u81ea\u516c\u5f00 CBOE / Yahoo \u6570\u636e\u7684\u6ce2\u52a8\u7387\u66f2\u9762\u6307\u6807\u3002\u4e0d\u8ba1\u5206\uff0c\u65e0\u524d\u77bb\u5224\u65ad\u3002\u8fd9\u4e9b\u82af\u7247\u63cf\u8ff0\u5f53\u524d\u6ce2\u52a8\u7387\u73af\u5883\uff0c\u4e0d\u9884\u6d4b\u65b9\u5411\u3002"
@@ -6068,12 +6068,14 @@
     "doctrine": "Event-window calendar seasonality \u2014 thin, widely-known calendar tilts measured on price history. Context only, never a buy/sell. Pre-FOMC drift expected DEAD post-2016 (house ruling)."
   },
   "growth_score": 0.067,
-  "inflation_score": 0.4,
+  "inflation_score": 0.72,
   "components_confirming": [
     "<span class=\"l-en\">growth \u00b7 copper vs gold</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u94dc\u5bf9\u9ec4\u91d1</span>",
     "<span class=\"l-en\">growth \u00b7 payrolls</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u975e\u519c\u5c31\u4e1a</span>",
     "<span class=\"l-en\">growth \u00b7 industrial production</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u5de5\u4e1a\u751f\u4ea7</span>",
     "<span class=\"l-en\">growth \u00b7 wei_trend</span><span class=\"l-zh\">\u589e\u957f \u00b7 wei_trend</span>",
+    "<span class=\"l-en\">inflation \u00b7 10-yr inflation expectations</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 10\u5e74\u671f\u901a\u80c0\u9884\u671f</span>",
+    "<span class=\"l-en\">inflation \u00b7 long-run inflation expectations</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 \u957f\u671f\u901a\u80c0\u9884\u671f</span>",
     "<span class=\"l-en\">inflation \u00b7 energy sector</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 \u80fd\u6e90\u677f\u5757</span>",
     "<span class=\"l-en\">inflation \u00b7 oil</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 \u539f\u6cb9</span>",
     "<span class=\"l-en\">inflation \u00b7 inflation-winners basket</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 \u901a\u80c0\u53d7\u76ca\u7bee\u5b50</span>"
@@ -6087,11 +6089,11 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4083.4,
+      "price": 4085.9,
       "above50": false,
       "above200": false,
       "pct_vs_50dma": -3.7,
-      "pct_vs_200dma": -8.9,
+      "pct_vs_200dma": -8.8,
       "rsi14": 47.0,
       "macd_pos": true,
       "off_52w_high_pct": -23.2,
@@ -6102,14 +6104,14 @@
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 84.69,
+      "price": 84.65,
       "above50": true,
       "above200": true,
       "pct_vs_50dma": 2.4,
       "pct_vs_200dma": 12.6,
       "rsi14": 64.0,
       "macd_pos": true,
-      "off_52w_high_pct": -25.0,
+      "off_52w_high_pct": -25.1,
       "season_this": "Jul: +1.6% avg, up 69% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.6%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
       "mom_60d_pct": -19.4
@@ -6127,7 +6129,7 @@
       "off_52w_high_pct": -1.8,
       "season_this": "Jul: +1.6% avg, up 62% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.6%\uff0c62% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": 10.1
+      "mom_60d_pct": 10.2
     },
     {
       "ticker": "DX-Y.NYB",
@@ -6212,16 +6214,16 @@
       "verdict": "<span class=\"l-en\">more puts than calls \u2014 mild caution</span><span class=\"l-zh\">\u770b\u8dcc\u591a\u4e8e\u770b\u6da8 \u2014 \u8f7b\u5ea6\u8c28\u614e</span>",
       "left": "",
       "right": "",
-      "tip": "<span class=\"l-en\">Put/call volume ratio on S&amp;P index options, computed from CBOE&#39;s chain: bearish bets \u00f7 bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.14 (as of 2026-07-20). A young series \u2014 labels are based on standard thresholds until enough history accrues.</span><span class=\"l-zh\">\u6807\u666e\u6307\u6570\u671f\u6743\u7684\u770b\u8dcc/\u770b\u6da8\u6210\u4ea4\u91cf\u6bd4\uff0c\u7531 CBOE \u671f\u6743\u94fe\u8ba1\u7b97\uff1a\u4eca\u65e5\u770b\u7a7a\u62bc\u6ce8 \u00f7 \u770b\u591a\u62bc\u6ce8\u3002\u9ad8\u4e8e\u7ea61.3 = \u5927\u91cf\u5bf9\u51b2\uff1b\u4f4e\u4e8e\u7ea60.8 = \u81ea\u6ee1\u3002\u4eca\u65e5\uff1a1.14\uff08\u622a\u81f3 2026-07-20\uff09\u3002\u8fd9\u662f\u4e00\u4e2a\u8f83\u65b0\u7684\u5e8f\u5217 \u2014 \u5728\u79ef\u7d2f\u8db3\u591f\u5386\u53f2\u524d\uff0c\u6807\u7b7e\u57fa\u4e8e\u6807\u51c6\u9608\u503c\u3002</span>"
+      "tip": "<span class=\"l-en\">Put/call volume ratio on S&amp;P index options, computed from CBOE&#39;s chain: bearish bets \u00f7 bullish bets traded today. Above ~1.3 = heavy hedging; below ~0.8 = complacency. Today: 1.23 (as of 2026-07-21). A young series \u2014 labels are based on standard thresholds until enough history accrues.</span><span class=\"l-zh\">\u6807\u666e\u6307\u6570\u671f\u6743\u7684\u770b\u8dcc/\u770b\u6da8\u6210\u4ea4\u91cf\u6bd4\uff0c\u7531 CBOE \u671f\u6743\u94fe\u8ba1\u7b97\uff1a\u4eca\u65e5\u770b\u7a7a\u62bc\u6ce8 \u00f7 \u770b\u591a\u62bc\u6ce8\u3002\u9ad8\u4e8e\u7ea61.3 = \u5927\u91cf\u5bf9\u51b2\uff1b\u4f4e\u4e8e\u7ea60.8 = \u81ea\u6ee1\u3002\u4eca\u65e5\uff1a1.23\uff08\u622a\u81f3 2026-07-21\uff09\u3002\u8fd9\u662f\u4e00\u4e2a\u8f83\u65b0\u7684\u5e8f\u5217 \u2014 \u5728\u79ef\u7d2f\u8db3\u591f\u5386\u53f2\u524d\uff0c\u6807\u7b7e\u57fa\u4e8e\u6807\u51c6\u9608\u503c\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">Market-maker effect</span><span class=\"l-zh\">\u505a\u5e02\u5546\u6548\u5e94</span>",
       "pct": null,
-      "label": "<span class=\"l-en\">amplifying swings</span><span class=\"l-zh\">\u653e\u5927\u6ce2\u52a8</span>",
-      "verdict": "<span class=\"l-en\">market-makers&#39; hedging adds fuel to moves \u2014 expect bigger swings both ways</span><span class=\"l-zh\">\u505a\u5e02\u5546\u5bf9\u51b2\u4e3a\u6ce2\u52a8\u6dfb\u67f4 \u2014 \u9884\u671f\u53cc\u5411\u6ce2\u52a8\u66f4\u5927</span>",
+      "label": "<span class=\"l-en\">dampening swings</span><span class=\"l-zh\">\u6291\u5236\u6ce2\u52a8</span>",
+      "verdict": "<span class=\"l-en\">market-makers&#39; hedging absorbs moves \u2014 calmer tape likely</span><span class=\"l-zh\">\u505a\u5e02\u5546\u5bf9\u51b2\u5438\u6536\u6ce2\u52a8 \u2014 \u76d8\u9762\u53ef\u80fd\u66f4\u5e73\u9759</span>",
       "left": "",
       "right": "",
-      "tip": "<span class=\"l-en\">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: -26bn per 1% move (as of 2026-07-20). An estimate, not ground truth.</span><span class=\"l-zh\">\u7531\u6807\u666e\u671f\u6743\u94fe\u4f30\u7b97\u7684\u505a\u5e02\u5546 gamma\uff08GEX\uff09\uff0c\u91c7\u7528\u6807\u51c6\u5047\u8bbe\uff08\u505a\u5e02\u5546\u6301\u6709\u591a\u5934\u770b\u6da8/\u7a7a\u5934\u770b\u8dcc\uff09\u3002\u6b63\u503c = \u5176\u5bf9\u51b2\u6291\u5236\u5e02\u573a\u6ce2\u52a8\uff1b\u8d1f\u503c = \u653e\u5927\u6ce2\u52a8\u3002\u4eca\u65e5\uff1a\u6bcf1%\u6ce2\u52a8 -26\u5341\u4ebf \uff08\u622a\u81f3 2026-07-20\uff09\u3002\u8fd9\u662f\u4f30\u7b97\uff0c\u5e76\u975e\u771f\u5b9e\u503c\u3002</span>"
+      "tip": "<span class=\"l-en\">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +21bn per 1% move (as of 2026-07-21). An estimate, not ground truth.</span><span class=\"l-zh\">\u7531\u6807\u666e\u671f\u6743\u94fe\u4f30\u7b97\u7684\u505a\u5e02\u5546 gamma\uff08GEX\uff09\uff0c\u91c7\u7528\u6807\u51c6\u5047\u8bbe\uff08\u505a\u5e02\u5546\u6301\u6709\u591a\u5934\u770b\u6da8/\u7a7a\u5934\u770b\u8dcc\uff09\u3002\u6b63\u503c = \u5176\u5bf9\u51b2\u6291\u5236\u5e02\u573a\u6ce2\u52a8\uff1b\u8d1f\u503c = \u653e\u5927\u6ce2\u52a8\u3002\u4eca\u65e5\uff1a\u6bcf1%\u6ce2\u52a8 +21\u5341\u4ebf \uff08\u622a\u81f3 2026-07-21\uff09\u3002\u8fd9\u662f\u4f30\u7b97\uff0c\u5e76\u975e\u771f\u5b9e\u503c\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">Fear gauge</span><span class=\"l-zh\">\u6050\u614c\u6307\u6807</span>",

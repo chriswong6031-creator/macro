@@ -5,7 +5,6 @@
     "ai_infra",
     "ai_neoclouds",
     "ai_semiconductors",
-    "ai_software",
     "big_pharma",
     "crypto",
     "cybersecurity",
@@ -40,7 +39,7 @@
     "memory_storage",
     "cybersecurity",
     "managed_care",
-    "ai_infra"
+    "ai_neoclouds"
   ],
   "leader": "memory_storage",
   "names": {

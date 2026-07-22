@@ -10,7 +10,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flow Leaders · 资金领袖</title>
@@ -31,8 +30,53 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=de86232e">
-<link rel="stylesheet" href="assets/css/97441713.css?v=97441713">
+<link rel="stylesheet" href="theme.css">
+<style>
+  *{box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;margin:0;padding:18px;}
+  @media(min-width:1100px){body{padding:24px max(40px,calc((100vw - 1360px)/2));}}
+  a{text-decoration:none;color:inherit;}
+  h1{font-size:20px;margin:0;}
+  h2{font-size:14px;margin:0 0 10px;font-weight:600;letter-spacing:.2px;}
+  h3{font-size:12px;margin:0 0 6px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+  .muted{color:var(--muted);}.sm{font-size:12px;}.xs{font-size:11px;}
+  .topline{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;}
+  .badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;border:1px solid;white-space:nowrap;}
+  .badge-green{color:var(--up);border-color:var(--up);}
+  .badge-orange{color:var(--orange,#f97316);border-color:var(--orange,#f97316);}
+  .badge-muted{color:var(--muted);border-color:var(--line);}
+  .badge-warn{color:var(--orange,#f97316);border-color:var(--orange,#f97316);}
+  .banner{padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;border:1px solid;}
+  .banner-stale{background:rgba(239,68,68,.08);border-color:var(--down);color:var(--down);}
+  .banner-cold{background:rgba(251,191,36,.08);border-color:var(--orange,#f97316);color:var(--orange,#f97316);}
+  .banner-source{background:var(--panel2);border-color:var(--line);color:var(--muted);}
+  .tbl-wrap{overflow-x:auto;}
+  table.ltbl{width:100%;border-collapse:collapse;font-size:12px;}
+  table.ltbl th{padding:6px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:2px solid var(--line);white-space:nowrap;}
+  table.ltbl td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  table.ltbl tr:last-child td{border-bottom:none;}
+  table.ltbl tr:hover td{background:var(--panel2);}
+  .tk{font-weight:700;font-size:13px;color:var(--blue,#3b82f6);}
+  .leg-row{display:flex;flex-wrap:wrap;gap:2px 4px;margin-top:3px;}
+  .leg{display:inline-block;font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid var(--line);}
+  .leg-t{border-color:var(--up);color:var(--up);}
+  .leg-f{color:var(--muted);}
+  .leg-n{border-color:var(--line);color:var(--muted);font-style:italic;}
+  .k-chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);}
+  .k-hi{background:rgba(34,197,94,.15);border-color:var(--up);color:var(--up);}
+  .etf-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .etf-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:110px;}
+  .etf-tk{font-weight:700;font-size:13px;}
+  .playbook{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+  .pb-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px;user-select:none;}
+  .pb-hd:hover{background:var(--panel2);}
+  .pb-hd .car{font-size:11px;color:var(--muted);transition:transform .2s;}
+  .pb-hd.open .car{transform:rotate(90deg);}
+  .pb-bd{display:none;padding:12px 14px;font-size:12px;line-height:1.6;border-top:1px solid var(--line);}
+  .pb-hd.open+.pb-bd{display:block;}
+  .osc-row{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:11px;}
+</style>
 </head>
 <body>
 <nav class="site-nav">
@@ -187,7 +231,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -246,8 +354,10 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  
+  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
 </nav>
 <div style="max-width:1360px;margin:0 auto;">
 
@@ -256,9 +366,9 @@
   <span class="muted sm"><span class="l-en">Recurring net-impact leadership · washout turns · Pick Lab shadow ledger</span><span class="l-zh">持续净额领先 · 洗盘转机 · Pick Lab影子账本</span></span>
 </div>
 <div class="topline muted xs" style="margin-bottom:14px;">
-  <span><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-21</span>
+  <span><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-22</span>
   <span><span class="l-en">Universe</span><span class="l-zh">样本</span>: 352</span>
-  <span><span class="l-en">Flow sessions</span><span class="l-zh">流量场次</span>: 132</span>
+  <span><span class="l-en">Flow sessions</span><span class="l-zh">流量场次</span>: 133</span>
   <span><span class="l-en">Tape-signed</span><span class="l-zh">分笔签署</span>: 371</span>
 </div>
 
@@ -370,7 +480,7 @@
   </td>
   <td class="muted xs">
     
-     · H52: 94%
+     · H52: 91%
      · γ:long
     
   </td>
@@ -390,7 +500,7 @@
     
   </td>
   <td>
-    <span class="k-chip ">1/5</span>
+    <span class="k-chip ">0/5</span>
   </td>
   <td>
     <div class="leg-row">
@@ -398,8 +508,7 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
       
       
       
@@ -442,16 +551,16 @@
   <td>
     
     
-    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
     <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
     
     
   </td>
   <td class="muted xs">
     
-     · H52: 51%
+     · H52: 54%
      · γ:long
-     · E+15d
+     · E+14d
   </td>
 </tr>
 
@@ -459,7 +568,86 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#LITE" class="tk">LITE</a>
+    <a href="us_stocks.html#SNDK" class="tk">SNDK</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">4</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
+  </td>
+  <td class="muted xs">
+    
+     · H52: 68%
+     · γ:short
+    
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#MP" class="tk">MP</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -528,9 +716,87 @@
   </td>
   <td class="muted xs">
     
-     · H52: 73%
+     · H52: 47%
      · γ:short
-     · E+22d
+     · E+16d
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#LITE" class="tk">LITE</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">4</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">0/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
+  </td>
+  <td class="muted xs">
+    
+     · H52: 80%
+     · γ:short
+     · E+21d
   </td>
 </tr>
 
@@ -539,164 +805,6 @@
 <tr>
   <td>
     <a href="us_stocks.html#WDC" class="tk">WDC</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">3</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
-  </td>
-  <td class="muted xs">
-    
-     · H52: 74%
-     · γ:short
-     · E+9d
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#SNDK" class="tk">SNDK</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">3</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
-  </td>
-  <td class="muted xs">
-    
-     · H52: 60%
-     · γ:short
-    
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#AVAV" class="tk">AVAV</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -764,9 +872,9 @@
   </td>
   <td class="muted xs">
     
-     · H52: 35%
+     · H52: 74%
      · γ:short
-     · E+-21d
+     · E+8d
   </td>
 </tr>
 
@@ -845,7 +953,7 @@
     
      · H52: 55%
      · γ:short
-     · E+9d
+     · E+8d
   </td>
 </tr>
 
@@ -853,7 +961,7 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#MP" class="tk">MP</a>
+    <a href="us_stocks.html#AVAV" class="tk">AVAV</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -863,7 +971,7 @@
     
   </td>
   <td>
-    <span class="k-chip ">1/5</span>
+    <span class="k-chip ">0/5</span>
   </td>
   <td>
     <div class="leg-row">
@@ -871,8 +979,7 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
       
       
       
@@ -915,16 +1022,173 @@
   <td>
     
     
-    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
     <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
     
     <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
   </td>
   <td class="muted xs">
     
-     · H52: 46%
+     · H52: 36%
      · γ:short
-     · E+17d
+     · E+-22d
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#COHU" class="tk">COHU</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">2</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">0/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    
+  </td>
+  <td class="muted xs">
+    
+     · H52: 76%
+     · γ:long
+     · E+9d
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#CZR" class="tk">CZR</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">2</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    
+  </td>
+  <td class="muted xs">
+    
+     · H52: 99%
+     · γ:long
+     · E+14d
   </td>
 </tr>
 
@@ -1001,242 +1265,7 @@
   </td>
   <td class="muted xs">
     
-     · H52: 96%
-     · γ:long
-     · E+8d
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#CZR" class="tk">CZR</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">2</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    
-  </td>
-  <td class="muted xs">
-    
      · H52: 98%
-     · γ:long
-     · E+15d
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#LRCX" class="tk">LRCX</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">1</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
-  </td>
-  <td class="muted xs">
-    
-     · H52: 71%
-     · γ:short
-     · E+9d
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#UCTT" class="tk">UCTT</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">1</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    
-  </td>
-  <td class="muted xs">
-    
-     · H52: 64%
      · γ:long
      · E+7d
   </td>
@@ -1256,7 +1285,7 @@
     
   </td>
   <td>
-    <span class="k-chip ">1/5</span>
+    <span class="k-chip ">0/5</span>
   </td>
   <td>
     <div class="leg-row">
@@ -1269,8 +1298,85 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
+  </td>
+  <td class="muted xs">
+    
+     · H52: 76%
+     · γ:short
+     · E+14d
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#TLN" class="tk">TLN</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">1</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">0/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
       
       
       
@@ -1315,9 +1421,9 @@
   </td>
   <td class="muted xs">
     
-     · H52: 76%
+     · H52: 82%
      · γ:short
-     · E+15d
+     · E+16d
   </td>
 </tr>
 
@@ -1325,7 +1431,7 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#ICHR" class="tk">ICHR</a>
+    <a href="us_stocks.html#AEIS" class="tk">AEIS</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -1389,91 +1495,13 @@
     <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
     <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
     
-    
+    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
   </td>
   <td class="muted xs">
     
-     · H52: 74%
-     · γ:long
+     · H52: 78%
+     · γ:short
      · E+14d
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#COHU" class="tk">COHU</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">1</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    
-  </td>
-  <td class="muted xs">
-    
-     · H52: 70%
-     · γ:long
-     · E+10d
   </td>
 </tr>
 
@@ -1549,9 +1577,9 @@
   </td>
   <td class="muted xs">
     
-     · H52: 84%
+     · H52: 86%
      · γ:long
-     · E+16d
+     · E+15d
   </td>
 </tr>
 
@@ -1627,9 +1655,9 @@
   </td>
   <td class="muted xs">
     
-     · H52: 86%
+     · H52: 85%
      · γ:long
-     · E+14d
+     · E+13d
   </td>
 </tr>
 
@@ -1637,7 +1665,243 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#TLN" class="tk">TLN</a>
+    <a href="us_stocks.html#LRCX" class="tk">LRCX</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">1</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">0/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
+  </td>
+  <td class="muted xs">
+    
+     · H52: 74%
+     · γ:short
+     · E+8d
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#ICHR" class="tk">ICHR</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">1</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">0/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    
+  </td>
+  <td class="muted xs">
+    
+     · H52: 85%
+     · γ:long
+     · E+13d
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#PNC" class="tk">PNC</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">0</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">2/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    
+  </td>
+  <td class="muted xs">
+    
+     · H52: 99%
+     · γ:long
+     · E+-6d
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#AVGO" class="tk">AVGO</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -1705,9 +1969,87 @@
   </td>
   <td class="muted xs">
     
-     · H52: 81%
+     · H52: 80%
      · γ:long
-     · E+17d
+    
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#UCTT" class="tk">UCTT</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      <span style="font-weight:700;">0</span><span class="muted xs">/10</span>
+    
+  </td>
+  <td>
+    <span class="k-chip ">0/5</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
+    
+    
+  </td>
+  <td class="muted xs">
+    
+     · H52: 74%
+     · γ:long
+     · E+6d
   </td>
 </tr>
 
@@ -1785,7 +2127,7 @@
     
      · H52: 76%
      · γ:long
-     · E+-19d
+     · E+-20d
   </td>
 </tr>
 
@@ -1793,7 +2135,7 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#AEIS" class="tk">AEIS</a>
+    <a href="us_stocks.html#ALHC" class="tk">ALHC</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -1854,16 +2196,16 @@
   <td>
     
     
-    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
     <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
     
-    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
+    
   </td>
   <td class="muted xs">
     
-     · H52: 72%
-     · γ:short
-     · E+15d
+     · H52: 88%
+     · γ:long
+     · E+8d
   </td>
 </tr>
 
@@ -1871,7 +2213,7 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#PNC" class="tk">PNC</a>
+    <a href="us_stocks.html#TFC" class="tk">TFC</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -1940,87 +2282,9 @@
   </td>
   <td class="muted xs">
     
-     · H52: 98%
+     · H52: 94%
      · γ:long
-     · E+-5d
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#FBIN" class="tk">FBIN</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">0</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    
-  </td>
-  <td class="muted xs">
-    
-     · H52: 79%
-     · γ:long
-     · E+10d
+     · E+-4d
   </td>
 </tr>
 
@@ -2099,164 +2363,7 @@
     
      · H52: 91%
      · γ:long
-     · E+9d
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#AVGO" class="tk">AVGO</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">0</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    <span class="badge badge-muted">γ<span class="l-en">Caution</span><span class="l-zh">谨慎</span></span> 
-  </td>
-  <td class="muted xs">
-    
-     · H52: 79%
-     · γ:short
-    
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#PH" class="tk">PH</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      <span style="font-weight:700;">0</span><span class="muted xs">/10</span>
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/5</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Recur</span><span class="l-zh">频率</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">FlowZ</span><span class="l-zh">流量Z</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">TSBrd</span><span class="l-zh">期限广度</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">PriceOK</span><span class="l-zh">价格OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">NearHigh</span><span class="l-zh">近高点</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    
-    <span class="badge badge-muted"><span class="l-en">BothSides</span><span class="l-zh">双向</span></span> 
-    
-    
-  </td>
-  <td class="muted xs">
-    
-     · H52: 93%
-     · γ:long
-     · E+17d
+     · E+8d
   </td>
 </tr>
 
@@ -2295,7 +2402,7 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#CRWD" class="tk">CRWD</a>
+    <a href="us_stocks.html#AEIS" class="tk">AEIS</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -2305,7 +2412,7 @@
     
   </td>
   <td>
-    <span class="k-chip ">1/3</span>
+    <span class="k-chip ">1/2</span>
   </td>
   <td>
     <div class="leg-row">
@@ -2313,7 +2420,7 @@
       
       
       
-        <span class="leg leg-f"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
       
       
       
@@ -2354,7 +2461,79 @@
   <td>
     <div class="osc-row">
       
-        <span class="badge badge-muted" title="2W StochRSI K">2WK 91</span>
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted">γ:short</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#ALGT" class="tk">ALGT</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
       
       
       
@@ -2362,7 +2541,7 @@
   </td>
   <td>
     
-    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
     <span class="badge badge-muted">γ:long</span>
   </td>
 </tr>
@@ -2371,7 +2550,155 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#FOUR" class="tk">FOUR</a>
+    <a href="us_stocks.html#ALHC" class="tk">ALHC</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#DKS" class="tk">DKS</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-muted">γ:short</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#DNN" class="tk">DNN</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
@@ -2445,13 +2772,679 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#NVMI" class="tk">NVMI</a>
+    <a href="us_stocks.html#FBIN" class="tk">FBIN</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
   <td>
     
       0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#FLYW" class="tk">FLYW</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#GLXY" class="tk">GLXY</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-muted">γ:short</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#GTLB" class="tk">GTLB</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#MDB" class="tk">MDB</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#SOFI" class="tk">SOFI</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#ZS" class="tk">ZS</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      0d
+    
+  </td>
+  <td>
+    <span class="k-chip ">1/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#CRWD" class="tk">CRWD</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      1d
+    
+  </td>
+  <td>
+    <span class="k-chip ">0/3</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+        <span class="badge badge-muted" title="2W StochRSI K">2WK 90</span>
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#FOUR" class="tk">FOUR</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      1d
+    
+  </td>
+  <td>
+    <span class="k-chip ">0/2</span>
+  </td>
+  <td>
+    <div class="leg-row">
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+      
+      
+      
+      
+        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
+      
+      
+      
+      
+        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
+      
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    <div class="osc-row">
+      
+      
+      
+    </div>
+  </td>
+  <td>
+    
+    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
+    <span class="badge badge-muted">γ:long</span>
+  </td>
+</tr>
+
+
+
+<tr>
+  <td>
+    <a href="us_stocks.html#NVMI" class="tk">NVMI</a>
+    
+    <span class="badge badge-muted">tape</span>
+  </td>
+  <td>
+    
+      1d
     
   </td>
   <td>
@@ -2525,11 +3518,11 @@
   </td>
   <td>
     
-      0d
+      1d
     
   </td>
   <td>
-    <span class="k-chip ">1/2</span>
+    <span class="k-chip ">0/2</span>
   </td>
   <td>
     <div class="leg-row">
@@ -2552,8 +3545,7 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
       
       
       
@@ -2599,11 +3591,11 @@
   </td>
   <td>
     
-      0d
+      1d
     
   </td>
   <td>
-    <span class="k-chip ">1/2</span>
+    <span class="k-chip ">0/2</span>
   </td>
   <td>
     <div class="leg-row">
@@ -2626,8 +3618,7 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
       
       
       
@@ -2652,7 +3643,7 @@
   <td>
     <div class="osc-row">
       
-        <span class="badge badge-muted" title="2W StochRSI K">2WK 66</span>
+        <span class="badge badge-muted" title="2W StochRSI K">2WK 68</span>
       
       
       
@@ -2675,11 +3666,11 @@
   </td>
   <td>
     
-      0d
+      1d
     
   </td>
   <td>
-    <span class="k-chip ">1/2</span>
+    <span class="k-chip ">0/2</span>
   </td>
   <td>
     <div class="leg-row">
@@ -2702,8 +3693,7 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
       
       
       
@@ -2749,11 +3739,11 @@
   </td>
   <td>
     
-      0d
+      1d
     
   </td>
   <td>
-    <span class="k-chip ">1/2</span>
+    <span class="k-chip ">0/2</span>
   </td>
   <td>
     <div class="leg-row">
@@ -2776,8 +3766,7 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
       
       
       
@@ -2823,7 +3812,7 @@
   </td>
   <td>
     
-      0d
+      1d
     
   </td>
   <td>
@@ -2897,11 +3886,11 @@
   </td>
   <td>
     
-      0d
+      1d
     
   </td>
   <td>
-    <span class="k-chip ">2/3</span>
+    <span class="k-chip ">1/3</span>
   </td>
   <td>
     <div class="leg-row">
@@ -2925,8 +3914,7 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
       
       
       
@@ -2974,11 +3962,11 @@
   </td>
   <td>
     
-      1d
+      2d
     
   </td>
   <td>
-    <span class="k-chip ">1/2</span>
+    <span class="k-chip ">0/2</span>
   </td>
   <td>
     <div class="leg-row">
@@ -3001,8 +3989,7 @@
       
       
       
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
+        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
       
       
       
@@ -3048,7 +4035,7 @@
   </td>
   <td>
     
-      1d
+      2d
     
   </td>
   <td>
@@ -3122,450 +4109,7 @@
   </td>
   <td>
     
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/4</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-        <span class="badge badge-muted" title="2W StochRSI K">2WK 21</span>
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#CRDO" class="tk">CRDO</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#CRWV" class="tk">CRWV</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#CZR" class="tk">CZR</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:long</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#HUT" class="tk">HUT</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#INFQ" class="tk">INFQ</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#LRCX" class="tk">LRCX</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
+      2d
     
   </td>
   <td>
@@ -3619,448 +4163,7 @@
   <td>
     <div class="osc-row">
       
-        <span class="badge badge-muted" title="2W StochRSI K">2WK 39</span>
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#NNE" class="tk">NNE</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#QNT" class="tk">QNT</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#QUBT" class="tk">QUBT</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">0/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#UCTT" class="tk">UCTT</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    <span class="badge badge-warn"><span class="l-en">EarnWin</span><span class="l-zh">财报窗</span></span> 
-    <span class="badge badge-muted">γ:long</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#UPST" class="tk">UPST</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    
-    
-    <span class="badge badge-muted">γ:short</span>
-  </td>
-</tr>
-
-
-
-<tr>
-  <td>
-    <a href="us_stocks.html#VIK" class="tk">VIK</a>
-    
-    <span class="badge badge-muted">tape</span>
-  </td>
-  <td>
-    
-      1d
-    
-  </td>
-  <td>
-    <span class="k-chip ">1/2</span>
-  </td>
-  <td>
-    <div class="leg-row">
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Washout</span><span class="l-zh">洗盘</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">Oversold</span><span class="l-zh">超卖</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">TurnOrg</span><span class="l-zh">转机器官</span></span>
-      
-      
-      
-      
-        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
-        
-      
-      
-      
-      
-        <span class="leg leg-f"><span class="l-en">OI✓</span><span class="l-zh">OI确认</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">VolOK</span><span class="l-zh">量OK</span></span>
-      
-      
-      
-      
-        <span class="leg leg-n"><span class="l-en">NotTrap</span><span class="l-zh">非陷阱</span></span>
-      
-      
-      
-      
-    </div>
-  </td>
-  <td>
-    <div class="osc-row">
+        <span class="badge badge-muted" title="2W StochRSI K">2WK 24</span>
       
       
       
@@ -4077,17 +4180,17 @@
 
 <tr>
   <td>
-    <a href="us_stocks.html#WULF" class="tk">WULF</a>
+    <a href="us_stocks.html#CRDO" class="tk">CRDO</a>
     
     <span class="badge badge-muted">tape</span>
   </td>
   <td>
     
-      1d
+      2d
     
   </td>
   <td>
-    <span class="k-chip ">0/2</span>
+    <span class="k-chip ">1/2</span>
   </td>
   <td>
     <div class="leg-row">
@@ -4110,7 +4213,8 @@
       
       
       
-        <span class="leg leg-f"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        <span class="leg leg-t"><span class="l-en">Inflect</span><span class="l-zh">转折</span></span>
+        
       
       
       
@@ -4162,10 +4266,10 @@
 <div class="etf-card">
   <div class="etf-tk">DIA</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.6M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -4.4M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 36%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4173,10 +4277,10 @@
 <div class="etf-card">
   <div class="etf-tk">IWM</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 68.7M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 30.2M</div>
   
   
-  <div class="xs muted">0DTE 56%</div>
+  <div class="xs muted">0DTE 47%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4184,10 +4288,10 @@
 <div class="etf-card">
   <div class="etf-tk">KRE</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -11.1M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -6.4M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 5%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4195,10 +4299,10 @@
 <div class="etf-card">
   <div class="etf-tk">QQQ</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 400.6M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 991.3M</div>
   
   
-  <div class="xs muted">0DTE 67%</div>
+  <div class="xs muted">0DTE 70%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4206,10 +4310,10 @@
 <div class="etf-card">
   <div class="etf-tk">SMH</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 170.2M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 199.5M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 18%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4217,10 +4321,10 @@
 <div class="etf-card">
   <div class="etf-tk">SOXX</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 25.6M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -33.0M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 32%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4228,10 +4332,10 @@
 <div class="etf-card">
   <div class="etf-tk">SPY</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 471.5M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 952.5M</div>
   
   
-  <div class="xs muted">0DTE 67%</div>
+  <div class="xs muted">0DTE 68%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4239,10 +4343,10 @@
 <div class="etf-card">
   <div class="etf-tk">XBI</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.4M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.8M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 29%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4250,10 +4354,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLB</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -1.2M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.1M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 38%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4261,10 +4365,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLC</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 0.3M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 1.1M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 11%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4272,10 +4376,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLE</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -4.6M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 1.2M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 26%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4283,10 +4387,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLF</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 2.6M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.6M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 25%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4294,10 +4398,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLI</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -3.0M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.3M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 30%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4305,10 +4409,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLK</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -7.4M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 3.1M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 20%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4316,10 +4420,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLP</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.2M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.9M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 24%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4327,10 +4431,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLRE</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 0.2M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 0.0M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 15%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4338,10 +4442,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLU</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.8M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.6M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 21%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4349,10 +4453,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLV</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.4M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -4.3M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 19%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4360,10 +4464,10 @@
 <div class="etf-card">
   <div class="etf-tk">XLY</div>
   
-  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> 0.3M</div>
+  <div class="sm"><span class="l-en">Net~</span><span class="l-zh">净~</span> -0.1M</div>
   
   
-  <div class="xs muted">0DTE 0%</div>
+  <div class="xs muted">0DTE 68%</div>
   
   <div class="xs muted">tape</div>
 </div>
@@ -4413,7 +4517,6 @@
 </div>
 
 </div>
-<script src="theme.js?v=e63903ba" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
+<script src="theme.js"></script>
 </body>
 </html>

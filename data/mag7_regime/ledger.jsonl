@@ -3,3 +3,4 @@
 {"date": "2026-07-15", "trend_state": "running_narrow", "structure_chip": "at_highs", "k7_trend": 4, "cw_r10": 0.074832, "generals": ["AAPL", "META", "NVDA"]}
 {"date": "2026-07-17", "trend_state": "running_narrow", "structure_chip": "recovering", "k7_trend": 2, "cw_r10": 0.02853, "generals": ["AAPL", "NVDA"]}
 {"date": "2026-07-20", "trend_state": "cooling", "structure_chip": "recovering", "k7_trend": 3, "cw_r10": 0.016959, "generals": ["AAPL", "NVDA", "META"]}
+{"date": "2026-07-21", "trend_state": "cooling", "structure_chip": "recovering", "k7_trend": 2, "cw_r10": 0.017052, "generals": ["AAPL", "NVDA"]}

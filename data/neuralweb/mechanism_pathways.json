@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-21",
+  "as_of": "2026-07-22",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -31,7 +31,7 @@
       "dominant_scare": "growth",
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "增长恐慌/防御轮动",
-      "state": "caution"
+      "state": "watch"
     }
   }
 }

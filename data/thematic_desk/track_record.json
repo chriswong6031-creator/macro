@@ -1,28 +1,28 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-07-21",
-  "scored_total": 7,
+  "as_of": "2026-07-22",
+  "scored_total": 13,
   "open": 98,
-  "unscored_soft": 13,
+  "unscored_soft": 14,
   "overall": {
-    "n": 7,
-    "hits": 3,
-    "misses": 4,
-    "hit_rate": 0.429,
-    "dir_accuracy": 0.143
+    "n": 13,
+    "hits": 7,
+    "misses": 6,
+    "hit_rate": 0.538,
+    "dir_accuracy": 0.385
   },
   "by_market": {
     "us": {
-      "n": 1,
-      "hits": 0,
-      "misses": 1,
-      "hit_rate": 0.0,
-      "dir_accuracy": 0.0
+      "n": 3,
+      "hits": 1,
+      "misses": 2,
+      "hit_rate": 0.333,
+      "dir_accuracy": 0.333
     },
     "china": {
-      "n": 2,
+      "n": 3,
       "hits": 0,
-      "misses": 2,
+      "misses": 3,
       "hit_rate": 0.0,
       "dir_accuracy": 0.0
     },
@@ -34,20 +34,20 @@
       "dir_accuracy": 0.0
     },
     "canada": {
-      "n": 3,
-      "hits": 2,
+      "n": 6,
+      "hits": 5,
       "misses": 1,
-      "hit_rate": 0.667,
-      "dir_accuracy": 0.333
+      "hit_rate": 0.833,
+      "dir_accuracy": 0.667
     }
   },
   "by_conviction": {
     "low": {
-      "n": 7,
-      "hits": 3,
-      "misses": 4,
-      "hit_rate": 0.429,
-      "dir_accuracy": 0.143
+      "n": 13,
+      "hits": 7,
+      "misses": 6,
+      "hit_rate": 0.538,
+      "dir_accuracy": 0.385
     },
     "medium": {
       "n": 0,
@@ -64,8 +64,68 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "7 scored, hit-rate 0.429 (directional accuracy 0.143). Sample is small \u2014 treat conviction as provisional; the honest expectation is no exploitable forward edge (display-only).",
+  "calibration_note": "13 scored, hit-rate 0.538 (directional accuracy 0.385). Sample is small \u2014 treat conviction as provisional; the honest expectation is no exploitable forward edge (display-only).",
   "recent": [
+    {
+      "id": "china-2026-06-23-1",
+      "market": "china",
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.066,
+      "check_by": "2026-07-21"
+    },
+    {
+      "id": "us-2026-06-23-1",
+      "market": "us",
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0811,
+      "check_by": "2026-07-21"
+    },
+    {
+      "id": "us-2026-06-23-2",
+      "market": "us",
+      "subject": "AI Software & Platforms",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0386,
+      "check_by": "2026-07-21"
+    },
+    {
+      "id": "canada-2026-06-23-1",
+      "market": "canada",
+      "subject": "Big Banks",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0087,
+      "check_by": "2026-07-21"
+    },
+    {
+      "id": "canada-2026-06-23-2",
+      "market": "canada",
+      "subject": "Utilities & Renewables",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0025,
+      "check_by": "2026-07-21"
+    },
+    {
+      "id": "canada-2026-06-30-2",
+      "market": "canada",
+      "subject": "Base Metals & Copper",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0513,
+      "check_by": "2026-07-21"
+    },
     {
       "id": "us-2026-06-22-1",
       "market": "us",
@@ -124,16 +184,6 @@
       "conviction": "low",
       "outcome": "hit",
       "realized": 0.007,
-      "check_by": "2026-07-16"
-    },
-    {
-      "id": "china-2026-07-02-1",
-      "market": "china",
-      "subject": "AI Compute & Optics",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.0816,
       "check_by": "2026-07-16"
     }
   ]

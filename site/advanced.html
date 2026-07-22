@@ -24,8 +24,30 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-  <link rel="stylesheet" href="theme.css?v=a1aa8c55">
-  <link rel="stylesheet" href="assets/css/afd3b2f9.css?v=afd3b2f9">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    body{background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:18px;}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;max-width:1280px;margin:0 auto;}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+    .span12{grid-column:span 12;} .span6{grid-column:span 6;}
+    @media(max-width:820px){.span6{grid-column:span 12;}}
+    h1{font-size:22px;margin:0 0 4px;} h2{font-size:16px;margin:0 0 10px;} h3{font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+    table{width:100%;border-collapse:collapse;font-size:13px;} th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;} th.l,td.l{text-align:left;}
+    .muted{color:var(--muted);} .pos{color:var(--up);} .neg{color:var(--down);}
+    .verdict{font-size:15px;font-weight:700;padding:3px 10px;border-radius:8px;display:inline-block;}
+    .v-bad{background:rgba(224,100,100,.16);color:var(--down);} .v-warn{background:rgba(224,160,48,.16);color:var(--warn);} .v-ok{background:rgba(69,184,115,.16);color:var(--up);}
+    .bar{height:10px;border-radius:5px;background:var(--panel2);position:relative;overflow:hidden;margin:4px 0;}
+    .bar i{position:absolute;top:0;bottom:0;left:0;border-radius:5px;background:var(--link);}
+    .heat{display:inline-block;min-width:42px;text-align:center;border-radius:4px;padding:2px 4px;}
+    .lab-intro{background:var(--panel2);}
+    .help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:10px;font-weight:600;cursor:help;position:relative;vertical-align:middle;margin-left:5px;flex:none;}
+    .help .tip{display:none;position:absolute;bottom:140%;left:50%;transform:translateX(-50%);width:290px;background:var(--panel);border:1px solid var(--line);padding:9px 11px;border-radius:8px;z-index:60;font-size:12px;line-height:1.45;color:var(--text);text-align:left;font-weight:400;text-transform:none;letter-spacing:normal;box-shadow:0 8px 28px rgba(0,0,0,.45);pointer-events:auto;cursor:auto;white-space:normal;max-height:min(60vh,420px);overflow-y:auto;overscroll-behavior:contain;}
+    /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+    .help:hover::before{content:'';position:absolute;bottom:100%;left:-30px;right:-30px;height:10px;}
+    .help:hover .tip{display:block;}
+    .help.below .tip{bottom:auto;top:140%;}
+    .help.below:hover::before{bottom:auto;top:100%;}
+  </style>
 </head>
 <body>
 <nav class="site-nav">
@@ -180,7 +202,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -239,8 +325,8 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -281,10 +367,10 @@
     <p style="margin:8px 0">3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 13% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.</p>
     <div style="max-width:520px">
       <div class="muted" style="font-size:12px"><span class="l-en">absorption ratio (PC1 variance share)</span><span class="l-zh">吸收比率（PC1 方差占比）</span> —
-        <b style="color:var(--text)">0.416</b>
-        · 87<span class="l-en">th pctile of 5y</span><span class="l-zh"> 百分位（5年）</span>
+        <b style="color:var(--text)">0.413</b>
+        · 86<span class="l-en">th pctile of 5y</span><span class="l-zh"> 百分位（5年）</span>
         · <span class="l-en">independent floor</span><span class="l-zh">独立基准</span> 0.167</div>
-      <div class="bar"><i style="width: 41.6%"></i></div>
+      <div class="bar"><i style="width: 41.3%"></i></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px">
       <div>
@@ -338,7 +424,7 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.01</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.03)">0.05</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.03</span></td>
@@ -357,7 +443,7 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.41</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.01</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.03)">0.05</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
@@ -658,11 +744,11 @@
       <span class="muted">(+0.07 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 4%)</span></p>
     <div class="bar"><i style="width: 53.3%"></i></div>
     <p style="margin:10px 0 0"><b><span class="l-en">Inflation pressure:</span><span class="l-zh">通胀压力：</span> <span class="l-en">RISING</span><span class="l-zh">上行</span></b>
-      <span class="muted">(+0.40 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 30%)</span></p>
-    <div class="bar"><i style="width: 70.0%"></i></div>
+      <span class="muted">(+0.72 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 60%)</span></p>
+    <div class="bar"><i style="width: 86.0%"></i></div>
     <h3><span class="l-en">What&#39;s voting for this regime</span><span class="l-zh">哪些指标在为此周期投票</span></h3>
     <div>
-      <span class="chip chip-pos"><span class="l-en">growth · copper vs gold</span><span class="l-zh">增长 · 铜对黄金</span></span><span class="chip chip-pos"><span class="l-en">growth · payrolls</span><span class="l-zh">增长 · 非农就业</span></span><span class="chip chip-pos"><span class="l-en">growth · industrial production</span><span class="l-zh">增长 · 工业生产</span></span><span class="chip chip-pos"><span class="l-en">growth · wei_trend</span><span class="l-zh">增长 · wei_trend</span></span><span class="chip chip-pos"><span class="l-en">inflation · energy sector</span><span class="l-zh">通胀 · 能源板块</span></span><span class="chip chip-pos"><span class="l-en">inflation · oil</span><span class="l-zh">通胀 · 原油</span></span><span class="chip chip-pos"><span class="l-en">inflation · inflation-winners basket</span><span class="l-zh">通胀 · 通胀受益篮子</span></span>
+      <span class="chip chip-pos"><span class="l-en">growth · copper vs gold</span><span class="l-zh">增长 · 铜对黄金</span></span><span class="chip chip-pos"><span class="l-en">growth · payrolls</span><span class="l-zh">增长 · 非农就业</span></span><span class="chip chip-pos"><span class="l-en">growth · industrial production</span><span class="l-zh">增长 · 工业生产</span></span><span class="chip chip-pos"><span class="l-en">growth · wei_trend</span><span class="l-zh">增长 · wei_trend</span></span><span class="chip chip-pos"><span class="l-en">inflation · 10-yr inflation expectations</span><span class="l-zh">通胀 · 10年期通胀预期</span></span><span class="chip chip-pos"><span class="l-en">inflation · long-run inflation expectations</span><span class="l-zh">通胀 · 长期通胀预期</span></span><span class="chip chip-pos"><span class="l-en">inflation · energy sector</span><span class="l-zh">通胀 · 能源板块</span></span><span class="chip chip-pos"><span class="l-en">inflation · oil</span><span class="l-zh">通胀 · 原油</span></span><span class="chip chip-pos"><span class="l-en">inflation · inflation-winners basket</span><span class="l-zh">通胀 · 通胀受益篮子</span></span>
       <span class="chip chip-neg"><span class="l-en">growth · small caps</span><span class="l-zh">增长 · 小盘股</span></span><span class="chip chip-neg"><span class="l-en">growth · cyclical sectors</span><span class="l-zh">增长 · 周期性板块</span></span><span class="chip chip-neg"><span class="l-en">inflation · sticky_cpi_direction</span><span class="l-zh">通胀 · sticky_cpi_direction</span></span>
       
     </div>
@@ -703,7 +789,7 @@
         <td class="l muted"><span class="l-en">calm</span><span class="l-zh">平静</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Copper vs gold</span><span class="l-zh">铜 vs 黄金</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">The economist&#39;s metal vs the doomsday metal. Rising = bets on real economic activity; falling = safety-seeking. Historically leads bond yields.</span><span class="l-zh">经济学家的金属 vs 末日金属。上升 = 押注真实经济活动；下降 = 寻求安全。历史上领先债券收益率。</span></span><span class="l-zh"><span class="l-en">The economist&#39;s metal vs the doomsday metal. Rising = bets on real economic activity; falling = safety-seeking. Historically leads bond yields.</span><span class="l-zh">经济学家的金属 vs 末日金属。上升 = 押注真实经济活动；下降 = 寻求安全。历史上领先债券收益率。</span></span></span></span></td>
-        <td class="pos">+7.50%</td>
+        <td class="pos">+7.46%</td>
         <td class="l muted"><span class="l-en">growth optimism</span><span class="l-zh">增长乐观</span></td></tr>
       
     </table>
@@ -732,8 +818,8 @@
     </table>
     
     <p class="muted" style="margin:10px 2px 0;font-size:13px"><span class="l-en">Small-cap participation</span><span class="l-zh">小盘参与度</span>:
-      <b>69%</b> <span class="l-en">of S&amp;P 600 vs</span><span class="l-zh">的标普600 对</span>
-      <b>62%</b> <span class="l-en">for the S&amp;P 500</span><span class="l-zh">的标普500</span> — <span class="l-en">small caps participating MORE than large caps — healthy, broad-based tape</span><span class="l-zh">小盘参与度高于大盘 — 健康、广泛的盘面</span>.</p>
+      <b>72%</b> <span class="l-en">of S&amp;P 600 vs</span><span class="l-zh">的标普600 对</span>
+      <b>60%</b> <span class="l-en">for the S&amp;P 500</span><span class="l-zh">的标普500</span> — <span class="l-en">small caps participating MORE than large caps — healthy, broad-based tape</span><span class="l-zh">小盘参与度高于大盘 — 健康、广泛的盘面</span>.</p>
     
   </div>
 
@@ -746,65 +832,65 @@
     <table>
       <tr><th class="l"><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">active Δwt</span><span class="l-zh">主动权重Δ</span></th><th><span class="l-en">est. flow</span><span class="l-zh">估算资金流</span></th><th class="l"><span class="l-en">technical</span><span class="l-zh">技术面</span></th></tr>
       
-      <tr><td class="l"><a href="stock.html#ABBV"><b>ABBV</b></a> <span class="muted">XLV</span></td>
-        <td class="neg"><b>-0.05pp</b></td>
-        <td class="muted">−$20M</td>
+      <tr><td class="l"><a href="stock.html#EOG"><b>EOG</b></a> <span class="muted">XLE</span></td>
+        <td class="neg"><b>-0.03pp</b></td>
+        <td class="muted">−$13M</td>
+        <td class="l"><span class="pill st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td></tr>
+      
+      <tr><td class="l"><a href="stock.html#CL"><b>CL</b></a> <span class="muted">XLP</span></td>
+        <td class="neg"><b>-0.03pp</b></td>
+        <td class="muted">−$5M</td>
         <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></td></tr>
       
       <tr><td class="l"><a href="stock.html#WELL"><b>WELL</b></a> <span class="muted">XLRE</span></td>
         <td class="pos"><b>+0.03pp</b></td>
         <td class="muted">+$3M</td>
-        <td class="l"><span class="pill st-FRESH_BUY"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span> ✅</td></tr>
-      
-      <tr><td class="l"><a href="stock.html#CL"><b>CL</b></a> <span class="muted">XLP</span></td>
-        <td class="neg"><b>-0.03pp</b></td>
-        <td class="muted">−$4M</td>
-        <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></td></tr>
+        <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
       
       <tr><td class="l"><a href="stock.html#PLD"><b>PLD</b></a> <span class="muted">XLRE</span></td>
         <td class="pos"><b>+0.03pp</b></td>
         <td class="muted">+$2M</td>
         <td class="l"><span class="pill st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span> ✅</td></tr>
       
-      <tr><td class="l"><a href="stock.html#EOG"><b>EOG</b></a> <span class="muted">XLE</span></td>
-        <td class="neg"><b>-0.03pp</b></td>
-        <td class="muted">−$10M</td>
-        <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
-      
-      <tr><td class="l"><a href="stock.html#IRM"><b>IRM</b></a> <span class="muted">XLRE</span></td>
+      <tr><td class="l"><a href="stock.html#AMT"><b>AMT</b></a> <span class="muted">XLRE</span></td>
         <td class="pos"><b>+0.02pp</b></td>
         <td class="muted">+$2M</td>
-        <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
+        <td class="l"><span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅</td></tr>
       
       <tr><td class="l"><a href="stock.html#SPG"><b>SPG</b></a> <span class="muted">XLRE</span></td>
         <td class="pos"><b>+0.02pp</b></td>
         <td class="muted">+$2M</td>
-        <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
+        <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#ABT"><b>ABT</b></a> <span class="muted">XLV</span></td>
+      <tr><td class="l"><a href="stock.html#CAT"><b>CAT</b></a> <span class="muted">XLI</span></td>
         <td class="neg"><b>-0.02pp</b></td>
-        <td class="muted">−$8M</td>
-        <td class="l"><span class="pill st-FRESH_BUY"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span></td></tr>
+        <td class="muted">−$6M</td>
+        <td class="l"><span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#CCI"><b>CCI</b></a> <span class="muted">XLRE</span></td>
+      <tr><td class="l"><a href="stock.html#VTR"><b>VTR</b></a> <span class="muted">XLRE</span></td>
         <td class="pos"><b>+0.02pp</b></td>
         <td class="muted">+$2M</td>
-        <td class="l"><span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅</td></tr>
+        <td class="l"><span class="pill st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span> ✅</td></tr>
       
-      <tr><td class="l"><a href="stock.html#EQIX"><b>EQIX</b></a> <span class="muted">XLRE</span></td>
+      <tr><td class="l"><a href="stock.html#CCI"><b>CCI</b></a> <span class="muted">XLRE</span></td>
         <td class="pos"><b>+0.02pp</b></td>
         <td class="muted">+$1M</td>
         <td class="l"><span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅</td></tr>
       
-      <tr><td class="l"><a href="stock.html#LLY"><b>LLY</b></a> <span class="muted">XLV</span></td>
-        <td class="pos"><b>+0.01pp</b></td>
-        <td class="muted">+$6M</td>
+      <tr><td class="l"><a href="stock.html#O"><b>O</b></a> <span class="muted">XLRE</span></td>
+        <td class="pos"><b>+0.02pp</b></td>
+        <td class="muted">+$1M</td>
         <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
       
-      <tr><td class="l"><a href="stock.html#FCX"><b>FCX</b></a> <span class="muted">XLB</span></td>
-        <td class="neg"><b>-0.01pp</b></td>
-        <td class="muted">−$1M</td>
-        <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
+      <tr><td class="l"><a href="stock.html#LIN"><b>LIN</b></a> <span class="muted">XLB</span></td>
+        <td class="pos"><b>+0.02pp</b></td>
+        <td class="muted">+$1M</td>
+        <td class="l"><span class="pill st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span></td></tr>
+      
+      <tr><td class="l"><a href="stock.html#EQIX"><b>EQIX</b></a> <span class="muted">XLRE</span></td>
+        <td class="pos"><b>+0.01pp</b></td>
+        <td class="muted">+$1M</td>
+        <td class="l"><span class="pill st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span> ✅</td></tr>
       
     </table>
     
@@ -833,13 +919,6 @@
           <td class="r pos"><b>+5.55pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
-      <tr><td class="l"><b>BUG</b></td>
-          <td class="l"><a href="stock.html#CRWD"><b>CRWD</b></a> <span class="muted">Crowdstrike Holdings Inc - A</span></td>
-          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
-          <td class="r muted">7.21%</td>
-          <td class="r pos"><b>+5.39pp</b></td>
-          <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
-      
       <tr><td class="l"><b>MEME</b></td>
           <td class="l"><a href="stock.html#ALAB"><b>ALAB</b></a> <span class="muted">Astera Labs Inc</span></td>
           <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
@@ -853,6 +932,13 @@
           <td class="r muted">5.33%</td>
           <td class="r pos"><b>+5.33pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>BUG</b></td>
+          <td class="l"><a href="stock.html#CRWD"><b>CRWD</b></a> <span class="muted">Crowdstrike Holdings Inc - A</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
+          <td class="r muted">7.13%</td>
+          <td class="r pos"><b>+5.33pp</b></td>
+          <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
           <td class="l"><a href="stock.html#ONDS"><b>ONDS</b></a> <span class="muted">Ondas Inc</span></td>
@@ -896,16 +982,16 @@
           <td class="r pos"><b>+4.78pp</b></td>
           <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
       
-      <tr><td class="l"><b>REMX</b></td>
-          <td class="l"><a href="stock.html#7610 TT"><b>7610 TT</b></a> <span class="muted">Lianyou Metals Co Ltd</span></td>
-          <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-          <td class="r muted">6.98%</td>
+      <tr><td class="l"><b>BETZ</b></td>
+          <td class="l"><a href="stock.html#LNW AU"><b>LNW AU</b></a> <span class="muted">Light &amp; Wonder Inc</span></td>
+          <td class="l muted"><span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></td>
+          <td class="r muted">4.65%</td>
           <td class="r pos"><b>+4.65pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
     </table>
     
-    <div style="margin-top:12px"><table><tr><th class='l'>date</th><th>Materials</th><th>Communications</th><th>Energy</th><th>Financials</th><th>Industrials</th><th>Technology</th><th>Consumer Staples</th><th>Real Estate</th><th>Utilities</th><th>Health Care</th><th>Consumer Discretionary</th></tr><tr><td class='l muted'>2026-07-01</td><td class='pos'>+$8M</td><td class='pos'>+$499M</td><td class='neg'>−$24M</td><td class='pos'>+$346M</td><td class='neg'>−$128M</td><td class='neg'>−$195M</td><td class='neg'>−$22M</td><td class='pos'>+$64M</td><td class='pos'>+$91M</td><td class='pos'>+$106M</td><td class='pos'>+$57M</td></tr><tr><td class='l muted'>2026-07-06</td><td class='neg'>−$153M</td><td class='neg'>−$154M</td><td class='neg'>−$383M</td><td class='neg'>−$99M</td><td class='pos'>+$594M</td><td class='pos'>+$266M</td><td class='pos'>+$576M</td><td class='pos'>+$55M</td><td class='pos'>+$298M</td><td class='pos'>+$428M</td><td class='neg'>−$175M</td></tr><tr><td class='l muted'>2026-07-07</td><td>—</td><td>—</td><td>—</td><td class='pos'>+$470M</td><td>—</td><td>—</td><td>—</td><td class='pos'>+$50M</td><td>—</td><td>—</td><td class='pos'>+$376M</td></tr><tr><td class='l muted'>2026-07-08</td><td class='pos'>+$223M</td><td class='neg'>−$160M</td><td class='neg'>−$47M</td><td>—</td><td class='neg'>−$90M</td><td class='neg'>−$80M</td><td class='pos'>+$64M</td><td>—</td><td class='pos'>+$133M</td><td class='neg'>−$341M</td><td>—</td></tr><tr><td class='l muted'>2026-07-09</td><td class='pos'>+$141M</td><td class='neg'>−$55M</td><td class='neg'>−$23M</td><td class='pos'>+$177M</td><td class='pos'>+$82M</td><td class='pos'>+$64M</td><td class='neg'>−$25M</td><td class='pos'>+$24M</td><td class='neg'>−$10M</td><td class='neg'>−$32M</td><td class='neg'>−$170M</td></tr><tr><td class='l muted'>2026-07-10</td><td class='pos'>+$149M</td><td class='neg'>−$222M</td><td class='neg'>−$69M</td><td class='neg'>−$198M</td><td class='neg'>−$73M</td><td class='pos'>+$178M</td><td class='neg'>−$51M</td><td class='pos'>+$29M</td><td class='neg'>−$34M</td><td class='pos'>+$201M</td><td class='pos'>+$111M</td></tr><tr><td class='l muted'>2026-07-13</td><td class='neg'>−$28M</td><td>—</td><td class='pos'>+$27M</td><td>—</td><td>—</td><td>—</td><td class='neg'>−$22M</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td class='l muted'>2026-07-14</td><td class='neg'>−$67M</td><td class='neg'>−$58M</td><td class='neg'>−$24M</td><td class='neg'>−$195M</td><td class='pos'>+$81M</td><td class='pos'>+$78M</td><td class='neg'>−$120M</td><td class='neg'>−$0M</td><td class='neg'>−$107M</td><td class='neg'>−$126M</td><td class='pos'>+$105M</td></tr><tr><td class='l muted'>2026-07-16</td><td class='neg'>−$5M</td><td class='neg'>−$10M</td><td class='pos'>+$45M</td><td class='pos'>+$1.2B</td><td class='neg'>−$64M</td><td class='neg'>−$106M</td><td class='neg'>−$52M</td><td class='pos'>+$5M</td><td class='pos'>+$74M</td><td class='pos'>+$249M</td><td class='pos'>+$39M</td></tr><tr><td class='l muted'>2026-07-17</td><td class='neg'>−$0M</td><td class='pos'>+$34M</td><td class='neg'>−$34M</td><td class='pos'>+$766M</td><td class='neg'>−$126M</td><td class='pos'>+$236M</td><td class='pos'>+$85M</td><td class='pos'>+$27M</td><td class='neg'>−$24M</td><td class='pos'>+$122M</td><td class='pos'>+$58M</td></tr></table></div>
+    <div style="margin-top:12px"><table><tr><th class='l'>date</th><th>Materials</th><th>Communications</th><th>Energy</th><th>Financials</th><th>Industrials</th><th>Technology</th><th>Consumer Staples</th><th>Real Estate</th><th>Utilities</th><th>Health Care</th><th>Consumer Discretionary</th></tr><tr><td class='l muted'>2026-07-06</td><td class='neg'>−$153M</td><td class='neg'>−$154M</td><td class='neg'>−$383M</td><td class='neg'>−$99M</td><td class='pos'>+$594M</td><td class='pos'>+$266M</td><td class='pos'>+$576M</td><td class='pos'>+$55M</td><td class='pos'>+$298M</td><td class='pos'>+$428M</td><td class='neg'>−$175M</td></tr><tr><td class='l muted'>2026-07-07</td><td>—</td><td>—</td><td>—</td><td class='pos'>+$470M</td><td>—</td><td>—</td><td>—</td><td class='pos'>+$50M</td><td>—</td><td>—</td><td class='pos'>+$376M</td></tr><tr><td class='l muted'>2026-07-08</td><td class='pos'>+$223M</td><td class='neg'>−$160M</td><td class='neg'>−$47M</td><td>—</td><td class='neg'>−$90M</td><td class='neg'>−$80M</td><td class='pos'>+$64M</td><td>—</td><td class='pos'>+$133M</td><td class='neg'>−$341M</td><td>—</td></tr><tr><td class='l muted'>2026-07-09</td><td class='pos'>+$141M</td><td class='neg'>−$55M</td><td class='neg'>−$23M</td><td class='pos'>+$177M</td><td class='pos'>+$82M</td><td class='pos'>+$64M</td><td class='neg'>−$25M</td><td class='pos'>+$24M</td><td class='neg'>−$10M</td><td class='neg'>−$32M</td><td class='neg'>−$170M</td></tr><tr><td class='l muted'>2026-07-10</td><td class='pos'>+$149M</td><td class='neg'>−$222M</td><td class='neg'>−$69M</td><td class='neg'>−$198M</td><td class='neg'>−$73M</td><td class='pos'>+$178M</td><td class='neg'>−$51M</td><td class='pos'>+$29M</td><td class='neg'>−$34M</td><td class='pos'>+$201M</td><td class='pos'>+$111M</td></tr><tr><td class='l muted'>2026-07-13</td><td class='neg'>−$28M</td><td>—</td><td class='pos'>+$27M</td><td>—</td><td>—</td><td>—</td><td class='neg'>−$22M</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td class='l muted'>2026-07-14</td><td class='neg'>−$67M</td><td class='neg'>−$58M</td><td class='neg'>−$24M</td><td class='neg'>−$195M</td><td class='pos'>+$81M</td><td class='pos'>+$78M</td><td class='neg'>−$120M</td><td class='neg'>−$0M</td><td class='neg'>−$107M</td><td class='neg'>−$126M</td><td class='pos'>+$105M</td></tr><tr><td class='l muted'>2026-07-16</td><td class='neg'>−$5M</td><td class='neg'>−$10M</td><td class='pos'>+$45M</td><td class='pos'>+$1.2B</td><td class='neg'>−$64M</td><td class='neg'>−$106M</td><td class='neg'>−$52M</td><td class='pos'>+$5M</td><td class='pos'>+$74M</td><td class='pos'>+$249M</td><td class='pos'>+$39M</td></tr><tr><td class='l muted'>2026-07-17</td><td class='neg'>−$0M</td><td class='pos'>+$34M</td><td class='neg'>−$34M</td><td class='pos'>+$766M</td><td class='neg'>−$126M</td><td class='pos'>+$236M</td><td class='pos'>+$85M</td><td class='pos'>+$27M</td><td class='neg'>−$24M</td><td class='pos'>+$122M</td><td class='pos'>+$58M</td></tr><tr><td class='l muted'>2026-07-20</td><td class='neg'>−$0M</td><td class='pos'>+$1M</td><td class='neg'>−$50M</td><td class='neg'>−$480M</td><td class='neg'>−$204M</td><td class='neg'>−$30M</td><td class='pos'>+$25M</td><td class='pos'>+$10M</td><td class='neg'>−$40M</td><td class='pos'>+$142M</td><td class='pos'>+$12M</td></tr></table></div>
   </div>
 
   <div class="panel span12" style="text-align:center;background:var(--panel2)">
@@ -916,6 +1002,6 @@
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script src="theme.js?v=195f6d56" defer></script>
+<script src="theme.js"></script>
 </body>
 </html>

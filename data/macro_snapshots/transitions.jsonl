@@ -43,3 +43,11 @@
 {"asof": "2026-07-21", "domain": "us", "field": "us_vrp_state", "from_value": "rich (vol overpriced \u2014 constructive)", "to_value": "normal", "macro_context_id": "2af4a82c96cdbde7"}
 {"asof": "2026-07-21", "domain": "fx", "field": "fx_usdmxn_action", "from_value": "FLAT", "to_value": "SHORT", "macro_context_id": "2af4a82c96cdbde7"}
 {"asof": "2026-07-21", "domain": "canada", "field": "canada_overlay_state", "from_value": "Neutral", "to_value": "Risk-on", "macro_context_id": "2af4a82c96cdbde7"}
+{"asof": "2026-07-22", "domain": "us", "field": "us_fused_risk", "from_value": "elevated", "to_value": "caution", "macro_context_id": "48099c975be2d2b1"}
+{"asof": "2026-07-22", "domain": "us", "field": "us_risk_radar", "from_value": "caution", "to_value": "watch", "macro_context_id": "48099c975be2d2b1"}
+{"asof": "2026-07-22", "domain": "us", "field": "us_gamma_regime", "from_value": null, "to_value": "short", "macro_context_id": "48099c975be2d2b1"}
+{"asof": "2026-07-22", "domain": "market", "field": "market_state_verdict", "from_value": "MIXED", "to_value": "RISK_ON", "macro_context_id": "48099c975be2d2b1"}
+{"asof": "2026-07-22", "domain": "commodity", "field": "gold_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "48099c975be2d2b1"}
+{"asof": "2026-07-22", "domain": "commodity", "field": "silver_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "48099c975be2d2b1"}
+{"asof": "2026-07-22", "domain": "commodity", "field": "oil_action", "from_value": "HOLD", "to_value": "SELL", "macro_context_id": "48099c975be2d2b1"}
+{"asof": "2026-07-22", "domain": "china", "field": "china_fe_band", "from_value": "Fear", "to_value": "Neutral", "macro_context_id": "48099c975be2d2b1"}

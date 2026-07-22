@@ -2,86 +2,66 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-07-21T03:03:22.037067+00:00",
+  "generated_at": "2026-07-22T03:24:06.395007+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-07-20",
+  "state_asof": "2026-07-21",
   "tldr": [
-    "AI unwind leads: Tech de-rating is the dominant move, led by semis, as the market sheds risk.",
-    "Regime at the edge: Goldilocks still holds, but growth cooling and inflation warming tilt the map toward Reflation.",
-    "Bonds and dollar diverge: Credit is widening and the dollar is strengthening \u2014 caution that stocks haven't fully priced.",
-    "What to do: Watch \u2014 don't chase."
+    "Regime shifting: Growth is cooling and inflation is warming, pushing Goldilocks toward Reflation.",
+    "Tech-led de-rating: The AI and semiconductor unwind is the main driver of market weakness.",
+    "Dollar headwind: A strengthening US dollar is weighing on stocks, gold, and Bitcoin.",
+    "Bonds late-cycle: Credit is still healthy but the bond cycle is ahead of equities \u2014 a caution flag.",
+    "What to do: Watch \u2014 don't chase"
   ],
-  "summary": "A tech-led selloff is pressuring equities even as the macro backdrop remains Goldilocks, with bonds and the dollar warning of headwinds.",
-  "regime_read": "The US economy is still in a Goldilocks zone \u2014 growth is positive and inflation is not hot \u2014 but the ground is shifting. Growth has cooled sharply in the last few weeks, while inflation has warmed, bringing the regime to the edge of Reflation. The primary force driving markets right now is the unwind in AI and semiconductor stocks, which is pulling the whole tech sector lower.\n\nThat unwind is not happening in isolation. The bond market's credit spreads are widening slightly, and the dollar is strengthening, both of which normally weigh on risk assets. The stock market hasn't fully absorbed that caution yet \u2014 it's priced for calm while the plumbing underneath is getting tighter.",
+  "summary": "Growth is cooling and inflation warming, moving the US from Goldilocks toward Reflation while a strong dollar and tech weakness weigh on markets.",
+  "regime_read": "The US is still in Goldilocks, but the ground is shifting. Growth has cooled noticeably over the past three weeks, while inflation has been warming. This pushes the regime toward the Reflation edge, where energy and financials would lead and tech would suffer.\n\nThe dominant driver today is the AI and semiconductor unwind. Chip stocks have lagged the market by a full standard deviation, and growth is underperforming value. The firm US dollar adds pressure across risk assets.",
   "conflicts": [
-    "Credit caution vs equity calm: High-yield spreads are widening slightly, but stocks remain in a Goldilocks posture \u2014 this often means equities may eventually catch down.",
-    "Narrow leadership: The macro environment reads risk-on, yet only a small fraction of new buy signals pass the quality filter \u2014 the broad uptrend is being carried by fewer stocks."
+    "Caution gap: Bonds are in a late-cycle phase while equities remain mid-cycle \u2014 this is a warning, not a sell signal.",
+    "Narrow leadership: Only 38% of new buy setups clear the filter despite a broad market uptrend \u2014 conviction is thin."
   ],
-  "rotation_check": "The liquidity rotation is unwinding: AI/semis are breaking down, growth software is following, and money is flowing into defensive value and energy \u2014 consistent with a contraction leg.",
+  "rotation_check": "The semis sell-off breaks the first leg of the liquidity rotation playbook. No subsequent asset \u2014 software, China equities, or crypto \u2014 is picking up the baton yet.",
   "transmission": [
-    "If the real 10-year yield keeps rising \u2192 pressure on long-duration stocks (tech, semis) and gold grows.",
-    "If the dollar keeps strengthening \u2192 it will act as a drag on emerging markets, copper, and Bitcoin despite near-term calm."
+    "If inflation keeps warming and growth cools further \u2192 the US regime tips into Reflation, favoring energy and financials over tech.",
+    "If the dollar keeps strengthening \u2192 it will add headwinds to US stocks, gold, copper, and Bitcoin."
   ],
   "watch_items": [
-    "Breadth direction flips below 0.45: that would tip the growth axis into Reflation.",
-    "PCE July 30: a cold print could ease stagflation fears, a hot one would deepen them.",
-    "FOMC July 29: if the Fed signals a September hike, real yields and the dollar could spike.",
-    "Semis RS reversal: if semis relative strength bounces back, the tech unwind may pause."
+    "Growth score dips below zero: Goldilocks ends and Reflation begins.",
+    "Semis relative strength recovers: tech de-rating fades and risk-on resumes.",
+    "FOMC July 29: any hawkish surprise would amplify dollar strength and rate pressure.",
+    "PCE July 30: a cold print could offset rate fears and soften the dollar's headwind."
   ],
-  "confidence": "medium",
-  "theses": [
-    {
-      "id": "mb-2026-07-20-1",
-      "subject": "Semiconductors",
-      "lean": "underweight",
-      "conviction": "medium",
-      "horizon_d": 10,
-      "thesis": "The AI/semi unwind is the dominant driver of tech de-rating, confirmed by bond market caution and narrow entry breadth.",
-      "falsifier": {
-        "text": "Semis relative strength turns positive for three consecutive days.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "SMH",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 10
-        }
-      },
-      "check_by": "2026-08-03"
-    }
-  ],
-  "raw_text": "{\n  \"tldr\": [\n    \"AI unwind leads: Tech de-rating is the dominant move, led by semis, as the market sheds risk.\",\n    \"Regime at the edge: Goldilocks still holds, but growth cooling and inflation warming tilt the map toward Reflation.\",\n    \"Bonds and dollar diverge: Credit is widening and the dollar is strengthening \u2014 caution that stocks haven't fully priced.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"A tech-led selloff is pressuring equities even as the macro backdrop remains Goldilocks, with bonds and the dollar warning of headwinds.\",\n  \"regime_read\": \"The US economy is still in a Goldilocks zone \u2014 growth is positive and inflation is not hot \u2014 but the ground is shifting. Growth has cooled sharply in the last few weeks, while inflation has warmed, bringing the regime to the edge of Reflation. The primary force driving markets right now is the unwind in AI and semiconductor stocks, which is pulling the whole tech sector lower.\\n\\nThat unwind is not happening in isolation. The bond market's credit spreads are widening slightly, and the dollar is strengthening, both of which normally weigh on risk assets. The stock market hasn't fully absorbed that caution yet \u2014 it's priced for calm while the plumbing underneath is getting tighter.\",\n  \"conflicts\": [\n    \"Credit caution vs equity calm: High-yield spreads are widening slightly, but stocks remain in a Goldilocks posture \u2014 this often means equities may eventually catch down.\",\n    \"Narrow leadership: The macro environment reads risk-on, yet only a small fraction of new buy signals pass the quality filter \u2014 the broad uptrend is being carried by fewer stocks.\"\n  ],\n  \"transmission\": [\n    \"If the real 10-year yield keeps rising \u2192 pressure on long-duration stocks (tech, semis) and gold grows.\",\n    \"If the dollar keeps strengthening \u2192 it will act as a drag on emerging markets, copper, and Bitcoin despite near-term calm.\"\n  ],\n  \"rotation_check\": \"The liquidity rotation is unwinding: AI/semis are breaking down, growth software is following, and money is flowing into defensive value and energy \u2014 consistent with a contraction leg.\",\n  \"watch_items\": [\n    \"Breadth direction flips below 0.45: that would tip the growth axis into Reflation.\",\n    \"PCE July 30: a cold print could ease stagflation fears, a hot one would deepen them.\",\n    \"FOMC July 29: if the Fed signals a September hike, real yields and the dollar could spike.\",\n    \"Semis RS reversal: if semis relative strength bounces back, the tech unwind may pause.\"\n  ],\n  \"confidence\": \"medium\",\n  \"theses\": [\n    {\n      \"subject\": \"Semiconductors\",\n      \"lean\": \"underweight\",\n      \"conviction\": \"medium\",\n      \"horizon_d\": 10,\n      \"thesis\": \"The AI/semi unwind is the dominant driver of tech de-rating, confirmed by bond market caution and narrow entry breadth.\",\n      \"falsifier_text\": \"Semis relative strength turns positive for three consecutive days.\"\n    }\n  ],\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-07-29\",\n      \"label\": \"FOMC rate decision\",\n      \"kind\": \"FOMC\",\n      \"note\": \"The Fed meets after hot inflation data and an Iran-linked oil spike \u2014 the market expects a hawkish hold.\"\n    },\n    {\n      \"date\": \"2026-07-30\",\n      \"label\": \"GDP (BEA estimate)\",\n      \"kind\": \"GDP\",\n      \"note\": \"The GDPNow estimate stood at about 1.7% \u2014 a miss could amplify growth-cooling fears.\"\n    },\n    {\n      \"date\": \"2026-07-30\",\n      \"label\": \"PCE / personal income (BEA)\",\n      \"kind\": \"PCE\",\n      \"note\": \"The PCE release will test inflation; the model sees a cold print likely, which could ease rate fears.\"\n    },\n    {\n      \"date\": \"2026-07-20\",\n      \"label\": \"China AI compute basket downside risk\",\n      \"kind\": \"hazard\",\n      \"note\": \"A cycle hazard signals a downturn in Chinese AI compute stocks over the next 3 months.\"\n    }\n  ],\n  \"forward_read\": \"The calendar is packed: claims on July 23, followed by the FOMC decision on July 29 and GDP/PCE on July 30. The odds favor a hawkish hold, but any hint of a September hike could boost the dollar and pressure tech further. The PCE cold surprise from the model suggests inflation may ease, but the market's attention is on the Fed's reaction to the Iran-driven oil spike.\"\n}",
+  "confidence": "low",
+  "theses": [],
+  "raw_text": "{\n  \"tldr\": [\n    \"Regime shifting: Growth is cooling and inflation is warming, pushing Goldilocks toward Reflation.\",\n    \"Tech-led de-rating: The AI and semiconductor unwind is the main driver of market weakness.\",\n    \"Dollar headwind: A strengthening US dollar is weighing on stocks, gold, and Bitcoin.\",\n    \"Bonds late-cycle: Credit is still healthy but the bond cycle is ahead of equities \u2014 a caution flag.\",\n    \"What to do: Watch \u2014 don't chase\"\n  ],\n  \"summary\": \"Growth is cooling and inflation warming, moving the US from Goldilocks toward Reflation while a strong dollar and tech weakness weigh on markets.\",\n  \"regime_read\": \"The US is still in Goldilocks, but the ground is shifting. Growth has cooled noticeably over the past three weeks, while inflation has been warming. This pushes the regime toward the Reflation edge, where energy and financials would lead and tech would suffer.\\n\\nThe dominant driver today is the AI and semiconductor unwind. Chip stocks have lagged the market by a full standard deviation, and growth is underperforming value. The firm US dollar adds pressure across risk assets.\",\n  \"conflicts\": [\n    \"Caution gap: Bonds are in a late-cycle phase while equities remain mid-cycle \u2014 this is a warning, not a sell signal.\",\n    \"Narrow leadership: Only 38% of new buy setups clear the filter despite a broad market uptrend \u2014 conviction is thin.\"\n  ],\n  \"transmission\": [\n    \"If inflation keeps warming and growth cools further \u2192 the US regime tips into Reflation, favoring energy and financials over tech.\",\n    \"If the dollar keeps strengthening \u2192 it will add headwinds to US stocks, gold, copper, and Bitcoin.\"\n  ],\n  \"rotation_check\": \"The semis sell-off breaks the first leg of the liquidity rotation playbook. No subsequent asset \u2014 software, China equities, or crypto \u2014 is picking up the baton yet.\",\n  \"watch_items\": [\n    \"Growth score dips below zero: Goldilocks ends and Reflation begins.\",\n    \"Semis relative strength recovers: tech de-rating fades and risk-on resumes.\",\n    \"FOMC July 29: any hawkish surprise would amplify dollar strength and rate pressure.\",\n    \"PCE July 30: a cold print could offset rate fears and soften the dollar's headwind.\"\n  ],\n  \"confidence\": \"low\",\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-07-23\",\n      \"label\": \"Initial jobless claims\",\n      \"kind\": \"release\",\n      \"note\": \"Claims model is benchmark-only \u2014 no projection; watch for any surprise in layoffs.\"\n    },\n    {\n      \"date\": \"2026-07-29\",\n      \"label\": \"FOMC rate decision\",\n      \"kind\": \"FOMC\",\n      \"note\": \"Market prices virtually no cuts (implied -2bp); any hawkish shift could intensify dollar headwind.\"\n    },\n    {\n      \"date\": \"2026-07-30\",\n      \"label\": \"GDP (BEA estimate)\",\n      \"kind\": \"GDP\",\n      \"note\": \"GDPnow estimate stands at 1.68%, a growth benchmark for the release.\"\n    },\n    {\n      \"date\": \"2026-07-30\",\n      \"label\": \"PCE / personal income (BEA)\",\n      \"kind\": \"PCE\",\n      \"note\": \"Model projects a cold headline print (median -0.29% MoM), surprise distribution 100% cold.\"\n    }\n  ],\n  \"forward_read\": \"The FOMC decision on July 29 arrives with the market already more hawkish than the Fed (implied cuts at -2bp); any further hawkish signal could intensify the dollar's headwind. The PCE report the next day is projected to show a cold headline print (median -0.29% MoM, surprise distribution 100% cold), which might counterbalance rate fears if realized.\"\n}",
   "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
   "style_flags": [],
   "forward_watch": [
     {
+      "date": "2026-07-23",
+      "label": "Initial jobless claims",
+      "kind": "release",
+      "note": "Claims model is benchmark-only \u2014 no projection; watch for any surprise in layoffs."
+    },
+    {
       "date": "2026-07-29",
       "label": "FOMC rate decision",
       "kind": "FOMC",
-      "note": "The Fed meets after hot inflation data and an Iran-linked oil spike \u2014 the market expects a hawkish hold."
+      "note": "Market prices virtually no cuts (implied -2bp); any hawkish shift could intensify dollar headwind."
     },
     {
       "date": "2026-07-30",
       "label": "GDP (BEA estimate)",
       "kind": "GDP",
-      "note": "The GDPNow estimate stood at about 1.7% \u2014 a miss could amplify growth-cooling fears."
+      "note": "GDPnow estimate stands at 1.68%, a growth benchmark for the release."
     },
     {
       "date": "2026-07-30",
       "label": "PCE / personal income (BEA)",
       "kind": "PCE",
-      "note": "The PCE release will test inflation; the model sees a cold print likely, which could ease rate fears."
-    },
-    {
-      "date": "2026-07-20",
-      "label": "China AI compute basket downside risk",
-      "kind": "hazard",
-      "note": "A cycle hazard signals a downturn in Chinese AI compute stocks over the next 3 months."
+      "note": "Model projects a cold headline print (median -0.29% MoM), surprise distribution 100% cold."
     }
   ],
-  "forward_read": "The calendar is packed: claims on July 23, followed by the FOMC decision on July 29 and GDP/PCE on July 30. The odds favor a hawkish hold, but any hint of a September hike could boost the dollar and pressure tech further. The PCE cold surprise from the model suggests inflation may ease, but the market's attention is on the Fed's reaction to the Iran-driven oil spike.",
+  "forward_read": "The FOMC decision on July 29 arrives with the market already more hawkish than the Fed (implied cuts at -2bp); any further hawkish signal could intensify the dollar's headwind. The PCE report the next day is projected to show a cold headline print (median -0.29% MoM, surprise distribution 100% cold), which might counterbalance rate fears if realized.",
   "nw_context_used": true,
   "cortex_status": "degraded",
   "refresh_days": 1,
@@ -122,9 +102,9 @@
       "key": "credit",
       "label_en": "Credit",
       "label_zh": "\u4fe1\u7528",
-      "value_en": "Tight, but widening",
-      "value_zh": "\u504f\u7d27\u4f46\u5728\u8d70\u5bbd",
-      "tone": "warn"
+      "value_en": "Tight",
+      "value_zh": "\u504f\u7d27",
+      "tone": "good"
     },
     {
       "key": "driver",
@@ -136,28 +116,29 @@
     }
   ],
   "zh": {
-    "summary": "\u5c3d\u7ba1\u5b8f\u89c2\u80cc\u666f\u4ecd\u662f\u91d1\u53d1\u5973\u5b69\u72b6\u6001\uff0c\u4f46\u79d1\u6280\u80a1\u5f15\u9886\u7684\u629b\u552e\u6b63\u5728\u7ed9\u80a1\u5e02\u65bd\u538b\uff0c\u503a\u5238\u548c\u7f8e\u5143\u53d1\u51fa\u9006\u98ce\u8b66\u544a\u3002",
-    "regime_read": "\u7f8e\u56fd\u7ecf\u6d4e\u4ecd\u5904\u4e8e\u91d1\u53d1\u5973\u5b69\u533a\u95f4\u2014\u2014\u589e\u957f\u4e3a\u6b63\u3001\u901a\u80c0\u4e0d\u70ed\u2014\u2014\u4f46\u6839\u57fa\u6b63\u5728\u52a8\u6447\u3002\u8fc7\u53bb\u51e0\u5468\u589e\u957f\u6025\u5267\u964d\u6e29\uff0c\u800c\u901a\u80c0\u5347\u6e29\uff0c\u4f7f\u8be5\u72b6\u6001\u6fd2\u4e34\u518d\u901a\u80c0\u8fb9\u7f18\u3002\u76ee\u524d\u9a71\u52a8\u5e02\u573a\u7684\u4e3b\u8981\u529b\u91cf\u662f\u4eba\u5de5\u667a\u80fd\u548c\u534a\u5bfc\u4f53\u80a1\u7968\u7684\u5e73\u4ed3\uff0c\u8fd9\u62d6\u7d2f\u6574\u4e2a\u79d1\u6280\u677f\u5757\u8d70\u4f4e\u3002\n\n\u8fd9\u79cd\u5e73\u4ed3\u5e76\u975e\u5b64\u7acb\u53d1\u751f\u3002\u503a\u5238\u5e02\u573a\u7684\u4fe1\u7528\u5229\u5dee\u5c0f\u5e45\u6269\u5927\uff0c\u7f8e\u5143\u8d70\u5f3a\uff0c\u8fd9\u4e24\u8005\u901a\u5e38\u90fd\u4f1a\u6253\u538b\u98ce\u9669\u8d44\u4ea7\u3002\u80a1\u5e02\u5c1a\u672a\u5b8c\u5168\u6d88\u5316\u8fd9\u79cd\u8c28\u614e\u60c5\u7eea\u2014\u2014\u5b83\u5b9a\u4ef7\u7684\u662f\u5e73\u9759\uff0c\u800c\u5e95\u5c42\u6d41\u52a8\u6027\u5374\u5728\u6536\u7d27\u3002",
-    "rotation_check": "\u6d41\u52a8\u6027\u8f6e\u52a8\u6b63\u5728\u5e73\u4ed3\uff1a\u4eba\u5de5\u667a\u80fd/\u534a\u5bfc\u4f53\u6b63\u5728\u5d29\u6e83\uff0c\u6210\u957f\u578b\u8f6f\u4ef6\u7d27\u968f\u5176\u540e\uff0c\u8d44\u91d1\u6d41\u5165\u9632\u5fa1\u6027\u4ef7\u503c\u548c\u80fd\u6e90\u2014\u2014\u8fd9\u4e0e\u6536\u7f29\u9636\u6bb5\u4e00\u81f4\u3002",
+    "summary": "\u589e\u957f\u6b63\u5728\u653e\u7f13\uff0c\u901a\u80c0\u6b63\u5728\u5347\u6e29\uff0c\u7f8e\u56fd\u7ecf\u6d4e\u4ece\u201c\u91d1\u53d1\u5973\u5b69\u201d\u72b6\u6001\u8f6c\u5411\u518d\u901a\u80c0\uff0c\u800c\u5f3a\u52bf\u7f8e\u5143\u548c\u79d1\u6280\u80a1\u75b2\u8f6f\u5bf9\u5e02\u573a\u6784\u6210\u538b\u529b\u3002",
+    "regime_read": "\u7f8e\u56fd\u4ecd\u5904\u4e8e\u201c\u91d1\u53d1\u5973\u5b69\u201d\u72b6\u6001\uff0c\u4f46\u57fa\u7840\u6b63\u5728\u8f6c\u53d8\u3002\u8fc7\u53bb\u4e09\u5468\uff0c\u589e\u957f\u660e\u663e\u964d\u6e29\uff0c\u800c\u901a\u80c0\u6301\u7eed\u5347\u6e29\u3002\u8fd9\u63a8\u52a8\u7ecf\u6d4e\u72b6\u6001\u8d70\u5411\u518d\u901a\u80c0\u8fb9\u7f18\uff0c\u5c4a\u65f6\u80fd\u6e90\u548c\u91d1\u878d\u677f\u5757\u5c06\u9886\u5148\uff0c\u79d1\u6280\u677f\u5757\u5c06\u627f\u538b\u3002\n\n\u5f53\u524d\u7684\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\u662f\u4eba\u5de5\u667a\u80fd\u548c\u534a\u5bfc\u4f53\u677f\u5757\u7684\u56de\u843d\u3002\u82af\u7247\u80a1\u843d\u540e\u5e02\u573a\u6574\u6574\u4e00\u4e2a\u6807\u51c6\u5dee\uff0c\u6210\u957f\u80a1\u8868\u73b0\u4e0d\u53ca\u4ef7\u503c\u80a1\u3002\u575a\u633a\u7684\u7f8e\u5143\u7ed9\u98ce\u9669\u8d44\u4ea7\u5e26\u6765\u989d\u5916\u538b\u529b\u3002",
+    "rotation_check": "\u534a\u5bfc\u4f53\u677f\u5757\u7684\u629b\u552e\u6253\u7834\u4e86\u6d41\u52a8\u6027\u8f6e\u52a8\u7b56\u7565\u7684\u7b2c\u4e00\u6b65\u3002\u968f\u540e\u6ca1\u6709\u8d44\u4ea7\u2014\u2014\u8f6f\u4ef6\u3001\u4e2d\u56fd\u80a1\u7968\u6216\u52a0\u5bc6\u8d27\u5e01\u2014\u2014\u63a5\u8fc7\u63a5\u529b\u68d2\u3002",
     "tldr": [
-      "AI\u56de\u64a4\u4e3b\u5bfc\uff1a\u79d1\u6280\u80a1\u4f30\u503c\u4e0b\u4fee\u662f\u4e3b\u8981\u8d8b\u52bf\uff0c\u7531\u534a\u5bfc\u4f53\u5f15\u9886\uff0c\u56e0\u5e02\u573a\u5728\u53bb\u98ce\u9669\u3002",
-      "\u8fb9\u7f18\u653f\u6743\uff1a\u91d1\u53d1\u59d1\u5a18\u6548\u5e94\u4ecd\u5b58\uff0c\u4f46\u589e\u957f\u964d\u6e29\u4e0e\u901a\u80c0\u5347\u6e29\u6b63\u5c06\u683c\u5c40\u63a8\u5411\u518d\u901a\u80c0\u3002",
-      "\u503a\u5238\u4e0e\u7f8e\u5143\u5206\u5316\uff1a\u5229\u5dee\u6269\u5927\u4e14\u7f8e\u5143\u8d70\u5f3a\u2014\u2014\u8b66\u60d5\u80a1\u5e02\u5c1a\u672a\u5145\u5206\u5b9a\u4ef7\u3002",
-      "\u5e94\u5bf9\u7b56\u7565\uff1a\u89c2\u671b\uff0c\u52ff\u8ffd\u6da8\u3002"
+      "\u5e02\u573a\u683c\u5c40\u8f6c\u6362\uff1a\u589e\u957f\u6b63\u5728\u964d\u6e29\uff0c\u901a\u80c0\u6b63\u5728\u5347\u6e29\uff0c\u5c06\u91d1\u53d1\u5973\u5b69\u7ecf\u6d4e\u63a8\u5411\u518d\u901a\u80c0\u3002",
+      "\u79d1\u6280\u80a1\u4e3b\u5bfc\u7684\u4f30\u503c\u4e0b\u8c03\uff1a\u4eba\u5de5\u667a\u80fd\u548c\u534a\u5bfc\u4f53\u677f\u5757\u7684\u56de\u843d\u662f\u5e02\u573a\u75b2\u8f6f\u7684\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\u3002",
+      "\u7f8e\u5143\u9006\u98ce\uff1a\u7f8e\u5143\u8d70\u5f3a\u6b63\u5728\u62d6\u7d2f\u80a1\u7968\u3001\u9ec4\u91d1\u548c\u6bd4\u7279\u5e01\u3002",
+      "\u503a\u5238\u5468\u671f\u540e\u671f\uff1a\u4fe1\u8d37\u4f9d\u7136\u5065\u5eb7\uff0c\u4f46\u503a\u5238\u5468\u671f\u9886\u5148\u4e8e\u80a1\u7968\u2014\u2014\u8fd9\u662f\u4e00\u4e2a\u8b66\u793a\u4fe1\u53f7\u3002",
+      "\u5e94\u5bf9\u7b56\u7565\uff1a\u89c2\u671b\u2014\u2014\u4e0d\u8981\u8ffd\u6da8\u3002"
     ],
     "conflicts": [
-      "\u4fe1\u7528\u8c28\u614e vs \u80a1\u5e02\u5e73\u9759\uff1a\u9ad8\u6536\u76ca\u5229\u5dee\u5c0f\u5e45\u6269\u5927\uff0c\u4f46\u80a1\u5e02\u4ecd\u5904\u4e8e\u91d1\u53d1\u5973\u5b69\u59ff\u6001\u2014\u2014\u8fd9\u901a\u5e38\u610f\u5473\u7740\u80a1\u5e02\u6700\u7ec8\u53ef\u80fd\u8865\u8dcc\u3002",
-      "\u9886\u6da8\u8303\u56f4\u72ed\u7a84\uff1a\u5b8f\u89c2\u73af\u5883\u5448\u73b0\u98ce\u9669\u504f\u597d\uff0c\u4f46\u53ea\u6709\u4e00\u5c0f\u90e8\u5206\u65b0\u7684\u4e70\u5165\u4fe1\u53f7\u901a\u8fc7\u8d28\u91cf\u7b5b\u9009\u2014\u2014\u5e7f\u6cdb\u4e0a\u6da8\u8d8b\u52bf\u7531\u8d8a\u6765\u8d8a\u5c11\u80a1\u7968\u652f\u6491\u3002"
+      "\u8c28\u614e\u7f3a\u53e3\uff1a\u503a\u5238\u5904\u4e8e\u5468\u671f\u540e\u671f\u9636\u6bb5\uff0c\u800c\u80a1\u7968\u4ecd\u5904\u4e8e\u5468\u671f\u4e2d\u671f\u2014\u2014\u8fd9\u662f\u4e00\u4e2a\u8b66\u544a\uff0c\u800c\u975e\u5356\u51fa\u4fe1\u53f7\u3002",
+      "\u9886\u6da8\u8303\u56f4\u72ed\u7a84\uff1a\u5c3d\u7ba1\u5e02\u573a\u6574\u4f53\u5448\u4e0a\u5347\u8d8b\u52bf\uff0c\u4f46\u53ea\u670938%\u7684\u65b0\u4e70\u5165\u8bbe\u7f6e\u901a\u8fc7\u4e86\u7b5b\u9009\u2014\u2014\u4fe1\u5fc3\u4e0d\u8db3\u3002"
     ],
     "transmission": [
-      "\u82e5\u5b9e\u964510\u5e74\u671f\u6536\u76ca\u7387\u7ee7\u7eed\u4e0a\u5347 \u2192 \u5bf9\u957f\u4e45\u671f\u80a1\u7968\uff08\u79d1\u6280\u3001\u534a\u5bfc\u4f53\uff09\u548c\u9ec4\u91d1\u7684\u538b\u529b\u589e\u5927\u3002",
-      "\u5982\u679c\u7f8e\u5143\u6301\u7eed\u8d70\u5f3a \u2192 \u5c3d\u7ba1\u77ed\u671f\u5185\u5e73\u9759\uff0c\u4f46\u5c06\u5bf9\u65b0\u5174\u5e02\u573a\u3001\u94dc\u548c\u6bd4\u7279\u5e01\u6784\u6210\u62d6\u7d2f\u3002"
+      "\u5982\u679c\u901a\u80c0\u6301\u7eed\u5347\u6e29\u4e14\u589e\u957f\u8fdb\u4e00\u6b65\u964d\u6e29\u2192\u7f8e\u56fd\u7ecf\u6d4e\u72b6\u6001\u5c06\u6ed1\u5165\u518d\u901a\u80c0\uff0c\u6709\u5229\u4e8e\u80fd\u6e90\u548c\u91d1\u878d\u677f\u5757\uff0c\u800c\u975e\u79d1\u6280\u677f\u5757\u3002",
+      "\u5982\u679c\u7f8e\u5143\u6301\u7eed\u8d70\u5f3a \u2192 \u5c06\u4e3a\u7f8e\u80a1\u3001\u9ec4\u91d1\u3001\u94dc\u548c\u6bd4\u7279\u5e01\u5e26\u6765\u9006\u98ce\u3002"
     ],
     "watch_items": [
-      "\u5e02\u573a\u5e7f\u5ea6\u65b9\u5411\u8dcc\u78340.45\uff1a\u90a3\u5c06\u628a\u589e\u957f\u8f74\u63a8\u5165\u518d\u901a\u80c0\u3002",
-      "7\u670830\u65e5PCE\u6570\u636e\uff1a\u82e5\u6570\u636e\u75b2\u8f6f\uff0c\u53ef\u7f13\u89e3\u6ede\u80c0\u62c5\u5fe7\uff1b\u82e5\u6570\u636e\u706b\u70ed\uff0c\u5219\u4f1a\u52a0\u6df1\u5fe7\u8651\u3002",
-      "7\u670829\u65e5FOMC\u4f1a\u8bae\uff1a\u82e5\u7f8e\u8054\u50a8\u6697\u793a9\u6708\u52a0\u606f\uff0c\u5b9e\u9645\u6536\u76ca\u7387\u548c\u7f8e\u5143\u53ef\u80fd\u98d9\u5347\u3002",
-      "\u534a\u5bfc\u4f53\u76f8\u5bf9\u5f3a\u5f31\u53cd\u8f6c\uff1a\u82e5\u534a\u5bfc\u4f53\u76f8\u5bf9\u5f3a\u5f31\u53cd\u5f39\uff0c\u79d1\u6280\u80a1\u56de\u64a4\u53ef\u80fd\u6682\u505c\u3002"
+      "\u589e\u957f\u8bc4\u5206\u964d\u81f3\u96f6\u4ee5\u4e0b\uff1a\u91d1\u53d1\u5973\u5b69\u7ecf\u6d4e\u7ed3\u675f\uff0c\u518d\u901a\u80c0\u5f00\u59cb\u3002",
+      "\u534a\u5bfc\u4f53\u76f8\u5bf9\u5f3a\u5f31\u6062\u590d\uff1a\u79d1\u6280\u80a1\u4f30\u503c\u4e0b\u8c03\u6d88\u9000\uff0c\u98ce\u9669\u504f\u597d\u6062\u590d\u3002",
+      "FOMC 7\u670829\u65e5\uff1a\u4efb\u4f55\u9e70\u6d3e\u610f\u5916\u90fd\u5c06\u653e\u5927\u7f8e\u5143\u5f3a\u52bf\u548c\u5229\u7387\u538b\u529b\u3002",
+      "PCE 7\u670830\u65e5\uff1a\u75b2\u8f6f\u7684\u6570\u636e\u53ef\u80fd\u62b5\u6d88\u5229\u7387\u62c5\u5fe7\uff0c\u7f13\u89e3\u7f8e\u5143\u9006\u98ce\u3002"
     ]
   }
 }

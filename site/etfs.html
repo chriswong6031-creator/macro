@@ -28,8 +28,85 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=a1aa8c55">
-<link rel="stylesheet" href="assets/css/56c9c27b.css?v=56c9c27b">
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1200px)/2)); } }
+  a { text-decoration:none; }
+  h1 { font-size:20px; margin:0; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.06em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+  .panel.hero { padding:16px 18px; }
+  .muted { color:var(--muted); }
+  .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
+           font-size:12.5px; }
+  table { border-collapse:collapse; width:100%; font-size:13px;
+          font-variant-numeric:tabular-nums; }
+  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line);
+          vertical-align:middle; }
+  th { color:var(--muted); font-weight:500; }
+  td.r, th.r { text-align:right; }
+  td.num, th.num { font-variant-numeric:tabular-nums; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .tag { display:inline-block; padding:1px 8px; border-radius:8px; font-size:11px;
+         font-weight:600; }
+  .tag-active { background:color-mix(in srgb,var(--info) 15%,var(--panel));
+                color:color-mix(in srgb,var(--info) 80%,var(--text)); }
+  .tag-passive { background:color-mix(in srgb,var(--muted) 15%,var(--panel));
+                 color:var(--muted); }
+  .tag-3p { background:color-mix(in srgb,var(--muted) 12%,var(--panel));
+            color:var(--muted); border:1px solid var(--line); }
+  .tag-contested { background:color-mix(in srgb,var(--down) 14%,var(--panel));
+                   color:color-mix(in srgb,var(--down) 82%,var(--text)); }
+  /* ---- company logo + ticker-text fallback (heatmap.js pattern) ---- */
+  .tk-logo { display:inline-flex; align-items:center; justify-content:center;
+             width:22px; height:22px; border-radius:5px; overflow:hidden;
+             background:color-mix(in srgb,var(--muted) 10%,var(--panel));
+             flex:0 0 22px; margin-right:8px; vertical-align:middle; }
+  .tk-logo img { width:22px; height:22px; object-fit:contain; display:block; }
+  .tk-fb { font-size:8.5px; font-weight:700; letter-spacing:-.02em; color:var(--muted);
+           align-items:center; justify-content:center; width:22px; height:22px; }
+  .stock-cell { display:flex; align-items:center; }
+  .stock-cell .stk-txt { min-width:0; }
+  .stock-cell .stk-txt b { display:block; line-height:1.2; }
+  .stock-cell .stk-txt .name { display:block; font-size:11.5px; line-height:1.2; }
+  /* ---- consensus breadth chips ---- */
+  .chip { display:inline-flex; align-items:center; gap:2px; padding:1px 6px;
+          border-radius:7px; font-size:11px; font-weight:700; margin-right:3px; }
+  .chip-accum { background:color-mix(in srgb,var(--up) 15%,var(--panel));
+                color:color-mix(in srgb,var(--up) 82%,var(--text)); }
+  .chip-trim { background:color-mix(in srgb,var(--down) 15%,var(--panel));
+               color:color-mix(in srgb,var(--down) 82%,var(--text)); }
+  .brk { color:var(--muted); font-size:12px; }
+  .brk b.pos { color:var(--up); } .brk b.neg { color:var(--down); }
+  .spark { display:inline-block; vertical-align:middle; }
+  /* ---- freshness dot ---- */
+  .fdot { display:inline-block; width:9px; height:9px; border-radius:50%;
+          vertical-align:middle; margin-right:6px; }
+  .fdot.fresh { background:var(--up); }
+  .fdot.aging { background:#d9a441; }
+  .fdot.stale { background:var(--down); }
+  .fdot.none  { background:var(--muted); }
+  details > summary { cursor:pointer; }
+  details[open] > summary { margin-bottom:2px; }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative;
+          vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%;
+               transform:translateX(-50%); width:320px; background:var(--panel);
+               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
+               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
+               box-shadow:var(--popover-shadow); pointer-events:auto;
+               max-height:min(60vh,420px); overflow-y:auto; }
+  .help:hover::before { content:""; position:absolute; top:100%; left:50%;
+               transform:translateX(-50%); width:60px; height:40%; }
+  .help:hover .tip { display:block; }
+</style>
 </head>
 <body>
 
@@ -185,7 +262,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -244,8 +385,8 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -301,6 +442,24 @@
       
       <tr>
         <td class="l">
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SPCX.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">SPCX</span></span><span class="stk-txt"><a href="stock.html#SPCX"><b>SPCX</b></a><span class="name muted">Space Exploration Technologies Corp</span></span></span>
+        </td>
+        <td class="l muted"><span class="l-en">Space</span><span class="l-zh">Space</span></td>
+        <td class="l">
+          <span class="chip chip-accum" title="funds accumulating">5 ▲</span>
+          <span class="chip chip-trim" title="funds trimming">1 ▼</span>
+          <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
+        </td>
+        <td class="r num pos"><b>+29.64pp</b></td>
+        <td class="l brk">
+          <b>MARS</b> <b class="pos">+21.4</b> · <b>ARKK</b> <b class="pos">+4.5</b> · <b>ARKW</b> <b class="pos">+3.3</b>
+        </td>
+        <td class="l"><span class="muted">—</span></td>
+        <td class="l muted"><span class="tag tag-active">3 <span class="l-en">NEW</span><span class="l-zh">新建</span></span> <span class="tag tag-passive">1 <span class="l-en">EXIT</span><span class="l-zh">清仓</span></span></td>
+      </tr>
+      
+      <tr>
+        <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CBRS.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">CBRS</span></span><span class="stk-txt"><a href="stock.html#CBRS"><b>CBRS</b></a><span class="name muted">Cerebras Systems Inc   A</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
@@ -309,7 +468,7 @@
           
           
         </td>
-        <td class="r num pos"><b>+3.86pp</b></td>
+        <td class="r num pos"><b>+3.92pp</b></td>
         <td class="l brk">
           <b>XSD</b> <b class="pos">+1.9</b> · <b>CHAT</b> <b class="pos">+0.9</b> · <b>ARKK</b> <b class="pos">+0.6</b>
         </td>
@@ -319,20 +478,20 @@
       
       <tr>
         <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SPCX.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">SPCX</span></span><span class="stk-txt"><a href="stock.html#SPCX"><b>SPCX</b></a><span class="name muted">Space Exploration Technologies Corp</span></span></span>
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/META.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">META</span></span><span class="stk-txt"><a href="stock.html#META"><b>META</b></a><span class="name muted">Meta Platforms Inc-Class A</span></span></span>
         </td>
-        <td class="l muted"><span class="l-en">Space</span><span class="l-zh">Space</span></td>
+        <td class="l muted"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></td>
         <td class="l">
-          <span class="chip chip-accum" title="funds accumulating">3 ▲</span>
+          <span class="chip chip-accum" title="funds accumulating">4 ▲</span>
           <span class="chip chip-trim" title="funds trimming">1 ▼</span>
           <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
         </td>
-        <td class="r num pos"><b>+28.54pp</b></td>
+        <td class="r num pos"><b>+1.42pp</b></td>
         <td class="l brk">
-          <b>MARS</b> <b class="pos">+21.4</b> · <b>ARKK</b> <b class="pos">+4.4</b> · <b>ARKW</b> <b class="pos">+3.2</b>
+          <b>METV</b> <b class="neg">-1.2</b> · <b>CHAT</b> <b class="pos">+1.2</b> · <b>ARKW</b> <b class="pos">+0.6</b>
         </td>
-        <td class="l"><span class="muted">—</span></td>
-        <td class="l muted"><span class="tag tag-active">3 <span class="l-en">NEW</span><span class="l-zh">新建</span></span> <span class="tag tag-passive">1 <span class="l-en">EXIT</span><span class="l-zh">清仓</span></span></td>
+        <td class="l"><span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td>
+        <td class="l muted">—</td>
       </tr>
       
       <tr>
@@ -345,7 +504,7 @@
           
           
         </td>
-        <td class="r num pos"><b>+7.19pp</b></td>
+        <td class="r num pos"><b>+7.20pp</b></td>
         <td class="l brk">
           <b>MEME</b> <b class="pos">+4.9</b> · <b>CHAT</b> <b class="pos">+2.1</b> · <b>ARKK</b> <b class="pos">+0.2</b>
         </td>
@@ -381,47 +540,11 @@
           
           
         </td>
-        <td class="r num pos"><b>+0.63pp</b></td>
+        <td class="r num pos"><b>+0.71pp</b></td>
         <td class="l brk">
           <b>ARKK</b> <b class="pos">+0.5</b> · <b>ARKQ</b> <b class="pos">+0.1</b> · <b>ARKX</b> <b class="pos">+0.1</b>
         </td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">—</td>
-      </tr>
-      
-      <tr>
-        <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/-USD CASH-.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">-USD</span></span><span class="stk-txt"><a href="stock.html#-USD CASH-"><b>-USD CASH-</b></a><span class="name muted">Nan</span></span></span>
-        </td>
-        <td class="l muted"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span></td>
-        <td class="l">
-          <span class="chip chip-accum" title="funds accumulating">3 ▲</span>
-          
-          
-        </td>
-        <td class="r num pos"><b>+0.62pp</b></td>
-        <td class="l brk">
-          <b>REMX</b> <b class="pos">+0.4</b> · <b>GDXJ</b> <b class="pos">+0.1</b> · <b>GDX</b> <b class="pos">+0.1</b>
-        </td>
-        <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">—</td>
-      </tr>
-      
-      <tr>
-        <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/META.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">META</span></span><span class="stk-txt"><a href="stock.html#META"><b>META</b></a><span class="name muted">Meta Platforms Inc-Class A</span></span></span>
-        </td>
-        <td class="l muted"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></td>
-        <td class="l">
-          <span class="chip chip-accum" title="funds accumulating">3 ▲</span>
-          <span class="chip chip-trim" title="funds trimming">1 ▼</span>
-          <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
-        </td>
-        <td class="r num pos"><b>+0.56pp</b></td>
-        <td class="l brk">
-          <b>METV</b> <b class="neg">-1.2</b> · <b>CHAT</b> <b class="pos">+1.2</b> · <b>ARKW</b> <b class="pos">+0.3</b>
-        </td>
-        <td class="l"><span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td>
         <td class="l muted">—</td>
       </tr>
       
@@ -435,7 +558,7 @@
           <span class="chip chip-trim" title="funds trimming">1 ▼</span>
           <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
         </td>
-        <td class="r num neg"><b>-1.34pp</b></td>
+        <td class="r num neg"><b>-1.32pp</b></td>
         <td class="l brk">
           <b>CHAT</b> <b class="neg">-1.8</b> · <b>ARKW</b> <b class="pos">+0.2</b> · <b>ARKK</b> <b class="pos">+0.2</b>
         </td>
@@ -453,9 +576,9 @@
           <span class="chip chip-trim" title="funds trimming">1 ▼</span>
           <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
         </td>
-        <td class="r num neg"><b>-3.90pp</b></td>
+        <td class="r num neg"><b>-3.79pp</b></td>
         <td class="l brk">
-          <b>MEME</b> <b class="neg">-5.2</b> · <b>ARKK</b> <b class="pos">+0.7</b> · <b>ARKW</b> <b class="pos">+0.5</b>
+          <b>MEME</b> <b class="neg">-5.2</b> · <b>ARKK</b> <b class="pos">+0.7</b> · <b>ARKW</b> <b class="pos">+0.6</b>
         </td>
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted"><span class="tag tag-passive">1 <span class="l-en">EXIT</span><span class="l-zh">清仓</span></span></td>
@@ -471,11 +594,11 @@
           
           
         </td>
-        <td class="r num pos"><b>+7.57pp</b></td>
+        <td class="r num pos"><b>+7.44pp</b></td>
         <td class="l brk">
-          <b>BUG</b> <b class="pos">+5.4</b> · <b>ARKW</b> <b class="pos">+2.2</b>
+          <b>BUG</b> <b class="pos">+5.3</b> · <b>ARKW</b> <b class="pos">+2.1</b>
         </td>
-        <td class="l"><span class="state st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td>
+        <td class="l"><span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td>
         <td class="l muted">—</td>
       </tr>
       
@@ -507,9 +630,9 @@
           
           
         </td>
-        <td class="r num pos"><b>+3.70pp</b></td>
+        <td class="r num pos"><b>+3.71pp</b></td>
         <td class="l brk">
-          <b>CHAT</b> <b class="pos">+3.5</b> · <b>XSD</b> <b class="pos">+0.2</b>
+          <b>CHAT</b> <b class="pos">+3.5</b> · <b>XSD</b> <b class="pos">+0.3</b>
         </td>
         <td class="l"><span class="state st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅</td>
         <td class="l muted">—</td>
@@ -561,7 +684,7 @@
           <span class="chip chip-trim" title="funds trimming">1 ▼</span>
           <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
         </td>
-        <td class="r num pos"><b>+2.57pp</b></td>
+        <td class="r num pos"><b>+2.53pp</b></td>
         <td class="l brk">
           <b>MEME</b> <b class="pos">+5.3</b> · <b>XSD</b> <b class="neg">-2.9</b> · <b>CHAT</b> <b class="pos">+0.1</b>
         </td>
@@ -579,9 +702,9 @@
           
           
         </td>
-        <td class="r num pos"><b>+1.89pp</b></td>
+        <td class="r num pos"><b>+1.81pp</b></td>
         <td class="l brk">
-          <b>ARKW</b> <b class="pos">+1.2</b> · <b>ARKK</b> <b class="pos">+0.7</b>
+          <b>ARKW</b> <b class="pos">+1.1</b> · <b>ARKK</b> <b class="pos">+0.7</b>
         </td>
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted"><span class="tag tag-active">2 <span class="l-en">NEW</span><span class="l-zh">新建</span></span> </td>
@@ -597,9 +720,9 @@
           
           
         </td>
-        <td class="r num pos"><b>+1.12pp</b></td>
+        <td class="r num pos"><b>+1.13pp</b></td>
         <td class="l brk">
-          <b>KBE</b> <b class="pos">+0.9</b> · <b>KRE</b> <b class="pos">+0.2</b>
+          <b>KBE</b> <b class="pos">+1.0</b> · <b>KRE</b> <b class="pos">+0.2</b>
         </td>
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted"><span class="tag tag-active">1 <span class="l-en">NEW</span><span class="l-zh">新建</span></span> </td>
@@ -633,9 +756,9 @@
           
           
         </td>
-        <td class="r num pos"><b>+1.05pp</b></td>
+        <td class="r num pos"><b>+1.07pp</b></td>
         <td class="l brk">
-          <b>REMX</b> <b class="pos">+0.7</b> · <b>XME</b> <b class="pos">+0.4</b>
+          <b>REMX</b> <b class="pos">+0.7</b> · <b>XME</b> <b class="pos">+0.3</b>
         </td>
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted">—</td>
@@ -651,7 +774,7 @@
           
           
         </td>
-        <td class="r num pos"><b>+0.85pp</b></td>
+        <td class="r num pos"><b>+0.86pp</b></td>
         <td class="l brk">
           <b>XAR</b> <b class="pos">+0.7</b> · <b>MARS</b> <b class="pos">+0.2</b>
         </td>
@@ -669,7 +792,7 @@
           
           
         </td>
-        <td class="r num pos"><b>+0.84pp</b></td>
+        <td class="r num pos"><b>+0.82pp</b></td>
         <td class="l brk">
           <b>IZRL</b> <b class="pos">+0.7</b> · <b>MARS</b> <b class="pos">+0.1</b>
         </td>
@@ -687,7 +810,7 @@
           <span class="chip chip-trim" title="funds trimming">1 ▼</span>
           <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
         </td>
-        <td class="r num pos"><b>+0.66pp</b></td>
+        <td class="r num pos"><b>+0.69pp</b></td>
         <td class="l brk">
           <b>ARKK</b> <b class="pos">+0.6</b> · <b>ARKW</b> <b class="pos">+0.4</b> · <b>METV</b> <b class="neg">-0.3</b>
         </td>
@@ -705,7 +828,7 @@
           
           
         </td>
-        <td class="r num pos"><b>+0.55pp</b></td>
+        <td class="r num pos"><b>+0.57pp</b></td>
         <td class="l brk">
           <b>IZRL</b> <b class="pos">+0.4</b> · <b>PPA</b> <b class="pos">+0.2</b>
         </td>
@@ -777,7 +900,7 @@
           
           
         </td>
-        <td class="r num pos"><b>+0.39pp</b></td>
+        <td class="r num pos"><b>+0.40pp</b></td>
         <td class="l brk">
           <b>KBE</b> <b class="pos">+0.2</b> · <b>KRE</b> <b class="pos">+0.2</b>
         </td>
@@ -805,24 +928,6 @@
       
       <tr>
         <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NTLA.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">NTLA</span></span><span class="stk-txt"><a href="stock.html#NTLA"><b>NTLA</b></a><span class="name muted">Intellia Therapeutics Inc</span></span></span>
-        </td>
-        <td class="l muted"><span class="l-en">Biotech</span><span class="l-zh">Biotech</span></td>
-        <td class="l">
-          <span class="chip chip-accum" title="funds accumulating">2 ▲</span>
-          
-          
-        </td>
-        <td class="r num pos"><b>+0.25pp</b></td>
-        <td class="l brk">
-          <b>ARKK</b> <b class="pos">+0.2</b> · <b>XBI</b> <b class="pos">+0.1</b>
-        </td>
-        <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">—</td>
-      </tr>
-      
-      <tr>
-        <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BUSE.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">BUSE</span></span><span class="stk-txt"><a href="stock.html#BUSE"><b>BUSE</b></a><span class="name muted">First Busey Corp</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Regional Banks</span><span class="l-zh">Regional Banks</span></td>
@@ -831,7 +936,7 @@
           
           
         </td>
-        <td class="r num pos"><b>+0.24pp</b></td>
+        <td class="r num pos"><b>+0.25pp</b></td>
         <td class="l brk">
           <b>KBE</b> <b class="pos">+0.1</b> · <b>KRE</b> <b class="pos">+0.1</b>
         </td>
@@ -859,6 +964,24 @@
       
       <tr>
         <td class="l">
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NTLA.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">NTLA</span></span><span class="stk-txt"><a href="stock.html#NTLA"><b>NTLA</b></a><span class="name muted">Intellia Therapeutics Inc</span></span></span>
+        </td>
+        <td class="l muted"><span class="l-en">Biotech</span><span class="l-zh">Biotech</span></td>
+        <td class="l">
+          <span class="chip chip-accum" title="funds accumulating">2 ▲</span>
+          
+          
+        </td>
+        <td class="r num pos"><b>+0.24pp</b></td>
+        <td class="l brk">
+          <b>ARKK</b> <b class="pos">+0.2</b> · <b>XBI</b> <b class="pos">+0.1</b>
+        </td>
+        <td class="l"><span class="muted">—</span></td>
+        <td class="l muted">—</td>
+      </tr>
+      
+      <tr>
+        <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NBTB.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">NBTB</span></span><span class="stk-txt"><a href="stock.html#NBTB"><b>NBTB</b></a><span class="name muted">N B T Bancorp Inc</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Financials</span><span class="l-zh">金融</span></td>
@@ -867,7 +990,7 @@
           
           
         </td>
-        <td class="r num pos"><b>+0.23pp</b></td>
+        <td class="r num pos"><b>+0.24pp</b></td>
         <td class="l brk">
           <b>KBE</b> <b class="pos">+0.2</b> · <b>KRE</b> <b class="pos">+0.1</b>
         </td>
@@ -957,27 +1080,9 @@
           <span class="chip chip-trim" title="funds trimming">1 ▼</span>
           <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
         </td>
-        <td class="r num neg"><b>-0.04pp</b></td>
+        <td class="r num neg"><b>-0.01pp</b></td>
         <td class="l brk">
           <b>METV</b> <b class="neg">-0.5</b> · <b>ARKK</b> <b class="pos">+0.3</b> · <b>ARKW</b> <b class="pos">+0.2</b>
-        </td>
-        <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">—</td>
-      </tr>
-      
-      <tr>
-        <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CRDO.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">CRDO</span></span><span class="stk-txt"><a href="stock.html#CRDO"><b>CRDO</b></a><span class="name muted">Credo Technology Group Holding Ltd</span></span></span>
-        </td>
-        <td class="l muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
-        <td class="l">
-          <span class="chip chip-accum" title="funds accumulating">2 ▲</span>
-          <span class="chip chip-trim" title="funds trimming">1 ▼</span>
-          <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
-        </td>
-        <td class="r num neg"><b>-0.08pp</b></td>
-        <td class="l brk">
-          <b>XSD</b> <b class="neg">-1.6</b> · <b>CHAT</b> <b class="pos">+1.1</b> · <b>MEME</b> <b class="pos">+0.4</b>
         </td>
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted">—</td>
@@ -993,9 +1098,45 @@
           <span class="chip chip-trim" title="funds trimming">1 ▼</span>
           <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
         </td>
-        <td class="r num neg"><b>-0.14pp</b></td>
+        <td class="r num neg"><b>-0.13pp</b></td>
         <td class="l brk">
           <b>METV</b> <b class="neg">-0.6</b> · <b>ARKK</b> <b class="pos">+0.3</b> · <b>ARKW</b> <b class="pos">+0.2</b>
+        </td>
+        <td class="l"><span class="muted">—</span></td>
+        <td class="l muted">—</td>
+      </tr>
+      
+      <tr>
+        <td class="l">
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CRDO.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">CRDO</span></span><span class="stk-txt"><a href="stock.html#CRDO"><b>CRDO</b></a><span class="name muted">Credo Technology Group Holding Ltd</span></span></span>
+        </td>
+        <td class="l muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
+        <td class="l">
+          <span class="chip chip-accum" title="funds accumulating">2 ▲</span>
+          <span class="chip chip-trim" title="funds trimming">1 ▼</span>
+          <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
+        </td>
+        <td class="r num neg"><b>-0.14pp</b></td>
+        <td class="l brk">
+          <b>XSD</b> <b class="neg">-1.6</b> · <b>CHAT</b> <b class="pos">+1.1</b> · <b>MEME</b> <b class="pos">+0.4</b>
+        </td>
+        <td class="l"><span class="muted">—</span></td>
+        <td class="l muted">—</td>
+      </tr>
+      
+      <tr>
+        <td class="l">
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/-USD CASH-.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">-USD</span></span><span class="stk-txt"><a href="stock.html#-USD CASH-"><b>-USD CASH-</b></a><span class="name muted">Nan</span></span></span>
+        </td>
+        <td class="l muted"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span></td>
+        <td class="l">
+          <span class="chip chip-accum" title="funds accumulating">2 ▲</span>
+          <span class="chip chip-trim" title="funds trimming">1 ▼</span>
+          <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
+        </td>
+        <td class="r num neg"><b>-0.22pp</b></td>
+        <td class="l brk">
+          <b>REMX</b> <b class="neg">-0.4</b> · <b>GDXJ</b> <b class="pos">+0.1</b> · <b>GDX</b> <b class="pos">+0.1</b>
         </td>
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted">—</td>
@@ -1011,7 +1152,7 @@
           <span class="chip chip-trim" title="funds trimming">1 ▼</span>
           <span class="tag tag-contested"><span class="l-en">contested</span><span class="l-zh">分歧</span></span>
         </td>
-        <td class="r num pos"><b>+4.50pp</b></td>
+        <td class="r num pos"><b>+4.49pp</b></td>
         <td class="l brk">
           <b>MEME</b> <b class="pos">+4.6</b> · <b>ARKK</b> <b class="neg">-0.1</b>
         </td>
@@ -1067,19 +1208,6 @@
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted">2026-05-20..2026-07-21</td>
       </tr><tr>
-        <td class="l"><b>BUG</b> <span class="muted">Global X Cybersecurity · <span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span></td>
-        <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CRWD.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">CRWD</span></span><span class="stk-txt"><a href="stock.html#CRWD"><b>CRWD</b></a><span class="name muted">Crowdstrike Holdings Inc - A</span></span></span>
-        </td>
-        <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
-        <td class="r num muted">7.21%</td>
-        <td class="r num pos"><b>+5.39pp</b></td>
-        <td class="r num muted">+296%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,5.0 7.4,7.7 13.7,8.0 20.1,8.9 26.5,12.4 32.8,12.7 39.2,10.9 45.5,15.4 51.9,16.0 58.3,2.0 64.6,4.7 71.0,6.2 "/></svg></td>
-        <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
-        <td class="l"><span class="state st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td>
-        <td class="l muted">2026-05-18..2026-07-17</td>
-      </tr><tr>
         <td class="l"><b>MEME</b> <span class="muted">Roundhill MEME · <span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></span></td>
         <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ALAB.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">ALAB</span></span><span class="stk-txt"><a href="stock.html#ALAB"><b>ALAB</b></a><span class="name muted">Astera Labs Inc</span></span></span>
@@ -1105,6 +1233,19 @@
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted">2026-05-20..2026-07-21</td>
+      </tr><tr>
+        <td class="l"><b>BUG</b> <span class="muted">Global X Cybersecurity · <span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span></td>
+        <td class="l">
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CRWD.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">CRWD</span></span><span class="stk-txt"><a href="stock.html#CRWD"><b>CRWD</b></a><span class="name muted">Crowdstrike Holdings Inc - A</span></span></span>
+        </td>
+        <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
+        <td class="r num muted">7.13%</td>
+        <td class="r num pos"><b>+5.33pp</b></td>
+        <td class="r num muted">+296%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,7.7 7.4,8.0 13.7,8.9 20.1,12.4 26.5,12.7 32.8,10.9 39.2,15.4 45.5,16.0 51.9,2.0 58.3,4.7 64.6,6.2 71.0,8.6 "/></svg></td>
+        <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
+        <td class="l"><span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td>
+        <td class="l muted">2026-05-19..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>MEME</b> <span class="muted">Roundhill MEME · <span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></span></td>
         <td class="l">
@@ -1184,19 +1325,6 @@
         <td class="l"><span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td>
         <td class="l muted">2026-05-20..2026-07-21</td>
       </tr><tr>
-        <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
-        <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/7610 TT.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">7610 TT</span></span><span class="stk-txt"><a href="stock.html#7610 TT"><b>7610 TT</b></a><span class="name muted">Lianyou Metals Co Ltd</span></span></span>
-        </td>
-        <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-        <td class="r num muted">6.98%</td>
-        <td class="r num pos"><b>+4.65pp</b></td>
-        <td class="r num muted">+200%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,16.0 24.3,10.7 47.7,4.7 71.0,2.0 "/></svg></td>
-        <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
-        <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
-      </tr><tr>
         <td class="l"><b>BETZ</b> <span class="muted">Roundhill Sports Betting &amp; iGaming · <span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></span></td>
         <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LNW AU.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">LNW AU</span></span><span class="stk-txt"><a href="stock.html#LNW AU"><b>LNW AU</b></a><span class="name muted">Light &amp; Wonder Inc</span></span></span>
@@ -1209,6 +1337,19 @@
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted">2026-05-20..2026-07-21</td>
+      </tr><tr>
+        <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
+        <td class="l">
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/7610 TT.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">7610 TT</span></span><span class="stk-txt"><a href="stock.html#7610 TT"><b>7610 TT</b></a><span class="name muted">Lianyou Metals Co Ltd</span></span></span>
+        </td>
+        <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
+        <td class="r num muted">6.72%</td>
+        <td class="r num pos"><b>+4.63pp</b></td>
+        <td class="r num muted">+221%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,16.0 18.5,10.7 36.0,4.7 53.5,2.0 71.0,3.3 "/></svg></td>
+        <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
+        <td class="l"><span class="muted">—</span></td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>MEME</b> <span class="muted">Roundhill MEME · <span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></span></td>
         <td class="l">
@@ -1228,52 +1369,65 @@
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SPCX.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">SPCX</span></span><span class="stk-txt"><a href="stock.html#SPCX"><b>SPCX</b></a><span class="name muted">Space Exploration Techn-Cl A</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Active / Innovation</span><span class="l-zh">Active / Innovation</span></td>
-        <td class="r num muted">4.43%</td>
-        <td class="r num pos"><b>+4.43pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
+        <td class="r num muted">4.50%</td>
+        <td class="r num pos"><b>+4.50pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
         <td class="r num muted"><span class="l-en">initiated</span><span class="l-zh">新建仓</span></td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,12.7 7.4,12.7 13.7,8.3 20.1,2.0 26.5,15.7 32.8,16.0 39.2,9.3 45.5,7.3 51.9,6.0 58.3,10.3 64.6,5.3 71.0,4.0 "/></svg></td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,12.7 7.4,8.5 13.7,2.3 20.1,15.7 26.5,16.0 32.8,9.5 39.2,7.5 45.5,6.2 51.9,10.5 58.3,5.6 64.6,4.3 71.0,2.0 "/></svg></td>
         <td class="l"><span class="tag tag-active"><span class="l-en">manager conviction</span><span class="l-zh">经理人信念</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-06-11..2026-07-20</td>
+        <td class="l muted">2026-06-11..2026-07-21</td>
       </tr><tr>
         <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
         <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ALB.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">ALB</span></span><span class="stk-txt"><a href="stock.html#ALB"><b>ALB</b></a><span class="name muted">Albemarle Corp</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></td>
-        <td class="r num muted">7.63%</td>
-        <td class="r num pos"><b>+3.96pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,16.0 24.3,7.4 47.7,9.5 71.0,2.0 "/></svg></td>
+        <td class="r num muted">7.74%</td>
+        <td class="r num pos"><b>+4.09pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,16.0 18.5,9.3 36.0,11.0 53.5,5.1 71.0,2.0 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
         <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LYC AU.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">LYC AU</span></span><span class="stk-txt"><a href="stock.html#LYC AU"><b>LYC AU</b></a><span class="name muted">Lynas Rare Earths Ltd</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-        <td class="r num muted">7.11%</td>
-        <td class="r num pos"><b>+3.69pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,15.0 24.3,16.0 47.7,7.5 71.0,2.0 "/></svg></td>
+        <td class="r num muted">7.18%</td>
+        <td class="r num pos"><b>+3.80pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,15.2 18.5,16.0 36.0,8.7 53.5,4.0 71.0,2.0 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
         <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/PLS AU.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">PLS AU</span></span><span class="stk-txt"><a href="stock.html#PLS AU"><b>PLS AU</b></a><span class="name muted">Pilbara Minerals Ltd</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-        <td class="r num muted">7.00%</td>
-        <td class="r num pos"><b>+3.64pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,15.5 24.3,16.0 47.7,2.0 71.0,4.3 "/></svg></td>
+        <td class="r num muted">6.97%</td>
+        <td class="r num pos"><b>+3.69pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,15.5 18.5,16.0 36.0,2.0 53.5,4.3 71.0,5.6 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
+      </tr><tr>
+        <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
+        <td class="l">
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/600111 C1.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">600111 C1</span></span><span class="stk-txt"><a href="stock.html#600111 C1"><b>600111 C1</b></a><span class="name muted">China Northern Rare Earth Group High-Te</span></span></span>
+        </td>
+        <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
+        <td class="r num muted">6.73%</td>
+        <td class="r num pos"><b>+3.56pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,3.1 18.5,16.0 36.0,7.6 53.5,10.4 71.0,2.0 "/></svg></td>
+        <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
+        <td class="l"><span class="muted">—</span></td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>CHAT</b> <span class="muted">Roundhill Generative AI &amp; Tech · <span class="l-en">AI</span><span class="l-zh">AI</span></span></td>
         <td class="l">
@@ -1290,29 +1444,29 @@
       </tr><tr>
         <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
         <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/600111 C1.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">600111 C1</span></span><span class="stk-txt"><a href="stock.html#600111 C1"><b>600111 C1</b></a><span class="name muted">China Northern Rare Earth Group High-Te</span></span></span>
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MP.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">MP</span></span><span class="stk-txt"><a href="stock.html#MP"><b>MP</b></a><span class="name muted">Mp Materials Corp</span></span></span>
         </td>
-        <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-        <td class="r num muted">6.49%</td>
-        <td class="r num pos"><b>+3.37pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.0 24.3,16.0 47.7,6.9 71.0,9.9 "/></svg></td>
+        <td class="l muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></td>
+        <td class="r num muted">6.18%</td>
+        <td class="r num pos"><b>+3.27pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.0 18.5,5.9 36.0,16.0 53.5,13.3 71.0,2.4 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>ARKW</b> <span class="muted">ARKW · <span class="l-en">Active / Innovation</span><span class="l-zh">Active / Innovation</span></span></td>
         <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SPCX.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">SPCX</span></span><span class="stk-txt"><a href="stock.html#SPCX"><b>SPCX</b></a><span class="name muted">Space Exploration Techn-Cl A</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Active / Innovation</span><span class="l-zh">Active / Innovation</span></td>
-        <td class="r num muted">3.19%</td>
-        <td class="r num pos"><b>+3.19pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
+        <td class="r num muted">3.26%</td>
+        <td class="r num pos"><b>+3.26pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
         <td class="r num muted"><span class="l-en">initiated</span><span class="l-zh">新建仓</span></td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,12.3 7.4,11.8 13.7,7.6 20.1,2.0 26.5,15.5 32.8,16.0 39.2,11.8 45.5,9.9 51.9,7.1 58.3,12.7 64.6,7.1 71.0,9.5 "/></svg></td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,11.8 7.4,7.6 13.7,2.0 20.1,15.5 26.5,16.0 32.8,11.8 39.2,9.9 45.5,7.1 51.9,12.7 58.3,7.1 64.6,9.5 71.0,6.2 "/></svg></td>
         <td class="l"><span class="tag tag-active"><span class="l-en">manager conviction</span><span class="l-zh">经理人信念</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-06-11..2026-07-20</td>
+        <td class="l muted">2026-06-11..2026-07-21</td>
       </tr><tr>
         <td class="l"><b>CHAT</b> <span class="muted">Roundhill Generative AI &amp; Tech · <span class="l-en">AI</span><span class="l-zh">AI</span></span></td>
         <td class="l">
@@ -1329,29 +1483,16 @@
       </tr><tr>
         <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
         <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MP.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">MP</span></span><span class="stk-txt"><a href="stock.html#MP"><b>MP</b></a><span class="name muted">Mp Materials Corp</span></span></span>
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SQM.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">SQM</span></span><span class="stk-txt"><a href="stock.html#SQM"><b>SQM</b></a><span class="name muted">Sociedad Quimica Y Minera De Chile Sa</span></span></span>
         </td>
-        <td class="l muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></td>
-        <td class="r num muted">5.90%</td>
-        <td class="r num pos"><b>+3.06pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.0 24.3,5.9 47.7,16.0 71.0,13.3 "/></svg></td>
+        <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
+        <td class="r num muted">5.49%</td>
+        <td class="r num pos"><b>+2.90pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,12.1 18.5,10.6 36.0,16.0 53.5,2.7 71.0,2.0 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
-      </tr><tr>
-        <td class="l"><b>XHB</b> <span class="muted">SPDR S&amp;P Homebuilders · <span class="l-en">Homebuilders</span><span class="l-zh">Homebuilders</span></span></td>
-        <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AAON.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">AAON</span></span><span class="stk-txt"><a href="stock.html#AAON"><b>AAON</b></a><span class="name muted">Aaon Inc</span></span></span>
-        </td>
-        <td class="l muted"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
-        <td class="r num muted">2.99%</td>
-        <td class="r num pos"><b>+2.99pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
-        <td class="r num muted"><span class="l-en">initiated</span><span class="l-zh">新建仓</span></td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,12.7 7.4,12.7 13.7,2.0 20.1,13.7 26.5,16.0 32.8,15.0 39.2,14.4 45.5,14.2 51.9,13.0 58.3,13.3 64.6,14.3 71.0,14.0 "/></svg></td>
-        <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
-        <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-06-11..2026-07-17</td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>CHAT</b> <span class="muted">Roundhill Generative AI &amp; Tech · <span class="l-en">AI</span><span class="l-zh">AI</span></span></td>
         <td class="l">
@@ -1379,31 +1520,31 @@
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted">2026-05-20..2026-07-21</td>
       </tr><tr>
-        <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
+        <td class="l"><b>XHB</b> <span class="muted">SPDR S&amp;P Homebuilders · <span class="l-en">Homebuilders</span><span class="l-zh">Homebuilders</span></span></td>
         <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SQM.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">SQM</span></span><span class="stk-txt"><a href="stock.html#SQM"><b>SQM</b></a><span class="name muted">Sociedad Quimica Y Minera De Chile Sa</span></span></span>
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AAON.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">AAON</span></span><span class="stk-txt"><a href="stock.html#AAON"><b>AAON</b></a><span class="name muted">Aaon Inc</span></span></span>
         </td>
-        <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-        <td class="r num muted">5.47%</td>
-        <td class="r num pos"><b>+2.84pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,11.8 24.3,10.3 47.7,16.0 71.0,2.0 "/></svg></td>
+        <td class="l muted"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
+        <td class="r num muted">2.85%</td>
+        <td class="r num pos"><b>+2.85pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
+        <td class="r num muted"><span class="l-en">initiated</span><span class="l-zh">新建仓</span></td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,12.5 7.4,2.0 13.7,13.6 20.1,15.9 26.5,14.9 32.8,14.3 39.2,14.1 45.5,12.9 51.9,13.2 58.3,14.2 64.6,13.9 71.0,16.0 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
+        <td class="l muted">2026-06-11..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
         <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/600549 C1.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">600549 C1</span></span><span class="stk-txt"><a href="stock.html#600549 C1"><b>600549 C1</b></a><span class="name muted">Xiamen Tungsten Co Ltd</span></span></span>
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/601958 C1.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">601958 C1</span></span><span class="stk-txt"><a href="stock.html#601958 C1"><b>601958 C1</b></a><span class="name muted">Jinduicheng Molybdenum Co Ltd</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-        <td class="r num muted">5.21%</td>
-        <td class="r num pos"><b>+2.71pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.0 24.3,2.5 47.7,10.4 71.0,16.0 "/></svg></td>
+        <td class="r num muted">5.24%</td>
+        <td class="r num pos"><b>+2.77pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,10.3 18.5,2.0 36.0,7.7 53.5,16.0 71.0,3.3 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>BETZ</b> <span class="muted">Roundhill Sports Betting &amp; iGaming · <span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></span></td>
         <td class="l">
@@ -1420,16 +1561,29 @@
       </tr><tr>
         <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
         <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/601958 C1.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">601958 C1</span></span><span class="stk-txt"><a href="stock.html#601958 C1"><b>601958 C1</b></a><span class="name muted">Jinduicheng Molybdenum Co Ltd</span></span></span>
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ALM.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">ALM</span></span><span class="stk-txt"><a href="stock.html#ALM"><b>ALM</b></a><span class="name muted">Almonty Industries Inc</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-        <td class="r num muted">4.95%</td>
-        <td class="r num pos"><b>+2.57pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,10.3 24.3,2.0 47.7,7.7 71.0,16.0 "/></svg></td>
+        <td class="r num muted">4.94%</td>
+        <td class="r num pos"><b>+2.61pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.0 18.5,5.8 36.0,16.0 53.5,10.6 71.0,6.2 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
+      </tr><tr>
+        <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
+        <td class="l">
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/600549 C1.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">600549 C1</span></span><span class="stk-txt"><a href="stock.html#600549 C1"><b>600549 C1</b></a><span class="name muted">Xiamen Tungsten Co Ltd</span></span></span>
+        </td>
+        <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
+        <td class="r num muted">4.89%</td>
+        <td class="r num pos"><b>+2.59pp</b></td>
+        <td class="r num muted">+112%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.0 18.5,2.3 36.0,7.5 53.5,11.1 71.0,16.0 "/></svg></td>
+        <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
+        <td class="l"><span class="muted">—</span></td>
+        <td class="l muted">2026-07-10..2026-07-20</td>
       </tr><tr>
         <td class="l"><b>OZEM</b> <span class="muted">Roundhill GLP-1 &amp; Weight Loss · <span class="l-en">Obesity / GLP-1</span><span class="l-zh">Obesity / GLP-1</span></span></td>
         <td class="l">
@@ -1470,19 +1624,6 @@
         <td class="l"><span class="muted">—</span></td>
         <td class="l muted">2026-05-20..2026-07-21</td>
       </tr><tr>
-        <td class="l"><b>REMX</b> <span class="muted">VanEck Rare Earth &amp; Strategic Metals · <span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
-        <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ALM.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">ALM</span></span><span class="stk-txt"><a href="stock.html#ALM"><b>ALM</b></a><span class="name muted">Almonty Industries Inc</span></span></span>
-        </td>
-        <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-        <td class="r num muted">4.71%</td>
-        <td class="r num pos"><b>+2.45pp</b></td>
-        <td class="r num muted">+108%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.0 24.3,5.8 47.7,16.0 71.0,10.6 "/></svg></td>
-        <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
-        <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-10..2026-07-17</td>
-      </tr><tr>
         <td class="l"><b>BETZ</b> <span class="muted">Roundhill Sports Betting &amp; iGaming · <span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></span></td>
         <td class="l">
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BETCO SS.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">BETCO SS</span></span><span class="stk-txt"><a href="stock.html#BETCO SS"><b>BETCO SS</b></a><span class="name muted">Better Collective A/S</span></span></span>
@@ -1514,13 +1655,13 @@
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CRWD.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">CRWD</span></span><span class="stk-txt"><a href="stock.html#CRWD"><b>CRWD</b></a><span class="name muted">Crowdstrike Holdings Inc - A</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
-        <td class="r num muted">3.00%</td>
-        <td class="r num pos"><b>+2.18pp</b></td>
-        <td class="r num muted">+265%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,16.0 7.4,14.9 13.7,13.1 20.1,10.6 26.5,10.6 32.8,9.5 39.2,11.3 45.5,8.8 51.9,11.7 58.3,3.1 64.6,3.4 71.0,2.0 "/></svg></td>
+        <td class="r num muted">2.91%</td>
+        <td class="r num pos"><b>+2.12pp</b></td>
+        <td class="r num muted">+266%</td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--up)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,16.0 7.4,14.1 13.7,11.3 20.1,11.3 26.5,10.2 32.8,12.1 39.2,9.4 45.5,12.5 51.9,3.2 58.3,3.6 64.6,2.0 71.0,5.5 "/></svg></td>
         <td class="l"><span class="tag tag-active"><span class="l-en">manager conviction</span><span class="l-zh">经理人信念</span></span></td>
-        <td class="l"><span class="state st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td>
-        <td class="l muted">2026-06-11..2026-07-20</td>
+        <td class="l"><span class="state st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td>
+        <td class="l muted">2026-06-11..2026-07-21</td>
       </tr><tr>
         <td class="l"><b>CHAT</b> <span class="muted">Roundhill Generative AI &amp; Tech · <span class="l-en">AI</span><span class="l-zh">AI</span></span></td>
         <td class="l">
@@ -1540,26 +1681,26 @@
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TE.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">TE</span></span><span class="stk-txt"><a href="stock.html#TE"><b>TE</b></a><span class="name muted">T1 Energy Inc</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
-        <td class="r num muted">1.99%</td>
-        <td class="r num pos"><b>+1.99pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
+        <td class="r num muted">2.04%</td>
+        <td class="r num pos"><b>+2.04pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
         <td class="r num muted"><span class="l-en">initiated</span><span class="l-zh">新建仓</span></td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,3.6 7.4,3.6 13.7,2.8 20.1,2.0 26.5,3.0 32.8,11.2 39.2,9.6 45.5,12.1 51.9,14.2 58.3,12.9 64.6,15.8 71.0,16.0 "/></svg></td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,3.6 7.4,2.8 13.7,2.0 20.1,3.0 26.5,11.2 32.8,9.6 39.2,12.1 45.5,14.2 51.9,12.9 58.3,15.8 64.6,16.0 71.0,14.7 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-06-11..2026-07-17</td>
+        <td class="l muted">2026-06-11..2026-07-20</td>
       </tr><tr>
-        <td class="l"><b>BETZ</b> <span class="muted">Roundhill Sports Betting &amp; iGaming · <span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></span></td>
+        <td class="l"><b>XSD</b> <span class="muted">SPDR S&amp;P Semiconductor · <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span></td>
         <td class="l">
-          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SRAD.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">SRAD</span></span><span class="stk-txt"><a href="stock.html#SRAD"><b>SRAD</b></a><span class="name muted">Sportradar Group Ag</span></span></span>
+          <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CBRS.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">CBRS</span></span><span class="stk-txt"><a href="stock.html#CBRS"><b>CBRS</b></a><span class="name muted">Cerebras Systems Inc   A</span></span></span>
         </td>
-        <td class="l muted"><span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></td>
-        <td class="r num muted">4.77%</td>
-        <td class="r num pos"><b>+1.93pp</b></td>
-        <td class="r num muted">+68%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,7.9 7.4,10.1 13.7,2.2 20.1,4.5 26.5,2.0 32.8,8.1 39.2,9.1 45.5,9.1 51.9,12.3 58.3,13.5 64.6,16.0 71.0,13.3 "/></svg></td>
+        <td class="l muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
+        <td class="r num muted">1.95%</td>
+        <td class="r num pos"><b>+1.95pp</b> <span class="tag tag-active" title="brand-new position — the fund just initiated a stake"><span class="l-en">NEW</span><span class="l-zh">新建</span></span></td>
+        <td class="r num muted"><span class="l-en">initiated</span><span class="l-zh">新建仓</span></td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,6.5 7.4,9.4 13.7,4.8 20.1,14.2 26.5,16.0 32.8,15.6 39.2,11.0 45.5,2.0 51.9,4.5 58.3,8.8 64.6,11.7 71.0,9.9 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-05-20..2026-07-21</td>
+        <td class="l muted">2026-06-11..2026-07-20</td>
       </tr>
     </table>
     
@@ -1615,13 +1756,13 @@
           <span class="stock-cell"><span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/XMTR.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">XMTR</span></span><span class="stk-txt"><a href="stock.html#XMTR"><b>XMTR</b></a><span class="name muted">Xometry Inc-A</span></span></span>
         </td>
         <td class="l muted"><span class="l-en">3D Printing</span><span class="l-zh">3D Printing</span></td>
-        <td class="r num muted">3.86%</td>
-        <td class="r num neg"><b>-7.40pp</b></td>
+        <td class="r num muted">3.87%</td>
+        <td class="r num neg"><b>-7.42pp</b></td>
         <td class="r num muted">-66%</td>
-        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.2 24.3,2.0 47.7,2.1 71.0,16.0 "/></svg></td>
+        <td class="l"><svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="var(--down)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="1.0,2.2 18.5,2.0 36.0,2.1 53.5,16.0 71.0,16.0 "/></svg></td>
         <td class="l"><span class="tag tag-passive"><span class="l-en">curated basket</span><span class="l-zh">精选篮子</span></span></td>
         <td class="l"><span class="muted">—</span></td>
-        <td class="l muted">2026-07-14..2026-07-20</td>
+        <td class="l muted">2026-07-14..2026-07-21</td>
       </tr><tr>
         <td class="l"><b>BETZ</b> <span class="muted">Roundhill Sports Betting &amp; iGaming · <span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></span></td>
         <td class="l">
@@ -1847,6 +1988,104 @@
         </tr>
         
         <tr>
+          <td class="l"><b>ARKK</b></td>
+          <td class="l muted">ARKK</td>
+          <td class="l muted">ark</td>
+          <td class="l"><span class="tag tag-active"><span class="l-en">active</span><span class="l-zh">主动</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-21</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>ARKW</b></td>
+          <td class="l muted">ARKW</td>
+          <td class="l muted">ark</td>
+          <td class="l"><span class="tag tag-active"><span class="l-en">active</span><span class="l-zh">主动</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-21</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>URNM</b></td>
+          <td class="l muted">Sprott Uranium Miners</td>
+          <td class="l muted">sprott</td>
+          <td class="l"><span class="muted"><span class="l-en">Uranium Miners</span><span class="l-zh">Uranium Miners</span></span></td>
+          <td class="r num muted">7</td>
+          <td class="l muted">2026-07-21</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>URNJ</b></td>
+          <td class="l muted">Sprott Junior Uranium Miners</td>
+          <td class="l muted">sprott</td>
+          <td class="l"><span class="muted"><span class="l-en">Junior Uranium</span><span class="l-zh">Junior Uranium</span></span></td>
+          <td class="r num muted">7</td>
+          <td class="l muted">2026-07-21</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>COPP</b></td>
+          <td class="l muted">Sprott Copper Miners</td>
+          <td class="l muted">sprott</td>
+          <td class="l"><span class="muted"><span class="l-en">Copper Miners</span><span class="l-zh">Copper Miners</span></span></td>
+          <td class="r num muted">7</td>
+          <td class="l muted">2026-07-21</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>LITP</b></td>
+          <td class="l muted">Sprott Lithium Miners</td>
+          <td class="l muted">sprott</td>
+          <td class="l"><span class="muted"><span class="l-en">Lithium Miners</span><span class="l-zh">Lithium Miners</span></span></td>
+          <td class="r num muted">7</td>
+          <td class="l muted">2026-07-21</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>BITQ</b></td>
+          <td class="l muted">Bitwise Crypto Industry Innovators</td>
+          <td class="l muted">bitwise</td>
+          <td class="l"><span class="muted"><span class="l-en">Crypto Industry</span><span class="l-zh">Crypto Industry</span></span></td>
+          <td class="r num muted">7</td>
+          <td class="l muted">2026-07-21</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
           <td class="l"><b>NERD</b></td>
           <td class="l muted">Roundhill Video Games</td>
           <td class="l muted">roundhill</td>
@@ -1889,110 +2128,12 @@
         </tr>
         
         <tr>
-          <td class="l"><b>ARKK</b></td>
-          <td class="l muted">ARKK</td>
-          <td class="l muted">ark</td>
-          <td class="l"><span class="tag tag-active"><span class="l-en">active</span><span class="l-zh">主动</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-20</td>
-          <td class="l">
-            
-              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>ARKW</b></td>
-          <td class="l muted">ARKW</td>
-          <td class="l muted">ark</td>
-          <td class="l"><span class="tag tag-active"><span class="l-en">active</span><span class="l-zh">主动</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-20</td>
-          <td class="l">
-            
-              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>URNM</b></td>
-          <td class="l muted">Sprott Uranium Miners</td>
-          <td class="l muted">sprott</td>
-          <td class="l"><span class="muted"><span class="l-en">Uranium Miners</span><span class="l-zh">Uranium Miners</span></span></td>
-          <td class="r num muted">6</td>
-          <td class="l muted">2026-07-20</td>
-          <td class="l">
-            
-              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>URNJ</b></td>
-          <td class="l muted">Sprott Junior Uranium Miners</td>
-          <td class="l muted">sprott</td>
-          <td class="l"><span class="muted"><span class="l-en">Junior Uranium</span><span class="l-zh">Junior Uranium</span></span></td>
-          <td class="r num muted">6</td>
-          <td class="l muted">2026-07-20</td>
-          <td class="l">
-            
-              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>COPP</b></td>
-          <td class="l muted">Sprott Copper Miners</td>
-          <td class="l muted">sprott</td>
-          <td class="l"><span class="muted"><span class="l-en">Copper Miners</span><span class="l-zh">Copper Miners</span></span></td>
-          <td class="r num muted">6</td>
-          <td class="l muted">2026-07-20</td>
-          <td class="l">
-            
-              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>LITP</b></td>
-          <td class="l muted">Sprott Lithium Miners</td>
-          <td class="l muted">sprott</td>
-          <td class="l"><span class="muted"><span class="l-en">Lithium Miners</span><span class="l-zh">Lithium Miners</span></span></td>
-          <td class="r num muted">6</td>
-          <td class="l muted">2026-07-20</td>
-          <td class="l">
-            
-              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>BITQ</b></td>
-          <td class="l muted">Bitwise Crypto Industry Innovators</td>
-          <td class="l muted">bitwise</td>
-          <td class="l"><span class="muted"><span class="l-en">Crypto Industry</span><span class="l-zh">Crypto Industry</span></span></td>
-          <td class="r num muted">6</td>
-          <td class="l muted">2026-07-20</td>
-          <td class="l">
-            
-              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
           <td class="l"><b>ARKG</b></td>
           <td class="l muted">ARK Genomic Revolution</td>
           <td class="l muted">ark</td>
           <td class="l"><span class="muted"><span class="l-en">Genomics</span><span class="l-zh">Genomics</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-20</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-21</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2005,8 +2146,8 @@
           <td class="l muted">ARK Autonomous Tech &amp; Robotics</td>
           <td class="l muted">ark</td>
           <td class="l"><span class="muted"><span class="l-en">Autonomous / Robotics</span><span class="l-zh">Autonomous / Robotics</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-20</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-21</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2019,8 +2160,8 @@
           <td class="l muted">ARK Blockchain &amp; Fintech Innovation</td>
           <td class="l muted">ark</td>
           <td class="l"><span class="muted"><span class="l-en">Fintech / Blockchain</span><span class="l-zh">Fintech / Blockchain</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-20</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-21</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2033,8 +2174,8 @@
           <td class="l muted">ARK Space &amp; Defense Innovation</td>
           <td class="l muted">ark</td>
           <td class="l"><span class="muted"><span class="l-en">Space / Defense</span><span class="l-zh">Space / Defense</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-20</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-21</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2047,8 +2188,8 @@
           <td class="l muted">The 3D Printing ETF</td>
           <td class="l muted">ark</td>
           <td class="l"><span class="muted"><span class="l-en">3D Printing</span><span class="l-zh">3D Printing</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-20</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-21</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2061,8 +2202,8 @@
           <td class="l muted">ARK Israel Innovative Technology</td>
           <td class="l muted">ark</td>
           <td class="l"><span class="muted"><span class="l-en">Israel Tech</span><span class="l-zh">Israel Tech</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-20</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-21</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2075,8 +2216,8 @@
           <td class="l muted">Amplify Transformational Data Sharing</td>
           <td class="l muted">amplify</td>
           <td class="l"><span class="muted"><span class="l-en">Blockchain</span><span class="l-zh">Blockchain</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-20</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-21</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2089,7 +2230,469 @@
           <td class="l muted">Procure Space</td>
           <td class="l muted">procure</td>
           <td class="l"><span class="muted"><span class="l-en">Space</span><span class="l-zh">Space</span></span></td>
-          <td class="r num muted">4</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-21</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>URA</b></td>
+          <td class="l muted">Global X Uranium</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Uranium</span><span class="l-zh">Uranium</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>LIT</b></td>
+          <td class="l muted">Global X Lithium &amp; Battery Tech</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Lithium / Battery</span><span class="l-zh">Lithium / Battery</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>COPX</b></td>
+          <td class="l muted">Global X Copper Miners</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Copper Miners</span><span class="l-zh">Copper Miners</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>SIL</b></td>
+          <td class="l muted">Global X Silver Miners</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Silver Miners</span><span class="l-zh">Silver Miners</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>MLPX</b></td>
+          <td class="l muted">Global X MLP &amp; Energy Infrastructure</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Energy Infra</span><span class="l-zh">Energy Infra</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>PAVE</b></td>
+          <td class="l muted">Global X U.S. Infrastructure Dev</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Infrastructure</span><span class="l-zh">Infrastructure</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>BOTZ</b></td>
+          <td class="l muted">Global X Robotics &amp; AI</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Robotics / AI</span><span class="l-zh">Robotics / AI</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>BUG</b></td>
+          <td class="l muted">Global X Cybersecurity</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>CLOU</b></td>
+          <td class="l muted">Global X Cloud Computing</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Cloud</span><span class="l-zh">Cloud</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>HERO</b></td>
+          <td class="l muted">Global X Video Games &amp; Esports</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Gaming / Esports</span><span class="l-zh">Gaming / Esports</span></span></td>
+          <td class="r num muted">66</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XBI</b></td>
+          <td class="l muted">SPDR S&amp;P Biotech</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Biotech</span><span class="l-zh">Biotech</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XOP</b></td>
+          <td class="l muted">SPDR S&amp;P Oil &amp; Gas E&amp;P</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Energy</span><span class="l-zh">能源</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XHB</b></td>
+          <td class="l muted">SPDR S&amp;P Homebuilders</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Homebuilders</span><span class="l-zh">Homebuilders</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XRT</b></td>
+          <td class="l muted">SPDR S&amp;P Retail</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Retail</span><span class="l-zh">Retail</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>KRE</b></td>
+          <td class="l muted">SPDR S&amp;P Regional Banking</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Regional Banks</span><span class="l-zh">Regional Banks</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>KBE</b></td>
+          <td class="l muted">SPDR S&amp;P Bank</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Banks</span><span class="l-zh">银行</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XME</b></td>
+          <td class="l muted">SPDR S&amp;P Metals &amp; Mining</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Metals &amp; Mining</span><span class="l-zh">Metals &amp; Mining</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XSD</b></td>
+          <td class="l muted">SPDR S&amp;P Semiconductor</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XAR</b></td>
+          <td class="l muted">SPDR S&amp;P Aerospace &amp; Defense</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Aerospace &amp; Defense</span><span class="l-zh">Aerospace &amp; Defense</span></span></td>
+          <td class="r num muted">23</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>AIQ</b></td>
+          <td class="l muted">Global X AI &amp; Technology</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">AI &amp; Big Data</span><span class="l-zh">AI &amp; Big Data</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>SNSR</b></td>
+          <td class="l muted">Global X Internet of Things</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">IoT</span><span class="l-zh">IoT</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>FINX</b></td>
+          <td class="l muted">Global X FinTech</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">FinTech</span><span class="l-zh">FinTech</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>DTCR</b></td>
+          <td class="l muted">Global X Data Center &amp; Digital Infra</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Data Centers</span><span class="l-zh">Data Centers</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>SHLD</b></td>
+          <td class="l muted">Global X Defense Tech</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Defense Tech</span><span class="l-zh">Defense Tech</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>HYDR</b></td>
+          <td class="l muted">Global X Hydrogen</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">Hydrogen</span><span class="l-zh">Hydrogen</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>EBIZ</b></td>
+          <td class="l muted">Global X E-commerce</td>
+          <td class="l muted">globalx</td>
+          <td class="l"><span class="muted"><span class="l-en">E-commerce</span><span class="l-zh">E-commerce</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XSW</b></td>
+          <td class="l muted">SPDR S&amp;P Software &amp; Services</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Software</span><span class="l-zh">Software</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XTN</b></td>
+          <td class="l muted">SPDR S&amp;P Transportation</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Transportation</span><span class="l-zh">交通运输</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XPH</b></td>
+          <td class="l muted">SPDR S&amp;P Pharmaceuticals</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Pharmaceuticals</span><span class="l-zh">Pharmaceuticals</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XES</b></td>
+          <td class="l muted">SPDR S&amp;P Oil &amp; Gas Equipment &amp; Services</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Oil Services</span><span class="l-zh">Oil Services</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>KCE</b></td>
+          <td class="l muted">SPDR S&amp;P Capital Markets</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Capital Markets</span><span class="l-zh">Capital Markets</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XHE</b></td>
+          <td class="l muted">SPDR S&amp;P Health Care Equipment</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Health Care Equipment</span><span class="l-zh">Health Care Equipment</span></span></td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
+          <td class="l">
+            
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b>XTL</b></td>
+          <td class="l muted">SPDR S&amp;P Telecom</td>
+          <td class="l muted">ssga</td>
+          <td class="l"><span class="muted"><span class="l-en">Telecom</span><span class="l-zh">Telecom</span></span></td>
+          <td class="r num muted">5</td>
           <td class="l muted">2026-07-20</td>
           <td class="l">
             
@@ -2103,8 +2706,8 @@
           <td class="l muted">Invesco Solar</td>
           <td class="l muted">invesco</td>
           <td class="l"><span class="muted"><span class="l-en">Solar</span><span class="l-zh">光伏</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-19</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2117,8 +2720,8 @@
           <td class="l muted">Invesco WilderHill Clean Energy</td>
           <td class="l muted">invesco</td>
           <td class="l"><span class="muted"><span class="l-en">Clean Energy</span><span class="l-zh">Clean Energy</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-19</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2131,8 +2734,8 @@
           <td class="l muted">Invesco Semiconductors</td>
           <td class="l muted">invesco</td>
           <td class="l"><span class="muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-19</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2145,8 +2748,8 @@
           <td class="l muted">Invesco Aerospace &amp; Defense</td>
           <td class="l muted">invesco</td>
           <td class="l"><span class="muted"><span class="l-en">Aerospace &amp; Defense</span><span class="l-zh">Aerospace &amp; Defense</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-19</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
@@ -2159,473 +2762,11 @@
           <td class="l muted">Invesco Water Resources</td>
           <td class="l muted">invesco</td>
           <td class="l"><span class="muted"><span class="l-en">Water</span><span class="l-zh">Water</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-19</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
               <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>URA</b></td>
-          <td class="l muted">Global X Uranium</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Uranium</span><span class="l-zh">Uranium</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>LIT</b></td>
-          <td class="l muted">Global X Lithium &amp; Battery Tech</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Lithium / Battery</span><span class="l-zh">Lithium / Battery</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>COPX</b></td>
-          <td class="l muted">Global X Copper Miners</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Copper Miners</span><span class="l-zh">Copper Miners</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>SIL</b></td>
-          <td class="l muted">Global X Silver Miners</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Silver Miners</span><span class="l-zh">Silver Miners</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>MLPX</b></td>
-          <td class="l muted">Global X MLP &amp; Energy Infrastructure</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Energy Infra</span><span class="l-zh">Energy Infra</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>PAVE</b></td>
-          <td class="l muted">Global X U.S. Infrastructure Dev</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Infrastructure</span><span class="l-zh">Infrastructure</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>BOTZ</b></td>
-          <td class="l muted">Global X Robotics &amp; AI</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Robotics / AI</span><span class="l-zh">Robotics / AI</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>BUG</b></td>
-          <td class="l muted">Global X Cybersecurity</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>CLOU</b></td>
-          <td class="l muted">Global X Cloud Computing</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Cloud</span><span class="l-zh">Cloud</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>HERO</b></td>
-          <td class="l muted">Global X Video Games &amp; Esports</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Gaming / Esports</span><span class="l-zh">Gaming / Esports</span></span></td>
-          <td class="r num muted">65</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XBI</b></td>
-          <td class="l muted">SPDR S&amp;P Biotech</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Biotech</span><span class="l-zh">Biotech</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XOP</b></td>
-          <td class="l muted">SPDR S&amp;P Oil &amp; Gas E&amp;P</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Energy</span><span class="l-zh">能源</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XHB</b></td>
-          <td class="l muted">SPDR S&amp;P Homebuilders</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Homebuilders</span><span class="l-zh">Homebuilders</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XRT</b></td>
-          <td class="l muted">SPDR S&amp;P Retail</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Retail</span><span class="l-zh">Retail</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>KRE</b></td>
-          <td class="l muted">SPDR S&amp;P Regional Banking</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Regional Banks</span><span class="l-zh">Regional Banks</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>KBE</b></td>
-          <td class="l muted">SPDR S&amp;P Bank</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Banks</span><span class="l-zh">银行</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XME</b></td>
-          <td class="l muted">SPDR S&amp;P Metals &amp; Mining</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Metals &amp; Mining</span><span class="l-zh">Metals &amp; Mining</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XSD</b></td>
-          <td class="l muted">SPDR S&amp;P Semiconductor</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XAR</b></td>
-          <td class="l muted">SPDR S&amp;P Aerospace &amp; Defense</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Aerospace &amp; Defense</span><span class="l-zh">Aerospace &amp; Defense</span></span></td>
-          <td class="r num muted">22</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>AIQ</b></td>
-          <td class="l muted">Global X AI &amp; Technology</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">AI &amp; Big Data</span><span class="l-zh">AI &amp; Big Data</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>SNSR</b></td>
-          <td class="l muted">Global X Internet of Things</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">IoT</span><span class="l-zh">IoT</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>FINX</b></td>
-          <td class="l muted">Global X FinTech</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">FinTech</span><span class="l-zh">FinTech</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>DTCR</b></td>
-          <td class="l muted">Global X Data Center &amp; Digital Infra</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Data Centers</span><span class="l-zh">Data Centers</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>SHLD</b></td>
-          <td class="l muted">Global X Defense Tech</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Defense Tech</span><span class="l-zh">Defense Tech</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>HYDR</b></td>
-          <td class="l muted">Global X Hydrogen</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">Hydrogen</span><span class="l-zh">Hydrogen</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>EBIZ</b></td>
-          <td class="l muted">Global X E-commerce</td>
-          <td class="l muted">globalx</td>
-          <td class="l"><span class="muted"><span class="l-en">E-commerce</span><span class="l-zh">E-commerce</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XSW</b></td>
-          <td class="l muted">SPDR S&amp;P Software &amp; Services</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Software</span><span class="l-zh">Software</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XTN</b></td>
-          <td class="l muted">SPDR S&amp;P Transportation</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Transportation</span><span class="l-zh">交通运输</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XPH</b></td>
-          <td class="l muted">SPDR S&amp;P Pharmaceuticals</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Pharmaceuticals</span><span class="l-zh">Pharmaceuticals</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XES</b></td>
-          <td class="l muted">SPDR S&amp;P Oil &amp; Gas Equipment &amp; Services</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Oil Services</span><span class="l-zh">Oil Services</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>KCE</b></td>
-          <td class="l muted">SPDR S&amp;P Capital Markets</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Capital Markets</span><span class="l-zh">Capital Markets</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XHE</b></td>
-          <td class="l muted">SPDR S&amp;P Health Care Equipment</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Health Care Equipment</span><span class="l-zh">Health Care Equipment</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
-            
-          </td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b>XTL</b></td>
-          <td class="l muted">SPDR S&amp;P Telecom</td>
-          <td class="l muted">ssga</td>
-          <td class="l"><span class="muted"><span class="l-en">Telecom</span><span class="l-zh">Telecom</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
-          <td class="l">
-            
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
             
           </td>
         </tr>
@@ -2635,11 +2776,11 @@
           <td class="l muted">VanEck Semiconductor</td>
           <td class="l muted">vaneck</td>
           <td class="l"><span class="muted"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2649,11 +2790,11 @@
           <td class="l muted">VanEck Gold Miners</td>
           <td class="l muted">vaneck</td>
           <td class="l"><span class="muted"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2663,11 +2804,11 @@
           <td class="l muted">VanEck Junior Gold Miners</td>
           <td class="l muted">vaneck</td>
           <td class="l"><span class="muted"><span class="l-en">Junior Gold Miners</span><span class="l-zh">Junior Gold Miners</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2677,11 +2818,11 @@
           <td class="l muted">VanEck Uranium &amp; Nuclear</td>
           <td class="l muted">vaneck</td>
           <td class="l"><span class="muted"><span class="l-en">Uranium / Nuclear</span><span class="l-zh">Uranium / Nuclear</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2691,11 +2832,11 @@
           <td class="l muted">VanEck Rare Earth &amp; Strategic Metals</td>
           <td class="l muted">vaneck</td>
           <td class="l"><span class="muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2705,11 +2846,11 @@
           <td class="l muted">VanEck Morningstar Wide Moat</td>
           <td class="l muted">vaneck</td>
           <td class="l"><span class="muted"><span class="l-en">Wide Moat</span><span class="l-zh">Wide Moat</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2719,11 +2860,11 @@
           <td class="l muted">VanEck Oil Services</td>
           <td class="l muted">vaneck</td>
           <td class="l"><span class="muted"><span class="l-en">Oil Services</span><span class="l-zh">Oil Services</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2733,11 +2874,11 @@
           <td class="l muted">VanEck Digital Transformation</td>
           <td class="l muted">vaneck</td>
           <td class="l"><span class="muted"><span class="l-en">Crypto Industry</span><span class="l-zh">Crypto Industry</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2747,11 +2888,11 @@
           <td class="l muted">Range Nuclear Renaissance</td>
           <td class="l muted">etc</td>
           <td class="l"><span class="muted"><span class="l-en">Nuclear</span><span class="l-zh">Nuclear</span></span></td>
-          <td class="r num muted">4</td>
-          <td class="l muted">2026-07-17</td>
+          <td class="r num muted">5</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 4<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2761,11 +2902,11 @@
           <td class="l muted">CoinShares Bitcoin Mining (WGMI)</td>
           <td class="l muted">stockanalysis</td>
           <td class="l"><span class="muted"><span class="l-en">Bitcoin Miners</span><span class="l-zh">Bitcoin Miners</span></span></td>
-          <td class="r num muted">2</td>
-          <td class="l muted">2026-07-16</td>
+          <td class="r num muted">3</td>
+          <td class="l muted">2026-07-20</td>
           <td class="l">
             
-              <span class="fdot aging"></span><span class="muted"><span class="l-en">aging</span><span class="l-zh">渐旧</span></span> <span class="muted">· 5<span class="l-en">d</span><span class="l-zh">天</span></span>
+              <span class="fdot fresh"></span><span class="muted"><span class="l-en">fresh</span><span class="l-zh">新鲜</span></span>
             
           </td>
         </tr>
@@ -2848,10 +2989,10 @@
 
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Coverage: SPDR / State Street, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, ARK, Invesco and Roundhill are verified daily holdings feeds (with shares). iShares and Schwab are blocked by anti-bot / consent walls at source but are reachable through the labelled third-party feed; Vanguard publishes no free daily feed, so those funds are absent unless the third-party feed carries them. A fund missing here failed today&#39;s fetch and is skipped, never crashing the page. See LIMITATIONS.md.</span><span class="l-zh">覆盖范围：SPDR／道富、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、ARK、Invesco 与 Roundhill 为已验证的每日持仓数据（含份额）。iShares 与嘉信在源头被反爬／同意墙屏蔽，但可通过带标注的第三方数据源触达；Vanguard 无免费每日数据，故除非第三方数据源覆盖，否则这些基金缺失。此处缺失的基金为今日抓取失败并被跳过，绝不会使页面崩溃。详见 LIMITATIONS.md。</span>
-      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-22 00:25 UTC</p>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-22 01:53 UTC</p>
   </div>
 
-<script src="theme.js?v=195f6d56" defer></script>
+<script src="theme.js"></script>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>

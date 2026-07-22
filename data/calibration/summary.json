@@ -1,20 +1,20 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-20",
+  "as_of": "2026-07-21",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
-      "scored": 11,
-      "open": 31,
-      "hit_rate": 0.818,
-      "dir_accuracy": 0.818,
+      "scored": 13,
+      "open": 32,
+      "hit_rate": 0.846,
+      "dir_accuracy": 0.846,
       "conviction_monotone": null,
       "regimes": [
         "Goldilocks"
       ],
       "health": "calibrated",
-      "health_note": "hit-rate 0.818 over 11 scored; conviction ordering holds"
+      "health_note": "hit-rate 0.846 over 13 scored; conviction ordering holds"
     },
     {
       "name": "Policy Intent",
@@ -32,7 +32,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 339,
+      "open": 348,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -44,7 +44,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 115,
+      "open": 116,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -55,14 +55,14 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 25,
-      "open": 94,
-      "hit_rate": 0.72,
-      "dir_accuracy": 0.32,
+      "scored": 31,
+      "open": 96,
+      "hit_rate": 0.774,
+      "dir_accuracy": 0.419,
       "conviction_monotone": true,
       "regimes": [],
       "health": "calibrated",
-      "health_note": "hit-rate 0.72 over 25 scored; conviction ordering holds"
+      "health_note": "hit-rate 0.774 over 31 scored; conviction ordering holds"
     },
     {
       "name": "Demand Chain",
@@ -844,8 +844,8 @@
       "name": "Prophet US \u2014 board track",
       "region": "US",
       "rel_path": "site/factordata/us_board_track.json",
-      "board_dates": 10,
-      "graded_rows": 1537,
+      "board_dates": 11,
+      "graded_rows": 1592,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
@@ -855,12 +855,12 @@
       "name": "Prophet China \u2014 board track",
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
-      "board_dates": 12,
+      "board_dates": 13,
       "graded_rows": 0,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
-      "health_note": "722 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+      "health_note": "782 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
     }
   ]
 }

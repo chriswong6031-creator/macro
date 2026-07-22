@@ -1,17 +1,17 @@
 {
   "schema": "market_structure_context.v1",
-  "asof": "2026-07-20",
-  "built_at": "2026-07-21T02:38:20.745175+00:00",
+  "asof": "2026-07-21",
+  "built_at": "2026-07-22T03:00:07.479892+00:00",
   "is_context_only": true,
   "display_only": true,
   "gamma": {
-    "regime": "short",
-    "net_gex_bn": -15.129204,
-    "net_gex_pctile": 17.2,
-    "gamma_flip": 7472.859091,
-    "spot": 7443.2798,
-    "dist_to_flip_pct": -0.4,
-    "days_in_regime": 4,
+    "regime": "long",
+    "net_gex_bn": 22.227945,
+    "net_gex_pctile": 53.3,
+    "gamma_flip": 7477.12566,
+    "spot": 7509.2002,
+    "dist_to_flip_pct": 0.43,
+    "days_in_regime": 1,
     "series_start": "2026-06-14",
     "history": [
       {
@@ -216,37 +216,36 @@
         "regime": "short",
         "flip": 7472.859091,
         "spot": 7443.2798
+      },
+      {
+        "date": "2026-07-21",
+        "net_gex_bn": 22.227945,
+        "regime": "long",
+        "flip": 7477.12566,
+        "spot": 7509.2002
       }
     ]
   },
   "systematic": {
     "vc": {
-      "alloc_bn": 237.115791,
-      "alloc_frac": 0.790386,
-      "flow_1d_bn": 3.418241,
-      "flow_5d_bn": 13.532765,
+      "alloc_bn": 235.516129,
+      "alloc_frac": 0.785054,
+      "flow_1d_bn": -1.599662,
+      "flow_5d_bn": 1.386037,
       "state": "adding",
       "aum_bn": 300.0,
       "target_vol_pct": 10.0,
       "series_start": "1927-12-30"
     },
     "cta": {
-      "score": 0.59324,
-      "z": -0.720228,
-      "flow_1d": -0.194196,
-      "flow_5d": -0.297599,
+      "score": 0.802277,
+      "z": -0.405571,
+      "flow_1d": 0.209037,
+      "flow_5d": -0.14664,
       "state": "cutting"
     },
     "agreement": "split",
     "history": [
-      {
-        "date": "2024-07-22",
-        "vc_alloc_bn": 300.0,
-        "vc_flow_bn": 0.0,
-        "cta_score": 1.707889,
-        "cta_flow": 0.167397,
-        "spx_close": 5564.410156
-      },
       {
         "date": "2024-07-23",
         "vc_alloc_bn": 300.0,
@@ -4238,60 +4237,64 @@
         "cta_score": 0.59324,
         "cta_flow": -0.194196,
         "spx_close": 7443.279785
+      },
+      {
+        "date": "2026-07-21",
+        "vc_alloc_bn": 235.516129,
+        "vc_flow_bn": -1.599662,
+        "cta_score": 0.802277,
+        "cta_flow": 0.209037,
+        "spx_close": 7509.200195
       }
     ]
   },
   "vol": {
-    "rv21": 0.105709,
-    "rv63": 0.12652,
+    "rv21": 0.103488,
+    "rv63": 0.12738,
     "rv_cross_state": "calm",
     "vix_curve": [
       {
         "tenor": "M1",
-        "settle": 18.4507,
-        "dte": 2
+        "settle": 17.0397,
+        "dte": 1
       },
       {
         "tenor": "M2",
-        "settle": 18.9656,
-        "dte": 30
+        "settle": 18.4089,
+        "dte": 29
       },
       {
         "tenor": "M3",
-        "settle": 19.7536,
-        "dte": 58
+        "settle": 19.4453,
+        "dte": 57
       },
       {
         "tenor": "M4",
-        "settle": 20.4529,
-        "dte": 93
+        "settle": 20.3423,
+        "dte": 92
       },
       {
         "tenor": "M5",
-        "settle": 20.7541,
-        "dte": 121
+        "settle": 20.7049,
+        "dte": 120
       },
       {
         "tenor": "M6",
-        "settle": 20.7954,
-        "dte": 149
+        "settle": 20.7987,
+        "dte": 148
       }
     ],
-    "vix_curve_slope": 2.3447,
+    "vix_curve_slope": 3.759,
     "series_start_curve": "2026-04-16"
   },
   "dispersion": {
-    "cor1m": 6.81,
+    "cor1m": 4.98,
     "cor1m_regime": "dispersion",
-    "cor1m_1y_delta": -6.11,
-    "cor1m_pctile_2y": 4.4,
-    "cor3m": 9.06,
-    "dspx": 47.15,
+    "cor1m_1y_delta": -8.55,
+    "cor1m_pctile_2y": 1.6,
+    "cor3m": 7.99,
+    "dspx": 47.51,
     "history": [
-      {
-        "date": "2024-07-22",
-        "cor1m": 8.65
-      },
       {
         "date": "2024-07-23",
         "cor1m": 9.2
@@ -6287,15 +6290,28 @@
       {
         "date": "2026-07-20",
         "cor1m": 6.81
+      },
+      {
+        "date": "2026-07-21",
+        "cor1m": 4.98
       }
     ]
   },
   "state_changes": {
-    "vs_asof": "2026-07-17",
-    "items": []
+    "vs_asof": "2026-07-20",
+    "items": [
+      {
+        "key": "gamma_regime",
+        "from": "short",
+        "to": "long",
+        "note_en": "Dealer gamma regime: Dealers short gamma (amplifying) → Dealers long gamma (absorbing)",
+        "note_zh": "庄家伽马机制：庄家净空伽马（放大波动） → 庄家净多伽马（吸收波动）",
+        "display_only": true
+      }
+    ]
   },
   "prev_state": {
-    "as_of": "2026-07-17",
+    "as_of": "2026-07-20",
     "state": {
       "gamma_regime": "short",
       "vc_state": "adding",

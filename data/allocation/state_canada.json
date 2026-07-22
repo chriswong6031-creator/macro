@@ -4,6 +4,7 @@
   "eligible": [
     "ca_asset_mgrs",
     "ca_banks",
+    "ca_base_metals",
     "ca_consumer",
     "ca_insurers",
     "ca_materials",
@@ -15,8 +16,8 @@
   ],
   "held": [
     "ca_banks",
+    "ca_base_metals",
     "ca_pipelines",
-    "ca_utilities",
     "ca_rails_ind"
   ],
   "leader": "ca_banks",

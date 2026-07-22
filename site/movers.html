@@ -8,7 +8,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Today's Movers — 2026-07-20</title>
+<title>Today's Movers — 2026-07-21</title>
 
 
 
@@ -29,8 +29,98 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=a1aa8c55">
-<link rel="stylesheet" href="assets/css/8461c179.css?v=8461c179">
+<link rel="stylesheet" href="theme.css">
+<style>
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.pg-brand{font-weight:800;font-size:23px;color:var(--text);letter-spacing:-.02em;margin:8px 0 2px;display:flex;align-items:center;gap:9px}
+.pg-brand .gn{color:var(--info)}
+.pg-lead{color:var(--muted);font-size:14px;margin:0 0 22px;max-width:60ch}
+.asof-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:4px 12px;margin-left:4px;vertical-align:middle}
+.asof-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--info)}
+
+/* ── two-column tape ── */
+.tape{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+@media(max-width:720px){.tape{grid-template-columns:1fr}}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:6px 6px 8px;overflow:hidden}
+.col-h{display:flex;align-items:center;gap:9px;padding:14px 16px 10px}
+.col-h .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.col.gain .col-h .dot{background:var(--up)}
+.col.lose .col-h .dot{background:var(--down)}
+.col-h .lbl{font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.col-h .cnt{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted);font-family:var(--font-mono)}
+
+/* mover row */
+.mv{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  padding:10px 14px;border-radius:11px;transition:background .14s}
+.mv:hover{background:color-mix(in srgb,var(--info) 7%,transparent)}
+.mv .rank{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--muted);width:16px;text-align:right}
+.mv .mid{min-width:0}
+.mv .tkr{font-family:var(--font-mono);font-weight:800;font-size:14.5px;color:var(--text);letter-spacing:.01em}
+.mv .co{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.mv .co .sect{opacity:.72}
+.mv .chg{font-family:var(--font-mono);font-weight:800;font-size:15px;text-align:right;white-space:nowrap}
+.chg.up{color:var(--up)}.chg.down{color:var(--down)}
+/* subtle magnitude bar under the row — shared scale within a column */
+.mv .bar{grid-column:2 / -1;height:3px;border-radius:2px;margin-top:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);overflow:hidden}
+.mv .bar i{display:block;height:100%;border-radius:2px}
+.col.gain .bar i{background:color-mix(in srgb,var(--up) 65%,transparent)}
+.col.lose .bar i{background:color-mix(in srgb,var(--down) 65%,transparent)}
+
+/* ── theme ribbon (signature) ── */
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:34px 0 4px;flex-wrap:wrap}
+.sec-h h2{margin:0;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.sec-h .sub{font-size:12.5px;color:var(--muted)}
+.ribbons{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.rb{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 16px;transition:border-color .16s}
+.rb:hover{border-color:color-mix(in srgb,var(--info) 32%,var(--line))}
+.rb-head{min-width:0}
+.rb-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.25;display:flex;align-items:center;gap:8px}
+.rb-arrow{font-size:13px;font-weight:800}
+.rb.up .rb-arrow{color:var(--up)}.rb.down .rb-arrow{color:var(--down)}
+.rb-agg{font-family:var(--font-mono);font-size:12px;font-weight:700;margin-top:2px}
+.rb.up .rb-agg{color:var(--up)}.rb.down .rb-agg{color:var(--down)}
+.rb-members{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{display:inline-flex;align-items:baseline;gap:5px;font-family:var(--font-mono);font-size:12px;font-weight:700;
+  color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 9px;transition:transform .14s,border-color .14s}
+.mchip:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
+.mchip .mp{font-size:10.5px;font-weight:700}
+.mchip .mp.up{color:var(--up)}.mchip .mp.down{color:var(--down)}
+@media(max-width:560px){.rb{grid-template-columns:1fr;gap:9px}}
+
+/* CTA */
+.cta-band{margin-top:26px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:16px;padding:20px 24px;box-shadow:var(--glass-shadow)}
+.cta-band .cb-tx{font-size:15px;font-weight:700;color:var(--text)}
+.cta-band .cb-sub{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;border-radius:10px;padding:9px 16px;
+  background:var(--info);color:#fff;border:0;cursor:pointer;transition:filter .15s,transform .15s;white-space:nowrap}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--info);border:1px solid color-mix(in srgb,var(--info) 40%,var(--line))}
+
+/* empty / degraded */
+.empty-col{padding:26px 16px 30px;text-align:center;color:var(--muted);font-size:13px;line-height:1.5}
+.empty-col .ec-ic{font-size:22px;display:block;margin-bottom:6px;opacity:.7}
+.empty-block{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:36px 24px;text-align:center;margin-top:14px}
+.empty-block .ec-ic{font-size:28px;margin-bottom:10px;opacity:.7}
+.empty-block h3{margin:0 0 6px;font-size:17px;font-weight:800;color:var(--text)}
+.empty-block p{margin:0 auto;font-size:13.5px;color:var(--muted);max-width:42ch;line-height:1.55}
+
+.site-foot{max-width:1080px;margin:34px auto 0;padding:18px 20px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+
+a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:8px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 <nav class="site-nav" style="max-width:1080px;margin:18px auto 14px;padding:0 20px">
@@ -185,7 +275,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -244,8 +398,8 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-ctrls">
@@ -261,7 +415,7 @@
 
 <div class="wrap">
   <div class="pg-brand">📈 <span class="l-en">Today's <span class="gn">Movers</span></span><span class="l-zh">今日<span class="gn">异动</span></span>
-    <span class="asof-chip mono"><span class="l-en">2026-07-20 · daily</span><span class="l-zh">2026-07-20 · 日线</span></span></div>
+    <span class="asof-chip mono"><span class="l-en">2026-07-21 · daily</span><span class="l-zh">2026-07-21 · 日线</span></span></div>
   <p class="pg-lead">
     <span class="l-en">The biggest one-day moves across our large-cap US list, and which theme groups are moving together. Tap any name for its full profile. Free, updated daily.</span>
     <span class="l-zh">大盘股名单中今日单日涨跌最大的个股，以及哪些主题板块正在联动。点击任意标的查看完整档案。免费，每日更新。</span>
@@ -279,68 +433,88 @@
       <div class="col-h">
         <span class="dot"></span>
         <span class="lbl"><span class="l-en">Top gainers</span><span class="l-zh">领涨</span></span>
-        <span class="cnt">6</span>
+        <span class="cnt">8</span>
       </div>
       
         
-        <a class="mv" href="stocks/GPN.html">
+        <a class="mv" href="stocks/SNDK.html">
           <span class="rank mono">1</span>
           <span class="mid">
-            <span class="tkr">GPN</span>
-            <span class="co">Global Payments · <span class="sect">Financial</span></span>
+            <span class="tkr">SNDK</span>
+            <span class="co">Sandisk · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg up mono">+5.85%</span>
+          <span class="chg up mono">+14.27%</span>
           <span class="bar"><i style="width:100%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/LITE.html">
+        <a class="mv" href="stocks/WDC.html">
           <span class="rank mono">2</span>
           <span class="mid">
-            <span class="tkr">LITE</span>
-            <span class="co">Lumentum · <span class="sect">Technology</span></span>
+            <span class="tkr">WDC</span>
+            <span class="co">Western Digital · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg up mono">+4.47%</span>
-          <span class="bar"><i style="width:76%"></i></span>
+          <span class="chg up mono">+12.51%</span>
+          <span class="bar"><i style="width:88%"></i></span>
+        </a>
+        
+        <a class="mv" href="stocks/MU.html">
+          <span class="rank mono">3</span>
+          <span class="mid">
+            <span class="tkr">MU</span>
+            <span class="co">Micron Technology · <span class="sect">Technology</span></span>
+          </span>
+          <span class="chg up mono">+12.17%</span>
+          <span class="bar"><i style="width:85%"></i></span>
         </a>
         
         <a class="mv" href="stocks/TER.html">
-          <span class="rank mono">3</span>
+          <span class="rank mono">4</span>
           <span class="mid">
             <span class="tkr">TER</span>
             <span class="co">Teradyne · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg up mono">+3.54%</span>
-          <span class="bar"><i style="width:61%"></i></span>
+          <span class="chg up mono">+12.07%</span>
+          <span class="bar"><i style="width:85%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/AXON.html">
-          <span class="rank mono">4</span>
-          <span class="mid">
-            <span class="tkr">AXON</span>
-            <span class="co">Axon Enterprise · <span class="sect">Industrials</span></span>
-          </span>
-          <span class="chg up mono">+3.37%</span>
-          <span class="bar"><i style="width:58%"></i></span>
-        </a>
-        
-        <a class="mv" href="stocks/MRVL.html">
+        <a class="mv" href="stocks/COHR.html">
           <span class="rank mono">5</span>
           <span class="mid">
-            <span class="tkr">MRVL</span>
-            <span class="co">Marvell Technology · <span class="sect">Technology</span></span>
+            <span class="tkr">COHR</span>
+            <span class="co">Coherent Corp. · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg up mono">+3.32%</span>
-          <span class="bar"><i style="width:57%"></i></span>
+          <span class="chg up mono">+11.15%</span>
+          <span class="bar"><i style="width:78%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/BF-B.html">
+        <a class="mv" href="stocks/STX.html">
           <span class="rank mono">6</span>
           <span class="mid">
-            <span class="tkr">BF-B</span>
-            <span class="co">Brown–Forman · <span class="sect">Consumer Defensive</span></span>
+            <span class="tkr">STX</span>
+            <span class="co">Seagate Technology · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg up mono">+3.24%</span>
-          <span class="bar"><i style="width:55%"></i></span>
+          <span class="chg up mono">+11.14%</span>
+          <span class="bar"><i style="width:78%"></i></span>
+        </a>
+        
+        <a class="mv" href="stocks/COIN.html">
+          <span class="rank mono">7</span>
+          <span class="mid">
+            <span class="tkr">COIN</span>
+            <span class="co">Coinbase · <span class="sect">Financial</span></span>
+          </span>
+          <span class="chg up mono">+9.61%</span>
+          <span class="bar"><i style="width:67%"></i></span>
+        </a>
+        
+        <a class="mv" href="stocks/LITE.html">
+          <span class="rank mono">8</span>
+          <span class="mid">
+            <span class="tkr">LITE</span>
+            <span class="co">Lumentum · <span class="sect">Technology</span></span>
+          </span>
+          <span class="chg up mono">+9.41%</span>
+          <span class="bar"><i style="width:66%"></i></span>
         </a>
         
       
@@ -355,84 +529,84 @@
       </div>
       
         
-        <a class="mv" href="stocks/CVNA.html">
+        <a class="mv" href="stocks/DHR.html">
           <span class="rank mono">1</span>
           <span class="mid">
-            <span class="tkr">CVNA</span>
-            <span class="co">Carvana · <span class="sect">Consumer Cyclical</span></span>
+            <span class="tkr">DHR</span>
+            <span class="co">Danaher Corporation · <span class="sect">Healthcare</span></span>
           </span>
-          <span class="chg down mono">-4.75%</span>
+          <span class="chg down mono">-10.99%</span>
           <span class="bar"><i style="width:100%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/HONA.html">
+        <a class="mv" href="stocks/MSCI.html">
           <span class="rank mono">2</span>
           <span class="mid">
-            <span class="tkr">HONA</span>
-            <span class="co">Honeywell Aerospace · <span class="sect">Industrials</span></span>
+            <span class="tkr">MSCI</span>
+            <span class="co">MSCI Inc. · <span class="sect">Financial</span></span>
           </span>
-          <span class="chg down mono">-4.33%</span>
-          <span class="bar"><i style="width:91%"></i></span>
+          <span class="chg down mono">-10.14%</span>
+          <span class="bar"><i style="width:92%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/ORCL.html">
+        <a class="mv" href="stocks/TYL.html">
           <span class="rank mono">3</span>
           <span class="mid">
-            <span class="tkr">ORCL</span>
-            <span class="co">Oracle Corporation · <span class="sect">Technology</span></span>
+            <span class="tkr">TYL</span>
+            <span class="co">Tyler Technologies · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg down mono">-3.98%</span>
-          <span class="bar"><i style="width:84%"></i></span>
+          <span class="chg down mono">-5.73%</span>
+          <span class="bar"><i style="width:52%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/KKR.html">
+        <a class="mv" href="stocks/HAL.html">
           <span class="rank mono">4</span>
           <span class="mid">
-            <span class="tkr">KKR</span>
-            <span class="co">KKR &amp; Co. · <span class="sect">Financial</span></span>
+            <span class="tkr">HAL</span>
+            <span class="co">Halliburton · <span class="sect">Energy</span></span>
           </span>
-          <span class="chg down mono">-3.93%</span>
-          <span class="bar"><i style="width:83%"></i></span>
+          <span class="chg down mono">-5.47%</span>
+          <span class="bar"><i style="width:50%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/UPS.html">
+        <a class="mv" href="stocks/IT.html">
           <span class="rank mono">5</span>
           <span class="mid">
-            <span class="tkr">UPS</span>
-            <span class="co">United Parcel Service · <span class="sect">Industrials</span></span>
+            <span class="tkr">IT</span>
+            <span class="co">Gartner · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg down mono">-3.88%</span>
-          <span class="bar"><i style="width:82%"></i></span>
+          <span class="chg down mono">-4.46%</span>
+          <span class="bar"><i style="width:41%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/CMG.html">
+        <a class="mv" href="stocks/VEEV.html">
           <span class="rank mono">6</span>
           <span class="mid">
-            <span class="tkr">CMG</span>
-            <span class="co">Chipotle Mexican Grill · <span class="sect">Consumer Cyclical</span></span>
+            <span class="tkr">VEEV</span>
+            <span class="co">Veeva Systems · <span class="sect">Healthcare</span></span>
           </span>
-          <span class="chg down mono">-3.8%</span>
-          <span class="bar"><i style="width:80%"></i></span>
+          <span class="chg down mono">-4.14%</span>
+          <span class="bar"><i style="width:38%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/MRNA.html">
+        <a class="mv" href="stocks/VRSN.html">
           <span class="rank mono">7</span>
           <span class="mid">
-            <span class="tkr">MRNA</span>
-            <span class="co">Moderna · <span class="sect">Healthcare</span></span>
+            <span class="tkr">VRSN</span>
+            <span class="co">Verisign · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg down mono">-3.77%</span>
-          <span class="bar"><i style="width:79%"></i></span>
+          <span class="chg down mono">-4.13%</span>
+          <span class="bar"><i style="width:38%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/WBD.html">
+        <a class="mv" href="stocks/WDAY.html">
           <span class="rank mono">8</span>
           <span class="mid">
-            <span class="tkr">WBD</span>
-            <span class="co">Warner Bros. Discovery · <span class="sect">Communication Services</span></span>
+            <span class="tkr">WDAY</span>
+            <span class="co">Workday, Inc. · <span class="sect">Technology</span></span>
           </span>
-          <span class="chg down mono">-3.76%</span>
-          <span class="bar"><i style="width:79%"></i></span>
+          <span class="chg down mono">-4.11%</span>
+          <span class="bar"><i style="width:37%"></i></span>
         </a>
         
       
@@ -451,27 +625,27 @@
       <div class="rb-head">
         <div class="rb-name">
           <span class="rb-arrow">▲</span>
-          <span><span class="l-en">Crypto &amp; Blockchain</span><span class="l-zh">Crypto &amp; Blockchain</span></span>
+          <span><span class="l-en">Semiconductors</span><span class="l-zh">Semiconductors</span></span>
         </div>
-        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> +3.61%</div>
+        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> +6.33%</div>
       </div>
       <div class="rb-members">
         
-        <a class="mchip" href="stocks/IREN.html">IREN<span class="mp up">+19.57%</span></a>
+        <a class="mchip" href="stocks/WDC.html">WDC<span class="mp up">+12.51%</span></a>
         
-        <a class="mchip" href="stocks/CIFR.html">CIFR<span class="mp up">+16.97%</span></a>
+        <a class="mchip" href="stocks/MU.html">MU<span class="mp up">+12.17%</span></a>
         
-        <a class="mchip" href="stocks/CLSK.html">CLSK<span class="mp up">+10.67%</span></a>
+        <a class="mchip" href="stocks/TER.html">TER<span class="mp up">+12.07%</span></a>
         
-        <a class="mchip" href="stocks/HUT.html">HUT<span class="mp up">+10.37%</span></a>
+        <a class="mchip" href="stocks/PDFS.html">PDFS<span class="mp up">+11.54%</span></a>
         
-        <a class="mchip" href="stocks/MARA.html">MARA<span class="mp up">+9.17%</span></a>
+        <a class="mchip" href="stocks/STX.html">STX<span class="mp up">+11.14%</span></a>
         
-        <a class="mchip" href="stocks/RIOT.html">RIOT<span class="mp up">+8.98%</span></a>
+        <a class="mchip" href="stocks/NVTS.html">NVTS<span class="mp up">+11.13%</span></a>
         
-        <a class="mchip" href="stocks/BKKT.html">BKKT<span class="mp up">+8.28%</span></a>
+        <a class="mchip" href="stocks/MRAM.html">MRAM<span class="mp up">+11.09%</span></a>
         
-        <a class="mchip" href="stocks/CORZ.html">CORZ<span class="mp up">+6.97%</span></a>
+        <a class="mchip" href="stocks/SIMO.html">SIMO<span class="mp up">+10.12%</span></a>
         
       </div>
     </div>
@@ -480,137 +654,125 @@
       <div class="rb-head">
         <div class="rb-name">
           <span class="rb-arrow">▲</span>
-          <span><span class="l-en">FinTech</span><span class="l-zh">FinTech</span></span>
+          <span><span class="l-en">Autonomous Systems</span><span class="l-zh">Autonomous Systems</span></span>
         </div>
-        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> +1.33%</div>
+        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> +2.83%</div>
       </div>
       <div class="rb-members">
         
-        <a class="mchip" href="stocks/GPN.html">GPN<span class="mp up">+5.85%</span></a>
+        <a class="mchip" href="stocks/OUST.html">OUST<span class="mp up">+17.0%</span></a>
         
-        <a class="mchip" href="stocks/EVER.html">EVER<span class="mp up">+5.28%</span></a>
+        <a class="mchip" href="stocks/AEVA.html">AEVA<span class="mp up">+11.26%</span></a>
         
-        <a class="mchip" href="stocks/MSTR.html">MSTR<span class="mp up">+3.13%</span></a>
+        <a class="mchip" href="stocks/RCAT.html">RCAT<span class="mp up">+10.7%</span></a>
         
-        <a class="mchip" href="stocks/NU.html">NU<span class="mp up">+2.94%</span></a>
+        <a class="mchip" href="stocks/INVZ.html">INVZ<span class="mp up">+10.18%</span></a>
         
-        <a class="mchip" href="stocks/TOST.html">TOST<span class="mp up">+2.56%</span></a>
+        <a class="mchip" href="stocks/AMBA.html">AMBA<span class="mp up">+8.52%</span></a>
+        
+        <a class="mchip" href="stocks/AMD.html">AMD<span class="mp up">+8.11%</span></a>
+        
+        <a class="mchip" href="stocks/ON.html">ON<span class="mp up">+5.03%</span></a>
         
       </div>
     </div>
     
-    <div class="rb down">
+    <div class="rb up">
       <div class="rb-head">
         <div class="rb-name">
-          <span class="rb-arrow">▼</span>
-          <span><span class="l-en">Healthcare &amp; Biotech</span><span class="l-zh">Healthcare &amp; Biotech</span></span>
+          <span class="rb-arrow">▲</span>
+          <span><span class="l-en">Artificial Intelligence</span><span class="l-zh">Artificial Intelligence</span></span>
         </div>
-        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> -1.49%</div>
+        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> +1.83%</div>
       </div>
       <div class="rb-members">
         
-        <a class="mchip" href="stocks/TEM.html">TEM<span class="mp down">-7.74%</span></a>
+        <a class="mchip" href="stocks/SMR.html">SMR<span class="mp up">+9.42%</span></a>
         
-        <a class="mchip" href="stocks/TWST.html">TWST<span class="mp down">-6.82%</span></a>
+        <a class="mchip" href="stocks/CEVA.html">CEVA<span class="mp up">+9.08%</span></a>
         
-        <a class="mchip" href="stocks/SEER.html">SEER<span class="mp down">-5.99%</span></a>
+        <a class="mchip" href="stocks/INTC.html">INTC<span class="mp up">+8.64%</span></a>
         
-        <a class="mchip" href="stocks/PACB.html">PACB<span class="mp down">-5.56%</span></a>
-        
-        <a class="mchip" href="stocks/CMPS.html">CMPS<span class="mp down">-5.51%</span></a>
-        
-        <a class="mchip" href="stocks/GH.html">GH<span class="mp down">-5.0%</span></a>
-        
-        <a class="mchip" href="stocks/AMWL.html">AMWL<span class="mp down">-4.91%</span></a>
-        
-        <a class="mchip" href="stocks/QDEL.html">QDEL<span class="mp down">-4.6%</span></a>
+        <a class="mchip" href="stocks/LSCC.html">LSCC<span class="mp up">+8.18%</span></a>
         
       </div>
     </div>
     
-    <div class="rb down">
+    <div class="rb up">
       <div class="rb-head">
         <div class="rb-name">
-          <span class="rb-arrow">▼</span>
-          <span><span class="l-en">Commodities Metals</span><span class="l-zh">Commodities Metals</span></span>
+          <span class="rb-arrow">▲</span>
+          <span><span class="l-en">Energy Renewable</span><span class="l-zh">Energy Renewable</span></span>
         </div>
-        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> -1.04%</div>
+        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> +2.2%</div>
       </div>
       <div class="rb-members">
         
-        <a class="mchip" href="stocks/LAR.html">LAR<span class="mp down">-7.39%</span></a>
+        <a class="mchip" href="stocks/NRGV.html">NRGV<span class="mp up">+15.23%</span></a>
         
-        <a class="mchip" href="stocks/ATLX.html">ATLX<span class="mp down">-7.24%</span></a>
+        <a class="mchip" href="stocks/BE.html">BE<span class="mp up">+14.82%</span></a>
         
-        <a class="mchip" href="stocks/CTGO.html">CTGO<span class="mp down">-4.38%</span></a>
+        <a class="mchip" href="stocks/FCEL.html">FCEL<span class="mp up">+9.07%</span></a>
         
-        <a class="mchip" href="stocks/NMG.html">NMG<span class="mp down">-4.22%</span></a>
+        <a class="mchip" href="stocks/SPWR.html">SPWR<span class="mp up">+8.92%</span></a>
         
-        <a class="mchip" href="stocks/CLF.html">CLF<span class="mp down">-3.23%</span></a>
+        <a class="mchip" href="stocks/SCCO.html">SCCO<span class="mp up">+7.39%</span></a>
         
-        <a class="mchip" href="stocks/SQM.html">SQM<span class="mp down">-3.04%</span></a>
+        <a class="mchip" href="stocks/FLNC.html">FLNC<span class="mp up">+7.0%</span></a>
         
-        <a class="mchip" href="stocks/ABAT.html">ABAT<span class="mp down">-2.97%</span></a>
+        <a class="mchip" href="stocks/BLDP.html">BLDP<span class="mp up">+6.86%</span></a>
         
-        <a class="mchip" href="stocks/LXFR.html">LXFR<span class="mp down">-2.79%</span></a>
+        <a class="mchip" href="stocks/PLUG.html">PLUG<span class="mp up">+6.57%</span></a>
         
       </div>
     </div>
     
-    <div class="rb down">
+    <div class="rb up">
       <div class="rb-head">
         <div class="rb-name">
-          <span class="rb-arrow">▼</span>
-          <span><span class="l-en">Agriculture &amp; FoodTech</span><span class="l-zh">Agriculture &amp; FoodTech</span></span>
+          <span class="rb-arrow">▲</span>
+          <span><span class="l-en">Hardware</span><span class="l-zh">Hardware</span></span>
         </div>
-        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> -1.15%</div>
+        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> +2.98%</div>
       </div>
       <div class="rb-members">
         
-        <a class="mchip" href="stocks/LSF.html">LSF<span class="mp down">-7.27%</span></a>
+        <a class="mchip" href="stocks/LITE.html">LITE<span class="mp up">+9.41%</span></a>
         
-        <a class="mchip" href="stocks/STKH.html">STKH<span class="mp down">-5.83%</span></a>
+        <a class="mchip" href="stocks/VIAV.html">VIAV<span class="mp up">+9.11%</span></a>
         
-        <a class="mchip" href="stocks/DNA.html">DNA<span class="mp down">-4.55%</span></a>
+        <a class="mchip" href="stocks/MOD.html">MOD<span class="mp up">+8.43%</span></a>
         
-        <a class="mchip" href="stocks/LOCL.html">LOCL<span class="mp down">-4.13%</span></a>
-        
-        <a class="mchip" href="stocks/CNH.html">CNH<span class="mp down">-2.91%</span></a>
-        
-        <a class="mchip" href="stocks/AGCO.html">AGCO<span class="mp down">-2.6%</span></a>
-        
-        <a class="mchip" href="stocks/LNN.html">LNN<span class="mp down">-2.31%</span></a>
-        
-        <a class="mchip" href="stocks/USFD.html">USFD<span class="mp down">-2.3%</span></a>
+        <a class="mchip" href="stocks/CIEN.html">CIEN<span class="mp up">+7.91%</span></a>
         
       </div>
     </div>
     
-    <div class="rb down">
+    <div class="rb up">
       <div class="rb-head">
         <div class="rb-name">
-          <span class="rb-arrow">▼</span>
-          <span><span class="l-en">Nanotechnology</span><span class="l-zh">Nanotechnology</span></span>
+          <span class="rb-arrow">▲</span>
+          <span><span class="l-en">Crypto &amp; Blockchain</span><span class="l-zh">Crypto &amp; Blockchain</span></span>
         </div>
-        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> -1.31%</div>
+        <div class="rb-agg mono"><span class="l-en">avg</span><span class="l-zh">均</span> +2.77%</div>
       </div>
       <div class="rb-members">
         
-        <a class="mchip" href="stocks/NBTX.html">NBTX<span class="mp down">-5.45%</span></a>
+        <a class="mchip" href="stocks/CIFR.html">CIFR<span class="mp up">+11.44%</span></a>
         
-        <a class="mchip" href="stocks/ENPH.html">ENPH<span class="mp down">-5.08%</span></a>
+        <a class="mchip" href="stocks/BTDR.html">BTDR<span class="mp up">+9.76%</span></a>
         
-        <a class="mchip" href="stocks/MRNA.html">MRNA<span class="mp down">-3.77%</span></a>
+        <a class="mchip" href="stocks/COIN.html">COIN<span class="mp up">+9.61%</span></a>
         
-        <a class="mchip" href="stocks/LQDA.html">LQDA<span class="mp down">-3.58%</span></a>
+        <a class="mchip" href="stocks/RIOT.html">RIOT<span class="mp up">+7.99%</span></a>
         
-        <a class="mchip" href="stocks/BRKR.html">BRKR<span class="mp down">-3.54%</span></a>
+        <a class="mchip" href="stocks/HUT.html">HUT<span class="mp up">+7.98%</span></a>
         
-        <a class="mchip" href="stocks/CLNN.html">CLNN<span class="mp down">-3.21%</span></a>
+        <a class="mchip" href="stocks/CORZ.html">CORZ<span class="mp up">+7.19%</span></a>
         
-        <a class="mchip" href="stocks/FSLR.html">FSLR<span class="mp down">-3.15%</span></a>
+        <a class="mchip" href="stocks/HOOD.html">HOOD<span class="mp up">+7.13%</span></a>
         
-        <a class="mchip" href="stocks/VECO.html">VECO<span class="mp down">-3.02%</span></a>
+        <a class="mchip" href="stocks/CLSK.html">CLSK<span class="mp up">+6.66%</span></a>
         
       </div>
     </div>
@@ -629,11 +791,11 @@
   
 
   <div class="site-foot">
-    <span><span class="l-en">Data as of 2026-07-20 · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 2026-07-20 · 美国大盘股 · 每日更新。</span></span>
+    <span><span class="l-en">Data as of 2026-07-21 · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 2026-07-21 · 美国大盘股 · 每日更新。</span></span>
     <span><span class="l-en">Context, not investment advice.</span><span class="l-zh">仅供参考，非投资建议。</span></span>
   </div>
 </div>
 
-<script src="theme.js?v=195f6d56" defer></script>
+<script src="theme.js"></script>
 </body>
 </html>
