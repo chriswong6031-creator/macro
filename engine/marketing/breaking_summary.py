@@ -251,7 +251,8 @@ def _llm_summarize(item: dict, cfg: dict) -> str | None:
         max_tokens = int(llm_cfg.get("max_tokens", 800))
 
         from engine import llm_auth  # noqa: PLC0415
-        providers = llm_auth.build_providers({}, opus_model=model_id)
+        providers = llm_auth.build_providers(
+            {"usage_lane": "marketing-breaking"}, opus_model=model_id)
         if not providers:
             return None
 
@@ -279,11 +280,11 @@ def _llm_summarize(item: dict, cfg: dict) -> str | None:
                 messages=[{"role": "user", "content": user_msg}],
             )
             if getattr(resp, "stop_reason", None) == "refusal":
-                return None, "stop_refusal"
+                return None, "stop_refusal", resp
             text = "".join(
                 b.text for b in resp.content if getattr(b, "type", "") == "text"
             )
-            return (text.strip() or None), None
+            return (text.strip() or None), None, resp
 
         raw_text, _reason, _provider = llm_auth.make_call(
             providers, _do_call, context="marketing_breaking"

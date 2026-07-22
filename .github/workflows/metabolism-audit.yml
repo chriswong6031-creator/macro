@@ -72,6 +72,7 @@ jobs:
           CYCLE_ID: ${{ github.event.inputs.cycle_id }}
           PR_NUMBER: ${{ github.event.inputs.pr_number }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          AI_COSTS_SHARD: "${{ github.workflow }}-${{ github.run_id }}-${{ github.run_attempt }}"
           CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
           CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
           CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
@@ -113,7 +114,7 @@ jobs:
           python -m scripts.metabolism_audit $ARGS
 
           # Commit audit records + governance events (narrow add, rebase-safe)
-          git add data/metabolism/audit/ data/neuralweb/governance.jsonl 2>/dev/null || true
+          git add data/ai_costs/usage.d data/metabolism/audit/ data/neuralweb/governance.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no new audit records to commit."
           else

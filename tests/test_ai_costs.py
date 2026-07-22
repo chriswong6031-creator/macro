@@ -394,3 +394,157 @@ class TestKeyPoolProbeEnvs:
         from scripts.key_pool_probe import _PROBE_ENVS
 
         assert "CLAUDE_CODE_OAUTH_TOKEN" in _PROBE_ENVS
+
+
+# ── lobe taxonomy (lane → lobe) ────────────────────────────────────────────────
+
+class TestLobeForLane:
+    def test_exact_matches(self) -> None:
+        from lib.ai_costs import lobe_for_lane
+        assert lobe_for_lane("master-brain") == "Master Brain"
+        assert lobe_for_lane("ask-brain") == "Mastermind"
+        assert lobe_for_lane("cortex") == "Mastermind"
+        assert lobe_for_lane("catalyst-tone") == "News"
+        assert lobe_for_lane("qual-extraction") == "Qual"
+        assert lobe_for_lane("whitehouse") == "Whitehouse"
+
+    def test_prefix_matches(self) -> None:
+        from lib.ai_costs import lobe_for_lane
+        assert lobe_for_lane("metabolism-propose") == "Metabolism"
+        assert lobe_for_lane("metabolism-build") == "Metabolism"
+        assert lobe_for_lane("marketing-copywriter") == "Marketing"
+        assert lobe_for_lane("marketing-breaking") == "Marketing"
+        assert lobe_for_lane("brain-pro") == "Mastermind"
+        assert lobe_for_lane("risk-radar-review") == "Risk"
+
+    def test_unknown_and_empty(self) -> None:
+        from lib.ai_costs import lobe_for_lane
+        assert lobe_for_lane("totally-new-lane") == "Other"
+        assert lobe_for_lane("") == "Other"
+        assert lobe_for_lane(None) == "Other"
+
+    def test_case_insensitive(self) -> None:
+        from lib.ai_costs import lobe_for_lane
+        assert lobe_for_lane("Metabolism-Propose") == "Metabolism"
+
+
+# ── summarize rollups (by_lobe / percentages / cost_basis) ─────────────────────
+
+class TestSummarizeRollups:
+    def test_by_lobe_rollup(self, tmp_path: Path) -> None:
+        _write_pricing(tmp_path)
+        from lib.ai_costs import record_usage, summarize
+        record_usage(lane="metabolism-propose", provider="claude_oauth",
+                     model="claude-sonnet-4-6", input_tokens=1000, output_tokens=500,
+                     cost_basis="subscription", root=tmp_path)
+        record_usage(lane="metabolism-build", provider="claude_oauth",
+                     model="claude-sonnet-4-6", input_tokens=2000, output_tokens=1000,
+                     cost_basis="subscription", root=tmp_path)
+        record_usage(lane="master-brain", provider="deepseek",
+                     model="claude-haiku-4-5", input_tokens=500, output_tokens=200,
+                     cost_basis="metered", root=tmp_path)
+        s = summarize(root=tmp_path)
+        assert "Metabolism" in s["by_lobe"]
+        assert s["by_lobe"]["Metabolism"]["calls"] == 2
+        assert set(s["by_lobe"]["Metabolism"]["lanes"]) == {
+            "metabolism-propose", "metabolism-build"}
+        assert "master-brain" not in s["by_lobe"]["Metabolism"]["lanes"]
+        assert s["by_lobe"]["Master Brain"]["calls"] == 1
+
+    def test_percentages(self, tmp_path: Path) -> None:
+        _write_pricing(tmp_path)
+        from lib.ai_costs import record_usage, summarize
+        for _ in range(3):
+            record_usage(lane="solo", provider="claude_api", model="claude-sonnet-4-6",
+                         input_tokens=1000, output_tokens=100, root=tmp_path)
+        s = summarize(root=tmp_path)
+        # a single lane must be 100% of both cost and tokens
+        assert s["by_lane"]["solo"]["pct_usd"] == 100.0
+        assert s["by_lane"]["solo"]["pct_tokens"] == 100.0
+        assert "tokens" in s["by_lane"]["solo"]
+
+    def test_cost_basis_split(self, tmp_path: Path) -> None:
+        _write_pricing(tmp_path)
+        from lib.ai_costs import record_usage, summarize
+        record_usage(lane="a", provider="claude_oauth", model="claude-sonnet-4-6",
+                     input_tokens=1000, output_tokens=100, cost_basis="subscription",
+                     root=tmp_path)
+        record_usage(lane="b", provider="deepseek", model="claude-haiku-4-5",
+                     input_tokens=1000, output_tokens=100, cost_basis="metered",
+                     root=tmp_path)
+        s = summarize(root=tmp_path)
+        assert s["by_cost_basis"]["subscription"]["calls"] == 1
+        assert s["by_cost_basis"]["metered"]["calls"] == 1
+
+    def test_ranked_lists_present(self, tmp_path: Path) -> None:
+        _write_pricing(tmp_path)
+        from lib.ai_costs import record_usage, summarize
+        record_usage(lane="a", provider="p", root=tmp_path)
+        s = summarize(root=tmp_path)
+        for k in ("lobe_ranked", "by_lane_ranked", "by_provider_ranked",
+                  "by_model_ranked", "by_key_ranked"):
+            assert isinstance(s[k], list)
+
+
+# ── shard merge (remote-sync mechanism) ────────────────────────────────────────
+
+class TestShards:
+    def test_shard_write_and_merge(self, tmp_path: Path, monkeypatch) -> None:
+        from lib.ai_costs import record_usage, read_usage
+        monkeypatch.delenv("AI_COSTS_SHARD", raising=False)
+        record_usage(lane="master-brain", provider="deepseek", root=tmp_path)
+        monkeypatch.setenv("AI_COSTS_SHARD", "metabolism-propose-run1-1")
+        record_usage(lane="metabolism-propose", provider="claude_oauth", root=tmp_path)
+        assert (tmp_path / "data/ai_costs/usage.jsonl").exists()
+        assert (tmp_path / "data/ai_costs/usage.d/metabolism-propose-run1-1.jsonl").exists()
+        rows = read_usage(root=tmp_path)
+        assert sorted(r["lane"] for r in rows) == ["master-brain", "metabolism-propose"]
+
+    def test_shard_name_sanitized(self, tmp_path: Path, monkeypatch) -> None:
+        from lib.ai_costs import record_usage
+        monkeypatch.setenv("AI_COSTS_SHARD", "weird/../name with spaces")
+        record_usage(lane="x", provider="p", root=tmp_path)
+        files = list((tmp_path / "data/ai_costs/usage.d").glob("*.jsonl"))
+        assert len(files) == 1
+        assert "/" not in files[0].name and ".." not in files[0].stem
+
+
+# ── direct-SDK capture helpers ─────────────────────────────────────────────────
+
+class TestCaptureHelpers:
+    def test_infer_provider(self) -> None:
+        from lib.ai_costs import infer_provider
+        assert infer_provider("https://api.deepseek.com/anthropic") == ("deepseek", "metered")
+        assert infer_provider(None, oauth=True) == ("claude_oauth", "subscription")
+        assert infer_provider(None) == ("claude_api", "metered")
+        assert infer_provider("http://localhost:8000/v1") == ("openai_compat", "metered")
+
+    def test_record_response_usage(self, tmp_path: Path) -> None:
+        _write_pricing(tmp_path)
+        from lib.ai_costs import record_response_usage, read_usage
+
+        class _U:
+            input_tokens = 1200
+            output_tokens = 340
+            cache_read_input_tokens = 0
+            cache_creation_input_tokens = 0
+
+        class _Resp:
+            usage = _U()
+
+        ok = record_response_usage(
+            lane="qual-extraction", response=_Resp(), model="claude-haiku-4-5",
+            provider="deepseek", cost_basis="metered", root=tmp_path)
+        assert ok is True
+        rows = read_usage(root=tmp_path)
+        assert len(rows) == 1
+        assert rows[0]["lane"] == "qual-extraction"
+        assert rows[0]["input_tokens"] == 1200
+
+    def test_record_response_usage_no_usage_object(self, tmp_path: Path) -> None:
+        from lib.ai_costs import record_response_usage
+
+        class _Resp:
+            usage = None
+
+        assert record_response_usage(lane="x", response=_Resp(), root=tmp_path) is False

@@ -2099,7 +2099,8 @@ def write_posts_llm(
         # House LLM path: llm_auth provider waterfall (OAuth pool -> API key ->
         # deepseek), same as cortex/metabolism — NOT a bare Anthropic() client.
         from engine import llm_auth  # noqa: PLC0415
-        providers = llm_auth.build_providers({}, opus_model=model_id)
+        providers = llm_auth.build_providers(
+            {"usage_lane": "marketing-copywriter"}, opus_model=model_id)
         if not providers:
             return None
         max_tokens = int(llm_cfg.get("max_tokens", 6000))
@@ -2111,10 +2112,10 @@ def write_posts_llm(
                            "Items:\n" + json.dumps(items_payload, indent=1)}],
             )
             if getattr(resp, "stop_reason", None) == "refusal":
-                return None, "stop_refusal"
+                return None, "stop_refusal", resp
             text = "".join(b.text for b in resp.content
                            if getattr(b, "type", "") == "text")
-            return (text or None), None
+            return (text or None), None, resp
 
         raw_text, _reason, _provider = llm_auth.make_call(
             providers, _do_call, context="marketing_copy")

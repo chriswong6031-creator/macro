@@ -599,6 +599,10 @@ def _llm_call(client, model, system: str, prompt: str) -> dict:
     try:
         resp = client.messages.create(model=model, max_tokens=420, system=system,
                                        messages=[{"role": "user", "content": prompt}])
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        _prov, _basis = _ac.infer_provider(str(getattr(client, "base_url", None) or ""))
+        _ac.record_response_usage(lane="special-situations", response=resp, model=model,
+                                  provider=_prov, cost_basis=_basis)
         out = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
     except Exception as e:  # noqa: BLE001 — degrade, never break the build
         log.warning("special_situations LLM call failed: %s", e)

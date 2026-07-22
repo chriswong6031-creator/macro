@@ -76,6 +76,7 @@ jobs:
           CYCLE_ID: ${{ github.event.inputs.cycle_id }}
           BRANCH_INPUT: ${{ github.event.inputs.branch }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          AI_COSTS_SHARD: "${{ github.workflow }}-${{ github.run_id }}-${{ github.run_attempt }}"
           CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
           CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
           CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
@@ -173,7 +174,7 @@ jobs:
             echo "row-pair passes done for $_docket_ok docket(s) on $_CID"
 
             # FIX-4: `data/metabolism` glob covers key_ledger.jsonl (key pool durability).
-            git add data/neuralweb/governance.jsonl data/metabolism 2>/dev/null || true
+            git add data/ai_costs/usage.d data/neuralweb/governance.jsonl data/metabolism 2>/dev/null || true
             if git diff --cached --quiet; then
               echo "no governance changes for $_CID (already adjudicated — resume no-op)."
             else
@@ -223,7 +224,7 @@ jobs:
           mkdir -p data/metabolism/journal || true
           cp -f "$_JSAVE"/*.json data/metabolism/journal/ 2>/dev/null || true
           # (d) Commit + push (tolerate no-change).
-          git add data/metabolism/journal/ 2>/dev/null || true
+          git add data/ai_costs/usage.d data/metabolism/journal/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "no journal changes to push to main — skip."
             exit 0

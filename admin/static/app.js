@@ -1540,119 +1540,125 @@ RENDER.cost = async () => {
   v.innerHTML = `<div class="sub muted">Loading AI cost data…</div>`;
   const d = await api("/api/cost");
   if (d.error) { v.innerHTML = card("Error", `<div class="sub" style="color:var(--bad)">${esc(d.error)}</div>`); return; }
-  const r = d.realized || {};
-  const m = d.measured || {};
-  const ms = m.summary || null;
+  const u = d.unified || null;
 
-  // ── (a) Measured usage summary cards ────────────────────────────────────
-  const oauthNote = `<div class="sub muted" style="font-size:11px;margin-top:3px">subscription keys — API-equivalent value, not billed</div>`;
-  const hasOAuth = ms && ms.by_provider && ms.by_provider["claude_oauth"] && (ms.by_provider["claude_oauth"].calls > 0);
+  // ── local render helpers (reuse house .bar / .meter / statpill system) ──
+  const barCls = (p) => (Number(p) || 0) >= 40 ? "bad" : (Number(p) || 0) >= 20 ? "warn" : "";
+  const pctBar = (p) => `<div class="bar"><i class="${barCls(p)}" style="width:${Math.max(1, Math.min(100, Number(p) || 0))}%"></i></div>`;
+  const srcBadge = (s) => {
+    const map = { ledger: ["s-ok", "ledger"], bot: ["s-warn", "bot · VPS"], codex: ["s-mut", "codex"] };
+    const [cls, lbl] = map[s] || ["s-mut", s || "?"];
+    return `<span class="statpill ${cls}" style="font-size:10px">${esc(lbl)}</span>`;
+  };
+  const statusPill = (st) => {
+    const map = { live: ["s-ok", "live"], stale: ["s-warn", "stale"], absent: ["s-bad", "missing"], empty: ["s-mut", "empty"] };
+    const [cls, lbl] = map[st] || ["s-mut", st || "?"];
+    return `<span class="statpill ${cls}">${esc(lbl)}</span>`;
+  };
 
-  let measuredHtml = "";
-  if (ms) {
-    const tod = ms.today || {};
-    const d7  = ms.d7  || {};
-    const d30  = ms.d30  || {};
-    measuredHtml = `
-      <div class="section">Measured usage</div>
-      <div class="grid">
-        ${card("Today", `<div class="big">${fmtUSD(tod.usd || 0)}</div><div class="sub">${(tod.calls||0)} calls · ${fmtTokens(tod.input_tokens||0)} in / ${fmtTokens(tod.output_tokens||0)} out</div>${hasOAuth ? oauthNote : ""}`)}
-        ${card("Last 7 days", `<div class="big">${fmtUSD(d7.usd || 0)}</div><div class="sub">${(d7.calls||0)} calls · ${fmtTokens(d7.input_tokens||0)} in / ${fmtTokens(d7.output_tokens||0)} out</div>${hasOAuth ? oauthNote : ""}`)}
-        ${card("Last 30 days", `<div class="big">${fmtUSD(d30.usd || 0)}</div><div class="sub">${(d30.calls||0)} calls · ${fmtTokens(d30.input_tokens||0)} in / ${fmtTokens(d30.output_tokens||0)} out</div>${hasOAuth ? oauthNote : ""}`)}
-      </div>`;
-  } else {
-    measuredHtml = `<div class="section">Measured usage</div><div class="card sub muted">No usage ledger yet — data/ai_costs/usage.jsonl will be written as lanes record calls.</div>`;
+  if (!u) {
+    v.innerHTML = `<div class="section">AI Cost</div><div class="card sub muted">Unified cost model unavailable — no usage ledger yet. Rows land in data/ai_costs/usage.jsonl as lanes record calls.</div>`;
+    return;
   }
 
-  // ── (b) By consumer / By key tables ─────────────────────────────────────
-  let consumerHtml = "";
-  if (ms && ms.by_lane && Object.keys(ms.by_lane).length) {
-    consumerHtml += `<div class="section">By consumer (30d)</div>
-      <table><thead><tr><th>Lane</th><th class="r">Calls</th><th class="r">Tokens in</th><th class="r">Tokens out</th><th class="r">Est USD</th></tr></thead><tbody>
-      ${Object.entries(ms.by_lane).map(([lane, lb]) => `<tr>
-        <td class="mono">${esc(lane)}</td>
-        <td class="r">${(lb.calls||0)}</td>
-        <td class="r">${fmtTokens(lb.input_tokens||0)}</td>
-        <td class="r">${fmtTokens(lb.output_tokens||0)}</td>
-        <td class="r">${fmtUSD(lb.usd||0)}</td>
-      </tr>`).join("")}
-      </tbody></table>`;
-  }
-  if (ms && ms.by_key && Object.keys(ms.by_key).length) {
-    consumerHtml += `<div class="section">By key (30d)</div>
-      <table><thead><tr><th>Key / env var</th><th class="r">Calls</th><th class="r">Tokens in</th><th class="r">Tokens out</th><th class="r">Est USD</th></tr></thead><tbody>
-      ${Object.entries(ms.by_key).map(([kid, kb]) => `<tr>
-        <td class="mono">${esc(kid||"—")}</td>
-        <td class="r">${(kb.calls||0)}</td>
-        <td class="r">${fmtTokens(kb.input_tokens||0)}</td>
-        <td class="r">${fmtTokens(kb.output_tokens||0)}</td>
-        <td class="r">${fmtUSD(kb.usd||0)}</td>
-      </tr>`).join("")}
-      </tbody></table>`;
-  }
+  const T = u.totals || {}, W = u.windows || {};
 
-  // ── (c) Metabolism runs with achievements ────────────────────────────────
-  const cycleRows = (m.recent_cycles || []);
-  let cyclesHtml = "";
-  if (cycleRows.length) {
-    cyclesHtml = `<div class="section">Metabolism runs (cost per cycle)</div>
-      <table><thead><tr><th>Cycle</th><th>What it did</th><th class="r">Tokens in</th><th class="r">Tokens out</th><th class="r">Est USD</th></tr></thead><tbody>
-      ${cycleRows.map(cy => `<tr>
-        <td class="mono sub">${esc((cy.cycle_id||"").slice(0,32))}</td>
-        <td class="sub">${esc(cy.achievement || "—")}</td>
-        <td class="r">${fmtTokens(cy.input_tokens||0)}</td>
-        <td class="r">${fmtTokens(cy.output_tokens||0)}</td>
-        <td class="r">${cy.est_cost_usd != null ? fmtUSD(cy.est_cost_usd) : "—"}</td>
-      </tr>`).join("")}
-      </tbody></table>`;
-  }
-
-  // ── (d) Mastermind portfolio bot ──────────────────────────────────────────
-  const mm = m.mastermind || null;
-  let mmHtml = `<div class="section">Mastermind portfolio bot</div>`;
-  if (!mm) {
-    mmHtml += `<div class="card sub muted">No bot cost data yet — data/mastermind/cost_summary.json is written by the bot process.</div>`;
-  } else {
-    const t30 = mm.totals_30d || {};
-    mmHtml += `<div class="grid">
-      ${card("Bot 30d total", `<div class="big">${fmtUSD(t30.usd||0)}</div><div class="sub">${fmtTokens((t30.input_tokens||0)+(t30.output_tokens||0))} tokens</div>`)}
-    </div>`;
-    const byBook = t30.by_book || {};
-    if (Object.keys(byBook).length) {
-      mmHtml += `<table><thead><tr><th>Book</th><th class="r">Calls</th><th class="r">Tokens</th><th class="r">Est USD</th></tr></thead><tbody>
-        ${Object.entries(byBook).map(([book, bb]) => `<tr>
-          <td class="mono">${esc(book)}</td>
-          <td class="r">${(bb.calls||0)}</td>
-          <td class="r">${fmtTokens((bb.input_tokens||0)+(bb.output_tokens||0))}</td>
-          <td class="r">${fmtUSD(bb.usd||0)}</td>
-        </tr>`).join("")}
-        </tbody></table>`;
-    }
-    if (mm.as_of) mmHtml += `<div class="sub muted" style="margin-top:6px">as of ${esc(mm.as_of)}</div>`;
-  }
-
-  // ── (e) Raw Key Usage table (moved from Metabolism tab) ──────────────────
-  const rawKeySection = `<div class="section">Raw Key Usage (rate-limit headers)</div>
-    <div class="card" id="costKeysCard"><div class="sub muted">Loading…</div></div>`;
-
-  // ���─ (f) Legacy DeepSeek estimator ────────────────────────────────────────
-  const legacyHtml = `
-    <div class="section">DeepSeek cost estimates (estimate only)</div>
-    <div class="card sub muted" style="margin-bottom:8px">Estimate only — based on call counts × assumed token sizes, not measured token usage.</div>
+  // ── (a) headline spend ──
+  const headHtml = `
+    <div class="sub" style="margin-bottom:10px">Every measured AI call across all lobes — unified from the usage ledger, the Mastermind bot, and Codex. Percentages are each lobe's share of spend, so a lobe that has become too heavy a burden stands out and you can decide whether to throttle it.</div>
     <div class="grid">
-      ${card("Est. monthly", `<div class="big">${fmtUSD(d.monthly_usd)}</div><div class="sub">~${(d.assumptions||{}).build_days_per_month||21} build-days/mo</div>`)}
-      ${card("Per build", `<div class="big">${fmtUSD(d.per_build_usd)}</div><div class="sub">${fmtUSD(d.effective_daily_usd)}/day effective</div>`)}
-      ${card("Actually generated", `<div class="big">${r.stockbrief_files || 0}</div><div class="sub">stock briefs · ${r.ai_desk_theses_logged || 0} analyst calls</div>`)}
-    </div>
-    ${!d.deepseek_key ? `<div class="card sub" style="margin-top:12px;color:var(--warn)">No AI key set — actual spend is $0.</div>` : ""}
-    <div class="section">What's using AI (DeepSeek)</div>
-    <table><thead><tr><th>Feature</th><th>On</th><th>Model</th><th class="r">Calls/build</th><th class="r">$/build</th><th>How often</th></tr></thead><tbody>
-      ${(d.components || []).map(c => `<tr><td><b>${esc(c.name)}</b><div class="sub">${esc(c.note)}</div></td>
-        <td>${c.enabled ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td>
-        <td class="mono">${esc(c.model)}</td><td class="r">${c.calls_per_build}</td><td class="r">${fmtUSD(c.cost_per_build)}</td><td class="sub">every ${c.interval_days}d</td></tr>`).join("")}
+      ${card("30-day spend · all sources", `<div class="big">${fmtUSD(T.usd)}</div><div class="sub">${fmtTokens(T.tokens)} tokens · ${T.calls || 0} calls</div>`)}
+      ${card("Subscription-equivalent", `<div class="big">${fmtUSD(T.subscription_usd)}</div><div class="sub">OAuth / CLI flat-fee value — not billed</div>`)}
+      ${card("Metered (billed)", `<div class="big">${fmtUSD(T.metered_usd)}</div><div class="sub">API + DeepSeek pay-as-you-go</div>`)}
+      ${card("Ledger trend", `<div class="sub" style="line-height:1.8">today <b>${fmtUSD((W.today || {}).usd)}</b><br>7d <b>${fmtUSD((W.d7 || {}).usd)}</b> · 30d <b>${fmtUSD((W.d30 || {}).usd)}</b></div>`)}
+    </div>`;
+
+  // ── (b) lobe leaderboard (centerpiece) ──
+  const lobes = u.lobes || [];
+  const topBurden = lobes.length ? lobes[0] : null;
+  const laneTable = (lanes) => {
+    if (!lanes || !lanes.length) return `<div class="sub muted" style="margin:6px 0 2px">Single source — no finer lane breakdown.</div>`;
+    return `<table style="margin-top:8px"><thead><tr><th>Sub-component (lane)</th><th class="r">USD</th><th class="r">% of $</th><th class="r">Tokens</th><th class="r">Calls</th></tr></thead><tbody>
+      ${lanes.map(ln => {
+        const lu = ln.no_usd ? `<span class="muted">—</span>` : fmtUSD(ln.usd);
+        const stages = ln.stages || [];
+        const stageRows = stages.map(st => `<tr><td class="sub" style="padding-left:20px">↳ ${esc(st.name)}</td><td class="r sub">${fmtUSD(st.usd)}</td><td class="r sub">${st.pct_usd != null ? st.pct_usd + "%" : "—"}</td><td class="r sub">${fmtTokens(st.tokens)}</td><td class="r sub">${st.calls != null ? st.calls : "—"}</td></tr>`).join("");
+        return `<tr><td class="mono">${esc(ln.name)}</td><td class="r">${lu}</td><td class="r">${ln.pct_usd != null ? ln.pct_usd + "%" : "—"}</td><td class="r">${fmtTokens(ln.tokens)}</td><td class="r">${ln.calls != null ? ln.calls : "—"}</td></tr>${stageRows}`;
+      }).join("")}
+      </tbody></table>`;
+  };
+  const lobeRows = lobes.map(l => {
+    const usd = l.no_usd ? `<span class="muted">—</span>` : `<b>${fmtUSD(l.usd)}</b>`;
+    const burden = l.no_usd ? "" : (l.pct_usd >= 40 ? `<span class="statpill s-bad">high burden</span>` : l.pct_usd >= 20 ? `<span class="statpill s-warn">watch</span>` : "");
+    const shareTxt = l.no_usd ? `${fmtTokens(l.tokens)} tok · no $ (rate-limited plan)` : `${l.pct_usd}% of spend · ${fmtTokens(l.tokens)} tok (${l.pct_tokens}% of volume)`;
+    return `<details class="lobe-row"${l === topBurden ? " open" : ""}>
+      <summary>
+        <div class="lobe-head"><b>${esc(l.name)}</b> ${srcBadge(l.source)} ${burden}<span style="flex:1"></span>${usd} <span class="sub">${l.no_usd ? "" : l.pct_usd + "%"}</span></div>
+        <div class="meter" style="margin:6px 0 0">
+          <div class="top"><span class="sub">${l.calls || 0} calls</span><span class="sub">${shareTxt}</span></div>
+          ${pctBar(l.no_usd ? l.pct_tokens : l.pct_usd)}
+        </div>
+      </summary>
+      ${laneTable(l.lanes)}
+    </details>`;
+  }).join("");
+  const lobeHtml = `<div class="section">Cost by lobe <span class="cnt">${lobes.length}</span></div>
+    <div class="card sub muted" style="margin-bottom:8px">Ranked by 30-day cost. Bar = share of total spend (amber ≥20%, red ≥40%). Click a lobe to expand its engines / lanes. A lobe can rank high in <b>tokens</b> yet low in <b>cost</b> when it runs a cheap model (e.g. DeepSeek) — watch the $ column for burden.</div>
+    ${lobeRows || `<div class="card sub muted">No measured spend yet.</div>`}`;
+
+  // ── (c) tracking coverage ──
+  const covHtml = `<div class="section">Tracking coverage</div>
+    <div class="card sub muted" style="margin-bottom:8px">What the totals above do — and don't — see. A "missing" or "stale" source is spend not yet fully captured here.</div>
+    <table><thead><tr><th>Source</th><th>Status</th><th class="r">Updated</th><th class="r">30d USD</th><th>Notes</th></tr></thead><tbody>
+    ${(u.sources || []).map(s => `<tr><td><b>${esc(s.label)}</b></td><td>${statusPill(s.status)}</td><td class="r sub">${s.age_h != null ? fmtAge(s.age_h) + " ago" : "—"}</td><td class="r">${s.usd_30d != null ? fmtUSD(s.usd_30d) : `<span class="muted">—</span>`}</td><td class="sub">${esc(s.note || "")}</td></tr>`).join("")}
     </tbody></table>`;
 
-  v.innerHTML = measuredHtml + consumerHtml + cyclesHtml + mmHtml + rawKeySection + legacyHtml;
+  // ── (d) provider / model / key breakdowns ──
+  const brkTable = (title, arr, keyLabel) => {
+    if (!arr || !arr.length) return "";
+    return `<div class="section">${title}</div>
+      <table><thead><tr><th>${keyLabel}</th><th class="r">Calls</th><th class="r">Tokens</th><th class="r">USD</th><th class="r">% of $</th></tr></thead><tbody>
+      ${arr.map(b => `<tr><td class="mono">${esc(b.name)}</td><td class="r">${b.calls || 0}</td><td class="r">${fmtTokens(b.tokens || 0)}</td><td class="r">${fmtUSD(b.usd || 0)}</td><td class="r">${b.pct_usd != null ? b.pct_usd + "%" : "—"}</td></tr>`).join("")}
+      </tbody></table>`;
+  };
+  const breakdownsHtml = brkTable("By provider (ledger · 30d)", u.providers, "Provider")
+    + brkTable("By model (ledger · 30d)", u.models, "Model")
+    + brkTable("By key / env var (ledger · 30d)", u.keys, "Key");
+
+  // ── (e) codex detail ──
+  let codexHtml = "";
+  const cx = u.codex;
+  if (cx) {
+    const ctok = cx.total_tokens || ((cx.input_tokens || 0) + (cx.output_tokens || 0));
+    codexHtml = `<div class="section">Codex research lane</div>
+      <div class="grid">
+        ${card("Last run tokens", `<div class="big">${fmtTokens(ctok)}</div><div class="sub">${esc(cx.plan_type || "—")} plan${cx.degraded ? ` · <span style="color:var(--warn)">degraded</span>` : ""}</div>`)}
+      </div>
+      <div class="card sub muted" style="margin-top:8px">Codex bills on a rate-limited subscription, not per-token USD — tokens are tracked for burden; cost is n/a.</div>`;
+  }
+
+  // ── (f) recent calls ──
+  const recent = u.recent || [];
+  let recentHtml = "";
+  if (recent.length) {
+    recentHtml = `<div class="section">Recent calls <span class="cnt">${recent.length}</span></div>
+      <table><thead><tr><th>When (UTC)</th><th>Lane</th><th>Model</th><th class="r">In</th><th class="r">Out</th><th class="r">USD</th></tr></thead><tbody>
+      ${recent.slice(0, 25).map(rw => `<tr><td class="sub mono">${esc((rw.ts || "").slice(5, 16).replace("T", " "))}</td><td class="mono">${esc(rw.lane || "—")}${rw.stage ? `<span class="sub"> · ${esc(rw.stage)}</span>` : ""}</td><td class="mono sub">${esc(rw.model || "—")}</td><td class="r">${fmtTokens(rw.input_tokens)}</td><td class="r">${fmtTokens(rw.output_tokens)}</td><td class="r">${rw.est_cost_usd != null ? fmtUSD(rw.est_cost_usd) : "—"}</td></tr>`).join("")}
+      </tbody></table>`;
+  }
+
+  // ── (g) raw key usage (async-loaded below) — preserved ──
+  const rawKeySection = `<div class="section">Raw key usage (rate-limit headers)</div>
+    <div class="card" id="costKeysCard"><div class="sub muted">Loading…</div></div>`;
+
+  // ── (h) legacy forward estimate — collapsed ──
+  const legacyHtml = `<details style="margin-top:16px"><summary class="sub muted" style="cursor:pointer">Legacy DeepSeek forward estimate (call-count projection, not measured)</summary>
+    <div class="grid" style="margin-top:10px">
+      ${card("Est. monthly", `<div class="big">${fmtUSD(d.monthly_usd)}</div><div class="sub">~${(d.assumptions || {}).build_days_per_month || 21} build-days/mo</div>`)}
+      ${card("Per build", `<div class="big">${fmtUSD(d.per_build_usd)}</div><div class="sub">${fmtUSD(d.effective_daily_usd)}/day effective</div>`)}
+    </div></details>`;
+
+  v.innerHTML = headHtml + lobeHtml + covHtml + breakdownsHtml + codexHtml + recentHtml + rawKeySection + legacyHtml;
 
   // Async raw key usage loader (same endpoint as Metabolism tab)
   (async () => {

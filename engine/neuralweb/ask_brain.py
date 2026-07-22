@@ -2020,6 +2020,69 @@ def _extract_citations(messages: list[dict]) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Usage capture — ask_brain drives the model via a direct client.messages loop
+# (NOT llm_auth.make_call), so token usage is summed across turns and recorded
+# here.  Without this, ask-brain Claude-OAuth spend never reaches the ledger.
+# ---------------------------------------------------------------------------
+
+# Provider-name → (ledger provider, cost_basis).  Mirrors llm_auth._capture_usage.
+_ASK_PROVIDER_MAP: dict[str, tuple[str, str]] = {
+    "oauth": ("claude_oauth", "subscription"),
+    "anthropic": ("claude_api", "metered"),
+    "deepseek": ("deepseek", "metered"),
+}
+
+
+def _new_usage_tot() -> dict[str, int]:
+    return {"in": 0, "out": 0, "cr": 0, "cc": 0, "calls": 0}
+
+
+def _accum_usage(usage_tot: dict[str, int], resp: Any) -> None:
+    """Add one response's token usage into the running total.  Never raises."""
+    try:
+        u = getattr(resp, "usage", None)
+        if u is None:
+            return
+        usage_tot["in"] += int(getattr(u, "input_tokens", 0) or 0)
+        usage_tot["out"] += int(getattr(u, "output_tokens", 0) or 0)
+        usage_tot["cr"] += int(getattr(u, "cache_read_input_tokens", 0) or 0)
+        usage_tot["cc"] += int(getattr(u, "cache_creation_input_tokens", 0) or 0)
+        usage_tot["calls"] += 1
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _record_ask_usage(
+    prov_name: str | None,
+    key_id: str | None,
+    model: str,
+    usage_tot: dict[str, int],
+) -> None:
+    """Record one ask-brain ledger row summed over all tool-loop turns.  NEVER raises."""
+    try:
+        if not usage_tot or usage_tot.get("calls", 0) <= 0:
+            return
+        provider, cost_basis = _ASK_PROVIDER_MAP.get(
+            prov_name or "oauth", ("claude_oauth", "subscription"))
+        from lib import ai_costs as _ac  # noqa: PLC0415
+        _ac.record_usage(
+            lane="ask-brain",
+            provider=provider,
+            model=model,
+            key_id=key_id,
+            input_tokens=int(usage_tot.get("in", 0)),
+            output_tokens=int(usage_tot.get("out", 0)),
+            cache_read_tokens=int(usage_tot.get("cr", 0)),
+            cache_creation_tokens=int(usage_tot.get("cc", 0)),
+            cost_basis=cost_basis,
+            stage="ask-brain",
+            note=f"{usage_tot.get('calls', 0)} turns",
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("ask_brain: usage record failed (%s)", exc)
+
+
+# ---------------------------------------------------------------------------
 # Live ask loop
 # ---------------------------------------------------------------------------
 
@@ -2030,6 +2093,8 @@ def _run_ask_loop(
     budget: int,
     client: Any,
     model: str,
+    prov_name: str = "oauth",
+    key_id: str | None = None,
 ) -> tuple[str, dict, list[str]]:
     """Run the bounded read-only tool loop.
 
@@ -2037,6 +2102,7 @@ def _run_ask_loop(
     """
     tool_schemas = _read_tool_schemas()
     tool_call_census: dict[str, int] = {}
+    usage_tot = _new_usage_tot()
 
     # Build the opening user message — include context_ticker hint if present
     user_content = question
@@ -2063,8 +2129,9 @@ def _run_ask_loop(
                 raise
             break
 
-        # Accumulate assistant message
+        # Accumulate assistant message + token usage
         messages.append({"role": "assistant", "content": resp.content})
+        _accum_usage(usage_tot, resp)
 
         # Extract any text from this turn
         for block in resp.content:
@@ -2108,6 +2175,7 @@ def _run_ask_loop(
             messages.append({"role": "user", "content": tool_results})
 
     citations = _extract_citations(messages)
+    _record_ask_usage(prov_name, key_id, model, usage_tot)
     return answer_text, tool_call_census, citations
 
 
@@ -2122,6 +2190,8 @@ def _run_ask_loop_stream(
     budget: int,
     client: Any,
     model: str,
+    prov_name: str = "oauth",
+    key_id: str | None = None,
 ) -> Generator[str, None, None]:
     """Run the tool loop synchronously then stream the final synthesis turn.
 
@@ -2131,6 +2201,7 @@ def _run_ask_loop_stream(
     """
     tool_schemas = _read_tool_schemas()
     tool_call_census: dict[str, int] = {}
+    usage_tot = _new_usage_tot()
 
     user_content = question
     if context_ticker:
@@ -2158,6 +2229,7 @@ def _run_ask_loop_stream(
 
         messages.append({"role": "assistant", "content": resp.content})
         last_resp_content = resp.content
+        _accum_usage(usage_tot, resp)
         stop_reason = getattr(resp, "stop_reason", None)
 
         if stop_reason == "end_turn":
@@ -2213,6 +2285,10 @@ def _run_ask_loop_stream(
             with stream_resp as s:
                 for text_chunk in s.text_stream:
                     full_answer += text_chunk
+                try:  # final message carries the synthesis-turn token usage
+                    _accum_usage(usage_tot, s.get_final_message())
+                except Exception:  # noqa: BLE001
+                    pass
             citations = _extract_citations(messages)
             filtered, was_filtered = _post_filter_advice(full_answer, citations)
             if was_filtered:
@@ -2248,6 +2324,9 @@ def _run_ask_loop_stream(
         else:
             yield f"data: {json.dumps({'delta': full_answer})}\n\n"
         yield f"data: {json.dumps({'done': True, 'tool_call_census': tool_call_census, 'is_context_only': True})}\n\n"
+
+    # Record accumulated token usage for the whole streamed ask (all turns).
+    _record_ask_usage(prov_name, key_id, model, usage_tot)
 
 
 # ---------------------------------------------------------------------------
@@ -2298,6 +2377,8 @@ def ask(
     # 3. Build Anthropic client — key-optional
     client = None
     model = _DEFAULT_MODEL
+    prov_name = "oauth"
+    key_id: str | None = None
     try:
         from engine import llm_auth  # noqa: PLC0415
         providers = llm_auth.build_providers(
@@ -2307,6 +2388,8 @@ def ask(
             if p.get("cred") and p.get("client"):
                 client = p["client"]
                 model = p.get("model", model)
+                prov_name = p.get("name", "oauth")
+                key_id = p.get("cap_id") or ("legacy" if p.get("name") == "oauth" else None)
                 break
     except Exception as exc:  # noqa: BLE001
         log.debug("ask_brain: provider build failed (%s) — memo-quote mode", exc)
@@ -2321,7 +2404,8 @@ def ask(
     # 5. Run the live tool loop
     try:
         answer_text, census, citations = _run_ask_loop(
-            clean_question, context_ticker, root, budget, client, model
+            clean_question, context_ticker, root, budget, client, model,
+            prov_name, key_id,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("ask_brain: live loop failed (%s) — memo-quote fallback", exc)
@@ -2369,6 +2453,8 @@ def ask_stream(
 
     client = None
     model = _DEFAULT_MODEL
+    prov_name = "oauth"
+    key_id: str | None = None
     try:
         from engine import llm_auth  # noqa: PLC0415
         providers = llm_auth.build_providers(
@@ -2378,6 +2464,8 @@ def ask_stream(
             if p.get("cred") and p.get("client"):
                 client = p["client"]
                 model = p.get("model", model)
+                prov_name = p.get("name", "oauth")
+                key_id = p.get("cap_id") or ("legacy" if p.get("name") == "oauth" else None)
                 break
     except Exception as exc:  # noqa: BLE001
         log.debug("ask_brain: stream provider build failed (%s)", exc)
@@ -2391,7 +2479,8 @@ def ask_stream(
     budget = min(budget, _BUDGET_MAX_HARD_CAP)
 
     try:
-        yield from _run_ask_loop_stream(clean_question, context_ticker, root, budget, client, model)
+        yield from _run_ask_loop_stream(clean_question, context_ticker, root, budget, client, model,
+                                        prov_name, key_id)
     except Exception as exc:  # noqa: BLE001
         log.warning("ask_brain: stream loop failed (%s) — memo-quote fallback", exc)
         result = _memo_quote_response(clean_question, root, f"stream_error:{exc}")
