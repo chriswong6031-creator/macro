@@ -236,6 +236,8 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 .trd-search{ min-width:130px; } .trd-search::placeholder{ color:var(--trd-muted); }
 .trd-search:focus-visible,.trd-sel:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:1px; }
 .trd-rail-grow{ flex:1;min-width:6px; }
+/* Tier-2 marking-basis caption above the ledger table (muted, one line). */
+.trd-mark-note{ margin:0 0 8px;font-size:10.5px;line-height:1.4;color:var(--trd-muted); }
 
 .trd-tbl-wrap{ overflow-x:auto;border-radius:10px;border:1px solid var(--trd-line); }
 .trd-tbl{ width:100%;border-collapse:collapse;font-size:12px; }
@@ -396,12 +398,12 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
           <div class="trd-card-k">{{ t('Resolved', '已了结') }}</div>
           <div class="trd-card-v">{{ _st.get('n_resolved', '—') }}</div>
           {%- set _nu = _st.get('n_up', 0) or 0 -%}{%- set _ns = _st.get('n_stopped', 0) or 0 -%}{%- set _nf = _st.get('n_flat', 0) or 0 -%}{%- set _tot = (_nu + _ns + _nf) if (_nu + _ns + _nf) > 0 else 1 -%}
-          <div class="trd-segbar" role="img" aria-label="up / flat / stopped mix">
+          <div class="trd-segbar" role="img" aria-label="up / flat / below-entry mix">
             <span class="trd-seg trd-seg-up" data-w="{{ (100 * _nu / _tot)|round(1) }}" style="width:{{ (100 * _nu / _tot)|round(1) }}%"></span>
             <span class="trd-seg trd-seg-flat" data-w="{{ (100 * _nf / _tot)|round(1) }}" style="width:{{ (100 * _nf / _tot)|round(1) }}%"></span>
             <span class="trd-seg trd-seg-dn" data-w="{{ (100 * _ns / _tot)|round(1) }}" style="width:{{ (100 * _ns / _tot)|round(1) }}%"></span>
           </div>
-          <div class="trd-seg-legend"><b class="trd-up">{{ _nu }}</b> {{ t('up', '涨') }} · {{ _nf }} {{ t('flat', '持平') }} · <b class="trd-dn">{{ _ns }}</b> {{ t('stopped', '止损') }}</div>
+          <div class="trd-seg-legend"><b class="trd-up">{{ _nu }}</b> {{ t('up', '涨') }} · {{ _nf }} {{ t('flat', '持平') }} · <b class="trd-dn">{{ _ns }}</b> {{ t('below entry', '低于入场价') }}</div>
         </div>
         {%- if _st.get('n_onboard') is not none -%}
         <div class="trd-card">
@@ -458,6 +460,13 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
         {%- if _m == 'us' -%}<select class="trd-sel" id="trd-sector" aria-label="Sector"></select>{%- endif -%}
         <span class="trd-rail-grow"></span>
       </div>
+      {#- Tier-2 marking-basis disclosure. US rows carry an open mark-to-latest-close
+          move (no executed exit); CN/HK/CA grade on committed excess, so this note is
+          US-only (it would misdescribe the other markets' committed rows). Plain-words
+          receipt, not glance tier; no CJK in title= (uses l-en/l-zh spans). -#}
+      {%- if _m == 'us' -%}
+      <p class="trd-mark-note"><span class="l-en">Open marks — priced at the latest close; not executed exits.</span><span class="l-zh">实时标记——按最新收盘计价，并非已执行的离场。</span></p>
+      {%- endif -%}
       <div id="trd-tbl-mount">
         <div class="trd-err" style="display:none"></div>
       </div>
@@ -563,12 +572,12 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   var market = dlg.dataset.market, benchEn = dlg.dataset.benchEn, benchZh = dlg.dataset.benchZh;
   var upC = dlg.dataset.upClass || 'az-up', dnC = dlg.dataset.dnClass || 'az-dn';
   var T = { // tiny bilingual helper
-    en:{ all:'All', up:'Up', stopped:'Stopped', flat:'Flat', early:'Early', matured:'Matured', suspended:'Suspended',
+    en:{ all:'All', up:'Up', stopped:'Below entry', flat:'Flat', early:'Early', matured:'Matured', suspended:'Suspended',
          beat:'Beat index', lag:'Lagged', onboard:'On board', stock:'Stock', logged:'Logged', entry:'Entry', latest:'Latest',
          move:'Move %', vs:'vs '+(benchEn||'index')+' %', days:'Days', status:'Status', find:'Find a stock',
          prev:'Prev', next:'Next', err:'Ledger unavailable right now — the numbers above are still current.', retry:'Retry',
          win90:'90d', win30:'30d', winall:'All', of:'of' },
-    zh:{ all:'全部', up:'上涨', stopped:'止损', flat:'持平', early:'初期', matured:'已成熟', suspended:'停牌',
+    zh:{ all:'全部', up:'上涨', stopped:'低于入场价', flat:'持平', early:'初期', matured:'已成熟', suspended:'停牌',
          beat:'跑赢', lag:'跑输', onboard:'在榜', stock:'个股', logged:'上榜', entry:'入场', latest:'最新',
          move:'涨跌', vs:'超额', days:'天数', status:'状态', find:'搜索股票',
          prev:'上一页', next:'下一页', err:'台账暂时不可用——上方数据仍然有效。', retry:'重试',
