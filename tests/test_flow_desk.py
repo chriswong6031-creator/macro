@@ -24,6 +24,7 @@ from scripts.build_flow_desk import (
     MIN_Z_HISTORY,
     _soft_tone,
     _z_score,
+    build_flow_read,
     build_sector_heatmap,
     build_top_movers,
 )
@@ -317,6 +318,123 @@ class TestTopMovers:
         ]
         result = build_top_movers(rows, n=1)
         assert result[0]["net_premium_mn"] == pytest.approx(123.5, abs=0.1)
+
+
+# ── daily flow read (hero scorecard) ────────────────────────────────────────────
+
+class TestFlowRead:
+    """build_flow_read: the one-glance intensity + lean + stance for the hero."""
+
+    def _heatmap(self, rows):
+        # rows: list of (gross, z, breadth) → heatmap cell dicts
+        return [{"sector": f"S{i}", "gross_premium_mn": g, "premium_z": z,
+                 "tape_breadth": b, "net_premium_mn": 0.0}
+                for i, (g, z, b) in enumerate(rows)]
+
+    def _tide(self, gross=1000.0, net=50.0, zerodte=0.3, n=100, spark=None):
+        return {"gross_premium_mn": gross, "net_premium_mn": net,
+                "zerodte_share": zerodte, "n_names": n, "asof": "2026-07-20",
+                "spark": spark or []}
+
+    def test_intensity_maps_z_to_score(self):
+        # gross-weighted mean z of 0 → score 50 (average)
+        hm = self._heatmap([(1000, 0.0, 0.5), (1000, 0.0, 0.5)])
+        r = build_flow_read(self._tide(), hm, [])
+        assert r["intensity_score"] == 50
+        assert r["intensity_key"] == "average"
+        assert r["intensity_raw_fallback"] is False
+
+    def test_intensity_positive_z_is_heavier(self):
+        hm = self._heatmap([(1000, 2.0, 0.5)])   # z=+2 → 50+50 = 100
+        r = build_flow_read(self._tide(), hm, [])
+        assert r["intensity_score"] == 100
+        assert r["intensity_key"] == "heavy"
+
+    def test_intensity_gross_weighted(self):
+        # big sector z=+1, tiny sector z=-1 → weighted mean ~ +1 → score ~75
+        hm = self._heatmap([(9000, 1.0, 0.5), (1000, -1.0, 0.5)])
+        r = build_flow_read(self._tide(), hm, [])
+        assert r["intensity_score"] == 70   # 50 + 0.8*25
+
+    def test_intensity_building_when_no_z(self):
+        hm = self._heatmap([(1000, None, 0.5)])
+        r = build_flow_read(self._tide(), hm, [])
+        assert r["intensity_score"] is None
+        assert r["intensity_key"] == "building"
+        assert r["intensity_raw_fallback"] is True
+
+    def test_lean_buyers_from_breadth(self):
+        hm = self._heatmap([(1000, 0.0, 0.7)])   # breadth 0.7 → buyers
+        r = build_flow_read(self._tide(), hm, [])
+        assert r["lean_key"] == "buyers"
+        assert r["lean_breadth_pct"] == 70
+
+    def test_lean_sellers_from_breadth(self):
+        hm = self._heatmap([(1000, 0.0, 0.3)])   # breadth 0.3 → sellers
+        r = build_flow_read(self._tide(), hm, [])
+        assert r["lean_key"] == "sellers"
+
+    def test_lean_falls_back_to_net_sign_without_breadth(self):
+        hm = self._heatmap([(1000, 0.0, None)])
+        r = build_flow_read(self._tide(net=200.0), hm, [])
+        assert r["lean_key"] == "buyers"        # net>0
+        assert r["lean_breadth_pct"] is None
+
+    def test_dod_from_spark(self):
+        spark = [{"premium_mn": 100.0}, {"premium_mn": 75.0}]  # -25%
+        r = build_flow_read(self._tide(spark=spark), self._heatmap([(1000, 0.0, 0.5)]), [])
+        assert r["dod_pct"] == -25.0
+        assert r["dod_key"] == "lighter"
+
+    def test_stance_stand_aside_when_quiet_and_balanced(self):
+        # very low z (quiet) + balanced breadth → stand aside
+        hm = self._heatmap([(1000, -2.0, 0.5)])
+        r = build_flow_read(self._tide(net=0.0), hm, [])
+        assert r["intensity_key"] in ("quiet", "light")
+        assert r["stance_key"] == "stand_aside"
+
+    def test_stance_watch_otherwise(self):
+        hm = self._heatmap([(1000, 0.0, 0.7)])   # average + buyers
+        r = build_flow_read(self._tide(), hm, [])
+        assert r["stance_key"] == "watch"
+
+    def test_callout_hedged_cohort(self):
+        # a put-tilted cohort while the tape leans to buyers → hedged callout
+        hm = self._heatmap([(1000, 0.0, 0.7)])   # buyers
+        cohorts = [{"name_en": "Memory", "name_zh": "存储",
+                    "pc_tone": "put-tilted", "pc_ratio": 1.4}]
+        r = build_flow_read(self._tide(), hm, cohorts)
+        keys = [c["key"] for c in r["callouts"]]
+        assert "hedged_cohort" in keys
+
+    def test_callout_crowded_sector(self):
+        hm = self._heatmap([(5000, 1.6, 0.5)])   # |z|>=1 → crowded
+        r = build_flow_read(self._tide(), hm, [])
+        keys = [c["key"] for c in r["callouts"]]
+        assert "crowded_sector" in keys
+
+    def test_no_crash_on_empty_inputs(self):
+        r = build_flow_read({}, [], [])
+        assert r["schema"] == "flow_read.v1"
+        assert r["intensity_key"] == "building"
+        assert r["stance_key"] in ("watch", "stand_aside")
+
+
+class TestCohortAsof:
+    """Regression: build() must aggregate cohorts for the flow index's own as-of
+    session, not date.today() — the per-ticker summary parquets carry EOD rows
+    through the last close, so defaulting to today missed every row and every
+    cohort came back 0-of-N covered (the visible defect this revamp fixed)."""
+
+    def test_build_passes_tide_asof_to_cohorts(self):
+        import inspect
+        import scripts.build_flow_desk as bfd
+        src = inspect.getsource(bfd.build)
+        # the cohort call must be parameterised by an as-of derived from the tide,
+        # not left to build_cohorts' date.today() default
+        assert "build_cohorts(" in src
+        assert "asof=cohort_asof" in src, "cohorts must be built for the tide as-of session"
+        assert 'market_tide.get("asof")' in src or "market_tide.get('asof')" in src
 
 
 # ── flow-proxy wiring ─────────────────────────────────────────────────────────

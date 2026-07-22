@@ -588,6 +588,143 @@ def build_flow_score_panel(data_dir: Path) -> dict | None:
         return None
 
 
+# ── daily flow read (hero scorecard) ────────────────────────────────────────────
+
+# Intensity gauge bands (0-100 score). The score is a SOLID magnitude read:
+# gross-premium-weighted mean of per-sector premium z-scores, mapped z→score by
+# score = 50 + z*25 (z 0 → 50 average, z +2 → 100 heavy, z -2 → 0 dead-quiet).
+_INTENSITY_BANDS = [(72, "heavy"), (58, "busy"), (40, "average"), (25, "light"), (0, "quiet")]
+
+
+def _intensity_band(score: float | None) -> str:
+    if score is None:
+        return "building"
+    for lo, key in _INTENSITY_BANDS:
+        if score >= lo:
+            return key
+    return "quiet"
+
+
+def build_flow_read(market_tide: dict, sector_heatmap: list[dict],
+                    cohorts: list[dict]) -> dict:
+    """Section 0: the day's one-glance read of the whole options tape.
+
+    Display-tier only — never feeds a rank/size/gate (same law as every other
+    section here). Two honest dimensions:
+
+    * INTENSITY (solid): how much options money changed hands vs the tape's own
+      recent norm — the gross-premium-weighted mean of per-sector premium
+      z-scores, mapped to a 0-100 gauge score. Magnitude is reliable, so this is
+      the headline gauge. Falls back to a "building history" state when no sector
+      has ≥MIN_Z_HISTORY observations.
+    * LEAN (semi-solid → soft): buying vs selling pressure. Primary read is the
+      gross-weighted tape-flow breadth (fraction of names with positive signed
+      premium, from ThetaData tape where present — more reliable than net
+      premium); net premium is the soft cross-check and is always labelled ~.
+
+    The stance is deliberately capped at "watch — don't chase" / "stand aside":
+    direction here is approximate and the desk never issues a buy, so the honest
+    ceiling is a heads-up, never "act". Plain-word copy + receipts are rendered
+    in the template (enum keys + numbers only cross the Python boundary).
+    """
+    gross = market_tide.get("gross_premium_mn")
+    net = market_tide.get("net_premium_mn")
+    zerodte = market_tide.get("zerodte_share")
+    n_names = market_tide.get("n_names")
+    asof = market_tide.get("asof")
+
+    # ── INTENSITY: gross-weighted mean sector premium z (solid magnitude) ──────
+    zw = [(c.get("gross_premium_mn") or 0.0, c["premium_z"])
+          for c in sector_heatmap
+          if c.get("premium_z") is not None and (c.get("gross_premium_mn") or 0) > 0]
+    if zw:
+        tot_w = sum(w for w, _ in zw)
+        mean_z = sum(w * z for w, z in zw) / tot_w if tot_w > 0 else 0.0
+        intensity_score = int(round(max(0.0, min(100.0, 50.0 + mean_z * 25.0))))
+        intensity_raw = False
+    else:
+        mean_z = None
+        intensity_score = None
+        intensity_raw = True
+    intensity_key = _intensity_band(intensity_score)
+
+    # ── LEAN: gross-weighted tape breadth (semi-solid), net premium soft ───────
+    bw = [(c.get("gross_premium_mn") or 0.0, c["tape_breadth"])
+          for c in sector_heatmap
+          if c.get("tape_breadth") is not None and (c.get("gross_premium_mn") or 0) > 0]
+    if bw:
+        tot_bw = sum(w for w, _ in bw)
+        breadth = sum(w * b for w, b in bw) / tot_bw if tot_bw > 0 else None
+    else:
+        breadth = None
+    if breadth is not None:
+        breadth_pct = int(round(breadth * 100))
+        if breadth >= 0.58:
+            lean_key = "buyers"
+        elif breadth <= 0.42:
+            lean_key = "sellers"
+        else:
+            lean_key = "balanced"
+    else:
+        breadth_pct = None
+        # No tape breadth → fall back to the SOFT net-premium sign only
+        lean_key = "buyers" if (net or 0) > 0 else ("sellers" if (net or 0) < 0 else "balanced")
+
+    # ── DAY-OVER-DAY: gross vs prior session (index-ETF tape proxy spark) ──────
+    spark = market_tide.get("spark") or []
+    gross_hist = [s.get("premium_mn") for s in spark if s.get("premium_mn") is not None]
+    dod_pct = None
+    dod_key = None
+    if len(gross_hist) >= 2 and gross_hist[-2]:
+        dod_pct = round((gross_hist[-1] / gross_hist[-2] - 1.0) * 100.0, 0)
+        dod_key = "heavier" if dod_pct > 15 else ("lighter" if dod_pct < -15 else "steady")
+
+    # ── STANCE: honest ceiling — watch / stand-aside only (soft direction) ─────
+    if intensity_key in ("quiet", "light") and lean_key == "balanced":
+        stance_key = "stand_aside"
+    else:
+        stance_key = "watch"
+
+    # ── CALLOUTS: up to 2 notable, honest divergences (optional) ───────────────
+    callouts: list[dict] = []
+    # (a) a cohort hedged against the tape (put-tilted while market leans to buyers)
+    for c in cohorts or []:
+        if c.get("pc_tone") == "put-tilted" and lean_key == "buyers":
+            callouts.append({"key": "hedged_cohort", "name_en": c.get("name_en"),
+                             "name_zh": c.get("name_zh"),
+                             "pc_ratio": c.get("pc_ratio")})
+            break
+    # (b) the single most unusual sector by |z| (>=1σ from its own norm)
+    unusual = sorted(
+        [c for c in sector_heatmap if c.get("premium_z") is not None
+         and abs(c["premium_z"]) >= 1.0 and (c.get("gross_premium_mn") or 0) > 0],
+        key=lambda c: abs(c["premium_z"]), reverse=True)
+    if unusual:
+        u = unusual[0]
+        callouts.append({"key": "crowded_sector" if u["premium_z"] > 0 else "quiet_sector",
+                         "sector": u["sector"], "z": u["premium_z"]})
+
+    return {
+        "schema": "flow_read.v1",
+        "asof": asof,
+        "gross_premium_mn": gross,
+        "net_premium_mn": net,             # soft
+        "zerodte_share": zerodte,
+        "n_names": n_names,
+        "intensity_score": intensity_score,   # 0-100 or None (building)
+        "intensity_key": intensity_key,        # heavy|busy|average|light|quiet|building
+        "intensity_z": round(mean_z, 2) if mean_z is not None else None,
+        "intensity_raw_fallback": intensity_raw,
+        "lean_key": lean_key,                  # buyers|sellers|balanced
+        "lean_breadth": round(breadth, 3) if breadth is not None else None,
+        "lean_breadth_pct": breadth_pct,       # e.g. 62
+        "dod_pct": dod_pct,                    # gross day-over-day %
+        "dod_key": dod_key,                    # heavier|lighter|steady|None
+        "stance_key": stance_key,              # watch|stand_aside
+        "callouts": callouts,
+    }
+
+
 # ── kill-switch & stub ─────────────────────────────────────────────────────────
 
 def _write_noindex_stub(site_dir: Path) -> None:
@@ -635,14 +772,30 @@ def build() -> dict:
     top_movers = build_top_movers(flow_rows, site_dir=site_dir)
     etf_tile = build_etf_tile(data_dir)
 
-    # FL-B: cohort-level aggregation (Mag7 / Memory / AI chips / Software)
+    # FL-B: cohort-level aggregation (Mag7 / Memory / AI chips / Software).
+    # Aggregate for the flow index's own as-of session — NOT date.today(): the
+    # per-ticker summary parquets carry EOD rows through the last close, so
+    # defaulting to today (build runs the morning after close) missed every row
+    # and every cohort came back 0-of-N covered. Parse the tide as-of; fall back
+    # to today only if it is absent/unparseable.
     site_flowdata_dir = site_dir / "flowdata"
+    _asof_str = market_tide.get("asof")
     try:
-        cohorts = build_cohorts(data_dir, site_flowdata_dir=site_flowdata_dir)
-        log.info("flow_desk: cohorts built — %d cohorts", len(cohorts))
+        cohort_asof = date.fromisoformat(_asof_str) if _asof_str else None
+    except (TypeError, ValueError):
+        cohort_asof = None
+    try:
+        cohorts = build_cohorts(data_dir, asof=cohort_asof,
+                                site_flowdata_dir=site_flowdata_dir)
+        log.info("flow_desk: cohorts built — %d cohorts (asof=%s)",
+                 len(cohorts), cohort_asof)
     except Exception as e:  # noqa: BLE001
         log.warning("flow_desk: cohort build failed (non-fatal): %s", e)
         cohorts = []
+
+    # Section 0: the day's one-glance read (intensity + lean + stance) — powers
+    # the hero scorecard. Display-tier; derived from the tide + heatmap + cohorts.
+    flow_read = build_flow_read(market_tide, sector_heatmap, cohorts)
 
     # FS-4 Lane C: flow-score glance panel (display-only; never feeds rank/gate)
     flow_score_panel = build_flow_score_panel(data_dir)
@@ -655,6 +808,7 @@ def build() -> dict:
         "direction_reliable": False,
         "magnitude_reliable": True,
         "direction_note": "net premium direction is SOFT — approximate (minute tick-rule signing)",
+        "read": flow_read,
         "cohorts": cohorts,
         "market_tide": market_tide,
         "sector_heatmap": sector_heatmap,
