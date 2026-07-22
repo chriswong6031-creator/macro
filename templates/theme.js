@@ -1394,7 +1394,9 @@
   var SDASH_CSS = [
     '.sd-overlay{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;padding:24px;background:color-mix(in srgb,#04060c 66%,transparent);-webkit-backdrop-filter:blur(9px) saturate(1.05);backdrop-filter:blur(9px) saturate(1.05);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility 0s linear .22s;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.sd-overlay.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .22s ease,visibility 0s}',
-    '.sd-card{position:relative;display:flex;width:min(720px,100%);height:min(560px,calc(100dvh - 48px));box-sizing:border-box;border-radius:20px;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--panel,var(--card,#0e1320)) 82%,transparent);border:1px solid color-mix(in srgb,var(--text,var(--ink,#e7ecf6)) 14%,transparent);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 32px 90px -20px rgba(3,7,18,.8),0 10px 28px -12px rgba(3,7,18,.5),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);transform:translateY(14px) scale(.985);opacity:.4;transition:transform .3s cubic-bezier(.32,1.28,.5,1),opacity .22s ease;color:var(--text,var(--ink,#e7ecf6))}',
+    /* 100vh line first = fallback for browsers without dvh (old iOS Safari drops
+       the whole min(...dvh...) declaration); the dvh line wins where supported */
+    '.sd-card{position:relative;display:flex;width:min(860px,100%);height:min(660px,calc(100vh - 48px));height:min(660px,calc(100dvh - 48px));box-sizing:border-box;border-radius:20px;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--panel,var(--card,#0e1320)) 82%,transparent);border:1px solid color-mix(in srgb,var(--text,var(--ink,#e7ecf6)) 14%,transparent);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 32px 90px -20px rgba(3,7,18,.8),0 10px 28px -12px rgba(3,7,18,.5),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);transform:translateY(14px) scale(.985);opacity:.4;transition:transform .3s cubic-bezier(.32,1.28,.5,1),opacity .22s ease;color:var(--text,var(--ink,#e7ecf6))}',
     '.sd-overlay.open .sd-card{transform:none;opacity:1}',
     'html[data-theme="light"] .sd-card{box-shadow:0 30px 80px -22px rgba(20,30,50,.35),0 10px 26px -14px rgba(20,30,50,.22),inset 0 1px 0 rgba(255,255,255,.75)}',
     '@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.sd-card{background:var(--panel,var(--card,#0e1320))}}',
@@ -1404,7 +1406,7 @@
     '@keyframes sdLaser{from{background-position:120% 0}to{background-position:0% 0}}',
     '@media (prefers-reduced-motion:reduce){.sd-overlay,.sd-card{transition:opacity .15s ease}.sd-card{transform:none}.sd-overlay.open .sd-laser{animation:none;background-position:0% 0}}',
     /* left rail */
-    '.sd-rail{flex:none;width:200px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:16px 12px 14px;border-right:1px solid color-mix(in srgb,var(--line,var(--grid,#283042)) 70%,transparent);background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 44%,transparent)}',
+    '.sd-rail{flex:none;width:220px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:16px 12px 14px;border-right:1px solid color-mix(in srgb,var(--line,var(--grid,#283042)) 70%,transparent);background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 44%,transparent)}',
     '.sd-me{display:flex;align-items:center;gap:9px;padding:4px 4px 12px}',
     '.sd-me-av{flex:none;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--link,var(--blue,#4f8cff)),color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 55%,#9b5cff))}',
     '.sd-me-av.guestav{background:color-mix(in srgb,var(--muted,var(--ink-3,#8b93a7)) 30%,var(--panel2,var(--card)));color:var(--muted,var(--ink-3,#8b93a7))}',
@@ -1425,7 +1427,7 @@
     '.sd-signout:focus-visible{outline:2px solid var(--down,#ff5c6c);outline-offset:2px}',
     /* right pane */
     '.sd-pane{flex:1;min-width:0;display:flex;flex-direction:column}',
-    '.sd-head{flex:none;display:flex;align-items:flex-start;gap:10px;padding:18px 18px 12px 22px}',
+    '.sd-head{flex:none;display:flex;align-items:flex-start;gap:10px;padding:20px 20px 12px 26px}',
     '.sd-head-main{flex:1;min-width:0}',
     '.sd-head h2{margin:0;font-size:15px;font-weight:800;letter-spacing:.01em;line-height:1.2;color:var(--text,var(--ink))}',
     '.sd-head .sd-sub{margin:3px 0 0;font-size:11.5px;line-height:1.45;color:var(--muted,var(--ink-3,#8b93a7))}',
@@ -1433,7 +1435,7 @@
     '.sd-x:hover{background:color-mix(in srgb,var(--text,var(--ink,#fff)) 8%,transparent);color:var(--text,var(--ink))}',
     '.sd-x svg{width:15px;height:15px}',
     '.sd-x:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
-    '.sd-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 18px 18px 22px}',
+    '.sd-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 20px 20px 26px}',
     /* section switch: one-shot rise on entry */
     '.sd-sect{display:none}',
     /* flex column so the head stays fixed and ONLY .sd-body scrolls — a block here
@@ -1530,7 +1532,7 @@
     /* MOBILE <=640px — full sheet, rail -> header + horizontal tabs */
     '@media (max-width:640px){',
     '.sd-overlay{padding:0;align-items:stretch}',
-    '.sd-card{flex-direction:column;width:100%;height:100dvh;border-radius:0;border-left:0;border-right:0;transform:translateY(24px)}',
+    '.sd-card{flex-direction:column;width:100%;height:100vh;height:100dvh;border-radius:0;border-left:0;border-right:0;transform:translateY(24px)}',
     '.sd-overlay.open .sd-card{transform:none}',
     '.sd-rail{width:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 8px;padding:12px 14px 8px;border-right:0;border-bottom:1px solid color-mix(in srgb,var(--line,var(--grid,#283042)) 70%,transparent)}',
     '.sd-me{flex:1;min-width:0;padding:0;order:1}',
