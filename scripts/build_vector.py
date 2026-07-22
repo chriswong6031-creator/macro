@@ -790,16 +790,18 @@ def chart_etf_flow(df: pd.DataFrame) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# landing hub (owns site/index.html exclusively). build_site.py writes the macro
-# dashboard straight to macro.html, so index.html is never the raw dashboard and
-# Home (-> index.html) can't regress to it — even if this step is skipped, the
+# signed-in hub (owns site/start.html exclusively; 2026-07-22 operator order:
+# index.html is now the static anonymous-visitor landing page, a PAIRED plain
+# template templates/index.html — never write index.html from here).
+# build_site.py writes the macro dashboard straight to macro.html, so
+# start.html is never the raw dashboard — even if this step is skipped, the
 # committed hub stays in place.
 # --------------------------------------------------------------------------- #
 HUB_MARKER = "<!-- bitcoin-vector-landing-hub -->"
 
 
 def build_landing(site: Path, vm: dict) -> None:
-    """Install the landing hub at index.html. Idempotent: safe to run every
+    """Install the signed-in hub at start.html. Idempotent: safe to run every
     build, independent of build_site.py ordering — the hub is rendered from the
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
@@ -808,8 +810,8 @@ def build_landing(site: Path, vm: dict) -> None:
                     _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
                     canada=_canada_state())
-    write_page(site / "index.html", hub)
-    log.info("wrote landing hub -> index.html")
+    write_page(site / "start.html", hub)
+    log.info("wrote signed-in hub -> start.html")
 
 
 def _macro_state() -> dict:
@@ -1967,7 +1969,8 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
 </style>"""
 
-# Critical a11y CSS that must ship INLINE in index.html itself: the hub-a11y CI
+# Critical a11y CSS that must ship INLINE in the hub page itself (start.html
+# since 2026-07-22; index.html before that): the hub-a11y CI
 # guard (scripts/check_hub_a11y.py checks c+d) greps the page HTML for the
 # body{} safe-area padding and the light-theme .pill contrast override, while
 # scripts/externalize_css.py lifts every <style> block >= 1024 bytes into an
@@ -2487,21 +2490,22 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     alerts_html = _g_alerts(alerts)
     blob_json = json.dumps(blob, ensure_ascii=False)
 
-    # SEO + social + favicon (the landing page — highest-value target). Plain,
-    # static HTML: social scrapers (Slack/X/iMessage) don't run JS. Mirrors the
-    # shared templates/_seo_head.html.j2 used by the Jinja hub pages.
+    # SEO + social + favicon. Plain, static HTML: social scrapers
+    # (Slack/X/iMessage) don't run JS. Mirrors the shared
+    # templates/_seo_head.html.j2 used by the Jinja hub pages. Canonical is
+    # /start.html — the root canonical belongs to the marketing landing page.
     _seo_title = "Mastermind — Global Macro Regime & Market Cycle Intelligence"
     _seo_desc = ("Mastermind is a live macro dashboard tracking market regimes, sector "
                  "rotation and boom-bust cycles across the US, China, Hong Kong, Canada and "
                  "global markets — risk radar, signals and cycle clocks in one place.")
     _seo = (
         '<meta name="description" content="%s">\n'
-        '<link rel="canonical" href="https://www.mastermind-x.com/">\n'
+        '<link rel="canonical" href="https://www.mastermind-x.com/start.html">\n'
         '<meta property="og:type" content="website">\n'
         '<meta property="og:site_name" content="Mastermind">\n'
         '<meta property="og:title" content="%s">\n'
         '<meta property="og:description" content="%s">\n'
-        '<meta property="og:url" content="https://www.mastermind-x.com/">\n'
+        '<meta property="og:url" content="https://www.mastermind-x.com/start.html">\n'
         '<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">\n'
         '<meta name="twitter:card" content="summary">\n'
         '<meta name="twitter:title" content="%s">\n'

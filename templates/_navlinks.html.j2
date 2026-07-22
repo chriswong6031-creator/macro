@@ -26,11 +26,13 @@
 {% set NP = nav_prefix if (nav_prefix is defined and nav_prefix) else '' %}
     <div class="nav-links">
     {# Brand mark — the crafted Mastermind “M” logomark (gradient tile + ascending
-       market-peak M), first item in the menu, links Home. Icon-only (styled by
+       market-peak M), first item in the menu, links Home. Since 2026-07-22 the
+       signed-in home is start.html (index.html is the anonymous marketing
+       landing), so the brand routes app users there. Icon-only (styled by
        .site-nav .nav-brand in theme.css). Kept in sync with the landing-hub lockup
        in scripts/build_vector.py (_BRAND_MARK_SVG). Plain-text aria-label only — the
        bilingual t() macro emits <span> HTML that would corrupt the attribute. #}
-    <a class="nav-brand" href="{{ NP }}index.html" aria-label="MASTERMIND — Home">
+    <a class="nav-brand" href="{{ NP }}start.html" aria-label="MASTERMIND — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
@@ -317,9 +319,3 @@
      when neither a Worker URL nor a snapshot URL is configured. #}
   <script src="{{ NP }}live_config.js"></script>
   <script src="{{ NP }}live.js"></script>
-  {# CLS guard pair: theme.css (+ the _vector_polish port) pre-collapses .nav-links
-     below 1260px at parse, so the menu never renders expanded and then vanishes
-     when theme.js's hamburger sheet lands (~2s on phones — a 0.30 layout shift,
-     2026-07-21 audit). With JS off the hamburger never arrives — this noscript
-     restores the always-expanded fallback (every link stays reachable). #}
-  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
