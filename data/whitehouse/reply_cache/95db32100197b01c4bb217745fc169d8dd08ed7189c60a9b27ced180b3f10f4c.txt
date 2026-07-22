@@ -1,0 +1,76 @@
+{
+  "activate": true,
+  "importance": 70,
+  "banner_days": 4,
+  "tone": "tailwind",
+  "banner_title": "$5B+ Genesis Mission AI science push: lifts semis, biotech, energy R&D",
+  "banner_title_zh": "逾50亿美元“创世使命”AI科学计划：利好半导体、生物科技和能源研发",
+  "summary": "The White House commits over $5 billion to the Genesis Mission, a multi-agency AI-for-science initiative spanning health, energy, infrastructure and manufacturing. The funding provides a direct tailwind for semiconductor, cloud, biotech and energy-technology firms involved in AI-driven R&D.",
+  "summary_zh": "白宫承诺为“创世使命”投入逾50亿美元，这是一项覆盖医疗、能源、基础设施和制造业的多机构AI科学计划。该资金为参与AI驱动研发的半导体、云服务、生物科技和能源技术公司带来直接利好。",
+  "analysis": "The Genesis Mission mobilizes more than 15 federal agencies to harness AI for scientific discovery, using the DOE’s shared compute and data platform. The announcement includes concrete challenges in drug discovery, pediatric cancer, grid modernization, semiconductor design, and industrial biology. For markets, the key takeaway is a multi-year, multi-billion-dollar demand signal for AI infrastructure, specialized compute, and research tools. Federal grants and contracts will flow to research institutions that partner with private-sector technology providers, lifting orders for GPUs, cloud services, and lab equipment. The program also explicitly targets semiconductor co-design and microelectronics, directly benefiting US chip-design and fab-tool ecosystems. The primary transmission mechanism is government-funded research spending, which historically has a high multiplier effect on commercial innovation. The main uncertainty is execution speed and the extent to which future Congressional appropriations sustain the current momentum. Nevertheless, the breadth of agency involvement and the early selection of 278 projects suggest the tailwind is real and ramping up.",
+  "sectors": [
+    {
+      "name": "Semiconductors",
+      "impact": "tailwind",
+      "rationale": "AI-driven microelectronics challenge and AI compute needs boost demand for GPUs, custom chips, and design tools."
+    },
+    {
+      "name": "Biotechnology & Pharma",
+      "impact": "tailwind",
+      "rationale": "Direct funding for AI-based drug discovery, cancer research, and biomedical data infrastructure benefits tools and data-driven biotechs."
+    },
+    {
+      "name": "AI Infrastructure / Cloud",
+      "impact": "tailwind",
+      "rationale": "Shared compute platform and agency AI workloads increase demand for hyperscale cloud and AI-optimized data center capacity."
+    },
+    {
+      "name": "Energy Technology",
+      "impact": "tailwind",
+      "rationale": "Grid digital-twin and materials-discovery initiatives support companies offering AI-powered grid software and advanced energy analytics."
+    },
+    {
+      "name": "Defense Tech",
+      "impact": "tailwind",
+      "rationale": "Weapon-component design and NNSA simulation challenges funnel R&D dollars to defense contractors with AI and high-performance computing expertise."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "NVDA",
+      "direction": "benefit",
+      "rationale": "Primary beneficiary as GPU demand rises for DOE supercomputing and AI workloads across multiple missions."
+    },
+    {
+      "symbol": "AMD",
+      "direction": "benefit",
+      "rationale": "AI accelerator and HPC processor demand scales with federal science computing initiatives."
+    },
+    {
+      "symbol": "MSFT",
+      "direction": "benefit",
+      "rationale": "Azure cloud and AI platform likely to capture expanded federal and research-institution compute contracts."
+    },
+    {
+      "symbol": "ILMN",
+      "direction": "benefit",
+      "rationale": "Genomic sequencing and data analysis tools see higher demand from AI-driven biomedical data infrastructure projects."
+    },
+    {
+      "symbol": "TMO",
+      "direction": "benefit",
+      "rationale": "Lab instruments and services benefit from ramped-up drug discovery and clinical translation research."
+    },
+    {
+      "symbol": "GEV",
+      "direction": "benefit",
+      "rationale": "Grid digital-twin and predictive-maintenance software aligns with infrastructure and grid-modernization challenges."
+    },
+    {
+      "symbol": "LMT",
+      "direction": "benefit",
+      "rationale": "AI-driven weapon component design and NNSA programs could accelerate R&D contracts for defense primes with modeling expertise."
+    }
+  ],
+  "confidence": "medium"
+}

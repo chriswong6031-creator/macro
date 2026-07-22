@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-22T06:42:06.095541+00:00",
-  "posts_seen": 19,
-  "seen_total": 55,
-  "evaluated": 0,
-  "activated": 0,
+  "as_of": "2026-07-22T14:22:44.416594+00:00",
+  "posts_seen": 20,
+  "seen_total": 56,
+  "evaluated": 1,
+  "activated": 1,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-22-45502",
+      "importance": 70,
+      "activated": true,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
