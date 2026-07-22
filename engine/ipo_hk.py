@@ -96,9 +96,19 @@ def hk_backdrop() -> dict:
     else:
         verdict = "mixed"
 
+    # coverage disclosure — the full leg set is southbound/hibor/peg/risk (4);
+    # missing_legs names which expected keys did not fire this run.
+    expected = ["southbound", "hibor", "peg", "risk"]
+    fired = {l["key"] for l in legs}
+    missing_legs = [k for k in expected if k not in fired]
+    n_expected = len(expected)
+    low_confidence = n < 3
+
     return {
         "available": n > 0,
         "verdict": verdict, "constructive": cons, "cautious": caut, "n_legs": n,
+        "n_expected": n_expected, "low_confidence": low_confidence,
+        "missing_legs": missing_legs,
         "legs": legs, "as_of": reg.get("date"),
         "note": ("Liquidity backdrop only — HK is structurally more retail-tradeable "
                  "(public-offer tranche + clawback, published subscription multiple, "

@@ -315,3 +315,172 @@ def test_lockup_summary_counts():
 def test_ipo_lockup_scored_flag_false():
     assert il.SCORED is False
     assert il.lockup_rows(pd.DataFrame()) == []     # degrades on empty
+
+
+# --------------------------------------------------------------------------- #
+# flagship-revamp additions — coverage disclosure, hardening, view-models
+# --------------------------------------------------------------------------- #
+def test_never_scored_invariant_intact():
+    """All three display engines stay never-scored; the persisted snapshot must
+    carry no score/axis/regime/allocation key (it is a display card only)."""
+    assert ir.SCORED is False and il.SCORED is False and ihk.SCORED is False
+    import json
+    from lib import config
+    p = config.data_dir() / "regime" / "ipo_latest.json"
+    if p.exists():
+        d = json.loads(p.read_text())
+        for k in d:
+            assert not any(bad in k.lower() for bad in ("score", "axis", "regime", "alloc"))
+
+
+def test_window_context_has_coverage_keys(monkeypatch):
+    monkeypatch.setattr(ir, "_rs", lambda num, den, lookback=63: 0.05)
+    monkeypatch.setattr(ir, "_close", lambda t: _vix(15.0) if t == "^VIX" else None)
+    w = ir.window_context(risk_score=20.0)
+    assert w["n_expected"] == 6
+    assert w["low_confidence"] == (w["n_legs"] < 5)
+    # full 6-leg read here → not low confidence
+    assert w["n_legs"] == 6 and w["low_confidence"] is False
+
+
+def test_pipeline_stats_withdraw_rate_and_froth_flags():
+    p = ir.pipeline_stats(_cal())
+    assert "withdraw_rate_90d" in p and "froth_flags" in p
+    # _cal(): 1 withdrawn @10d + 2 priced @<=90d → 1/(1+2) ≈ 33%
+    assert p["withdraw_rate_90d"] == 33
+    assert isinstance(p["froth_flags"], list)
+    # 50% SPAC share ≥40 → 'spac'; 33% withdraw ≥20 → 'pulled'; 2 priced <45 → no 'pace'
+    assert "spac" in p["froth_flags"] and "pulled" in p["froth_flags"]
+    assert "pace" not in p["froth_flags"]
+
+
+def test_pipeline_excludes_future_dated_priced_date():
+    """A future-dated priced_date (bad feed row) must not count as a listing."""
+    cal = _cal().copy()
+    # add a future-priced row (days_since = -3) — should be rejected by the 0<=dsl clamp
+    future = pd.Timestamp.now("UTC").normalize() + timedelta(days=3)
+    cal.loc["rf"] = {c: None for c in cal.columns}
+    cal.loc["rf", "ticker"] = "FUT"
+    cal.loc["rf", "status"] = "priced"
+    cal.loc["rf", "priced_date"] = future.strftime("%Y-%m-%d")
+    cal.loc["rf", "is_spac"] = False
+    cal.loc["rf", "offer_value_usd"] = 2e8
+    p = ir.pipeline_stats(cal)
+    assert p["priced_90d"] == 2          # AAA + SPCU only; FUT rejected
+    rec = ir.recent_listings(cal, days=120)
+    assert "FUT" not in [r["ticker"] for r in rec]
+
+
+def test_is_spac_nan_becomes_not_spac_after_fillna():
+    """A NaN is_spac must resolve to not-SPAC (bool(nan) is truthy, and .astype(bool)
+    on a NaN raises on modern pandas — the fillna(False) is what makes both paths safe)."""
+    today = pd.Timestamp.now("UTC").normalize()
+
+    def iso(days):
+        return (today - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    cols = ["ticker", "company", "exchange", "status", "offer_price", "range_low",
+            "range_high", "range_mid", "shares", "offer_value_usd", "priced_date",
+            "expected_date", "filed_date", "withdraw_date", "is_spac"]
+
+    def row(**kw):
+        r = {c: None for c in cols}
+        r.update(kw)
+        return r
+
+    df = pd.DataFrame.from_dict({
+        "n": row(ticker="NANX", company="NaN Co", status="priced",
+                 priced_date=iso(5), offer_value_usd=2e8, is_spac=float("nan")),
+        "s": row(ticker="SPCU", company="Spac Acquisition Corp", status="priced",
+                 priced_date=iso(20), offer_value_usd=1.5e8, is_spac=True),
+    }, orient="index")
+    df.index.name = "deal_id"
+    # is_spac column is object dtype here (bool + NaN mix) — the realistic post-concat shape
+    assert df["is_spac"].dtype == object
+    p = ir.pipeline_stats(df)
+    assert p["spac_90d"] == 1 and p["operating_90d"] == 1     # NaN → operating, not SPAC
+    rec = ir.recent_listings(df, days=120)
+    nanx = next(r for r in rec if r["ticker"] == "NANX")
+    assert nanx["is_spac"] is False                           # scalar path NaN-safe too
+
+
+# ---- build_ipo view-model builders (pure) ---------------------------------- #
+import scripts.build_ipo as bi
+
+
+def test_avoid_builds_three_items_on_hot_data():
+    after = {"verdict": "trails"}
+    pipe = {"froth_flags": ["spac", "pulled"], "spac_pct_90d": 51, "withdraw_rate_90d": 16}
+    lk = {"approaching": 27, "just_expired": 4, "next_days": 0,
+          "next_ticker": "EQPT", "next_date": "2026-07-22", "next_size_usd": 7.47e8}
+    av = bi._build_avoid(after, pipe, lk, "2026-07-22")
+    assert len(av["items"]) >= 3
+    for it in av["items"]:
+        assert it["title_en"] and it["title_zh"]
+        assert "tone" in it and it["tone"] in ("red", "warn", "calm")
+    # next_days==0 → the lock-up item is red (into the cliff)
+    lock = next(i for i in av["items"] if "un-lock" in i["title_en"])
+    assert lock["tone"] == "red"
+
+
+def test_avoid_calm_when_nothing_urgent():
+    av = bi._build_avoid({"verdict": "tracks"}, {"froth_flags": []},
+                         {"approaching": 0, "just_expired": 0}, "2026-07-22")
+    assert len(av["items"]) == 1 and av["items"][0]["tone"] == "calm"
+
+
+def test_changed_emits_band_flip_item():
+    prior = {"window_band": "SHUT", "verdict": "trails", "spac_pct_90d": 20,
+             "next_lockup": "AAA", "lockups_approaching": 5}
+    win = {"band": "OPEN"}
+    after = {"verdict": "trails"}
+    pipe = {"spac_pct_90d": 20}
+    lk = {"next_ticker": "AAA", "approaching": 5}
+    ch = bi._build_changed(prior, win, after, pipe, lk)
+    assert ch["has_prior"] is True
+    assert any("OPEN" in i["en"] and "SHUT" in i["en"] for i in ch["items"])
+    band_item = next(i for i in ch["items"] if "OPEN" in i["en"])
+    assert band_item["tone"] == "up"        # flip to OPEN reads constructive
+
+
+def test_changed_defensive_on_missing_prior():
+    assert bi._build_changed(None, {"band": "OPEN"}, {}, {}, {}) == {"has_prior": False, "items": []}
+    assert bi._build_changed({}, {"band": "OPEN"}, {}, {}, {}) == {"has_prior": False, "items": []}
+
+
+def test_lockup_timeline_shape_and_clamp():
+    rows = [
+        {"ticker": "EQPT", "company": "Eq Co", "expiry_date": "2026-07-22",
+         "days_to": 0, "size_usd": 7.47e8, "status": "approaching", "source": "confirmed"},
+        {"ticker": "OLD", "company": "Old", "expiry_date": "2026-01-01",
+         "days_to": -200, "size_usd": 1e8, "status": "expired", "source": "estimate"},  # out of window
+        {"ticker": "NAN", "company": "Nan", "expiry_date": "2026-09-01",
+         "days_to": 40, "size_usd": float("nan"), "status": "locked", "source": "estimate"},
+    ]
+    tl = bi._build_lockup_timeline(rows, {"approaching": 27, "just_expired": 4,
+                                          "confirmed": 48, "next_ticker": "EQPT",
+                                          "next_date": "2026-07-22", "next_days": 0,
+                                          "next_size_usd": 7.47e8})
+    assert tl["horizon_days"] == 120
+    tickers = [m["ticker"] for m in tl["markers"]]
+    assert "EQPT" in tickers and "OLD" not in tickers      # -200d rejected
+    for m in tl["markers"]:
+        assert 0.0 <= m["pos_frac"] <= 1.0
+    nanm = next(m for m in tl["markers"] if m["ticker"] == "NAN")
+    assert nanm["size_bucket"] == "sm"                     # NaN size → sm bucket
+    eqpt = next(m for m in tl["markers"] if m["ticker"] == "EQPT")
+    assert eqpt["size_bucket"] == "lg" and eqpt["confirmed"] is True
+    assert tl["next"]["ticker"] == "EQPT" and tl["approaching"] == 27
+
+
+def test_chart_aftermarket_is_svg_not_plotly():
+    out = bi._chart_aftermarket()
+    assert out is None or ("<svg" in out and "plotly" not in out.lower())
+
+
+def test_hk_vm_each_leg_has_note_zh():
+    vm = bi._hk_vm()
+    if vm.get("available"):
+        for leg in vm["legs"]:
+            assert leg.get("note_zh")            # bilingual note on every HK leg
+        assert "stance_en" in vm and "stance_zh" in vm
