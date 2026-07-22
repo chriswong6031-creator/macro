@@ -51,9 +51,44 @@ def test_constructive_yields_rel_return_check():
 
 
 def test_cautious_mirrors_threshold():
-    nt = sd._build_note(_note(lean="cautious"), _state()["picks"][0], "2026-01-05", sd._cfg(), 0)
+    # A cautious lean on a genuinely WEAK / lagging name STAYS cautious → mirrored short check.
+    # (On a strong-leader name it now softens to neutral — see the Phase 3 tests below.)
+    weak = {"ticker": "AAA", "conviction": {"verdict": "Lagging — relative weakness",
+                                            "band": "watch", "cycle_blocked": False}}
+    nt = sd._build_note(_note(lean="cautious"), weak, "2026-01-05", sd._cfg(), 0)
     chk = nt["falsifier"]["check"]
     assert chk["op"] == ">" and chk["threshold"] == 0.05       # FALSE if it OUTperforms by ≥5%
+    assert nt["lean"] == "cautious"
+
+
+def test_cautious_on_leader_extension_softens_to_neutral():
+    """Phase 3: a 'cautious' lean is a graded directional SHORT vs SPY. On a strong LEADER
+    that is merely extended it fights live momentum — only ~17% directionally correct on this
+    desk (n=52) vs ~86% on genuinely weak names (n=7). So soften cautious-on-a-leader to
+    NEUTRAL (watch, don't chase, DON'T short); the winning weak-name cautions are untouched."""
+    # _state()'s pick is "Leader · good entry" (a strong-leader-extension).
+    nt = sd._build_note(_note(lean="cautious"), _state()["picks"][0], "2026-01-05", sd._cfg(), 0)
+    assert nt["lean"] == "neutral"                             # leader + extended → neutral, not a short
+    assert nt["falsifier"]["check"]["kind"] == "soft"         # neutral ⇒ unscored (no losing short logged)
+    assert "soften" in (nt["dissent"] or "").lower()
+
+
+def test_constructive_on_leader_extension_clamps_to_neutral_not_cautious():
+    """The anti-chase clamp on a risk-blocked STRONG LEADER de-escalates to NEUTRAL (don't
+    chase, don't short) — NOT cautious. Only a bearish-tape name clamps down to cautious."""
+    pick = {"ticker": "DDD",
+            "conviction": {"verdict": "High-conviction leader — good entry", "band": "buy",
+                           "cycle_blocked": False, "cautions": ["extended +18% over 50dma"]}}
+    nt = sd._build_note(_note(ticker="DDD", lean="constructive"), pick, "2026-01-05", sd._cfg(), 0)
+    assert nt["lean"] == "neutral"                            # leader-extension ⇒ neutral, not cautious
+    assert nt["falsifier"]["check"]["kind"] == "soft"
+
+
+def test_avoid_on_leader_extension_also_softens_to_neutral():
+    """De-escalation is symmetric: an 'avoid' (the strongest short) on a leader-extension also
+    softens to neutral — the reshape never lets the desk short a momentum-intact leader."""
+    nt = sd._build_note(_note(lean="avoid"), _state()["picks"][0], "2026-01-05", sd._cfg(), 0)
+    assert nt["lean"] == "neutral"
 
 
 def test_neutral_is_soft_unscored():
