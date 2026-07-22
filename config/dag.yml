@@ -610,6 +610,10 @@ lanes:
       - id: grade_us_board
         module: scripts.grade_us_board
         args: [--nightly]
+      - id: grade_bottom_calls
+        module: scripts.grade_bottom_calls
+        args: [--nightly]
+        note: "Bottom Ledger P1 — policy-free bottom-calling learning instrument. Sole forward advancer (nightly-only). Accrues board buy-lane + washout WAIT + Prophet-plan flags from snapshots.jsonl (must run AFTER grade_us_board appends today's snapshot), matures at H=60, writes data/bottom_ledger/rows.parquet + emits site/factordata/us_bottom_ledger.json (both committed by nightly like every sibling forward ledger). Display-tier; no exits/stops/authority."
       - id: stamp_options_state
         module: scripts.stamp_options_state
         note: "Options Alpha W1.3 — context-only nullable options-state stamp on board ledger"

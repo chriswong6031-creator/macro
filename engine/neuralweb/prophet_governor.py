@@ -298,6 +298,35 @@ def _build_us_block(repo: Path) -> dict:
     else:
         gaps.append(_data_gap("track_history", "site/factordata/us_track_history.json absent"))
 
+    # 7. site/factordata/us_bottom_ledger.json — Bottom Ledger P1 (bottom-calling instrument).
+    # PASSIVE STAT CARRY ONLY (LLM law: never originate signals). Display-tier; sourced solely
+    # from the emitted display artifact — never recomputes grades. Nulls until matured.
+    bottom_path = repo / "site" / "factordata" / "us_bottom_ledger.json"
+    if bottom_path.exists():
+        d = _read_json(bottom_path)
+        if d is not None:
+            n_matured = d.get("n_matured")
+            summ = d.get("summary") or {}
+            block["bottom_ledger"] = {
+                "as_of": d.get("as_of"),
+                "n_accruing": d.get("n_accruing"),
+                "n_matured": n_matured,
+                "pin5": summ.get("pin5"),           # null until matured
+                "held_pct": summ.get("held_pct"),   # null until matured
+                "status": ("accruing" if not n_matured else "maturing"),
+                "reliability": ("display-tier bottom-calling learning instrument (policy-free; "
+                                "no ranking/sizing authority) — measures proximity to the "
+                                "eventual low and floor durability; live cohorts compared "
+                                "against the committed panel baseline as they mature"),
+                "first_maturity_est": d.get("first_maturity_est"),
+            }
+        else:
+            gaps.append(_data_gap("bottom_ledger", "us_bottom_ledger.json parse error"))
+    else:
+        gaps.append(_data_gap("bottom_ledger",
+                              "site/factordata/us_bottom_ledger.json absent (Bottom Ledger P1 "
+                              "not yet emitted — expected after first nightly)"))
+
     block["data_gaps"] = gaps
     return block
 
