@@ -802,9 +802,11 @@ def _flip_text(comps: list, verdict: str) -> tuple[str, str]:
     if verdict == "RISK_OFF":
         return (f"→ Mixed when {strongest['label_en'].lower()} stabilises and stress fades.",
                 f"→ 待{strongest['label_zh']}企稳且压力护栏解除后转为「混合」。")
+    # zh names the target TIERS (偏多/避险), not colours: under the zh 红涨绿跌 swap the
+    # "green" tier paints red on the board, so colour words would point the wrong way.
     return (f"→ Green if {weakest['label_en'].lower()} firms up (now {weakest['score']}/100); "
             f"→ Red if it deteriorates further.",
-            f"→ 若{weakest['label_zh']}转强（现 {weakest['score']}/100）则转「绿」；进一步恶化则转「红」。")
+            f"→ 若{weakest['label_zh']}转强（现 {weakest['score']}/100）则转「偏多」；进一步恶化则转「避险」。")
 
 
 # --------------------------------------------------------------- store ----

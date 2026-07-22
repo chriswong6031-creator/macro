@@ -2558,12 +2558,13 @@ body.page-macro .mxqm-foot{margin-top:8px;padding-top:8px;border-top:1px solid v
 body.page-macro .mxqm-wrap{margin:0 0 8px}
 body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
-/* Quad fill classes — fixed hex (SVG presentation fills don't read var()); match
-   theme.css dark defaults. Active tile lifts brighter. */
-body.page-macro .mxqm-q1-fill{fill:#2e9e4f;opacity:.14}
-body.page-macro .mxqm-q2-fill{fill:#d4a017;opacity:.14}
-body.page-macro .mxqm-q3-fill{fill:#d04545;opacity:.14}
-body.page-macro .mxqm-q4-fill{fill:#3f78d8;opacity:.14}
+/* Quad fill classes — CSS rules (not presentation attrs) so var() resolves fine;
+   --q1/--q3 swap under zh (theme.css 红涨绿跌) and all four re-shade per theme,
+   which also retires the old per-theme literal overrides. Active tile lifts brighter. */
+body.page-macro .mxqm-q1-fill{fill:var(--q1,#2e9e4f);opacity:.14}
+body.page-macro .mxqm-q2-fill{fill:var(--q2,#d4a017);opacity:.14}
+body.page-macro .mxqm-q3-fill{fill:var(--q3,#d04545);opacity:.14}
+body.page-macro .mxqm-q4-fill{fill:var(--q4,#3f78d8);opacity:.14}
 body.page-macro .mxqm-q1-fill.active{opacity:.42}
 body.page-macro .mxqm-q2-fill.active{opacity:.42}
 body.page-macro .mxqm-q3-fill.active{opacity:.42}
@@ -2583,10 +2584,6 @@ body.page-macro .mxqm-arrowhead{fill:var(--warn,#f59e0b)}
   body.page-macro .mxqm-pulse{animation:none;opacity:.28}
   body.page-macro .mxqm-arrow{animation:none;stroke-dashoffset:0}
 }
-[data-theme="light"] body.page-macro .mxqm-q1-fill{fill:#1f8b41}
-[data-theme="light"] body.page-macro .mxqm-q2-fill{fill:#b07d05}
-[data-theme="light"] body.page-macro .mxqm-q3-fill{fill:#c12f2f}
-[data-theme="light"] body.page-macro .mxqm-q4-fill{fill:#2f63c4}
 [data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.4)}
 [data-theme="light"] body.page-macro .mxqm-quad-label{fill:rgba(0,0,0,.62)}
 [data-theme="light"] body.page-macro .mxqm-odds{fill:rgba(0,0,0,.6)}
@@ -3568,6 +3565,12 @@ body.page-macro.mx4-grid {
   --mx5-accent-ink:    #17753f;
   --mx5-warn-ink:      #9c6212;
 }
+/* zh 红涨绿跌 + light: the risk-on accent INK is a literal (deep green for contrast),
+   so it can't flip via the --up swap — mirror it to a deep red of equal contrast.
+   (Dark mode needs no mirror: accent-ink chains through --mx5-accent → --up there.) */
+html[data-theme="light"][data-lang="zh"] body.page-macro.mx4-grid {
+  --mx5-accent-ink:    #a82f2f;
+}
 /* ── v5.3 UNIFIED card hover (Order 5): ONE idiom for every grid card/face.
    No accent-colored tints anywhere — border brightens, surface lifts ~2%,
    translateY(-1px), soft ambient shadow. Same both directions, 200ms ease-out. */
@@ -3903,6 +3906,17 @@ body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(239,68,68,.60);}
 /* zh 红涨绿跌: Risk-on(偏多)=bullish→red, Risk-off(偏空)=bearish→green (mid amber stays) */
 html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(239,68,68,.60);}
 html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(34,217,122,.62);}
+/* path-chart verdict-band zone fills + boundary hairlines — the SVG rect/line elements
+   carry these classes so the zh mirror below can re-tint them (their fill/stroke
+   presentation attrs remain as no-CSS fallbacks; CSS wins over attrs). */
+body.page-macro.mx4-grid .mx5-ph-zone-on{fill:rgba(34,217,122,.045);}
+body.page-macro.mx4-grid .mx5-ph-zone-off{fill:rgba(239,68,68,.045);}
+body.page-macro.mx4-grid .mx5-ph-hair-on{stroke:rgba(34,217,122,.22);}
+body.page-macro.mx4-grid .mx5-ph-hair-off{stroke:rgba(239,68,68,.20);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-zone-on{fill:rgba(239,68,68,.045);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-zone-off{fill:rgba(34,217,122,.045);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-hair-on{stroke:rgba(239,68,68,.20);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-hair-off{stroke:rgba(34,217,122,.22);}
 body.page-macro.mx4-grid .mx5-pl-x{
   top:96.4%;color:var(--ink-3,rgba(255,255,255,.34));
 }
@@ -5049,6 +5063,9 @@ body.page-macro.mx4-grid .mx5-mkt-price{
 body.page-macro.mx4-grid .mx5-mkt-delta{font-size:13px;font-weight:600;}
 body.page-macro.mx4-grid .mx5-mkt-delta.up{color:var(--up,#22d97a);}
 body.page-macro.mx4-grid .mx5-mkt-delta.dn{color:var(--down,#ef4444);}
+/* live.js paintChg speaks up/down (not dn) — alias it into the same token path so a
+   live-patched delta paints identically to a baked one (and flips in zh with it) */
+body.page-macro.mx4-grid .mx5-mkt-delta.down{color:var(--down,#ef4444);}
 body.page-macro.mx4-grid .mx5-spark{margin-top:10px;}
 body.page-macro.mx4-grid .mx5-spark svg{width:100%;height:32px;display:block;}
 
@@ -5212,6 +5229,8 @@ body.page-macro.mx4-grid .mx5-action-icon{
 body.page-macro.mx4-grid .mx5-action-icon svg{width:16px;height:16px;}
 /* state-tinted glass icon containers (border tints to the state colour) */
 body.page-macro.mx4-grid .mx5-ai-green{background:rgba(34,217,122,.10);border-color:rgba(34,217,122,.24);color:var(--up,#22d97a);}
+/* zh 红涨绿跌: the icon TEXT flips via --up; the glass tint is literal — mirror it */
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ai-green{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.24);}
 body.page-macro.mx4-grid .mx5-ai-yellow{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.24);color:var(--warn,#f59e0b);}
 body.page-macro.mx4-grid .mx5-ai-blue{background:rgba(129,140,248,.10);border-color:rgba(129,140,248,.26);color:#818cf8;}
 body.page-macro.mx4-grid .mx5-ai-gray{background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.5));}
@@ -5986,6 +6005,19 @@ body.page-macro.mx4-grid .mx5-sector-chip.cold{
   background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);
   color:var(--down,#ef4444);
 }
+/* zh 红涨绿跌: hot(强势)=red family, cold(退潮)=green family — text already flips
+   via --up/--down; the literal glass tints mirror here */
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-sector-chip.hot{
+  background:rgba(239,68,68,.11);border-color:rgba(239,68,68,.28);
+}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-sector-chip.cold{
+  background:rgba(34,217,122,.08);border-color:rgba(34,217,122,.22);
+}
+/* sector heat bars — hue by class (rank decay rides the bar's inline opacity) */
+body.page-macro.mx4-grid .mx5-shb-hot{background:#22d97a;}
+body.page-macro.mx4-grid .mx5-shb-cool{background:#ef4444;}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-shb-hot{background:#ef4444;}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-shb-cool{background:#22d97a;}
 body.page-macro.mx4-grid .mx5-sector-heat-divider{
   margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);
 }
@@ -6235,6 +6267,13 @@ body.page-macro.mx4-grid .mx5-spark-up polyline{stroke:#22d97a;}
 body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-area{fill:rgba(239,68,68,.08);}
 body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-line,
 body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
+/* zh 红涨绿跌 mirror — up-spark red, down-spark green (neon family preserved) */
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-area{fill:rgba(239,68,68,.10);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-line,
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-up polyline{stroke:#ef4444;}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-area{fill:rgba(34,217,122,.08);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-line,
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#22d97a;}
 
 /* ── 1.2 heatmap scorecard title hidden (eyebrow already names it) ── */
 body.page-macro.mx4-grid #dlg-heatmap-scorecard .hm-sc-tit{display:none}
@@ -6523,8 +6562,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _mx5_needle_deg = (_mx5_score / 100 * 180 - 90) | round(1) %}
     {# Score color variable class #}
     {% set _mx5_sc_cls = 'mx5-score-green' if MS.color == 'green' else ('mx5-score-yellow' if MS.color == 'yellow' else 'mx5-score-red') %}
-    {% set _mx5_sc_col = '#22d97a' if MS.color == 'green' else ('#f59e0b' if MS.color == 'yellow' else '#ef4444') %}
-    {% set _mx5_sc_glow = 'rgba(34,217,122,.7)' if MS.color == 'green' else ('rgba(245,158,11,.7)' if MS.color == 'yellow' else 'rgba(239,68,68,.7)') %}
+    {# state colour as a TOKEN so it flips in zh (红涨绿跌); var() only resolves in
+       style="", NOT in bare SVG presentation attributes — every consumer below must
+       paint via style (or be covered by a CSS rule), never via stroke=/fill= attrs. #}
+    {% set _mx5_sc_col = 'var(--up)' if MS.color == 'green' else ('var(--warn)' if MS.color == 'yellow' else 'var(--down)') %}
+    {% set _mx5_sc_glow = 'color-mix(in srgb,var(--up) 70%,transparent)' if MS.color == 'green' else ('color-mix(in srgb,var(--warn) 70%,transparent)' if MS.color == 'yellow' else 'color-mix(in srgb,var(--down) 70%,transparent)') %}
     {# Regime pill: quad_name + transition_state.
        Design-doctrine glance ruling (2026-07-16): "Goldilocks · Shifting" read as
        all-clear at a glance; the not-clear states carry their honest stance inline. #}
@@ -6605,15 +6647,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
             <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
             <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
-            <circle cx="70" cy="75" r="4.5" stroke="{{ _mx5_sc_col }}" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
-            <circle cx="70" cy="75" r="2"  fill="{{ _mx5_sc_col }}"/>
-            <circle cx="70" cy="25.5" r="2.5" fill="{{ _mx5_sc_col }}" style="filter:drop-shadow(0 0 4px {{ _mx5_sc_col }})"/>
+            <circle cx="70" cy="75" r="4.5" style="stroke:{{ _mx5_sc_col }}" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
+            <circle cx="70" cy="75" r="2"  style="fill:{{ _mx5_sc_col }}"/>
+            <circle cx="70" cy="25.5" r="2.5" style="fill:{{ _mx5_sc_col }};filter:drop-shadow(0 0 4px {{ _mx5_sc_col }})"/>
           </g>
           {# Score numeral inside arc — hidden in ledger view, visible in grid (parent hidden by CSS) #}
           <text id="mx5-score-numeral"
-                x="70" y="62" fill="{{ _mx5_sc_col }}" font-size="24" font-weight="800"
+                x="70" y="62" font-size="24" font-weight="800"
                 text-anchor="middle" font-family="Inter,-apple-system,sans-serif"
-                style="filter:drop-shadow(0 0 10px {{ _mx5_sc_glow }})">{{ _mx5_score }}</text>
+                style="fill:{{ _mx5_sc_col }};filter:drop-shadow(0 0 10px {{ _mx5_sc_glow }})">{{ _mx5_score }}</text>
           <text x="70" y="73" fill="rgba(255,255,255,.32)" font-size="11"
                 text-anchor="middle" font-family="Inter,-apple-system,sans-serif">/ 100</text>
         </svg>
@@ -7017,20 +7059,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            role="img" aria-label="{{ _mx5_hist_n }}-session macro score path, {{ _mx5_hist[0].score }} to {{ _mx5_hist[-1].score }}">
         <defs>
           <linearGradient id="mx5PathAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stop-color="{{ _mx5_sc_col }}" stop-opacity=".40"/>
-            <stop offset="62%"  stop-color="{{ _mx5_sc_col }}" stop-opacity=".07"/>
-            <stop offset="100%" stop-color="{{ _mx5_sc_col }}" stop-opacity="0"/>
+            <stop offset="0%"   style="stop-color:{{ _mx5_sc_col }}" stop-opacity=".40"/>
+            <stop offset="62%"  style="stop-color:{{ _mx5_sc_col }}" stop-opacity=".07"/>
+            <stop offset="100%" style="stop-color:{{ _mx5_sc_col }}" stop-opacity="0"/>
           </linearGradient>
         </defs>
         {# ── Verdict-band tinted zones (subtle, 4%) ──
            green risk-on: score 60–100 → y _y100.._y60 ; amber mixed: 42–60 → _y60.._y42 ;
            red risk-off: 0–42 → _y42.._y0 . #}
-        <rect x="0" y="{{ _y100 }}" width="1000" height="{{ (_y60 - _y100) | round(2) }}" fill="rgba(34,217,122,.045)"/>
+        <rect class="mx5-ph-zone-on" x="0" y="{{ _y100 }}" width="1000" height="{{ (_y60 - _y100) | round(2) }}" fill="rgba(34,217,122,.045)"/>
         <rect x="0" y="{{ _y60 }}"  width="1000" height="{{ (_y42 - _y60) | round(2) }}" fill="rgba(245,158,11,.045)"/>
-        <rect x="0" y="{{ _y42 }}"  width="1000" height="{{ (_y0 - _y42) | round(2) }}" fill="rgba(239,68,68,.045)"/>
+        <rect class="mx5-ph-zone-off" x="0" y="{{ _y42 }}"  width="1000" height="{{ (_y0 - _y42) | round(2) }}" fill="rgba(239,68,68,.045)"/>
         {# zone boundary hairlines at 42 / 60 #}
-        <line x1="0" y1="{{ _y60 }}" x2="1000" y2="{{ _y60 }}" stroke="rgba(34,217,122,.22)" stroke-width="1" stroke-dasharray="2,5"/>
-        <line x1="0" y1="{{ _y42 }}" x2="1000" y2="{{ _y42 }}" stroke="rgba(239,68,68,.20)" stroke-width="1" stroke-dasharray="2,5"/>
+        <line class="mx5-ph-hair-on" x1="0" y1="{{ _y60 }}" x2="1000" y2="{{ _y60 }}" stroke="rgba(34,217,122,.22)" stroke-width="1" stroke-dasharray="2,5"/>
+        <line class="mx5-ph-hair-off" x1="0" y1="{{ _y42 }}" x2="1000" y2="{{ _y42 }}" stroke="rgba(239,68,68,.20)" stroke-width="1" stroke-dasharray="2,5"/>
         {# NB: zone labels, y-axis numbers, x-axis dates and the today dot are NOT
            drawn in-SVG — this SVG uses preserveAspectRatio="none" (the plot band
            must stretch to fill the card), which would warp any glyph/circle. They
@@ -7046,7 +7088,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {# y-axis number labels → HTML overlay (see .mx5-path-labels below) #}
         {# ── Area fill + line ── #}
         <path d="M{{ _ph_pts_line | join(' L') }} L{{ (PX0 + PXW) | round(2) }},{{ PYB }} L{{ PX0 }},{{ PYB }} Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
-        <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="{{ _mx5_sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
+        <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" style="stroke:{{ _mx5_sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
         {# ── X-axis baseline hairline ── #}
         <line x1="{{ PX0 }}" y1="{{ PYB }}" x2="988" y2="{{ PYB }}" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
         {# ── X-axis tick marks (date labels live in the HTML overlay below) ── #}
@@ -9813,13 +9855,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   .fg-greed{--fg-col:var(--up)} .fg-fear{--fg-col:var(--down)} .fg-neutral{--fg-col:var(--warn)}
   #sx-v5-sentiment .fg-mark-s{stroke:var(--fg-col)} #sx-v5-sentiment .fg-mark-f{fill:var(--fg-col)}
   #sx-v5-sentiment .fg-lab-panic{fill:var(--down)} #sx-v5-sentiment .fg-lab-euph{fill:var(--up)}
+  /* zh 红涨绿跌: the arc gradient is baked hex (panic-red → euphoria-green Western);
+     mirror it so the greed end reads red and the fear end green, matching the
+     already-flipping 恐慌/亢奋 labels and the needle (both paint from --up/--down). */
+  html[data-lang="zh"] #sentGrad5 stop:nth-of-type(1){stop-color:#22d97a}
+  html[data-lang="zh"] #sentGrad5 stop:nth-of-type(3){stop-color:#ef4444}
+  html[data-lang="zh"] #sentGrad5 stop:nth-of-type(4){stop-color:#ef4444}
   </style>
   <div class="sx-v5-static {{ 'fg-greed' if _fgv5_dial0 > 60 else ('fg-fear' if _fgv5_dial0 < 40 else 'fg-neutral') }}" id="sx-v5-sentiment">
   {% set _fgv5 = fear_greed if (fear_greed is defined and fear_greed) else {} %}
   {% set _fgv5_dial = (_fgv5.get('dial') or 50) | float %}
   {% set _fgv5_label_en = _fgv5.get('label_en') or ('Neutral' if _fgv5_dial >= 40 and _fgv5_dial <= 60 else ('Greed' if _fgv5_dial > 60 else 'Fear')) %}
   {% set _fgv5_label_zh = _fgv5.get('label_zh') or {'Extreme Fear':'极度恐慌','Fear':'恐慌','Neutral':'中性','Greed':'贪婪','Extreme Greed':'极度贪婪'}.get(_fgv5_label_en, _fgv5_label_en) %}
-  {% set _fgv5_col = '#22d97a' if _fgv5_dial > 60 else ('#ef4444' if _fgv5_dial < 40 else '#f59e0b') %}
+  {# greed zone = bullish → --up (red in zh), fear zone = bearish → --down (green in zh);
+     var() needs style="", not SVG presentation attrs — needle paints via style below #}
+  {% set _fgv5_col = 'var(--up)' if _fgv5_dial > 60 else ('var(--down)' if _fgv5_dial < 40 else 'var(--warn)') %}
   {# Needle: SVG rotate transform — angle=dial/100*180, needle points from center (190,185) upward.
      rotate(angle-90, cx, cy) maps 0→left, 100→right; no trig needed in Jinja. #}
   {% set _fg_needle_rot = (_fgv5_dial / 100 * 180 - 90) | round(1) %}
@@ -9848,10 +9898,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {# Needle wrapped in <g> so filter bbox is always non-zero (group includes the hub circles) #}
         <g filter="url(#dialGlow5)">
           <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
-                stroke="{{ _fgv5_col }}" stroke-width="4" stroke-linecap="round"
+                style="stroke:{{ _fgv5_col }}" stroke-width="4" stroke-linecap="round"
                 transform="rotate({{ _fg_needle_rot }}, 190, 185)"/>
-          <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke="{{ _fgv5_col }}" stroke-width="2.5"/>
-          <circle class="fg-mark-f" cx="190" cy="185" r="4"  fill="{{ _fgv5_col }}"/>
+          <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" style="stroke:{{ _fgv5_col }}" stroke-width="2.5"/>
+          <circle class="fg-mark-f" cx="190" cy="185" r="4"  style="fill:{{ _fgv5_col }}"/>
         </g>
         {# Zone labels: bilingual dual-text (SVG <text> l-en/l-zh honours display CSS); placed below arc for clearance #}
         <text class="l-en fg-lab-panic" x="26"  y="208" fill="#ef4444" font-size="13" font-family="Inter,-apple-system,sans-serif" font-weight="700" text-anchor="start">PANIC</text>
@@ -9927,11 +9977,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _rk = s.get('rank', loop.index) | int %}
         {# bar height: rank 1=52px, ... decay to a 16px floor; color green for hot, red for cold #}
         {% set _bar_h = ([52 - (_rk - 1) * 5, 16] | max) %}
-        {% set _bar_col = 'rgba(34,217,122,' ~ ([0.78 - (_rk-1)*0.07, 0.28]|max) ~ ')' if _is_heat else 'rgba(239,68,68,' ~ ([0.7 - (_rk-1)*0.07, 0.22]|max) ~ ')' %}
+        {# hue via class (zh-mirrorable), rank-decay via opacity — visually identical to
+           the old per-bar rgba alpha since the bars sit on a flat card background #}
+        {% set _bar_op = ([0.78 - (_rk-1)*0.07, 0.28]|max) if _is_heat else ([0.7 - (_rk-1)*0.07, 0.22]|max) %}
         {% set _s_name = s.get('name','') %}
         {% set _s_name_zh = s.get('name_zh') or _s_name %}
         <div class="mx5-sector-heat-col" data-tip-en="{{ _s_name }}{{ ' — heating' if _is_heat else ' — cooling' }}" data-tip-zh="{{ _s_name_zh }}{{ ' — 升温' if _is_heat else ' — 退潮' }}">
-          <div class="mx5-sector-heat-bar" style="height:{{ _bar_h }}px;background:{{ _bar_col }};"></div>
+          <div class="mx5-sector-heat-bar mx5-shb-{{ 'hot' if _is_heat else 'cool' }}" style="height:{{ _bar_h }}px;opacity:{{ _bar_op }};"></div>
         </div>
         {% endfor %}
       </div>

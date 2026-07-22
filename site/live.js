@@ -71,7 +71,9 @@
   function paintChg(el, chg, stale) {
     var up = chg >= 0;
     el.textContent = (up ? "+" : "") + Number(chg).toFixed(2) + "%";
-    el.classList.remove("up", "down", "stale");
+    // "dn" is the render-time twin of "down" on mx5 tiles — drop it too, or a tile
+    // baked dn keeps its old down-colour rule after a live up-tick (green +x% in zh)
+    el.classList.remove("up", "down", "dn", "stale");
     el.classList.add(up ? "up" : "down");
     if (stale) el.classList.add("stale");      // last-session move, not live
   }
