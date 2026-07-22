@@ -298,6 +298,10 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
    ============================================================================ */
 :root{--btc:#F7931A;--btc-2:#FDB94E;--btc-soft:rgba(247,147,26,.12);--btc-line:rgba(247,147,26,.34);--btc-ink:#8a5210}
 html[data-theme="dark"]{--btc:#ffa63a;--btc-2:#ffc673;--btc-soft:rgba(255,166,58,.15);--btc-line:rgba(255,166,58,.30);--btc-ink:#ffcf8e}
+/* visible keyboard focus (doctrine: every interactive surface) — on-brand orange ring */
+:focus-visible{outline:2px solid var(--btc);outline-offset:2px;border-radius:6px}
+details.sec-fold>summary:focus-visible{outline-offset:-2px}
+.qm:focus-visible,.fmore:focus-visible{outline-offset:1px}
 
 /* ---------- section eyebrow: an orange vector tick + hairline rule ---------- */
 .vsec{display:flex;align-items:center;gap:11px;margin:46px 4px 16px;animation:vec-rise .5s cubic-bezier(.2,.7,.3,1) both}
@@ -339,6 +343,10 @@ html[data-theme="dark"]{--btc:#ffa63a;--btc-2:#ffc673;--btc-soft:rgba(255,166,58
 .vvec-band{text-align:center;font-size:21px;font-weight:800;letter-spacing:-.02em;margin-top:8px;color:var(--vtone,var(--ink))}
 .vvec-tally{text-align:center;font-size:12px;color:var(--muted);margin-top:3px}
 .vvec-tally b.bu{color:var(--blue)} .vvec-tally b.be{color:var(--r3)}
+/* balance the hero: vertically centre the vector column against the dense right column */
+.cmd>div:first-child{display:flex;flex-direction:column;justify-content:center}
+.cmd>div:first-child .cmd-h{text-align:center;margin-bottom:6px}
+@media(max-width:780px){.cmd>div:first-child{justify-content:flex-start}}
 @keyframes vvec-swing{from{transform:rotate(0deg)}}
 @keyframes vvec-flow{to{stroke-dashoffset:0}}
 @keyframes fmeter-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
