@@ -33,8 +33,9 @@ _MET_DIR = ROOT / "data" / "metabolism"
 # V10 Throttle constants (mirrors engine.metabolism.throttle)
 # ---------------------------------------------------------------------------
 _INTENSITY_ALLOWED = {"low", "normal", "high", "max"}
-# New vocab (low/medium/high/max = loops per window); legacy single/2x/4x still accepted.
-_PACE_ALLOWED_NEW = {"low", "medium", "high", "max"}
+# New vocab (loops per window; V12 adds daily=0 — chain-runner cron fully off,
+# only the staggered daily stage chain runs); legacy single/2x/4x still accepted.
+_PACE_ALLOWED_NEW = {"daily", "low", "medium", "high", "max"}
 _PACE_ALLOWED_LEGACY = {"single", "2x", "4x"}
 _PACE_ALLOWED = _PACE_ALLOWED_NEW | _PACE_ALLOWED_LEGACY
 _RUNUNTIL_ALLOWED = {"off", "5h_max", "weekly_max"}

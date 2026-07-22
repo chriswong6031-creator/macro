@@ -179,6 +179,7 @@ def key_budget(key_id: str, root: Path | None = None) -> dict:
         "pct_5h": None, "src_5h": None,
         "pct_weekly": None, "src_weekly": None,
         "reset_5h": None, "reset_weekly": None,
+        "cooling": False, "cool_kind": None,
     }
     try:
         from engine.neuralweb.key_pool import usage_snapshot  # noqa: PLC0415
@@ -211,6 +212,19 @@ def key_budget(key_id: str, root: Path | None = None) -> dict:
                 result["reset_5h"] = parsed["reset_5h"]
             if parsed["reset_weekly"] is not None:
                 result["reset_weekly"] = parsed["reset_weekly"]
+
+        # V12 (R-V12-9): a 429 IS Anthropic reporting the window is done.
+        # A key cooling on a window 429 scores pct_5h=100 (src "429_window")
+        # so the gate finally has readings even when header capture is broken
+        # — the failure mode that let auto-run burn every key to the wall.
+        result["cooling"] = bool(row.get("cooling"))
+        result["cool_kind"] = row.get("cool_kind")
+        if result["cooling"] and result["pct_5h"] is None:
+            if str(row.get("cool_kind") or "").strip().lower() == "window":
+                result["pct_5h"] = 100.0
+                result["src_5h"] = "429_window"
+                if result["reset_5h"] is None and row.get("reset_hint"):
+                    result["reset_5h"] = str(row.get("reset_hint"))
 
         # Est fallback for any dimension still unknown
         est_5h = int(row.get("window_5h_est_tokens") or 0)
@@ -280,6 +294,7 @@ def gate_verdict(mode: str, root: Path | None = None) -> dict:
         "eligible_keys": [],
         "all_done": False,
         "blocked": False,
+        "known_readings": 0,
         "reason": "",
         "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
@@ -302,12 +317,25 @@ def gate_verdict(mode: str, root: Path | None = None) -> dict:
         weekly_stop = cfg["weekly_key_stop_pct"]
         manual_floor = cfg["manual_floor_pct"]
 
+        # V12 (R-V12-9): verdicts expose how many keys have ANY known reading
+        # (reported header, est fallback, or a 429-derived cap) — RUN_UNTIL
+        # burn modes refuse to chain when this is zero (blind burn is the one
+        # thing the gate must never do).
+        result["known_readings"] = sum(
+            1 for kb in per_key.values()
+            if kb.get("pct_5h") is not None or kb.get("pct_weekly") is not None
+        )
+
         if mode == "5h_max":
             eligible = []
             any_known_5h = False
             for kid, kb in per_key.items():
                 if kb["pct_5h"] is not None:
                     any_known_5h = True
+                # V12 (R-V12-9): a currently-cooling key cannot take a session
+                # NOW — it is never eligible, whatever its pct reads say.
+                if kb.get("cooling"):
+                    continue
                 # Operator rule: no sessions on keys past the 90% weekly floor
                 # regardless of mode — a session started on such a key would likely
                 # trip the weekly limit mid-run.  Unknown weekly does NOT exclude
@@ -336,10 +364,11 @@ def gate_verdict(mode: str, root: Path | None = None) -> dict:
             for kid, kb in per_key.items():
                 pct_wk = kb["pct_weekly"]
                 pct_5h = kb["pct_5h"]
-                # eligible: weekly below per-key stop AND 5h below window threshold
+                # eligible: not cooling (V12 R-V12-9) AND weekly below per-key
+                # stop AND 5h below window threshold
                 wk_ok = pct_wk is None or pct_wk < weekly_stop
                 fiveh_ok = pct_5h is None or pct_5h < fivehour_done
-                if wk_ok and fiveh_ok:
+                if not kb.get("cooling") and wk_ok and fiveh_ok:
                     eligible.append(kid)
                 # Track whether ALL keys have known weekly >= weekly_done_pct
                 if pct_wk is not None:

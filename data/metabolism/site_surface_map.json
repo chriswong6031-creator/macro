@@ -1,0 +1,3669 @@
+{
+ "schema": "metabolism.surface_map.v1",
+ "generated_by": "build_surface_map",
+ "pages": {
+  "_mockup_ccw_credit_desk.html": {
+   "bytes": 23794,
+   "markers": 7,
+   "outline": [
+    "Overall read 整体研判",
+    "Spread gauges 利差仪表",
+    "AI &amp; tech themes AI与科技主题",
+    "On the watch list 观察名单",
+    "Bond market tape 债券市场行情",
+    "When the debt comes due 债务到期分布",
+    "Stocks vs their bonds 股票与其债券"
+   ],
+   "saturated": false
+  },
+  "advanced.html": {
+   "bytes": 91234,
+   "markers": 16,
+   "outline": [
+    "🔬 Quant Lab — advanced analytics 量化实验室 — 进阶分析",
+    "🌐 Cross-asset concentration — are the six markets one bet? 跨资产集中度 — 六大市场是否同一笔押注？",
+    "Dominant cluster (PC1 loadings) 主导聚类（PC1 载荷）",
+    "Most-correlated pairs 相关性最高的配对",
+    "Correlation matrix (63-day, risk-on-oriented) 相关性矩阵（63日，按风险偏好定向）",
+    "⚖️ Risk budgeting across the six markets 六大市场的风险预算 ? If you expressed all six ma",
+    "🌊 Crisis stress replay 危机压力回放 ? What an equal-weight book of the then-available ",
+    "🧮 Factor IC scorecard — leak-free (point-in-time) 因子 IC 记分卡 — 无前视（时点） ? Each equ",
+    "The two dials behind the regime 周期背后的两个刻度盘 ? The regime label comes from two sco",
+    "What&#39;s voting for this regime 哪些指标在为此周期投票",
+    "Weakest link 最薄弱环节",
+    "Does the market agree with the regime? 市场是否认同此周期？",
+    "Market internals — risk appetite gauges 市场内部结构 — 风险偏好计 ? Simple ratios between t",
+    "US equity — size &amp; style 美股 — 规模与风格 ? Is the advance broad or narrow? Small/",
+    "🐳 Accumulation watch — sector ETFs 增持监测 — 板块 ETF ? Each sector SPDR&#39;s top we",
+    "Star fund managers&#39; real moves &amp; ETF money flows 明星基金经理的真实动作与 ETF 资金流 ? "
+   ],
+   "saturated": false
+  },
+  "ai_desk.html": {
+   "bytes": 43243,
+   "markers": 1,
+   "outline": [
+    "🖥️ AI Desk AI交易台"
+   ],
+   "saturated": false
+  },
+  "aibrief.html": {
+   "bytes": 94825,
+   "markers": 19,
+   "outline": [
+    "🧠 AI Daily Brief AI每日简报",
+    "Right now 当前状态",
+    "What's ahead 近期日程",
+    "🇺🇸 Macro · cross-asset synthesis 宏观 · 跨资产综合 ? AI synthesis of the macro picture ",
+    "🇨🇳 China & Hong Kong synthesis 中港综合 ? An AI-generated synthesis of the China & H",
+    "₿ Bitcoin synthesis 比特币综合 ? An AI-generated synthesis of the Bitcoin Vector — cy",
+    "The brief's own record 简报自身记录",
+    "Overnight deliberation 隔夜AI复盘",
+    "AI Daily Brief · cross-asset synthesis AI 每日简报 · 跨资产综合",
+    "&#x2696;&#xFE0E; Where signals disagree &#x2696;&#xFE0E; 信号分歧",
+    "&#x26D3;&#xFE0E; Chain reactions &#x26D3;&#xFE0E; 连锁反应",
+    "&#x267B;&#xFE0E; Playbook check &#x267B;&#xFE0E; 剧本对照",
+    "AI Daily Brief · China &amp; HK synthesis AI 每日简报 · 中港综合",
+    "AI Daily Brief · Bitcoin synthesis AI 每日简报 · 比特币综合"
+   ],
+   "saturated": false
+  },
+  "alerts.html": {
+   "bytes": 289416,
+   "markers": 6,
+   "outline": [
+    "🚨 Alert Command Center 警报指挥中心",
+    "The stories behind the alerts 警报背后的脉络 ? Related alerts collapse into one narrati",
+    "Backdrop — the context every alert is read against 背景 — 解读每条警报的共同语境",
+    "the tape right now",
+    "● 4 new today"
+   ],
+   "saturated": true
+  },
+  "allocation.html": {
+   "bytes": 251444,
+   "markers": 14,
+   "outline": [
+    "🔄 Narrative Rotation 主题轮动 · US 美国",
+    "01 Suggested allocation 建议配置",
+    "⚖ Optional de-risk overlay 可选降风险叠加 backtested · offered, not forced 已回测 · 可选而非强制",
+    "★ 🎯 Buy &amp; sell entries — the playbook 买卖入场 — 操作手册 discipline, not advice 纪律，",
+    "★ 🌡️ Risk over time 风险随时间 cash dial &amp; de-risk events 现金刻度与去风险事件",
+    "★ 🔔 Rotation alerts 轮动警报 book &amp; leadership changes 组合与领涨变化",
+    "02 Narrative lifecycle board 叙事生命周期看板 rank = focus lens, not a forecast 排名=关注透镜，",
+    "03 Rotation radar 轮动雷达 display-only 仅展示",
+    "04 What is actually validated — sector backtest 真正验证过的 — 行业回测",
+    "05 AI desk guardrails AI 桌约束",
+    "06 Candidate themes — discovery radar 候选主题 — 发现雷达 display-only · for human revie",
+    "${head} (${arr.length})"
+   ],
+   "saturated": true
+  },
+  "allocation_canada.html": {
+   "bytes": 136221,
+   "markers": 13,
+   "outline": [
+    "🔄 Narrative Rotation 主题轮动 · Canada / TSX 加拿大",
+    "01 Suggested allocation 建议配置",
+    "⚖ Optional de-risk overlay 可选降风险叠加 backtested · offered, not forced 已回测 · 可选而非强制",
+    "★ 🎯 Buy &amp; sell entries — the playbook 买卖入场 — 操作手册 discipline, not advice 纪律，",
+    "★ 🌡️ Risk over time 风险随时间 cash dial &amp; de-risk events 现金刻度与去风险事件",
+    "★ 🔔 Rotation alerts 轮动警报 book &amp; leadership changes 组合与领涨变化",
+    "02 Narrative lifecycle board 叙事生命周期看板 rank = focus lens, not a forecast 排名=关注透镜，",
+    "03 Rotation radar 轮动雷达 display-only 仅展示",
+    "04 What is actually validated — sector backtest 真正验证过的 — 行业回测",
+    "05 AI desk guardrails AI 桌约束",
+    "${head} (${arr.length})"
+   ],
+   "saturated": false
+  },
+  "allocation_china.html": {
+   "bytes": 158489,
+   "markers": 13,
+   "outline": [
+    "🔄 Narrative Rotation 主题轮动 · China A-shares 中国A股",
+    "01 Suggested allocation 建议配置",
+    "⚖ Optional de-risk overlay 可选降风险叠加 backtested · offered, not forced 已回测 · 可选而非强制",
+    "★ 🎯 Buy &amp; sell entries — the playbook 买卖入场 — 操作手册 discipline, not advice 纪律，",
+    "★ 🌡️ Risk over time 风险随时间 cash dial &amp; de-risk events 现金刻度与去风险事件",
+    "★ 🔔 Rotation alerts 轮动警报 book &amp; leadership changes 组合与领涨变化",
+    "02 Narrative lifecycle board 叙事生命周期看板 rank = focus lens, not a forecast 排名=关注透镜，",
+    "03 Rotation radar 轮动雷达 display-only 仅展示",
+    "04 What is actually validated — sector backtest 真正验证过的 — 行业回测",
+    "05 AI desk guardrails AI 桌约束",
+    "${head} (${arr.length})"
+   ],
+   "saturated": false
+  },
+  "allocation_hk.html": {
+   "bytes": 152203,
+   "markers": 14,
+   "outline": [
+    "🔄 Narrative Rotation 主题轮动 · Hong Kong 香港",
+    "01 Suggested allocation 建议配置",
+    "⚖ Optional de-risk overlay 可选降风险叠加 backtested · offered, not forced 已回测 · 可选而非强制",
+    "★ 🎯 Buy &amp; sell entries — the playbook 买卖入场 — 操作手册 discipline, not advice 纪律，",
+    "★ 🌡️ Risk over time 风险随时间 cash dial &amp; de-risk events 现金刻度与去风险事件",
+    "★ 🔔 Rotation alerts 轮动警报 book &amp; leadership changes 组合与领涨变化",
+    "02 Narrative lifecycle board 叙事生命周期看板 rank = focus lens, not a forecast 排名=关注透镜，",
+    "03 Rotation radar 轮动雷达 display-only 仅展示",
+    "04 What is actually validated — sector backtest 真正验证过的 — 行业回测",
+    "05 AI desk guardrails AI 桌约束",
+    "${head} (${arr.length})",
+    "Leaders moving first 龙头先行"
+   ],
+   "saturated": false
+  },
+  "alt_data.html": {
+   "bytes": 130432,
+   "markers": 37,
+   "outline": [
+    "Alternative Data 替代数据",
+    "🎯 Conviction board 置信榜 deterministic convergence only — AI read unavailable; not",
+    "⚠ Attention on broken names — crowd activity, NOT entries 问题标的受关注——仅为人气聚焦，非入场信号 ",
+    "🕸️ Influence graph 影响力图谱 important actors → the names they control, hold, talk a",
+    "📊 Track record 战绩 every convergence logged as a dated, falsifiable thesis vs SPY",
+    "🔬 Signal feeds 信号源 each feed as its derived signal — Quiver + federal grants · S",
+    "📜 Gov-contract leaders 政府合同领先 30d",
+    "🏛️ Congress net buying 国会净买入 90d",
+    "👔 Insider net buying 内部人净买入 90d",
+    "📱 App-store demand 应用商店需求",
+    "🔬 Patent clusters 专利集群",
+    "💼 Lobbying spend 游说支出 45d",
+    "🏦 Institutional 13F adds 机构13F加仓",
+    "📑 Bill catalysts 法案催化",
+    "🏗️ Federal grants / loans 联邦补助/贷款 CHIPS·DOE·IRA",
+    "💊 FDA catalysts FDA催化",
+    "🧬 Phase-3 pipeline 三期管线",
+    "📄 Material 8-K clusters 重大8-K集群 30d",
+    "🧲 Unusual options flow 异常期权流",
+    "🤖 AI model adoption AI模型采用 HF dl WoW"
+   ],
+   "saturated": true
+  },
+  "anticipation.html": {
+   "bytes": 214311,
+   "markers": 4,
+   "outline": [
+    "🔮 Anticipation 预判",
+    "Drivers 驱动因子 ( ★ = validated / scored · dashed = display-only ★ = 已验证/计分 · 虚线 = ",
+    "All assets — ranked by anticipation index (stress) 全部标的 — 按预判指数（压力）排序",
+    "'+T('Trust & honesty','可信度与诚实')+'"
+   ],
+   "saturated": false
+  },
+  "baskets.html": {
+   "bytes": 1460265,
+   "markers": 17,
+   "outline": [
+    "🧺 Thematic baskets 主题篮子",
+    "✅ What to act on now 现在该做什么 buy now · wait for a pullback · reduce / avoid 立即买入 ",
+    "🧭 Theme Rotation Desk 主题轮动台 scored · labeled · actionable 评分 · 标注 · 可执行",
+    "Rotation this week 本周轮动",
+    "Money flow 资金流向 ⓘ",
+    "Performance table 表现一览",
+    "Performance 走势对比",
+    "${emo} ${L(en,zh)}",
+    "${head} (${arr.length})",
+    "${sign} ${L(en,zh)}",
+    "${kind==='entry'?'✦':'⚠'} ${L(en,zh)}"
+   ],
+   "saturated": true
+  },
+  "baskets_canada.html": {
+   "bytes": 478192,
+   "markers": 23,
+   "outline": [
+    "🧺 Canada thematic baskets 加拿大主题篮子",
+    "★ 🔥 Sector ignition 板块点火 turn evidence · not trailing strength 拐点证据 · 非追涨强度",
+    "★ ✅ What to act on now 现在该做什么 buy now · wait for a pullback · reduce / avoid 立即买",
+    "★ 🧭 Theme Rotation Desk 主题轮动台 scored · labeled · actionable 评分 · 标注 · 可执行",
+    "★ 🛑 Market concentration &amp; theme leadership 市场集中度与主题领导力 who owns the advance",
+    "★ 📆 5-Day Theme Rotation 5日主题轮动 weekly climbers &amp; fallers 本周上升与下降",
+    "★ ⚡ Impulse &amp; Extremes 脉冲与极值 across the thematic universe 覆盖全部主题成分",
+    "01 Performance table 表现一览",
+    "02 Performance 走势对比",
+    "03 Baskets by category 按类别分组",
+    "${esc(catLabel(cat))}",
+    "${esc(bn(b))} ${esc(catLabel(b.category))}"
+   ],
+   "saturated": true
+  },
+  "baskets_china.html": {
+   "bytes": 1034048,
+   "markers": 20,
+   "outline": [
+    "🧺 China thematic baskets A股主题篮子",
+    "★ ✅ What to act on now 现在该做什么 buy now · wait for a pullback · reduce / avoid 立即买",
+    "★ 🧭 Theme Rotation Desk 主题轮动台 scored · labeled · actionable 评分 · 标注 · 可执行",
+    "★ 🛑 Market concentration &amp; theme leadership 市场集中度与主题领导力 who owns the advance",
+    "★ 📆 5-Day Theme Rotation 5日主题轮动 weekly climbers &amp; fallers 本周上升与下降",
+    "★ ⚡ Impulse &amp; Extremes 脉冲与极值 across the thematic universe 覆盖全部主题成分",
+    "01 Performance table 表现一览",
+    "02 Performance 走势对比",
+    "03 Baskets by category 按类别分组",
+    "${esc(catLabel(cat))}",
+    "${nameLink(b)} ${esc(catLabel(b.category))}"
+   ],
+   "saturated": true
+  },
+  "baskets_china_ths.html": {
+   "bytes": 3313873,
+   "markers": 9,
+   "outline": [
+    "🧺 China thematic baskets A股主题篮子 · 同花顺 themes 同花顺主题",
+    "01 Performance table 表现一览",
+    "02 Performance 走势对比",
+    "03 Baskets by category 按类别分组",
+    "${esc(catLabel(cat))}",
+    "${nameLink(b)} ${esc(catLabel(b.category))}"
+   ],
+   "saturated": true
+  },
+  "baskets_hk.html": {
+   "bytes": 482108,
+   "markers": 23,
+   "outline": [
+    "🧺 Hong Kong thematic baskets 香港主题篮子",
+    "★ 🔥 Sector ignition 板块点火 turn evidence · not trailing strength 拐点证据 · 非追涨强度",
+    "★ ✅ What to act on now 现在该做什么 buy now · wait for a pullback · reduce / avoid 立即买",
+    "★ 🧭 Theme Rotation Desk 主题轮动台 scored · labeled · actionable 评分 · 标注 · 可执行",
+    "★ 🛑 Market concentration &amp; theme leadership 市场集中度与主题领导力 who owns the advance",
+    "★ 📆 5-Day Theme Rotation 5日主题轮动 weekly climbers &amp; fallers 本周上升与下降",
+    "★ ⚡ Impulse &amp; Extremes 脉冲与极值 across the thematic universe 覆盖全部主题成分",
+    "01 Performance table 表现一览",
+    "02 Performance 走势对比",
+    "03 Baskets by category 按类别分组",
+    "${esc(catLabel(cat))}",
+    "${esc(bn(b))} ${esc(catLabel(b.category))}"
+   ],
+   "saturated": true
+  },
+  "baskets_intl.html": {
+   "bytes": 516542,
+   "markers": 20,
+   "outline": [
+    "🌍 International thematic baskets 国际主题篮子",
+    "★ ✅ What to act on now 现在该做什么 buy now · wait for a pullback · reduce / avoid 立即买",
+    "★ 🧭 Theme Rotation Desk 主题轮动台 scored · labeled · actionable 评分 · 标注 · 可执行",
+    "★ 🛑 Market concentration &amp; theme leadership 市场集中度与主题领导力 who owns the advance",
+    "★ 📆 5-Day Theme Rotation 5日主题轮动 weekly climbers &amp; fallers 本周上升与下降",
+    "★ ⚡ Impulse &amp; Extremes 脉冲与极值 across the thematic universe 覆盖全部主题成分",
+    "01 Performance table 表现一览",
+    "02 Performance 走势对比",
+    "03 Baskets by category 按类别分组",
+    "${esc(catLabel(cat))}",
+    "${esc(bn(b))} ${esc(catLabel(b.category))}"
+   ],
+   "saturated": true
+  },
+  "bonds.html": {
+   "bytes": 438336,
+   "markers": 23,
+   "outline": [
+    "Bond health score 债券健康度",
+    "Bond health — history 债券健康度 · 历史",
+    "Duration lean — the classic bond factors, blended 久期倾向 · 经典债券因子综合",
+    "Curve trade &amp; expected return 曲线交易与预期回报",
+    "Where the market prices the funds rate — and where the Fed projects it 市场为基金利率定价",
+    "Credit — the &#34;smart money&#34; canary 信用 · “聪明钱”预警",
+    "Real rates &amp; inflation — the discount rate 实际利率与通胀 · 贴现率",
+    "Overall read 整体研判",
+    "Spread gauges 利差仪表",
+    "AI &amp; tech themes AI与科技主题",
+    "On the watch list 观察名单",
+    "Bond market tape 债券市场行情",
+    "When the debt comes due 债务到期分布",
+    "Stocks vs their bonds 股票与其债券",
+    "Rates volatility &amp; funding plumbing 利率波动与资金管道",
+    "Stock-bond correlation — is the hedge working? 股债相关性 · 对冲是否有效？",
+    "Global sovereign scorecard — G10 + EM 全球主权记分卡 · G10 + 新兴市场",
+    "Euro-area fragmentation &amp; the JGB curve 欧元区分化与日债曲线",
+    "Global credit cycle — the crisis early-warning (BIS) 全球信用周期 · 危机预警 (BIS)",
+    "What bonds are doing to each market — right now 当前债券对各市场的影响"
+   ],
+   "saturated": true
+  },
+  "btc_strategy.html": {
+   "bytes": 58543,
+   "markers": 11,
+   "outline": [
+    "₿ BTC Strategy BTC策略",
+    "Equity curve — $1 grown, log scale 净值曲线 — $1 增长，对数刻度",
+    "Leverage — honest outcomes 杠杆 — 真实结果",
+    "Cycle pivots · projected 周期拐点 · 预测",
+    "How it works 运作方式",
+    "⚠ Honest caveats 诚实警示"
+   ],
+   "saturated": false
+  },
+  "calibration.html": {
+   "bytes": 22537,
+   "markers": 4,
+   "outline": [
+    "Calibration Hub",
+    "Phase-C desks — are the falsifiable-thesis loops right?",
+    "Board track records — standing accuracy, all known boards (SA-W5, display-only)",
+    "Trial Ledger — honest multiple-testing counts (P3 keystone)"
+   ],
+   "saturated": false
+  },
+  "canada.html": {
+   "bytes": 132543,
+   "markers": 30,
+   "outline": [
+    "🇨🇦 Canada — S&P/TSX Regime 加拿大 — 标普/TSX 周期",
+    "Factor Breakdown",
+    "TSX Market State — components TSX 市场状态 — 组成部分",
+    "Pullback Risk Radar",
+    "CA External Risk Monitor 加拿大外部风险监控",
+    "What To Do",
+    "✅ Buy now 立即买入",
+    "⏳ Buy soon 即将买入",
+    "💰 Take profits 止盈",
+    "✋ Hold 持有",
+    "🚫 Avoid 回避",
+    "Regime Watch",
+    "Current quad 当前象限",
+    "Quad-preferred sectors 象限偏好板块",
+    "Lifespan base rates 寿命基准率",
+    "Growth & inflation axes over time 增长与通胀轴历史",
+    "Market Participation",
+    "Breadth snapshot 广度快照",
+    "Sector Rotation",
+    "Commodities & FX Overlay"
+   ],
+   "saturated": true
+  },
+  "canada_heatmap.html": {
+   "bytes": 42585,
+   "markers": 1,
+   "outline": [
+    "🔥 Canada · TSX Heatmap 加拿大 · TSX 热力图"
+   ],
+   "saturated": false
+  },
+  "canada_history.html": {
+   "bytes": 384291,
+   "markers": 4,
+   "outline": [
+    "Canada regime history 加拿大周期历史",
+    "Regimes over the S&P/TSX Composite 标普/TSX 综合指数 周期叠加 ? The S&P/TSX Composite with",
+    "The two dials over time 两大指标随时间变化 ? History of the growth (green) and inflation ",
+    "Regime lifespans — base rates 周期存续期 — 基准概率 ? Every regime period in this classif"
+   ],
+   "saturated": true
+  },
+  "canada_stock.html": {
+   "bytes": 89607,
+   "markers": 15,
+   "outline": [
+    "🔎 TSX analyzer TSX 个股分析",
+    "Chart 图表",
+    "Momentum across timeframes 跨周期动量",
+    "Conviction profile 确信度画像 · unified verdict — cycle caps it 统一结论 — 周期封顶",
+    "Relative strength 相对强度 · sector-neutral residual 板块中性残差",
+    "Fundamentals 基本面 · context, not a signal 背景，而非信号 ? Descriptive valuation, profit",
+    "👔 Analyst &amp; estimates 分析师与预期 · sell-side consensus 卖方一致预期 ? yfinance sell-si",
+    "📅 Earnings 财报",
+    "Positioning 持仓与做空 · short interest &amp; ownership 空头与持股结构 ? Short interest (sha",
+    "👤 Insider activity 内部人交易 · SEDI open-market filings (yfinance) SEDI 公开市场申报（yfina",
+    "Commodity exposure 商品敞口 · oil / gold / loonie beta 原油／黄金／加元贝塔 ? This name's sens",
+    "How much to trust the state — measured on TSX history 这个状态有多可信 — 基于TSX历史实测 ? TSX"
+   ],
+   "saturated": false
+  },
+  "canada_stocks.html": {
+   "bytes": 163305,
+   "markers": 11,
+   "outline": [
+    "🇨🇦 TSX Stock Dashboard 标普/TSX 个股看板",
+    "⚡ What to act on now — sectors 当前可操作 — 板块 ? The TSX sector groups bucketed by th",
+    "✅ Buy now 立即买入 (1)",
+    "⏳ Buy soon 即将买入 (2)",
+    "🏃 ON THE RUN — don't chase 顺势运行 — 勿追高 (0)",
+    "💰 Take profits 止盈 (3)",
+    "✋ Hold 持有 (1)",
+    "🚫 Avoid 回避 (5)",
+    "⚡ Prophet Stock Signals — TSX ripe list ⚡ 先知选股 — TSX 成熟清单 10 shown · 已显示 · 5 bot",
+    "Canada board · vs TSX 加拿大榜单 · 对比多伦多指数",
+    "Track record 榜单往绩"
+   ],
+   "saturated": false
+  },
+  "chat.html": {
+   "bytes": 72867,
+   "markers": 5,
+   "outline": [
+    "Threads 对话",
+    "Ask the Mastermind 向操盘大脑提问",
+    "What do you want to know? 你想了解什么？",
+    "' + esc(t.title || L('Untitled', '无标题')) + '"
+   ],
+   "saturated": false
+  },
+  "china.html": {
+   "bytes": 216250,
+   "markers": 51,
+   "outline": [
+    "Market State — Evidence & Signals",
+    "What the composite measures 综合指标测量 · 31/100 Risk-off 避险",
+    "Signals — do they agree? 各信号 — 是否一致？",
+    "The regime — and where it's headed 当前周期 — 及走向",
+    "Market drivers 市场驱动",
+    "A-Share Phase A股阶段",
+    "Pullback Risk — Radar & Gauges",
+    "Risk radar 风险雷达 · 89/100",
+    "Deep-drawdown gauge 深跌仪表",
+    "Slowdown gauge 放缓仪表",
+    "FX context 外汇背景",
+    "Markets — Index Health & Cross-Asset",
+    "Index health 指数健康度",
+    "Sector temperature 板块温度",
+    "A-share sector heatmap A股板块热力图",
+    "Key rates & cross-asset 关键利率与跨资产",
+    "Market Sentiment — Breakdown",
+    "Margin crowd meter 两融拥挤度",
+    "Sentiment thermometer 情绪温度计",
+    "Sectors — Ladder, Rotation & Breadth"
+   ],
+   "saturated": true
+  },
+  "china_allocation.html": {
+   "bytes": 137644,
+   "markers": 11,
+   "outline": [
+    "Recommended allocation 建议仓位 · Balanced 均衡",
+    "What this blend has delivered 该组合的历史表现 (2013-07-19→)",
+    "Growth of ¥1 (log) ¥1 增长（对数）",
+    "Underwater (drawdown) 水下回撤",
+    "China Allocation · Income Vector 中国仓位 · 红利向量",
+    "Where each sleeve is now 各组成部分现状",
+    "Growth of ¥1 and drawdown · vs CSI 300 ¥1 增长与回撤 · 对比沪深300",
+    "The three variants · pick your drawdown tolerance 三种风险档 · 按回撤承受力选择",
+    "We tested a momentum overlay — here is why it is OFF 我们测试了动量叠加 —— 这是它被关闭的原因",
+    "The instruments · liquid onshore ETFs 所用工具 · 流动性强的在岸 ETF",
+    "Independent drawdown episodes · the true sample size 独立回撤事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "china_altdata.html": {
+   "bytes": 97266,
+   "markers": 13,
+   "outline": [
+    "China Alternative-Data Desk 中国另类数据台",
+    "🎯 Multi-feed convergence 多源共振 ≥3 of 7 independent feeds agree 7源中≥3源一致 · 3994",
+    "🏅 Broker gold-stock picks 券商金股 202607 · Tushare premium Tushare 付费",
+    "📣 Earnings-guidance surprises 业绩预告 Tushare premium · validated as the guidance f",
+    "⚠️ Leverage-crowding flags 杠杆拥挤标记",
+    "🔬 China Signal Lab 中国信号实验室",
+    "Scored 已评分 3",
+    "Confirmer 确认器 2",
+    "Display 展示 10",
+    "Pending 待验 10",
+    "Killed 已淘汰 2",
+    "🛰️ Alternative Data 另类数据"
+   ],
+   "saturated": false
+  },
+  "china_heatmap.html": {
+   "bytes": 42577,
+   "markers": 1,
+   "outline": [
+    "🔥 China A-share Heatmap A股市场热力图"
+   ],
+   "saturated": false
+  },
+  "china_history.html": {
+   "bytes": 413736,
+   "markers": 9,
+   "outline": [
+    "China A-share regime history 中国A股周期历史",
+    "Regimes over the Shanghai Composite 上证综指 周期叠加 ? The Shanghai Composite with the ",
+    "The two dials over time 两大指标随时间变化 ? History of the growth (green) and inflation ",
+    "Regime lifespans — base rates 周期存续期 — 基准概率 ? Every regime period since ~2006 in ",
+    "Cycle Phase Memory 周期阶段记忆 ? Current A-share cycle phase from the W3 lobe, with a",
+    "90-session phase strip 90个交易日阶段图条",
+    "Historical ERA table 历史ERA对照表 ? Known A-share market cycle eras since 2005. Each",
+    "Historical analogs (display-only) 历史类比（仅供展示） ? Top-5 closest historical dates by"
+   ],
+   "saturated": true
+  },
+  "china_intel.html": {
+   "bytes": 131592,
+   "markers": 23,
+   "outline": [
+    "China Intelligence Hub 中国情报中心",
+    "🖥️ Desk Status Board 面板状态",
+    "📜 Policy Phrase Shifts 政策表述变化",
+    "🧩 Cross-surface conviction 跨面板共振",
+    "🏷️ Flagged tickers 标记个股",
+    "🔗 Transmission chains 传导链条",
+    "🗂️ Intelligence Surfaces 情报面板",
+    "📅 Next catalysts 即将催化",
+    "🔮 Standing policy calls 政策预测",
+    "⚡ China Command List 中国指挥清单",
+    "🔭 Discovery Queue 发现队列",
+    "🕰️ Cycle Context & Historical Analogs 周期背景与历史类比",
+    "🗺️ China Suite Directory 中国页面目录",
+    "🧠 China Intelligence 中国情报中心",
+    "Intelligence Spokes 情报分支",
+    "Market Boards 市场板",
+    "Sectors 板块",
+    "Themes & Rotation 主题与轮动",
+    "Strategy & Allocation 策略与配置"
+   ],
+   "saturated": false
+  },
+  "china_lookup.html": {
+   "bytes": 91300,
+   "markers": 13,
+   "outline": [
+    "🔎 A-Share analyzer A股分析",
+    "Chart 图表",
+    "Momentum across timeframes 跨周期动量",
+    "Relative strength & mean-reversion 相对强度与均值回归 · sector-neutral residual 板块中性残差",
+    "Fundamentals 基本面 · context, not a signal 背景，而非信号 ? Descriptive financial health,",
+    "Valuation band 估值分位 · own 5-year range 自身5年区间 ? Where today's multiple sits insi",
+    "👔 Analyst &amp; estimates 分析师与预期 · sell-side consensus 卖方一致预期 ? Eastmoney sell-s",
+    "📅 Earnings &amp; disclosure 财报披露",
+    "Margin positioning 融资融券仓位 · leveraged financing 杠杆资金 ? Per-name margin financing",
+    "How much to trust the state — measured 2008→2026 这个状态有多可信 — 实测 2008→2026 ? A-sha"
+   ],
+   "saturated": false
+  },
+  "china_mechanics.html": {
+   "bytes": 161928,
+   "markers": 22,
+   "outline": [
+    "A-Share Market Mechanics A股市场结构",
+    "Participation — Who's Trading &amp; How Hot 参与度 — 谁在交易、热度几何",
+    "Limit Mechanics — Daily Price Limits 涨跌停板机制 ? CN-SYS-R3: Limit-up/down data is m",
+    "Cycle Phase Memory 周期阶段记忆 ? Current phase classification with confidence and a 9",
+    "Policy Tape 政策磁带",
+    "Cross-Market Context 跨市场背景 ? CGB (China Government Bond) curve from the yield st",
+    "Glossary 术语表",
+    "Market Cycle Position 市场周期位置",
+    "Breadth Thermometer — % of universe 涨跌比（占全市场比例）",
+    "China Govt Bond Yield Curve",
+    "${e.title}"
+   ],
+   "saturated": false
+  },
+  "china_news.html": {
+   "bytes": 110730,
+   "markers": 37,
+   "outline": [
+    "华尔街见闻早餐 | 2026年7月22日 华尔街见闻早餐 | 2026年7月22日",
+    "提醒：日内请重点关注（以下均为北京时间） 提醒：日内请重点关注（以下均为北京时间）",
+    "金十数据整理：A股盘前市场要闻速递（2026-07-22） 金十数据整理：A股盘前市场要闻速递（2026-07-22）",
+    "【A股温度计】市场估值指标统计：双双在区间边界附近波动 【A股温度计】市场估值指标统计：双双在区间边界附近波动",
+    "金十数据整理：每日港股市场要闻速递（2026-07-22） 金十数据整理：每日港股市场要闻速递（2026-07-22）",
+    "险企表态后银行接棒，兴业银行率先发声“坚定看好资本市场” 努力提升分红回报水平，以稳健经营回馈股东信任。 险企表态后银行接棒，兴业银行率先发声“坚定看好资本市场",
+    "证监会：持续加强基础制度建设 增强市场内在稳定性 证监会：持续加强基础制度建设 增强市场内在稳定性",
+    "证监会召开上市公司、行业机构、专家学者系列座谈会 持续加强市场基础制度建设 增强市场内在稳定性 证监会召开上市公司、行业机构、专家学者系列座谈会 持续加强市场基",
+    "Preliminary Accounting Results of GDP for the Second Quarter and the First Half ",
+    "Shanghai beats GDP estimates with 5.6% growth – but two-speed recovery persists ",
+    "盘前必读丨证监会释放稳市信号；北京将布局建设Token工厂 机构认为，市场信心有望持续修复，A股长期稳健发展、价值投资主导的运行大趋势不变。 盘前必读丨证监会释",
+    "专访张晓晶：直接融资反超信贷，中国制度化创新冒险能力持续增强｜科创资本论 “站在当下直接融资增量首次超过信贷的特殊节点，我们可以作出一个全新判断：中国制度化的创",
+    "“股债跷跷板”失灵，降准预期升温下债市逻辑生变 仍待观察。 “股债跷跷板”失灵，降准预期升温下债市逻辑生变 仍待观察。",
+    "外资机构密集发声看好中国股市 外资机构密集发声看好中国股市",
+    "中国资产从“可选项”升级为“必选项” 外资机构密集发声看好中国股市 中国资产从“可选项”升级为“必选项” 外资机构密集发声看好中国股市",
+    "China Merchants Securities drops South Korea ETF as Seoul stock volatility spill",
+    "China's SC crude oil main contract rose 4.00% intraday to 552.10 yuan/barrel Chi",
+    "Ikea’s China remodelling: parent firm puts 8 former retail sites on block 宜家中国布局",
+    "Deputy Governor Xuan Changneng Speaks with John Berrigan, Director-General for F",
+    "滔搏：耐克产品线上平台销售将于2027年1月1日起全面终止 滔搏：耐克产品线上平台销售将于2027年1月1日起全面终止"
+   ],
+   "saturated": true
+  },
+  "china_policy_watch.html": {
+   "bytes": 64453,
+   "markers": 11,
+   "outline": [
+    "China Central Bank & Policy Watch 中国央行与政策观察",
+    "🪙 PBoC stance & rate corridor 央行立场与利率走廊",
+    "💱 FX & reserves 外汇与储备",
+    "Recent policy moves 近期政策动作",
+    "📊 NBS latest prints 统计局最新数据",
+    "🎯 NPC 2026 targets 两会2026目标",
+    "🧭 Sector-policy tracker 行业政策追踪",
+    "📰 Official policy tape 官方政策快讯",
+    "🔮 Policy prediction ledger 政策预测台账",
+    "🏛️ PBoC & Policy Watch 央行与政策观察"
+   ],
+   "saturated": false
+  },
+  "china_radar.html": {
+   "bytes": 62877,
+   "markers": 7,
+   "outline": [
+    "China Divergence Radar 中国背离雷达",
+    "📡 Active divergences 活跃背离 5/16",
+    "🔇 In line (silent) 一致（静默）",
+    "📒 Falsification ledger 证伪台账",
+    "🌐 Venue Divergence 跨市场背离 1/3 active 活跃",
+    "📡 Divergence Radar 背离雷达"
+   ],
+   "saturated": false
+  },
+  "china_sector_desk.html": {
+   "bytes": 107159,
+   "markers": 6,
+   "outline": [
+    "📊 Live Sector Board 行业实时看板",
+    "🧭 Pathway Desk — GS Sectors 路径桌面 — GS 行业",
+    "China Banks 中国银行",
+    "China Consumption 中国消费",
+    "China Real Estate 中国地产",
+    "China Auto 中国汽车"
+   ],
+   "saturated": false
+  },
+  "china_special_situations.html": {
+   "bytes": 85645,
+   "markers": 23,
+   "outline": [
+    "China Special Situations Desk 中国特殊情景台",
+    "🔓 Unlock Overhang 解禁压力 ok 2026-07-21",
+    "📬 Exchange Inquiry Letters 交易所问询函 ok 2026-07-21",
+    "📋 Earnings Pre-Announcements 业绩预告 ok 2026-07-21",
+    "🔄 Buyback Tape 回购台账 ok 2026-07-21",
+    "⛓️ Pledge Stress 质押压力 ok 2026-07-21",
+    "🚨 ST Watch ST 观察 stale 2026-07-06",
+    "📦 Block-Trade Anomalies 大宗交易异常 ok 2026-07-21",
+    "📊 Goodwill Profile 商誉概览 ok macro context · annual aggregate 宏观背景 · 年度汇总",
+    "⚠️ China Special Situations 中国特殊情景",
+    "600215 派斯林 replied 已回复 派斯林独立董事关于2025年年度报告的信息披露监管问询函相关事项的独立意见",
+    "300813 泰林生物 关于浙江泰林生物技术股份有限公司向不特定对象发行可转换公司债券审核问询函中有关财务事项的说明",
+    "603602 纵横通信 replied 已回复 纵横通信独立董事关于2025年年度报告的信息披露监管问询函所涉事项的独立意见",
+    "688218 江苏北人 replied 已回复 关于2025年年度报告的信息披露监管问询函相关事项的独立意见",
+    "600403 大有能源 replied 已回复 河南大有能源股份有限公司独立董事关于公司2025年年度报告信息披露监管问询函所涉问题的独立意见",
+    "603313 梦百合 replied 已回复 独立董事关于公司2025年年度报告信息披露监管问询函所涉问题的明确意见",
+    "603313 梦百合 replied 已回复 审计委员会关于公司2025年年度报告信息披露监管问询函所涉问题的明确意见",
+    "002656 *ST摩登 replied 已回复 北京市天元律师事务所关于摩登大道时尚集团股份有限公司2025年年报问询函相关事项的法律意见书"
+   ],
+   "saturated": false
+  },
+  "china_stocks.html": {
+   "bytes": 1339877,
+   "markers": 13,
+   "outline": [
+    "🇨🇳 A-Share Stock Dashboard A股个股看板 ? A stock-picking watchlist for China A-shares",
+    "⚡ What to Act On Now 现在行动 v2 ? Four lanes, read left to right: Buy Now = a clean",
+    "⚡ Prophet Stock Signals ⚡ 先知选股 ? How to read this board. Each card is an A-share",
+    "🎯 Stock screener — one board, two validated lenses 🎯 选股面板 — 一板双镜 · switch the le",
+    "🔄 Reversion Desk 回归台 ? Stocks that fell the most within their own sector over th",
+    "Turn Setups (multi-timeframe) 多周期转折形态 ? Forward-graded meter (expected-null; pri",
+    "Buy Now 立即买入 (0)",
+    "In Favour 看好 (6)",
+    "Bottoming Watch 洗盘观察 (19)",
+    "Reduce / Avoid 减仓 / 回避 (22)",
+    "RIPENING SHELF",
+    "China board · vs CSI300 中国榜单 · 对比沪深300",
+    "Track record 榜单往绩"
+   ],
+   "saturated": true
+  },
+  "china_strategies.html": {
+   "bytes": 54177,
+   "markers": 5,
+   "outline": [
+    "China Income Vector 中国收入向量",
+    "Credit-Impulse + Vol-Managed 信用脉冲 + 波动率管理",
+    "Volatility-Managed CSI 300 波动率管理 沪深300",
+    "Credit + Margin-Euphoria Guard 信用 + 融资狂热护栏",
+    "🧠 China Mastermind Flagships"
+   ],
+   "saturated": false
+  },
+  "cn_reversal_sleeve.html": {
+   "bytes": 167998,
+   "markers": 4,
+   "outline": [
+    "CN Reversal Sleeve A股反转组合 beta · accruing grades Beta · 成绩累积中",
+    "Trimmed-plane reconstruction (upper bound) — NAV vs CSI300 裁剪面板重建（上界）——净值 vs 沪深3",
+    "Forward ledger — the real record 前瞻记录簿——真实记录",
+    "Current membership 当前成分"
+   ],
+   "saturated": false
+  },
+  "coming-soon.html": {
+   "bytes": 2806,
+   "markers": 2,
+   "outline": [
+    "Something great is on its way.",
+    "精彩即将登场"
+   ],
+   "saturated": false
+  },
+  "commodities.html": {
+   "bytes": 240061,
+   "markers": 53,
+   "outline": [
+    "Commodities 大宗商品",
+    "Early warnings forming 早期预警形成中",
+    "Every commodity at a glance 一眼看遍所有品种",
+    "Per-commodity detail 逐品种详情",
+    "Upcoming events 即将到来的市场事件",
+    "Alert timeline · last 警报时间线 · 最近 60 days 天 · 47 alerts 条警报"
+   ],
+   "saturated": true
+  },
+  "commodity_strategies.html": {
+   "bytes": 65249,
+   "markers": 11,
+   "outline": [
+    "Gold Trend Swap 黄金趋势开关",
+    "Gold Macro Driver Model 黄金宏观驱动模型",
+    "Gold Active (levered) 黄金主动（杠杆）",
+    "Silver Trend Swap 白银趋势开关",
+    "Silver Macro + Industrial Model 白银宏观 + 工业模型",
+    "Silver Active (levered) 白银主动（杠杆）",
+    "Copper Trend Swap 铜趋势开关",
+    "Copper Growth &amp; Dollar Model 铜·增长与美元模型",
+    "Copper Active (levered) 铜主动（杠杆）",
+    "Oil Trend Swap 原油趋势开关",
+    "Oil Macro Multifactor 原油宏观多因子"
+   ],
+   "saturated": false
+  },
+  "congress_trades.html": {
+   "bytes": 550705,
+   "markers": 11,
+   "outline": [
+    "Congressional Trades 国会交易",
+    "🎯 Watchlist — ranked copy candidates 观察清单 — 跟单候选排名 — composite = 综合分 = 30% clust",
+    "🏅 Member Track Record — reliability leaderboard 议员历史记录 — 可靠性排行榜 — empirical-Baye",
+    "📊 Desk scorecard — is this desk beating the market? 研究台记分卡 —— 本台是否跑赢大盘？ every na",
+    "Auto-findings 自动结论 — derived from the stats each run, to improve this desk's eng",
+    "Notes &amp; lessons 笔记与经验 — what we've learned, so the desk's engine keeps impro",
+    "Early Turn Flags 早期拐点提示 BETA As of 截至 2026-07-20",
+    "🗳️ Recent disclosures 最新披露 — newest filings first; ExcessReturn = cumulative exc",
+    "🏛️ Politician-Disclosed Trades Desk 政界披露交易台"
+   ],
+   "saturated": true
+  },
+  "country_cycles.html": {
+   "bytes": 46945,
+   "markers": 5,
+   "outline": [
+    "Where every market stands 每个市场所处的位置",
+    "Country rotation overlay 国家轮动叠加",
+    "Market scorecards 市场记分卡"
+   ],
+   "saturated": false
+  },
+  "crossasset.html": {
+   "bytes": 108122,
+   "markers": 10,
+   "outline": [
+    "What&#39;s trending 趋势行情",
+    "One trade or many? 一笔交易还是多笔？",
+    "Who moves first? 谁先动？",
+    "Do bonds &amp; currencies agree with stocks? 债券与汇率是否与股票一致？",
+    "Dollar pressure 美元压力",
+    "Money &amp; plumbing 资金与管道",
+    "Growth vs safety 增长与避险",
+    "Carry context 套息背景"
+   ],
+   "saturated": false
+  },
+  "cycle.html": {
+   "bytes": 47853,
+   "markers": 5,
+   "outline": [
+    "Where every cycle stands 每个周期所处的位置",
+    "Cross-cycle overlay 跨周期叠加",
+    "Cycle scorecards 周期记分卡"
+   ],
+   "saturated": false
+  },
+  "darkpool.html": {
+   "bytes": 217576,
+   "markers": 4,
+   "outline": [
+    "Dark Pool Desk 场外暗池台",
+    "Off-Exchange Volume — Per Name 场外成交量 — 各个股",
+    "Weekly ATS Venue Breakdown 每周ATS场所分项",
+    "Methodology &amp; Limitations 方法论与局限性"
+   ],
+   "saturated": false
+  },
+  "demand.html": {
+   "bytes": 108556,
+   "markers": 5,
+   "outline": [
+    "🧭 Demand Desk 需求台"
+   ],
+   "saturated": false
+  },
+  "discovery.html": {
+   "bytes": 785409,
+   "markers": 25,
+   "outline": [
+    "🏆 Top Picks 精选股",
+    "⭐ Buy-zone picks ⭐ 可建仓精选 ? The sweet spot, HARD-GATED on the MACD-2D × StochRSI-",
+    "Sectors by conviction 按信念排序的板块 ? GICS sectors ranked by the mean Top-Pick score ",
+    "Top picks 精选 — Industrials 工业",
+    "Avoid 回避 — Industrials 工业",
+    "Top picks 精选 — Materials 原材料",
+    "Avoid 回避 — Materials 原材料",
+    "Top picks 精选 — Communication Services 通信服务",
+    "Avoid 回避 — Communication Services 通信服务",
+    "Top picks 精选 — Financials 金融",
+    "Avoid 回避 — Financials 金融",
+    "Top picks 精选 — Health Care 医疗保健",
+    "Avoid 回避 — Health Care 医疗保健",
+    "Top picks 精选 — Energy 能源",
+    "Avoid 回避 — Energy 能源",
+    "Top picks 精选 — Utilities 公用事业",
+    "Avoid 回避 — Utilities 公用事业",
+    "Top picks 精选 — Information Technology 信息技术",
+    "Avoid 回避 — Information Technology 信息技术",
+    "Top picks 精选 — Consumer Staples 必需消费"
+   ],
+   "saturated": true
+  },
+  "etfs.html": {
+   "bytes": 236229,
+   "markers": 5,
+   "outline": [
+    "🐳 Real fund moves 基金真实动作",
+    "⭐ Favored stocks — cross-fund consensus ⭐ 被青睐个股 — 跨基金共识 ? Cross-fund consensus r",
+    "🟢 Accumulating — strongest conviction first 🟢 增持中 — 信念最强者优先"
+   ],
+   "saturated": false
+  },
+  "factors.html": {
+   "bytes": 536325,
+   "markers": 32,
+   "outline": [
+    "🧮 Factors &amp; seasonality 因子与季节性 ? The cross-sectional factors quant equity de",
+    "Factor weather 因子风向",
+    "Factor calendar — what each month usually brings 因子月历——每个月的历史规律",
+    "What is working now 当前哪种因子在起作用 ? For each factor, the trailing-63-day return of ",
+    "Where the heat is 热度集中在哪",
+    "Do these rankings actually predict? — the honest test 这些排名真的能预测吗？— 诚实检验 ? The ho",
+    "Market breadth 市场广度 ? Share of index members trading above their own 50-day AND ",
+    "Factor performance — interactive 因子表现 — 交互图 ? Rebased to 0% at the start of the ",
+    "Performance table 表现一览 ? Every factor across horizons, watchlist-style. SCOPE to",
+    "Sector monitor — cap-weighted GICS vs S&amp;P 行业监测 — 市值加权 GICS 相对标普 ? Each cap-w",
+    "Factor performance — point-in-time portfolios 因子表现 — 时点组合 ? Each factor built in",
+    "Recent moves — z vs trailing year 近期变动 — 相对过去一年的 z ? Each horizon&#39;s compound",
+    "Factor crowding 因子拥挤度 ? Correlation of the factor LONG/SHORT daily return series",
+    "Quilt — Q5−Q1 monthly ranks 拼布 — 多空月度排名 ? The periodic-table-of-returns: each co",
+    "Multi-factor composite 多因子综合 ? The RANKING here uses only the factor legs that c",
+    "Top composite 综合最高",
+    "Bottom composite 综合最低",
+    "Insider conviction 内部人信念 SEC Form-4 · SEC Form-4 · 6mo to 2026-03 ? Net OPEN-MAR",
+    "Biggest net BUYING 最大净买入",
+    "Biggest net SELLING 最大净卖出"
+   ],
+   "saturated": true
+  },
+  "flow_desk.html": {
+   "bytes": 81298,
+   "markers": 7,
+   "outline": [
+    "🌊 Group Flow Heatmap &amp; Market Tide 资金潮汐与板块流量图",
+    "Market Tide 市场资金潮汐 370 names · EOD · direction approx ? Whole-market gross premi",
+    "Cohorts 主题群组 ? Options flow by thematic cohort — crosses GICS lines. Gross premi",
+    "Sector Flow Heatmap 板块资金流热力图 ? Gross premium rolled up to GICS sector from membe",
+    "Top Net Impact 净额最大标的 ~soft direction ~方向软性 ? Largest absolute net premium mover",
+    "Sector ETF Flows 板块ETF资金流 proxy 代理指标 ? Sector SPDR creation/redemption proxy: de",
+    "Options Flow Score 期权流量评分 ? Pattern history for options-flow events logged since"
+   ],
+   "saturated": false
+  },
+  "flow_leaders.html": {
+   "bytes": 133958,
+   "markers": 5,
+   "outline": [
+    "Flow Leaders 资金领袖",
+    "Board A — Flow Leadership A板 — 资金领头",
+    "Board B — Washout Turns B板 — 洗盘转机",
+    "ETF Flow Strip ETF资金流条带",
+    "Playbook 操作手册"
+   ],
+   "saturated": false
+  },
+  "flow_velocity.html": {
+   "bytes": 257597,
+   "markers": 4,
+   "outline": [
+    "🧭 Flow Map 资金流向图",
+    "🛰️ Stock-Connect Channels 沪深港通通道",
+    "Southbound — mainland money into HK 南向 · 内地资金入港",
+    "Northbound — foreign money into A-shares 北向 · 外资入A股"
+   ],
+   "saturated": true
+  },
+  "foresight.html": {
+   "bytes": 167097,
+   "markers": 49,
+   "outline": [
+    "Catch the theme before the revisions explode 在盈利预期爆发前抓住主题",
+    "🛰️ Discovery — bottlenecks forming outside the tracked themes 发现——在已跟踪主题之外正在形成的瓶",
+    "📡 Subsector radar — the whole S&P 500 at sub-industry granularity 子行业雷达——以子行业粒度覆",
+    "Policy catalyst calendar — regulatory-action convergence 政策催化日历——监管行动收敛",
+    "Upcoming comment-close / rule-effective events 即将到期的意见征集截止/规则生效事项",
+    "Per-theme pipeline status 各主题管线状态",
+    "Empirical PRORULE→RULE latency (R1 — measured, not modeled) 实证 PRORULE→RULE 时滞（R",
+    "Forward-graded track record 前瞻评分记录",
+    "Methodology & honesty 方法与诚实声明",
+    "🔮 Thematic Foresight Desk 主题前瞻台",
+    "Medicaid Program; Medicaid Managed Care State Directed Payments and Medicaid Fee",
+    "Notice of Request for Public Comments on Section 232 National Security Investiga",
+    "Receipt of Pesticide Petitions Filed for Residues of Pesticide Chemicals in or o",
+    "Pesticide Product Registration; Receipt of Applications for New Active Ingredien",
+    "Approval and Promulgation of Air Quality Implementation Plans; Wyoming; Regional",
+    "Biweekly Notice; Applications and Amendments to Facility Operating Licenses and ",
+    "Federal Acquisition Regulation: Revolutionary Federal Acquisition Regulation Ove",
+    "Commercial Leasing for Outer Continental Shelf Minerals Offshore the Commonwealt",
+    "Holtec Decommissioning International, LLC; Holtec Pilgrim, LLC; Holtec Indian Po",
+    "Establishing the Digital Opportunity Data Collection; Modernizing the FCC Form 4"
+   ],
+   "saturated": true
+  },
+  "forex.html": {
+   "bytes": 207904,
+   "markers": 7,
+   "outline": [
+    "Dollar ripple effects 美元连锁影响",
+    "Stress watch 风险预警",
+    "The pairs 货币对",
+    "Do these styles work? 这些策略有效吗",
+    "FOREX · Jul 22, 2026 FOREX · Jul 22, 2026",
+    "RECENT SHIFTS"
+   ],
+   "saturated": false
+  },
+  "fund_ako.html": {
+   "bytes": 121108,
+   "markers": 8,
+   "outline": [
+    "AKO Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_akre.html": {
+   "bytes": 106898,
+   "markers": 8,
+   "outline": [
+    "Akre Capital Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_altarock.html": {
+   "bytes": 80876,
+   "markers": 8,
+   "outline": [
+    "AltaRock Partners",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_altimeter.html": {
+   "bytes": 97942,
+   "markers": 8,
+   "outline": [
+    "Altimeter Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_appaloosa.html": {
+   "bytes": 133939,
+   "markers": 8,
+   "outline": [
+    "Appaloosa (Tepper)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_aquamarine.html": {
+   "bytes": 73845,
+   "markers": 8,
+   "outline": [
+    "Aquamarine Zurich AG (Spier)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_bakerbros.html": {
+   "bytes": 204766,
+   "markers": 8,
+   "outline": [
+    "Baker Bros. Advisors",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_basswood.html": {
+   "bytes": 271675,
+   "markers": 8,
+   "outline": [
+    "Basswood Capital Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": true
+  },
+  "fund_baupost.html": {
+   "bytes": 114502,
+   "markers": 8,
+   "outline": [
+    "Baupost Group (Klarman)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_berkshire.html": {
+   "bytes": 128787,
+   "markers": 8,
+   "outline": [
+    "Berkshire Hathaway (Buffett)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_casdin.html": {
+   "bytes": 140126,
+   "markers": 8,
+   "outline": [
+    "Casdin Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_coatue.html": {
+   "bytes": 195328,
+   "markers": 8,
+   "outline": [
+    "Coatue Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_corvex.html": {
+   "bytes": 113679,
+   "markers": 8,
+   "outline": [
+    "Corvex Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_d1capital.html": {
+   "bytes": 157159,
+   "markers": 8,
+   "outline": [
+    "D1 Capital Partners",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_dorsey.html": {
+   "bytes": 86665,
+   "markers": 8,
+   "outline": [
+    "Dorsey Asset Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_dragoneer.html": {
+   "bytes": 100726,
+   "markers": 8,
+   "outline": [
+    "Dragoneer Investment Group",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_duquesne.html": {
+   "bytes": 201217,
+   "markers": 8,
+   "outline": [
+    "Duquesne Family Office (Druckenmiller)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_durable.html": {
+   "bytes": 144246,
+   "markers": 8,
+   "outline": [
+    "Durable Capital Partners",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_egerton.html": {
+   "bytes": 121548,
+   "markers": 8,
+   "outline": [
+    "Egerton Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_elliott.html": {
+   "bytes": 130616,
+   "markers": 8,
+   "outline": [
+    "Elliott Investment Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_engaged.html": {
+   "bytes": 80729,
+   "markers": 8,
+   "outline": [
+    "Engaged Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_fairholme.html": {
+   "bytes": 89201,
+   "markers": 8,
+   "outline": [
+    "Fairholme Capital (Berkowitz)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_gates.html": {
+   "bytes": 101811,
+   "markers": 8,
+   "outline": [
+    "Gates Foundation Trust",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_giverny.html": {
+   "bytes": 160160,
+   "markers": 8,
+   "outline": [
+    "Giverny Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_greenlea.html": {
+   "bytes": 81299,
+   "markers": 8,
+   "outline": [
+    "Greenlea Lane Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_himalaya.html": {
+   "bytes": 92186,
+   "markers": 8,
+   "outline": [
+    "Himalaya Capital (Li Lu)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_icahn.html": {
+   "bytes": 86351,
+   "markers": 8,
+   "outline": [
+    "Icahn (Carl Icahn)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_index.html": {
+   "bytes": 109444,
+   "markers": 3,
+   "outline": [
+    "Fund Directory 基金目录",
+    "💼 Institutional 13F · super-investor track record 机构 13F · 超级投资者业绩记录"
+   ],
+   "saturated": false
+  },
+  "fund_jana.html": {
+   "bytes": 85938,
+   "markers": 8,
+   "outline": [
+    "JANA Partners Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_kimmeridge.html": {
+   "bytes": 65443,
+   "markers": 8,
+   "outline": [
+    "Kimmeridge Energy Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_lightstreet.html": {
+   "bytes": 115012,
+   "markers": 8,
+   "outline": [
+    "Light Street Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_lonepine.html": {
+   "bytes": 144834,
+   "markers": 8,
+   "outline": [
+    "Lone Pine Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_mudrick.html": {
+   "bytes": 63888,
+   "markers": 8,
+   "outline": [
+    "Mudrick Capital Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_oaktree.html": {
+   "bytes": 149131,
+   "markers": 8,
+   "outline": [
+    "Oaktree Capital Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_pabrai.html": {
+   "bytes": 68304,
+   "markers": 8,
+   "outline": [
+    "Dalal Street (Mohnish Pabrai)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_perceptive.html": {
+   "bytes": 237522,
+   "markers": 8,
+   "outline": [
+    "Perceptive Advisors",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_pershing.html": {
+   "bytes": 90702,
+   "markers": 8,
+   "outline": [
+    "Pershing Square (Ackman)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_polen.html": {
+   "bytes": 493785,
+   "markers": 8,
+   "outline": [
+    "Polen Capital Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": true
+  },
+  "fund_punchcard.html": {
+   "bytes": 73250,
+   "markers": 8,
+   "outline": [
+    "Punch Card Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_racapital.html": {
+   "bytes": 206250,
+   "markers": 8,
+   "outline": [
+    "RA Capital Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_rtw.html": {
+   "bytes": 219708,
+   "markers": 8,
+   "outline": [
+    "RTW Investments",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_sachem.html": {
+   "bytes": 110880,
+   "markers": 8,
+   "outline": [
+    "Sachem Head Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_scion.html": {
+   "bytes": 92828,
+   "markers": 8,
+   "outline": [
+    "Scion Asset Mgmt (Burry)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_soros.html": {
+   "bytes": 506222,
+   "markers": 8,
+   "outline": [
+    "Soros Fund Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": true
+  },
+  "fund_starboard.html": {
+   "bytes": 111582,
+   "markers": 8,
+   "outline": [
+    "Starboard Value",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_tci.html": {
+   "bytes": 86242,
+   "markers": 8,
+   "outline": [
+    "TCI Fund Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_thirdpoint.html": {
+   "bytes": 140489,
+   "markers": 8,
+   "outline": [
+    "Third Point (Loeb)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_tigerglobal.html": {
+   "bytes": 167427,
+   "markers": 8,
+   "outline": [
+    "Tiger Global (Coleman)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_trian.html": {
+   "bytes": 74627,
+   "markers": 8,
+   "outline": [
+    "Trian Fund Management",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_valueact.html": {
+   "bytes": 103408,
+   "markers": 8,
+   "outline": [
+    "ValueAct Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_viking.html": {
+   "bytes": 217445,
+   "markers": 8,
+   "outline": [
+    "Viking Global (Halvorsen)",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "fund_whalerock.html": {
+   "bytes": 143835,
+   "markers": 8,
+   "outline": [
+    "Whale Rock Capital",
+    "Grade &amp; excess history 评级与超额历史",
+    "Sector exposure &amp; rotation 行业配置与轮动",
+    "Full book 完整持仓",
+    "Rotation detail 轮动明细",
+    "Trade log 交易记录",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单",
+    "Core lean — the 10-second read 核心倾向 — 10秒速读"
+   ],
+   "saturated": false
+  },
+  "gex.html": {
+   "bytes": 409787,
+   "markers": 5,
+   "outline": [
+    "🧲 Options Desk 期权台",
+    "🌦️ Market Weather — index vol regime 市场天气 — 指数波动率体制 ? The one read on this page ",
+    "Board — every name at a glance 总览 — 所有标的一览 ? Each column has its own ❓ — hover i"
+   ],
+   "saturated": true
+  },
+  "history.html": {
+   "bytes": 165651,
+   "markers": 4,
+   "outline": [
+    "Regime history &amp; charts 周期历史与图表",
+    "Three years of regimes over the S&amp;P 500 标普500 三年周期叠加 ? The S&amp;P 500 with ",
+    "The two dials over time 两大指标随时间变化 ? History of the growth (green) and inflation ",
+    "Regime lifespans — the base rates behind &#34;what&#39;s next&#34; 周期存续期 — “下一步”"
+   ],
+   "saturated": false
+  },
+  "hk.html": {
+   "bytes": 187447,
+   "markers": 53,
+   "outline": [
+    "The Full Read — What's Behind the Score",
+    "The checks · today 今日各项检查 44/100",
+    "Signal stack 信号堆栈",
+    "The trend across timeframes 多周期走势",
+    "Currency & Interest Rates",
+    "The currency link 联汇",
+    "The profit engine (China) 盈利引擎（中国）",
+    "Aggregate Balance — system liquidity 综合结余 — 系统流动性",
+    "Key dates ahead 关键日期",
+    "Mainland Buying & Value",
+    "Mainland money into Hong Kong 内地资金流入港股",
+    "Why HK is a bargain 港股为何更便宜",
+    "Valuation 估值",
+    "Cumulative southbound flow 南向资金累计走势",
+    "Shanghai vs Shenzhen connect 沪股通 vs 深股通",
+    "Shanghai → HK 沪市港股通",
+    "Shenzhen → HK 深市港股通",
+    "Overnight Read & Leverage",
+    "Overnight US read 美股隔夜读数",
+    "Individual ADR moves 个股ADR走势"
+   ],
+   "saturated": true
+  },
+  "hk_heatmap.html": {
+   "bytes": 42633,
+   "markers": 1,
+   "outline": [
+    "🔥 Hong Kong Stock Heatmap 港股市场热力图"
+   ],
+   "saturated": false
+  },
+  "hk_history.html": {
+   "bytes": 492509,
+   "markers": 4,
+   "outline": [
+    "Hong Kong regime history 香港周期历史",
+    "Regimes over the Hang Seng Index 恒生指数 周期叠加 ? The Hang Seng Index with the regime",
+    "The two dials over time 两大指标随时间变化 ? History of the growth (green) and inflation ",
+    "Regime lifespans — base rates 周期存续期 — 基准概率 ? Every regime period since ~2006 in "
+   ],
+   "saturated": true
+  },
+  "hk_lookup.html": {
+   "bytes": 81460,
+   "markers": 10,
+   "outline": [
+    "🔎 HK analyzer 港股分析",
+    "Chart 图表",
+    "Momentum across timeframes 跨周期动量",
+    "Global-risk beta 全球风险贝塔 · amplifier vs cushion 放大器 vs 缓冲 ? This name's beta to g",
+    "Fundamentals 基本面 · context, not a signal 背景，而非信号 ? Descriptive financial health,",
+    "A/H premium A/H 溢价 · mainland A vs HK-listed H 内地A股 vs 港股H股 ? For a dual-listed ",
+    "How much to trust the state — measured on HK history 这个状态有多可信 — 基于香港历史实测 ? HK st"
+   ],
+   "saturated": false
+  },
+  "hk_stocks.html": {
+   "bytes": 444651,
+   "markers": 20,
+   "outline": [
+    "🇭🇰 HK Stock Desk 港股研判台",
+    "⚡ 1D Velocity Desk 1日速度台 · flagship-2 · 1D momentum confluence — HK native 旗舰2 ·",
+    "⚡ What to act on now — sectors 当前可操作 — 板块 ? The HK sector groups bucketed by the",
+    "Buy zone 买入区 · 1",
+    "Hold 持有 · 8",
+    "Avoid 回避 · 4",
+    "⚡ Prophet — the HK Stock Desk ⚡ 先知 — 港股研判台 · cycle-aligned bottoming · southboun",
+    "🔥 Washout Watch 洗盘点火 · igniting · unconfirmed · high-risk / context 点火中 · 未确认 · ",
+    "🇨🇳 Smart-money flows — where the mainland is buying 聪明钱流向 — 内地在买什么 · per-stock s",
+    "↑ Mainland accumulating 内地加仓 · 5-day holding growth 5日持股增长",
+    "↓ Mainland distributing 内地减仓 · 5-day holding decline 5日持股下降",
+    "🌐 Global-risk screener — amplifiers, cushions, the full list 🌐 全球风险筛选 — 放大器、缓冲、全",
+    "Sector Rotation 板块轮动 · RS vs HSI 相对恒生指数",
+    "⟲ HK Basket Rotation Events 港股篮子轮动事件",
+    "🇭🇰 Southbound &amp; A/H 🇭🇰 南向资金与 A/H · mainland flow · flow-vs-price · cross-lis",
+    "🇭🇰 HK Stock Desk 港股研判台 Stagflation 滞胀 Neutral 中性 ? Ranks HK names by three clean",
+    "Broad market joining in 大盘跟进中",
+    "Hong Kong board · vs Hang Seng 港股榜单 · 对比恒指",
+    "Track record 榜单往绩",
+    "'+title+'"
+   ],
+   "saturated": true
+  },
+  "impulse.html": {
+   "bytes": 133139,
+   "markers": 8,
+   "outline": [
+    "🚀 Impulse Tracker 冲量追踪",
+    "🟢 Just igniting — entry still open 刚刚点火 — 入场窗口仍开",
+    "🟩 Accelerating — momentum building 加速中 — 动能积累",
+    "🔵 Coiling — pre-ignition watch 蓄势 — 点火前观察",
+    "🟠 Already ran — no entry 已大涨 — 无入场点",
+    "🔴 Fading — rolling over 转弱 — 动能消退",
+    "📐 How the impulse score is built 冲量分如何计算"
+   ],
+   "saturated": false
+  },
+  "index.html": {
+   "bytes": 44553,
+   "markers": 31,
+   "outline": [
+    "MASTERMIND",
+    "Markets 市场",
+    "United States 美国",
+    "China 中国",
+    "Hong Kong 香港",
+    "Canada · TSX 加拿大 · TSX",
+    "Other Features 其他功能",
+    "Terminal 交易终端 Terminal 终端",
+    "Cycle Intelligence 周期智能 Cycle Intel 周期",
+    "US Sectors 美股行业 US Sectors 美股行业",
+    "CN Sectors 中国行业 CN Sectors 中国行业",
+    "Research Reports 研究报告 Reports 报告",
+    "Bitcoin Vector 比特币向量 Bitcoin 比特币",
+    "Bonds & Bond Health 债券与债券健康 Bonds 债券",
+    "Commodity Vector 大宗商品向量 Commodities 商品",
+    "Forex Vector 外汇向量 Forex 外汇",
+    "What changed 近期变化",
+    "Dashboards 看板",
+    "Vectors 向量",
+    "Intelligence 智能"
+   ],
+   "saturated": true
+  },
+  "intelligence_hub.html": {
+   "bytes": 160428,
+   "markers": 14,
+   "outline": [
+    "Intelligence Hub 情报中心",
+    "Emerging edge — before the crowd 萌芽优势 —— 抢在人群之前",
+    "Discovery — what the desks miss 发掘 —— 各台遗漏之处",
+    "Exhausted — already run, fade-risk 透支 —— 已跑完，派发风险 12",
+    "Live catalysts — dated events 在途催化 —— 有确定日期的事件 12",
+    "Command — ranked by opportunity 指挥榜 —— 按机会值排序",
+    "Signal scorecard — is the edge real? 信号记分卡 —— 优势是否真实？",
+    "Sector heat 板块热度",
+    "📊 Desk scorecard — is this desk beating the market? 研究台记分卡 —— 本台是否跑赢大盘？ every na",
+    "Engine-version A/B 引擎版本 A/B — pre/post overhaul, where the ledger carries the st",
+    "Auto-findings 自动结论 — derived from the stats each run, to improve this desk's eng",
+    "Notes &amp; lessons 笔记与经验 — what we've learned, so the desk's engine keeps impro"
+   ],
+   "saturated": false
+  },
+  "intl.html": {
+   "bytes": 263632,
+   "markers": 22,
+   "outline": [
+    "World markets — turns & rotation 全球市场 — 拐点与轮动 ? State machine per market: crash/",
+    "What changed 近期变化",
+    "Performance in US dollars 以美元计的表现 ? Shows each market in USD, split into local s",
+    "US vs the World — capital rotation 美国 vs 全球 — 资本轮动 ? Maps who is beating the US ",
+    "Cross-country comparison 跨国对比 ? Same scorecard for every economy: regime, recess",
+    "Rates & curve desk 利率与曲线室 ? Compares yield curves, real yields, 10-year yield dr",
+    "🇪🇺 Eurozone fragmentation — peripheral spreads over Bund 欧元区分化 — 外围国相对德债利差 ? Wid",
+    "Contagion board 传导看板 ? How tightly are global markets linked right now? The scor",
+    "Central bank desk 央行动态台 ? Rates from public data. Stance = realized rate changes",
+    "Credit & bond stress 信用与债券压力 ? Credit spreads = the extra yield emerging-market ",
+    "What's driving the dollar? 美元走势的驱动因素 ? Dollar regime uses a 120-day rolling wind",
+    "Fragility map 脆弱性地图 ? Flags countries where structural vulnerabilities coincide:",
+    "Where crash pressure is flowing now 冲击压力的实时流向 ? How much inbound pressure each m",
+    "Regime map — growth × inflation 周期图 — 增长 × 通胀 ? Places each economy on the growt",
+    "Cross-market correlation 跨市场相关性 ? Shows whether markets are moving together. Low",
+    "Where each economy ranks 各经济体排名",
+    "20d momentum — rotation rank 20日动能 — 轮动排名",
+    "Recession pressure 衰退压力",
+    "Equity drawdown risk 股市回撤风险",
+    "Real 10y yield 实际10年收益"
+   ],
+   "saturated": true
+  },
+  "intl_stock.html": {
+   "bytes": 84640,
+   "markers": 14,
+   "outline": [
+    "🔎 International analyzer 国际个股分析",
+    "Chart 图表",
+    "Momentum across timeframes 跨周期动量",
+    "Conviction profile 确信度画像 · unified verdict — cycle caps it 统一结论 — 周期封顶",
+    "Relative strength 相对强度 · sector-neutral residual 板块中性残差 ? This name's return wit",
+    "Fundamentals 基本面 · context, not a signal 背景，而非信号 ? Descriptive valuation, profit",
+    "👔 Analyst &amp; estimates 分析师与预期 · sell-side consensus 卖方一致预期 ? yfinance sell-si",
+    "📅 Earnings 财报",
+    "Positioning 持仓与做空 · short interest &amp; ownership 空头与持股结构 ? Short interest (sha",
+    "Factor exposure 因子敞口 · commodity / FX beta 商品／汇率贝塔 ? This name's sensitivity to ",
+    "How much to trust the state — measured on its market's history 这个状态有多可信 — 基于该市场历"
+   ],
+   "saturated": false
+  },
+  "intl_stocks.html": {
+   "bytes": 219092,
+   "markers": 3,
+   "outline": [
+    "🌍 International Stock Dashboard 国际股票看板",
+    "What to act on now — sector rotation 现在该关注什么 — 板块轮动 ? Ranks regional sectors by ",
+    "Prophet Stock Signals 先知选股 ? Stocks showing stronger momentum than peers in thei"
+   ],
+   "saturated": false
+  },
+  "intraday_flow.html": {
+   "bytes": 284029,
+   "markers": 4,
+   "outline": [
+    "📊 Intraday Flow 盘中资金流",
+    "What's set up now 当前布局一览 ? Each leader is sorted into one plain-word call from d",
+    "How to read this board 如何看懂本看板 field guide 实战指南",
+    "'+title+'"
+   ],
+   "saturated": true
+  },
+  "ipo.html": {
+   "bytes": 168813,
+   "markers": 11,
+   "outline": [
+    "Is the issuance window open? 发行窗口是否开启？",
+    "Reality check: “buy new IPOs” in the aftermarket 现实检验：在二级市场“买新股”",
+    "IPO Radar · context, not a crystal ball 新股雷达 · 背景，而非水晶球",
+    "What the window read is made of 窗口读数的构成",
+    "The aftermarket trade · IPO &amp; IPOX vs the S&amp;P (5y, rebased) 二级市场交易 · 新股与",
+    "Lock-up expiry overhang · the most watchable leg 禁售期到期压力 · 最值得关注的一环",
+    "Issuance pipeline · how busy &amp; how frothy 发行管道 · 繁忙度与泡沫度",
+    "Recently priced · last 120 days 近期定价 · 最近120天",
+    "Expected to price soon 预计即将定价",
+    "Hong Kong IPO backdrop · the more retail-tradeable market 香港新股背景 · 更适合散户参与的市场",
+    "Why this is context, not a prediction — and US vs Hong Kong 为何这是背景而非预测 —— 以及美国 v"
+   ],
+   "saturated": false
+  },
+  "leader_radar.html": {
+   "bytes": 568945,
+   "markers": 22,
+   "outline": [
+    "Early-entry desk 早入场台",
+    "Coverage receipt 覆盖情况说明",
+    "What does the market regime mean? \"市场制度\"是什么意思？",
+    "Leader Radar 领袖雷达",
+    "Changed tonight",
+    "One signal away",
+    "Early entry board",
+    "Lifecycle pipeline",
+    "Handoff watch 接力观察",
+    "Closest to stretched — basket extension check 最接近超伸 — 篮子伸展检查",
+    "Rerating watch 重估观察",
+    "Fire log",
+    "Field guide — Stage anatomy 实战手册 — 阶段解析"
+   ],
+   "saturated": true
+  },
+  "learn.html": {
+   "bytes": 37265,
+   "markers": 34,
+   "outline": [
+    "Learn: an interactive field manual for reading a dealer-positioning gamma-levels",
+    "Positioning, not prophecy.",
+    "Dealers don't have opinions. They have inventory.",
+    "Sticky tape, slippery tape.",
+    "The Flip: where the terrain changes law.",
+    "Ceiling and Floor: walls that hold until they don't.",
+    "The nomenclature.",
+    "The other axis: what if vol moves first?",
+    "The move the market already paid for.",
+    "Trust is a measurement, not a vibe.",
+    "What this map will never say.",
+    "Read one board. Out loud.",
+    "Field manual · dealer positioning · 10 chapters",
+    "Ch 01",
+    "Ch 02",
+    "Ch 03",
+    "Ch 04",
+    "Ch 05",
+    "Ch 06",
+    "Ch 07"
+   ],
+   "saturated": true
+  },
+  "macro.html": {
+   "bytes": 582355,
+   "markers": 98,
+   "outline": [
+    "Release Radar 数据发布雷达 ? Pre-print model projections for upcoming US macro release",
+    "The Regime 当前周期",
+    "⚠ Fired alerts 已触发警报",
+    "A star fund manager made a notable move",
+    "Major event on deck — expect bigger swings either way",
+    "REGIME CONTEXT 周期背景 Context — not a forecast 情景参考 — 非预测",
+    "Factor Breakdown &mdash; 6 Signals 因子分析 &mdash; 6 项",
+    "16-session path",
+    "What To Do 操作建议",
+    "Upcoming Events 近期事件",
+    "Release Radar — Track record 数据发布雷达 — 评分记录",
+    "Track record 历史评分",
+    "'+relName(rel, rt)+'",
+    "Fed Path 联储路径",
+    "Market Sentiment 市场情绪",
+    "Sector Temperature 板块温度",
+    "Risk 风险",
+    "Policy Monitor 政策监测",
+    "AI Brief AI简报",
+    "Alerts Centre 警报中心"
+   ],
+   "saturated": true
+  },
+  "macro_context.html": {
+   "bytes": 161178,
+   "markers": 5,
+   "outline": [
+    "Macro Weather Station 宏观气象台 &bull; 2026-07-21",
+    "Bond Compass",
+    "Rates Transmission 利率传导",
+    "FX / Dollar 外汇 / 美元",
+    "Dollar Impact 美元影响"
+   ],
+   "saturated": false
+  },
+  "macro_signals.html": {
+   "bytes": 136782,
+   "markers": 19,
+   "outline": [
+    "Macro Signals 宏观信号",
+    "Right now 当下",
+    "Growth &amp; the cycle 增长与周期",
+    "Tier momentum 层级动量 6-month 6个月",
+    "Real-time conditions 实时状况",
+    "Money &amp; liquidity — the tide 资金与流动性 — 资金潮 ? Net money in the system: Fed bal",
+    "Credit &amp; market participation 信用与市场参与度 ? High-yield spread: the market&#39;s",
+    "Mood — Fear / Greed 情绪 — 恐惧/贪婪 ? Wide multi-indicator composite combining market",
+    "Who&#39;s positioned how 谁如何持仓",
+    "VIX — volatility level VIX — 波动率水平",
+    "Commodities &amp; macro tape 大宗商品与宏观盘面",
+    "Currencies &amp; the dollar 货币与美元",
+    "Dollar regime 美元周期 ? Desk legs — real yield z: +0.84 · Fed path: +42bp to 12m · ",
+    "Strength vs dollar 兑美元强弱 1-month",
+    "Stress patterns 压力形态",
+    "Offshore yuan (CNH) 离岸人民币 (CNH)",
+    "Dollar transmission 美元传导",
+    "What changed 近期变化"
+   ],
+   "saturated": false
+  },
+  "market_structure.html": {
+   "bytes": 160733,
+   "markers": 12,
+   "outline": [
+    "How the market is built right now 当前市场的底层结构",
+    "Dealer exposure history 做市商敞口历史",
+    "Machine money flows 机器资金动向",
+    "Stock-picker conditions 选股行情",
+    "Vol weather 波动率天气",
+    "Weekly range 本周区间",
+    "Shock Absorbers 缓冲机制",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "saturated": false
+  },
+  "markets.html": {
+   "bytes": 50377,
+   "markers": 8,
+   "outline": [
+    "Where every market stands 各市场所处位置",
+    "Cross-market overlay 跨市场叠加",
+    "Where they stand today 今日所处位置",
+    "Valuation map 估值地图",
+    "Market scorecards 市场记分卡"
+   ],
+   "saturated": false
+  },
+  "mastermind.html": {
+   "bytes": 42759,
+   "markers": 1,
+   "outline": [
+    "🤖 Mastermind 操盘大脑"
+   ],
+   "saturated": false
+  },
+  "masterminds.html": {
+   "bytes": 48903,
+   "markers": 0,
+   "outline": [],
+   "saturated": false
+  },
+  "measurement.html": {
+   "bytes": 284483,
+   "markers": 56,
+   "outline": [
+    "Measured, not asserted 已测量，而非断言",
+    "The Scorecards 记分卡",
+    "Cone Recalibration Multipliers 锥形重校倍数",
+    "Sector Cycles",
+    "Country Cycles",
+    "China Sector Cycles",
+    "Gate Ledger 门槛台账",
+    "Collinearity Verdict (W2.5) 共线性裁定（W2.5）",
+    "Redundant legs (|rho|&gt;0.8 or VIF&gt;5) 冗余腿（|相关系数|&gt;0.8 或 VIF&gt;5）",
+    "Risk-channel survivors (partial-corr CI excl. 0) 风险信道幸存者（偏相关CI不含0）",
+    "Accruing Measurements 积累中的测量",
+    "Cycle Sync Gauge (W5.1) 周期同步指标（W5.1）",
+    "W5.1 Gate Record W5.1门控记录",
+    "Pattern Memory v0 — What Cycle Has Learned 模式记忆 v0 — 周期已发现的规律",
+    "Null Library — Ruled Out 零效应库 — 已排除",
+    "Live Maturity &amp; Accrual Clocks 实盘成熟度与积累时钟",
+    "Prediction Layer — Hazard Model 预测层 — 风险模型",
+    "Coverage Matrix 覆盖矩阵",
+    "Evidence-Gap Panel 证据缺口面板",
+    "Grading Closure 评分闭环"
+   ],
+   "saturated": true
+  },
+  "methodology.html": {
+   "bytes": 54815,
+   "markers": 21,
+   "outline": [
+    "Methodology 方法论",
+    "Overview &amp; honesty 概述与诚实声明",
+    "Data sources 数据来源",
+    "Universe &amp; point-in-time 股票域与时点",
+    "Factor definitions 因子定义",
+    "Value",
+    "Profitability",
+    "Quality",
+    "Investment",
+    "Payout",
+    "Low volatility",
+    "Low beta",
+    "Cross-sectional z-scores 横截面 z 分数",
+    "Portfolio construction 组合构建",
+    "Returns, horizons &amp; σ 回报、跨度与 σ",
+    "The IC scorecard — our rigor edge IC 记分卡 — 我们的严谨之处",
+    "Sector monitor 行业监测",
+    "Thematic baskets 主题篮子",
+    "Seasonality (Ken French) 季节性 (Ken French)",
+    "Validation 验证"
+   ],
+   "saturated": false
+  },
+  "movers.html": {
+   "bytes": 55867,
+   "markers": 1,
+   "outline": [
+    "Themes moving together 联动主题"
+   ],
+   "saturated": false
+  },
+  "narrative_radar.html": {
+   "bytes": 787032,
+   "markers": 2,
+   "outline": [
+    "🏆 Top Running Baskets 领先运行主题",
+    "📊 All Baskets 全部主题篮子"
+   ],
+   "saturated": true
+  },
+  "news.html": {
+   "bytes": 216181,
+   "markers": 78,
+   "outline": [
+    "News Intelligence Boards 新闻情报面板",
+    "Event Delta Board 事件变化面板",
+    "Macro Release Board 宏观数据发布面板",
+    "Theme Pulse 主题脉冲",
+    "Other macro headlines 其他宏观头条",
+    "Reject Log 筛出日志",
+    "Event Class Calibration 事件类别校准 ?",
+    "Company &amp; market wires 公司与市场快讯",
+    "Upcoming catalysts 即将到来的催化",
+    "High-impact calendar 高影响日程",
+    "Market-implied odds 市场隐含概率",
+    "Feed intelligence 新闻情报",
+    "Narrative texture 叙事纹理",
+    "Trump imposes 50% tariffs on Canadian goods Trump imposes 50% tariffs on Canadia",
+    "GM beats on earnings, raises guidance amid &#39;resilient&#39; consumer, pricing",
+    "Around 70% of debt lawsuits end in default judgments as collectors flood courts ",
+    "Federal Reserve issues FOMC statement 美联储发布FOMC声明",
+    "SEC Names Paul Knight as Chief Operating Officer SEC任命Paul Knight为首席运营官"
+   ],
+   "saturated": true
+  },
+  "odds.html": {
+   "bytes": 55697,
+   "markers": 14,
+   "outline": [
+    "Odds — what happened next on days like today 胜率 — 历史上像今天这样的日子，后来怎么走",
+    "Where the matching days sit on the chart 匹配交易日在走势中的位置",
+    "Median forward path of the matched days 匹配交易日的前瞻价格路径",
+    "Distribution of what happened next 随后收益的分布",
+    "Factor Match — today's conditions across the whole universe 因子共振 — 今日条件在全市场的共振",
+    "Historical Odds Desk 历史胜率台",
+    "How this desk works",
+    "Market Context"
+   ],
+   "saturated": false
+  },
+  "options_screener.html": {
+   "bytes": 355899,
+   "markers": 1,
+   "outline": [
+    "Options Screener 期权筛选台"
+   ],
+   "saturated": true
+  },
+  "policy_watch.html": {
+   "bytes": 189575,
+   "markers": 16,
+   "outline": [
+    "Fed & Policy Watch 美联储与政策观察",
+    "🗓️ Catalyst spine — inflation to decision 催化剂主线 — 从通胀到决议",
+    "🤖 Intent Desk — accountable realpolitik leans 意图台 — 可问责的现实政治判断",
+    "🏦 The Fed under Warsh 沃什治下的美联储",
+    "Reform task forces — dated, falsifiable 改革工作组 — 有日期、可证伪",
+    "🇺🇸 The Administration 行政当局",
+    "Verified policy levers 已核实的政策杠杆",
+    "Geopolitical theaters 地缘政治战区",
+    "🧭 Capital-rotation map 资本轮动地图",
+    "🎯 Targeted / protected / subsidized 受益 / 受保护 / 受补贴",
+    "🥶 Starved / pressured 受冷落 / 承压",
+    "🎯 Falsifiable prediction ledger 可证伪预测台账",
+    "📡 Monitor — highest-signal sources 监测 — 最高信号来源",
+    "📚 Sources & caveats 来源与说明",
+    "🏛️ Fed & Policy Watch 美联储与政策观察"
+   ],
+   "saturated": false
+  },
+  "qa_bottom_sensors.html": {
+   "bytes": 1900136,
+   "markers": 3,
+   "outline": [
+    "Bottom Sensor QA Surface 底部传感器 QA 界面",
+    "What is this surface? 这个界面是什么？",
+    "Entry Stack · Lane B0 入场堆栈 · 通道 B0 DISPLAY-ONLY 仅展示"
+   ],
+   "saturated": true
+  },
+  "radar.html": {
+   "bytes": 41628,
+   "markers": 2,
+   "outline": [
+    "🛰️ Divergence Radar 背离雷达"
+   ],
+   "saturated": false
+  },
+  "report_ai_master_plan.html": {
+   "bytes": 283934,
+   "markers": 50,
+   "outline": [
+    "The AI Master Plan AI 总体规划",
+    "1 What the plan actually is 计划到底是什么",
+    "Lever 1 — Maximize physical throughput 杠杆 1 — 最大化物理吞吐量",
+    "Lever 2 — Force the capex onshore with a tariff stick 杠杆 2 — 用关税大棒迫使资本开支回流本土",
+    "Lever 3 — Turn the state into a toll collector on the AI trade 杠杆 3 — 把国家变成 AI 贸",
+    "Lever 4 — State-capitalism scaffolding 杠杆 4 — 国家资本主义脚手架",
+    "Lever 5 — Narrative and political management 杠杆 5 — 叙事与政治管理",
+    "The five levers at a glance 五个杠杆一览",
+    "The unifying logic 统一逻辑",
+    "2 Was the bubble part of the plan? 泡沫是计划的一部分吗",
+    "Not authored 不是原创者",
+    "Amplified — documentable through revealed preference 被放大——可通过显性偏好记录下来",
+    "The precise answer 更精确的答案",
+    "3 The pop — mechanism &amp; the toolkit 破裂 —— 机制与工具箱",
+    "Hyperscaler capex / FCF reality (2026) 超大云厂商资本开支 / 自由现金流现实（2026）",
+    "June 2026 was the dress rehearsal 2026 年 6 月是彩排",
+    "The Fed put is structurally disabled — for now “Fed put”目前在结构上失灵",
+    "Administration toolkit — deployment order 政府工具箱——部署顺序",
+    "What they cannot fix 他们修不了什么",
+    "4 The real thesis — refinancing the United States 真正的论点 —— 为美国再融资"
+   ],
+   "saturated": true
+  },
+  "report_bessent_jun24.html": {
+   "bytes": 100413,
+   "markers": 14,
+   "outline": [
+    "The Bessent Bridge 贝森特之桥",
+    "1 One week after Warsh — the scorecard 沃什之后一周 —— 成绩单",
+    "2 Was Warsh’s narrative aligned with what happened? 沃什的叙事与后续走势一致吗",
+    "3 The Bessent tell — June 24 贝森特的破绽 —— 6月24日",
+    "The four-leg dollar — and the one leg he omits 四条腿的美元 —— 以及他略去的那条腿",
+    "4 Narrative vs revealed vs true interest 叙事 vs 显示 vs 真实利益",
+    "5 What they don’t say — decoded 他们没说的 —— 解码",
+    "6 The debasement-trade shakeout — flush or refutation? 去货币化交易的洗盘 —— 踩踏还是证伪",
+    "7 The gameplan & timeline 棋局与时间表",
+    "8 What we foresee 前瞻研判",
+    "The master gate + the tells that decide it 总闸门 + 决定走向的\"破绽\"",
+    "9 The honest caveats 诚实的告诫",
+    "Sources 资料来源"
+   ],
+   "saturated": false
+  },
+  "report_haven_audition.html": {
+   "bytes": 170615,
+   "markers": 11,
+   "outline": [
+    "The Haven Audition 避险选角",
+    "1 The ten-second answer 十秒答案",
+    "2 Two different jobs 两份不同的工作",
+    "3 The Google template, measured 谷歌模板的度量",
+    "4 Meta&rsquo;s audition Meta 的试镜",
+    "5 The full cast, scored 全体候选人打分",
+    "6 The Washington question 华盛顿之问",
+    "7 The two-phase answer 两阶段答案",
+    "8 Falsification dashboard 证伪仪表盘",
+    "Sources &amp; method 资料来源与方法"
+   ],
+   "saturated": false
+  },
+  "report_relapse_jul8.html": {
+   "bytes": 139649,
+   "markers": 17,
+   "outline": [
+    "The Relapse 复燃",
+    "0 How to read this note 阅读方式",
+    "1 The 96 hours that mattered 决定性的96小时",
+    "2 Re-marking the map 重估地图",
+    "3 The buy list, ranked 买入清单，按序排列",
+    "01 Energy — the hedge that pays carry 能源——会付息的对冲",
+    "02 China platforms — the rotation fired early 中国平台——轮动提前点火",
+    "03 Act II power &amp; electrical — buy the weakness you were promised 第二幕电力与电气——",
+    "04 Mag-7 at the FCF trough — tranche one 七巨头现金流低谷——第一批",
+    "05 Gold — the both-ways hedge 黄金——双向对冲",
+    "06 Bitcoin — the schedule outranks the bounce 比特币——时间表高于反弹",
+    "07 Copper — let the war hand you the entry 铜——让战争把入场点递过来",
+    "4 Sell into strength — the discipline half 逢强卖出——纪律的另一半",
+    "5 Sequencing — what fires when 时序——什么时候扣哪一扳机",
+    "6 Falsification — what kills what 证伪面板——什么杀死什么",
+    "Sources &amp; method 资料来源与方法"
+   ],
+   "saturated": false
+  },
+  "report_second_act.html": {
+   "bytes": 471249,
+   "markers": 57,
+   "outline": [
+    "The Second Act 第二幕",
+    "0 How to Read This Document 如何阅读本文",
+    "1 Executive Summary — The Ten Calls 执行摘要——十大判断",
+    "2 State of Play — July 2, 2026 局势盘点——2026年7月2日",
+    "2.1 · The tape (the market scoreboard) 2.1 · 盘面（市场记分牌）",
+    "2.2 · What actually happened in the first half of 2026 (the short version) 2.2 ·",
+    "2.3 · The war and its wind-down — the biggest macro force for H2 2.3 · 战争及其退潮——主",
+    "2.4 · The Fed under Warsh — read the man, not the dots 2.4 · Warsh 治下的联储——读人，不读点",
+    "2.5 · The tariff machine, rebuilt mid-flight 2.5 · 关税机器——飞行中重建",
+    "2.6 · The AI complex: demand intact, structure changing 2.6 · AI 复合体：需求未损，结构生变",
+    "3 The Political Economy Engine — Interests, Actors, and the Path They Force 政治经济",
+    "3.1 · What the administration is actually optimizing 3.1 · 政府真正在优化什么",
+    "3.2 · Actor-by-actor 3.2 · 逐个行为主体拆解",
+    "3.3 · Does the plan include the whole stack? Yes — and the order of operations i",
+    "3.4 · The midterm calculus and what it forces in Q3 3.4 · 中期选举的算术及其对三季度的倒逼",
+    "4 Cycle Position — 1998 × 1990, With 2000 on the 2027 Horizon 周期定位——1998 × 1990，",
+    "4.1 · The three analogs, scored 4.1 · 三个历史类比的评分",
+    "4.2 · The cloud-digestion sub-analog (for the semis specifically) 4.2 · 云消化期子类比（",
+    "5 The Master Timeline — July 2026 → December 2027 总时间轴——2026年7月 → 2027年12月",
+    "5.1 · Month-by-month base case 5.1 · 逐月基准情形"
+   ],
+   "saturated": true
+  },
+  "report_warsh_fomc.html": {
+   "bytes": 77298,
+   "markers": 14,
+   "outline": [
+    "The Warsh Shock 沃什冲击",
+    "1 The setup — where markets were coming in 前情 —— 市场带着怎样的仓位进入会议",
+    "2 What the Fed actually delivered 美联储实际交出了什么",
+    "3 The intraday play-by-play — and the three \"why\"s 盘中三幕 —— 以及三个\"为什么\"",
+    "① 2:00pm — the drop. Why it fell first. ① 下午2:00 —— 下跌。为何最初会跌。",
+    "② ~2:30pm — the rebound. Why it bounced. ② 约下午2:30 —— 反弹。为何会回升。",
+    "③ Into the close — the crash. Why it cratered again. ③ 临近收盘 —— 再度暴跌。为何二次崩跌。",
+    "4 Cross-asset scorecard 跨资产成绩单 · June 17 close 6月17日收盘",
+    "5 Why the dovish guidance some expected never came 为何某些人期待的鸽派指引始终没有出现",
+    "6 What it means going forward 对后市意味着什么",
+    "7 The watch-list that decides which branch 决定走向哪个分支的观察清单",
+    "8 So — confusion scare, or has the landscape changed? 所以 —— 困惑式恐慌，还是格局已变？",
+    "Sources 资料来源"
+   ],
+   "saturated": false
+  },
+  "reports.html": {
+   "bytes": 64716,
+   "markers": 9,
+   "outline": [
+    "Research Reports 研究报告",
+    "📰 Research Reports 研究报告",
+    "The Haven Audition 避险选角",
+    "The Relapse 复燃",
+    "The Second Act 第二幕",
+    "The AI Master Plan AI 总体规划",
+    "The Bessent Bridge 贝森特之桥",
+    "The Warsh Shock 沃什冲击"
+   ],
+   "saturated": false
+  },
+  "seasonality.html": {
+   "bytes": 89830,
+   "markers": 2,
+   "outline": [
+    "🗓 Factor seasonality 因子季节性",
+    "Seasonality mosaic — mean return × hit-rate by month 季节性矩阵 — 各月平均回报 × 命中率 ? A fa"
+   ],
+   "saturated": false
+  },
+  "sector_central.html": {
+   "bytes": 87406,
+   "markers": 13,
+   "outline": [
+    "Every US sector &amp; theme, in one read 每个美股行业与主题，一个研判",
+    "Cycle map — every sector &amp; theme on one clock 周期图谱 — 各板块与主题同框",
+    "Sector rotation overlay 板块轮动叠加",
+    "Conviction board — one gated read per name 信念研判 — 每个标的一个门控研判",
+    "Where sector-ETF money is flowing 板块 ETF 资金流向何处",
+    "Market heat — breadth &amp; cap-weighted moves 市场热度 — 宽度与市值加权涨跌",
+    "'+L('Self-grader','自评分器')+'",
+    "'+L('Self-grader — measured accuracy','自评分器 — 已衡量准确度')+'",
+    "🧭 ' + L('Index leadership rotation', '指数领导轮动') + '"
+   ],
+   "saturated": false
+  },
+  "sector_central_china.html": {
+   "bytes": 73017,
+   "markers": 11,
+   "outline": [
+    "Every China sector &amp; theme, in one read 每个中国行业与主题，一个研判",
+    "Cycle map — every sector & theme on one clock 周期图谱 — 各板块与主题同框",
+    "Sector rotation overlay 板块轮动叠加",
+    "Conviction board — one gated read per name 信念研判 — 每个标的一个门控研判",
+    "'+L('Self-grader','自评分器')+'",
+    "'+L('Self-grader — measured accuracy','自评分器 — 已衡量准确度')+'"
+   ],
+   "saturated": false
+  },
+  "sector_cycles.html": {
+   "bytes": 46805,
+   "markers": 5,
+   "outline": [
+    "Where every US sector stands 每个美股板块所处的位置",
+    "Sector rotation overlay 板块轮动叠加",
+    "Sector scorecards 板块记分卡"
+   ],
+   "saturated": false
+  },
+  "sector_cycles_china.html": {
+   "bytes": 51695,
+   "markers": 5,
+   "outline": [
+    "Where every China sector stands 每个中国板块所处的位置",
+    "Sector rotation overlay 板块轮动叠加",
+    "Sector scorecards 板块记分卡"
+   ],
+   "saturated": false
+  },
+  "sector_heatmap.html": {
+   "bytes": 44027,
+   "markers": 1,
+   "outline": [
+    "🔥 Market Heatmaps 市场热力图"
+   ],
+   "saturated": false
+  },
+  "smart_money.html": {
+   "bytes": 917990,
+   "markers": 81,
+   "outline": [
+    "Ownership Intelligence Desk 持仓情报台",
+    "Managers worth following 值得跟随的基金经理",
+    "Quarterly report card — last four quarters 季度成绩单——近四个季度",
+    "What just moved 最新动向",
+    "Insider intelligence 内部人情报",
+    "Manager desk 基金经理台",
+    "Per-fund rotation 各基金轮动",
+    "Best ideas board 最佳想法榜",
+    "Asymmetric small/mid 非对称小中型股",
+    "Biggest exits 最大减持离场",
+    "Where the herd stands 机构抱团现状",
+    "Activist situation monitor 维权情况监控",
+    "Ticker dossier 个股档案",
+    "Institutional 13F · Context Only · Never a Buy List 机构 13F · 仅供背景参考 · 非买入清单"
+   ],
+   "saturated": true
+  },
+  "special_situations.html": {
+   "bytes": 6697959,
+   "markers": 2,
+   "outline": [
+    "Special Situations · Event-Driven Desk 特殊事件 · 事件驱动交易台",
+    "Coverage &amp; honesty 覆盖与诚实"
+   ],
+   "saturated": true
+  },
+  "spr.html": {
+   "bytes": 190572,
+   "markers": 10,
+   "outline": [
+    "🇺🇸 United States SPR · live (EIA, weekly) 美国战略石油储备 · 实时（EIA，每周）",
+    "Strategic context 战略背景",
+    "US SPR level vs WTI / Brent 美国战略储备水平 vs WTI / 布伦特",
+    "US SPR — full history (1982→) 美国战略储备 — 完整历史（1982年至今）",
+    "Emergency oil stocks worldwide 全球应急石油储备",
+    "Strategic Petroleum Reserves 战略石油储备",
+    "SPR vs oil price 战略储备与油价",
+    "Major countries — strategic reserves &amp; national crude stocks 主要国家 — 战略储备与国家原",
+    "Global picture 全球概览",
+    "Official gold reserves — central banks 官方黄金储备 — 央行"
+   ],
+   "saturated": false
+  },
+  "spvector.html": {
+   "bytes": 298874,
+   "markers": 11,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Macro de-risk score 宏观降险评分 (0–100)",
+    "LLM context / veto overlay LLM 背景 / 否决叠加",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Allocation Strategy · in depth 仓位策略 · 深度",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · S&amp;P 500 with the model on top 策略实战 · 标普500 叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → equity weight 规则手册 · 风险区间 → 股票权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "stage_analysis.html": {
+   "bytes": 156157,
+   "markers": 26,
+   "outline": [
+    "The market, placed on the cycle 把全市场放到周期上",
+    "Most stocks are advancing 多数股票 正在上升",
+    "'+TT('Nothing matches','没有符合的股票')+'",
+    "'+TT('Weekly stage view','周线阶段视图')+' — '+esc(row.ticker)+'",
+    "'+TT('Last earnings call','最近财报会')+'",
+    "'+TT('Earnings tags','财报标签')+'",
+    "'+TT('Warming up','正在预热')+'",
+    "'+TT('No fresh advances here','此处暂无新转强')+'",
+    "'+ (pol==='up'?LT('Improved calls','转好的电话会'):LT('Worsened calls','转差的电话会'))+'",
+    "'+LT('What went well','亮点')+'",
+    "'+LT('What to watch','需留意')+'",
+    "'+LT('In their words','管理层原话')+'",
+    "'+LT('Themes on the call','电话会主题')+'",
+    "'+TT('Nothing matches','没有符合的公司')+'",
+    "Market weather 市场天气"
+   ],
+   "saturated": true
+  },
+  "state_of_themes.html": {
+   "bytes": 408450,
+   "markers": 132,
+   "outline": [
+    "State of Themes 主题态势",
+    "This week 本周",
+    "Variant perception 差异认知",
+    "Mechanism 传导机制",
+    "Pathway 传导路径",
+    "Falsifiers 假证伪器",
+    "Evidence 证据",
+    "Setup legs 结构腿",
+    "Options crowding check 期权拥挤度检查",
+    "Clinical pipeline 临床管线"
+   ],
+   "saturated": true
+  },
+  "status.html": {
+   "bytes": 3060,
+   "markers": 1,
+   "outline": [
+    "mastermind-x · VPS status"
+   ],
+   "saturated": false
+  },
+  "stock.html": {
+   "bytes": 228235,
+   "markers": 35,
+   "outline": [
+    "Chart 图表",
+    "Momentum across timeframes 跨周期动量",
+    "🔮 Anticipation — multi-horizon outcome cone 预判 — 多周期结果锥 all assets → 全部标的 →",
+    "⚖️ AI judgment — accountable lean AI 研判 — 可问责判断",
+    "🧠 AI brief — research context AI 简报 — 研究背景",
+    "🏢 Business profile 公司概况",
+    "🧭 Demand context — is the rally already priced? 需求背景 — 涨势是否已被定价？ ? A framing of ",
+    "💲 Valuation 估值 ? Trailing multiples from the latest SEC filing divided by the cu",
+    "📊 Financials &amp; growth 财务与增长 ? Latest fiscal year from SEC EDGAR XBRL; multi-",
+    "🧾 Accounting quality 会计质量 ? A plain-language read on whether the accounting is d",
+    "⚠ Great-company-trap check 优质公司陷阱检查 ? Three independent de-escalation legs appli",
+    "🗓 Event windows 事件窗口 ? Upcoming event-calendar context for this name: next earni",
+    "📅 Earnings 财报 ? Next reported earnings date and the recent beat/miss history (SE",
+    "🧬 Factor fingerprint 因子指纹 ? Where this name sits on the canonical smart-beta fac",
+    "📈 Alpha vs sector &amp; index 相对板块与大盘的阿尔法 ? This stock&#39;s return with its MAR",
+    "🎯 Options &amp; dealer gamma (GEX) 期权与做市商Gamma",
+    "📊 Intraday flow 盘中资金流",
+    "🩳 Positioning 持仓与做空 ? Short interest from FINRA (bi-monthly, ~2-week lag). Insid",
+    "👔 Analyst &amp; estimates 分析师与预期",
+    "🐳 Thematic-fund flow — curated ETF baskets 主题基金流 — 精选ETF篮子 ? Which curated thema"
+   ],
+   "saturated": true
+  },
+  "strategies.html": {
+   "bytes": 93415,
+   "markers": 28,
+   "outline": [
+    "S&amp;P / Macro Vector 标普宏观向量",
+    "Credit Carry 信用套息",
+    "Duration / Treasury Timing 久期 / 国债择时",
+    "Nasdaq 100 Trend 纳指100趋势",
+    "Small-Cap Trend 小盘股趋势",
+    "Semiconductor Trend 半导体趋势",
+    "Dual Momentum (US) 双动量（美股）",
+    "Golden Cross 黄金交叉",
+    "Volatility-Managed S&amp;P 波动管理标普",
+    "VIX Term-Structure Timer VIX 期限结构择时",
+    "Net-Liquidity Vector 净流动性向量",
+    "Yield-Curve Recession Timer 收益率曲线衰退择时",
+    "Sahm-Rule Labor Timer Sahm 失业率择时",
+    "Credit-Spread Equity Gate 信用利差股票闸门",
+    "Financial-Conditions Timer 金融条件择时",
+    "Momentum w/ Crash Guard 动量因子崩溃护盾",
+    "Low-Volatility Defensive 低波动防御",
+    "Quality Flight 质量避险",
+    "Equal-Weight Trend &amp; Breadth 等权趋势与广度",
+    "Gold Macro Timer 黄金宏观择时"
+   ],
+   "saturated": true
+  },
+  "strategy_btc_trend.html": {
+   "bytes": 238748,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · ₿ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 11.8 years vs buy &amp; hold 回测记分卡 · 11.8 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_cm_copper_active.html": {
+   "bytes": 198111,
+   "markers": 7,
+   "outline": [
+    "Recommended exposure right now 当前建议敞口",
+    "Backtest scorecard 回测记分卡 · 25.9y vs 对比 Copper buy-&amp;-hold 铜买入持有",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "← Commodity Strategies 商品策略 · ⚙️ Active strategy 主动策略",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_cm_copper_macro.html": {
+   "bytes": 258821,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Growth slowing 增长放缓 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Commodity Strategies 商品策略 · 🏗️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 25.9 years vs buy &amp; hold 回测记分卡 · 25.9 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_cm_copper_swap.html": {
+   "bytes": 273397,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Commodity Strategies 商品策略 · 🟤 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 25.9 years vs buy &amp; hold 回测记分卡 · 25.9 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_cm_gold_active.html": {
+   "bytes": 197104,
+   "markers": 7,
+   "outline": [
+    "Recommended exposure right now 当前建议敞口",
+    "Backtest scorecard 回测记分卡 · 25.9y vs 对比 Gold buy-&amp;-hold 黄金买入持有",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "← Commodity Strategies 商品策略 · 🔱 Active strategy 主动策略",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_cm_gold_macro.html": {
+   "bytes": 268673,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Monetary headwind 货币逆风 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Commodity Strategies 商品策略 · 🏵️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 25.9 years vs buy &amp; hold 回测记分卡 · 25.9 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_cm_gold_swap.html": {
+   "bytes": 279721,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Commodity Strategies 商品策略 · 🥇 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 25.9 years vs buy &amp; hold 回测记分卡 · 25.9 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_cm_oil_macro.html": {
+   "bytes": 228674,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Dollar + glut 美元 + 过剩 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Commodity Strategies 商品策略 · 🛢 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 19.0 years vs buy &amp; hold 回测记分卡 · 19.0 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_cm_oil_swap.html": {
+   "bytes": 228395,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Commodity Strategies 商品策略 · 🛢️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 19.0 years vs buy &amp; hold 回测记分卡 · 19.0 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_cm_silver_active.html": {
+   "bytes": 198407,
+   "markers": 7,
+   "outline": [
+    "Recommended exposure right now 当前建议敞口",
+    "Backtest scorecard 回测记分卡 · 25.9y vs 对比 Silver buy-&amp;-hold 白银买入持有",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "← Commodity Strategies 商品策略 · ⚡ Active strategy 主动策略",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_cm_silver_macro.html": {
+   "bytes": 262555,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Monetary + growth headwind 货币 + 增长逆风 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Commodity Strategies 商品策略 · ⚙️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 25.9 years vs buy &amp; hold 回测记分卡 · 25.9 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_cm_silver_swap.html": {
+   "bytes": 277310,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Commodity Strategies 商品策略 · 🥈 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 25.9 years vs buy &amp; hold 回测记分卡 · 25.9 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_cn_credit_margin.html": {
+   "bytes": 184436,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Leverage euphoria 杠杆狂热 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← China Strategies 中国策略 · 🛡️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 14.2 years vs buy &amp; hold 回测记分卡 · 14.2 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_cn_credit_vol.html": {
+   "bytes": 187132,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Credit contracting 信用收缩 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← China Strategies 中国策略 · 🪙 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 14.2 years vs buy &amp; hold 回测记分卡 · 14.2 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_cn_volmanaged.html": {
+   "bytes": 194454,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Vol spiking 波动率飙升 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← China Strategies 中国策略 · 🌊 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 14.2 years vs buy &amp; hold 回测记分卡 · 14.2 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_cnmm_aggressive.html": {
+   "bytes": 170247,
+   "markers": 9,
+   "outline": [
+    "Current allocation 当前配置",
+    "Backtest scorecard 回测记分卡 · 13.0y vs 对比 CSI 300 沪深300",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "How this strategy works 本策略如何运作",
+    "This profile’s risk dials 本档的风险旋钮",
+    "Live regime layer · why the book is positioned this way 实时体制层 · 当前持仓为何如此",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_cnmm_conservative.html": {
+   "bytes": 170337,
+   "markers": 9,
+   "outline": [
+    "Current allocation 当前配置",
+    "Backtest scorecard 回测记分卡 · 13.0y vs 对比 China 40/60 (CSI300/CGB) 中国 40/60（沪深300/国",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "How this strategy works 本策略如何运作",
+    "This profile’s risk dials 本档的风险旋钮",
+    "Live regime layer · why the book is positioned this way 实时体制层 · 当前持仓为何如此",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_cnmm_moderate.html": {
+   "bytes": 170643,
+   "markers": 9,
+   "outline": [
+    "Current allocation 当前配置",
+    "Backtest scorecard 回测记分卡 · 13.0y vs 对比 CSI 300 沪深300",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "How this strategy works 本策略如何运作",
+    "This profile’s risk dials 本档的风险旋钮",
+    "Live regime layer · why the book is positioned this way 实时体制层 · 当前持仓为何如此",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_copper_growth.html": {
+   "bytes": 255374,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Growth slowing 增长放缓 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🟤 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 25.9 years vs buy &amp; hold 回测记分卡 · 25.9 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_credit_carry.html": {
+   "bytes": 131683,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Credit stress 信用压力 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 💳 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 3.1 years vs buy &amp; hold 回测记分卡 · 3.1 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_credit_gate_equity.html": {
+   "bytes": 299406,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Credit stress 信用压力 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🚦 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_curve_recession.html": {
+   "bytes": 271908,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Curve trigger 曲线触发 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 📉 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_dual_momentum.html": {
+   "bytes": 278411,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Below-cash momentum 低于现金的动量 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🔀 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_duration_timing.html": {
+   "bytes": 248104,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Duration risk 久期风险 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🏛️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 24.0 years vs buy &amp; hold 回测记分卡 · 24.0 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_em_debt_carry.html": {
+   "bytes": 233636,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Dollar / EM stress 美元 / 新兴市场压力 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🌍 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 18.6 years vs buy &amp; hold 回测记分卡 · 18.6 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_equalweight_trend.html": {
+   "bytes": 248429,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Breadth narrowing 广度收窄 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · ⚖️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 23.2 years vs buy &amp; hold 回测记分卡 · 23.2 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_eth_trend.html": {
+   "bytes": 206871,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · Ξ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 8.7 years vs buy &amp; hold 回测记分卡 · 8.7 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_fin_conditions.html": {
+   "bytes": 265407,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Conditions tightening 条件收紧 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🌡️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_flight_to_quality.html": {
+   "bytes": 259626,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Rate shock 利率冲击 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🪂 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 24.0 years vs buy &amp; hold 回测记分卡 · 24.0 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_gold_macro.html": {
+   "bytes": 274641,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Gold headwinds 黄金逆风 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🥇 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 25.9 years vs buy &amp; hold 回测记分卡 · 25.9 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_golden_cross.html": {
+   "bytes": 263628,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Death-cross state 死叉状态 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · ✝️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_ig_carry.html": {
+   "bytes": 248982,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "IG credit stress 投资级信用压力 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🏦 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 24.0 years vs buy &amp; hold 回测记分卡 · 24.0 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_lowvol_defensive.html": {
+   "bytes": 212083,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Market panic 市场恐慌 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🛡️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 14.7 years vs buy &amp; hold 回测记分卡 · 14.7 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_mm_aggressive.html": {
+   "bytes": 186526,
+   "markers": 8,
+   "outline": [
+    "Current allocation 当前配置",
+    "Backtest scorecard 回测记分卡 · 19.2y vs 对比 S&amp;P 500 标普500",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "How this strategy works 本策略如何运作",
+    "This profile’s risk dials 本档的风险旋钮",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_mm_conservative.html": {
+   "bytes": 187165,
+   "markers": 8,
+   "outline": [
+    "Current allocation 当前配置",
+    "Backtest scorecard 回测记分卡 · 19.2y vs 对比 60/40 (SPY/IEF) 60/40（SPY/IEF）",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "How this strategy works 本策略如何运作",
+    "This profile’s risk dials 本档的风险旋钮",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_mm_moderate.html": {
+   "bytes": 186647,
+   "markers": 8,
+   "outline": [
+    "Current allocation 当前配置",
+    "Backtest scorecard 回测记分卡 · 19.2y vs 对比 S&amp;P 500 标普500",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "Exposure / leverage over time 敞口 / 杠杆走势",
+    "How this strategy works 本策略如何运作",
+    "This profile’s risk dials 本档的风险旋钮",
+    "Out-of-sample honesty · does the edge hold in both halves? 样本外诚实检验 · 优势在两个半段是否成立"
+   ],
+   "saturated": false
+  },
+  "strategy_momentum_crashguard.html": {
+   "bytes": 195020,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Crash risk 崩溃风险 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🚀 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 13.3 years vs buy &amp; hold 回测记分卡 · 13.3 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_nasdaq_trend.html": {
+   "bytes": 271377,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 💻 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 27.4 years vs buy &amp; hold 回测记分卡 · 27.4 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_net_liquidity.html": {
+   "bytes": 268045,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Liquidity drain 流动性收缩 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🪣 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_oil_trend.html": {
+   "bytes": 227804,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🛢️ Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 19.0 years vs buy &amp; hold 回测记分卡 · 19.0 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_quality_flight.html": {
+   "bytes": 177144,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Recession risk 衰退风险 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 💎 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 13.0 years vs buy &amp; hold 回测记分卡 · 13.0 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": false
+  },
+  "strategy_sahm_timer.html": {
+   "bytes": 317611,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Labor weakening 就业转弱 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🧰 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_semis_trend.html": {
+   "bytes": 268314,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🔌 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 26.1 years vs buy &amp; hold 回测记分卡 · 26.1 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_smallcap_trend.html": {
+   "bytes": 268556,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Down-trend / vol 下行趋势 / 波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🐭 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 26.1 years vs buy &amp; hold 回测记分卡 · 26.1 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_vix_term_timer.html": {
+   "bytes": 293997,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "VIX backwardation VIX 贴水 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 📐 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "strategy_vol_managed_sp.html": {
+   "bytes": 318141,
+   "markers": 10,
+   "outline": [
+    "Recommended allocation right now 当前建议仓位",
+    "Realized vol 已实现波动 score 评分 (0–100)",
+    "Growth of $1 (log) — vs buy &amp; hold 1美元增长（对数）— 对比买入持有",
+    "Underwater (drawdown) — vs buy &amp; hold 水下回撤 — 对比买入持有",
+    "← Strategies 策略 · 🌊 Tactical strategy 战术策略",
+    "What is driving the score 分数由什么驱动",
+    "The strategy in action · benchmark with the model on top 策略实战 · 基准叠加模型",
+    "Backtest scorecard · 33.5 years vs buy &amp; hold 回测记分卡 · 33.5 年对比买入持有",
+    "The rule-book · risk band → weight 规则手册 · 风险区间 → 权重",
+    "Independent bear episodes · the true sample size 独立熊市事件 · 真实样本量"
+   ],
+   "saturated": true
+  },
+  "subsector_rotation.html": {
+   "bytes": 114080,
+   "markers": 10,
+   "outline": [
+    "🌀 Subsector Rotation 子行业轮动",
+    "⟲ Rotation Events 轮动事件",
+    "⏱ Rotation Time Machine 轮动时光机",
+    "🎯 Rotation Turn Desk 轮动入场台",
+    "📡 Earliest flow signs 最早期资金迹象",
+    "'+title+'"
+   ],
+   "saturated": false
+  },
+  "subsector_rotation_china.html": {
+   "bytes": 51326,
+   "markers": 4,
+   "outline": [
+    "🌀 China Subsector Rotation 中国子行业轮动",
+    "⟲ China Rotation Events 中国轮动事件",
+    "'+title+'"
+   ],
+   "saturated": false
+  },
+  "subsectors.html": {
+   "bytes": 42187,
+   "markers": 1,
+   "outline": [
+    "💫 Subsector Confluence 子行业汇聚 ⓘ"
+   ],
+   "saturated": false
+  },
+  "subsectors_china.html": {
+   "bytes": 42326,
+   "markers": 1,
+   "outline": [
+    "💫 Subsector Confluence · China 子行业汇聚 · 中国 同花顺概念"
+   ],
+   "saturated": false
+  },
+  "transmission.html": {
+   "bytes": 120357,
+   "markers": 28,
+   "outline": [
+    "Curve shape 曲线形态",
+    "Curve regime 曲线状态",
+    "Recession dashboard 衰退面板",
+    "Slopes &amp; momentum 斜率与动能",
+    "Forward rates &amp; carry 远期利率与持有收益",
+    "Curve signals — sector, style &amp; market tendency 曲线信号 — 板块、风格与市场倾向",
+    "Inflation decomposition 通胀分解",
+    "Breakeven velocity &amp; cause — visibility only 盈亏平衡速度与成因 — 仅供观察",
+    "What changed",
+    "Rates 利率 ? The real 10-year yield is the interest rate after inflation — the tru",
+    "Inflation 通胀 ? Core PCE is the Fed&#39;s preferred inflation gauge; its 2% targe",
+    "Dollar 美元 ? Most world trade and debt is priced in dollars, so a strong dollar s",
+    "Rates channel",
+    "Higher real rates",
+    "Inflation channel",
+    "Sticky inflation",
+    "Rate cuts &amp; a steeper curve",
+    "If real rates rise further 若实际利率进一步走高",
+    "If rates ease off 若利率回落",
+    "If an inflation scare hits 若通胀预期升温"
+   ],
+   "saturated": true
+  },
+  "us_stocks.html": {
+   "bytes": 847998,
+   "markers": 20,
+   "outline": [
+    "🇺🇸 US Stock Dashboard 美国个股看板",
+    "The Big Seven 七巨头",
+    "What to act on now 当前可操作 ? Every sector and theme is sorted into five lanes by c",
+    "Prophet Stock Signals 先知选股",
+    "US equity scoreboard — size, breadth &amp; internals 美股计分板 — 规模、广度与内部结构 ? Three ",
+    "Sector buy/sell setups — short-term timing 板块买卖配置 — 短线择时 ? The primary sector ti",
+    "Turn Setups — early bottoming signs by stock 拐点形态 — 个股早期筑底迹象 ? A per-stock check",
+    "Accumulation watch — sector ETFs 增持监测 — 板块 ETF ? Each sector SPDR&#39;s top-10 w",
+    "Real fund moves — strongest conviction 基金真实动作 — 信念最强 ? The top conviction-ranked",
+    "⚡ Early turn signs",
+    "🟢 Buy now 立即买入 5",
+    "🔵 Almost ready 接近就绪 3",
+    "🏃 In favour — don't chase 看好 — 勿追高 3",
+    "🟠 Take profits 止盈 0",
+    "⚪ Stand aside 观望 26",
+    "US buy board · vs S&amp;P 500 美股买入榜 · 对比标普500",
+    "Track record 榜单往绩"
+   ],
+   "saturated": true
+  },
+  "us_stocks_v2.html": {
+   "bytes": 10308,
+   "markers": 3,
+   "outline": [
+    "Buy Board 2.0 买入榜 2.0 SHADOW · not live",
+    "Entry open 入场开放",
+    "Setting up 酝酿中"
+   ],
+   "saturated": false
+  },
+  "us_track_record.html": {
+   "bytes": 55979,
+   "markers": 5,
+   "outline": [
+    "Track Record 往绩记录",
+    "US Buy Board 美股买入榜",
+    "Weekly board activity 每周榜单活跃度",
+    "Surfaced vs. missed 上榜与遗漏对比"
+   ],
+   "saturated": false
+  },
+  "validation_timeline.html": {
+   "bytes": 816730,
+   "markers": 0,
+   "outline": [],
+   "saturated": true
+  },
+  "vector.html": {
+   "bytes": 371662,
+   "markers": 61,
+   "outline": [
+    "BTC Allocation · Optimal strategy BTC 仓位 · 最优策略",
+    "What BTC did next · on days like today 类似今日的历史日 · BTC 后续走势",
+    "Trend &amp; Momentum 趋势与动量",
+    "Risk &amp; Volatility 风险与波动",
+    "Valuation &amp; Cycle 估值与周期",
+    "Demand &amp; Flows 需求与资金流",
+    "Macro &amp; Positioning 宏观与持仓",
+    "Impulse Radar · forward pressure 脉冲雷达 · 前瞻压力",
+    "BTC price, Risk Index &amp; allocation BTC 价格、风险指数与仓位 · Optimal variant · 最优变体",
+    "Where Bitcoin is in its short cycle (~8 weeks) 比特币当前所处短周期位置（约 8 周） · BEARISH BEA",
+    "Technicals across timeframes 跨周期技术指标",
+    "Momentum 动量 -0.13",
+    "Structure Shift 结构转变 0.24",
+    "Impulse 脉冲 · NEUTRAL 中性 0.09",
+    "Bitcoin Fundamental Index (BFI) — Network growth × Liquidity 比特币基本面指数（BFI）— 网络增长",
+    "Valuation anchors 估值锚点 · Fair Fair",
+    "Miner cycle &amp; cost basis 矿工周期与成本基准",
+    "Cycle clock 周期时钟 · MARKDOWN 下跌",
+    "Cycle Thesis Monitor 周期论点监测 · INTACT 成立 ?",
+    "CME positioning &amp; correlation CME 持仓与相关性 · CROWDED LONG 多头拥挤"
+   ],
+   "saturated": true
+  },
+  "vector_allocation.html": {
+   "bytes": 136079,
+   "markers": 10,
+   "outline": [
+    "Recommended split 建议配置 · Bear 看空 regime 格局 × Mixed Mixed",
+    "Where are we in the alt cycle? 处于山寨周期何处？",
+    "Conservative 保守",
+    "Moderate 稳健",
+    "Aggressive 进取",
+    "Optimal 最优",
+    "Allocation Strategy · in depth 仓位策略 · 深度",
+    "ETH/BTC ratio · the alt-cycle clock ETH/BTC 比率 · 山寨周期时钟",
+    "Allocation grid · cycle regime × alt-season 配置矩阵 · 周期格局 × 山寨季",
+    "Bitcoin allocation variants · backtested vs HODL 比特币仓位变体 · 相对 HODL 回测"
+   ],
+   "saturated": false
+  },
+  "watchlist.html": {
+   "bytes": 53049,
+   "markers": 6,
+   "outline": [
+    "Watchlist &amp;amp; Portfolio 自选与持仓",
+    "Account sync 账户同步",
+    "Portfolio 持仓",
+    "Add holding"
+   ],
+   "saturated": false
+  },
+  "whitehouse.html": {
+   "bytes": 122867,
+   "markers": 25,
+   "outline": [
+    "Policy alerts, market-read 政策快讯 · 市场解读",
+    "Treasury liquidity — the TGA read 财政部流动性 · TGA 解读",
+    "Trump imposes 50% tariff on Canadian goods in retaliation for alcohol bans — tar",
+    "Trump halves aluminum tariff for onshoring smelter investments — shift in U.S. p",
+    "Trump defense supply chain order: domestic miners benefit, import-reliant contra",
+    "Trump delays costly EPA chemical emissions rule by 2 years — domestic producers&",
+    "Bears Ears Monument cut by 1.2M acres — uranium, copper, silver miners gain acce",
+    "Trump shrinks Grand Staircase-Escalante 90%, unleashing critical mineral mining ",
+    "Treasury injects $175bn quarter-end cash, RRP exhausted — reserves flood banks, ",
+    "Trump&#39;s NEPA overhaul unlocks federal land &amp; permits — tailwind for ener",
+    "Trump duty-free Moroccan phosphate — US producers squeezed, farmers get cost rel",
+    "Trump lifts phosphate duties from Morocco — farm relief, domestic producers hit ",
+    "Aftermarket-parts deregulation: EPA to bypass CARB bottleneck, ease tampering ru"
+   ],
+   "saturated": true
+  }
+ },
+ "counts": {
+  "pages": 226,
+  "saturated": 78
+ },
+ "authority": {
+  "is_context_only": true,
+  "note": "display-tier census; evidence for the Surface Curator (R-V12-2) — never a market-facing signal"
+ }
+}

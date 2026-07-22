@@ -75,6 +75,10 @@ REJECT the pull-request if ANY of the following holds:
     violation, unhandled exception that could crash a production lane.
   - Any file is touched that the proposal did not declare.
   - The code diverges from the fitness_contract in any material respect.
+  - The diff grows a user-facing page beyond what the proposal declared — a new
+    panel/scoreboard/section under a non-ui proposal, or more panels than
+    panel_delta authorized (R-V12-4: the site is a curated product; undeclared
+    surface growth is scope creep even when the code is correct).
   - You are not fully confident this is safe to merge UNATTENDED by a human.
 
 DEFAULT TO REJECT under any uncertainty. The loop can always re-propose; a bad
@@ -546,6 +550,50 @@ def audit_pr(
         max_lines = _audit_max_diff_lines(root)
         if diff_line_count > max_lines:
             findings.append(f"diff_too_large:{diff_line_count}")
+
+        # (d) V12 Surface Curator realized-delta teeth (R-V12-4): the census
+        # counter runs over the ACTUAL diff — declarations are checked, never
+        # trusted.  Deny-only; parser errors fail open (the propose/adjudicate
+        # binds of the same law still stand).
+        try:
+            from engine.metabolism import surface_map as _sm  # noqa: PLC0415
+            realized = _sm.realized_delta_from_diff(diff_text, root)
+            if realized.get("front_paths"):
+                kind = str(proposal.get("kind") or "").strip().lower()
+                rules = _sm.load_surface_rules(root)
+                byte_allow = int(rules.get("max_new_bytes_saturated") or 2048)
+                if kind != "ui" and int(realized.get("marker_delta") or 0) > 0:
+                    findings.append(
+                        f"undeclared_surface_addition:marker_delta="
+                        f"{realized['marker_delta']} on {realized['front_paths'][:3]}"
+                        " (front-page growth requires kind=ui — R-V12-4)"
+                    )
+                if kind == "ui":
+                    try:
+                        declared = int(proposal.get("panel_delta"))
+                    except (TypeError, ValueError):
+                        declared = 0
+                    if int(realized.get("marker_delta") or 0) > max(0, declared):
+                        findings.append(
+                            f"panel_delta_exceeded:realized={realized['marker_delta']}"
+                            f">declared={declared} (R-V12-4)"
+                        )
+                smap = _sm.load_surface_map(root)
+                for page_key, fdelta in (realized.get("files") or {}).items():
+                    if not _sm.is_saturated(page_key, smap, root):
+                        continue
+                    if int(fdelta.get("marker_delta") or 0) > 0:
+                        findings.append(
+                            f"saturated_page_growth:{page_key}:markers+"
+                            f"{fdelta['marker_delta']} (R-V12-3)"
+                        )
+                    elif int(fdelta.get("net_bytes") or 0) > byte_allow:
+                        findings.append(
+                            f"saturated_page_growth:{page_key}:bytes+"
+                            f"{fdelta['net_bytes']}>{byte_allow} (R-V12-3)"
+                        )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("audit: surface realized-delta check failed (fail-open): %s", exc)
 
         deterministic_ok = len(findings) == 0
         record["deterministic_ok"] = deterministic_ok

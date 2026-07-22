@@ -76,6 +76,12 @@ IMMUTABLE_PATTERNS: list[str] = [
     "config/metabolism_schedule.yml",
     # V2-D additions (R-V2-8)
     "config/ux_simplicity_rules.yml",
+    # V12 addition (R-V12-3/R-V12-8): Surface Curator saturation thresholds +
+    # audit byte allowance, and the attention operator_pins policy.  A loop
+    # that could raise saturated_markers, the byte allowance, or unpin itself
+    # could legalise its own scoreboard-stacking — operator T2 only.
+    # (config/metabolism_attention.yml is already fenced below per R-V9-8.)
+    "config/metabolism_surface_rules.yml",
     # V2-C Unit 6 addition (R-V2-8): the Uncovered-Domain Scout's reference
     # universe. A loop that could add domains could manufacture its own charter
     # mandate — expanding the proposable universe is operator-only.

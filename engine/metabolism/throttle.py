@@ -39,7 +39,7 @@ INTENSITY_MULT: dict[str, float] = {
 _VALID_INTENSITIES = frozenset(INTENSITY_MULT)
 _DEFAULT_INTENSITY = "normal"
 
-_VALID_PACES = frozenset({"single", "2x", "4x", "low", "medium", "high", "max"})
+_VALID_PACES = frozenset({"single", "2x", "4x", "daily", "low", "medium", "high", "max"})
 _DEFAULT_PACE = "single"
 
 # Extra chain-runner cycles (legacy V10 API — no production caller since V11).
@@ -51,6 +51,8 @@ _PACE_EXTRA: dict[str, int] = {
     "single": 0,
     "2x": 1,
     "4x": 3,
+    # V12 rung — chain runner fully off
+    "daily": 0,
     # V11 ladder (analogous mapping)
     "low": 0,
     "medium": 1,
@@ -58,10 +60,14 @@ _PACE_EXTRA: dict[str, int] = {
     "max": 3,
 }
 
-# V11 loops ladder: METAB_PACE vocabulary -> loops per 5-hour window.
+# Loops ladder: METAB_PACE vocabulary -> loops per 5-hour window.
+# V12 vocab:   daily=0 (hourly chain-runner cron no-ops entirely; ONLY the
+#              staggered daily stage chain runs — the true "down a notch",
+#              R-V12-7)
 # V11 vocab:   low=1, medium=2, high=3, max=4
 # Legacy compat: single->1, 2x->2, 4x->3 (kept for metabolism-cycle.yml pace gate)
 _PACE_LOOPS: dict[str, int] = {
+    "daily": 0,
     "low": 1,
     "medium": 2,
     "high": 3,
@@ -146,7 +152,10 @@ def pace_extra_cycles(p: str | None = None) -> int:
 def pace_loops_per_window(p: str | None = None) -> int:
     """Return the number of metabolism loops allowed per 5-hour window.
 
-    V11 LOOPS LADDER (METAB_PACE vocabulary):
+    LOOPS LADDER (METAB_PACE vocabulary):
+        daily  → 0 loops per 5h window — the hourly chain-runner cron no-ops
+                 entirely; only the staggered daily stage chain runs (V12,
+                 R-V12-7 — the real "down a notch")
         low    → 1 loop per 5h window
         medium → 2 loops per 5h window
         high   → 3 loops per 5h window
@@ -157,7 +166,8 @@ def pace_loops_per_window(p: str | None = None) -> int:
         2x     → 2   (maps to medium)
         4x     → 3   (maps to high)
 
-    Absent or invalid METAB_PACE resolves to 1 (safe minimum). NEVER raises.
+    Absent or invalid METAB_PACE resolves to 1 (fail-open to today's behaviour,
+    R-V10-2). NEVER raises.
 
     Parameters
     ----------
@@ -181,6 +191,24 @@ def pace_loops_per_window(p: str | None = None) -> int:
         return 1
     except Exception as exc:  # noqa: BLE001
         log.warning("throttle.pace_loops_per_window: error %s — returning 1", exc)
+        return 1
+
+
+def propose_cadence_factor(i: str | None = None) -> int:
+    """Return the V12 eco multiplier applied to attention cadence denominators.
+
+    METAB_INTENSITY=low → 2 (unpinned lobes propose HALF as often: STANDARD
+    1/2 → 1/4, MAINTENANCE 1/4 → 1/8).  Every other intensity → 1 (today's
+    behaviour).  Operator ``core`` pins are exempt (R-V12-8) — the factor is
+    applied by attention.propose_skip, never here.
+
+    Pass i=None to read METAB_INTENSITY from env. NEVER raises.
+    """
+    try:
+        resolved = i if i is not None else intensity()
+        return 2 if str(resolved).strip().lower() == "low" else 1
+    except Exception as exc:  # noqa: BLE001
+        log.warning("throttle.propose_cadence_factor: error %s — returning 1", exc)
         return 1
 
 

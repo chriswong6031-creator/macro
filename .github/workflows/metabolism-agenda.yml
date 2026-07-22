@@ -144,6 +144,11 @@ jobs:
           # allocation. Best-effort; agenda proceeds even if degraded.
           python -m scripts.metabolism_attention --cycle-id "$CYCLE_ID" || echo "attention degraded (continuing)"
 
+          # Step 3.8: Site-surface census (V12 — R-V12-2). Deterministic, no LLM;
+          # PROPOSE/ADJUDICATE/AUDIT read the fresh census (rides the same
+          # data/metabolism commit). Best-effort; agenda proceeds even if degraded.
+          python -m scripts.build_surface_map || echo "surface census degraded (continuing)"
+
           # Step 4: Build agenda (INERT — writes artifact only)
           AGENDA="$(python -m scripts.metabolism_agenda --cycle-id "$CYCLE_ID" | tail -n 1 || true)"
           echo "agenda=$AGENDA"

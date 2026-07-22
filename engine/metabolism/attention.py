@@ -91,7 +91,15 @@ _DEFAULT_CONFIG: dict[str, Any] = {
         "STANDARD": 2,
         "MAINTENANCE": 4,
     },
+    # operator_pins — V12 (R-V12-8): deterministic per-lobe importance pins that
+    # OUTRANK LLM attention discretion.  {lobe_id: "core"|"weekly"|"paused"}.
+    # core   → proposes every eligible cycle (never cadence-sampled, never DORMANT)
+    # weekly → proposes on ONE deterministic day per week (hash-spread)
+    # paused → zero improvement spend (G3 urgent-fix supremacy still overrides)
+    "operator_pins": {},
 }
+
+_VALID_PINS = frozenset({"core", "weekly", "paused"})
 
 
 def _repo_root(root: Path | None = None) -> Path:
@@ -133,11 +141,29 @@ def load_attention_config(root: Path | None = None) -> dict:
                 _parsed_cadence[_band] = max(1, _v)
             except Exception:  # noqa: BLE001
                 _parsed_cadence[_band] = _default_cadence[_band]
+        # V12 (R-V12-8): parse operator_pins — accepts the grouped YAML shape
+        # {core: [ids], weekly: [ids], paused: [ids]} and flattens to
+        # {lobe_id: pin}.  Unknown pin groups are ignored (fail-open).
+        _pins: dict[str, str] = {}
+        try:
+            _raw_pins = data.get("operator_pins") or {}
+            if isinstance(_raw_pins, dict):
+                for _group, _ids in _raw_pins.items():
+                    _g = str(_group).strip().lower()
+                    if _g not in _VALID_PINS or not isinstance(_ids, list):
+                        continue
+                    for _lid in _ids:
+                        _l = str(_lid).strip()
+                        if _l:
+                            _pins[_l] = _g
+        except Exception:  # noqa: BLE001
+            _pins = {}
         cfg: dict[str, Any] = {
             "max_focus_lobes": int(data.get("max_focus_lobes") or _DEFAULT_CONFIG["max_focus_lobes"]),
             "docket_share": dict(data.get("docket_share") or _DEFAULT_CONFIG["docket_share"]),
             "dispatch_priority": dict(data.get("dispatch_priority") or _DEFAULT_CONFIG["dispatch_priority"]),
             "propose_cadence": _parsed_cadence,
+            "operator_pins": _pins,
         }
         return cfg
     except Exception as exc:  # noqa: BLE001
@@ -598,6 +624,28 @@ def _cadence_hash_skip(cycle_id: str, lobe_id: str, cadence: int) -> bool:
         return False
 
 
+def weekly_due_day(lobe_id: str) -> int:
+    """Deterministic weekday (0=Mon..6=Sun) a weekly-pinned lobe proposes on.
+
+    Hash-spread so weekly lobes don't all land on the same day.  NEVER raises.
+    """
+    try:
+        digest = hashlib.sha256(f"weekly:{lobe_id}".encode()).digest()
+        return int.from_bytes(digest[:8], "big") % 7
+    except Exception:  # noqa: BLE001
+        return 0
+
+
+def operator_pin(lobe_id: str, root: Path | None = None) -> str | None:
+    """Return the operator pin for a lobe ("core"|"weekly"|"paused") or None."""
+    try:
+        cfg = load_attention_config(root=root)
+        pin = (cfg.get("operator_pins") or {}).get(lobe_id)
+        return pin if pin in _VALID_PINS else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def propose_skip(
     lobe_id: str,
     root: Path | None = None,
@@ -606,11 +654,18 @@ def propose_skip(
 ) -> tuple[bool, str]:
     """Return (skip, reason) for the PROPOSE stage.
 
+    V12 operator pins (R-V12-8) are checked FIRST and outrank LLM discretion:
+      - core   → never skipped (not by band, not by cadence).
+      - weekly → proposes only on its hash-spread weekday; G3 overrides.
+      - paused → always skipped; G3 urgent-fix supremacy overrides.
+    Unpinned lobes keep V9 behaviour:
     DORMANT band: checks G3 exemption; if not exempted → (True, "attention_dormant").
     Non-DORMANT band: applies cadence gate (operator-ratified 2026-07-13):
       - FOCUS (cadence 1) → always propose.
       - STANDARD (cadence 2) → propose ~every 2nd loop on average.
       - MAINTENANCE (cadence 4) → propose ~every 4th loop on average.
+      V12 eco: METAB_INTENSITY=low doubles the effective cadence denominator
+      for unpinned lobes (throttle.propose_cadence_factor).
       Cadence gate is deterministic: sha256(cycle_id:lobe_id) % cadence == 0 → propose.
       If cadence gate says skip, G3 urgent-fix exemption overrides (high/critical row).
       cycle_id is resolved from: explicit param → allocation["cycle_id"] → None.
@@ -618,6 +673,25 @@ def propose_skip(
     Any error → (False, "attention_error") — never block work. NEVER raises.
     """
     try:
+        # ── V12 operator pins (R-V12-8) — outrank everything below ──────────
+        pin = operator_pin(lobe_id, root=root)
+        if pin == "core":
+            return (False, "")
+        if pin == "paused":
+            exempted, ex_reason = _g3_urgent_fix_exemption(lobe_id, root=root)
+            if exempted:
+                return (False, ex_reason)
+            return (True, "operator_pin:paused")
+        if pin == "weekly":
+            due = weekly_due_day(lobe_id)
+            today = datetime.now(timezone.utc).weekday()
+            if today == due:
+                return (False, "")
+            exempted, ex_reason = _g3_urgent_fix_exemption(lobe_id, root=root)
+            if exempted:
+                return (False, ex_reason)
+            return (True, f"operator_pin:weekly:due_day={due}")
+
         b = band_for(lobe_id, allocation=allocation, root=root)
 
         if b == "DORMANT":
@@ -632,6 +706,12 @@ def propose_skip(
         default_cadence = _DEFAULT_CONFIG["propose_cadence"]
         cadence = int(cfg.get("propose_cadence", {}).get(b) or default_cadence.get(b, 1))
         cadence = max(1, cadence)
+        # V12 eco intensity (R-V12-8): low intensity halves unpinned call volume.
+        try:
+            from engine.metabolism.throttle import propose_cadence_factor  # noqa: PLC0415
+            cadence = cadence * max(1, int(propose_cadence_factor()))
+        except Exception:  # noqa: BLE001
+            pass
 
         if cadence <= 1:
             return (False, "")
