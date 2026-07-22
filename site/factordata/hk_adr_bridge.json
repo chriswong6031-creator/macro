@@ -10,7 +10,7 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "PDD": {
+    "KWEB": {
       "asof": "2026-07-21",
       "lag_days": 0,
       "state": "fresh"
@@ -20,12 +20,12 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "JD": {
+    "PDD": {
       "asof": "2026-07-21",
       "lag_days": 0,
       "state": "fresh"
     },
-    "KWEB": {
+    "JD": {
       "asof": "2026-07-21",
       "lag_days": 0,
       "state": "fresh"
