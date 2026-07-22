@@ -230,6 +230,25 @@ def test_price_revision_partial_adjustment():
     assert ir.price_revision(None, 31, 34) is None
 
 
+def test_revision_gate_coverage():
+    """The display-only 'Demand (vs range)' column is gated on real marketed-range
+    coverage — it stays hidden until MORE than REV_MIN_COVERAGE recent deals carry a
+    revision (the range accrues only for deals seen pre-pricing), and prints an honest
+    N-of-M either way. A null here never blocks anything — it gates a context column."""
+    rev = {"label": "top-half", "pct": 0.02}
+    # below the floor → hidden, coverage counted honestly against the full total
+    few = [{"revision": rev}] * 5 + [{"revision": None}] * 20
+    assert ir.revision_gate(few) == {"coverage": 5, "total": 25, "show": False}
+    # exactly at the floor → still hidden (must EXCEED, not merely meet, the floor)
+    assert ir.revision_gate([{"revision": rev}] * ir.REV_MIN_COVERAGE)["show"] is False
+    # above the floor → shown
+    many = [{"revision": rev}] * (ir.REV_MIN_COVERAGE + 1) + [{"revision": None}] * 3
+    g = ir.revision_gate(many)
+    assert g["coverage"] == ir.REV_MIN_COVERAGE + 1 and g["show"] is True
+    # empty degrades cleanly (never raises, never shows)
+    assert ir.revision_gate([]) == {"coverage": 0, "total": 0, "show": False}
+
+
 def test_ipo_hk_backdrop_shape_and_not_scored():
     assert ihk.SCORED is False
     b = ihk.hk_backdrop()
