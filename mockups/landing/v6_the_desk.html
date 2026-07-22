@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mastermind — The whole desk</title>
+<meta name="description" content="Mastermind is the complete market-intelligence suite: a macro dashboard, graded signals, a live options terminal and an AI analyst — the four seats of an institutional desk, for individuals.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700;800;900&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   V6 — THE DESK
+   Thesis: an institutional operation has four seats — macro
+   strategist, signals desk, execution, research analyst.
+   Mastermind is all four. Product = seat. The page is a desk tour.
+   Type: Libre Franklin (American financial print) · Inter · Plex Mono
+   Palette: ink navy-black · porcelain · desk-lamp brass
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#070a10; --ink2:#0b0f17; --panel:#0e1320; --panel2:#111827;
+  --porcelain:#e9edf4; --muted:#8d97a9; --faint:#5d6778;
+  --brass:#e8a33d; --brass-hi:#f4bc63; --brass-deep:#8a5f1c;
+  --up:#35c77f; --down:#e06464;
+  --line:rgba(190,205,225,.13); --line2:rgba(190,205,225,.07);
+  --disp:'Libre Franklin',system-ui,sans-serif;
+  --sans:'Inter',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --maxw:1240px; --pad:clamp(20px,5vw,64px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:clip}
+body{margin:0;background:var(--ink);color:var(--porcelain);font:16px/1.62 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:clip}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:4px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad)}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--brass)}
+.eyebrow.dim{color:var(--muted)}
+h1,h2{font-family:var(--disp);letter-spacing:-.028em;line-height:1.04;margin:0}
+h2{font-size:clamp(30px,4.4vw,46px);font-weight:800}
+.sub{color:var(--muted);font-size:clamp(16px,1.9vw,18.5px);line-height:1.65}
+.mono{font-family:var(--mono)}
+
+/* reveal system — opacity/transform only, stagger via --d */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .7s ease var(--d,0s),transform .7s cubic-bezier(.22,.8,.3,1) var(--d,0s)}
+.in .rv,.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  .ink path,.ink circle,.ink ellipse{stroke-dashoffset:0 !important;transition:none !important}
+  .lamp::after{animation:none !important}
+}
+
+/* ═══════════ NAV ═══════════ */
+.nav{position:sticky;top:0;z-index:80;background:rgba(7,10,16,.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line2)}
+.nav-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);height:62px;display:flex;align-items:center;gap:26px}
+.brand{display:flex;align-items:center;gap:10px;font:800 16px var(--disp);letter-spacing:.04em}
+.brand .m{width:27px;height:27px;border-radius:8px;background:linear-gradient(150deg,var(--brass-hi),var(--brass-deep));display:grid;place-items:center;color:#140d02;font:800 15px var(--disp)}
+.nav-links{display:flex;gap:22px;margin-left:8px;font-size:14px;color:var(--muted)}
+.nav-links a:hover{color:var(--porcelain)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:16px;font-size:14px}
+.lang{font:500 12px var(--mono);color:var(--muted);letter-spacing:.06em}
+.lang b{color:var(--porcelain);font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:9px;border-radius:10px;padding:11px 20px;font:600 14.5px var(--sans);border:1px solid var(--line);transition:transform .18s ease,background .18s ease,border-color .18s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(160deg,var(--brass-hi),var(--brass));border-color:transparent;color:#181001}
+.btn.primary:hover{background:linear-gradient(160deg,#f8c877,var(--brass))}
+.btn.ghost:hover{border-color:rgba(232,163,61,.5)}
+.btn.sm{padding:8px 15px;font-size:13.5px}
+
+/* ═══════════ HERO ═══════════ */
+.hero{position:relative;padding:clamp(56px,8vh,92px) 0 0;overflow:clip}
+.hero-grid{position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(58% 42% at 50% 0%,rgba(232,163,61,.10),transparent 62%),
+    linear-gradient(rgba(190,205,225,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(190,205,225,.045) 1px,transparent 1px);
+  background-size:100% 100%,72px 72px,72px 72px;
+  -webkit-mask-image:linear-gradient(#000 55%,transparent 92%);mask-image:linear-gradient(#000 55%,transparent 92%)}
+.hero-top{position:relative;text-align:center;max-width:880px;margin:0 auto;padding-inline:var(--pad)}
+.hero h1{font-size:clamp(52px,8.2vw,104px);font-weight:900}
+.hero h1 .brass{color:var(--brass)}
+.hero .sub{max-width:640px;margin:22px auto 0}
+.hero .sub b{color:var(--porcelain);font-weight:600}
+.cta-row{display:flex;gap:14px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+.micro{margin-top:14px;font:500 12px var(--mono);letter-spacing:.08em;color:var(--faint)}
+
+/* the desk array — signature */
+.desk{position:relative;margin-top:clamp(44px,7vh,74px);perspective:1600px}
+.desk-in{position:relative;max-width:1180px;margin:0 auto;padding-inline:clamp(12px,3vw,40px);display:grid;grid-template-columns:0.92fr 1.5fr 0.92fr;gap:clamp(10px,1.8vw,22px);align-items:end}
+.seat{position:relative}
+.seat-tag{display:flex;align-items:center;gap:8px;font:600 10.5px var(--mono);letter-spacing:.2em;color:var(--muted);margin:0 4px 9px}
+.seat-tag i{width:7px;height:7px;border-radius:50%;background:var(--brass);box-shadow:0 0 10px rgba(232,163,61,.8);font-style:normal}
+.frame{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;box-shadow:0 30px 70px -28px rgba(0,0,0,.85)}
+.frame .bar{display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;background:rgba(255,255,255,.035);border-bottom:1px solid var(--line2)}
+.frame .bar i{width:8px;height:8px;border-radius:50%;background:rgba(190,205,225,.22);font-style:normal}
+.frame .bar .url{margin-left:8px;font:500 10px var(--mono);letter-spacing:.08em;color:var(--faint)}
+.frame img{width:100%;height:100%;object-fit:cover;object-position:top left}
+.seat-l .frame{transform:rotateY(7deg) translateZ(-30px);height:300px}
+.seat-r .frame{transform:rotateY(-7deg) translateZ(-30px);height:300px}
+.seat-c .frame{height:380px;z-index:2}
+.seat-l .frame img,.seat-r .frame img{height:270px}
+.seat-c .frame img{height:350px;object-position:top center}
+/* brain card floats in front of the array */
+.brain-card{position:absolute;right:clamp(8px,6vw,84px);bottom:-46px;width:min(330px,78vw);z-index:5;
+  background:rgba(17,24,39,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(232,163,61,.28);border-radius:16px;padding:16px 16px 14px;
+  box-shadow:0 34px 80px -20px rgba(0,0,0,.9)}
+.brain-card .bc-head{display:flex;align-items:center;gap:8px;font:600 10.5px var(--mono);letter-spacing:.18em;color:var(--brass);margin-bottom:11px}
+.brain-card .bc-head i{width:7px;height:7px;border-radius:50%;background:var(--brass);font-style:normal;position:relative}
+.brain-card .bc-head i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid rgba(232,163,61,.5);animation:ping 2.4s ease-out infinite}
+@keyframes ping{0%{transform:scale(.6);opacity:1}70%,100%{transform:scale(1.6);opacity:0}}
+.msg{font-size:12.8px;line-height:1.55;border-radius:11px;padding:9px 12px;margin-top:8px}
+.msg.q{background:rgba(255,255,255,.06);color:var(--porcelain);width:88%}
+.msg.a{background:rgba(232,163,61,.08);border:1px solid rgba(232,163,61,.16);color:var(--muted)}
+.msg.a b{color:var(--porcelain);font-weight:600}
+.chip-act{display:inline-flex;align-items:center;gap:6px;margin-top:9px;font:600 11px var(--mono);letter-spacing:.05em;color:var(--brass);border:1px solid rgba(232,163,61,.35);border-radius:8px;padding:5px 10px;background:rgba(232,163,61,.07)}
+/* desk surface */
+.desk-floor{height:120px;margin-top:-6px;background:
+  radial-gradient(60% 130% at 50% 0%,rgba(232,163,61,.09),transparent 60%),
+  linear-gradient(rgba(190,205,225,.06),transparent 70%);
+  -webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent)}
+
+/* seat index strip */
+.seat-index{border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);background:rgba(255,255,255,.016)}
+.si-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);display:grid;grid-template-columns:repeat(4,1fr)}
+.si{display:flex;gap:12px;align-items:center;padding:18px 14px;border-left:1px solid var(--line2);transition:background .2s}
+.si:last-child{border-right:1px solid var(--line2)}
+.si:hover{background:rgba(232,163,61,.05)}
+.si .n{font:600 11px var(--mono);color:var(--brass);letter-spacing:.14em}
+.si b{display:block;font:700 14.5px var(--disp);letter-spacing:-.01em}
+.si span{display:block;font-size:12px;color:var(--muted)}
+
+/* ═══════════ PRODUCT SECTIONS ═══════════ */
+.prod{padding:clamp(72px,11vh,120px) 0 0}
+.prod-head{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(24px,4vw,64px);align-items:end;margin-bottom:34px}
+.prod-head .lede{color:var(--muted);font-size:16.5px;line-height:1.65;max-width:52ch}
+.prod-head .lede b{color:var(--porcelain);font-weight:600}
+.prod h2 .thin{color:var(--muted);font-weight:600}
+.prod-body{display:grid;grid-template-columns:minmax(300px,.78fr) 1.5fr;gap:clamp(24px,4vw,56px);align-items:start}
+.prod.flip .prod-body{grid-template-columns:1.5fr minmax(300px,.78fr)}
+.prod.flip .prod-copy{order:2}
+.prod-copy{position:sticky;top:96px}
+.feat{list-style:none;margin:0;padding:0}
+.feat li{position:relative;padding:14px 0 14px 30px;border-top:1px solid var(--line2);font-size:15.5px;color:var(--muted)}
+.feat li:first-child{border-top:0}
+.feat li b{color:var(--porcelain);font-weight:600}
+.feat li::before{content:"";position:absolute;left:4px;top:21px;width:12px;height:2px;background:var(--brass)}
+.prod-cta{margin-top:22px;display:inline-flex;align-items:center;gap:8px;font:600 14.5px var(--sans);color:var(--brass)}
+.prod-cta:hover{color:var(--brass-hi)}
+.shot{position:relative}
+.shot .frame img{height:auto}
+.shot.tall .frame img{max-height:560px;object-fit:cover;object-position:top center}
+.shot-cap{margin-top:12px;font:500 12px var(--mono);letter-spacing:.06em;color:var(--faint)}
+/* ink annotations — the analyst's pen */
+.ink{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.ink path,.ink ellipse{fill:none;stroke:var(--brass-hi);stroke-width:2.2;stroke-linecap:round;
+  stroke-dasharray:var(--len,600);stroke-dashoffset:var(--len,600);transition:stroke-dashoffset 1.15s ease .25s;
+  filter:drop-shadow(0 0 6px rgba(232,163,61,.45))}
+.in .ink path,.in .ink ellipse{stroke-dashoffset:0}
+.ink-note{position:absolute;font:italic 500 13px/1.45 var(--mono);color:var(--brass-hi);max-width:200px;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+
+/* mastermind AI panel (seat 04) */
+.ai-panel{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--panel) 0%,var(--ink2) 100%);padding:22px;max-width:640px}
+.ai-panel .msg{font-size:14px;padding:12px 15px;border-radius:13px}
+.ai-panel .msg.q{width:auto;max-width:75%;margin-left:auto;background:rgba(255,255,255,.07)}
+.ai-panel .msg.a{max-width:92%}
+.ai-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.ai-tool{font:500 11.5px var(--mono);letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:6px 12px}
+.ai-tool b{color:var(--brass);font-weight:600}
+
+/* ═══════════ PROOF BAND ═══════════ */
+.proof{margin-top:clamp(80px,12vh,130px);border-top:1px solid var(--line2);background:
+  radial-gradient(70% 60% at 50% 0%,rgba(232,163,61,.06),transparent 70%)}
+.proof-in{max-width:var(--maxw);margin:0 auto;padding:clamp(64px,9vh,100px) var(--pad);display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,5vw,72px);align-items:center}
+.proof p{color:var(--muted);font-size:16.5px;line-height:1.7;max-width:56ch}
+.proof p b{color:var(--porcelain);font-weight:600}
+.grade-card{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
+.grade-card .gc-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line2);font:600 11px var(--mono);letter-spacing:.16em;color:var(--muted)}
+.grade-row{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:13px 18px;border-bottom:1px solid var(--line2);font-size:14px}
+.grade-row:last-child{border-bottom:0}
+.grade-row .tk{font:600 13px var(--mono)}
+.grade-row .th{color:var(--muted);font-size:12.5px}
+.pill{font:600 10.5px var(--mono);letter-spacing:.1em;border-radius:7px;padding:4px 9px}
+.pill.hit{color:var(--up);background:rgba(53,199,127,.1);border:1px solid rgba(53,199,127,.3)}
+.pill.miss{color:var(--down);background:rgba(224,100,100,.1);border:1px solid rgba(224,100,100,.3)}
+.pill.open{color:var(--brass);background:rgba(232,163,61,.09);border:1px solid rgba(232,163,61,.3)}
+.ret{font:600 13px var(--mono)}
+.ret.up{color:var(--up)} .ret.down{color:var(--down)} .ret.dim{color:var(--faint)}
+
+/* ═══════════ COVERAGE ═══════════ */
+.cover{padding:clamp(72px,11vh,120px) 0 0;text-align:center}
+.cover .sub{max-width:600px;margin:16px auto 0}
+.cover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:16px;overflow:hidden;margin-top:44px}
+.cov{background:var(--ink2);padding:26px 20px}
+.cov .big{font:800 clamp(26px,3vw,34px) var(--disp);letter-spacing:-.02em}
+.cov .big em{font-style:normal;color:var(--brass)}
+.cov span{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+.cov .zh{font-size:12px;color:var(--faint);margin-top:2px}
+
+/* ═══════════ PRICING ═══════════ */
+.pricing{padding:clamp(80px,12vh,130px) 0 0}
+.p-head{text-align:center;max-width:620px;margin:0 auto}
+.toggle{display:inline-flex;margin-top:24px;border:1px solid var(--line);border-radius:99px;padding:4px;font:600 13px var(--sans)}
+.toggle button{all:unset;cursor:pointer;padding:7px 18px;border-radius:99px;color:var(--muted)}
+.toggle button[aria-pressed="true"]{background:rgba(232,163,61,.14);color:var(--brass-hi)}
+.toggle .save{font:600 10px var(--mono);letter-spacing:.06em;margin-left:6px;color:var(--up)}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px;align-items:stretch}
+.tier{border:1px solid var(--line);border-radius:18px;background:var(--ink2);padding:26px;display:flex;flex-direction:column}
+.tier.hot{border-color:rgba(232,163,61,.45);background:linear-gradient(180deg,rgba(232,163,61,.07),var(--ink2) 40%);position:relative}
+.tier.hot::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font:600 10px var(--mono);letter-spacing:.16em;color:#181001;background:linear-gradient(160deg,var(--brass-hi),var(--brass));padding:5px 12px;border-radius:99px}
+.tier h3{margin:0;font:800 20px var(--disp)}
+.tier .who{color:var(--muted);font-size:13.5px;margin-top:4px;min-height:38px}
+.price{margin-top:14px;font:900 44px var(--disp);letter-spacing:-.03em}
+.price .per{font:500 13px var(--sans);color:var(--muted);letter-spacing:0}
+.price .was{font:600 15px var(--mono);color:var(--faint);text-decoration:line-through;margin-right:8px}
+.badge{display:inline-block;margin-top:6px;font:600 10.5px var(--mono);letter-spacing:.08em;color:var(--up);background:rgba(53,199,127,.09);border:1px solid rgba(53,199,127,.28);border-radius:7px;padding:4px 9px}
+.tier ul{list-style:none;margin:18px 0 22px;padding:0;font-size:14px;color:var(--muted);flex:1}
+.tier li{padding:7px 0 7px 24px;position:relative}
+.tier li::before{content:"✓";position:absolute;left:2px;color:var(--brass);font-weight:700}
+.tier li b{color:var(--porcelain);font-weight:600}
+.p-foot{text-align:center;margin-top:22px;font:500 12px var(--mono);letter-spacing:.06em;color:var(--faint)}
+
+/* ═══════════ FINAL CTA + FOOTER ═══════════ */
+.final{margin-top:clamp(90px,13vh,150px);border-top:1px solid var(--line2);text-align:center;position:relative;overflow:clip}
+.final .lamp{position:relative;padding:clamp(80px,12vh,130px) var(--pad)}
+.final .lamp::before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);width:min(720px,90vw);height:100%;
+  background:radial-gradient(50% 62% at 50% 0%,rgba(232,163,61,.14),transparent 75%);pointer-events:none}
+.final h2{font-size:clamp(38px,6vw,64px);font-weight:900}
+.final .sub{max-width:520px;margin:18px auto 0}
+footer{border-top:1px solid var(--line2);padding:44px 0 60px;color:var(--muted);font-size:13.5px}
+.f-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px}
+.f-col b{display:block;color:var(--porcelain);font:700 13px var(--disp);letter-spacing:.02em;margin-bottom:12px}
+.f-col a{display:block;padding:4px 0;color:var(--muted)}
+.f-col a:hover{color:var(--porcelain)}
+.f-note{max-width:34ch;line-height:1.6;color:var(--faint);font-size:12.5px;margin-top:12px}
+
+/* ═══════════ RESPONSIVE ═══════════ */
+@media (max-width:1020px){
+  .prod-body,.prod.flip .prod-body{grid-template-columns:1fr}
+  .prod.flip .prod-copy{order:0}
+  .prod-copy{position:static}
+  .prod-head{grid-template-columns:1fr}
+  .proof-in{grid-template-columns:1fr}
+  .si-in{grid-template-columns:1fr 1fr}
+  .si:nth-child(-n+2){border-bottom:1px solid var(--line2)}
+  .cover-grid{grid-template-columns:1fr 1fr}
+  .f-in{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .nav-links{display:none}
+  .lang,.nav-right>a:not(.btn){display:none}
+  .nav-right{gap:10px}
+  .desk-in{grid-template-columns:1fr;align-items:stretch;max-width:560px}
+  .seat-l .frame,.seat-r .frame{transform:none;height:210px}
+  .seat-l .frame img,.seat-r .frame img{height:180px}
+  .seat-c{order:-1}
+  .seat-c .frame{height:250px}
+  .seat-c .frame img{height:220px;object-position:top left}
+  .brain-card{position:relative;right:auto;bottom:auto;width:auto;margin-top:14px}
+  .desk-floor{display:none}
+  .tiers{grid-template-columns:1fr}
+  .si-in{grid-template-columns:1fr;padding:0}
+  .si{border-left:0;border-bottom:1px solid var(--line2)}
+  .si:last-child{border-right:0;border-bottom:0}
+  .hero h1{font-size:clamp(44px,13vw,60px)}
+  .ink-note{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <a class="brand" href="#"><span class="m">M</span> MASTERMIND</a>
+    <div class="nav-links">
+      <a href="#seat-macro">Product</a>
+      <a href="#seat-terminal">Terminal</a>
+      <a href="#proof">Track record</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <span class="lang"><b>EN</b> · 中文</span>
+      <a href="#" style="color:var(--muted)">Log in</a>
+      <a class="btn primary sm" href="#pricing">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<header class="hero in">
+  <div class="hero-grid" aria-hidden="true"></div>
+  <div class="hero-top">
+    <p class="eyebrow rv" style="--d:.05s">The complete market-intelligence suite</p>
+    <h1 class="rv" style="--d:.12s">The whole <span class="brass">desk.</span></h1>
+    <p class="sub rv" style="--d:.22s">A macro strategist. A signals desk with a public report card. A live options terminal. An analyst you can ask anything. <b>The four seats of an institutional operation — on one screen, at a person's price.</b></p>
+    <div class="cta-row rv" style="--d:.3s">
+      <a class="btn primary" href="#pricing">Start free</a>
+      <a class="btn ghost" href="#seat-macro">See tonight's read</a>
+    </div>
+    <p class="micro rv" style="--d:.36s">NO CARD · TERMINAL FREE FOREVER</p>
+  </div>
+
+  <!-- signature: the desk array -->
+  <div class="desk">
+    <div class="desk-in">
+      <div class="seat seat-l rv" style="--d:.45s">
+        <p class="seat-tag"><i></i>SEAT 02 · SIGNALS</p>
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">mastermind-x.com/us_stocks</span></div>
+          <img src="assets/stock_lanes.png" alt="The action board: stocks sorted into plain lanes — Buy now, Almost ready, In favour, Take profits, Stand aside." loading="eager">
+        </div>
+      </div>
+      <div class="seat seat-c rv" style="--d:.38s">
+        <p class="seat-tag"><i></i>SEAT 01 · MACRO</p>
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">mastermind-x.com — tonight's read</span></div>
+          <img src="assets/macro_hero.png" alt="The Mastermind macro dashboard: a 0–100 regime dial reading 50 · Mixed, with a plain-word stance and the 15-session market path." loading="eager">
+        </div>
+      </div>
+      <div class="seat seat-r rv" style="--d:.52s">
+        <p class="seat-tag"><i></i>SEAT 03 · EXECUTION</p>
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">app.mastermind-x.com</span></div>
+          <img src="assets/terminal_live.png" alt="The Mastermind Terminal: live NVDA candles, moving averages, RSI and stochastic panes, and an entry-signal panel." loading="eager">
+        </div>
+      </div>
+    </div>
+    <aside class="brain-card rv" style="--d:.62s" aria-label="Mastermind AI example conversation">
+      <p class="bc-head"><i></i>SEAT 04 · MASTERMIND AI</p>
+      <div class="msg q">Semis look stretched. Would the desk chase here?</div>
+      <div class="msg a"><b>No — the board says watch, don't chase.</b> NVDA is 9% above its 20-day and the entry gate has been shut since Jul 14. If the turn is real, the lanes reopen on their own.</div>
+      <span class="chip-act">→ OPEN NVDA ON TERMINAL</span>
+    </aside>
+    <div class="desk-floor" aria-hidden="true"></div>
+  </div>
+
+  <!-- seat index -->
+  <div class="seat-index" style="margin-top:64px">
+    <div class="si-in">
+      <a class="si" href="#seat-macro"><span class="n">01</span><span><b>Macro Dashboard</b><span>Which season the market is in</span></span></a>
+      <a class="si" href="#seat-prophet"><span class="n">02</span><span><b>Prophet</b><span>Named calls, graded in public</span></span></a>
+      <a class="si" href="#seat-terminal"><span class="n">03</span><span><b>Terminal</b><span>Live charts &amp; options flow</span></span></a>
+      <a class="si" href="#seat-ai"><span class="n">04</span><span><b>Mastermind AI</b><span>The analyst on call</span></span></a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════ SEAT 01 — MACRO ═══════════ -->
+<section class="prod" id="seat-macro">
+  <div class="wrap">
+    <div class="prod-head rv">
+      <div>
+        <p class="eyebrow">Seat 01 · The macro strategist</p>
+        <h2 style="margin-top:12px">One number for the whole tape. <span class="thin">And what to do about it.</span></h2>
+      </div>
+      <p class="lede">Every night after the close, Mastermind's engines re-read every market we cover and set the regime dial — <b>a 0–100 read with a plain-word stance</b>, not a wall of indicators. When the machine can't tell, it says <i>Mixed — trade smaller</i>. That honesty is the product.</p>
+    </div>
+    <div class="prod-body">
+      <div class="prod-copy rv">
+        <ul class="feat">
+          <li><b>Rebuilt nightly, every market.</b> US, China, Hong Kong, Canada — same machine, same standard.</li>
+          <li><b>Stance in plain words.</b> "Trade smaller, favour quality, don't chase" — never a naked statistic.</li>
+          <li><b>From regime to names.</b> The dial flows into sector cycles, theme baskets and a ranked stock board.</li>
+        </ul>
+        <a class="prod-cta" href="#">See tonight's read →</a>
+      </div>
+      <div class="shot rv" style="--d:.1s">
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">mastermind-x.com/macro</span></div>
+          <img src="assets/macro_hero.png" alt="Macro dashboard with the amber regime dial at 50 · Mixed, plain-word guidance, and index tiles." loading="lazy" width="2880" height="1800">
+        </div>
+        <svg class="ink" viewBox="0 0 900 600" aria-hidden="true" style="--len:520">
+          <ellipse cx="153" cy="170" rx="98" ry="72"/>
+          <path d="M 250 195 C 330 230, 380 240, 460 235"/>
+        </svg>
+        <p class="ink-note" style="right:2%;top:30%">the whole market,<br>one honest number</p>
+        <p class="shot-cap">TONIGHT'S READ · REBUILT EVERY CLOSE · FREE TO READ</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ SEAT 02 — PROPHET ═══════════ -->
+<section class="prod flip" id="seat-prophet">
+  <div class="wrap">
+    <div class="prod-head rv">
+      <div>
+        <p class="eyebrow">Seat 02 · The signals desk</p>
+        <h2 style="margin-top:12px">Prophet makes calls. <span class="thin">Then grades them in public.</span></h2>
+      </div>
+      <p class="lede">Named entries with price, stop and thesis — published <b>before</b> the move, then graded when they resolve. Hits and misses stay on the permanent record, with an autopsy for every miss. No highlight reel.</p>
+    </div>
+    <div class="prod-body">
+      <div class="shot rv" style="--d:.1s">
+        <div class="grade-card">
+          <div class="gc-head"><span>PROPHET · THE PUBLIC BOOK</span><span>GRADED NIGHTLY</span></div>
+          <div class="grade-row"><span><span class="tk">XLE</span> <span class="th">— energy leadership, entry on pullback</span></span><span class="pill hit">HIT</span><span class="ret up">+8.4%</span></div>
+          <div class="grade-row"><span><span class="tk">NVDA</span> <span class="th">— hold through earnings, stop raised</span></span><span class="pill open">OPEN</span><span class="ret dim">+3.1%</span></div>
+          <div class="grade-row"><span><span class="tk">XLRE</span> <span class="th">— early rotation read</span></span><span class="pill miss">MISS</span><span class="ret down">−2.9%</span></div>
+          <div class="grade-row"><span><span class="tk">MU</span> <span class="th">— memory-complex momentum</span></span><span class="pill hit">HIT</span><span class="ret up">+12.7%</span></div>
+          <div class="grade-row"><span><span class="th" style="font-size:12px">Every resolved call carries its grade and its lesson — the misses are the point.</span></span><span></span><span></span></div>
+        </div>
+        <p class="shot-cap">ILLUSTRATIVE ROWS · THE LIVE BOOK IS THE PRODUCT</p>
+      </div>
+      <div class="prod-copy rv">
+        <ul class="feat">
+          <li><b>Before, not after.</b> Entries are stamped when made — price, stop, thesis, size guidance.</li>
+          <li><b>A public report card.</b> Every resolved call graded on the record; misses get autopsies.</li>
+          <li><b>A full roster, not cherry-picks.</b> Stocks, sectors and themes — the whole book is visible.</li>
+        </ul>
+        <a class="prod-cta" href="#proof">Read the track record →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ SEAT 03 — TERMINAL ═══════════ -->
+<section class="prod" id="seat-terminal">
+  <div class="wrap">
+    <div class="prod-head rv">
+      <div>
+        <p class="eyebrow">Seat 03 · Execution</p>
+        <h2 style="margin-top:12px">A real terminal. <span class="thin">In the browser. Free.</span></h2>
+      </div>
+      <p class="lede">Institutional-grade charting with the signals drawn on — and <b>full intraday options flow</b>, so you can see what size is doing while it's doing it. No install, no card. The Terminal is free forever.</p>
+    </div>
+    <div class="prod-body">
+      <div class="prod-copy rv">
+        <ul class="feat">
+          <li><b>Live tape, candle by candle.</b> Indicators, layouts and the desk's own entry signals on-chart.</li>
+          <li><b>Intraday options flow.</b> Sweeps and blocks as they print — the tell retail never gets to see.</li>
+          <li><b>Zero friction.</b> Free forever, sign-in optional. Live options flow rides with Insider.</li>
+        </ul>
+        <a class="prod-cta" href="#">Open the Terminal →</a>
+      </div>
+      <div class="shot rv" style="--d:.1s">
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">app.mastermind-x.com — NVDA</span></div>
+          <img src="assets/terminal_live.png" alt="Mastermind Terminal: NVDA candlestick chart with moving averages, RSI and stochastic panes, watchlist rail, and an upturn entry-signal panel." loading="lazy" width="2880" height="1800">
+        </div>
+        <svg class="ink" viewBox="0 0 900 560" aria-hidden="true" style="--len:460">
+          <ellipse cx="762" cy="205" rx="105" ry="52"/>
+          <path d="M 705 250 C 660 300, 640 330, 630 370" />
+        </svg>
+        <p class="ink-note" style="right:1%;top:52%">the desk's signals,<br>on the live chart</p>
+        <p class="shot-cap">LIVE INTRADAY · OPTIONS FLOW ON INSIDER · FREE FOREVER</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ SEAT 04 — MASTERMIND AI ═══════════ -->
+<section class="prod flip" id="seat-ai">
+  <div class="wrap">
+    <div class="prod-head rv">
+      <div>
+        <p class="eyebrow">Seat 04 · The research analyst</p>
+        <h2 style="margin-top:12px">Ask the desk anything. <span class="thin">It shows its work.</span></h2>
+      </div>
+      <p class="lede">Mastermind AI sits inside every board and the Terminal. It answers from the desk's own signals — <b>why the regime moved, what changed overnight, what the book says about a name</b> — and it can drive the Terminal chart while you talk.</p>
+    </div>
+    <div class="prod-body">
+      <div class="shot rv" style="--d:.1s">
+        <div class="ai-panel">
+          <p class="bc-head" style="display:flex;align-items:center;gap:8px;font:600 10.5px var(--mono);letter-spacing:.18em;color:var(--brass);margin:0 0 8px"><i style="width:7px;height:7px;border-radius:50%;background:var(--brass);font-style:normal"></i>MASTERMIND AI · DEEP RESEARCH</p>
+          <div class="msg q">Why is the regime stuck at Mixed when the index keeps making highs?</div>
+          <div class="msg a"><b>Because the average stock isn't confirming the index.</b> Leadership is narrow — a handful of megacaps carry the tape while most sectors sit mid-cycle. The dial stays at 50 until breadth confirms either way. Here's what would move it: participation broadening, or the leaders cracking.</div>
+          <div class="msg a" style="border-style:dashed"><b>→ Terminal:</b> opened <span class="mono">NVDA · 1D</span> with the 20-day and entry gates drawn.</div>
+          <div class="ai-tools">
+            <span class="ai-tool"><b>Fast</b> answers on every page</span>
+            <span class="ai-tool"><b>Deep research</b> with receipts</span>
+            <span class="ai-tool"><b>Drives the Terminal</b> chart</span>
+          </div>
+        </div>
+        <p class="shot-cap">ANSWERS CITE THE DESK'S OWN BOARDS · IT EXPLAINS — THE ENGINES DECIDE</p>
+      </div>
+      <div class="prod-copy rv">
+        <ul class="feat">
+          <li><b>Fluent in every board.</b> Ask why, not just what — it reads the same signals you do.</li>
+          <li><b>It can drive the Terminal.</b> "Show me NVDA at the last two earnings" — and the chart obeys.</li>
+          <li><b>Explanation, not oracle.</b> The engines make the calls; the analyst explains them. Never the reverse.</li>
+        </ul>
+        <a class="prod-cta" href="#">Meet the analyst →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PROOF ═══════════ -->
+<section class="proof" id="proof">
+  <div class="proof-in">
+    <div class="rv">
+      <p class="eyebrow">The standard</p>
+      <h2 style="margin-top:12px">Graded in public.<br>Misses included.</h2>
+      <p style="margin-top:18px">Institutions hold their desks to a written record. So do we — <b>every call graded when it resolves, every miss kept on the page with an autopsy</b>. And when a signal has no real edge, the board says so in plain words instead of dressing it up. If that costs us a sale, so be it.</p>
+      <a class="prod-cta" href="#" style="margin-top:8px">See the full track record →</a>
+    </div>
+    <div class="rv" style="--d:.12s">
+      <div class="grade-card">
+        <div class="gc-head"><span>US BOOK · SEASON TO DATE</span><span class="mono">AS OF LAST CLOSE</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;padding:22px 8px;gap:6px">
+          <div><div style="font:900 34px var(--disp)">66</div><div style="font-size:12px;color:var(--muted)">tracked calls<br>on the book</div></div>
+          <div><div style="font:900 34px var(--disp);color:var(--up)">100%</div><div style="font-size:12px;color:var(--muted)">of resolved calls<br>carry a grade</div></div>
+          <div><div style="font:900 34px var(--disp);color:var(--brass)">0</div><div style="font-size:12px;color:var(--muted)">deleted<br>misses</div></div>
+        </div>
+        <div style="padding:0 18px 16px;font:500 11.5px var(--mono);letter-spacing:.05em;color:var(--faint);border-top:1px solid var(--line2);padding-top:12px">HIT-RATES LIVE ON THE RECORD PAGE — WITH THEIR DENOMINATORS.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ COVERAGE ═══════════ -->
+<section class="cover">
+  <div class="wrap rv">
+    <p class="eyebrow dim">Coverage</p>
+    <h2 style="margin-top:12px">Five markets, every night.</h2>
+    <p class="sub">The engines don't skim. Every close, the whole universe is re-read — and every page ships in English and Chinese.</p>
+    <div class="cover-grid">
+      <div class="cov rv" style="--d:.05s"><div class="big"><em>5</em> markets</div><span>US · China · Hong Kong · Canada · Global</span></div>
+      <div class="cov rv" style="--d:.1s"><div class="big"><em>2,700+</em></div><span>stocks with full dossiers</span></div>
+      <div class="cov rv" style="--d:.15s"><div class="big"><em>34</em> themes</div><span>baskets tracked through their cycle</span></div>
+      <div class="cov rv" style="--d:.2s"><div class="big">EN · <em>中文</em></div><span>bilingual at every URL</span><span class="zh">每一页，双语呈现</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PRICING ═══════════ -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="p-head rv">
+      <p class="eyebrow">Pricing</p>
+      <h2 style="margin-top:12px">Take your seat.</h2>
+      <div class="toggle" role="group" aria-label="Billing period">
+        <button aria-pressed="true" data-period="annual">Annual <span class="save">SAVE UP TO 22%</span></button>
+        <button aria-pressed="false" data-period="monthly">Monthly</button>
+      </div>
+    </div>
+    <div class="tiers">
+      <div class="tier rv" style="--d:.05s">
+        <h3>Free</h3>
+        <p class="who">The nightly read and the Terminal — for everyone, forever.</p>
+        <div class="price">$0</div>
+        <ul>
+          <li><b>Tonight's read</b> — the regime dial and market state</li>
+          <li><b>Terminal charting</b>, free forever</li>
+          <li>Movers, calculators, lessons and the blog</li>
+          <li>A fast taste of Mastermind AI</li>
+        </ul>
+        <a class="btn ghost" href="#" style="justify-content:center">Start free</a>
+      </div>
+      <div class="tier hot rv" style="--d:.12s">
+        <h3>Insider</h3>
+        <p class="who">Every board, every dossier, the live flow — the working desk.</p>
+        <div class="price" data-annual="$49" data-monthly="$59"><span class="was" data-annual-show>$59</span>$49 <span class="per">/mo billed annually</span></div>
+        <span class="badge" data-annual-show>SAVE 17% · $588/YR</span>
+        <ul>
+          <li><b>All dashboards &amp; dossiers</b> — 2,700+ stocks, five markets</li>
+          <li><b>Prophet's full book</b> with grades and autopsies</li>
+          <li><b>Live intraday options flow</b> on the Terminal</li>
+          <li>Mastermind AI — the fast analyst, all day</li>
+        </ul>
+        <a class="btn primary" href="#" style="justify-content:center">Start 7-day trial</a>
+      </div>
+      <div class="tier rv" style="--d:.19s">
+        <h3>Pro</h3>
+        <p class="who">For the ones who ask harder questions.</p>
+        <div class="price" data-annual="$69" data-monthly="$89"><span class="was" data-annual-show>$89</span>$69 <span class="per">/mo billed annually</span></div>
+        <span class="badge" data-annual-show>SAVE 22% · $828/YR</span>
+        <ul>
+          <li><b>Everything in Insider</b></li>
+          <li><b>Deep-research analyst</b> — long-form answers with receipts</li>
+          <li>Priority compute on the heaviest questions</li>
+          <li>First seat on new desks as they open</li>
+        </ul>
+        <a class="btn ghost" href="#" style="justify-content:center">Go Pro</a>
+      </div>
+    </div>
+    <p class="p-foot">NO CARD FOR FREE · CANCEL ANYTIME · PRICES IN USD</p>
+  </div>
+</section>
+
+<!-- ═══════════ FINAL ═══════════ -->
+<section class="final">
+  <div class="lamp rv">
+    <p class="eyebrow">Tonight, after the close</p>
+    <h2 style="margin-top:14px">The desk is set.</h2>
+    <p class="sub">The engines run at every close, whether you're watching or not. Start free — tonight's read will be waiting.</p>
+    <div class="cta-row" style="margin-top:28px">
+      <a class="btn primary" href="#pricing">Start free</a>
+      <a class="btn ghost" href="#seat-macro">See tonight's read</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="f-in">
+    <div class="f-col">
+      <a class="brand" href="#"><span class="m">M</span> MASTERMIND</a>
+      <p class="f-note">Market intelligence, rebuilt nightly. Signals come from deterministic engines over market data; AI explains — it never originates a call.</p>
+    </div>
+    <div class="f-col"><b>Product</b>
+      <a href="#seat-macro">Macro Dashboard</a><a href="#seat-prophet">Prophet</a><a href="#seat-terminal">Terminal</a><a href="#seat-ai">Mastermind AI</a>
+    </div>
+    <div class="f-col"><b>Free</b>
+      <a href="#">Tonight's read</a><a href="#">Trading calculators</a><a href="#">Learning center</a><a href="#">Blog</a>
+    </div>
+    <div class="f-col"><b>Company</b>
+      <a href="#">Methodology</a><a href="#proof">Track record</a><a href="#pricing">Pricing</a><a href="#">中文</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* reveal on scroll */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: .12 });
+document.querySelectorAll('main .rv, main .shot, .proof-in > div, .final .lamp').forEach(el => io.observe(el));
+document.querySelectorAll('main section, .proof').forEach(s => io.observe(s));
+
+/* pricing toggle — annual default, monthly view */
+const tog = document.querySelectorAll('.toggle button');
+tog.forEach(b => b.addEventListener('click', () => {
+  const annual = b.dataset.period === 'annual';
+  tog.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  document.querySelectorAll('.price[data-annual]').forEach(p => {
+    const per = p.querySelector('.per'), was = p.querySelector('.was');
+    p.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = (annual ? p.dataset.annual : p.dataset.monthly) + ' '; });
+    if (per) per.textContent = annual ? '/mo billed annually' : '/mo billed monthly';
+    if (was) was.style.display = annual ? '' : 'none';
+  });
+  document.querySelectorAll('[data-annual-show]').forEach(el => { if (el.classList.contains('badge')) el.style.visibility = annual ? '' : 'hidden'; });
+}));
+</script>
+</body>
+</html>

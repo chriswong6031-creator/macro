@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mastermind — While you slept</title>
+<meta name="description" content="Every close, Mastermind's engines re-read five markets. By coffee the calls are graded. At the bell the Terminal goes live. One market day on the complete intelligence suite.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   V8 — ONE MARKET DAY
+   Thesis: time is the architecture. The page is one market day:
+   16:00 the close · 02:00 the bake · 08:00 the read · 09:30 the
+   bell · always the analyst. Each product enters at its hour and
+   keeps its native light (violet night → brass dawn → teal open).
+   Type: Newsreader (narrative) · Inter · IBM Plex Mono (the log)
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --night:#06080f; --night2:#0a0d16; --panel:#0e1220;
+  --text:#eaeef6; --dim:#939db0; --faint:#5c6779;
+  --brass:#e8a33d; --brass-hi:#f4bc63;
+  --violet:#8f7dff; --teal:#2dd4bf; --bluewhite:#9db8ff;
+  --up:#35c77f; --down:#e06464;
+  --line:rgba(195,208,228,.13); --line2:rgba(195,208,228,.07);
+  --disp:'Newsreader',Georgia,serif;
+  --sans:'Inter',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --maxw:1200px; --pad:clamp(20px,5vw,60px); --rail:190px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:clip}
+body{margin:0;background:var(--night);color:var(--text);font:16px/1.64 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:clip}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:4px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad)}
+h1,h2{font-family:var(--disp);font-weight:500;letter-spacing:-.012em;line-height:1.05;margin:0}
+h2{font-size:clamp(30px,4.2vw,44px)}
+h2 em,h1 em{font-style:italic}
+.sub{color:var(--dim);font-size:clamp(16px,1.85vw,18px);line-height:1.68}
+.stamp{font:600 11px var(--mono);letter-spacing:.22em;text-transform:uppercase}
+.rv{opacity:0;transform:translateY(20px);transition:opacity .7s ease var(--d,0s),transform .7s cubic-bezier(.22,.8,.3,1) var(--d,0s)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  .live-dot::after{animation:none !important}
+}
+
+/* ═══════════ NAV ═══════════ */
+.nav{position:sticky;top:0;z-index:80;background:rgba(6,8,15,.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line2)}
+.nav-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);height:61px;display:flex;align-items:center;gap:24px}
+.brand{display:flex;align-items:center;gap:10px;font:600 16px var(--disp);letter-spacing:.02em}
+.brand .m{width:26px;height:26px;border-radius:7px;background:linear-gradient(150deg,var(--brass-hi),#96681c);display:grid;place-items:center;color:#171001;font:700 14px var(--sans)}
+.nav-links{display:flex;gap:22px;font-size:14px;color:var(--dim)}
+.nav-links a:hover{color:var(--text)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:16px;font-size:14px}
+.lang{font:500 12px var(--mono);color:var(--faint)}
+.lang b{color:var(--dim)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:11px 20px;font:600 14.5px var(--sans);border:1px solid var(--line);transition:transform .16s ease,border-color .16s,background .16s}
+.btn:hover{transform:translateY(-1px);border-color:rgba(232,163,61,.5)}
+.btn.primary{background:linear-gradient(160deg,var(--brass-hi),var(--brass));border-color:transparent;color:#171001}
+.btn.sm{padding:8px 15px;font-size:13.5px}
+
+/* ═══════════ HERO ═══════════ */
+.hero{position:relative;text-align:center;padding:clamp(72px,11vh,120px) 0 clamp(56px,8vh,84px);overflow:clip}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(42% 50% at 24% 0%,rgba(143,125,255,.10),transparent 68%),
+    radial-gradient(42% 50% at 76% 4%,rgba(232,163,61,.08),transparent 68%)}
+.hero .stamp{color:var(--faint)}
+.hero h1{font-size:clamp(56px,9vw,116px);font-weight:500}
+.hero h1 em{color:var(--brass-hi)}
+.hero .sub{max-width:640px;margin:22px auto 0}
+.hero .sub b{color:var(--text);font-weight:600}
+.cta-row{display:flex;gap:13px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+.micro{margin-top:13px;font:500 11.5px var(--mono);letter-spacing:.1em;color:var(--faint)}
+/* suite strip — the four products, enumerable at a glance */
+.suite{max-width:940px;margin:clamp(40px,6vh,60px) auto 0;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:14px;overflow:hidden}
+.su{background:var(--night2);padding:16px 14px;text-align:left;display:block}
+.su:hover{background:#0d1120}
+.su .t{font:600 10px var(--mono);letter-spacing:.16em}
+.su b{display:block;font:600 14.5px var(--sans);margin-top:5px}
+.su span{display:block;font-size:12px;color:var(--faint);margin-top:2px}
+.su.c1 .t{color:var(--violet)} .su.c2 .t{color:var(--brass)} .su.c3 .t{color:var(--teal)} .su.c4 .t{color:var(--bluewhite)}
+
+/* ═══════════ DAY LAYOUT — rail + chapters ═══════════ */
+.day{position:relative;max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad);display:grid;grid-template-columns:var(--rail) 1fr;gap:clamp(24px,3.5vw,56px)}
+.rail{position:relative}
+.rail-in{position:sticky;top:96px;padding-bottom:24px}
+.rail-line{position:absolute;left:5px;top:6px;bottom:20px;width:1px;background:linear-gradient(var(--line) 60%,transparent)}
+.stop{position:relative;display:block;padding:0 0 30px 26px;color:var(--faint)}
+.stop i{position:absolute;left:0;top:5px;width:11px;height:11px;border-radius:50%;background:var(--night);border:2px solid var(--faint);font-style:normal;transition:border-color .25s,box-shadow .25s}
+.stop .tm{font:600 11.5px var(--mono);letter-spacing:.1em;display:block}
+.stop .nm{font-size:12.5px;display:block;margin-top:2px}
+.stop.on{color:var(--text)}
+.stop.on i{border-color:var(--stopc,var(--brass));box-shadow:0 0 12px color-mix(in srgb,var(--stopc,var(--brass)) 60%,transparent)}
+.stop.on .tm{color:var(--stopc,var(--brass))}
+
+.chapter{padding:clamp(56px,9vh,96px) 0 0;position:relative}
+.chapter:first-child{padding-top:8px}
+.ch-head{max-width:640px}
+.ch-head .stamp{display:flex;align-items:center;gap:10px}
+.ch-head .stamp::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,currentColor,transparent);opacity:.35}
+.ch-head h2{margin-top:14px}
+.ch-head .sub{margin-top:14px}
+.ch-head .sub b{color:var(--text);font-weight:600}
+.ch-body{margin-top:30px;display:grid;grid-template-columns:1fr;gap:18px}
+.shotframe{border:1px solid var(--line);border-radius:15px;overflow:hidden;background:var(--panel);box-shadow:0 34px 90px -32px rgba(0,0,0,.9)}
+.shotframe .bar{display:flex;align-items:center;gap:6px;height:32px;padding:0 13px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--line2)}
+.shotframe .bar i{width:8px;height:8px;border-radius:50%;background:rgba(195,208,228,.2);font-style:normal}
+.shotframe .bar .url{margin-left:8px;font:500 10.5px var(--mono);letter-spacing:.06em;color:var(--faint)}
+.shotframe img{width:100%;height:auto}
+.shotframe.crop img{max-height:520px;object-fit:cover;object-position:top center}
+.ch-notes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.note{border:1px solid var(--line2);border-radius:12px;background:rgba(255,255,255,.018);padding:15px 16px;font-size:13.5px;color:var(--dim);line-height:1.55}
+.note b{display:block;color:var(--text);font-weight:600;margin-bottom:3px}
+.ch-cta{margin-top:6px;display:inline-flex;gap:8px;font:600 14.5px var(--sans)}
+/* per-chapter light */
+.ch-bake{--c:var(--violet)}
+.ch-read{--c:var(--brass)}
+.ch-bell{--c:var(--teal)}
+.ch-always{--c:var(--bluewhite)}
+.chapter .stamp{color:var(--c)}
+.chapter .ch-cta{color:var(--c)}
+.chapter::before{content:"";position:absolute;left:-8%;top:8%;width:70%;height:60%;pointer-events:none;z-index:-1;
+  background:radial-gradient(48% 48% at 30% 30%,color-mix(in srgb,var(--c) 7%,transparent),transparent 72%)}
+/* the close — thin transitional band inside hero bottom */
+.close-line{display:flex;align-items:center;gap:14px;justify-content:center;margin-top:clamp(48px,7vh,72px);color:var(--faint);font:500 12px var(--mono);letter-spacing:.14em}
+.close-line::before,.close-line::after{content:"";height:1px;width:min(180px,22vw);background:linear-gradient(90deg,transparent,var(--line))}
+.close-line::after{background:linear-gradient(90deg,var(--line),transparent)}
+
+/* live tape row for 09:30 */
+.tape{display:flex;gap:22px;overflow:hidden;border-block:1px solid var(--line2);padding:9px 0;font:500 12px var(--mono);color:var(--dim);white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.tape b{color:var(--teal);font-weight:600}
+.tape .u{color:var(--up)} .tape .d{color:var(--down)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;position:relative;margin-right:7px}
+.live-dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid rgba(45,212,191,.55);animation:ping 2.4s ease-out infinite}
+@keyframes ping{0%{transform:scale(.55);opacity:1}70%,100%{transform:scale(1.7);opacity:0}}
+
+/* chat panel for always-on */
+.chat{border:1px solid var(--line);border-radius:15px;background:linear-gradient(180deg,var(--panel),var(--night2));padding:20px;max-width:620px}
+.chat .who{display:flex;align-items:center;gap:8px;font:600 10.5px var(--mono);letter-spacing:.18em;color:var(--bluewhite);margin-bottom:10px}
+.msg{border-radius:12px;padding:11px 14px;font-size:14px;line-height:1.58;margin-top:9px}
+.msg.q{background:rgba(255,255,255,.06);max-width:72%;margin-left:auto}
+.msg.a{background:rgba(157,184,255,.06);border:1px solid rgba(157,184,255,.14);color:var(--dim)}
+.msg.a b{color:var(--text);font-weight:600}
+.msg.act{border:1px dashed rgba(157,184,255,.4);background:transparent;color:var(--bluewhite);font:600 11.5px var(--mono);letter-spacing:.05em;max-width:max-content}
+
+/* ═══════════ RECORD / PRICING / FINAL ═══════════ */
+.record{margin-top:clamp(80px,12vh,130px);border-top:1px solid var(--line2);background:radial-gradient(60% 55% at 50% 0%,rgba(232,163,61,.05),transparent 70%)}
+.record-in{max-width:var(--maxw);margin:0 auto;padding:clamp(64px,9vh,100px) var(--pad);display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,64px);align-items:center}
+.record p{color:var(--dim);font-size:16px;line-height:1.7;max-width:50ch}
+.record p b{color:var(--text);font-weight:600}
+.record .shotframe img{max-height:420px;object-fit:cover;object-position:top center}
+.pricing{padding:clamp(84px,11vh,124px) 0 0}
+.p-head{text-align:center;max-width:560px;margin:0 auto}
+.toggle{display:inline-flex;margin-top:22px;border:1px solid var(--line);border-radius:99px;padding:4px;font:600 13px var(--sans)}
+.toggle button{all:unset;cursor:pointer;padding:7px 17px;border-radius:99px;color:var(--dim)}
+.toggle button[aria-pressed="true"]{background:rgba(232,163,61,.13);color:var(--brass-hi)}
+.toggle .save{font:600 9.5px var(--mono);margin-left:5px;color:var(--up)}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad)}
+.tier{border:1px solid var(--line);border-radius:16px;background:var(--night2);padding:24px;display:flex;flex-direction:column}
+.tier.hot{border-color:rgba(232,163,61,.42);position:relative;background:linear-gradient(180deg,rgba(232,163,61,.05),var(--night2) 45%)}
+.tier.hot::before{content:"MOST POPULAR";position:absolute;top:-10px;left:50%;transform:translateX(-50%);font:600 9.5px var(--mono);letter-spacing:.15em;color:#171001;background:var(--brass);padding:4px 11px;border-radius:99px}
+.tier h3{margin:0;font:600 20px var(--disp)}
+.tier .who{color:var(--dim);font-size:13px;margin-top:4px;min-height:36px}
+.price{margin-top:12px;font:600 40px var(--disp);letter-spacing:-.02em}
+.price .per{font:500 12.5px var(--sans);color:var(--dim)}
+.price .was{font:600 14px var(--mono);color:var(--faint);text-decoration:line-through;margin-right:7px}
+.badge{display:inline-block;margin-top:6px;font:600 10px var(--mono);color:var(--up);border:1px solid rgba(53,199,127,.3);border-radius:6px;padding:3px 8px}
+.tier ul{list-style:none;margin:16px 0 20px;padding:0;font-size:13.5px;color:var(--dim);flex:1}
+.tier li{padding:6px 0 6px 22px;position:relative}
+.tier li::before{content:"✓";position:absolute;left:1px;color:var(--brass);font-weight:700}
+.tier li b{color:var(--text);font-weight:600}
+.p-foot{text-align:center;margin-top:20px;font:500 11.5px var(--mono);letter-spacing:.08em;color:var(--faint)}
+.final{margin-top:clamp(88px,12vh,140px);border-top:1px solid var(--line2);text-align:center;position:relative}
+.final .in2{padding:clamp(80px,11vh,120px) var(--pad);position:relative}
+.final .in2::before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);width:min(680px,90vw);height:100%;
+  background:radial-gradient(50% 58% at 50% 0%,rgba(232,163,61,.12),transparent 72%);pointer-events:none}
+.final h2{font-size:clamp(38px,5.6vw,60px)}
+.final .sub{max-width:500px;margin:16px auto 0}
+footer{border-top:1px solid var(--line2);padding:36px 0 54px;color:var(--faint);font-size:13px}
+.f-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.f-links{display:flex;gap:20px;flex-wrap:wrap}
+.f-links a:hover{color:var(--text)}
+
+@media (max-width:960px){
+  .day{grid-template-columns:1fr}
+  .rail{display:none}
+  .chapter .inline-stamp{display:inline-flex}
+  .suite{grid-template-columns:1fr 1fr}
+  .record-in{grid-template-columns:1fr}
+  .tiers{grid-template-columns:1fr}
+  .ch-notes{grid-template-columns:1fr}
+}
+.inline-stamp{display:none;align-items:center;gap:8px;font:600 11px var(--mono);letter-spacing:.18em;color:var(--c,var(--brass));margin-bottom:10px}
+@media (max-width:640px){
+  .nav-links{display:none}
+  .lang,.nav-right>a:not(.btn){display:none}
+  .nav-right{gap:10px}
+  .hero h1{font-size:clamp(48px,14vw,64px)}
+  .suite{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Main">
+  <div class="nav-in">
+    <a class="brand" href="#"><span class="m">M</span> Mastermind</a>
+    <div class="nav-links">
+      <a href="#bake">Product</a>
+      <a href="#bell">Terminal</a>
+      <a href="#record">Track record</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <span class="lang"><b>EN</b> · 中文</span>
+      <a href="#" style="color:var(--dim)">Log in</a>
+      <a class="btn primary sm" href="#pricing">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<header class="hero">
+  <div class="wrap">
+    <p class="stamp rv in" style="--d:.04s">One market day on Mastermind</p>
+    <h1 class="rv in" style="--d:.1s">While <em>you</em> slept.</h1>
+    <p class="sub rv in" style="--d:.2s">Every close, the engines re-read five markets, name by name. By coffee, the calls are graded and the briefing is written. At the bell, the Terminal goes live. <b>An institutional day's work — done for you, every day.</b></p>
+    <div class="cta-row rv in" style="--d:.28s">
+      <a class="btn primary" href="#pricing">Start free</a>
+      <a class="btn" href="#bake">Walk through the day</a>
+    </div>
+    <p class="micro rv in" style="--d:.34s">NO CARD · TERMINAL FREE FOREVER · EN / 中文</p>
+
+    <div class="suite rv in" style="--d:.42s">
+      <a class="su c1" href="#bake"><span class="t">02:00 · NIGHTLY</span><b>Macro Dashboard</b><span>the regime, re-read</span></a>
+      <a class="su c2" href="#read"><span class="t">08:00 · MORNING</span><b>Prophet</b><span>calls, graded in public</span></a>
+      <a class="su c3" href="#bell"><span class="t">09:30 · LIVE</span><b>Terminal</b><span>tape &amp; options flow</span></a>
+      <a class="su c4" href="#always"><span class="t">ANY HOUR</span><b>Mastermind AI</b><span>the analyst on call</span></a>
+    </div>
+
+    <p class="close-line rv in" style="--d:.5s">16:00 ET — THE BELL RINGS. YOUR DAY ENDS. OURS STARTS.</p>
+  </div>
+</header>
+
+<!-- ═══════════ THE DAY ═══════════ -->
+<main>
+<div class="day">
+  <aside class="rail" aria-hidden="true">
+    <div class="rail-in">
+      <div class="rail-line"></div>
+      <span class="stop" data-for="bake" style="--stopc:var(--violet)"><i></i><span class="tm">02:00 ET</span><span class="nm">The bake</span></span>
+      <span class="stop" data-for="read" style="--stopc:var(--brass)"><i></i><span class="tm">08:00 ET</span><span class="nm">The read</span></span>
+      <span class="stop" data-for="bell" style="--stopc:var(--teal)"><i></i><span class="tm">09:30 ET</span><span class="nm">The bell</span></span>
+      <span class="stop" data-for="always" style="--stopc:var(--bluewhite)"><i></i><span class="tm">ANY HOUR</span><span class="nm">The analyst</span></span>
+    </div>
+  </aside>
+
+  <div>
+    <!-- 02:00 THE BAKE -->
+    <section class="chapter ch-bake" id="bake">
+      <div class="ch-head rv">
+        <p class="inline-stamp" style="--c:var(--violet)">02:00 ET — THE BAKE</p>
+        <p class="stamp">02:00 ET — The bake</p>
+        <h2>The engines read <em>everything.</em></h2>
+        <p class="sub">While the tape is cold, Mastermind re-reads <b>2,700+ stocks across the US, China, Hong Kong and Canada</b> — regime, cycles, sectors, themes, flows — and cross-checks every signal against the others. No skimming, no shortcuts, no opinions carried over from yesterday.</p>
+      </div>
+      <div class="ch-body">
+        <div class="shotframe rv" style="--d:.08s">
+          <div class="bar"><i></i><i></i><i></i><span class="url">the overnight web — every signal, cross-checked</span></div>
+          <img src="assets/synapse_map.png" alt="The signal web: engines, regimes, sectors and theses drawn as a constellation, edges showing which signals confirm or contradict each other." loading="lazy" width="2361" height="1496">
+        </div>
+        <div class="ch-notes rv" style="--d:.14s">
+          <div class="note"><b>One honest dial.</b> The night ends in a 0–100 regime read with a plain-word stance — even when it's "Mixed — trade smaller."</div>
+          <div class="note"><b>Signals argue, you don't.</b> When engines disagree, the web shows it — confirmation is earned, not assumed.</div>
+          <div class="note"><b>Nulls printed.</b> When something has no edge right now, the board says so. Silence is not a strategy.</div>
+        </div>
+        <a class="ch-cta rv" style="--d:.18s" href="#">See tonight's read →</a>
+      </div>
+    </section>
+
+    <!-- 08:00 THE READ -->
+    <section class="chapter ch-read" id="read">
+      <div class="ch-head rv">
+        <p class="inline-stamp" style="--c:var(--brass)">08:00 ET — THE READ</p>
+        <p class="stamp">08:00 ET — The read</p>
+        <h2>Coffee, and a <em>graded</em> book.</h2>
+        <p class="sub">Prophet's calls are stamped before the move — price, stop, thesis. Overnight, every resolved call got its grade, <b>hit or miss, on the permanent record</b>. The morning briefing tells you what changed and what to do about it, in plain words.</p>
+      </div>
+      <div class="ch-body">
+        <div class="shotframe crop rv" style="--d:.08s">
+          <div class="bar"><i></i><i></i><i></i><span class="url">mastermind-x.com/us_track_record</span></div>
+          <img src="assets/prophet_track.png" alt="The public track record: share of exits above surfacing price, average move since surfaced, names tracked — caveats printed beside the numbers." loading="lazy" width="1440" height="1100">
+        </div>
+        <div class="ch-notes rv" style="--d:.14s">
+          <div class="note"><b>Before, not after.</b> Entries carry their timestamp. Nobody grades their own homework here.</div>
+          <div class="note"><b>Misses stay up.</b> Every miss keeps its page and gets an autopsy. The record is the product.</div>
+          <div class="note"><b>Your list, ranked.</b> The board sorts names into plain lanes — buy now, almost ready, stand aside.</div>
+        </div>
+        <a class="ch-cta rv" style="--d:.18s" href="#record">Read the track record →</a>
+      </div>
+    </section>
+
+    <!-- 09:30 THE BELL -->
+    <section class="chapter ch-bell" id="bell">
+      <div class="ch-head rv">
+        <p class="inline-stamp" style="--c:var(--teal)">09:30 ET — THE BELL</p>
+        <p class="stamp">09:30 ET — The bell</p>
+        <h2>Now it's <em>live.</em></h2>
+        <p class="sub">The Terminal picks up where the night left off: the live tape with the desk's signals drawn on, and <b>full intraday options flow — sweeps and blocks as they print</b>. It's free, forever, in the browser. The night told you where to look; the day shows you when.</p>
+      </div>
+      <div class="ch-body">
+        <div class="tape rv" aria-hidden="true"><span><span class="live-dot"></span><b>LIVE</b></span><span>NVDA <span class="d">−2.21%</span> · unusual call sweep $2.4M</span><span>SPY block <span class="u">+$18M</span> at bid</span><span>XLE call flow <span class="u">3.2×</span> average</span><span>QQQ puts bought <span class="d">−$6M</span></span><span>MU sweep <span class="u">+$1.1M</span> ask-side</span></div>
+        <div class="shotframe rv" style="--d:.08s">
+          <div class="bar"><i></i><i></i><i></i><span class="url">app.mastermind-x.com — NVDA · live</span></div>
+          <img src="assets/terminal_live.png" alt="The Mastermind Terminal live: NVDA candles with moving averages, RSI and stochastic panes, watchlist rail and an entry-signal panel." loading="lazy" width="2880" height="1800">
+        </div>
+        <div class="ch-notes rv" style="--d:.14s">
+          <div class="note"><b>A real terminal.</b> Institutional-grade charting, layouts and indicators — no install, no card.</div>
+          <div class="note"><b>Options flow, live.</b> See what size is doing while it's doing it. On Insider, the feed runs intraday.</div>
+          <div class="note"><b>Signals on-chart.</b> The desk's entry gates are drawn on the candles you're already watching.</div>
+        </div>
+        <a class="ch-cta rv" style="--d:.18s" href="#">Open the Terminal — it's free →</a>
+      </div>
+    </section>
+
+    <!-- ALWAYS -->
+    <section class="chapter ch-always" id="always">
+      <div class="ch-head rv">
+        <p class="inline-stamp" style="--c:var(--bluewhite)">ANY HOUR — THE ANALYST</p>
+        <p class="stamp">Any hour — The analyst</p>
+        <h2>Ask the desk <em>anything.</em></h2>
+        <p class="sub">Mastermind AI sits inside every page, fluent in every board. Ask why the regime moved, what the book says about a name, what changed while you were away. <b>It explains — the engines decide.</b> Never the other way around.</p>
+      </div>
+      <div class="ch-body">
+        <div class="chat rv" style="--d:.08s">
+          <p class="who"><span class="live-dot" style="background:var(--bluewhite)"></span>MASTERMIND AI · 22:40 YOUR TIME</p>
+          <div class="msg q">Missed the whole session. What matters for tomorrow?</div>
+          <div class="msg a"><b>Two things.</b> Energy held its new leadership slot for a third night — Prophet's XLE call is now +4% with the stop moved to break-even. And breadth faded into the close again, which keeps the dial at 50 · Mixed: trade smaller, don't chase strength.</div>
+          <div class="msg act">→ TERMINAL · QUEUED XLE, DAILY, FOR THE OPEN</div>
+        </div>
+        <div class="ch-notes rv" style="--d:.14s">
+          <div class="note"><b>Fast or deep.</b> Quick answers on every page — or deep research that returns with receipts.</div>
+          <div class="note"><b>Drives the Terminal.</b> "Show me NVDA at the last two earnings" — the chart obeys.</div>
+          <div class="note"><b>Honest by design.</b> It cites the boards it reads. When the desk is unsure, it says so.</div>
+        </div>
+        <a class="ch-cta rv" style="--d:.18s" href="#">Meet the analyst →</a>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ═══════════ THE RECORD ═══════════ -->
+<section class="record" id="record">
+  <div class="record-in">
+    <div class="rv">
+      <p class="stamp" style="color:var(--brass)">The standard</p>
+      <h2 style="margin-top:12px">A day's work you can <em>audit.</em></h2>
+      <p style="margin-top:16px">Everything above leaves a paper trail: <b>calls stamped before the move, grades printed when they resolve, misses kept with autopsies</b> — and plain words when a signal has no real edge. That's how institutional desks are judged. Judge ours.</p>
+      <a class="ch-cta" style="color:var(--brass);margin-top:14px" href="#">See the live track record →</a>
+    </div>
+    <div class="shotframe rv" style="--d:.1s">
+      <img src="assets/prophet_track.png" alt="Track record page with win-rate charts and printed caveats." loading="lazy" width="1440" height="1100">
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PRICING ═══════════ -->
+<section class="pricing" id="pricing">
+  <div class="p-head rv">
+    <p class="stamp" style="color:var(--brass)">Pricing</p>
+    <h2 style="margin-top:12px">Every day. <em>One price.</em></h2>
+    <div class="toggle" role="group" aria-label="Billing period">
+      <button aria-pressed="true" data-period="annual">Annual <span class="save">SAVE 22%</span></button>
+      <button aria-pressed="false" data-period="monthly">Monthly</button>
+    </div>
+  </div>
+  <div class="tiers">
+    <div class="tier rv" style="--d:.04s">
+      <h3>Free</h3>
+      <p class="who">The nightly read and the Terminal, for everyone.</p>
+      <div class="price">$0</div>
+      <ul>
+        <li><b>Tonight's read</b> — the dial &amp; market state</li>
+        <li><b>Terminal charting</b>, free forever</li>
+        <li>Movers, calculators, lessons, blog</li>
+        <li>A taste of Mastermind AI</li>
+      </ul>
+      <a class="btn" href="#" style="justify-content:center">Start free</a>
+    </div>
+    <div class="tier hot rv" style="--d:.1s">
+      <h3>Insider</h3>
+      <p class="who">The full day — every board, the live flow.</p>
+      <div class="price" data-annual="$49" data-monthly="$59"><span class="was">$59</span>$49 <span class="per">/mo billed annually</span></div>
+      <span class="badge">SAVE 17% · $588/YR</span>
+      <ul>
+        <li><b>All boards &amp; dossiers</b> — five markets</li>
+        <li><b>Prophet's full book</b>, grades &amp; autopsies</li>
+        <li><b>Live intraday options flow</b></li>
+        <li>Mastermind AI — fast analyst, all day</li>
+      </ul>
+      <a class="btn primary" href="#" style="justify-content:center">Start 7-day trial</a>
+    </div>
+    <div class="tier rv" style="--d:.16s">
+      <h3>Pro</h3>
+      <p class="who">For harder questions.</p>
+      <div class="price" data-annual="$69" data-monthly="$89"><span class="was">$89</span>$69 <span class="per">/mo billed annually</span></div>
+      <span class="badge">SAVE 22% · $828/YR</span>
+      <ul>
+        <li><b>Everything in Insider</b></li>
+        <li><b>Deep-research analyst</b> with receipts</li>
+        <li>Priority compute</li>
+        <li>First seat on new desks</li>
+      </ul>
+      <a class="btn" href="#" style="justify-content:center">Go Pro</a>
+    </div>
+  </div>
+  <p class="p-foot">NO CARD FOR FREE · CANCEL ANYTIME · USD</p>
+</section>
+
+<!-- ═══════════ FINAL ═══════════ -->
+<section class="final">
+  <div class="in2 rv">
+    <p class="stamp" style="color:var(--brass)">16:00 ET, today</p>
+    <h2 style="margin-top:12px">Tonight, it runs <em>again.</em></h2>
+    <p class="sub">Start free before the close — tomorrow's read will be waiting with your coffee.</p>
+    <div class="cta-row" style="margin-top:26px">
+      <a class="btn primary" href="#pricing">Start free</a>
+      <a class="btn" href="#bake">Walk through the day</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="f-in">
+    <span>© Mastermind · mastermind-x.com — engines decide, AI explains.</span>
+    <div class="f-links">
+      <a href="#">Methodology</a><a href="#record">Track record</a><a href="#">Tools</a><a href="#">Learn</a><a href="#">Blog</a><a href="#">中文</a>
+    </div>
+  </div>
+</footer>
+</main>
+
+<script>
+/* reveal */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.1 });
+document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
+
+/* day-rail traveling light */
+const stops = [...document.querySelectorAll('.stop')];
+const chapters = ['bake','read','bell','always'].map(id => document.getElementById(id));
+const railIO = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) {
+    stops.forEach(s => s.classList.toggle('on', s.dataset.for === e.target.id));
+  }});
+}, { rootMargin:'-30% 0px -55% 0px' });
+chapters.forEach(c => railIO.observe(c));
+
+/* pricing toggle */
+const tog = document.querySelectorAll('.toggle button');
+tog.forEach(b => b.addEventListener('click', () => {
+  const annual = b.dataset.period === 'annual';
+  tog.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  document.querySelectorAll('.price[data-annual]').forEach(p => {
+    p.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = (annual ? p.dataset.annual : p.dataset.monthly) + ' '; });
+    const per = p.querySelector('.per'), was = p.querySelector('.was');
+    if (per) per.textContent = annual ? '/mo billed annually' : '/mo billed monthly';
+    if (was) was.style.display = annual ? '' : 'none';
+  });
+  document.querySelectorAll('.badge').forEach(el => el.style.visibility = annual ? '' : 'hidden');
+}));
+</script>
+</body>
+</html>
