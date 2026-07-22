@@ -1449,12 +1449,16 @@ def _season_tooltip(seas: dict | None, month: int | None):
 
 
 def _mini_svg(vals, color: str = "var(--link)", w: int = 260, h: int = 54,
-              baseline=None, dot: bool = True) -> str:
+              baseline=None, dot: bool = True,
+              zone_lo: float | None = None, zone_hi: float | None = None,
+              zone_state: str | None = None) -> str:
     """A tiny theme-aware inline sparkline (area + line + last-point marker),
     used both for the nowcast hover charts and the standout-stock cards. Pure
     SVG so it needs no client JS and works offline. `vals` should already be a
     clean numeric list. `baseline` draws a dashed reference line (0 = stall,
-    2 = the Fed's inflation target, …)."""
+    2 = the Fed's inflation target, …). zone_lo/zone_hi/zone_state (all
+    optional): the prophet-card buy-zone band, drawn on the same lo/hi/pad
+    scale as the polyline — args absent -> output identical to before."""
     vals = [float(v) for v in vals if v is not None and v == v]
     if len(vals) < 2:
         return ""
@@ -1476,6 +1480,34 @@ def _mini_svg(vals, color: str = "var(--link)", w: int = 260, h: int = 54,
         out.append(f'<line x1="0" y1="{by:.1f}" x2="{w}" y2="{by:.1f}" '
                    f'stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" '
                    f'opacity="0.55"/>')
+    if zone_hi is not None or zone_lo is not None:
+        # Buy-zone band (prophet-card E1): a horizontal price band over the right
+        # 40% of the plot — filled low-opacity rect when the zone is ACTIVE, dashed
+        # edge lines only when PENDING. Price-clamped into the plotted window; a
+        # zone wholly outside it draws nothing. The edge lines carry no fill
+        # attribute and the rect keeps fill-opacity, so the prophet-card hue
+        # override (stroke on *, fill on [fill]:not([fill="none"])) recolors both
+        # without flattening the band.
+        try:
+            zh = float(zone_hi if zone_hi is not None else zone_lo)
+            zl = float(zone_lo if zone_lo is not None else zone_hi)
+            zl, zh = min(zl, zh), max(zl, zh)
+            if zh > 0 and zh >= lo and zl <= hi:
+                yt = (h - pad) - ((min(zh, hi) - lo) / rng) * (h - 2 * pad) + pad
+                yb = (h - pad) - ((max(zl, lo) - lo) / rng) * (h - 2 * pad) + pad
+                x0 = w * 0.60
+                if zone_state == "active":
+                    out.append(f'<rect x="{x0:.1f}" y="{yt:.1f}" width="{w - x0:.1f}" '
+                               f'height="{max(yb - yt, 0.0):.1f}" fill="{color}" '
+                               f'fill-opacity="0.09" stroke="none"/>')
+                out.append(f'<line x1="{x0:.1f}" y1="{yt:.1f}" x2="{w}" y2="{yt:.1f}" '
+                           f'stroke="{color}" stroke-width="1" stroke-dasharray="4 3" '
+                           f'stroke-opacity="0.65"/>'
+                           f'<line x1="{x0:.1f}" y1="{yb:.1f}" x2="{w}" y2="{yb:.1f}" '
+                           f'stroke="{color}" stroke-width="1" stroke-dasharray="4 3" '
+                           f'stroke-opacity="0.65"/>')
+        except (TypeError, ValueError):
+            pass  # malformed zone — never a broken spark
     out.append(f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" '
                f'opacity="0.12" stroke="none"/>')
     out.append(f'<polyline points="{pts}" fill="none" stroke="{color}" '

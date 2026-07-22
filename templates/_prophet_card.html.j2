@@ -36,6 +36,12 @@
 .pvcard.pv-triage::before{box-shadow:0 1px 12px color-mix(in srgb,var(--pvh) 70%,transparent)}
 .pv-chart{position:relative;min-width:0;background:color-mix(in srgb,var(--pvh) 3%,transparent)}
 .pv-chart svg{display:block;width:100%;height:74px}
+{# spark recolor law (band contract): everything strokes the verb hue; filled shapes flip
+   to hue fill. The builder-drawn buy-zone band (_spark_svg zone_lo/zone_hi/zone_state)
+   relies on this exact split — its dashed edge lines carry NO fill attribute (only the
+   stroke rule recolors them, dasharray survives) and its rect keeps a low fill-opacity
+   ATTRIBUTE the fill override does not touch. Don't override fill-opacity/stroke-dasharray
+   here without re-checking the band in the five *_library _spark_svg generators. #}
 .pv-chart svg *{stroke:var(--pvh)!important}
 .pv-chart svg [fill]:not([fill="none"]){fill:var(--pvh)!important;stroke:none!important}
 .pv-nochart{height:74px}
