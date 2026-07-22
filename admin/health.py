@@ -14,6 +14,9 @@ from .paths import DATA
 
 _STALE_HOURS = 96.0   # heartbeat.yml's staleness threshold
 
+# statuses that mean a feed genuinely failed to deliver this run (these move the verdict)
+_DOWN_STATUSES = {"dead", "failed", "check_failed", "error", "not_run"}
+
 # (label, relative path under data/)
 _MARKETS = [
     ("US macro regime", "regime/latest.json"),
@@ -55,6 +58,27 @@ def _parse_iso_age_hours(ts: str) -> float | None:
         return None
 
 
+def _parse_any_age_hours(ts) -> float | None:
+    """Age in hours from a date string, tolerant of the formats the market latest.json
+    files actually carry: ISO ('2026-07-21', optionally with time/tz) AND the
+    'Jul 22, 2026' / 'Jul 22 2026' variant that forex + commodities emit. Used so
+    dashboard freshness reflects the DATA's date, not the file mtime (which is just the
+    checkout/deploy time in a git working tree and says nothing about staleness)."""
+    if not isinstance(ts, str) or not ts.strip():
+        return None
+    s = ts.strip()
+    a = _parse_iso_age_hours(s)
+    if a is not None:
+        return a
+    for fmt in ("%b %d, %Y", "%b %d %Y", "%B %d, %Y", "%Y/%m/%d", "%m/%d/%Y"):
+        try:
+            dt = datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+            return (datetime.now(timezone.utc) - dt).total_seconds() / 3600.0
+        except ValueError:
+            continue
+    return None
+
+
 def market_freshness() -> list[dict]:
     out = []
     for label, rel in _MARKETS:
@@ -64,10 +88,16 @@ def market_freshness() -> list[dict]:
             continue
         d = _read_json(p) or {}
         date = d.get("date") or d.get("asof") or d.get("as_of")
+        age = _parse_any_age_hours(date)
+        age_source = "date"
+        if age is None:
+            age = _age_hours_from_mtime(p)   # last resort — the file carried no parseable date
+            age_source = "mtime"
         out.append({
             "label": label, "exists": True,
             "date": date,
-            "age_hours": _age_hours_from_mtime(p),
+            "age_hours": age,
+            "age_source": age_source,
         })
     return out
 
@@ -81,15 +111,34 @@ def summary() -> dict:
     breaker = rs.get("circuit_breaker", {}) or {}
 
     src_rows = []
-    ok = stale = dead = 0
+    # Bucket every status, not just ok/stale/dead. The old code counted only those
+    # three, so blocked/failed/no_creds/empty/check_failed feeds were invisible in the
+    # tally AND could never move the verdict (dead stayed 0, so "Healthy" was pinned on).
+    # "down" = a genuine failure to deliver (flips the verdict); "blocked" = throttled/
+    # paywalled upstream (surfaced, but doesn't cry wolf on chronic external blocks);
+    # "gated" = missing creds (operator config, not a pipeline fault); "empty" = ran but
+    # returned no rows.
+    # "dead" is retained as a subset of "down" (literal dead status) for backward-compat
+    # with existing consumers of the old sources schema.
+    counts = {"ok": 0, "stale": 0, "down": 0, "dead": 0, "blocked": 0, "gated": 0, "empty": 0, "other": 0}
     for nm, s in sorted(sources.items()):
         st = (s or {}).get("status", "?")
         if st == "ok":
-            ok += 1
+            counts["ok"] += 1
         elif st == "stale":
-            stale += 1
-        elif st == "dead":
-            dead += 1
+            counts["stale"] += 1
+        elif st in _DOWN_STATUSES:
+            counts["down"] += 1
+            if st == "dead":
+                counts["dead"] += 1
+        elif st == "blocked":
+            counts["blocked"] += 1
+        elif st == "no_creds":
+            counts["gated"] += 1
+        elif st == "empty":
+            counts["empty"] += 1
+        else:
+            counts["other"] += 1
         src_rows.append({
             "name": nm, "status": st,
             "rows": (s or {}).get("rows"),
@@ -104,7 +153,8 @@ def summary() -> dict:
     markets = market_freshness()
     missing_markets = [m["label"] for m in markets if not m["exists"]]
 
-    healthy = (not is_stale) and (not broad_outage) and dead == 0
+    down = counts["down"]
+    healthy = (not is_stale) and (not broad_outage) and down == 0
     return {
         "healthy": healthy,
         "last_run": last_run,
@@ -112,7 +162,13 @@ def summary() -> dict:
         "stale": is_stale,
         "stale_threshold_h": _STALE_HOURS,
         "broad_outage": broad_outage,
-        "sources": {"ok": ok, "stale": stale, "dead": dead, "total": len(src_rows)},
+        "down_count": down,
+        "sources": {
+            "ok": counts["ok"], "stale": counts["stale"], "down": down,
+            "dead": counts["dead"], "blocked": counts["blocked"], "gated": counts["gated"],
+            "empty": counts["empty"], "other": counts["other"],
+            "total": len(src_rows),
+        },
         "source_rows": src_rows,
         "breaker_tripped": tripped,
         "markets": markets,

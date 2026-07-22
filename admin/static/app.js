@@ -425,7 +425,8 @@ function renderHeader() {
   const hh = SUMMARY.health || {};
   const sv = SUMMARY.services || {};
   const allOk = hh.healthy && (!sv.available || sv.healthy);
-  const led = allOk ? "ok" : ((hh.broad_outage || (hh.sources && hh.sources.dead) || (sv.available && !sv.healthy)) ? "bad" : "warn");
+  const hhDown = hh.down_count != null ? hh.down_count : ((hh.sources && hh.sources.down) || 0);
+  const led = allOk ? "ok" : ((hh.broad_outage || hhDown > 0 || (sv.available && !sv.healthy)) ? "bad" : "warn");
   const el = $("#hmeta"); el.innerHTML = "";
   el.appendChild(h(`<span class="pill"><span class="led ${led}"></span>${allOk ? "Healthy" : "Attention"}</span>`));
   const ex = SUMMARY.experiments || {};
@@ -1517,16 +1518,34 @@ RENDER.health = async () => {
   const v = $("#view"); const d = await api("/api/health");
   if (d.error) { v.innerHTML = card("Error", `<div class="sub" style="color:var(--bad)">${esc(d.error)}</div>`); return; }
   const src = d.sources || {};
-  const sp = (s) => { const lbl = s === "stale" ? "out of date" : s === "dead" ? "down" : s; return `<span class="statpill ${s === "ok" ? "s-ok" : s === "stale" ? "s-warn" : s === "dead" ? "s-bad" : "s-mut"}">${esc(lbl)}</span>`; };
+  const down = d.down_count != null ? d.down_count : (src.down || 0);
+  const sp = (s) => {
+    const map = {
+      ok: ["s-ok", "ok"], stale: ["s-warn", "out of date"], dead: ["s-bad", "down"],
+      failed: ["s-bad", "failed"], error: ["s-bad", "error"], check_failed: ["s-bad", "check failed"],
+      not_run: ["s-bad", "didn't run"], blocked: ["s-warn", "blocked"],
+      no_creds: ["s-mut", "needs creds"], empty: ["s-warn", "empty"],
+    };
+    const [cls, lbl] = map[s] || ["s-mut", s];
+    return `<span class="statpill ${cls}">${esc(lbl)}</span>`;
+  };
+  const verdictColor = d.healthy ? "var(--ok)" : (down > 0 || d.broad_outage ? "var(--bad)" : "var(--warn)");
+  const reason = d.healthy ? "all feeds delivering"
+    : ([down > 0 ? `${down} feed${down > 1 ? "s" : ""} failed` : "",
+        d.stale ? "pipeline out of date" : "",
+        d.broad_outage ? "many feeds auto-paused" : ""].filter(Boolean).join(" · ") || "needs a look");
+  const feedExtra = [src.down ? `${src.down} down` : "", src.blocked ? `${src.blocked} blocked` : "",
+      src.gated ? `${src.gated} need creds` : "", src.empty ? `${src.empty} empty` : "",
+      src.stale ? `${src.stale} out of date` : ""].filter(Boolean).join(" · ") || "all delivering";
   v.innerHTML = `
     <div class="sub" style="margin-bottom:10px">Health of the nightly data pipeline and each data feed it pulls from.</div>
     <div class="grid">
-      ${card("Nightly pipeline", `<div class="big" style="color:${d.healthy ? "var(--ok)" : "var(--warn)"}">${d.healthy ? "Healthy" : "Attention"}</div><div class="sub">last run ${fmtAge(d.age_hours)} ago${d.stale ? " · OUT OF DATE" : ""}</div>`)}
-      ${card("Data feeds", `<div class="big">${src.ok}/${src.total}</div><div class="sub">${src.stale} out of date · ${src.dead} down</div>`)}
+      ${card("Nightly pipeline", `<div class="big" style="color:${verdictColor}">${d.healthy ? "Healthy" : "Attention"}</div><div class="sub">last run ${fmtAge(d.age_hours)} ago · ${esc(reason)}</div>`)}
+      ${card("Data feeds", `<div class="big" style="color:${down > 0 ? "var(--bad)" : "var(--text)"}">${src.ok}/${src.total}</div><div class="sub">${esc(feedExtra)}</div>`)}
       ${card("Auto-paused feeds", `<div class="big" style="color:${d.broad_outage ? "var(--bad)" : "var(--text)"}">${d.breaker_tripped}</div><div class="sub">paused after repeated errors${d.broad_outage ? " · MANY FEEDS DOWN" : ""}</div>`)}
     </div>
     <div class="section">Dashboard freshness</div>
-    <div class="grid">${(d.markets || []).map(m => `<div class="card"><h3>${esc(m.label)}</h3><div class="big" style="font-size:18px">${m.exists ? fmtAge(m.age_hours) + " ago" : "<span style='color:var(--bad)'>missing</span>"}</div><div class="sub">${esc(m.date || "")}</div></div>`).join("")}</div>
+    <div class="grid">${(d.markets || []).map(m => `<div class="card"><h3>${esc(m.label)}</h3><div class="big" style="font-size:18px">${m.exists ? fmtAge(m.age_hours) + " ago" : "<span style='color:var(--bad)'>missing</span>"}</div><div class="sub">${esc(m.date || "")}${m.age_source === "mtime" ? " <span style='opacity:.55'>(file time)</span>" : ""}</div></div>`).join("")}</div>
     <div class="section">Data feeds <span class="cnt">${(d.source_rows || []).length}</span></div>
     <table><thead><tr><th>Feed</th><th>Status</th><th class="r">Rows</th><th>Last date</th><th class="r">Auto-pause</th><th>Error</th></tr></thead><tbody>
       ${(d.source_rows || []).map(s => `<tr><td class="mono">${esc(s.name)}</td><td>${sp(s.status)}</td><td class="r">${s.rows ?? "—"}</td>
@@ -2904,11 +2923,19 @@ RENDER.prophet = async () => {
        <table><thead><tr><th>Market</th><th>Freshness</th><th>Data gaps</th><th>Status</th></tr></thead><tbody>
        ${intMkts.map(mk => {
          const ib = integrityBlk[mk] || {};
+         // real schema: {artifact_checks:[{age_hours,status,...}], data_gap_count, overall_health}.
+         // freshness = the oldest artifact; pill = overall_health (the old code read
+         // freshness_hours/ok/status, none of which exist, so every market showed a false red "stale").
+         const checks = Array.isArray(ib.artifact_checks) ? ib.artifact_checks : [];
+         const oldest = checks.reduce((mx, c) => Math.max(mx, Number(c.age_hours) || 0), 0);
+         const gaps = Number(ib.data_gap_count || 0);
+         const health = ib.overall_health || "unknown";
+         const pillCls = health === "ok" ? "s-ok" : health === "degraded" ? "s-warn" : "s-bad";
          return `<tr>
            <td class="mono"><b>${esc(mk)}</b></td>
-           <td class="sub">${ib.freshness_hours != null ? `${Number(ib.freshness_hours).toFixed(1)}h old` : "—"}</td>
-           <td class="r mono">${ib.data_gap_count != null ? Number(ib.data_gap_count) : "—"}</td>
-           <td><span class="statpill ${ib.ok ? "s-ok" : "s-bad"}">${esc(ib.status || (ib.ok ? "ok" : "stale"))}</span></td>
+           <td class="sub">${checks.length ? `${oldest.toFixed(1)}h old` : "—"}</td>
+           <td class="r mono" style="${gaps > 0 ? "color:var(--warn)" : ""}">${gaps}</td>
+           <td><span class="statpill ${pillCls}">${esc(health)}</span></td>
          </tr>`;
        }).join("")}
        </tbody></table>`
@@ -2970,7 +2997,7 @@ RENDER.prophet = async () => {
       ${card("CN fitness", `<div class="kv"><span>Lobe</span><b>${esc(fitCn.lobe || "site-china-standouts")}</b></div>
         <div class="kv"><span>Maturity</span><b>${esc(fitCn.maturity || "accruing")}</b></div>
         <div class="kv"><span>As of</span><b>${esc(fitCn.as_of || "—")}</b></div>
-        <div class="note muted">Last audit: ${esc((astCn.last_run_utc || "—").slice(0, 16).replace("T", " "))} · attributed ${Number(astCn.rows_attributed_total || 0)}</div>`)}
+        <div class="note muted">Last audit: ${esc((astCn.attribution_last_run || "—").slice(0, 16).replace("T", " "))}${astCn.regime_store_last_date ? ` · regime ${esc(astCn.regime_store_last_date)}` : ""}</div>`)}
     </div>`;
 
   /* --- Track record summary --- */
@@ -6740,7 +6767,9 @@ RENDER.context_lobe = async () => {
         const gate = lobe.gate || {};
         detail = Object.entries(gate).map(([k, v2]) => `${esc(k)}=${esc(String(v2))}`).join(" · ") || "—";
       } else if (name === "cortex") {
-        detail = `probation=${lobe.probation ? "yes" : "no"} · active_signals=${lobe.active_signals != null ? lobe.active_signals : "—"}`;
+        const probTxt = lobe.probation_granted ? `granted${lobe.probation_tier ? " (" + esc(lobe.probation_tier) + ")" : ""}`
+          : `not granted${lobe.probation_reason ? " — " + esc(lobe.probation_reason) : ""}`;
+        detail = `probation: ${probTxt} · active_signals=${lobe.active_signals != null ? lobe.active_signals : "—"}`;
       } else if (name === "contradictions") {
         detail = `${lobe.n_records != null ? lobe.n_records : "—"} records`;
       } else if (name === "cycle_pattern") {

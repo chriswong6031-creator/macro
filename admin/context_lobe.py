@@ -126,7 +126,19 @@ def _lobes_block(raw: dict) -> dict:
             # Cortex
             elif name == "cortex":
                 memo = lobe.get("memo") or {}
-                entry["probation"] = lobe.get("probation", False)
+                # probation is a dict ({granted, tier, reason, ...}); pull the real granted
+                # bool out. The old code passed the whole dict through as "probation", and
+                # the UI did `probation ? "yes" : "no"` — a non-empty dict is always truthy,
+                # so it rendered "yes" even when granted was false (inverted the signal).
+                prob = lobe.get("probation")
+                if isinstance(prob, dict):
+                    entry["probation_granted"] = bool(prob.get("granted", False))
+                    entry["probation_tier"] = prob.get("tier")
+                    entry["probation_reason"] = prob.get("reason")
+                else:
+                    entry["probation_granted"] = bool(prob)
+                    entry["probation_tier"] = None
+                    entry["probation_reason"] = None
                 entry["active_signals"] = memo.get("active_signals")
             # Macro weather
             elif name == "macro_weather":
