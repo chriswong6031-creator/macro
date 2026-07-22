@@ -50,9 +50,9 @@ _ACTIVE_VERDICT = {
 }
 _ACTIVE_CAV = ("Active, leverage-capable model — leverage amplifies losses as well as gains. Continuous "
                "front-month total-return close; net of 3 bps cost + a 1% financing spread on the levered part; "
-               "the de-risked sleeve earns the T-bill yield. Experimental; full Phase-0 a fast-follow.",
+               "the de-risked sleeve earns the T-bill yield. Phase-0 is complete — see each model's verdict for its multiple-testing (DSR) result; these stay display-tier, not promoted to a live allocation.",
                "主动、可加杠杆模型——杠杆会同时放大盈亏。连续近月总回报收盘价；扣除 3 个基点成本 + 杠杆部分 1% 融资利差；"
-               "降险部分赚取短债收益。实验性；完整 Phase-0 为后续跟进。")
+               "降险部分赚取短债收益。Phase-0 已完成——各模型的多重检验（DSR）结果见其判语；均为展示层，未提升为实盘配置。")
 
 
 def _build_active(env, site, built, cards_by_group: dict) -> list:
