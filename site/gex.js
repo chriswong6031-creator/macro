@@ -322,6 +322,8 @@
     var cov = COV["__all__"];
     if (sub && cov) sub.textContent = lz(
       cov.total + " symbols · sortable · scored", cov.total + " 个标的 · 可排序 · 已评分");
+    var hint = document.getElementById("gx-board-hint");
+    if (hint && cov) hint.textContent = lz(cov.covered + " of " + cov.total + " have liquid options", cov.total + " 中 " + cov.covered + " 个有活跃期权");
     var wrap = document.getElementById("gx-boardwrap"), cta = document.getElementById("gx-board-expand");
     if (!wrap || !cta) return;
     function open() { wrap.classList.remove("collapsed"); try { localStorage.setItem("gx_board_open", "1"); } catch (e) {} }
@@ -356,255 +358,345 @@
       });
   }
 
+  // ========================================================================
+  // DETAIL COMPOSITION — hero verdict → Levels Map → three reads → flow → shelf
+  // ========================================================================
   function renderDetail() {
     if (!cur) return;
     var box = document.getElementById("gx-detail");
-
-    var charts =
-      '<div class="grid2">' +
-        '<div class="panel"><div class="topline" style="justify-content:space-between"><h2>' + lz("Dealer gamma by strike — the walls", "按行权价的做市商Gamma — 墙") +
-          help(lz("Net dealer GEX summed at each strike (across expiries). Green = call-heavy resistance above; red = put-heavy support below. The call wall caps rallies; the put wall cushions selloffs under long gamma. Toggle to see raw open interest / volume by strike.",
-                  "每个行权价上的做市商净GEX之和（跨到期）。绿=上方看涨阻力；红=下方看跌支撑。多头Gamma下，看涨墙压制上涨、看跌墙缓冲下跌。可切换查看按行权价的未平仓量/成交量。")) +
-          "</h2><div class='hm-tabs' id='gx-bartabs'>" + barTabs() + "</div></div>" +
-          '<div class="chartbox" id="gx-bars"></div>' + barLegend() + "</div>" +
-        '<div class="panel"><h2>' + lz("Net-gamma profile — where the flip is", "净Gamma曲线 — 翻转所在") +
-          help(lz("Dealer $gamma re-evaluated as spot moves across the grid. Where the curve crosses zero is the gamma flip: above it dealers are long gamma (dampen); below it short gamma (amplify). Steeper negative = faster vol on the way down.",
-                  "随现价在网格上移动重估的做市商$Gamma。曲线穿越零点处即Gamma翻转：之上做市商多头Gamma（抑制），之下空头Gamma（放大）。负值越陡，下跌时波动放大越快。")) + "</h2>" +
-          '<div class="chartbox" id="gx-profile"></div></div>' +
+    var V = verdict();
+    box.innerHTML =
+      '<div class="' + V.cls + '">' +
+        heroHTML(V) +
+        '<div class="eyebrow anim"><span class="dot"></span>' + lz("Where the walls are", "墙在何处") +
+          '<span class="hint">' + lz("the levels dealers defend", "做市商守护的价位") + "</span></div>" +
+        levelsMapHTML() +
+        '<div class="eyebrow"><span class="dot"></span>' + lz("Three reads", "三项读数") +
+          '<span class="hint">' + lz("regime · tone · lean", "体制 · 情绪 · 倾向") + "</span></div>" +
+        '<div class="reads">' + regimeReadHTML() + toneReadHTML() + tiltReadHTML() + "</div>" +
+        '<div class="eyebrow"><span class="dot"></span>' + lz("Today’s measured flow", "今日实测流动") + "</div>" +
+        '<div id="gx-flow"></div>' +
+        '<div class="eyebrow"><span class="dot"></span>' + lz("Study — the raw options structure", "研究 — 原始期权结构") +
+          '<span class="hint">' + lz("open a panel for the charts", "展开面板查看图表") + "</span></div>" +
+        shelfHTML() +
       "</div>";
-
-    var heat =
-      '<div class="panel"><div class="topline" style="justify-content:space-between"><h2>' + lz("Heatmap — strike × expiry", "热力图 — 行权价 × 到期") +
-        help(lz("The options surface. Rows = strikes (spot row outlined), columns = expiries. Toggle: net dealer gamma (green call / red put), open interest, or volume. Bright clusters are where positioning — and dealer hedging — concentrate.",
-                "期权曲面。行=行权价（现价行加框），列=到期。可切换：做市商净Gamma（绿看涨/红看跌）、未平仓量、成交量。亮区即仓位与做市商对冲集中之处。")) +
-        '</h2><div class="hm-tabs" id="gx-heattabs">' + heatTabs() + "</div></div>" +
-        '<div class="hm-scroll" id="gx-heat"></div>' + heatLegend() + "</div>";
-
-    var vol =
-      '<div class="grid2">' +
-        '<div class="panel"><h2>' + lz("Volatility smile / skew", "波动率微笑/偏斜") +
-          help(lz("Implied vol by strike for the front liquid expiry. A steep left side (puts richer than calls) is downside skew — the market paying up for crash protection.",
-                  "近月主力到期按行权价的隐含波动。左侧更陡（看跌比看涨更贵）即下行偏斜 — 市场为下跌保护付溢价。")) + "</h2>" +
-          '<div class="chartbox" id="gx-smile"></div></div>' +
-        '<div class="panel"><h2>' + lz("IV term structure", "隐含波动期限结构") +
-          help(lz("ATM implied vol by expiry. Upward-sloping (contango) is the calm default; an inverted (backwardated) curve — near dates above far — flags an event or stress priced in.",
-                  "按到期的平值隐含波动。向上倾斜（contango）为平静常态；倒挂（近高远低）预示已计入的事件或压力。")) + "</h2>" +
-          '<div class="chartbox" id="gx-term"></div></div>' +
-      "</div>";
-
-    var termTbl = termTableHTML();
-    var cards = cardsHTML();
-
-    box.innerHTML = heroHTML() + '<div id="gx-flow"></div>' + gamePlanHTML() + tiltPanelHTML() + volHoleHTML() +
-      charts + heat + vol + termTbl + cards + caveatHTML();
-    // draw the SVG/HTML views
     drawBars(); drawProfile(); drawHeat(); drawSmile(); drawTerm(); drawSpark();
     wireBarTabs(); wireHeatTabs();
     renderFlow();
   }
 
-  // ---- command-center hero (3-zone grid) -----------------------------------
-  function heroHTML() {
-    var s = cur.summary, em = cur.expected_move || {}, meta = cur.meta || {}, ivr = s.iv_rank;
-    var regCls = s.regime === "long" ? "calm" : s.regime === "short" ? "jumpy" : "mixed";
-    var regTxt = s.regime === "long" ? lz("🛡️ Calm regime — dealers fade moves; price tends to pin", "🛡️ 平静体制 — 做市商抑制走势；价格倾向被磁吸")
-      : s.regime === "short" ? lz("⚡ Jumpy regime — dealers chase moves; price tends to trend", "⚡ 跳动体制 — 做市商追逐走势；价格倾向趋势化")
-      : lz("⚖️ Mixed regime — no clear dealer lean", "⚖️ 中性体制 — 做市商无明显倾向");
-    // W0.7: when low_confidence, replace the rich/cheap label with an explicit caveat chip
-    // so we never present settled rich/cheap bands on a sub-floor history window.
-    // i18n: EN+ZH; no translated text in title= attrs (data-tip-* popover mechanism used below).
-    var ivrTxt = ivr ? (ivr.low_confidence
-      ? (' <span class="ivr-building" data-tip-en="IVR n=' + (ivr.n_days || "?") + 'd — building history (need ≥20d for reliable rank)" data-tip-zh="IVR n=' + (ivr.n_days || "?") + '天 — 历史积累中（需≥20天）">'
-          + esc(lz("IVR n=" + (ivr.n_days || "?") + "d — building history", "IVR n=" + (ivr.n_days || "?") + "天 — 积累中"))
-          + "</span>")
-      : (" <small>· " + esc(lz((IVRANK[ivr.band] || {}).en, (IVRANK[ivr.band] || {}).zh)) + "</small>")
-    ) : "";
-    var flipTxt = s.gamma_flip == null ? "—" : price(s.gamma_flip) + " <small>(" + pct(s.dist_to_flip_pct, 1) + ")</small>";
-
-    var zoneA =
-      '<div class="hz hz-id">' +
-        '<div><span class="sym">' + esc(meta.key || curKey) + "</span>" + (meta.en ? '<span class="nm">' + esc(lz(meta.en, meta.zh)) + "</span>" : "") + "</div>" +
-        '<div class="spot"><span class="lbl">' + lz("Spot", "现价") + "</span>" + price(s.spot) + "</div>" +
-        '<div class="regbanner ' + regCls + '">' + regTxt + "</div>" +
-      "</div>";
-
-    var zoneB =
-      '<div class="hz"><div class="vitals">' +
-        vital(lz("Net GEX", "净GEX"), '<span class="' + (s.net_gex_bn >= 0 ? "pos" : "neg") + '">' + sgn(s.net_gex_bn, 1) + "<small> $bn</small></span>") +
-        vital(lz("Gamma flip", "Gamma翻转"), flipTxt) +
-        vital("IV30", pctU(s.iv30, 1) + ivrTxt) +
-        vital(lz("Put/Call OI", "认沽/认购"), s.put_call_oi_ratio == null ? "—" : (+s.put_call_oi_ratio).toFixed(2)) +
-      "</div></div>";
-
-    var frontMove = em.front ? ("±" + pctU(em.front.pct, 1) + " <small>(" + esc(em.front.expiry) + ")</small>") : "—";
-    var zoneC =
-      '<div class="hz"><div class="vitals">' +
-        vital(lz("Exp. daily move", "预期单日波动"), "±" + pctU(em.daily_pct, 2) + " <small>±" + price(em.daily_abs) + "</small>") +
-        vital(lz("Front-expiry move", "近月预期波动"), frontMove) +
-      "</div>" +
-      '<div class="hz-foot"><span id="gx-spark"></span>' + heroTilt() + "</div></div>";
-
-    return '<div class="panel"><div class="hero3">' + zoneA + zoneB + zoneC + "</div></div>";
-  }
-  function vital(k, v) { return '<div class="vital"><div class="k">' + esc(k) + '</div><div class="v">' + v + "</div></div>"; }
-
-  // headline directional tilt strip (in the hero) — direction + its primary horizon
-  function heroTilt() {
-    var t = cur.tilt; if (!t || !t.read) return "";
-    var r = READS[t.read] || READS.balanced;
-    var hz = (t.headline && t.headline.horizon)
-      ? " " + horizonPill(t.headline.horizon, t.headline.days) : "";
-    return '<span class="tiltline ' + r.cls + '"><span class="arrow">' + r.arrow + "</span> " +
-      '<span class="muted sm">' + lz("Lean", "倾向") + ":</span> <b>" + esc(lz(r.en, r.zh)) + "</b>" + hz + "</span>";
-  }
-
   function help(txt) {
-    return '<span class="help">?<span class="tip">' + esc(txt) + "</span></span>";
+    return '<span class="help" tabindex="0">?<span class="tip">' + txt + "</span></span>";
   }
 
-  // ---- the Game Plan (beginner-readable signal card; replaces the old read line) ----
-  // A plain-English verdict (calm vs jumpy) + the levels to watch with explicit
-  // daily-close triggers + today's expected range. Display-only: a levels/regime
-  // playbook, never a buy/sell score. Drives off summary + vol_hole + expected_move.
-  function gamePlanHTML() {
-    var s = cur.summary, em = cur.expected_move || {}, vh = cur.vol_hole || {}, meta = cur.meta || {};
-    if (!s) return "";
-    var regime = s.regime, st = vh.state;
-
-    // verdict: regime (short→jumpy, neutral→mixed) then long crossed with vol-hole state
-    var V;
+  // ---- the one-line verdict (regime × vol-hole → state + plain say + stance) ----
+  function verdict() {
+    var s = cur.summary || {}, vh = cur.vol_hole || {}, regime = s.regime, st = vh.state;
+    var cw = price(s.call_wall), pw = price(s.put_wall);
     if (regime === "short") {
-      V = { cls: "gp-jumpy", icon: "🌪", h_en: "Amplified & jumpy", h_zh: "放大 · 跳动",
-        s_en: "Moves tend to feed on themselves — expect bigger swings and air-pockets, and don't count on dips getting bought back the way they do in calm tape.",
-        s_zh: "走势倾向自我强化 — 预期更大的波动与急跌，且别指望像平静行情那样回调会自动被买回。" };
-    } else if (!regime) {        // engine emits long / short / null — null = no determinable lean (Mixed)
-      V = { cls: "gp-neutral", icon: "⚖️", h_en: "No strong pull", h_zh: "无明显牵引",
-        s_en: "Dealer hedging isn't leaning either way today, so the levels below matter less than usual — trade the chart, not the gamma.",
-        s_zh: "今日做市商对冲无明显倾向，下方价位的作用弱于平常 — 看图表，而非Gamma。" };
-    } else if (st === "COILED_UP") {
-      V = { cls: "gp-up", icon: "⬆", h_en: "Coiled at the ceiling", h_zh: "贴近上沿蓄势",
-        s_en: "Quiet but wound tight just under the ceiling — it usually fades back inside, but a daily CLOSE above the ceiling can let it run.",
-        s_zh: "平静却在上沿之下紧绷 — 通常回落区间内，但日线收于上沿之上可能放行上涨。" };
-    } else if (st === "COILED_DOWN") {
-      V = { cls: "gp-warn", icon: "⬇", h_en: "Coiled at the floor", h_zh: "贴近下沿蓄势",
-        s_en: "Quiet but wound tight just above the floor — it usually holds, but a daily CLOSE below the floor removes the cushion and can speed up the drop.",
-        s_zh: "平静却在下沿之上紧绷 — 通常守住，但日线收于下沿之下会移除缓冲、可能加速下跌。" };
-    } else if (st === "IN_HOLE") {
-      V = { cls: "gp-calm", icon: "🧲", h_en: "Pinned & calm", h_zh: "磁吸 · 平静",
-        s_en: "Expect chop, not trend: price tends to get pulled back toward the middle, so extremes toward the ceiling or floor often fade.",
-        s_zh: "预期震荡而非趋势：价格倾向被拉回中部，逼近上/下沿的极端常常回落。" };
-    } else {
-      V = { cls: "gp-neutral", icon: "🧲", h_en: "Calm, no clear walls", h_zh: "平静 · 无明显墙",
-        s_en: "Calm regime, but no firm walls are mapped today — lean on the chart and the expected range below.",
-        s_zh: "平静体制，但今日无明确的墙 — 参考图表与下方预期区间。" };
+      return { cls: "gx-jumpy", icon: "🌪",
+        state_en: "Jumpy — dealers amplify moves", state_zh: "跳动 — 做市商放大走势",
+        say_en: "Moves feed on themselves — expect <b>bigger swings and air-pockets</b>, and don’t count on dips getting bought back the way they do in calm tape.",
+        say_zh: "走势自我强化 — 预期<b>更大的波动与急跌</b>，别指望像平静行情那样回调自动被买回。",
+        stance_en: "Watch — don’t chase", stance_zh: "观察 — 勿追高" };
     }
+    if (!regime) {
+      return { cls: "gx-mixed", icon: "⚖️",
+        state_en: "No strong pull", state_zh: "无明显牵引",
+        say_en: "Dealer hedging isn’t leaning either way today, so the levels below matter less than usual.",
+        say_zh: "今日做市商对冲无明显倾向，下方价位的作用弱于平常。",
+        stance_en: "Trade the chart, not the gamma", stance_zh: "看图表，而非Gamma" };
+    }
+    if (st === "COILED_UP") return { cls: "gx-calm", icon: "⬆",
+      state_en: "Coiled at the ceiling", state_zh: "贴近上沿蓄势",
+      say_en: "Quiet but wound tight under the ceiling — it usually fades back inside, but a <b>daily close above " + cw + "</b> can let it run.",
+      say_zh: "平静却在上沿之下紧绷 — 通常回落，但<b>日线收于 " + cw + " 之上</b>可能放行上涨。",
+      stance_en: "Watch the ceiling", stance_zh: "关注上沿" };
+    if (st === "COILED_DOWN") return { cls: "gx-calm", icon: "⬇",
+      state_en: "Coiled at the floor", state_zh: "贴近下沿蓄势",
+      say_en: "Quiet but wound tight above the floor — it usually holds, but a <b>daily close below " + pw + "</b> removes the cushion.",
+      say_zh: "平静却在下沿之上紧绷 — 通常守住，但<b>日线收于 " + pw + " 之下</b>会移除缓冲。",
+      stance_en: "Watch the floor", stance_zh: "关注下沿" };
+    if (st === "IN_HOLE") return { cls: "gx-calm", icon: "🧲",
+      state_en: "Pinned & calm", state_zh: "磁吸 · 平静",
+      say_en: "Expect chop, not trend: price gets pulled toward the middle, so pushes toward the ceiling or floor tend to fade.",
+      say_zh: "预期震荡而非趋势：价格被拉回中部，逼近上/下沿常回落。",
+      stance_en: "Range day — fade the edges", stance_zh: "区间日 — 逢边回落" };
+    return { cls: "gx-calm", icon: "🧲",
+      state_en: "Calm, no firm walls", state_zh: "平静 · 无明显墙",
+      say_en: "Calm regime, but no firm walls are mapped today — lean on the chart and the expected range below.",
+      say_zh: "平静体制，但今日无明确的墙 — 参考图表与下方预期区间。",
+      stance_en: "Watch — don’t chase", stance_zh: "观察 — 勿追高" };
+  }
 
-    var vHelp = help(lz(
-      "A plain-English summary of today's options map. Dealers must hedge the options they hold: in a calm (long-gamma) regime they trade against moves, so price gets pinned; in a jumpy (short-gamma) regime they trade with moves, so price trends and jumps. The levels below are where that hedging clusters — a magnet, a ceiling and a floor. It's a MAP of where pressure sits, from delayed end-of-day data — not buy/sell advice and not price targets.",
-      "今日期权地图的通俗总结。做市商必须对冲手中的期权：平静（多头Gamma）体制下逆势交易，价格被磁吸；跳动（空头Gamma）体制下顺势交易，价格趋势化与跳动。下方价位即对冲聚集处 — 磁吸位、上沿与下沿。这是压力分布的地图（延迟收盘数据），并非买卖建议或目标价。"));
-    var head = '<div class="gp-head"><span class="gp-icon">' + V.icon + '</span><span class="gp-verdict">' +
-      esc(lz(V.h_en, V.h_zh)) + "</span>" + vHelp + "</div>" +
-      '<div class="gp-sub">' + esc(lz(V.s_en, V.s_zh)) + "</div>";
+  // ---- "what changed" — most recent regime run from the daily history ----
+  function regimeChange() {
+    var h = (cur.history || []).filter(function (r) { return r.regime; });
+    if (h.length < 2) return null;
+    var last = h[h.length - 1].regime, days = 0, i;
+    for (i = h.length - 1; i >= 0; i--) { if (h[i].regime === last) days++; else break; }
+    var prior = null;
+    for (var j = h.length - 1 - days; j >= 0; j--) { if (h[j].regime) { prior = h[j].regime; break; } }
+    return { reg: last, days: days, prior: prior, flipped: !!(prior && prior !== last && days <= 3) };
+  }
 
-    // ---- scored levels to watch (ceiling, magnet, floor — words + strength score) ----
-    var rows = [];
-    if (s.call_wall != null) {
-      rows.push(lvlRow("🟢", "ceiling", "上沿", s.call_wall,
-        { strength: s.call_wall_strength, band: s.call_wall_band, hard: s.call_wall_hard, type: "cw", dist_sigma: s.call_wall_dist_sigma },
-        "Heavy call positioning caps rallies here. A daily CLOSE above " + price(s.call_wall) + " releases upside.",
-        "此处大量看涨持仓压制上涨。日线收于 " + price(s.call_wall) + " 之上释放上行。",
-        "The “call wall” — the strike with the most dealer gamma above today's price. The strength score blends how much gamma clusters there with how close it is; “hard line” = one dominant strike, “smeared” = spread across neighbours. Rallies often stall into a strong wall. A level, not a target.",
-        "“看涨墙” — 现价之上做市商Gamma最重的行权价。强度=该处Gamma聚集程度与距离的综合；“清晰”=单一主导行权价，“分散”=分布于相邻多档。上涨常在强墙处停滞。是价位，非目标。"));
-    } else if (s.magnet_up != null) {
-      rows.push(lvlRow("🟢", "resistance", "上方阻力", s.magnet_up, null,
-        "Heaviest dealer gamma above price — a soft ceiling.",
-        "现价之上做市商Gamma最重处 — 软上沿。",
-        "The strike with the most dealer gamma above spot — a softer ceiling than a true call wall.",
-        "现价之上做市商Gamma最大的行权价 — 比真正看涨墙更软的上沿。"));
-    }
-    var magVal = s.max_pain != null ? s.max_pain : s.gamma_flip;
-    if (magVal != null) {
-      var mt_en, mt_zh;
-      if (regime === "short") { mt_en = "Magnet pull is weak in this jumpy regime."; mt_zh = "跳动体制下磁吸作用较弱。"; }
-      else if (s.max_pain != null) { mt_en = "On quiet days price tends to drift toward " + price(s.max_pain) + " (where the most options expire worthless)."; mt_zh = "平静日价格倾向漂向 " + price(s.max_pain) + "（最多期权到期作废之处）。"; }
-      else { mt_en = "On quiet days price tends to drift toward the " + price(s.gamma_flip) + " flip — the line between calm and jumpy."; mt_zh = "平静日价格倾向漂向 " + price(s.gamma_flip) + " 翻转 — 平静与跳动的分界。"; }
-      var mh_en, mh_zh;
-      if (s.max_pain != null) {
-        mh_en = "“Max pain” — the price where the most options expire worthless, so hedging gently pulls price toward it on quiet days. The strength score reflects OI concentration + proximity. Not a forecast.";
-        mh_zh = "“最大痛点” — 最多期权到期作废的价格，平静日对冲会温和地把价格拉向它。强度反映未平仓集中度与距离。并非预测。";
-      } else {
-        mh_en = "The gamma flip — the line between the calm and jumpy regimes; on quiet days price tends to drift toward it. A level, not a forecast.";
-        mh_zh = "Gamma翻转 — 平静与跳动体制的分界；平静日价格倾向漂向它。是价位，非预测。";
-      }
-      var magSc = (s.max_pain != null) ? { strength: s.magnet_strength, band: s.magnet_band, type: "mp", dist_sigma: s.magnet_dist_sigma } : null;
-      rows.push(lvlRow("🧲", "magnet", "磁吸位", magVal, magSc, mt_en, mt_zh, mh_en, mh_zh));
-    }
-    if (s.put_wall != null) {
-      var ft_en = "Heavy put positioning cushions selloffs here. A daily CLOSE below " + price(s.put_wall) + " opens downside.";
-      var ft_zh = "此处大量看跌持仓缓冲下跌。日线收于 " + price(s.put_wall) + " 之下打开下行。";
-      if (regime === "short" && s.gamma_flip != null) {
-        ft_en += " Below the " + price(s.gamma_flip) + " flip the cushion is gone — that's why swings are bigger now.";
-        ft_zh += " 跌破 " + price(s.gamma_flip) + " 翻转后缓冲消失 — 这正是当前波动更大的原因。";
-      }
-      rows.push(lvlRow("🔴", "floor", "下沿", s.put_wall,
-        { strength: s.put_wall_strength, band: s.put_wall_band, hard: s.put_wall_hard, type: "pw", dist_sigma: s.put_wall_dist_sigma },
-        ft_en, ft_zh,
-        "The “put wall” — the strike with the most dealer gamma below today's price. Strength blends gamma clustering with proximity. Selloffs often slow into a strong wall; a daily close through it can accelerate down.",
-        "“看跌墙” — 现价之下做市商Gamma最重的行权价。强度=Gamma聚集与距离的综合。下跌常在强墙处放缓；日线突破可能加速下行。"));
-    } else if (s.magnet_down != null) {
-      rows.push(lvlRow("🔴", "support", "下方支撑", s.magnet_down, null,
-        "Heaviest dealer gamma below price — a soft floor.",
-        "现价之下做市商Gamma最重处 — 软下沿。",
-        "The strike with the most dealer gamma below spot — a softer floor than a true put wall.",
-        "现价之下做市商Gamma最大的行权价 — 比真正看跌墙更软的下沿。"));
-    }
-    var weakNote = (!regime && rows.length)
-      ? '<div class="gp-weak">' + esc(lz("Walls are weak guides today.", "今日墙的指引较弱。")) + "</div>" : "";
-    var levels = rows.length ? '<div class="gp-levels">' + weakNote + rows.join("") + rulerHTML() + "</div>" : "";
-
-    // ---- today's expected range ----
+  // ---- HERO: identity + verdict + stance + expected range + as-of ----
+  function heroHTML(V) {
+    var s = cur.summary || {}, em = cur.expected_move || {}, meta = cur.meta || {}, grp = meta.grp || "";
     var range = "";
     if (em.daily_pct != null && s.spot != null) {
       var lo = s.spot * (1 - em.daily_pct / 100), hi = s.spot * (1 + em.daily_pct / 100);
-      range = '<div class="gp-range"><div class="gp-rk">📏 ' + esc(lz("Today's expected range", "今日预期区间")) + "</div>" +
-        '<div class="gp-rv"><b>' + price(lo) + " – " + price(hi) + "</b> <span class='muted sm'>(±" +
-        em.daily_pct.toFixed(2) + "%" + (em.daily_abs != null ? " / ±" + price(em.daily_abs) : "") + ")</span></div>" +
-        '<div class="muted xs gp-rc">' + esc(lz(
-          "Options imply a roughly 2-out-of-3 chance the close lands inside this band today.",
-          "期权隐含：今日收盘约有三分之二的概率落在此区间内。")) + "</div></div>";
+      range = '<span class="range-chip"><span class="k">' + lz("Range today", "今日区间") + "</span> <b>" +
+        price(lo) + " – " + price(hi) + '</b> <span class="muted sm">±' + em.daily_pct.toFixed(2) + "%</span>" +
+        help(lz("Options imply a roughly 2-in-3 chance the close lands inside this band today. A symmetric range, not a forecast of direction and not a cap.",
+                "期权隐含今日收盘约三分之二概率落在此区间。对称区间，非方向预测、非上限。")) + "</span>";
     }
-
-    // ---- single-name caveat (the dealer sign is fragile off the indices/ETFs) ----
-    var chip = "", grp = meta.grp || "";
+    var rc = regimeChange(), changed = "";
+    if (rc) {
+      var wEn = rc.reg === "long" ? "calm" : rc.reg === "short" ? "jumpy" : "mixed";
+      var wZh = rc.reg === "long" ? "平静" : rc.reg === "short" ? "跳动" : "中性";
+      var cEn = rc.flipped ? ("Flipped to " + wEn + " " + rc.days + (rc.days === 1 ? " session ago" : " sessions ago"))
+        : (wEn.charAt(0).toUpperCase() + wEn.slice(1) + " for " + rc.days + (rc.days === 1 ? " session" : " sessions"));
+      var cZh = rc.flipped ? ("转为" + wZh + "已" + rc.days + "个交易日") : (wZh + "已持续" + rc.days + "个交易日");
+      changed = '<span class="changed-chip"><span class="bd"></span>' + esc(lz(cEn, cZh)) + "</span>";
+    }
+    var warn = "";
     if (grp !== "Index" && grp.indexOf("ETF") < 0) {
-      chip = '<div class="gp-chip">⚠ ' + esc(lz(
-        "Single stock — the dealer-positioning sign here is an assumption and can be wrong (covered-call funds or heavy retail call-buying can flip it). Treat these levels as loose context, not lines to trade against.",
-        "个股 — 此处做市商持仓符号为假设、可能出错（备兑基金或散户大量买看涨可使其翻转）。这些价位仅作宽松背景，切勿据此逆向交易。")) + "</div>";
+      warn = '<div class="single-warn">⚠ <b>' + esc(lz("Single stock", "个股")) + "</b> " +
+        esc(lz("— the dealer-positioning sign here is an assumption and can be wrong (covered-call funds or heavy retail call-buying can flip it). Treat these levels as loose context.",
+               "— 此处做市商持仓符号为假设、可能出错（备兑基金或散户大量买看涨可翻转）。价位仅作宽松背景。")) +
+        help(lz("Top-strike OI share " + (s.top_oi_share == null ? "—" : s.top_oi_share) + ", chain tier “" + s.tier + "”. The long-call/short-put sign is unobservable and least reliable when one strike dominates.",
+                "最大行权价OI占比 " + (s.top_oi_share == null ? "—" : s.top_oi_share) + "，链路等级“" + s.tier + "”。多空符号不可观测，单一行权价主导时最不可靠。")) + "</div>";
     }
-
-    return '<div class="gx-gameplan ' + V.cls + '">' + head + levels + range + chip + "</div>";
+    return '<div class="card hero accent anim">' +
+      '<div class="hero-glow"></div>' +
+      '<div class="hero-top">' +
+        '<div class="hero-id"><span class="sym">' + esc(meta.key || curKey) + "</span>" +
+          (meta.en ? '<span class="nm">' + esc(lz(meta.en, meta.zh)) + "</span>" : "") +
+          '<span class="grp">' + esc(lz(grp, grp)) + " · " + esc(lz("as of " + (meta.asof || ""), "截至 " + (meta.asof || ""))) + "</span></div>" +
+        '<div class="hero-spot"><span class="k">' + lz("Spot", "现价") + '</span><span class="v">' + price(s.spot) + "</span></div>" +
+      "</div>" +
+      '<div class="hero-verdict"><span class="hero-vicon">' + V.icon + "</span>" +
+        '<div class="hero-vtext"><div class="state">' + esc(lz(V.state_en, V.state_zh)) + "</div>" +
+          '<div class="say">' + lz(V.say_en, V.say_zh) + "</div></div></div>" +
+      '<div class="hero-row"><span class="stance"><span class="bd"></span>' + esc(lz(V.stance_en, V.stance_zh)) + "</span>" +
+        range + changed +
+        '<span class="hero-asof"><span class="bd"></span>' + esc(lz("delayed EOD", "延迟收盘")) + "</span></div>" +
+      warn +
+    "</div>";
   }
 
-  // a scored level row: icon · {band} label · number · strength bar · score/hardness/σ · trigger
-  function lvlRow(icon, lab_en, lab_zh, val, sc, trig_en, trig_zh, help_en, help_zh) {
-    sc = sc || {};
-    var bw = sc.band ? BANDS[sc.band] : null;
-    var labEN = (bw ? bw.en + " " : "") + lab_en;
-    var labZH = (bw ? bw.zh : "") + lab_zh;
-    var bar = (sc.strength != null) ? " " + strengthBar(sc.strength, sc.type) : "";
-    var suf = [];
-    if (sc.strength != null) suf.push(sc.strength + "/100");
-    if (sc.hard === true) suf.push(lz("hard line", "清晰"));
-    else if (sc.hard === false) suf.push(lz("smeared", "分散"));
-    if (sc.dist_sigma != null) suf.push(lz(sc.dist_sigma + "σ away", "距" + sc.dist_sigma + "σ"));
-    var sufHtml = suf.length ? ' <span class="muted xs">· ' + esc(suf.join(" · ")) + "</span>" : "";
-    return '<div class="gp-lvl"><div class="gp-lk"><span class="gp-li">' + icon + "</span>" +
-      '<span class="gp-ll">' + esc(lz(labEN, labZH)) + '</span> <b class="gp-lv">' + price(val) + "</b>" +
-      bar + sufHtml + help(lz(help_en, help_zh)) + "</div>" +
-      '<div class="gp-lt">' + esc(lz(trig_en, trig_zh)) + "</div></div>";
+  // ========================================================================
+  // LEVELS MAP (signature) — a spatial gravity map of the key levels
+  // ========================================================================
+  function strengthDots(str, colorVar) {
+    if (str == null) return "";
+    var n = Math.max(0, Math.min(6, Math.round(str / 100 * 6))), out = "";
+    for (var i = 0; i < 6; i++) out += '<i style="background:' + (i < n ? "var(" + colorVar + ")" : "var(--line)") + '"></i>';
+    return '<span class="lvl-str" title="' + str + '/100">' + out + "</span>";
+  }
+  function buildRail(L, s) {
+    var spot = s.spot;
+    var vals = L.map(function (p) { return p.v; }); if (spot != null) vals.push(spot);
+    vals = vals.filter(function (v) { return v != null; });
+    if (vals.length < 2) return "";
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var pad = (hi - lo) * 0.10 || 1; lo -= pad; hi += pad;
+    var W = 180, H = 300, xC = 52, mT = 14, mB = 14;
+    function Y(v) { return mT + (hi - v) / (hi - lo) * (H - mT - mB); }
+    var up = cssv("--up"), down = cssv("--down"), info = cssv("--info"), orange = cssv("--orange"),
+        text = cssv("--text"), muted = cssv("--muted"), line = cssv("--line");
+    var flip = s.gamma_flip, svg = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="levels map">';
+    if (flip != null) {
+      var yf = Y(flip);
+      svg += '<rect x="8" y="' + mT + '" width="' + (W - 16) + '" height="' + (yf - mT).toFixed(1) + '" fill="' + up + '" opacity="0.05"/>';
+      svg += '<rect x="8" y="' + yf.toFixed(1) + '" width="' + (W - 16) + '" height="' + (H - mB - yf).toFixed(1) + '" fill="' + down + '" opacity="0.06"/>';
+    }
+    svg += '<line class="lmap-axis" x1="' + xC + '" y1="' + mT + '" x2="' + xC + '" y2="' + (H - mB) +
+      '" stroke="' + line + '" stroke-width="1.5" stroke-dasharray="2 4" pathLength="100" style="stroke-dashoffset:100;animation:gxDraw 1s ease forwards"/>';
+    var labels = [];
+    L.forEach(function (p) {
+      var y = Y(p.v), col = p.cls === "cw" ? up : p.cls === "pw" ? down : p.cls === "flip" ? info : p.cls === "mp" ? orange : text;
+      if (p.cls === "cw" || p.cls === "pw") {
+        var th = 6 + (p.str ? Math.round(p.str / 100 * 20) : 8);
+        svg += '<rect x="20" y="' + (y - th / 2).toFixed(1) + '" width="64" height="' + th + '" rx="3" fill="' + col + '" opacity="0.22"/>';
+        svg += '<line x1="16" y1="' + y.toFixed(1) + '" x2="88" y2="' + y.toFixed(1) + '" stroke="' + col + '" stroke-width="2.4"/>';
+      } else if (p.cls === "flip") {
+        svg += '<line x1="16" y1="' + y.toFixed(1) + '" x2="88" y2="' + y.toFixed(1) + '" stroke="' + col + '" stroke-width="1.6" stroke-dasharray="5 4"/>';
+        svg += '<line class="lmap-pulse" x1="16" y1="' + y.toFixed(1) + '" x2="88" y2="' + y.toFixed(1) + '" stroke="' + col +
+          '" stroke-width="1.6" stroke-dasharray="6 66" pathLength="100" style="animation:gxFlow 3s linear infinite;filter:drop-shadow(0 0 3px ' + col + ')"/>';
+      } else if (p.cls === "mp") {
+        svg += '<circle cx="' + xC + '" cy="' + y.toFixed(1) + '" r="5" fill="none" stroke="' + col + '" stroke-width="2"/>';
+      }
+      labels.push({ y: y, col: col, txt: price(p.v), bold: false });
+    });
+    if (spot != null) {
+      var ys = Y(spot);
+      svg += '<line x1="16" y1="' + ys.toFixed(1) + '" x2="88" y2="' + ys.toFixed(1) + '" stroke="' + text + '" stroke-width="1" stroke-dasharray="2 3" opacity="0.7"/>';
+      svg += '<circle class="lmap-halo" cx="' + xC + '" cy="' + ys.toFixed(1) + '" r="9" fill="var(--rg,' + info + ')" opacity="0.18" style="transform-origin:' + xC + 'px ' + ys.toFixed(1) + 'px;animation:gxBreathe 3s ease-in-out infinite"/>';
+      svg += '<circle cx="' + xC + '" cy="' + ys.toFixed(1) + '" r="4.5" fill="' + text + '"/>';
+      labels.push({ y: ys, col: text, txt: price(spot) + " ●", bold: true });
+    }
+    labels.sort(function (a, b) { return a.y - b.y; });
+    var GAP = 13, prev = -99;
+    labels.forEach(function (l) { l.ly = Math.max(l.y, prev + GAP); prev = l.ly; });
+    var of = labels.length ? labels[labels.length - 1].ly - (H - 6) : 0;
+    if (of > 0) labels.forEach(function (l) { l.ly -= of; });
+    labels.forEach(function (l) {
+      if (Math.abs(l.ly - l.y) > 2) svg += '<line x1="88" y1="' + l.y.toFixed(1) + '" x2="93" y2="' + l.ly.toFixed(1) + '" stroke="' + l.col + '" stroke-width="0.6" opacity="0.5"/>';
+      svg += '<text x="96" y="' + (l.ly + 3).toFixed(1) + '" font-size="10" font-weight="' + (l.bold ? "800" : "600") + '" fill="' + l.col + '" font-family="Inter,sans-serif">' + esc(l.txt) + "</text>";
+    });
+    if (flip != null) {
+      svg += '<text x="12" y="' + (mT + 9) + '" font-size="8" fill="' + muted + '" font-family="Inter,sans-serif">' + esc(lz("calmer", "较平静")) + "</text>";
+      svg += '<text x="12" y="' + (H - mB - 3) + '" font-size="8" fill="' + muted + '" font-family="Inter,sans-serif">' + esc(lz("jumpier", "较跳动")) + "</text>";
+    }
+    return svg + "</svg>";
+  }
+  function levelsMapHTML() {
+    var s = cur.summary || {}, vh = cur.vol_hole || {}, spot = s.spot, regime = s.regime;
+    var L = [];
+    if (s.call_wall != null) {
+      L.push({ cls: "cw", v: s.call_wall, str: s.call_wall_strength, sigma: s.call_wall_dist_sigma,
+        tag_en: "Ceiling · call wall", tag_zh: "上沿 · 看涨墙",
+        say_en: "Heavy call positioning caps rallies. A <b>daily close above " + price(s.call_wall) + "</b> releases upside.",
+        say_zh: "大量看涨持仓压制上涨。<b>日线收于 " + price(s.call_wall) + " 之上</b>释放上行。" });
+    } else if (s.magnet_up != null) {
+      L.push({ cls: "cw", v: s.magnet_up, tag_en: "Resistance", tag_zh: "上方阻力",
+        say_en: "Heaviest dealer gamma above price — a soft ceiling.", say_zh: "现价之上做市商Gamma最重处 — 软上沿。" });
+    }
+    if (s.gamma_flip != null) {
+      L.push({ cls: "flip", v: s.gamma_flip, str: s.flip_strength,
+        tag_en: "The flip", tag_zh: "翻转",
+        say_en: "The line between <b>calm above</b> and <b>jumpy below</b>. On quiet days price tends to drift toward it.",
+        say_zh: "<b>之上平静</b>、<b>之下跳动</b>的分界。平静日价格倾向漂向它。" });
+    }
+    if (s.max_pain != null) {
+      var mE = "On quiet days price tends to drift toward " + price(s.max_pain) + ", where the most options expire worthless.";
+      var mZ = "平静日价格倾向漂向 " + price(s.max_pain) + "（最多期权到期作废之处）。";
+      if (regime === "short") { mE += " Pull is weak in this jumpy regime."; mZ += " 跳动体制下磁吸较弱。"; }
+      L.push({ cls: "mp", v: s.max_pain, str: s.magnet_strength, sigma: s.magnet_dist_sigma,
+        tag_en: "Magnet · max pain", tag_zh: "磁吸 · 最大痛点", say_en: mE, say_zh: mZ });
+    }
+    if (s.put_wall != null) {
+      var fE = "Heavy put positioning cushions selloffs. A <b>daily close below " + price(s.put_wall) + "</b> opens downside.";
+      var fZ = "大量看跌持仓缓冲下跌。<b>日线收于 " + price(s.put_wall) + " 之下</b>打开下行。";
+      if (regime === "short" && s.gamma_flip != null) { fE += " Below the " + price(s.gamma_flip) + " flip the cushion is already gone."; fZ += " 跌破 " + price(s.gamma_flip) + " 翻转后缓冲已消失。"; }
+      L.push({ cls: "pw", v: s.put_wall, str: s.put_wall_strength, sigma: s.put_wall_dist_sigma,
+        tag_en: "Floor · put wall", tag_zh: "下沿 · 看跌墙", say_en: fE, say_zh: fZ });
+    } else if (s.magnet_down != null) {
+      L.push({ cls: "pw", v: s.magnet_down, tag_en: "Support", tag_zh: "下方支撑",
+        say_en: "Heaviest dealer gamma below price — a soft floor.", say_zh: "现价之下做市商Gamma最重处 — 软下沿。" });
+    }
+    if (L.length < 2) {
+      return '<div class="card anim d1"><div class="lmap-head"><span class="lmap-title">📍 ' + lz("Levels map", "价位地图") + "</span></div>" +
+        '<p class="read-sub" style="margin-top:10px">' + esc(lz("No firm walls are mapped today — trade the chart and the expected range in the hero.", "今日无明确的墙 — 参考图表与上方预期区间。")) + "</p></div>";
+    }
+    var disp = L.slice();
+    if (spot != null) {
+      var flip = s.gamma_flip, above = flip != null && spot >= flip;
+      disp.push({ cls: "spot", v: spot, tag_en: "Spot · you are here", tag_zh: "现价 · 当前所在",
+        say_en: flip != null ? ("Currently " + pct(s.dist_to_flip_pct, 1) + " " + (above ? "above" : "below") + " the flip — " + (above ? "in the calmer zone." : "in the jumpier zone.")) : "Where price sits now.",
+        say_zh: flip != null ? ("当前距翻转 " + pct(s.dist_to_flip_pct, 1) + "，" + (above ? "处于较平静区。" : "处于较跳动区。")) : "当前价格所在。" });
+    }
+    disp.sort(function (a, b) { return b.v - a.v; });
+    var clsVar = { cw: "--up", pw: "--down", flip: "--info", mp: "--orange", spot: "--text" };
+    var cards = disp.map(function (p, i) {
+      var dist = (spot != null && p.cls !== "spot") ? ((p.v - spot) / spot * 100) : null;
+      var distHtml = dist != null ? '<b class="' + (dist >= 0 ? "pos" : "neg") + '">' + pct(dist, 1) + "</b>" +
+        (p.sigma != null ? ' <span class="muted">· ' + p.sigma + "σ</span>" : "") + " — " : "";
+      var dots = (p.str != null) ? strengthDots(p.str, clsVar[p.cls]) : "";
+      return '<div class="lvl ' + p.cls + '" style="animation-delay:' + (i * 0.04).toFixed(2) + 's">' +
+        '<div class="lvl-top"><span class="lvl-tag">' + esc(lz(p.tag_en, p.tag_zh)) + "</span>" + dots +
+          '<span class="lvl-val">' + price(p.v) + "</span></div>" +
+        '<div class="lvl-say">' + distHtml + lz(p.say_en, p.say_zh) + "</div></div>";
+    }).join("");
+    var badge = "";
+    if (vh.state && vh.state !== "NONE") { var v = VHS[vh.state] || VHS.NONE;
+      badge = '<span class="vh-pill ' + v.cls + '">' + v.emo + " " + esc(lz(v.sh_en, v.sh_zh)) + "</span>"; }
+    var foot = lz("Walls are measured from yesterday’s close, so price sits inside the band by construction — only a <b>daily close</b> beyond a level counts, never an intraday touch.",
+      "墙以昨日收盘计算，价格按构造必在带内 — 只有<b>日线收盘</b>越过某价位才算数，盘中触碰不算。");
+    return '<div class="card anim d1"><div class="lmap-head"><span class="lmap-title">📍 ' + lz("Levels map", "价位地图") +
+      help(lz("A single picture of where dealer hedging clusters: the call-wall ceiling, the put-wall floor, the flip line (calm above / jumpy below) and the max-pain magnet. Band thickness ≈ strength. Levels to watch, never targets.",
+              "做市商对冲聚集处的单幅图：看涨墙上沿、看跌墙下沿、翻转线（之上平静/之下跳动）与最大痛点磁吸。带厚≈强度。仅供观察，绝非目标价。")) + "</span>" + badge + "</div>" +
+      '<div class="lmap"><div class="lmap-rail">' + buildRail(L, s) + '</div><div class="lmap-levels">' + cards + "</div></div>" +
+      '<div class="lmap-foot">' + foot + "</div></div>";
   }
 
-  // ---- directional tilt panel (leans BY HORIZON — one row per leg) ----------
+  // ========================================================================
+  // THREE READS — regime · options tone · directional lean
+  // ========================================================================
+  function regimeReadHTML() {
+    var s = cur.summary || {}, regime = s.regime;
+    var word = regime === "long" ? lz("Calm", "平静") : regime === "short" ? lz("Jumpy", "跳动") : lz("Mixed", "中性");
+    var scls = regime === "long" ? "up" : regime === "short" ? "down" : "info";
+    var sub = regime === "long" ? lz("Dealer hedging pushes back against moves — price tends to pin and mean-revert.", "对冲逆势 — 价格倾向磁吸与均值回归。")
+      : regime === "short" ? lz("Dealer hedging adds to moves — swings and air-pockets run bigger.", "对冲顺势 — 波动与急跌更大。")
+      : lz("No clear dealer lean — hedging isn’t pushing either way today.", "做市商无明显倾向 — 今日对冲不偏向任一方。");
+    var netCls = (s.net_gex_bn != null && s.net_gex_bn >= 0) ? "pos" : "neg";
+    var foot = "";
+    if (s.gamma_flip != null) { var ab = (s.dist_to_flip_pct != null && s.dist_to_flip_pct >= 0);
+      foot = lz("Flip " + price(s.gamma_flip) + " · price " + pct(s.dist_to_flip_pct, 1) + " " + (ab ? "above" : "below"),
+                "翻转 " + price(s.gamma_flip) + " · 价格 " + pct(s.dist_to_flip_pct, 1) + (ab ? " 在上" : " 在下")); }
+    return '<div class="card read anim d1">' +
+      '<div class="read-eyebrow">' + lz("Volatility regime", "波动率体制") +
+        help(lz("Are dealers calming the market or making it jumpy today? The single most important read. Positive Net GEX = calming (pinning, smaller moves); negative = amplifying (trending, bigger moves). About volatility, not direction.",
+                "今天做市商让市场平静还是跳动？最重要的读数。净GEX为正=平静（磁吸、更小波动）；为负=放大（趋势、更大波动）。关乎波动，非方向。")) + "</div>" +
+      '<div class="read-state ' + scls + '">' + word + "</div>" +
+      '<div class="read-sub">' + sub + "</div>" +
+      '<div class="read-metric"><span class="big ' + netCls + '">' + sgn(s.net_gex_bn, 1) + '</span><span class="unit">' + lz("$bn / 1% · Net GEX", "十亿$/1% · 净GEX") + "</span></div>" +
+      '<div class="read-spark" id="gx-spark"></div>' +
+      (foot ? '<div class="read-foot">' + esc(foot) + "</div>" : "") +
+    "</div>";
+  }
+  function toneReadHTML() {
+    var s = cur.summary || {}, sk = s.skew;
+    if (!sk || sk.rr25 == null) {
+      return '<div class="card read anim d2"><div class="read-eyebrow">' + lz("Options tone", "期权情绪") +
+        help(lz("Whether the market is paying up for downside protection (fear) or chasing upside (greed), read from the 25-delta risk-reversal — the price gap between equally-far puts and calls. Context, not a signal.",
+                "市场是在为下行保护付费（恐慌）还是追逐上行（贪婪），取自25Δ风险逆转 — 等距看跌与看涨的价差。仅作背景，非信号。")) + "</div>" +
+        '<div class="read-state info">—</div><div class="read-sub">' + esc(lz("Not enough strikes to read option skew for this name.", "该标的行权价不足，无法读取偏斜。")) + "</div></div>";
+    }
+    var tone = sk.tone;
+    var word = tone === "fear" ? lz("Fear", "恐慌") : tone === "greed" ? lz("Greed", "贪婪") : lz("Balanced", "均衡");
+    var scls = tone === "fear" ? "down" : tone === "greed" ? "up" : "info";
+    var sub = tone === "fear" ? lz("The market is paying up for downside protection.", "市场为下行保护付溢价。")
+      : tone === "greed" ? lz("The market is chasing upside — calls bid over puts.", "市场追逐上行 — 看涨比看跌更贵。")
+      : lz("Puts and calls are priced roughly evenly.", "看跌与看涨定价大致均衡。");
+    var foot = lz("25Δ risk-reversal on the " + (sk.expiry || "") + " chain" + (sk.days != null ? " (" + sk.days + "d)" : "") + ". Puts richer = fear; calls richer = greed.",
+                  "25Δ风险逆转（" + (sk.expiry || "") + "）" + (sk.days != null ? " " + sk.days + "天" : "") + "。看跌更贵=恐慌；看涨更贵=贪婪。");
+    return '<div class="card read anim d2"><div class="read-eyebrow">' + lz("Options tone", "期权情绪") +
+      help(lz("Whether the market is paying up for downside protection (fear) or chasing upside (greed), read from the 25-delta risk-reversal — the price gap between equally-far puts and calls. Context, not a signal.",
+              "市场是在为下行保护付费（恐慌）还是追逐上行（贪婪），取自25Δ风险逆转 — 等距看跌与看涨的价差。仅作背景，非信号。")) + "</div>" +
+      '<div class="read-state ' + scls + '">' + word + '</div><div class="read-sub">' + sub + "</div>" +
+      '<div class="read-metric"><span class="big">' + sgn(sk.rr25, 1) + '</span><span class="unit">' + lz("25Δ risk-reversal", "25Δ风险逆转") + "</span></div>" +
+      '<div class="read-foot">' + esc(foot) + "</div></div>";
+  }
+  function tiltReadHTML() {
+    var t = cur.tilt, meta = cur.meta || {}, grp = meta.grp || "";
+    var hHelp = help(lz("Different option forces act on different clocks, so the lean is split BY TIME WINDOW. Each row is a directional tendency from delayed end-of-day positioning — not a trade, not a target. Direction is far less reliable than the regime; most names sit near a coin-flip.",
+                        "不同期权力量作用于不同时间窗，故按时间窗拆分。每条为延迟收盘仓位的方向倾向 — 非交易、非目标。方向远不如体制可靠；多数标的接近抛硬币。"));
+    if (!t || !t.legs || !t.legs.length) {
+      return '<div class="card read anim d3"><div class="read-eyebrow">' + lz("Directional lean", "方向倾向") + hHelp + "</div>" +
+        '<div class="read-state info">—</div><div class="read-sub">' + esc(lz("No directional lean today.", "今日无方向倾向。")) + "</div></div>";
+    }
+    var r = READS[t.read] || READS.balanced;
+    var scls = r.cls === "up" ? "up" : r.cls === "down" ? "down" : (r.cls === "pin" || r.cls === "vol") ? "warn" : "info";
+    var legs = t.legs.map(function (leg) {
+      var a = tiltArrow(leg), sig = TILT_SIG[leg.signal] || { en: leg.signal, zh: leg.signal };
+      return '<div class="leg"><div class="leg-ar ' + a.c + '">' + a.g + "</div>" +
+        '<div><span class="leg-sig">' + esc(lz(sig.en, sig.zh)) + '</span><span class="leg-hz">' + esc(horizonText(leg.horizon, leg.days)) + "</span></div>" +
+        '<div class="leg-why">' + esc(tiltWhy(leg)) + "</div></div>";
+    }).join("");
+    var frag = (grp !== "Index" && grp.indexOf("ETF") < 0) ? lz(" Single-name: the dealer sign is an assumption and can be wrong.", " 个股：做市商符号为假设、可能出错。") : "";
+    return '<div class="card read anim d3"><div class="read-eyebrow">' + lz("Directional lean", "方向倾向") + hHelp + "</div>" +
+      '<div class="read-state ' + scls + '">' + esc(lz(r.en, r.zh)) + "</div>" +
+      '<div class="read-sub">' + esc(lz("Direction is far less reliable than the regime above.", "方向远不如上方体制可靠。")) + "</div>" +
+      '<div class="read-legs">' + legs + "</div>" +
+      '<div class="read-foot">' + esc(lz("Not a trade signal or target — a balance-of-pressures read from delayed EOD options.", "非交易信号或目标 — 延迟收盘期权的力量平衡读数。") + frag) + "</div>" +
+    "</div>";
+  }
+
+  // ---- directional-tilt leg helpers (used by the lean read) ----
   var TILT_SIG = {
     charm: { en: "Charm drift", zh: "Charm 漂移" },
     pin: { en: "Max-pain pin", zh: "最大痛点磁吸" },
@@ -615,7 +707,7 @@
     if (leg.signal === "pin") return { g: "●", c: "pin" };
     if (leg.dir === "up") return { g: "▲", c: "up" };
     if (leg.dir === "down") return { g: "▼", c: "down" };
-    return { g: "⇅", c: "flat" };   // two_sided / mean_revert
+    return { g: "⇅", c: "flat" };
   }
   function tiltWhy(leg) {
     switch (leg.signal) {
@@ -636,36 +728,8 @@
       default: return "";
     }
   }
-  function tiltPanelHTML() {
-    var t = cur.tilt, meta = cur.meta || {};
-    if (!t || !t.legs || !t.legs.length) return "";
-    var r = READS[t.read] || READS.balanced;
-    var hHelp = help(lz(
-      "Different option forces act on different clocks, so this is split BY TIME WINDOW rather than blended into one arrow. Each row is a directional tendency from delayed end-of-day positioning — NOT a trade, NOT a target. The horizon is each signal's natural decay, not a holding period. Direction is far less reliable than the volatility regime above; most names sit near a coin-flip.",
-      "不同期权力量作用于不同时间窗，故按时间窗拆分、而非混成单一箭头。每条均为延迟收盘仓位的方向倾向 — 非交易、非目标。时间窗为各信号的自然衰减期，而非持仓周期。方向远不如上方的波动体制可靠；多数标的接近抛硬币。"));
-    var head = '<div class="topline" style="justify-content:space-between;align-items:center"><h2 style="margin:0">🧭 ' +
-      lz("Directional tilt — leans by time window", "方向倾向 — 按时间窗") + hHelp + "</h2>" +
-      '<span class="tiltline ' + r.cls + '"><span class="arrow">' + r.arrow + "</span> <b>" + esc(lz(r.en, r.zh)) + "</b></span></div>";
-    var legHtml = t.legs.map(function (leg) {
-      var a = tiltArrow(leg), sig = TILT_SIG[leg.signal] || { en: leg.signal, zh: leg.signal };
-      return '<div class="dt-leg"><div class="dt-arrow ' + a.c + '">' + a.g + "</div>" +
-        '<div class="dt-mid"><span class="dt-sig">' + esc(lz(sig.en, sig.zh)) + "</span>" +
-        '<span class="dt-meta">' + horizonPill(leg.horizon, leg.days) +
-        (leg.strength ? ' ' + strengthPill(leg.strength === "strong" ? "strong" : leg.strength === "moderate" ? "moderate" : "weak", "mp") : "") +
-        "</span></div>" +
-        '<div class="dt-why">' + esc(tiltWhy(leg)) + "</div></div>";
-    }).join("");
-    var conf = t.confidence ? ('<span class="muted xs">' + esc(lz("Confidence: ", "可信度：") +
-      (t.confidence === "low" ? lz("low", "低") : t.confidence === "high" ? lz("high", "高") : lz("medium", "中"))) + "</span>") : "";
-    var grp = meta.grp || "", frag = (grp !== "Index" && grp.indexOf("ETF") < 0)
-      ? lz("  ·  single-name: the dealer sign is an assumption and can be wrong.", "  ·  个股：做市商符号为假设、可能出错。") : "";
-    var disc = '<p class="muted xs" style="margin:10px 0 0">⚠ ' + esc(lz(
-      "Not a trade signal and not a target — a balance-of-pressures read from delayed EOD options. Horizons are each signal's natural decay, not a holding period.",
-      "并非交易信号、也非目标 — 由延迟收盘期权得出的力量平衡读数。时间窗为各信号的自然衰减期，而非持仓周期。") + frag) + ' ' + conf + "</p>";
-    return '<div class="panel dt-panel">' + head + legHtml + disc + "</div>";
-  }
 
-  // ---- volatility hole (dealer-gamma compression band, DannyTrades framing) ----
+  // ---- vol-hole label map + board cell (kept: renderBoard + the levels-map badge use these) ----
   var VHS = {
     IN_HOLE:     { emo: "🧲", en: "In the hole — boxed in",  zh: "洞内 · 被困",  cls: "neu",  sh_en: "In hole",     sh_zh: "洞内" },
     COILED_UP:   { emo: "⬆",  en: "Coiled at the ceiling",   zh: "贴上沿蓄势",   cls: "up",   sh_en: "Coiled up",   sh_zh: "贴上沿" },
@@ -673,152 +737,61 @@
     EXPANSION:   { emo: "🌪", en: "Expansion — jumpy zone",  zh: "扩张 · 跳动区", cls: "vol",  sh_en: "Expansion",   sh_zh: "扩张" },
     NONE:        { emo: "·",  en: "No clear hole",           zh: "无明显洞",     cls: "na",   sh_en: "—",           sh_zh: "—" }
   };
-
   function vhCell(m) {
     if (!m.vh_state || m.vh_state === "NONE") return '<td><span class="vh-pill na">—</span></td>';
     var v = VHS[m.vh_state] || VHS.NONE;
     return '<td><span class="vh-pill ' + v.cls + '" title="' + esc(lz(v.en, v.zh)) + '">' + v.emo + " " + esc(lz(v.sh_en, v.sh_zh)) + "</span></td>";
   }
 
-  function sigTxt(x) { return x == null ? "—" : (+x).toFixed(1) + "σ"; }
-
-  function vhRead(vh, s) {
-    var up = price(vh.upper), lo = price(vh.lower);
-    var hasFlip = s.gamma_flip != null, flip = price(s.gamma_flip);
-    switch (vh.state) {
-      case "IN_HOLE":
-        return lz(
-          "<b>In the calm zone.</b> Price is parked between a <b>" + lo + "</b> floor and a <b>" + up + "</b> ceiling, and dealer hedging leans against moves — so it tends to drift back toward the middle and stay range-bound. The zone holds until a daily CLOSE outside " + lo + "–" + up + " breaks the spell and lets a bigger move run.",
-          "<b>处于平静区。</b> 价格停在 <b>" + lo + "</b> 下沿与 <b>" + up + "</b> 上沿之间，做市商对冲逆势而行 — 因而倾向回到中部、维持区间。该区间持续，直到日线收于 " + lo + "–" + up + " 之外打破平衡、放行更大的走势。");
-      case "COILED_UP":
-        return lz(
-          "<b>Coiled at the ceiling.</b> Price is pressed against the <b>" + up + "</b> call wall, where dealers have been capping the rally. While it holds, that wall acts like a lid. But a daily CLOSE above " + up + " can flip dealers into chasing the move — turning the ceiling into a launchpad for a faster push higher.",
-          "<b>贴近上沿蓄势。</b> 价格贴住 <b>" + up + "</b> 看涨墙，做市商一直在此压制上涨。只要守住，该墙就像盖子。但日线收于 " + up + " 之上会使做市商转为追逐 — 让上沿变成更快上行的跳板。");
-      case "COILED_DOWN":
-        return lz(
-          "<b>Coiled at the floor.</b> Price is pressed against the <b>" + lo + "</b> put wall, where dealer buying has been cushioning the drop. While it holds, that wall acts like a trampoline. But a daily CLOSE below " + lo + " can flip dealers into selling with the move — pulling the floor out and opening an air-pocket lower.",
-          "<b>贴近下沿蓄势。</b> 价格贴住 <b>" + lo + "</b> 看跌墙，做市商买入一直在此缓冲下跌。只要守住，该墙就像蹦床。但日线收于 " + lo + " 之下会使做市商转为顺势卖出 — 抽走下沿、向下打开急跌缺口。");
-      case "EXPANSION":
-        var fl = hasFlip ? "<b>" + flip + "</b> " : "";
-        var fb = hasFlip ? flip : lz("the flip", "翻转");
-        return lz(
-          "<b>Already in the jumpy zone.</b> Price is below the " + fl + "flip line, so dealers are now hedging with the move — both trends and sudden air-pockets run bigger than normal, and the downside tends to move faster. There's no calming band here until price climbs back above " + fb + " and the market flips calm again.",
-          "<b>已处于跳动区。</b> 价格位于 " + fl + "翻转线之下，做市商现在顺势对冲 — 趋势与突发急跌都比平常更大，下行往往更快。在价格重新升破 " + fb + " 、市场转回平静之前，这里没有压制带。");
-      default:
-        return "";
-    }
-  }
-
-  function vhBand(vh, s) {
-    var lo = vh.lower, hi = vh.upper, sp = s.spot;
-    var vals = [sp]; if (lo != null) vals.push(lo); if (hi != null) vals.push(hi);
-    if (vals.length < 2 || sp == null) return "";
-    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
-    var pad = (mx - mn) * 0.18 || (sp * 0.02) || 1; mn -= pad; mx += pad;
-    function xp(v) { return (v - mn) / (mx - mn) * 100; }
-    var html = '<div class="vh-band"><div class="track">';
-    if (lo != null && hi != null) {
-      var x1 = xp(lo), x2 = xp(hi);
-      html += '<div class="fill" style="left:' + x1.toFixed(1) + "%;width:" + (x2 - x1).toFixed(1) + "%;background:var(--info)\"></div>";
-    }
-    html += "</div>";
-    function mk(v, cls, lab) {
-      if (v == null) return "";
-      var x = xp(v).toFixed(1);
-      return '<div class="mk ' + cls + '" style="left:' + x + '%"></div>' +
-        '<div class="cap ' + (cls === "spot" ? "spot" : "") + '" style="left:' + x + '%"><span class="v">' + price(v) + "</span>" + esc(lab) + "</div>";
-    }
-    html += mk(lo, "lo", lz("floor", "下沿")) + mk(hi, "hi", lz("ceiling", "上沿")) + mk(sp, "spot", lz("spot", "现价"));
-    return html + "</div>";
-  }
-
-  function vhStats(vh, s) {
-    var out = [];
-    if (vh.to_lower_sigma != null) out.push(lz("To floor: ", "距下沿：") + "<b>" + sigTxt(vh.to_lower_sigma) + "</b>" + (vh.to_lower_pct != null ? " (" + vh.to_lower_pct + "%)" : ""));
-    if (vh.to_upper_sigma != null) out.push(lz("To ceiling: ", "距上沿：") + "<b>" + sigTxt(vh.to_upper_sigma) + "</b>" + (vh.to_upper_pct != null ? " (" + vh.to_upper_pct + "%)" : ""));
-    if (vh.band_width_pct != null) out.push(lz("Band width: ", "区间宽度：") + "<b>" + vh.band_width_pct + "%</b>");
-    if (vh.compression) {
-      var cc = vh.compression === "tight" ? lz("tight (coiled)", "紧（蓄势）")
-        : vh.compression === "wide" ? lz("wide (loose)", "宽（松散）") : lz("normal", "一般");
-      out.push(lz("Compression: ", "压缩：") + "<b>" + cc + "</b>");
-    }
-    var ivr = s && s.iv_rank;
-    if (ivr) {
-      // W0.7: low_confidence → explicit caveat; do not present rich/cheap band as settled
-      if (ivr.low_confidence) {
-        out.push('<span class="ivr-building">'
-          + esc(lz("IV rank: n=" + (ivr.n_days || "?") + "d — building history",
-                   "IV分位：n=" + (ivr.n_days || "?") + "天 — 积累中"))
-          + "</span>");
-      } else {
-        var d = IVRANK[ivr.band] || {};
-        out.push(lz("IV rank: ", "IV分位：") + "<b>" + esc(lz(d.en, d.zh)) + "</b> <span class='xs'>(" + ivr.rank_pct + "%)</span>");
-      }
-    }
-    return out.length ? '<div class="vh-stats">' + out.join("") + "</div>" : "";
-  }
-
-  function volHoleHTML() {
-    var vh = cur.vol_hole; if (!vh || vh.state === "NONE") return "";
-    var s = cur.summary;
-    var v = VHS[vh.state] || VHS.NONE;
-    var biasCls = vh.bias === "up" ? "vh-up" : vh.bias === "down" ? "vh-down"
-      : vh.bias === "volatile" ? "vh-volatile" : "vh-neutral";
-    var hHelp = help(lz(
-      "In a calm (long-gamma) regime, dealer hedging defends a floor and a ceiling, trapping price in a low-volatility band — the “hole.” Pressed against a wall = “coiled,” where the next daily close decides whether it pins or breaks. Below the flip, that band is gone and volatility expands. It's a relabeling of the flip and walls from delayed end-of-day data — not a backtested or proprietary edge.",
-      "在平静（多头Gamma）体制下，做市商对冲守住下沿与上沿，把价格困在低波动带 — 即“洞”。贴住某墙=“蓄势”，下一根日线收盘决定是被磁吸还是突破。翻转之下，该带消失、波动扩张。这是对翻转与墙的重新表述（延迟收盘数据）— 并非回测或专有优势。"));
-    var armed = (vh.compression === "tight" && (vh.state === "COILED_UP" || vh.state === "COILED_DOWN"))
-      ? '<span class="vh-armed">⚡ ' + esc(lz("Armed — tight band pressed against a wall", "蓄势 — 窄带贴墙")) + "</span>" : "";
-    var head = '<div class="topline" style="justify-content:space-between;align-items:center"><h2 style="margin:0">' +
-      lz("🕳️ Volatility Hole", "🕳️ 波动洞") + hHelp + '</h2><span><span class="vh-badge ' + v.cls + '">' + v.emo + " " + esc(lz(v.en, v.zh)) + "</span>" + armed + "</span></div>" +
-      '<p class="muted xs" style="margin:6px 0 0">' + esc(lz(
-        "How trapped vs. free the price is to move — a plain-English read of the flip and the walls (sometimes nicknamed the “volatility hole”). It's a relabeling of those levels, not a separate indicator.",
-        "价格被困还是可自由波动 — 对翻转与墙的通俗解读（有时戏称“波动洞”）。它是对这些价位的重新表述，并非独立指标。")) + "</p>";
-    var caveat = '<p class="muted xs" style="margin:8px 0 0">' + esc(lz(
-      "Walls are measured from yesterday's close, so on any single day price sits inside the band by construction — you can't read a live wall break from one snapshot; only the daily close beyond a level counts, and the dealer sign is an assumption that's shaky for single names.",
-      "墙以昨日收盘计算，因此任意单日价格按构造必在带内 — 无法从单帧快照读出实时突破；只有日线收盘越过某价位才算数，且做市商符号为假设、对个股不稳。")) + "</p>";
-    return '<div class="panel vhole ' + biasCls + '">' + head +
-      '<div class="vh-read">' + vhRead(vh, s) + "</div>" + vhBand(vh, s) + vhStats(vh, s) + caveat + "</div>";
-  }
-
-  // ---- key-levels ruler — strength-encoded markers, two lanes to avoid collisions ----
-  function rulerHTML() {
-    var s = cur.summary;
-    var pts = [
-      { v: s.put_wall, lab: lz("Put wall", "看跌墙"), cls: "pw", str: s.put_wall_strength, band: s.put_wall_band },
-      { v: s.gamma_flip, lab: lz("Flip", "翻转"), cls: "flip", str: s.flip_strength, band: s.flip_band },
-      { v: s.max_pain, lab: lz("Max pain", "最大痛点"), cls: "mp", str: s.magnet_strength, band: s.magnet_band },
-      { v: s.call_wall, lab: lz("Call wall", "看涨墙"), cls: "cw", str: s.call_wall_strength, band: s.call_wall_band },
-      { v: s.spot, lab: lz("Spot", "现价"), cls: "spot" }
-    ].filter(function (p) { return p.v != null; });
-    if (pts.length < 2) return "";
-    var vals = pts.map(function (p) { return p.v; });
-    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
-    var pad = (hi - lo) * 0.10 || 1; lo -= pad; hi += pad;
-    function xp(v) { return (v - lo) / (hi - lo) * 100; }
-    pts.sort(function (a, b) { return a.v - b.v; });
-    var lastX = [-99, -99], GAP = 11;       // assign 2 lanes by horizontal proximity
-    pts.forEach(function (p) {
-      var px = xp(p.v);
-      var lane = (px - lastX[0] >= GAP) ? 0 : (px - lastX[1] >= GAP) ? 1 : (lastX[0] <= lastX[1] ? 0 : 1);
-      p.lane = lane; lastX[lane] = px;
-    });
-    var mk = pts.map(function (p) {
-      // marker thickness + opacity encode the level's strength (spot is fixed)
-      var w = 3, op = 1, sub = "";
-      if (p.cls !== "spot" && p.str != null) {
-        w = 2 + Math.round(p.str / 100 * 5);                // 2–7px
-        op = (0.45 + 0.55 * (p.str / 100)).toFixed(2);
-        if (p.band) sub = '<span class="lab">' + esc(bandWord(p.band)) + "</span>";
-      } else if (p.cls !== "spot") {
-        sub = '<span class="lab">' + esc(p.lab) + "</span>";
-      }
-      var istyle = 'width:' + w + 'px;opacity:' + op;
-      return '<div class="mk ' + p.cls + " lane" + p.lane + '" style="left:' + xp(p.v).toFixed(2) + '%" title="' + esc(p.lab + (p.str != null ? " · " + p.str + "/100" : "")) + '">' +
-        '<i style="' + istyle + '"></i><span class="lbl"><span class="val">' + price(p.v) + "</span>" +
-        (p.cls === "spot" ? '<span class="lab">' + esc(p.lab) + "</span>" : sub) + "</span></div>";
+  // ========================================================================
+  // STUDY SHELF — the raw options charts (collapsed by default; walls open)
+  // ========================================================================
+  function shelfTermHTML() {
+    var tm = cur.term || []; if (!tm.length) return '<p class="sh-sub">—</p>';
+    var rows = tm.map(function (r) {
+      return "<tr><td>" + esc(r.expiry) + "</td><td>" + r.days + "</td><td>" + pctU(r.atm_iv, 1) + "</td><td>±" + pctU(r.move_pct, 1) +
+        "</td><td>" + (r.straddle_pct == null ? "—" : "±" + pctU(r.straddle_pct, 1)) + "</td><td>" + price(r.max_pain) + "</td></tr>";
     }).join("");
-    return '<div class="ruler"><div class="axis"></div>' + mk + "</div>";
+    return '<table class="term"><thead><tr><th>' + lz("Expiry", "到期") + "</th><th>" + lz("Days", "天数") + "</th><th>" + lz("ATM IV", "平值IV") +
+      "</th><th>" + lz("IV move", "IV波动") + "</th><th>" + lz("Straddle", "跨式") + "</th><th>" + lz("Max pain", "最大痛点") + "</th></tr></thead><tbody>" + rows + "</tbody></table>";
+  }
+  function greeksHTML() {
+    var s = cur.summary || {};
+    function g(k, v, sub) { return '<div class="greek"><div class="k">' + esc(k) + '</div><div class="v">' + v + "</div>" + (sub ? '<div class="muted xs">' + esc(sub) + "</div>" : "") + "</div>"; }
+    var cells = [
+      g(lz("Net delta", "净Delta"), s.net_delta_bn == null ? "—" : sgn(s.net_delta_bn, 1) + " $bn"),
+      g(lz("Net vanna", "净Vanna"), s.net_vex == null ? "—" : compact(s.net_vex)),
+      g(lz("Charm bias", "Charm偏向"), s.charm_net_sign > 0 ? lz("↑ up-drift", "↑ 上漂") : s.charm_net_sign < 0 ? lz("↓ down-drift", "↓ 下漂") : "—", s.charm_anchor != null ? lz("anchor " + price(s.charm_anchor), "锚 " + price(s.charm_anchor)) : ""),
+      g(lz("Put/Call OI", "认沽/认购OI"), s.put_call_oi_ratio == null ? "—" : (+s.put_call_oi_ratio).toFixed(2)),
+      g(lz("Put/Call vol", "认沽/认购量"), s.put_call_vol_ratio == null ? "—" : (+s.put_call_vol_ratio).toFixed(2)),
+      g(lz("Largest OI", "最大未平仓"), price(s.largest_oi)),
+      g(lz("Chain depth", "链路深度"), (s.n_strikes || "—") + "", s.tier === "full" ? lz("deep", "深度") : lz("thin — fragile", "稀疏 — 脆弱"))
+    ];
+    return '<div class="greeks">' + cells.join("") + "</div>";
+  }
+  function shelfHTML() {
+    function panel(ic, ti_en, ti_zh, hint_en, hint_zh, body, open) {
+      return "<details" + (open ? " open" : "") + '><summary><span class="sh-ic">' + ic + "</span>" + esc(lz(ti_en, ti_zh)) +
+        (hint_en ? '<span class="sh-hint">' + esc(lz(hint_en, hint_zh)) + "</span>" : "") + '<span class="sh-caret">▸</span></summary>' +
+        '<div class="sh-body">' + body + "</div></details>";
+    }
+    var walls = '<p class="sh-sub">' + esc(lz("Net dealer gamma summed at each strike. Green = call-heavy resistance above; red = put-heavy support below.", "每个行权价上的做市商净Gamma。绿=上方看涨阻力；红=下方看跌支撑。")) + "</p>" +
+      '<div class="hm-tabs" id="gx-bartabs">' + barTabs() + '</div><div><div class="chartbox" id="gx-bars"></div>' + barLegend() + "</div>";
+    var prof = '<p class="sh-sub">' + esc(lz("Dealer $gamma re-evaluated as spot moves. Where the curve crosses zero is the flip: above it dealers dampen, below they amplify.", "随现价移动重估的做市商$Gamma。曲线穿越零点即翻转：之上抑制，之下放大。")) + '</p><div class="chartbox" id="gx-profile"></div>';
+    var heat = '<p class="sh-sub">' + esc(lz("The options surface. Rows = strikes (spot outlined), columns = expiries. Bright clusters are where positioning concentrates.", "期权曲面。行=行权价（现价加框），列=到期。亮区即仓位集中处。")) + "</p>" +
+      '<div class="hm-tabs" id="gx-heattabs">' + heatTabs() + '</div><div class="hm-scroll" id="gx-heat"></div>' + heatLegend();
+    var vol = '<div class="sh-grid2"><div><h3 style="font-size:13px;margin:0 0 2px">' + lz("Volatility smile / skew", "波动率微笑/偏斜") + "</h3>" +
+      '<p class="sh-sub">' + esc(lz("Implied vol by strike, front expiry. A steep left side (puts richer) is downside skew.", "近月按行权价的隐含波动。左侧更陡（看跌更贵）即下行偏斜。")) + '</p><div class="chartbox" id="gx-smile"></div></div>' +
+      '<div><h3 style="font-size:13px;margin:0 0 2px">' + lz("IV term structure", "隐含波动期限结构") + "</h3>" +
+      '<p class="sh-sub">' + esc(lz("ATM vol by expiry. Upward-sloping is the calm default; inverted flags an event or stress.", "按到期的平值波动。向上倾斜为平静常态；倒挂预示事件或压力。")) + '</p><div class="chartbox" id="gx-term"></div></div></div>';
+    return '<div class="shelf">' +
+      panel("🧱", "Dealer gamma by strike — the walls", "按行权价的做市商Gamma — 墙", "gamma · OI · volume", "Gamma · 未平仓 · 成交量", walls, true) +
+      panel("📉", "Net-gamma profile — where the flip is", "净Gamma曲线 — 翻转所在", "", "", prof, false) +
+      panel("🗺️", "Options surface heatmap", "期权曲面热力图", "gamma · OI · volume", "Gamma · 未平仓 · 成交量", heat, false) +
+      panel("🌋", "Vol smile & IV term structure", "波动率微笑与期限结构", "", "", vol, false) +
+      panel("🪜", "Expiry ladder — IV, expected move & max pain", "到期阶梯 — IV、预期波动与最大痛点", "", "", shelfTermHTML(), false) +
+      panel("Σ", "Positioning greeks", "持仓希腊字母", "delta · vanna · charm · chain", "Delta · Vanna · Charm · 链路", greeksHTML(), false) +
+    "</div>";
   }
 
   // ========================================================================
@@ -1116,38 +1089,7 @@
     return '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="' + w + '" stroke-linejoin="round"/>';
   }
 
-  // ---- term table, cards, spark, caveat -----------------------------------
-  function termTableHTML() {
-    var tm = cur.term || []; if (!tm.length) return "";
-    var rows = tm.map(function (r) {
-      return "<tr><td>" + esc(r.expiry) + "</td><td>" + r.days + "</td><td>" + pctU(r.atm_iv, 1) + "</td><td>±" + pctU(r.move_pct, 1) +
-        "</td><td>" + (r.straddle_pct == null ? "—" : "±" + pctU(r.straddle_pct, 1)) + "</td><td>" + price(r.max_pain) + "</td></tr>";
-    }).join("");
-    return '<div class="panel"><h2>' + lz("Expiry ladder — IV, expected move & max pain", "到期阶梯 — IV、预期波动与最大痛点") + "</h2>" +
-      '<table class="term"><thead><tr><th>' + lz("Expiry", "到期") + "</th><th>" + lz("Days", "天数") + "</th><th>" + lz("ATM IV", "平值IV") +
-      "</th><th>" + lz("IV move", "IV波动") + "</th><th>" + lz("Straddle", "跨式") + "</th><th>" + lz("Max pain", "最大痛点") + "</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
-  }
-
-  function cardsHTML() {
-    var s = cur.summary;
-    function c(k, v, sub) { return '<div class="gcard"><div class="k">' + k + '</div><div class="v">' + v + "</div>" + (sub ? '<div class="muted xs">' + sub + "</div>" : "") + "</div>"; }
-    var cells = [
-      c(lz("Call wall", "看涨墙"), price(s.call_wall)),
-      c(lz("Put wall", "看跌墙"), price(s.put_wall)),
-      c(lz("Largest OI", "最大未平仓"), price(s.largest_oi)),
-      c(lz("Max pain", "最大痛点"), price(s.max_pain)),
-      c(lz("Magnet ↑ / ↓", "磁吸 ↑ / ↓"), price(s.magnet_up) + " / " + price(s.magnet_down)),
-      c("IV30", pctU(s.iv30, 1)),
-      c(lz("Put/Call OI", "认沽/认购OI"), s.put_call_oi_ratio == null ? "—" : (+s.put_call_oi_ratio).toFixed(2)),
-      c(lz("Put/Call vol", "认沽/认购量"), s.put_call_vol_ratio == null ? "—" : (+s.put_call_vol_ratio).toFixed(2)),
-      c(lz("Net delta", "净Delta"), s.net_delta_bn == null ? "—" : sgn(s.net_delta_bn, 1) + " $bn"),
-      c(lz("Net vanna", "净Vanna"), s.net_vex == null ? "—" : compact(s.net_vex)),
-      c(lz("Charm bias", "Charm偏向"), s.charm_net_sign > 0 ? lz("↑ up-drift", "↑ 上漂") : s.charm_net_sign < 0 ? lz("↓ down-drift", "↓ 下漂") : "—", lz("anchor " + price(s.charm_anchor), "锚 " + price(s.charm_anchor))),
-      c(lz("Chain", "链路"), (s.n_strikes || "—") + "", s.tier === "full" ? lz("deep", "深度") : lz("thin — fragile", "稀疏 — 脆弱"))
-    ];
-    return '<div class="panel"><h2>' + lz("Positioning summary", "持仓概览") + '</h2><div class="cards">' + cells.join("") + "</div></div>";
-  }
-
+  // ---- net-GEX history sparkline (used by the regime read) ----
   function drawSpark() {
     var host = document.getElementById("gx-spark"); if (!host) return;
     var h = (cur.history || []).filter(function (r) { return r.net_gex_bn != null; });
@@ -1165,14 +1107,6 @@
     svg += '<path d="' + d + '" fill="none" stroke="' + (last >= 0 ? up : down) + '" stroke-width="1.4"/>';
     svg += '<circle cx="' + X(h.length - 1) + '" cy="' + Y(last) + '" r="2.2" fill="' + (last >= 0 ? up : down) + '"/></svg>';
     host.innerHTML = '<span class="heronum"><span class="muted sm">' + lz("GEX trend", "GEX走势") + " " + h.length + "d</span><br>" + svg + "</span>";
-  }
-
-  function caveatHTML() {
-    var s = cur.summary, meta = cur.meta || {}, grp = meta.grp || "";
-    if (grp === "Index" || grp.indexOf("ETF") >= 0) return "";
-    return '<div class="panel"><p class="muted xs note" style="margin:0">' + lz(
-      "Single-name caveat: the dealer long-call / short-put sign is FRAGILE here — concentration, covered-call ETFs or heavy retail call-buying can flip the true positioning. Top-strike OI share " + (s.top_oi_share == null ? "—" : s.top_oi_share) + ", chain tier “" + s.tier + "”. Read these as loose context, never a level to trade against.",
-      "个股提示：此处“多头看涨/空头看跌”的做市商符号脆弱 — 集中度、备兑ETF或散户大量买看涨可翻转真实持仓。最大行权价OI占比 " + (s.top_oi_share == null ? "—" : s.top_oi_share) + "，链路等级“" + s.tier + "”。仅作宽松背景，切勿据此逆向交易。") + "</p></div>";
   }
 
   // ========================================================================
@@ -1195,7 +1129,7 @@
     if (!f || !f.available) {
       // Show an honest "accruing" state rather than a blank panel — F12 UI honesty fix.
       host.innerHTML =
-        '<div class="panel"><div class="fl fl-accruing">' +
+        '<div class="card anim fl fl-accruing">' +
           '<div class="fl-head"><span class="fl-tag">📊 ' +
             esc(lz("Options flow desk", "期权流动台")) +
           "</span></div>" +
@@ -1207,7 +1141,7 @@
                 + "S3拉取运行后，量级信号（权利金、0DTE、ΔOI）将自动填充。"
             )) +
           "</div>" +
-        "</div></div>";
+        "</div>";
       return;
     }
     var d = f.dealer || {}, np = f.net_premium_mn, v = f.verdict || {}, sg = f.signing || {};
@@ -1236,7 +1170,7 @@
     var posBuild = p ? (p.top_build || []).slice(0, 4).map(function (x) {
       return "<li>" + esc((x.cp === "C" ? "C" : "P") + x.k + " " + x.exp + " — " + (x.doi >= 0 ? "+" : "") + x.doi.toLocaleString() + " OI (" + x.oi_prior.toLocaleString() + "→" + x.oi.toLocaleString() + ")") + "</li>"; }).join("") : "";
     host.innerHTML =
-      '<div class="panel"><div class="fl s-' + (v.tone || "neutral") + '">' +
+      '<div class="card anim fl s-' + (v.tone || "neutral") + '">' +
         '<div class="fl-head"><span class="fl-tag">📊 ' + lz("Today’s measured flow", "今日实测流动") + "</span>" +
           '<span class="fl-verdict">' + esc(lz(v.en, v.zh)) + "</span></div>" +
         '<div class="fl-chips">' + chips + "</div>" +
@@ -1249,7 +1183,7 @@
         '<div class="fl-foot">' + esc(lz(
           "Reliable (no signing): premium, 0DTE, new positions, P/C. Direction (~) is SOFT — tick-rule recovers net buy/sell only " + (sg.net_sign_recovery != null ? Math.round(sg.net_sign_recovery * 100) + "%" : "~") + " of the time on minute bars (option ticks are delta-dominated; per-trade " + (sg.per_trade_agreement != null ? Math.round(sg.per_trade_agreement * 100) + "%" : "~80%") + " vs NBBO, Databento-calibrated). EOD, as of " + (f.asof || "") + ". Never a buy/sell.",
           "可靠（无需定向）：权利金、0DTE、新建仓、P/C。方向(~)为软信号 — tick规则在分钟数据上仅约" + (sg.net_sign_recovery != null ? Math.round(sg.net_sign_recovery * 100) : "") + "%能还原净买卖（期权由delta主导；逐笔约" + (sg.per_trade_agreement != null ? Math.round(sg.per_trade_agreement * 100) : 80) + "% 对NBBO，经Databento校准）。收盘数据，截至 " + (f.asof || "") + "。绝非买卖信号。")) + "</div>" +
-      "</div></div>";
+      "</div>";
   }
   function renderWeather() {
     var box = document.getElementById("gx-weather"), body = document.getElementById("gx-weather-body");
