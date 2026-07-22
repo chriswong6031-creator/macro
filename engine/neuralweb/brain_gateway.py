@@ -123,6 +123,63 @@ def _load_brain_config(root: Path | None = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Guest / free access config (operator-tunable, gitignored JSON, hot-reloaded)
+# ---------------------------------------------------------------------------
+# The operator turns anonymous free Fast access on/off and sets the per-day cap from
+# the admin console. The config lives in an UNTRACKED JSON file (admin/brain_guest_access.json)
+# so toggling it never touches git / requires a deploy — it is re-read within a short TTL.
+# Resolution order: env BRAIN_GUEST_CFG path override (tests) → <repo>/admin/brain_guest_access.json
+# → absent/malformed → the fail-CLOSED default {enabled: False, daily_limit: 30}.
+_GUEST_CFG_DEFAULT = {"enabled": False, "daily_limit": 30}
+_GUEST_CFG_TTL = 20.0            # seconds — toggles apply within this window, no restart
+_GUEST_CFG_LO = 1
+_GUEST_CFG_HI = 500
+_GUEST_CFG_CACHE: tuple[dict, float] | None = None   # (parsed, expiry_monotonic)
+_GUEST_CFG_LOCK = threading.Lock()
+
+
+def _guest_cfg_path(root: Path | None = None) -> Path:
+    """Resolve the guest-access config path (env override → <repo>/admin/brain_guest_access.json)."""
+    override = os.environ.get("BRAIN_GUEST_CFG", "").strip()
+    if override:
+        return Path(override)
+    return _repo_root(root) / "admin" / "brain_guest_access.json"
+
+
+def _guest_cfg(root: Path | None = None) -> dict:
+    """Read the guest-access config with a short TTL cache. Never raises.
+
+    Returns {"enabled": bool, "daily_limit": int} with daily_limit clamped to [1, 500].
+    Missing file / bad JSON / bad types → the fail-closed default (guest access OFF).
+    """
+    global _GUEST_CFG_CACHE  # noqa: PLW0603
+    now = time.monotonic()
+    with _GUEST_CFG_LOCK:
+        if _GUEST_CFG_CACHE is not None and _GUEST_CFG_CACHE[1] > now:
+            return _GUEST_CFG_CACHE[0]
+
+    parsed = dict(_GUEST_CFG_DEFAULT)
+    try:
+        raw = json.loads(_guest_cfg_path(root).read_text(encoding="utf-8"))
+        if isinstance(raw, dict):
+            parsed["enabled"] = bool(raw.get("enabled", False))
+            lim_raw = raw.get("daily_limit", _GUEST_CFG_DEFAULT["daily_limit"])
+            try:
+                lim = int(lim_raw)
+            except (TypeError, ValueError):
+                lim = _GUEST_CFG_DEFAULT["daily_limit"]
+            parsed["daily_limit"] = max(_GUEST_CFG_LO, min(_GUEST_CFG_HI, lim))
+    except FileNotFoundError:
+        pass  # absent → default (fail-closed OFF) — the common production case until enabled
+    except Exception as exc:  # noqa: BLE001 — a bad config must never break the brain
+        log.warning("brain_gateway: guest-access config load failed (%s) — access OFF", exc)
+
+    with _GUEST_CFG_LOCK:
+        _GUEST_CFG_CACHE = (parsed, now + _GUEST_CFG_TTL)
+    return parsed
+
+
+# ---------------------------------------------------------------------------
 # Brain message sanitizer (fix #3: 2000-char bound, NOT ask_brain's 500-char cap)
 # ---------------------------------------------------------------------------
 
@@ -2840,6 +2897,11 @@ def _get_allowance(tier: str, status: str, lane: str, root: Path | None = None) 
     """Return {limit, period} for (tier, status, lane).
 
     status='trialing' → trial allowances; 'active' → tier allowances; else → free.
+
+    GUEST-ACCESS FREE FLIP: when the operator turns guest access ON (_guest_cfg.enabled),
+    the FREE tier's FAST lane allowance becomes daily_limit/DAY instead of its config value
+    (the default 5/week). Paid tiers, trial, and the pro lane are UNTOUCHED. When the toggle
+    is off, this returns the config allowance exactly (legacy behaviour, byte-for-byte).
     """
     cfg = _load_brain_config(root)
     quotas = cfg.get("quotas") or {}
@@ -2850,6 +2912,12 @@ def _get_allowance(tier: str, status: str, lane: str, root: Path | None = None) 
         bucket_name = tier if tier in quotas else "free"
     else:
         bucket_name = "free"
+
+    # Free-tier fast lane flips to the guest daily cap while guest access is enabled.
+    if bucket_name == "free" and lane == "fast":
+        gc = _guest_cfg(root)
+        if gc.get("enabled"):
+            return {"limit": int(gc.get("daily_limit") or _GUEST_CFG_DEFAULT["daily_limit"]), "period": "day"}
 
     bucket = quotas.get(bucket_name) or quotas.get("free") or {}
     lane_cfg = bucket.get(lane) or {}
@@ -2865,11 +2933,14 @@ def _get_allowance(tier: str, status: str, lane: str, root: Path | None = None) 
 def _period_key(period: str, status: str, current_period_end: str | None) -> str:
     """Return a string key for the current allowance period.
 
+    day → calendar day UTC (YYYY-MM-DD) — guest + free-flip daily caps
     week → ISO week (YYYY-Www)
     month → calendar month (YYYY-MM)
     trial → current_period_end string (unique per trial window)
     """
     now_utc = datetime.now(timezone.utc)
+    if period == "day":
+        return now_utc.strftime("%Y-%m-%d")
     if period == "week":
         return now_utc.strftime("%G-W%V")
     if period == "trial":
@@ -2898,6 +2969,16 @@ def _quota_file(user_id: str, lane: str, period_key: str) -> Path:
 def _device_quota_file(device_key: str, lane: str, period_key: str) -> Path:
     """Second ledger keyed by device (aid/ip hash) — pools N free accounts on one device."""
     return _brain_quota_dir() / f"qd_{_safe_uid(device_key)}_{lane}_{period_key}.json"
+
+
+def _guest_cookie_quota_file(aid_hash: str, lane: str, period_key: str) -> Path:
+    """Per-cookie guest ledger (gd_{aid}). Debited alongside the per-IP ledger below."""
+    return _brain_quota_dir() / f"gd_{_safe_uid(aid_hash)}_{lane}_{period_key}.json"
+
+
+def _guest_ip_quota_file(ip_hash: str, lane: str, period_key: str) -> Path:
+    """Per-IP guest ledger (gip_{ip}). The anti-farm half: clearing cookies does NOT reset it."""
+    return _brain_quota_dir() / f"gip_{_safe_uid(ip_hash)}_{lane}_{period_key}.json"
 
 
 def _record_device_link(device_key: str, user_id: str) -> None:
@@ -3047,6 +3128,81 @@ def _check_and_increment_quota(
         _record_device_link(device_key, user_id)
 
     return True, {"lane": lane, "remaining": max(0, remaining), "limit": limit, "period": period}
+
+
+def _check_and_increment_guest_quota(
+    aid_hash: str,
+    ip_hash: str,
+    lane: str,
+    root: Path | None = None,
+) -> tuple[bool, dict]:
+    """Guest (anonymous, unlogged-in) quota — FAST lane only, day-keyed, dual ledger.
+
+    The "per cookie + IP" anti-farm: the day's usage is debited against BOTH a per-cookie
+    ledger (gd_{aid}) AND a per-IP ledger (gip_{ip}). The request is allowed only if BOTH
+    are under the daily limit; on allow, BOTH are incremented. remaining is reported against
+    the WORSE of the two (limit − max(spent_cookie, spent_ip)), so clearing cookies does not
+    reset the cap — the IP ledger still holds the count.
+
+    limit = the operator's guest daily_limit (from _guest_cfg). Pro/other lanes → forbidden (0).
+    Fails OPEN (allowed) only when the ledger dir is genuinely unwritable, matching the
+    signed-in path — a broken ledger must never hard-lock the public surface.
+    """
+    cfg = _guest_cfg(root)
+    limit = int(cfg.get("daily_limit") or _GUEST_CFG_DEFAULT["daily_limit"])
+
+    # Guests get the Fast lane only. Any other lane is locked (mirrors free-tier pro=0).
+    if lane != "fast":
+        return False, {"lane": lane, "remaining": 0, "limit": 0, "period": "day"}
+
+    # No cookie AND no routable IP → the guest cannot be metered at all. Serving free here would
+    # be UNCAPPED (both ledgers absent), so we DENY instead (the visitor falls back to sign-in).
+    # This is the realistic "EO-Client-IP not configured + fresh browser" case — deny, don't leak.
+    if not aid_hash and not ip_hash:
+        return False, {"lane": lane, "remaining": 0, "limit": limit, "period": "day"}
+
+    try:
+        _brain_quota_dir().mkdir(parents=True, exist_ok=True)
+    except Exception as exc:  # noqa: BLE001
+        log.error("::error::brain_gateway: GUEST QUOTA DIR UNAVAILABLE (%s) — fail-open", exc)
+        return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "day"}
+
+    pk = _period_key("day", "active", None)
+
+    # Read both ledgers. Either identity may be empty (no cookie yet, or unroutable IP);
+    # an empty key hashes to '' and its ledger is skipped — the OTHER key still caps.
+    cf = _guest_cookie_quota_file(aid_hash, lane, pk) if aid_hash else None
+    ipf = _guest_ip_quota_file(ip_hash, lane, pk) if ip_hash else None
+    cdata = _read_quota(cf) if cf is not None else {"count": 0}
+    ipdata = _read_quota(ipf) if ipf is not None else {"count": 0}
+    ccount = int(cdata.get("count") or 0)
+    ipcount = int(ipdata.get("count") or 0)
+
+    # Blocked when EITHER identity has already hit the limit for the day.
+    if ccount >= limit or ipcount >= limit:
+        return False, {"lane": lane, "remaining": 0, "limit": limit, "period": "day"}
+
+    # Increment both present ledgers.
+    if cf is not None:
+        cdata["count"] = ccount + 1
+        _write_quota(cf, cdata)
+    if ipf is not None:
+        ipdata["count"] = ipcount + 1
+        _write_quota(ipf, ipdata)
+
+    remaining = limit - (max(ccount, ipcount) + 1)
+    return True, {"lane": lane, "remaining": max(0, remaining), "limit": limit, "period": "day"}
+
+
+def _guest_quota_status(aid_hash: str, ip_hash: str, root: Path | None = None) -> dict:
+    """Read-only guest Fast-lane remaining (no increment) — for /api/brain/me."""
+    cfg = _guest_cfg(root)
+    limit = int(cfg.get("daily_limit") or _GUEST_CFG_DEFAULT["daily_limit"])
+    pk = _period_key("day", "active", None)
+    ccount = int(_read_quota(_guest_cookie_quota_file(aid_hash, "fast", pk)).get("count") or 0) if aid_hash else 0
+    ipcount = int(_read_quota(_guest_ip_quota_file(ip_hash, "fast", pk)).get("count") or 0) if ip_hash else 0
+    remaining = max(0, limit - max(ccount, ipcount))
+    return {"remaining": remaining, "limit": limit, "period": "day"}
 
 
 def _record_token_usage(user_id: str, lane: str, input_tokens: int, output_tokens: int) -> None:
@@ -4127,6 +4283,9 @@ def chat(
     images: list[str] | None = None,
     device_key: str = "",
     user_email: str = "",
+    is_guest: bool = False,
+    guest_aid: str = "",
+    guest_ip: str = "",
 ) -> dict:
     """Process a brain chat request (non-streaming).
 
@@ -4135,6 +4294,14 @@ def chat(
 
     user_email: Supabase-verified account email for CXI-R23a internals gating.
                 MUST come from require_user (server-verified); never from body/headers.
+
+    is_guest (guest access): anonymous, unlogged-in visitor served the FREE Fast lane when
+                the operator enables guest access. Guests are day-capped via the dual
+                cookie+IP ledger (_check_and_increment_guest_quota, keyed by guest_aid/guest_ip
+                hashes), NEVER get internals tools, NEVER touch the thread store (stateless —
+                client history carries continuity), and are locked out of Pro/research/vision
+                exactly like a non-pro free user. user_email is always "" for a guest, so the
+                internals/unlimited allowlists can never match.
 
     mode: 'chat' (default) or 'research' (W6b Deep Research — forces pro lane, Opus,
           larger tool budget, structured multi-section report with citations).
@@ -4188,14 +4355,18 @@ def chat(
             "is_context_only": True,
         }
 
-    # 2. Tier resolution
-    entitlement = _resolve_tier(user_id, root)
-    tier = entitlement.get("tier") or "free"
-    status = entitlement.get("status") or "active"
-    cpe = entitlement.get("current_period_end")
+    # 2. Tier resolution (guests never touch Supabase — they are a synthetic 'guest' tier).
+    if is_guest:
+        tier, status, cpe = "guest", "active", None
+    else:
+        entitlement = _resolve_tier(user_id, root)
+        tier = entitlement.get("tier") or "free"
+        status = entitlement.get("status") or "active"
+        cpe = entitlement.get("current_period_end")
 
-    # 3a. Research mode pro-eligibility gate (W6b): pro quota limit > 0 required
-    # Unlimited operators bypass this gate entirely.
+    # 3a. Research mode pro-eligibility gate (W6b): pro quota limit > 0 required.
+    # Guests are never pro-eligible (guest tier → free pro bucket = 0), so research is rejected
+    # here exactly like a non-pro free user. Unlimited operators bypass entirely.
     if mode == "research" and not _unlimited_allowed(user_email):
         pro_allowance = _get_allowance(tier, status, "pro", root)
         if pro_allowance["limit"] == 0:
@@ -4208,8 +4379,12 @@ def chat(
                 "upgrade": "/plans.html",
             }
 
-    # 3. Quota check (research mode already forced lane='pro' above)
-    allowed, quota_info = _check_and_increment_quota(user_id, lane, tier, status, cpe, root, device_key=device_key, user_email=user_email)
+    # 3. Quota check (research mode already forced lane='pro' above).
+    # Guests use the day-keyed dual cookie+IP ledger; everyone else the per-user (+device) ledger.
+    if is_guest:
+        allowed, quota_info = _check_and_increment_guest_quota(guest_aid, guest_ip, lane, root)
+    else:
+        allowed, quota_info = _check_and_increment_quota(user_id, lane, tier, status, cpe, root, device_key=device_key, user_email=user_email)
     if not allowed:
         if mode == "research":
             return {
@@ -4283,13 +4458,15 @@ def chat(
     effective_thread_id: str | None = None
     thread_history: list[dict] = []
 
-    # Always ensure a thread row (a new thread is created when thread_id is None) so
-    # streamed turns persist; degrades to stateless when the store is unavailable.
-    resolved_tid = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
-    if resolved_tid:
-        effective_thread_id = resolved_tid
-        if thread_id:  # loading history from an existing thread
-            thread_history = _load_thread_history(resolved_tid)
+    # Guests are STATELESS: no thread row is created and no message is persisted (continuity
+    # rides on the screened client-sent history below). Signed-in turns ensure a thread row
+    # (a new one when thread_id is None) so they persist; degrades to stateless if unavailable.
+    if not is_guest:
+        resolved_tid = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
+        if resolved_tid:
+            effective_thread_id = resolved_tid
+            if thread_id:  # loading history from an existing thread
+                thread_history = _load_thread_history(resolved_tid)
 
     # Use server thread history when available; fall back to client-sent history
     # Fix #4: filter BEFORE passing to the loop so mocked loop also sees clean history
@@ -4419,6 +4596,9 @@ def chat_stream(
     images: list[str] | None = None,
     device_key: str = "",
     user_email: str = "",
+    is_guest: bool = False,
+    guest_aid: str = "",
+    guest_ip: str = "",
 ) -> Generator[str, None, None]:
     """Process a brain chat request (streaming). Yields SSE strings per contract.
 
@@ -4467,13 +4647,16 @@ def chat_stream(
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
         return
 
-    # 2. Tier + quota
-    entitlement = _resolve_tier(user_id, root)
-    tier = entitlement.get("tier") or "free"
-    status = entitlement.get("status") or "active"
-    cpe = entitlement.get("current_period_end")
+    # 2. Tier + quota (guests never touch Supabase — synthetic 'guest' tier).
+    if is_guest:
+        tier, status, cpe = "guest", "active", None
+    else:
+        entitlement = _resolve_tier(user_id, root)
+        tier = entitlement.get("tier") or "free"
+        status = entitlement.get("status") or "active"
+        cpe = entitlement.get("current_period_end")
 
-    # 2a. Research mode pro-eligibility gate
+    # 2a. Research mode pro-eligibility gate (guests never pro-eligible → rejected here).
     # Unlimited operators bypass this gate entirely.
     if mode == "research" and not _unlimited_allowed(user_email):
         pro_allowance = _get_allowance(tier, status, "pro", root)
@@ -4482,7 +4665,11 @@ def chat_stream(
             yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'quota_exhausted': True, 'mode': 'research', 'upgrade': '/plans.html', 'is_context_only': True})}\n\n"
             return
 
-    allowed, quota_info = _check_and_increment_quota(user_id, lane, tier, status, cpe, root, device_key=device_key, user_email=user_email)
+    # Guests use the day-keyed dual cookie+IP ledger; everyone else the per-user (+device) ledger.
+    if is_guest:
+        allowed, quota_info = _check_and_increment_guest_quota(guest_aid, guest_ip, lane, root)
+    else:
+        allowed, quota_info = _check_and_increment_quota(user_id, lane, tier, status, cpe, root, device_key=device_key, user_email=user_email)
     if not allowed:
         yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'none', 'thread_id': None, 'quota': quota_info})}\n\n"
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': quota_info, 'usage': {}, 'filtered': False, 'degraded': True, 'quota_exhausted': True, 'is_context_only': True})}\n\n"
@@ -4529,14 +4716,15 @@ def chat_stream(
         else:
             image_blocks = []
 
-    # 4. Thread store
+    # 4. Thread store — guests are STATELESS (no rows written; client history carries continuity).
     effective_thread_id: str | None = None
     thread_history: list[dict] = []
-    resolved_tid = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
-    if resolved_tid:
-        effective_thread_id = resolved_tid
-        if thread_id:
-            thread_history = _load_thread_history(resolved_tid)
+    if not is_guest:
+        resolved_tid = _ensure_thread(thread_id, user_id, lane, title=clean_msg)
+        if resolved_tid:
+            effective_thread_id = resolved_tid
+            if thread_id:
+                thread_history = _load_thread_history(resolved_tid)
 
     # Fix #4: filter client history before passing to the stream loop
     def _filter_client_history_stream(h: list[dict]) -> list[dict]:
@@ -4661,6 +4849,21 @@ def get_thread(thread_id: str, user_id: str) -> dict | None:
 # ---------------------------------------------------------------------------
 # /api/brain/me quota summary helper
 # ---------------------------------------------------------------------------
+
+def get_guest_quotas(guest_aid: str, guest_ip: str, root: Path | None = None) -> dict:
+    """Return the /api/brain/me quota shape for a GUEST (anonymous) session.
+
+    Fast = the guest daily cap's live remaining (read-only, no increment); Pro is locked
+    (limit 0) so the widget offers Pro/Deep-Research/attach only as sign-in prompts."""
+    fast = _guest_quota_status(guest_aid, guest_ip, root)
+    return {
+        "tier": "guest",
+        "quotas": {
+            "fast": {"remaining": fast["remaining"], "limit": fast["limit"], "period": "day"},
+            "pro": {"remaining": 0, "limit": 0, "period": "day"},
+        },
+    }
+
 
 def get_user_quotas(user_id: str, root: Path | None = None, user_email: str = "") -> dict:
     """Return quota status for both lanes for a user.

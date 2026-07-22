@@ -6112,6 +6112,66 @@ const MAI_FINDING_MEANINGS = {
   gap_notes_elevated: "The latest build carries several producer gap notes — upstream collectors skipped data.",
 };
 
+/* Public chat-widget guest access (anonymous free Fast lane). This controls the /api/brain/*
+   gateway that powers the "Mastermind AI" chat widget on the public dashboard — NOT the bot
+   self-improvement loop below. Served by the admin itself, so it renders even when the bot is
+   unreachable (it is injected ABOVE the bot fetch on this page). */
+function guestAccessCardHtml(g) {
+  const en = !!(g && g.enabled);
+  const lim = (g && g.daily_limit != null) ? g.daily_limit : 30;
+  const pathStr = (g && g.path) ? g.path : "admin/brain_guest_access.json";
+  const stateChip = en
+    ? '<span class="statpill s-ok">guests on</span>'
+    : '<span class="statpill s-mut">guests off</span>';
+  const fileChip = (g && g.exists)
+    ? '<span class="statpill s-mut" title="config file present">file present</span>'
+    : '<span class="statpill s-warn" title="no config file yet — using the fail-closed default (off); saving creates it">no file yet</span>';
+  return `<div class="section">Public chat access ${stateChip} ${fileChip}</div>
+    <div class="note muted" style="margin:0 0 12px;line-height:1.5">Let anyone use the <b>Mastermind AI</b> chat widget's <b>Fast</b> lane for free — including signed-out visitors — up to a daily cap per person (counted by cookie <i>and</i> IP, so clearing cookies doesn't reset it). Signed-in free users get the same daily Fast cap while this is on. Pro, Deep Research, and image attach stay sign-in / paid. Changes apply within about 20 seconds — no restart.</div>
+    <div class="row"><label class="switch"><input type="checkbox" id="guestEnabled" ${en ? "checked" : ""}><span class="slider"></span></label>
+      <div><div class="lab">Guest access (free Fast lane)</div><div class="note">When off, the widget is sign-in-gated exactly as before. Fails closed (off) if the config file is missing. <code class="muted">enabled</code></div></div></div>
+    <div class="row"><div class="lab" style="min-width:220px">Free messages per day</div>
+      <input type="number" id="guestLimit" data-prev="${en || lim ? lim : 30}" min="1" max="500" value="${lim}" style="width:86px">
+      <button class="btn" id="guestSave" style="margin-left:8px">Save</button>
+      <div class="note">Per visitor, per day (1&#x2013;500). <code class="muted">daily_limit</code></div></div>
+    <div class="note muted" style="margin-top:6px;font-size:11px">Config file: <code>${esc(pathStr)}</code> (gitignored; override with <code>BRAIN_GUEST_CFG</code>).</div>`;
+}
+
+async function loadGuestAccessCard(mountSel) {
+  const mount = $(mountSel);
+  if (!mount) return;
+  let g;
+  try {
+    const r = await api("/api/brain/guest");
+    g = (r && r.guest) ? r.guest : null;
+  } catch (e) { g = null; }
+  if (!g) { mount.innerHTML = `<div class="section">Public chat access</div><div class="note muted">Could not load guest-access state.</div>`; return; }
+  mount.innerHTML = guestAccessCardHtml(g);
+  const meta = (SUMMARY && SUMMARY.meta) || {};
+  const enEl = $("#guestEnabled"), limEl = $("#guestLimit"), saveEl = $("#guestSave");
+  const save = async () => {
+    const enabled = !!(enEl && enEl.checked);
+    const daily_limit = Number(limEl && limEl.value);
+    if (!Number.isInteger(daily_limit) || daily_limit < 1 || daily_limit > 500) {
+      toast("Free messages per day must be a whole number between 1 and 500", true);
+      if (limEl) limEl.value = limEl.dataset.prev;
+      return;
+    }
+    if (saveEl) saveEl.disabled = true;
+    const r = await post("/api/brain/guest", { enabled, daily_limit });
+    if (saveEl) saveEl.disabled = false;
+    if (r && r.ok) {
+      if (limEl) limEl.dataset.prev = String(r.daily_limit != null ? r.daily_limit : daily_limit);
+      toast(`Guest access ${r.enabled ? "on" : "off"} — ${r.daily_limit}/day`);
+      loadGuestAccessCard(mountSel);   // re-render chips from the persisted state
+    } else {
+      toast((r && r.error) || "save failed", true);
+    }
+  };
+  if (enEl) enEl.onchange = save;      // toggling saves immediately (matches the daily brief switches)
+  if (saveEl) saveEl.onclick = save;   // explicit Save for the number field
+}
+
 RENDER.mastermind_ai = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
@@ -6124,12 +6184,15 @@ RENDER.mastermind_ai = async () => {
     /* Async: fetch live_runs to get the real bot base; render the banner
        immediately with a placeholder, then patch it once we know the base. */
     let botBase = "http://127.0.0.1:8000";  /* default shown immediately */
-    v.innerHTML = `<div class="banner show" style="position:static;margin-bottom:16px;padding:12px 16px;border-radius:6px;display:block">
+    v.innerHTML = `<div id="guestAccessCard"><div class="spin">loading…</div></div>
+    <div class="banner show" style="position:static;margin-bottom:16px;padding:12px 16px;border-radius:6px;display:block">
       <div style="font-size:15px;font-weight:700;margin-bottom:6px">Bot service unreachable (<span id="maiBotBase">${esc(botBase)}</span>)</div>
       <div>The Mastermind bot runs on the operator&#39;s Mac, not this server. Run cycle and settings will fail until <code>MASTERMIND_BOT_BASE</code> points at a reachable bot API.</div>
       <div class="sub muted" style="margin-top:6px">Detail: ${detailSnip}</div>
     </div>
     <div id="loopStripWrap"></div>`;
+    /* Public chat-widget guest access is admin-served — available even when the bot is down. */
+    loadGuestAccessCard("#guestAccessCard");
     /* Patch the base URL from live_runs when available. */
     (async () => {
       let lr;
@@ -6183,10 +6246,14 @@ RENDER.mastermind_ai = async () => {
   };
   const settingsHtml = `<div class="section">Settings <span class="cnt">bot-side</span></div>` + MAI_SETTING_FIELDS.map(settingRow).join("");
 
-  v.innerHTML = `<div id="loopStripWrap"></div>` + heroHtml + settingsHtml
+  v.innerHTML = `<div id="guestAccessCard"><div class="spin">loading…</div></div>`
+    + `<div id="loopStripWrap"></div>` + heroHtml + settingsHtml
     + `<div class="section">Loop log &amp; reviews</div><div id="maiLoopLog"><div class="spin">loading…</div></div>
        <div class="section">Improvements</div><div id="maiImprovements"><div class="spin">loading…</div></div>
        <div class="section">Reflection &amp; dialogue</div><div id="maiReflection"><div class="spin">loading…</div></div>`;
+
+  /* Public chat-widget guest access — the free-Fast-lane knob for the dashboard chat widget. */
+  loadGuestAccessCard("#guestAccessCard");
 
   /* wiring: settings + run */
   v.querySelectorAll("[data-maiset]").forEach(el => el.onchange = async () => {

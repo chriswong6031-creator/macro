@@ -8,6 +8,10 @@ __pycache__/
 # Kept OUT of git (the .example.json template documents the schema). The admin service
 # reads it via ANALYTICS_EXCLUSIONS; recommended location is /var/lib/macro-admin/.
 admin/analytics_exclusions.json
+# Brain guest-access knob — operator-tunable anonymous free Fast lane (on/off + daily cap).
+# Kept OUT of git (the .example.json template documents the schema) so toggling never touches
+# git / needs a deploy. Read via BRAIN_GUEST_CFG (default admin/brain_guest_access.json).
+admin/brain_guest_access.json
 # VPS deploy artifact: Caddy's served root is an atomic rsync mirror of site/,
 # living OUTSIDE the git work-tree so `git reset --hard` can't expose a partial
 # file (app/deploy/update.sh + Caddyfile). Box-only; never committed.

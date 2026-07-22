@@ -324,7 +324,7 @@
 
   /* ── state ── */
   var lane = 'fast', researchMode = false, threadId = null, streaming = false,
-      quotas = {}, authed = false, ctxSymbol = '', streamAbort = null, pendingImages = [], proEligible = false;
+      quotas = {}, authed = false, guestMode = false, ctxSymbol = '', streamAbort = null, pendingImages = [], proEligible = false;
   var MAX_IMAGES = 4;
   var explainPanel = null; /* set by MMBrain.explain(); attached once to the next send()'s context */
 
@@ -354,24 +354,32 @@
   }
 
   /* ── quota / me ── */
+  /* Always called on boot, even signed-out: /api/brain/me returns tier 'guest' (200) when the
+     operator has enabled free guest access, or 401 when it is off. A 'guest' tier flips the
+     widget into guest mode (chat UI, not the sign-in gate); a 401 leaves the gate up. */
   function loadQuotas() {
     withAuth().then(function (h) { return fetch(API + '/api/brain/me', { headers: h, credentials: 'include' }); })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
-        if (!d) return; quotas = d.quotas || {};
+        if (!d) { if (!authed) enterGuest(false); return; }
+        quotas = d.quotas || {};
+        /* Signed-out + tier 'guest' → guest mode ON; signed-out + anything else → gate. */
+        if (!authed) enterGuest(d.tier === 'guest');
         /* limit < 0 = unlimited (operator allowlist) → Pro eligible; limit 0 = lane locked. */
         proEligible = !!(quotas.pro && quotas.pro.limit !== 0);
         researchBtn.classList.toggle('mmb-off', !proEligible);
         if (!proEligible && researchMode) setResearch(false);
         renderQuota();
-      }).catch(function () {});
+      }).catch(function () { if (!authed) enterGuest(false); });
   }
   function renderQuota() {
     var q = quotas[researchMode ? 'pro' : lane];
-    if (!q) { qEl.textContent = ''; return; }
+    if (!q) { qEl.textContent = ''; qEl.removeAttribute('title'); return; }
     var pre = (researchMode || lane === 'pro') ? '◈ ' : '⚡ ';
-    if (q.limit < 0) { qEl.textContent = pre + '∞'; qEl.className = 'mmb-q'; return; }  /* unlimited */
+    /* title is English-only per house law (no translated text in title= attrs). */
+    if (q.limit < 0) { qEl.textContent = pre + '∞'; qEl.className = 'mmb-q'; qEl.setAttribute('title', 'Unlimited'); return; }  /* unlimited */
     qEl.textContent = pre + q.remaining + '/' + q.limit;
+    qEl.setAttribute('title', q.period === 'day' ? (q.remaining + ' of ' + q.limit + ' free messages left today') : (q.remaining + ' of ' + q.limit + ' left'));
     qEl.className = 'mmb-q' + (q.remaining <= 0 ? ' empty' : (q.remaining <= Math.max(1, q.limit * 0.15) ? ' warn' : ''));
   }
 
@@ -390,6 +398,7 @@
     return d;
   }
   function paintThreads() {
+    if (guestMode) { paintGuestThreads(); return; }   /* guests see the sign-in prompt, not the (empty) list */
     if (!allThreads.length) { tlist.innerHTML = '<div class="mmb-th-empty">' + L('Your conversations appear here.', '你的对话会显示在这里。') + '</div>'; return; }
     var q = ((searchIn && searchIn.value) || '').trim().toLowerCase();
     var items = q ? allThreads.filter(function (t) { return (t.title || '').toLowerCase().indexOf(q) !== -1; }) : allThreads;
@@ -480,7 +489,8 @@
     root.querySelectorAll('.mmb-l[data-en]').forEach(function (el) { el.textContent = zh() ? el.getAttribute('data-zh') : el.getAttribute('data-en'); });
     root.querySelectorAll('[data-ph-en]').forEach(function (el) { el.placeholder = zh() ? el.getAttribute('data-ph-zh') : el.getAttribute('data-ph-en'); });
     if ($('#mmb-emptystate')) renderEmpty();
-    paintThreads();
+    paintThreads();   /* self-routes to the guest sign-in prompt when in guest mode */
+    renderQuota();     /* refresh the meter's title in the new language sense */
   }
 
   /* ── send (SSE) ── */
@@ -488,7 +498,9 @@
     text = (text || ta.value).trim();
     var imgs = pendingImages.slice();
     if ((!text && !imgs.length) || streaming) return;
-    if (!authed && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
+    /* Guests may send (Fast lane) without the sign-in modal; only fully-gated (non-guest,
+       signed-out) sessions are bounced to sign-in. */
+    if (!authed && !guestMode && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
     /* only the latest reply carries follow-up chips — clear any stale rows */
     root.querySelectorAll('.mmb-sugg').forEach(function (el) { el.remove(); });
     var ub = appendMsg('user', text);
@@ -577,7 +589,15 @@
     upgradeEl.style.display = 'block';
     var plansHref = (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'plans.html';
     var link = '<a href="' + plansHref + '" target="_blank">' + LB('See plans', '查看套餐') + '</a>';
-    if (d && d.feature === 'vision') {
+    /* Guests are prompted to SIGN IN (not to buy a plan) — signin is the natural next step,
+       and it also unlocks the higher signed-in Fast cap. The link fires the MDXAuth signin. */
+    var signinLink = '<a href="#" data-act="signin">' + LB('Sign in', '登录') + '</a>';
+    if (guestMode && d && d.feature === 'pro') {
+      upgradeEl.innerHTML = '<strong>' + LB('Sign in for Pro features', '登录以使用 Pro 功能') + '</strong> — ' +
+        LB('Pro, Deep Research, and image attach need an account. ', 'Pro、深度研究与图片上传需要账户。') + signinLink;
+    } else if (guestMode && d && (d.feature === 'quota' || !d.feature)) {
+      upgradeEl.innerHTML = '<strong>' + LB("You've used today's free messages — sign in for more.", '今日免费次数已用完 — 登录以继续。') + '</strong> ' + signinLink;
+    } else if (d && d.feature === 'vision') {
       upgradeEl.innerHTML = '<strong>' + LB('Image analysis is a Pro feature', '图像分析为 Pro 功能') + '</strong> — ' +
         LB('upgrade to attach charts and screenshots. ', '升级即可上传图表与截图。') + link;
     } else {
@@ -607,6 +627,7 @@
       );
     }
     if (authed) { loadThreads(); loadQuotas(); }
+    else { loadQuotas(); }   /* guests refresh their daily meter; a 401 keeps the gate */
     setTimeout(function () { ta.focus(); }, 260);
   }
   function close() { if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; streaming = false; } if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
@@ -655,8 +676,18 @@
   function onAuth(user) {
     authed = !!user;
     var gate = $('#mmb-gate');
-    if (authed) { if (gate) gate.remove(); if (!scroll.querySelector('.mmb-msg') && !$('#mmb-emptystate')) renderEmpty(); if (panel.classList.contains('open')) { loadThreads(); loadQuotas(); } showChat(true); }
-    else { showChat(false); }
+    if (authed) {
+      guestMode = false;
+      if (gate) gate.remove();
+      if (!scroll.querySelector('.mmb-msg') && !$('#mmb-emptystate')) renderEmpty();
+      if (panel.classList.contains('open')) { loadThreads(); loadQuotas(); }
+      showChat(true);
+    } else {
+      /* Signed out: default to the gate, then probe /api/brain/me — if guest access is on it
+         returns tier 'guest' and enterGuest() flips to the chat UI. */
+      showChat(false);
+      loadQuotas();
+    }
   }
   function showChat(on) {
     var comp = root.querySelector('.mmb-comp'); comp.style.display = on ? '' : 'none'; scroll.style.display = on ? '' : 'none';
@@ -669,6 +700,27 @@
       root.querySelector('.mmb-main').insertBefore(g, root.querySelector('.mmb-comp'));
     } else if (on && gate) gate.remove();
   }
+  /* Guest mode: signed-out but allowed the free Fast lane. Show the chat UI (not the gate),
+     render a sign-in prompt in the threads panel (guests are stateless), and load quotas. */
+  function enterGuest(on) {
+    if (on === guestMode) { if (on) { renderEmpty(); showChat(true); } return; }
+    guestMode = on;
+    if (on) {
+      var gate = $('#mmb-gate'); if (gate) gate.remove();
+      if (!scroll.querySelector('.mmb-msg') && !$('#mmb-emptystate')) renderEmpty();
+      showChat(true);
+      paintGuestThreads();
+    } else {
+      showChat(false);
+    }
+  }
+  /* Threads panel body for guests — conversations aren't saved, so offer sign-in instead. */
+  function paintGuestThreads() {
+    if (!tlist) return;
+    tlist.innerHTML = '<div class="mmb-th-empty" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">' +
+      '<span>' + LB('Sign in to save your conversations.', '登录后可保存对话记录。') + '</span>' +
+      '<button class="mmb-signin" data-act="signin" style="margin-top:0;padding:9px 18px;font-size:13px">' + LB('Sign in', '登录') + '</button></div>';
+  }
 
   /* ── events (delegated) ── */
   root.addEventListener('click', function (e) {
@@ -676,16 +728,21 @@
     if (rm) { pendingImages.splice(+rm.dataset.rmimg, 1); renderThumbs(); return; }
     var t = e.target.closest('[data-act],[data-p],[data-lane]'); if (!t) return;
     if (t.dataset.p) { ta.value = t.dataset.p; autosize(); send(); return; }
-    if (t.dataset.lane) { lane = t.dataset.lane; root.querySelectorAll('#mmb-lane button').forEach(function (b) { b.classList.toggle('on', b === t); }); renderQuota(); return; }
+    if (t.dataset.lane) {
+      /* Guests: the Pro lane is a sign-in prompt (it stays locked); Fast is theirs. */
+      if (t.dataset.lane === 'pro' && guestMode) { showUpgrade({ feature: 'pro' }); return; }
+      lane = t.dataset.lane; root.querySelectorAll('#mmb-lane button').forEach(function (b) { b.classList.toggle('on', b === t); }); renderQuota(); return;
+    }
     var a = t.dataset.act;
     if (a === 'close') close(); else if (a === 'max') toggleMax(); else if (a === 'side') toggleSide();
-    else if (a === 'new') newChat(); else if (a === 'research') setResearch(!researchMode);
+    else if (a === 'new') newChat();
+    else if (a === 'research') { if (guestMode) showUpgrade({ feature: 'pro' }); else setResearch(!researchMode); }
     else if (a === 'home') location.href = (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'macro.html';
     else if (a === 'search') toggleSearch();
     else if (a === 'search-clear') { searchIn.value = ''; paintThreads(); searchIn.focus(); }
     else if (a === 'voice') startVoice();
-    else if (a === 'attach') { if (proEligible) fileEl.click(); else showUpgrade({ feature: 'vision' }); }
-    else if (a === 'signin') { if (window.MDXAuth) window.MDXAuth.open('signin'); }
+    else if (a === 'attach') { if (proEligible) fileEl.click(); else showUpgrade(guestMode ? { feature: 'pro' } : { feature: 'vision' }); }
+    else if (a === 'signin') { e.preventDefault(); if (window.MDXAuth) window.MDXAuth.open('signin'); }
   });
   fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
   if (searchIn) {
