@@ -291,5 +291,35 @@ SEPARATES = α/m CI excludes 0 (mechanical, all-controls at t0); NULL = α/m CI 
 
 ## Adjudication (main loop)
 
-PENDING
+Ruled 2026-07-22 by main-loop Fable, after an opus adversarial review whose own
+recomputations (gate-matched controls; t0−1 onset-bar exclusion) drove the round-1
+corrections, and a fix round that reproduced every review number in-script (zero CI
+divergence).
+
+**Ruling: NO registration.** The two clean separators are filed as **display-tier
+descriptive census facts**, retained as confluence context:
+
+- **`realized_vol_63d` (+11.6pts gate-matched, α/m-clean)** and
+  **`updown_dollar_vol_ratio` (+0.13, α/m-clean)** are genuine, strictly-pre-onset
+  participation signatures — but they precede breakaway **MOTION** (they hold for
+  blow-offs; updown fails on the kept_going split), not quality. They are
+  watchlist-context facts, not rankers. Any future attempt to promote either into a
+  screen/ranker requires a fresh prereg AND must clear the **gate-matched t0−1 ruler
+  established here** — the full-population t0 numbers are known-inflated and may not
+  be cited as the effect size.
+- **`dollar_vol_z21` / `dv_5_60_ratio` as PRE-onset fingerprints: REFUTED — onset-bar
+  + selection-gate artifacts** (NULL at t0−1 gate-matched). The volume spike IS the
+  breakout bar; 43% of episodes wouldn't pass the detector's own volume gate one day
+  earlier. Registry row appended (DO_NOT_REBUILD §2).
+- **`drawdown_from_252d_high` — SUGGESTIVE only** (95% + ticker-cluster CIs hold;
+  α/m flips under gate-matching; non-mirror across the quality split). May be
+  revisited only under a prereg with the same gate-matched ruler.
+
+**Layer-3 is now complete: (a) census null on quality (W3), (b) two modest motion
+signatures pre-onset (W4).** The combined read stands: nothing measurable today
+identifies the future *winner* — not at onset, not before it. The discriminating
+information, if it exists, is in the forward-accruing substrates (options/revisions,
+first answerable ~2027-06) or in holding-policy conditioned on post-onset evidence
+(the PSQ tilt lane, #3203). Scope caveats carried: sector-mapped cohort only (45%
+IT), survivor-lean store, engine SHA pinned for control reproducibility.
 
