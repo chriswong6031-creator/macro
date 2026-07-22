@@ -387,7 +387,7 @@ def _stage(edge: float, gap: int, lean: int, flags: list, n_components: int, lag
 # --------------------------------------------------------------------------- #
 def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = None,
              discovery: dict | None = None, traj: dict | None = None,
-             entry_gate: dict | None = None) -> dict:
+             entry_gate: dict | None = None, gov: dict | None = None) -> dict:
     news = v.get("news") or {}
     alt = v.get("alt") or {}
     radar = v.get("radar") or {}
@@ -462,6 +462,19 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     # continuous leading-gap multiplier — no binary cliff: ±15% per net leading desk, capped ±2
     gap_mult = 1.0 + 0.15 * max(-2, min(2, gap["gap"]))
     opportunity = round(min(100.0, 100.0 * signal_core * fals_pen * edge["score"] * gap_mult), 1)
+    # ── SIGNAL GOVERNOR (de-escalation only) — close the measure→act loop ──────────────────
+    # If a feeder has been PROVEN mis-firing by its matured, overlap-robust track record
+    # (engine.signal_governor), scale DOWN the opportunity of the names it is bullishly driving.
+    # trust ∈ [floor,1] ⇒ opportunity can only fall, never rise. No governor / healthy ⇒ no-op.
+    # The STAGE label is left ungoverned (it describes the feeders' read); only the RANK moves.
+    gov_mult, governed_by = 1.0, []
+    if gov and lean > 0:
+        rt = gov.get("radar", 1.0)
+        if rt < 1.0 and radar.get("state") in _POS_RADAR:
+            gov_mult *= rt
+            governed_by.append("radar")
+    if gov_mult < 1.0:
+        opportunity = round(opportunity * gov_mult, 1)
     # the lifecycle gate uses NON-discovery evidence (n_base) so a single off-tape discovery
     # feed cannot, by itself, label a name 'emerging' or push it into the actionable cohort.
     # rolling_over is the price VETO — a broken name can never read emerging/early.
@@ -486,6 +499,7 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
         "sectors": sectors[:3], "baskets": (news.get("baskets") or [])[:3],
         "composite_conviction": composite, "lean": lean,
         "opportunity_score": opportunity, "edge_remaining": edge["score"],
+        "governor_mult": round(gov_mult, 3), "governed_by": governed_by or None,
         "edge_drivers": edge["drivers"], "edge_components": edge["n_components"], "stage": stage,
         "entry_gate": entry_gate, "trajectory": traj or None,
         "leading_gap": gap["gap"], "lead_up": gap["lead_up"], "lag_up": gap["lag_up"],
@@ -728,6 +742,13 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     vel = load_velocity(tickers, today)
     cidx = _catalyst_index(special, today)
     didx = (discovery or {}).get("by_ticker") or {}
+    # SIGNAL GOVERNOR — the per-feeder trust map (de-escalation only). Absent/corrupt ⇒ {}
+    # (identity), so a hub with no governor file ranks byte-identically to before. Never raises.
+    try:
+        from engine import signal_governor
+        gov = signal_governor.load_trust(config.ROOT)
+    except Exception:  # noqa: BLE001 — governor is additive, never fatal to the build
+        gov = {}
     # PRICE-TRAJECTORY spine + validated entry gate — the anti-inversion pair. Load the
     # yahoo close ONCE per name (reused for both the trajectory read and any on-demand gate),
     # so a rolling-over / broken name can be vetoed out of the hero list and stage.
@@ -742,7 +763,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
 
     _pr = {t: _price_read(t) for t in tickers}
     dossiers = [_dossier(t, v, pidx, vel, cidx.get(t), didx.get(t),
-                         traj=_pr[t][0], entry_gate=_pr[t][1]) for t, v in tickers.items()]
+                         traj=_pr[t][0], entry_gate=_pr[t][1], gov=gov) for t, v in tickers.items()]
     # DISCOVERY: inject OFF-desk candidates (not in any feeder's universe) as their own dossiers.
     # Bound the injection to the strongest few (off_desk is disc-sorted) so a large lagging-
     # confirmer feed (e.g. insider clusters) can't flood the ranked command list; the rest still

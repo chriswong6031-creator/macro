@@ -41,6 +41,7 @@ import pandas as pd
 
 from engine.ai_desk import _close_series, _level_asof  # price helpers — do NOT reinvent
 from engine.ai_desk_scorer import _close_at, _covers   # also reuse; same parquet layer
+from engine import validation as V                      # HAC t-stat machinery — do NOT reinvent
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -105,6 +106,36 @@ def _is_matured(row: dict, root: Path, horizon_d: int, today: date) -> bool:
         )
     except Exception:  # noqa: BLE001
         return False
+
+
+_STATE_DIR = {"POSITIVE_DIVERGENCE": 1, "CONFIRMED_UP": 1,
+              "NEGATIVE_DIVERGENCE": -1, "CONFIRMED_DOWN": -1}
+
+
+def _daily_hac_signed_ic(enriched: list[dict], horizon_d: int) -> dict:
+    """RIGOROUS, overlap-robust signal quality: per-DATE cross-sectional Spearman IC of
+    (edge_score signed by the state's implied direction) vs fwd_rel_return, summarized with a
+    Newey-West HAC t-stat at lag=horizon. The pooled ``ic_all`` above OVERSTATES significance
+    because daily snapshots with an h-day forward window overlap for ~h days (the IC series
+    autocorrelates at lag h). This is the number the signal governor gates de-escalation on —
+    never the pooled Spearman. Needs ≥10 names/date and ≥6 dates; else returns {n_days:…}."""
+    by_date: dict[str, list] = {}
+    for r in enriched:
+        d = _STATE_DIR.get(r.get("state"), 0)
+        if not d:                                   # no directional claim ⇒ excluded
+            continue
+        by_date.setdefault(r["date"], []).append((r["edge_score"] * d, r["fwd_rel_return"]))
+    ics: list[float] = []
+    for _, pairs in sorted(by_date.items()):
+        xs = [p[0] for p in pairs]
+        ys = [p[1] for p in pairs]
+        if len(xs) < 10 or len(set(xs)) < 2 or len(set(ys)) < 2:   # need spread for a rank corr
+            continue
+        ic = V.rank_ic(xs, ys)
+        if ic == ic:                                # not NaN
+            ics.append(ic)
+    # periods_per_year=2*h ⇒ ic_summary sets the NW lag to h (its lag = periods_per_year//2)
+    return V.ic_summary(ics, periods_per_year=2 * horizon_d) if len(ics) >= 6 else {"n_days": len(ics)}
 
 
 def _spearman_ic(xs: list[float], ys: list[float]) -> float | None:
@@ -344,6 +375,7 @@ def _compute_ic_for_horizon(
             "n_matured": n_matured,
             "ic_all": None,
             f"ic_rolling_{_ROLLING_N}": None,
+            "ic_daily_hac": {"n_days": 0},
             "by_bucket": {label: {"n": 0, "hit_rate": None, "mean_fwd_ret": None}
                           for label, *_ in _BUCKETS},
             "by_state": {},
@@ -419,6 +451,7 @@ def _compute_ic_for_horizon(
         "n_matured": n_matured,
         "ic_all": ic_all,
         f"ic_rolling_{_ROLLING_N}": ic_rolling,
+        "ic_daily_hac": _daily_hac_signed_ic(enriched, horizon_d),
         "by_bucket": by_bucket,
         "by_state": by_state,
         "note": note,

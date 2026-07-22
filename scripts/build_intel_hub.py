@@ -26,7 +26,7 @@ from datetime import date  # noqa: E402
 
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
-from engine import intel_hub, hub_track_record, desk_grader  # noqa: E402
+from engine import intel_hub, hub_track_record, desk_grader, signal_governor  # noqa: E402
 from engine.qledger_ui import chips_for_desks, load_track_record  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -246,10 +246,30 @@ def build(write: bool = True) -> dict:
         today = date.today()
         n_new = hub_track_record.snapshot(hub.get("track_rows"), today)
         track = hub_track_record.compute(today)
+        # PERSIST the graded track-record (was ephemeral) so the signal governor + audits can
+        # read it, and the page can show whether the hub's own claims have proven out.
+        try:
+            tp = config.ROOT / "data" / "hub" / "track_record.json"
+            tp.parent.mkdir(parents=True, exist_ok=True)
+            tp.write_text(json.dumps(track, indent=2, default=str))
+        except Exception as e:  # noqa: BLE001
+            log.warning("hub track-record persist failed: %s", e)
         log.info("hub track-record: +%d snapshots, %d total, %d matured-any",
                  n_new, track.get("n_snapshots", 0), sum(1 for h in (track.get("horizons") or {}).values() if h.get("n_matured")))
     except Exception as e:  # noqa: BLE001
         log.warning("hub track-record step failed: %s", e)
+    # SIGNAL GOVERNOR — recompute the de-escalation trust map from the now-fresh track records
+    # (radar_ic.json + the hub track-record just persisted). It PERSISTS to
+    # data/hub/signal_governor.json and is APPLIED on the next build's intel_hub.build() — a
+    # deliberate one-build lag for a slow-moving, arm-by-evidence governor. Degrade-safe.
+    try:
+        gov = signal_governor.compute(persist=True)
+        hub["signal_governor"] = gov
+        if gov.get("n_demoted"):
+            log.info("signal governor: %s", gov.get("note"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("signal governor step failed: %s", e)
+        hub["signal_governor"] = {}
     hub.pop("track_rows", None)                    # heavy; not part of the published command view
     hub["track_record"] = track
     # UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d). intel_hub uses the ADAPTER over the
