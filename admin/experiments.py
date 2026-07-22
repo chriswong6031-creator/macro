@@ -18,6 +18,17 @@ from .paths import SITE
 
 _REGISTRY = SITE / "marketdata" / "experiments.json"
 _PRIO = {"high": 0, "medium": 1, "low": 2}
+# Keys the admin panel actually renders (admin/static/app.js RENDER.experiments) — plus
+# derived timing (days_until/ready). The registry ships large prose/history blobs the front
+# end never reads (come_back_note, maturation, storage, started, priority, …); projecting the
+# response down to this whitelist drops ~100KB of unrendered bulk off /api/experiments.
+# NB: `priority` is used by the panel() sort below but is not rendered, so it is intentionally
+# excluded here (sort runs before projection).
+_RENDER_KEYS = (
+    "id", "name", "what", "source", "kind", "status", "cadence",
+    "come_back_on", "next_step", "phase_hint", "state", "surfaced",
+    "days_until", "ready",
+)
 # statuses that are already concluded (don't re-flag their come-back date as "newly ready")
 _DONE = {"validated", "proven"}
 # kinds that never auto-mature a result on their come-back date (a re-check prompt, not a result)
@@ -74,10 +85,13 @@ def panel() -> dict:
     by_status: dict[str, int] = {}
     for e in exps:
         by_status[e.get("status") or "?"] = by_status.get(e.get("status") or "?", 0) + 1
+    # Project each record down to the keys the panel renders (drops unrendered prose/history
+    # blobs — see _RENDER_KEYS). Sorting above already consumed the full dicts (priority).
+    slim = [{k: e[k] for k in _RENDER_KEYS if k in e} for e in exps]
     return {
         "ok": True, "as_of": reg.get("as_of"), "generated_at": reg.get("generated_at"),
         "today": _today().isoformat(), "n": len(exps), "ready_count": len(ready),
-        "by_status": by_status, "experiments": exps, "note": reg.get("note"),
+        "by_status": by_status, "experiments": slim, "note": reg.get("note"),
     }
 
 

@@ -408,16 +408,31 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": "authentication required"}, 401)
 
             if path == "/api/summary":
+                # Each component is isolated so one failing sub-call degrades ONE landing
+                # tile instead of 500-ing the whole page. health + cost are PROJECTED to the
+                # few fields the landing tiles read — the Health/AI-Cost tabs fetch the full
+                # /api/health and /api/cost respectively (this dropped the payload ~104KB->~12KB).
+                def _safe(fn):
+                    try:
+                        return fn()
+                    except Exception as exc:  # noqa: BLE001
+                        return {"error": str(exc)}
+                _health = _safe(health.summary)
+                _cost = _safe(ai_cost.estimate)
+                if isinstance(_health, dict) and "error" not in _health:
+                    _health = {k: v for k, v in _health.items() if k not in ("source_rows", "markets")}
+                if isinstance(_cost, dict) and "error" not in _cost:
+                    _cost = {k: _cost.get(k) for k in ("monthly_usd", "effective_daily_usd")}
                 return self._json({
-                    "meta": _repo_summary(),
-                    "flags": flags.snapshot(),
-                    "brief": brief.panel(),
-                    "health": health.summary(),
-                    "cost": ai_cost.estimate(),
-                    "git": gitops.status(),
-                    "system": system.snapshot(),
-                    "services": services.status(),
-                    "experiments": experiments.alert_summary(),
+                    "meta": _safe(_repo_summary),
+                    "flags": _safe(flags.snapshot),
+                    "brief": _safe(brief.panel),
+                    "health": _health,
+                    "cost": _cost,
+                    "git": _safe(gitops.status),
+                    "system": _safe(system.snapshot),
+                    "services": _safe(services.status),
+                    "experiments": _safe(experiments.alert_summary),
                 })
             if path == "/api/flags":
                 return self._json(flags.snapshot())

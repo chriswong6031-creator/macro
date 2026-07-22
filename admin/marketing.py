@@ -62,6 +62,24 @@ _CONTENT_ACCRUING_NOTE = (
     "content_plan.json not yet written — "
     "accruing after first nightly governor run."
 )
+# Content Studio payload was ~363KB, most of it internal underscore-prefixed
+# post keys the browser render never reads (the full Prophet ``_plan`` alone is
+# ~80KB across the queue).  We strip underscore keys per post before shipping,
+# keeping only the small flags the render surfaces as plain-word badges
+# (``_live_gate_fail`` → "signal demoted", ``_copy_violations`` → caution chip).
+_CONTENT_POST_KEEP = frozenset({"_live_gate_fail", "_copy_violations"})
+
+
+def _strip_post_internals(post: dict) -> dict:
+    """Drop internal underscore-prefixed keys from a queue post, keeping the
+    small whitelist the Content Studio render reads.  Non-dict rows pass
+    through untouched (fail-soft)."""
+    if not isinstance(post, dict):
+        return post
+    return {
+        k: v for k, v in post.items()
+        if not k.startswith("_") or k in _CONTENT_POST_KEEP
+    }
 _LAB_WAITING_NOTE = (
     "No live posts yet — the Lab starts measuring once Broadcast goes live (W1). "
     "The hypotheses below are seeded and waiting for evidence."
@@ -358,10 +376,23 @@ def content(root=None) -> dict:
                 "distinctness": None,
                 "summary": None,
             }
+        # Strip internal underscore-prefixed keys from every queued post before
+        # shipping to the browser — the render reads none of the big ones (the
+        # full Prophet ``_plan`` was ~80KB across the queue).  Small whitelisted
+        # flags survive (see _CONTENT_POST_KEEP).
+        accounts = []
+        for acct in (cp.get("accounts") or []):
+            if isinstance(acct, dict) and isinstance(acct.get("queue"), list):
+                acct = {
+                    **acct,
+                    "queue": [_strip_post_internals(p) for p in acct["queue"]],
+                }
+            accounts.append(acct)
+
         return {
             "ok": True,
             "content_types": cp.get("content_types") or [],
-            "accounts": cp.get("accounts") or [],
+            "accounts": accounts,
             "featured_charts": cp.get("featured_charts") or [],
             "distinctness": cp.get("distinctness"),
             "summary": cp.get("summary"),

@@ -223,7 +223,9 @@ def _section_engine_health() -> dict:
                 "as_of": nw_health.get("as_of"),
                 "cortex_source": (nw_health.get("cortex") or {}).get("cortex_source"),
                 "summary_counts": nw_health.get("summary_counts"),
-                "lobes": nw_health.get("lobes", []),
+                # NOTE: per-lobe `lobes` block (~69KB) intentionally dropped — no
+                # client code renders nw_health.lobes; only the cheap scalars
+                # above/below are read. Per-lobe detail lives at /api/neural_web/lobes.
                 "cortex": nw_health.get("cortex"),
                 "workflow_conformance_misses": nw_health.get("workflow_conformance_misses", []),
             },
@@ -1290,6 +1292,10 @@ def lobes_panel() -> dict:
         "desc_health": desc_health,
         "graph": graph_info,
         "groups": groups,
+        # The UI renders only `groups` (per-group nested lobes), NOT this flat copy
+        # (~72KB). It's kept solely because the test suite uses it as the canonical lobe
+        # enumeration; removing it + migrating those tests to flatten `groups` is a
+        # separate follow-up. The heavier nw_health.lobes block (~64KB) IS dropped above.
         "lobes": lobes_flat,
         "independence": independence,
         # W-AI: Master Brain pin (additive — groups/lobes contract unchanged)
