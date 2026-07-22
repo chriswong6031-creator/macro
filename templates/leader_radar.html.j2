@@ -97,6 +97,33 @@
   --radius-card: 14px;
   --radius-chip: 6px;
   --transition: 0.18s ease;
+  /* ── mx5 port: mono numerals + deliberate type scale ── */
+  --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  --fs-display: 44px;
+  --fs-num-xl:  38px;
+  --fs-h1:      27px;
+  --fs-num-lg:  22px;
+  --fs-h2:      16px;
+  --fs-md:      15px;
+  --fs-body:    14px;
+  --fs-sm:      12.5px;
+  --fs-label:   11px;
+  --fs-micro:   10px;
+  /* ── laser hairlines + machined-surface shadow ── */
+  --hair:        rgba(255,255,255,0.06);
+  --hair-strong: rgba(255,255,255,0.11);
+  --tile:        rgba(255,255,255,0.025);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.05), 0 1px 1px rgba(0,0,0,.28), 0 16px 36px -22px rgba(0,0,0,.62);
+  /* ── mx5 glass card system ── */
+  --mx5-glass-bg:     rgba(17,22,31,.60);
+  --mx5-glass-border: rgba(255,255,255,.10);
+  --mx5-glass-shadow: 0 8px 32px rgba(0,0,0,.5), 0 1.5px 0 rgba(255,255,255,.06) inset;
+  --mx5-glass-hover:  0 16px 46px -8px rgba(0,0,0,.6), 0 1.5px 0 rgba(255,255,255,.10) inset;
+  --mx5-blur:         blur(20px) saturate(1.35);
+  --mx5-radius-card:  18px;
+  /* ── section rail + eyebrow tracking ── */
+  --rail: var(--col-ignition);
+  --trk:  .16em;
 }
 [data-theme="light"] {
   --bg-base: #f0f2f8;
@@ -113,14 +140,115 @@
   --glow-quiet: rgba(124,58,237,0.10);
   --glow-breakaway: rgba(34,197,94,0.10);
   --glow-failed: rgba(239,68,68,0.07);
+  /* mx5 light overrides */
+  --hair:        rgba(15,20,35,0.07);
+  --hair-strong: rgba(15,20,35,0.12);
+  --tile:        rgba(15,20,35,0.02);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7), 0 1px 2px rgba(20,30,50,.05), 0 16px 34px -22px rgba(20,30,50,.18);
+  --mx5-glass-bg:     rgba(255,255,255,.82);
+  --mx5-glass-border: rgba(15,20,35,.09);
+  --mx5-glass-shadow: 0 12px 34px -14px rgba(20,32,64,.22), 0 1.5px 0 rgba(255,255,255,.9) inset;
+  --mx5-glass-hover:  0 18px 46px -12px rgba(20,32,64,.28), 0 1.5px 0 rgba(255,255,255,.95) inset;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:15px;scroll-behavior:smooth;}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;background:var(--bg-base);color:var(--text-primary);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;margin:0;padding-top:24px;}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 15% 20%,rgba(124,58,237,0.12) 0%,transparent 70%),radial-gradient(ellipse 50% 35% at 85% 10%,rgba(59,130,246,0.10) 0%,transparent 70%),radial-gradient(ellipse 40% 30% at 60% 80%,rgba(34,197,94,0.07) 0%,transparent 70%);z-index:0;}
+body{font-family:var(--font-ui,-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif);background:var(--bg-base);color:var(--text-primary);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;margin:0;padding-top:24px;
+  --aur-a:rgba(59,130,246,0.13);--aur-b:rgba(124,58,237,0.12);--aur-c:rgba(34,197,94,0.06);}
+/* Regime-tinted ambient aurora (static — painted once, perf-safe) */
+body.rg-narrow{--aur-a:rgba(245,158,11,0.14);--aur-b:rgba(59,130,246,0.10);--aur-c:rgba(124,58,237,0.06);}
+body.rg-broad{--aur-a:rgba(34,197,94,0.15);--aur-b:rgba(59,130,246,0.10);--aur-c:rgba(34,197,94,0.07);}
+body.rg-mixed{--aur-a:rgba(59,130,246,0.12);--aur-b:rgba(124,58,237,0.11);--aur-c:rgba(148,163,184,0.05);}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(680px 460px at 12% -6%,var(--aur-a) 0%,transparent 68%),
+    radial-gradient(620px 460px at 92% 2%,var(--aur-b) 0%,transparent 70%),
+    radial-gradient(760px 520px at 55% 114%,var(--aur-c) 0%,transparent 70%);}
 a{text-decoration:none;color:inherit;}
-.page-wrap{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:20px 28px 48px;}
-.glass{background:var(--bg-glass);border:1px solid var(--border);border-radius:var(--radius-card);backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);}
+.page-wrap{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:20px 28px 52px;}
+.glass{background:var(--mx5-glass-bg);border:1px solid var(--mx5-glass-border);border-radius:var(--mx5-radius-card);backdrop-filter:var(--mx5-blur);-webkit-backdrop-filter:var(--mx5-blur);box-shadow:var(--mx5-glass-shadow);}
+/* Mono tabular numerals — the terminal feel */
+.num{font-family:var(--num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;letter-spacing:-.01em;}
+/* ── mx5 animation keyframes (opacity-only / one-shot — perf-safe) ── */
+@keyframes lrRise{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+@keyframes lrGlowBreathe{0%,100%{opacity:.32;}50%{opacity:.72;}}
+@keyframes lrDrawIn{to{stroke-dashoffset:0;}}
+@keyframes lrGaugeSweep{from{transform:rotate(-118deg);}to{transform:var(--gauge-rot,rotate(0deg));}}
+@keyframes lrBarGrow{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+@keyframes lrDotPulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+@keyframes lrGaugeSweep{from{transform:rotate(-95deg);}}
+/* ═══════════════ HERO ═══════════════ */
+.lr-hero{position:relative;display:grid;grid-template-columns:minmax(0,0.86fr) minmax(0,1.14fr);gap:0;overflow:hidden;margin-bottom:20px;padding:0;animation:lrRise .5s cubic-bezier(.22,.9,.26,1.02) both;}
+.lr-hero-read{padding:24px 26px 22px;display:flex;flex-direction:column;gap:12px;min-width:0;}
+.lr-eyebrow{font-size:var(--fs-label);font-weight:700;letter-spacing:var(--trk);text-transform:uppercase;color:var(--text-muted);}
+.lr-verdict-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.lr-verdict{font-size:var(--fs-display);font-weight:800;letter-spacing:-.025em;line-height:.98;color:var(--text-primary);}
+.lr-verdict.r-narrow{color:var(--col-crowded);}
+.lr-verdict.r-broad{color:var(--col-breakaway);}
+.lr-verdict.r-mixed{color:var(--text-primary);}
+.lr-stance{font-size:var(--fs-md);font-weight:700;letter-spacing:-.01em;color:var(--text-primary);}
+.lr-stance .lr-stance-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:baseline;box-shadow:0 0 10px currentColor;}
+.lr-says{font-size:var(--fs-sm);color:var(--text-secondary);line-height:1.5;max-width:46ch;}
+/* what-would-flip-it callout */
+.lr-flip{display:flex;gap:9px;align-items:flex-start;font-size:0.78rem;line-height:1.45;color:var(--text-secondary);padding:9px 12px;border-radius:10px;background:color-mix(in srgb,var(--col-crowded) 8%,transparent);border:1px solid color-mix(in srgb,var(--col-crowded) 22%,transparent);}
+.lr-flip .lr-flip-ar{color:var(--col-crowded);font-weight:800;flex-shrink:0;}
+/* count chips */
+.lr-counts{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;}
+.lr-count{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border-radius:9px;background:var(--tile);border:1px solid var(--hair-strong);font-size:0.74rem;font-weight:600;color:var(--text-secondary);}
+.lr-count b{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.95rem;font-weight:800;color:var(--text-primary);letter-spacing:-.02em;}
+.lr-count .lr-cdot{width:7px;height:7px;border-radius:50%;}
+/* ── arc gauge ── */
+.lr-gauge-wrap{display:flex;align-items:center;gap:16px;margin:2px 0 2px;}
+.lr-gauge{position:relative;width:150px;height:92px;flex-shrink:0;}
+.lr-gauge svg{width:150px;height:92px;overflow:visible;display:block;}
+.lr-gauge-track{fill:none;stroke:var(--hair-strong);stroke-width:9;stroke-linecap:round;}
+.lr-gauge-arc{fill:none;stroke-width:9;stroke-linecap:round;}
+.lr-tick{stroke:var(--text-dim);stroke-width:2;stroke-linecap:round;}
+.lr-needle{stroke:var(--text-primary);stroke-width:3;stroke-linecap:round;transform-origin:110px 110px;animation:lrGaugeSweep 1s cubic-bezier(.22,.9,.26,1.02);}
+.lr-needle-hub{fill:var(--text-primary);}
+.lr-gauge-val{position:absolute;left:0;right:0;bottom:2px;text-align:center;}
+.lr-gauge-num{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:26px;font-weight:800;letter-spacing:-.03em;color:var(--text-primary);line-height:1;}
+.lr-gauge-cap{font-size:0.62rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);margin-top:2px;}
+.lr-gauge-scale{display:flex;justify-content:space-between;font-size:0.6rem;color:var(--text-dim);width:150px;margin-top:-6px;font-family:var(--num);}
+.lr-gauge-side{min-width:0;}
+.lr-gauge-side .lr-gs-line{font-size:0.76rem;color:var(--text-secondary);line-height:1.45;}
+.lr-gauge-side .lr-gs-line b{color:var(--text-primary);font-weight:700;}
+/* ── lifecycle funnel (hero right) ── */
+.lr-funnel{position:relative;padding:22px 24px 20px;border-left:1px solid var(--hair);display:flex;flex-direction:column;justify-content:center;min-width:0;background:linear-gradient(180deg,rgba(255,255,255,0.012),transparent 40%);}
+.lr-dist{display:flex;height:8px;border-radius:5px;overflow:hidden;margin:18px 0 8px;background:var(--hair-strong);}
+.lr-dist-seg{height:100%;animation:lrBarGrow .7s cubic-bezier(.22,.9,.26,1.02) both;transform-origin:left;}
+.lr-dist-key{display:flex;gap:16px;font-size:0.66rem;color:var(--text-muted);}
+.lr-dist-key .num{color:var(--text-secondary);font-weight:700;}
+.lr-dist-key .lr-dk-dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:middle;}
+.lr-funnel-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:13px;}
+.lr-funnel-title{font-size:var(--fs-label);font-weight:700;letter-spacing:var(--trk);text-transform:uppercase;color:var(--text-muted);}
+.lr-funnel-sub{font-size:0.7rem;color:var(--text-dim);}
+.lr-flow{display:flex;align-items:stretch;gap:0;}
+.lr-fstage{position:relative;flex:1 1 0;min-width:0;padding:2px 8px 2px 0;display:flex;flex-direction:column;gap:3px;animation:lrRise .5s cubic-bezier(.22,.9,.26,1.02) both;}
+.lr-fstage+.lr-fstage{padding-left:12px;border-left:1px solid var(--hair);}
+.lr-fstage.is-empty{opacity:.5;}
+.lr-fs-top{display:flex;align-items:center;gap:5px;}
+.lr-fs-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.lr-fs-name{font-size:0.66rem;font-weight:700;color:var(--text-secondary);line-height:1.15;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lr-fs-count{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:1.7rem;font-weight:800;line-height:1;letter-spacing:-.03em;}
+.lr-fs-stance{font-size:0.6rem;color:var(--text-muted);line-height:1.25;}
+.lr-fs-arrow{position:absolute;right:-6px;top:16px;z-index:2;font-size:0.6rem;color:var(--text-dim);pointer-events:none;}
+.lr-funnel-foot{display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);align-items:center;flex-wrap:wrap;}
+.lr-ff-item{display:flex;align-items:center;gap:7px;font-size:0.7rem;color:var(--text-muted);}
+.lr-ff-item b{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.95rem;font-weight:800;letter-spacing:-.01em;}
+.lr-ff-item.failed b{color:var(--col-failed);}
+.lr-ff-sep{width:1px;height:14px;background:var(--hair-strong);}
+.lr-ff-chips{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto;}
+.lr-ff-chip{font-family:var(--num);font-size:0.6rem;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--col-failed) 11%,transparent);color:var(--col-failed);font-weight:600;text-decoration:none;}
+.lr-ff-chip:hover{background:color-mix(in srgb,var(--col-failed) 20%,transparent);}
+@media(max-width:920px){
+  .lr-hero{grid-template-columns:1fr;}
+  .lr-funnel{border-left:none;border-top:1px solid var(--hair);}
+  .lr-flow{overflow-x:auto;}
+  .lr-fstage{min-width:78px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .lr-hero,.lr-fstage{animation:none;}
+  .lr-needle{animation:none;}
+}
 /* ── LANG/THEME visibility ── */
 .l-zh{display:none;}
 [data-lang="zh"] .l-en{display:none;}
@@ -129,104 +257,91 @@ a{text-decoration:none;color:inherit;}
 .banner{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:12px;border:1px solid;}
 .banner-stale{background:rgba(239,68,68,.08);border-color:#ef4444;color:#ef4444;}
 .banner-degraded{background:rgba(245,158,11,.08);border-color:#f59e0b;color:#f59e0b;}
-/* ── HEADER ── */
-.site-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:18px 24px;margin-bottom:20px;}
-.header-left{flex:1;min-width:0;}
-.header-eyebrow{font-size:0.72rem;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;}
-.header-title{font-size:1.65rem;font-weight:700;letter-spacing:-0.02em;color:var(--text-primary);line-height:1.2;}
-.header-subtitle{margin-top:6px;font-size:0.88rem;color:var(--text-secondary);max-width:480px;}
-.header-meta{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:0.78rem;color:var(--text-muted);flex-wrap:wrap;}
+/* ── HERO META + affordances ── */
+.header-meta{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:0.75rem;color:var(--text-muted);flex-wrap:wrap;}
 .header-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--text-dim);}
-.badge-seeding{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);color:#f59e0b;font-size:0.72rem;font-weight:600;}
-.badge-seeding::before{content:'◉';font-size:0.6rem;}
 .q-afford{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--border-strong);color:var(--text-muted);font-size:0.65rem;cursor:pointer;transition:var(--transition);font-weight:700;border:1px solid var(--border);}
 .q-afford:hover{background:var(--col-ignition);color:#fff;}
-/* Regime capsule */
-.header-right{flex-shrink:0;}
-.regime-capsule{background:var(--bg-glass-2);border:1px solid var(--border-strong);border-radius:var(--radius-card);padding:16px 20px;text-align:center;min-width:200px;}
-.regime-label-top{font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
-.regime-plain{font-size:1.05rem;font-weight:700;line-height:1.2;}
-.regime-plain.r-broad{color:var(--col-breakaway);}
-.regime-plain.r-narrow{color:#f59e0b;}
-.regime-plain.r-mixed{color:var(--text-secondary);}
-.regime-sub{font-size:0.75rem;color:var(--text-secondary);margin-top:4px;}
-.regime-evidence{font-size:0.75rem;color:var(--text-secondary);margin-top:4px;line-height:1.3;}
-.regime-stance{font-size:0.78rem;font-weight:600;color:var(--text-primary);margin-top:6px;}
-.regime-chips-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
-.regime-chip-sm{padding:2px 7px;border-radius:4px;font-size:0.65rem;font-weight:600;letter-spacing:0.04em;}
-.regime-chip-sm.on{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.25);}
-.regime-chip-sm.off{background:rgba(107,114,128,0.10);color:var(--text-muted);border:1px solid var(--border);}
 /* ── SECTION LABELS ── */
 .section-header{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
 .section-title{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
 .section-count{font-size:0.72rem;color:var(--text-dim);}
 .section-rule{flex:1;height:1px;background:var(--border);}
-/* ── CHANGED TONIGHT ── */
-.changed-tonight-section{margin-bottom:16px;}
-.changed-tonight-wrap{padding:12px 16px;border-radius:var(--radius-card);}
-.ct-empty{font-size:0.82rem;color:var(--text-muted);padding:4px 0;}
-.ct-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.82rem;border-bottom:1px solid var(--border);}
-.ct-row:last-child{border-bottom:none;}
-.ct-ticker{font-weight:700;font-size:0.88rem;min-width:60px;}
-.ct-arrow{color:var(--text-dim);font-size:0.8rem;}
-.ct-badge{border-radius:4px;padding:1px 6px;font-size:0.72rem;font-weight:600;}
-.ct-badge-enter{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);}
-.ct-badge-fire{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);}
-.ct-badge-exit{background:rgba(107,114,128,.10);color:var(--text-muted);border:1px solid rgba(107,114,128,.2);}
-.ct-badge-degrade{background:rgba(107,114,128,.10);color:var(--text-muted);border:1px solid rgba(107,114,128,.2);}
-.ct-badge-crowded{background:rgba(245,158,11,.12);color:#fcd34d;border:1px solid rgba(245,158,11,.25);}
-.ct-from{font-size:0.70rem;color:var(--text-dim);}
-.ct-overflow{font-size:0.72rem;color:var(--text-dim);padding:4px 0;}
-/* ── ONE SIGNAL AWAY ── */
-.near-trigger-section{margin-bottom:16px;}
-.near-trigger-wrap{padding:12px 16px;border-radius:var(--radius-card);}
-.nt-row{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:0.82rem;border-bottom:1px solid var(--border);}
-.nt-row:last-child{border-bottom:none;}
-.nt-ticker{font-weight:700;font-size:0.88rem;min-width:60px;}
-.nt-missing{display:flex;gap:6px;flex-wrap:wrap;}
-.nt-chip-missing{background:rgba(245,158,11,.10);color:#f59e0b;border:1px solid rgba(245,158,11,.25);border-radius:4px;padding:1px 6px;font-size:0.70rem;}
+/* ── TONIGHT'S FOCUS ── */
+.tonight-section{margin-bottom:20px;}
+.section-note{font-size:0.72rem;color:var(--text-muted);font-weight:500;}
+.tonight-wrap{padding:15px 17px;}
+.tonight-grid{display:flex;flex-wrap:wrap;gap:9px;}
+.move-card{display:inline-flex;align-items:center;gap:9px;padding:9px 14px 9px 12px;border-radius:11px;background:var(--bg-card);border:1px solid var(--border);position:relative;overflow:hidden;transition:var(--transition);text-decoration:none;animation:lrRise .4s cubic-bezier(.22,.9,.26,1.02) both;}
+.move-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mv-c,var(--text-muted));}
+.move-card:hover{border-color:var(--mv-c,var(--border-strong));transform:translateY(-1px);box-shadow:0 7px 20px rgba(0,0,0,.24);}
+.move-glyph{color:var(--mv-c);font-size:0.9rem;filter:drop-shadow(0 0 6px var(--mv-c));}
+.move-tkr{font-weight:800;font-size:0.92rem;color:var(--text-primary);letter-spacing:-.01em;}
+.move-ar{color:var(--text-dim);font-size:0.82rem;}
+.move-badge{font-size:0.68rem;font-weight:700;padding:2px 9px;border-radius:6px;background:color-mix(in srgb,var(--mv-c) 16%,transparent);color:var(--mv-c);white-space:nowrap;}
+.move-from{font-size:0.68rem;color:var(--text-muted);}
+.move-card.is-fire{--mv-c:var(--col-ignition);box-shadow:0 0 0 1px color-mix(in srgb,var(--col-ignition) 24%,transparent),0 6px 20px -6px var(--glow-ignition);}
+.move-card.is-crowded{--mv-c:var(--col-crowded);}
+.tonight-empty{font-size:0.82rem;color:var(--text-muted);padding:2px 0;}
+/* one signal away — folded in */
+.tonight-near{margin-top:13px;padding-top:12px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.tn-label{font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);flex-shrink:0;}
+.tn-chip{display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:8px;background:var(--tile);border:1px solid var(--hair-strong);font-size:0.74rem;text-decoration:none;transition:var(--transition);}
+.tn-chip:hover{border-color:var(--col-ignition);}
+.tn-chip .tn-tkr{font-weight:800;color:var(--text-primary);}
+.tn-chip .tn-miss{color:var(--col-crowded);font-size:0.66rem;}
+/* cooled summary — the de-noised de-escalations */
+.tonight-cooled{margin-top:13px;padding-top:12px;border-top:1px solid var(--hair);font-size:0.74rem;color:var(--text-muted);display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+.tonight-cooled b{color:var(--text-secondary);font-weight:700;}
+.cooled-list{font-size:0.68rem;color:var(--text-dim);font-family:var(--num);letter-spacing:.01em;}
 /* ── FIRE RECEIPTS ── */
-.fire-receipts-section{margin-bottom:16px;}
+.fire-receipts-section{margin-bottom:20px;}
 .fire-receipts-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
-.fire-receipts-table th{text-align:left;padding:6px 10px;color:var(--text-dim);font-size:0.70rem;font-weight:600;border-bottom:1px solid var(--border);}
-.fire-receipts-table td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text-secondary);}
+.fire-receipts-table th{text-align:left;padding:7px 12px;color:var(--text-dim);font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--hair-strong);}
+.fire-receipts-table td{padding:8px 12px;border-bottom:1px solid var(--hair);color:var(--text-secondary);font-variant-numeric:tabular-nums;}
 .fire-receipts-table tr:last-child td{border-bottom:none;}
-.fire-receipts-footer{font-size:0.72rem;color:var(--text-dim);padding:8px 0 2px;}
+.fire-receipts-table tbody tr{transition:var(--transition);}
+.fire-receipts-table tbody tr:hover td{background:color-mix(in srgb,var(--col-ignition) 6%,transparent);}
+.fire-receipts-table td:first-child,.fire-receipts-table td:nth-child(2){font-family:var(--num);}
+.fire-receipts-footer{font-size:0.72rem;color:var(--text-dim);padding:9px 2px 2px;}
 /* ── EARLY ENTRY BOARD ── */
-.early-entry-section{margin-bottom:24px;}
-.lane-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
-.lane-col{display:flex;flex-direction:column;gap:10px;}
-.lane-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;}
-.lane-header.ignition{background:rgba(59,130,246,0.10);border:1px solid rgba(59,130,246,0.20);}
-.lane-header.quiet{background:rgba(124,58,237,0.10);border:1px solid rgba(124,58,237,0.20);}
-.lane-header.suppressed{background:rgba(107,114,128,0.08);border:1px solid rgba(107,114,128,0.15);}
+.early-entry-section{margin-bottom:26px;}
+.lane-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.lane-col{display:flex;flex-direction:column;gap:11px;}
+.lane-header{display:flex;align-items:center;gap:9px;padding:11px 15px;border-radius:12px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.lane-header.ignition{background:color-mix(in srgb,var(--col-ignition) 12%,transparent);border:1px solid color-mix(in srgb,var(--col-ignition) 26%,transparent);}
+.lane-header.quiet{background:color-mix(in srgb,var(--col-quiet) 12%,transparent);border:1px solid color-mix(in srgb,var(--col-quiet) 24%,transparent);}
+.lane-header.suppressed{background:color-mix(in srgb,var(--col-suppressed) 10%,transparent);border:1px solid color-mix(in srgb,var(--col-suppressed) 18%,transparent);}
 .lane-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.lane-dot.ignition{background:var(--col-ignition);box-shadow:0 0 8px var(--col-ignition);}
-.lane-dot.quiet{background:var(--col-quiet);box-shadow:0 0 8px var(--col-quiet);}
+.lane-dot.ignition{background:var(--col-ignition);box-shadow:0 0 10px var(--col-ignition);}
+.lane-dot.quiet{background:var(--col-quiet);box-shadow:0 0 10px var(--col-quiet);}
 .lane-dot.suppressed{background:var(--col-suppressed);}
-.lane-name{font-size:0.85rem;font-weight:700;color:var(--text-primary);flex:1;}
-.lane-count-chip{font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:10px;}
-.lane-count-chip.ignition{background:rgba(59,130,246,0.20);color:#93c5fd;}
-.lane-count-chip.quiet{background:rgba(124,58,237,0.20);color:#c4b5fd;}
-.lane-count-chip.suppressed{background:rgba(107,114,128,0.15);color:var(--text-muted);}
+.lane-name{font-size:0.86rem;font-weight:700;color:var(--text-primary);flex:1;letter-spacing:-.01em;}
+.lane-count-chip{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.72rem;font-weight:800;padding:2px 9px;border-radius:10px;}
+.lane-count-chip.ignition{background:color-mix(in srgb,var(--col-ignition) 22%,transparent);color:#93c5fd;}
+.lane-count-chip.quiet{background:color-mix(in srgb,var(--col-quiet) 22%,transparent);color:#c4b5fd;}
+.lane-count-chip.suppressed{background:color-mix(in srgb,var(--col-suppressed) 18%,transparent);color:var(--text-muted);}
 /* Entry card */
-.entry-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;transition:var(--transition);cursor:pointer;position:relative;overflow:hidden;}
-.entry-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0;}
-.entry-card.ignition{border-color:rgba(59,130,246,0.25);}
-.entry-card.ignition::before{background:linear-gradient(90deg,var(--col-ignition),rgba(99,179,255,0.5));}
-.entry-card.ignition:hover{box-shadow:0 0 24px var(--glow-ignition);border-color:rgba(59,130,246,0.45);}
-.entry-card.quiet{border-color:rgba(124,58,237,0.22);}
-.entry-card.quiet::before{background:linear-gradient(90deg,var(--col-quiet),rgba(167,139,250,0.5));}
-.entry-card.quiet:hover{box-shadow:0 0 24px var(--glow-quiet);border-color:rgba(124,58,237,0.40);}
-.entry-card.suppressed{border-color:rgba(107,114,128,0.18);}
+.entry-card{background:var(--bg-card);border:1px solid var(--border);border-radius:13px;padding:14px 16px;transition:transform .16s ease,box-shadow .22s ease,border-color .2s ease;cursor:pointer;position:relative;overflow:hidden;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:lrRise .45s cubic-bezier(.22,.9,.26,1.02) both;}
+.entry-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;z-index:2;}
+.entry-card:hover{transform:translateY(-2px);}
+.entry-card.ignition{border-color:color-mix(in srgb,var(--col-ignition) 28%,transparent);}
+.entry-card.ignition::before{background:linear-gradient(90deg,var(--col-ignition),color-mix(in srgb,var(--col-ignition) 30%,transparent));}
+.entry-card.ignition:hover{box-shadow:0 10px 28px -6px var(--glow-ignition);border-color:color-mix(in srgb,var(--col-ignition) 50%,transparent);}
+.entry-card.quiet{border-color:color-mix(in srgb,var(--col-quiet) 24%,transparent);}
+.entry-card.quiet::before{background:linear-gradient(90deg,var(--col-quiet),color-mix(in srgb,var(--col-quiet) 30%,transparent));}
+.entry-card.quiet:hover{box-shadow:0 10px 28px -6px var(--glow-quiet);border-color:color-mix(in srgb,var(--col-quiet) 42%,transparent);}
+.entry-card.suppressed{border-color:color-mix(in srgb,var(--col-suppressed) 18%,transparent);}
 .entry-card.suppressed::before{background:linear-gradient(90deg,var(--col-suppressed),transparent);}
-.entry-card.suppressed:hover{box-shadow:0 0 16px var(--glow-suppressed);}
-.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
-.card-ticker{font-size:1.3rem;font-weight:800;letter-spacing:-0.02em;color:var(--text-primary);line-height:1;}
-.card-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
-.card-days{font-size:0.68rem;color:var(--text-muted);}
-.card-sparkline{width:64px;height:24px;}
-.spark-path{fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.entry-card.suppressed:hover{box-shadow:0 8px 20px -6px var(--glow-suppressed);}
+/* breathing glow — draws the eye to the time-sensitive ignition names */
+.entry-card.ignition::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:0 0 0 1px color-mix(in srgb,var(--col-ignition) 40%,transparent),0 0 20px 1px var(--glow-ignition);opacity:0;animation:lrGlowBreathe 3.9s ease-in-out infinite;}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px;}
+.card-ticker{font-size:1.34rem;font-weight:800;letter-spacing:-0.03em;color:var(--text-primary);line-height:1;}
+.card-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.card-days{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.66rem;color:var(--text-muted);letter-spacing:-.01em;}
+.card-sparkline{width:66px;height:24px;}
+.spark-path{fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 .spark-path.up{stroke:#4ade80;}
 .spark-path.down{stroke:#f87171;}
 .spark-path.flat{stroke:#8b90a8;}
@@ -234,91 +349,61 @@ a{text-decoration:none;color:inherit;}
 .evidence-bar{display:flex;align-items:center;gap:6px;margin-bottom:7px;}
 .dot-bar{display:flex;gap:3px;}
 .dot-bar-dot{width:6px;height:6px;border-radius:50%;transition:var(--transition);}
-.dot-bar-dot.filled.ignition{background:var(--col-ignition);}
-.dot-bar-dot.filled.quiet{background:var(--col-quiet);}
+.dot-bar-dot.filled.ignition{background:var(--col-ignition);box-shadow:0 0 6px color-mix(in srgb,var(--col-ignition) 60%,transparent);}
+.dot-bar-dot.filled.quiet{background:var(--col-quiet);box-shadow:0 0 6px color-mix(in srgb,var(--col-quiet) 55%,transparent);}
 .dot-bar-dot.filled.suppressed{background:var(--text-muted);}
 .dot-bar-dot.empty{background:var(--text-dim);}
 .ev-label{font-size:0.7rem;color:var(--text-muted);}
 .ev-label strong{color:var(--text-secondary);}
 /* evidence line */
-.evidence-line{font-size:0.78rem;color:var(--text-secondary);line-height:1.4;}
+.evidence-line{font-size:0.78rem;color:var(--text-secondary);line-height:1.45;}
 .ev-sep{color:var(--text-dim);margin:0 3px;}
 /* timing chip */
-.timing-chip{display:inline-flex;align-items:center;gap:4px;margin-top:7px;padding:3px 8px;border-radius:5px;font-size:0.7rem;font-weight:600;}
-.timing-chip.near{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.30);color:#93c5fd;}
-.timing-chip.watch{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.30);color:#c4b5fd;}
+.timing-chip{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 9px;border-radius:6px;font-size:0.7rem;font-weight:600;}
+.timing-chip.near{background:color-mix(in srgb,var(--col-ignition) 15%,transparent);border:1px solid color-mix(in srgb,var(--col-ignition) 30%,transparent);color:#93c5fd;}
+.timing-chip.watch{background:color-mix(in srgb,var(--col-quiet) 15%,transparent);border:1px solid color-mix(in srgb,var(--col-quiet) 30%,transparent);color:#c4b5fd;}
 /* fire badge */
-.fire-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:5px;font-size:0.68rem;font-weight:700;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.30);color:#fca5a5;}
+.fire-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:0.68rem;font-weight:700;background:color-mix(in srgb,var(--col-ignition) 15%,transparent);border:1px solid color-mix(in srgb,var(--col-ignition) 30%,transparent);color:#93c5fd;}
 /* Empty lane state */
-.lane-empty{padding:10px 12px;font-size:0.72rem;color:var(--text-muted);font-style:italic;border:1px solid rgba(59,130,246,0.15);border-radius:8px;background:rgba(59,130,246,0.05);line-height:1.5;}
-/* ── LIFECYCLE PIPELINE ── */
-.pipeline-section{margin-bottom:24px;}
-.pipeline-wrap{padding:18px 20px 20px;overflow-x:auto;}
-.pipe-sm-row{display:flex;align-items:stretch;gap:0;border-radius:12px;overflow:hidden;border:1px solid var(--border);min-height:108px;}
-.pipe-seg{display:flex;flex-direction:column;justify-content:flex-start;padding:12px 10px 10px;border-right:1px solid var(--border);cursor:default;transition:background 0.15s;position:relative;min-width:92px;}
-.pipe-seg:last-child{border-right:none;}
-.pipe-seg:hover{background:rgba(255,255,255,0.03);}
-.pipe-seg.empty-stage{border-style:dashed;background:transparent;opacity:0.65;min-width:92px;flex:0 0 92px !important;}
-.pipe-seg.empty-stage:hover{opacity:0.85;}
-.pipe-seg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-bottom:5px;display:inline-block;}
-.pipe-seg-header{display:flex;align-items:center;gap:5px;}
-.pipe-seg-name{font-size:0.72rem;font-weight:700;color:var(--text-primary);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pipe-seg-stance{font-size:0.65rem;color:var(--text-muted);margin-top:3px;line-height:1.3;}
-.pipe-seg-count{font-size:1.65rem;font-weight:800;line-height:1;margin-top:8px;margin-bottom:6px;}
-.pipe-seg-count.col-gray{color:var(--col-suppressed);}
-.pipe-seg-count.col-violet{color:#a78bfa;}
-.pipe-seg-count.col-blue{color:#93c5fd;}
-.pipe-seg-count.col-green{color:#4ade80;}
-.pipe-seg-count.col-led{color:#34d399;}
-.pipe-seg-count.col-amber{color:#fcd34d;}
-.pipe-seg-chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto;}
-.pipe-seg-chip{font-size:0.6rem;font-weight:600;padding:1px 5px;border-radius:4px;color:var(--text-secondary);background:var(--border);letter-spacing:0.03em;text-decoration:none;white-space:nowrap;}
-.pipe-seg-chip:hover{color:var(--text-primary);}
-.pipe-seg-chip-more{font-size:0.6rem;font-weight:600;padding:1px 5px;border-radius:4px;color:var(--text-dim);background:transparent;border:1px solid var(--border);}
-.pipe-seg-none-label{font-size:0.62rem;color:var(--text-dim);font-style:italic;margin-top:auto;}
-.pipe-seg-arrow{position:absolute;right:-9px;top:50%;transform:translateY(-50%);z-index:3;width:18px;height:18px;background:var(--bg-base);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--text-dim);pointer-events:none;}
-/* Failed side-pile */
-.pipe-failed-row{display:flex;align-items:center;gap:14px;margin-top:10px;padding:10px 14px;border-radius:10px;border:1px dashed rgba(239,68,68,0.28);background:rgba(239,68,68,0.04);}
-.pipe-failed-return{font-size:0.85rem;color:rgba(239,68,68,0.5);flex-shrink:0;}
-.pipe-failed-label{font-size:0.72rem;font-weight:700;color:#f87171;flex-shrink:0;}
-.pipe-failed-note{font-size:0.68rem;color:var(--text-muted);}
-.pipe-failed-count{font-size:1.25rem;font-weight:800;color:#f87171;flex-shrink:0;}
-.pipe-failed-chips{display:flex;flex-wrap:wrap;gap:3px;flex:1;}
-.pipe-failed-chip{font-size:0.6rem;padding:1px 5px;border-radius:4px;background:rgba(239,68,68,0.10);color:#f87171;font-weight:600;text-decoration:none;}
-.pipe-failed-chip:hover{background:rgba(239,68,68,0.18);}
-/* No-signal reservoir */
-.pipe-reservoir{display:flex;align-items:center;gap:10px;margin-top:8px;padding:7px 14px;border-radius:8px;background:rgba(55,65,81,0.15);border:1px solid rgba(55,65,81,0.25);opacity:0.7;}
-.pipe-reservoir-label{font-size:0.68rem;color:var(--text-dim);font-style:italic;}
-.pipe-reservoir-count{font-size:0.78rem;font-weight:700;color:var(--text-dim);}
+.lane-empty{padding:12px 13px;font-size:0.72rem;color:var(--text-muted);font-style:italic;border:1px dashed color-mix(in srgb,var(--col-ignition) 18%,transparent);border-radius:10px;background:color-mix(in srgb,var(--col-ignition) 4%,transparent);line-height:1.5;}
+@media(prefers-reduced-motion:reduce){.entry-card{animation:none;}.entry-card.ignition::after{animation:none;opacity:0;}}
+@media(pointer:coarse){.entry-card.ignition::after{animation:none;opacity:.25;}}
 /* ── DUAL CARDS ── */
-.dual-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.dual-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:26px;}
 .side-card{padding:20px 22px;}
-.side-card-title{font-size:0.88rem;font-weight:700;color:var(--text-primary);margin-bottom:4px;}
-.side-card-sub{font-size:0.75rem;color:var(--text-muted);margin-bottom:14px;}
+.side-card-title{font-size:0.92rem;font-weight:700;color:var(--text-primary);margin-bottom:5px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;}
+.side-card-title::before{content:'';width:3px;height:15px;border-radius:2px;background:linear-gradient(180deg,var(--rail),color-mix(in srgb,var(--rail) 35%,transparent));flex:none;}
+.side-card.sc-handoff{--rail:var(--col-breakaway);}
+.side-card.sc-rerate{--rail:var(--col-quiet);}
+.side-card-sub{font-size:0.75rem;color:var(--text-muted);margin-bottom:15px;margin-left:12px;}
 /* Handoff empty state */
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 0 8px;gap:8px;color:var(--text-muted);}
-.empty-icon{font-size:1.8rem;opacity:0.4;}
-.empty-label{font-size:0.8rem;font-weight:600;}
-.empty-sub{font-size:0.73rem;text-align:center;line-height:1.4;}
-.closest-list{margin-top:12px;}
-.closest-title{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:8px;}
-.closest-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.78rem;}
+.empty-state{display:flex;flex-direction:column;align-items:flex-start;padding:4px 0 2px;gap:5px;color:var(--text-muted);}
+.empty-label{font-size:0.8rem;font-weight:700;color:var(--text-secondary);}
+.empty-sub{font-size:0.73rem;line-height:1.5;}
+.closest-list{margin-top:15px;}
+.closest-title{font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:9px;}
+.closest-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--hair);font-size:0.78rem;}
 .closest-row:last-child{border-bottom:none;}
-.closest-ticker{font-weight:700;min-width:46px;color:var(--text-primary);}
-.closest-why{color:var(--text-muted);flex:1;font-size:0.73rem;}
+.closest-ticker{font-weight:700;min-width:118px;color:var(--text-primary);font-size:0.76rem;}
+.closest-why{color:var(--text-muted);flex:1;font-size:0.72rem;line-height:1.4;}
 /* Rerating card */
-.rerating-rows{display:flex;flex-direction:column;gap:6px;}
-.rerating-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:var(--bg-glass-2);border:1px solid var(--border);font-size:0.78rem;}
-.rerating-ticker{font-weight:700;min-width:42px;color:var(--text-primary);}
-.rerating-stage-chip{padding:1px 6px;border-radius:4px;font-size:0.63rem;font-weight:700;white-space:nowrap;}
-.rerating-stage-chip.s-breakaway{background:rgba(34,197,94,0.12);color:#4ade80;}
-.rerating-stage-chip.s-quiet{background:rgba(124,58,237,0.12);color:#c4b5fd;}
-.rerating-stage-chip.s-suppressed{background:rgba(107,114,128,0.12);color:#9ca3af;}
-.rerating-stage-chip.s-none{background:rgba(55,65,81,0.20);color:var(--text-muted);}
-.rerating-chips{display:flex;gap:4px;flex:1;flex-wrap:wrap;}
-.rerate-chip{padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:rgba(124,58,237,0.12);color:#c4b5fd;border:1px solid rgba(124,58,237,0.20);}
-.rerate-chip.warn{background:rgba(245,158,11,0.10);color:#fcd34d;border-color:rgba(245,158,11,0.20);}
-.rerate-chip.null-chip{background:transparent;color:var(--text-dim);border:1px solid var(--border);font-style:italic;}
+.rerating-rows{display:flex;flex-direction:column;gap:7px;}
+.rerating-row{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:9px;background:var(--tile);border:1px solid var(--hair-strong);font-size:0.78rem;transition:var(--transition);}
+.rerating-row:hover{border-color:var(--border-strong);}
+.rerating-row.rr-dim{opacity:0.6;}
+.rerating-ticker{font-family:var(--num);font-weight:800;min-width:46px;color:var(--text-primary);letter-spacing:-.01em;}
+.rerating-stage-chip{padding:2px 7px;border-radius:5px;font-size:0.63rem;font-weight:700;white-space:nowrap;}
+.rerating-stage-chip.s-breakaway{background:color-mix(in srgb,var(--col-breakaway) 14%,transparent);color:#4ade80;}
+.rerating-stage-chip.s-quiet{background:color-mix(in srgb,var(--col-quiet) 16%,transparent);color:#c4b5fd;}
+.rerating-stage-chip.s-suppressed{background:color-mix(in srgb,var(--col-suppressed) 16%,transparent);color:#9ca3af;}
+.rerating-stage-chip.s-leadership{background:color-mix(in srgb,var(--col-leading) 16%,transparent);color:#4ade80;}
+.rerating-stage-chip.s-crowded{background:color-mix(in srgb,var(--col-crowded) 16%,transparent);color:#fcd34d;}
+.rerating-stage-chip.s-none{background:color-mix(in srgb,var(--text-muted) 14%,transparent);color:var(--text-muted);}
+.rerating-chips{display:flex;gap:5px;flex:1;flex-wrap:wrap;align-items:center;}
+.rerate-chip{padding:2px 8px;border-radius:5px;font-size:0.65rem;font-weight:600;background:color-mix(in srgb,var(--col-breakaway) 13%,transparent);color:#4ade80;border:1px solid color-mix(in srgb,var(--col-breakaway) 24%,transparent);}
+.rerate-chip.warn{background:color-mix(in srgb,var(--col-crowded) 12%,transparent);color:#fcd34d;border-color:color-mix(in srgb,var(--col-crowded) 22%,transparent);}
+.rr-watching{font-size:0.68rem;color:var(--text-dim);font-style:italic;}
+.rr-footer{margin-top:12px;font-size:0.68rem;color:var(--text-dim);line-height:1.45;padding-top:10px;border-top:1px solid var(--hair);}
 /* ── FULL BOARD ── */
 .full-board-section{margin-bottom:24px;}
 .board-toggle{display:flex;align-items:center;gap:8px;padding:12px 18px;cursor:pointer;border-radius:var(--radius-card);border:1px solid var(--border);background:var(--bg-glass-2);transition:var(--transition);user-select:none;justify-content:space-between;}
@@ -372,10 +457,9 @@ a{text-decoration:none;color:inherit;}
 footer{padding:18px 24px;margin-top:8px;}
 .footer-honesty{font-size:0.76rem;color:var(--text-muted);line-height:1.5;}
 /* ── POPOVER ── */
-.popover-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:center;justify-content:center;}
+.popover-backdrop{display:none;position:fixed;inset:0;background:rgba(3,6,10,0.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;}
 .popover-backdrop.open{display:flex;}
-.popover-box{background:#1a1e2e;border:1px solid var(--border-strong);border-radius:14px;padding:20px 22px;max-width:400px;width:90%;box-shadow:0 24px 60px rgba(0,0,0,0.6);}
-[data-theme="light"] .popover-box{background:#fff;}
+.popover-box{background:var(--mx5-glass-bg);border:1px solid var(--mx5-glass-border);border-radius:16px;padding:22px 24px;max-width:420px;width:90%;box-shadow:var(--mx5-glass-shadow);-webkit-backdrop-filter:blur(28px) saturate(1.4);backdrop-filter:blur(28px) saturate(1.4);}
 .popover-title{font-size:0.9rem;font-weight:700;margin-bottom:6px;color:var(--text-primary);}
 .popover-body{font-size:0.78rem;color:var(--text-secondary);line-height:1.55;}
 .popover-body p{margin:0 0 8px;}
@@ -395,23 +479,17 @@ footer{padding:18px 24px;margin-top:8px;}
   .lane-grid{grid-template-columns:1fr;}
   .dual-cards{grid-template-columns:1fr;}
   .page-wrap{padding:14px 14px 36px;}
-  .header-right{display:none;}
-  .pipeline-wrap{padding:14px;}
-  .pipe-sm-row{flex-wrap:wrap;min-height:unset;}
-  .pipe-seg{flex:0 0 calc(50% - 1px) !important;min-width:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
-  .pipe-seg:nth-child(2n){border-right:none;}
-  .pipe-seg-arrow{display:none;}
+  .lr-verdict{font-size:36px;}
 }
 @media(max-width:390px){
-  .header-title{font-size:1.25rem;}
+  .lr-verdict{font-size:31px;}
   .entry-card{padding:11px 12px;}
   .card-ticker{font-size:1.1rem;}
+  .move-card{padding:8px 11px;}
 }
 /* ── 红涨绿跌: directional colour flips for Chinese mode ── */
 html[data-lang="zh"] { --col-breakaway:#ef4444; --col-leading:#dc2626; --col-failed:#22c55e; --glow-breakaway:rgba(239,68,68,0.15); --glow-failed:rgba(34,197,94,0.10); }
 html[data-lang="zh"][data-theme="light"] { --col-breakaway:#dc2626; --col-leading:#b91c1c; --col-failed:#16a34a; }
-/* Regime chip "on" — bullish state, hardcoded greens */
-html[data-lang="zh"] .regime-chip-sm.on{background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.25);}
 /* Sparkline strokes */
 html[data-lang="zh"] .spark-path.up{stroke:#f87171;}
 html[data-lang="zh"] .spark-path.down{stroke:#4ade80;}
@@ -421,18 +499,11 @@ html[data-lang="zh"] .stage-pill.FAILED{background:rgba(34,197,94,0.12);color:#4
 html[data-lang="zh"] .stage-pill.LEADERSHIP{background:rgba(220,38,38,0.18);color:#f87171;}
 /* Rerating stage chip */
 html[data-lang="zh"] .rerating-stage-chip.s-breakaway{background:rgba(239,68,68,0.12);color:#f87171;}
-/* Pipeline failed section — bearish, flip to green */
-html[data-lang="zh"] .pipe-failed-row{border:1px dashed rgba(34,197,94,0.28);background:rgba(34,197,94,0.04);}
-html[data-lang="zh"] .pipe-failed-return{color:rgba(34,197,94,0.5);}
-html[data-lang="zh"] .pipe-failed-label{color:#4ade80;}
-html[data-lang="zh"] .pipe-failed-count{color:#4ade80;}
-html[data-lang="zh"] .pipe-failed-chip{background:rgba(34,197,94,0.10);color:#4ade80;}
-html[data-lang="zh"] .pipe-failed-chip:hover{background:rgba(34,197,94,0.18);}
 /* Leg chip green (breakaway context) */
 html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f87171;}
 </style>
 </head>
-<body>
+<body class="{% if regime.label == 'narrow_leadership' %}rg-narrow{% elif regime.label == 'broad_thrust' %}rg-broad{% else %}rg-mixed{% endif %}">
 <nav class="site-nav">
   {% include '_navlinks.html.j2' %}
 </nav>
@@ -548,13 +619,96 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
 </div>
 {% endif %}
 
-{# ── HEADER ── #}
-<header class="glass site-header">
-  <div class="header-left">
-    <div class="header-eyebrow">{{ t('Leader Radar', '领袖雷达') }}</div>
-    <h1 class="header-title">{{ t('Early-entry desk', '早入场台') }}</h1>
-    <p class="header-subtitle">{{ t('Stocks staged before the crowd arrives — observation, not prediction', '人群到来前已布局的股票 — 观察，非预测') }}</p>
-    <div class="header-meta">
+{# ══════════════ HERO ══════════════ #}
+{% set _rl = regime.label if regime.label is defined and regime.label is not none else 'mixed' %}
+{% set _rchips = regime.chips if regime.chips is defined and regime.chips is not none else {} %}
+{% set _disp_edge = (_rchips.dispersion_high is defined and _rchips.dispersion_high) and (_rchips.corr_low is defined and _rchips.corr_low) %}
+{% set _brd = regime.adv_share_10d if regime.adv_share_10d is defined and regime.adv_share_10d is not none else none %}
+{% set n_lead = ns.cnt_breakaway + ns.cnt_leadership %}
+<section class="lr-hero glass">
+  <div class="lr-hero-read">
+    <div class="lr-eyebrow">{{ t('Leader Radar', '领袖雷达') }} · {{ t('Early-entry desk', '早入场台') }}</div>
+    <div class="lr-verdict-row">
+      <span class="lr-verdict {% if _rl == 'broad_thrust' %}r-broad{% elif _rl == 'narrow_leadership' %}r-narrow{% else %}r-mixed{% endif %}">
+        {% if _rl == 'broad_thrust' %}{{ t('Broad advance', '普涨行情') }}
+        {% elif _rl == 'narrow_leadership' %}{{ t('Narrow leadership', '少数领涨') }}
+        {% else %}{{ t('Mixed tape', '多空交织') }}{% endif %}
+      </span>
+    </div>
+    <div class="lr-stance">
+      {% if _rl == 'broad_thrust' %}
+        <span class="lr-stance-dot" style="color:var(--col-breakaway);"></span>{{ t('Broad tape — leadership is diffuse', '普涨——领涨分散') }}
+      {% elif _rl == 'narrow_leadership' %}
+        <span class="lr-stance-dot" style="color:var(--col-crowded);"></span>{{ t('Get ready — track the staged few', '做好准备——盯紧已就位的少数') }}
+      {% elif _disp_edge %}
+        <span class="lr-stance-dot" style="color:var(--col-ignition);"></span>{{ t("Selection pays — a stock-picker's tape", '选股为王——个股行情') }}
+      {% else %}
+        <span class="lr-stance-dot" style="color:var(--text-muted);"></span>{{ t("Watch — don't chase", '观察——勿追高') }}
+      {% endif %}
+    </div>
+    <div class="lr-says">{{ t('Stocks staged before the crowd arrives — this desk describes stages and prints its evidence. Observation, not prediction.', '在人群涌入前已布局的股票——本台只描述阶段并列出证据。观察，非预测。') }}</div>
+
+    {# ── breadth arc-gauge + regime evidence ── #}
+    <div class="lr-gauge-wrap">
+      {% if _brd is not none %}
+        {% set _gv = (_brd * 100) %}
+        {% set _gf_raw = ((_gv - 30) / 40) %}
+        {% set _gf = 0 if _gf_raw < 0 else (1 if _gf_raw > 1 else _gf_raw) %}
+        {% set _grot = ((_gf - 0.5) * 180) %}
+      <div class="lr-gauge">
+        <svg viewBox="0 0 220 130" aria-hidden="true">
+          <defs>
+            <linearGradient id="lrGaugeGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="var(--col-crowded)"/>
+              <stop offset="38%" stop-color="var(--text-muted)"/>
+              <stop offset="62%" stop-color="var(--text-muted)"/>
+              <stop offset="100%" stop-color="var(--col-breakaway)"/>
+            </linearGradient>
+          </defs>
+          <path class="lr-gauge-track" d="M 22 110 A 88 88 0 0 1 198 110"/>
+          <path class="lr-gauge-arc" d="M 22 110 A 88 88 0 0 1 198 110" stroke="url(#lrGaugeGrad)"/>
+          <line class="lr-tick" x1="53.4" y1="53.4" x2="42.1" y2="42.1"/>
+          <line class="lr-tick" x1="172.8" y1="60.5" x2="185.4" y2="50.6"/>
+          <line class="lr-needle" x1="110" y1="110" x2="110" y2="34" style="--gauge-rot:{{ '%.1f'|format(_grot) }}deg;"/>
+          <circle class="lr-needle-hub" cx="110" cy="110" r="6"/>
+        </svg>
+        <div class="lr-gauge-val">
+          <div class="lr-gauge-num">{{ '%.0f'|format(_gv) }}</div>
+          <div class="lr-gauge-cap">{{ t('10-day breadth', '10日广度') }}</div>
+        </div>
+      </div>
+      <div class="lr-gauge-side">
+        <div class="lr-gs-line">
+          {% if _disp_edge %}{{ t('Dispersion <b>high</b>, correlation <b>low</b> — names move on their own.', '分散度<b>高</b>、相关性<b>低</b>——个股各行其道。') }}
+          {% elif _rl == 'narrow_leadership' %}{{ t('A few names carry the tape while breadth lags.', '少数个股主导，市场宽度偏弱。') }}
+          {% elif _rl == 'broad_thrust' %}{{ t('Broad participation — most names rising together.', '普遍参与——多数个股同步上行。') }}
+          {% else %}{{ t('Breadth and dispersion mixed — no clear regime.', '宽度与分散度交织——格局未明。') }}{% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="lr-gauge-side"><div class="lr-gs-line">{{ t('Breadth data unavailable tonight.', '今夜广度数据不可用。') }}</div></div>
+      {% endif %}
+    </div>
+
+    {# what would flip it #}
+    <div class="lr-flip">
+      <span class="lr-flip-ar">→</span>
+      <span>
+      {% if _rl == 'narrow_leadership' %}{{ t('Broadens on a breadth thrust — 10-day advance share pushing over 61%.', '若广度冲击——10日上涨占比升破61%，则转为普涨。') }}
+      {% elif _rl == 'broad_thrust' %}{{ t('Fades to mixed if participation rolls back under 61%.', '若参与度回落至61%以下，则转为交织。') }}
+      {% else %}{{ t('Narrows if breadth holds under 40% · broadens on a thrust over 61%.', '若广度维持40%以下则收窄 · 若升破61%则转普涨。') }}{% endif %}
+      </span>
+    </div>
+
+    {# count chips #}
+    <div class="lr-counts">
+      <span class="lr-count"><span class="lr-cdot" style="background:var(--col-quiet);"></span><b class="num">{{ ns.cnt_quiet }}</b> {{ t('quietly building', '静默筑底') }}</span>
+      <span class="lr-count"><span class="lr-cdot" style="background:var(--col-ignition);"></span><b class="num">{{ ns.cnt_catalyst }}</b> {{ t('in ignition', '点火中') }}</span>
+      <span class="lr-count"><span class="lr-cdot" style="background:var(--col-breakaway);"></span><b class="num">{{ n_lead }}</b> {{ t('leading', '领涨中') }}</span>
+    </div>
+
+    {# ── freshness / coverage meta ── #}
+    <div class="header-meta" style="margin-top:2px;">
       {% set n_univ = cov.n_universe if cov.n_universe is defined and cov.n_universe is not none else 0 %}
       {% if n_univ %}
       <span>{{ n_univ }} {{ t('names tracked', '个标的追踪中') }}</span>
@@ -595,64 +749,81 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       <span class="q-afford" onclick="openPopover('coverage-popover')" data-tip-en="Coverage receipt" data-tip-zh="覆盖情况说明">?</span>
     </div>
   </div>
-  <div class="header-right">
-    {% if regime and regime.label is defined and regime.label is not none %}
-    <div class="regime-capsule">
-      <div class="regime-label-top">{{ t('Market regime', '市场制度') }}</div>
-      {% set rl = regime.label %}
-      {# Title (≤4 words) #}
-      <div class="regime-plain {% if rl == 'broad_thrust' %}r-broad{% elif rl == 'narrow_leadership' %}r-narrow{% else %}r-mixed{% endif %}">
-        {% if rl == 'broad_thrust' %}{{ t('Broad advance', '普涨行情') }}
-        {% elif rl == 'narrow_leadership' %}{{ t('Narrow leadership', '少数领涨') }}
-        {% else %}{{ t('Mixed tape', '多空交织') }}{% endif %}
+  {# ── lifecycle funnel (hero right) ── #}
+  <div class="lr-funnel">
+    <div class="lr-funnel-hd">
+      <span class="lr-funnel-title">{{ t('The lifecycle', '生命周期') }}</span>
+      <span class="lr-funnel-sub">{{ t('where the universe sits tonight', '今夜全样本分布') }}</span>
+      <span class="q-afford" style="margin-left:auto;" onclick="openPopover('regime-popover')" data-tip-en="What does this mean?" data-tip-zh="这是什么意思？">?</span>
+    </div>
+    <div class="lr-flow">
+      <div class="lr-fstage {% if ns.cnt_suppressed == 0 %}is-empty{% endif %}" style="animation-delay:.04s;">
+        <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-suppressed);"></span><span class="lr-fs-name">{{ t('Left for dead','无人问津') }}</span></div>
+        <div class="lr-fs-count num" style="color:var(--col-suppressed);">{{ ns.cnt_suppressed }}</div>
+        <div class="lr-fs-stance">{{ t('First stirrings','初现异动') }}</div>
+        <span class="lr-fs-arrow">›</span>
       </div>
-      {# Evidence line — only when data present #}
-      {% set rc = regime.chips if regime.chips is defined and regime.chips is not none else {} %}
-      {% set _zfd = regime.zweig_fire_date if regime.zweig_fire_date is defined and regime.zweig_fire_date is not none else none %}
-      {% if rc.zweig_thrust is defined and rc.zweig_thrust and _zfd is not none and _zfd %}
-        {% set _zfd_parts = _zfd.split('-') %}
-        {% set _zfd_mon_en = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'}[_zfd_parts[1]] if _zfd_parts|length >= 3 and _zfd_parts[1] in {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} else (_zfd_parts[1] if _zfd_parts|length >= 2 else _zfd) %}
-        {% set _zfd_day_en = _zfd_parts[2] | int if _zfd_parts|length >= 3 else 0 %}
-        {% set _zfd_mon_zh = _zfd_parts[1] | int if _zfd_parts|length >= 2 else 0 %}
-        {% set _zfd_day_zh = _zfd_parts[2] | int if _zfd_parts|length >= 3 else 0 %}
-      <div class="regime-evidence">
-        {{ t('Breadth surge fired ' + _zfd_mon_en + ' ' + (_zfd_day_en|string) + ' · label persists ~2 weeks', '广度冲击于' + (_zfd_mon_zh|string) + '月' + (_zfd_day_zh|string) + '日触发 · 标签约维持两周') }}
+      <div class="lr-fstage {% if ns.cnt_quiet == 0 %}is-empty{% endif %}" style="animation-delay:.10s;">
+        <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-quiet);"></span><span class="lr-fs-name">{{ t('Quiet build','静默筑底') }}</span></div>
+        <div class="lr-fs-count num" style="color:#a78bfa;">{{ ns.cnt_quiet }}</div>
+        <div class="lr-fs-stance">{{ t("Watch — don't chase",'观察勿追') }}</div>
+        <span class="lr-fs-arrow">›</span>
       </div>
-      {% elif rl != 'broad_thrust' %}
-      <div class="regime-evidence">
-        {% if rl == 'narrow_leadership' %}
-        <span class="l-en" style="font-size:0.75em;">A few names carry the tape while breadth lags</span><span class="l-zh">少数个股主导，市场宽度偏弱</span>
-        {% else %}
-        <span class="l-en" style="font-size:0.75em;">Breadth and dispersion mixed — no clear regime</span><span class="l-zh">宽度与分散度交织——无明确格局</span>
-        {% endif %}
+      <div class="lr-fstage {% if ns.cnt_catalyst == 0 %}is-empty{% endif %}" style="animation-delay:.16s;">
+        <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-ignition);"></span><span class="lr-fs-name">{{ t('Ignition','点火窗口') }}</span></div>
+        <div class="lr-fs-count num" style="color:#93c5fd;">{{ ns.cnt_catalyst }}</div>
+        <div class="lr-fs-stance">{{ t('Get ready','做好准备') }}</div>
+        <span class="lr-fs-arrow">›</span>
       </div>
-      {% endif %}
-      {# Stance line (doctrine Law 1 — always present) #}
-      <div class="regime-stance">
-        {% if rl == 'broad_thrust' %}{{ t("Watch — don't chase", '观察——勿追高') }}
-        {% elif rl == 'narrow_leadership' %}{{ t('Get ready — follow the staged names', '做好准备——关注已就位个股') }}
-        {% else %}{{ t("Watch — don't chase", '观察——勿追高') }}{% endif %}
+      <div class="lr-fstage {% if ns.cnt_breakaway == 0 %}is-empty{% endif %}" style="animation-delay:.22s;">
+        <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-breakaway);"></span><span class="lr-fs-name">{{ t('Breaking','突破启动') }}</span></div>
+        <div class="lr-fs-count num" style="color:var(--col-breakaway);">{{ ns.cnt_breakaway }}</div>
+        <div class="lr-fs-stance">{{ t('In motion','运行中') }}</div>
+        <span class="lr-fs-arrow">›</span>
       </div>
-      {# Breadth surge chip — only when confirmed AND fire date known #}
-      {% if rc.zweig_thrust is defined and rc.zweig_thrust and _zfd is not none and _zfd %}
-        {# Always recompute date parts here for safe scoping in Jinja2 #}
-        {% set _chip_zfd_parts = _zfd.split('-') %}
-        {% set _chip_mon_map = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} %}
-        {% set _chip_mon_en = _chip_mon_map[_chip_zfd_parts[1]] if _chip_zfd_parts|length >= 3 and _chip_zfd_parts[1] in _chip_mon_map else (_chip_zfd_parts[1] if _chip_zfd_parts|length >= 2 else _zfd) %}
-        {% set _chip_day_en = _chip_zfd_parts[2] | int if _chip_zfd_parts|length >= 3 else 0 %}
-        {% set _chip_mon_zh = _chip_zfd_parts[1] | int if _chip_zfd_parts|length >= 2 else 0 %}
-        {% set _chip_day_zh = _chip_zfd_parts[2] | int if _chip_zfd_parts|length >= 3 else 0 %}
-      <div class="regime-chips-row">
-        <span class="regime-chip-sm on">{{ t('Breadth surge ' + _chip_mon_en + ' ' + (_chip_day_en|string), '广度冲击 ' + (_chip_mon_zh|string) + '月' + (_chip_day_zh|string) + '日') }}</span>
+      <div class="lr-fstage {% if ns.cnt_leadership == 0 %}is-empty{% endif %}" style="animation-delay:.28s;">
+        <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-leading);"></span><span class="lr-fs-name">{{ t('Leading','领涨中') }}</span></div>
+        <div class="lr-fs-count num" style="color:var(--col-leading);">{{ ns.cnt_leadership }}</div>
+        <div class="lr-fs-stance">{{ t('In favour','受青睐') }}</div>
+        <span class="lr-fs-arrow">›</span>
       </div>
-      {% endif %}
-      <div style="margin-top:8px;">
-        <span class="q-afford" onclick="openPopover('regime-popover')" data-tip-en="What does this mean?" data-tip-zh="这是什么意思？">?</span>
+      <div class="lr-fstage {% if ns.cnt_crowded == 0 %}is-empty{% endif %}" style="animation-delay:.34s;">
+        <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-crowded);"></span><span class="lr-fs-name">{{ t('Crowded','过度拥挤') }}</span></div>
+        <div class="lr-fs-count num" style="color:#fcd34d;">{{ ns.cnt_crowded }}</div>
+        <div class="lr-fs-stance">{{ t('Protect gains','保护盈利') }}</div>
       </div>
     </div>
+    {# ── universe distribution bar ── #}
+    {% set _u_dormant = ns.cnt_none + ns.cnt_failed %}
+    {% set _u_building = ns.cnt_suppressed + ns.cnt_quiet %}
+    {% set _u_live = ns.cnt_catalyst + ns.cnt_breakaway + ns.cnt_leadership %}
+    {% set _u_tot = _u_dormant + _u_building + _u_live + ns.cnt_crowded %}
+    {% if _u_tot > 0 %}
+    <div class="lr-dist" aria-hidden="true">
+      <span class="lr-dist-seg" style="width:{{ '%.1f'|format(100*_u_dormant/_u_tot) }}%;background:var(--text-dim);animation-delay:.02s;"></span>
+      <span class="lr-dist-seg" style="width:{{ '%.1f'|format(100*_u_building/_u_tot) }}%;background:var(--col-quiet);animation-delay:.08s;"></span>
+      <span class="lr-dist-seg" style="width:{{ '%.1f'|format(100*_u_live/_u_tot) }}%;background:var(--col-breakaway);animation-delay:.14s;"></span>
+      {% if ns.cnt_crowded > 0 %}<span class="lr-dist-seg" style="width:{{ '%.1f'|format(100*ns.cnt_crowded/_u_tot) }}%;background:var(--col-crowded);animation-delay:.2s;"></span>{% endif %}
+    </div>
+    <div class="lr-dist-key">
+      <span><span class="lr-dk-dot" style="background:var(--text-dim);"></span>{{ t('Dormant','沉寂') }} <span class="num">{{ _u_dormant }}</span></span>
+      <span><span class="lr-dk-dot" style="background:var(--col-quiet);"></span>{{ t('Building','筑底') }} <span class="num">{{ _u_building }}</span></span>
+      <span><span class="lr-dk-dot" style="background:var(--col-breakaway);"></span>{{ t('Live','活跃') }} <span class="num">{{ _u_live }}</span></span>
+    </div>
     {% endif %}
+    <div class="lr-funnel-foot">
+      <span class="lr-ff-item failed"><b class="num">{{ ns.cnt_failed }}</b> {{ t('failed breaks','突破失败') }}</span>
+      <span class="lr-ff-sep"></span>
+      <span class="lr-ff-item"><b class="num">{{ ns.cnt_none }}</b> {{ t('no signal','无信号') }}</span>
+      {% if ns.failed_rows | length > 0 %}
+      <span class="lr-ff-chips">
+        {% for r in ns.failed_rows[:8] %}<a class="lr-ff-chip" href="us_stocks.html#{{ r.ticker }}">{{ r.ticker }}</a>{% endfor %}
+        {% if ns.failed_rows | length > 8 %}<span class="lr-ff-chip" style="background:none;color:var(--text-dim);">+{{ ns.failed_rows | length - 8 }}</span>{% endif %}
+      </span>
+      {% endif %}
+    </div>
   </div>
-</header>
+</section>
 
 {# ── CHANGED TONIGHT strip ── #}
 {% set _ct = lr.changed_today if lr.changed_today is defined and lr.changed_today is not none else {} %}
@@ -681,113 +852,97 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
   'FAILED': '突破失败',
   'NONE': '无信号',
 } %}
-<section class="changed-tonight-section">
-  <div class="section-header">
-    <span class="section-title">{{ t('Changed tonight', '今夜变化') }}</span>
-    <span class="q-afford" style="margin-left:6px;" data-tip-en="Compares tonight's confirmed stages vs the prior session. Tickers entering, exiting, or triggering a watch window." data-tip-zh="对比今夜确认阶段与上一交易日。包含进入、退出或触发观察窗口的标的。">?</span>
-    <span class="section-rule"></span>
-    <span style="font-size:0.72rem;color:var(--text-muted);font-weight:500;">{{ t('Overnight stage moves — context, not signals', '隔夜阶段变化——仅供参考') }}</span>
-  </div>
-  <div class="glass changed-tonight-wrap">
-  {% if _ct_total == 0 %}
-    <div class="ct-empty">{{ t('No stage changes since last night', '自昨夜起无阶段变化') }}</div>
+{# ══════════════ TONIGHT'S FOCUS ══════════════ #}
+{# Split the overnight moves: escalations (advancing) shown loud, cooldowns collapsed. #}
+{% set _RANK = {'NONE':0,'FAILED':0,'SUPPRESSED':1,'QUIET_ACCUMULATION':2,'CATALYST_WINDOW':3,'BREAKAWAY':4,'LEADERSHIP':5,'CROWDED':4} %}
+{% set _STATE_COL = {'CATALYST_WINDOW':'var(--col-ignition)','QUIET_ACCUMULATION':'var(--col-quiet)','BREAKAWAY':'var(--col-breakaway)','LEADERSHIP':'var(--col-leading)','SUPPRESSED':'var(--col-suppressed)','CROWDED':'var(--col-crowded)'} %}
+{% set _fired_tkrs = _ct_fired | map(attribute='ticker') | list %}
+{% set nsf = namespace(esc=[], cooled=[], crowded=[]) %}
+{% for item in _ct_entered %}
+  {% set _nr = _RANK[item.state] if item.state in _RANK else 0 %}
+  {% set _pr = _RANK[item.prev_state] if (item.prev_state is not none and item.prev_state in _RANK) else -1 %}
+  {% if item.ticker in _fired_tkrs %}
+    {# fire card already covers this name — skip to avoid a duplicate row #}
+  {% elif item.state == 'CROWDED' %}
+    {% set nsf.crowded = nsf.crowded + [item] %}
+  {% elif item.state in ('NONE','FAILED') or _nr < _pr %}
+    {% set nsf.cooled = nsf.cooled + [item] %}
   {% else %}
-    {% set ns_ct = namespace(shown=0) %}
-    {# Entered rows #}
-    {% for item in _ct_entered %}
-      {% if ns_ct.shown < 12 %}
-      <div class="ct-row ct-entered">
-        <a class="ct-ticker" href="us_stocks.html#{{ item.ticker }}" style="color:inherit;text-decoration:none;">{{ item.ticker }}</a>
-        <span class="ct-arrow">→</span>
-        {% if item.state in ('NONE', 'FAILED') %}
-        <span class="ct-badge ct-badge-degrade">
-          <span class="l-en">{{ _STATE_PLAIN_EN[item.state] if item.state in _STATE_PLAIN_EN else item.state }}</span>
-          <span class="l-zh">{{ _STATE_PLAIN_ZH[item.state] if item.state in _STATE_PLAIN_ZH else '状态更新' }}</span>
-        </span>
-        {% elif item.state == 'CROWDED' %}
-        <span class="ct-badge ct-badge-crowded">
-          <span class="l-en">{{ _STATE_PLAIN_EN[item.state] if item.state in _STATE_PLAIN_EN else item.state }}</span>
-          <span class="l-zh">{{ _STATE_PLAIN_ZH[item.state] if item.state in _STATE_PLAIN_ZH else '状态更新' }}</span>
-        </span>
+    {% set nsf.esc = nsf.esc + [item] %}
+  {% endif %}
+{% endfor %}
+{% set _nt = lr.near_trigger if lr.near_trigger is defined and lr.near_trigger is not none else [] %}
+{% set _n_focus = nsf.esc|length + _ct_fired|length + nsf.crowded|length %}
+<section class="tonight-section">
+  <div class="section-header">
+    <span class="section-title">{{ t("Tonight's focus", '今夜焦点') }}</span>
+    <span class="q-afford" style="margin-left:6px;" data-tip-en="What escalated or fired overnight vs the prior session. Cooldowns are summarised below. Context, not signals — not a buy list." data-tip-zh="对比上一交易日，今夜升级或触发的标的。回落标的汇总于下方。仅供参考，非买入清单。">?</span>
+    <span class="section-rule"></span>
+    <span class="section-note">{{ t('What escalated or fired overnight — context, not signals', '隔夜升级或触发——仅供参考') }}</span>
+  </div>
+  <div class="glass tonight-wrap">
+  {% if _n_focus > 0 %}
+    <div class="tonight-grid">
+      {# Fires first — highest signal #}
+      {% for item in _ct_fired %}
+      <a class="move-card is-fire" href="us_stocks.html#{{ item.ticker }}">
+        <span class="move-glyph">⚡</span>
+        <span class="move-tkr">{{ item.ticker }}</span>
+        <span class="move-badge">{{ t('Ignition fired', '点火触发') }}</span>
+      </a>
+      {% endfor %}
+      {# Escalations #}
+      {% for item in nsf.esc %}
+      <a class="move-card" href="us_stocks.html#{{ item.ticker }}" style="--mv-c:{{ _STATE_COL[item.state] if item.state in _STATE_COL else 'var(--text-muted)' }};">
+        <span class="move-tkr">{{ item.ticker }}</span>
+        <span class="move-ar">→</span>
+        <span class="move-badge"><span class="l-en">{{ _STATE_PLAIN_EN[item.state] if item.state in _STATE_PLAIN_EN else item.state }}</span><span class="l-zh">{{ _STATE_PLAIN_ZH[item.state] if item.state in _STATE_PLAIN_ZH else item.state }}</span></span>
+        {% if item.prev_state is not none and item.prev_state and item.prev_state not in ('NONE','') %}
+        <span class="move-from"><span class="l-en">from {{ _STATE_PLAIN_EN[item.prev_state] if item.prev_state in _STATE_PLAIN_EN else item.prev_state }}</span><span class="l-zh">来自{{ _STATE_PLAIN_ZH[item.prev_state] if item.prev_state in _STATE_PLAIN_ZH else item.prev_state }}</span></span>
+        {% endif %}
+      </a>
+      {% endfor %}
+      {# Newly crowded — exit-side warning #}
+      {% for item in nsf.crowded %}
+      <a class="move-card is-crowded" href="us_stocks.html#{{ item.ticker }}">
+        <span class="move-tkr">{{ item.ticker }}</span>
+        <span class="move-ar">→</span>
+        <span class="move-badge">{{ t('Crowded · protect gains', '过度拥挤·保护盈利') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="tonight-empty">{{ t('Quiet night — no new escalations or fires.', '平静之夜——无新升级或触发。') }}</div>
+  {% endif %}
+
+  {# One signal away — folded in #}
+  {% if _nt | length > 0 %}
+    <div class="tonight-near">
+      <span class="tn-label">{{ t('One signal away', '差一个信号') }}</span>
+      {% for item in _nt %}
+      {% if loop.index <= 8 %}
+      <a class="tn-chip" href="us_stocks.html#{{ item.ticker }}">
+        <span class="tn-tkr">{{ item.ticker }}</span>
+        {% for chip_key in item.missing_chips if item.missing_chips is defined and item.missing_chips is not none %}
+        {% if loop.index == 1 %}<span class="tn-miss"><span class="l-en js-chip-en" data-chip-key="{{ chip_key }}">{{ chip_key | replace('_',' ') | title }}</span><span class="l-zh js-chip-zh" data-chip-key="{{ chip_key }}">{{ chip_key | replace('_',' ') | title }}</span></span>{% endif %}
         {% else %}
-        <span class="ct-badge ct-badge-enter">
-          <span class="l-en">{{ _STATE_PLAIN_EN[item.state] if item.state in _STATE_PLAIN_EN else item.state }}</span>
-          <span class="l-zh">{{ _STATE_PLAIN_ZH[item.state] if item.state in _STATE_PLAIN_ZH else '状态更新' }}</span>
-        </span>
-        {% endif %}
-        {% if item.prev_state is not none and item.prev_state and item.prev_state != 'NONE' %}
-        <span class="ct-from">
-          <span class="l-en">from {{ _STATE_PLAIN_EN[item.prev_state] if item.prev_state in _STATE_PLAIN_EN else item.prev_state }}</span>
-          <span class="l-zh">来自{{ _STATE_PLAIN_ZH[item.prev_state] if item.prev_state in _STATE_PLAIN_ZH else item.prev_state }}</span>
-        </span>
-        {% endif %}
-      </div>
-      {% set ns_ct.shown = ns_ct.shown + 1 %}
+        <span class="tn-miss" style="font-style:italic;opacity:0.75;">{{ t('one chip pending', '待确认一项') }}</span>
+        {% endfor %}
+      </a>
       {% endif %}
-    {% endfor %}
-    {# Fired rows #}
-    {% for item in _ct_fired %}
-      {% if ns_ct.shown < 12 %}
-      <div class="ct-row ct-fired">
-        <a class="ct-ticker" href="us_stocks.html#{{ item.ticker }}" style="color:inherit;text-decoration:none;">{{ item.ticker }}</a>
-        <span class="ct-arrow">⚡</span>
-        <span class="ct-badge ct-badge-fire">{{ t('Watch window opened', '观察窗口开启') }}</span>
-      </div>
-      {% set ns_ct.shown = ns_ct.shown + 1 %}
-      {% endif %}
-    {% endfor %}
-    {# Exited rows #}
-    {% for item in _ct_exited %}
-      {% if ns_ct.shown < 12 %}
-      <div class="ct-row ct-exited">
-        <a class="ct-ticker" href="us_stocks.html#{{ item.ticker }}" style="color:inherit;text-decoration:none;">{{ item.ticker }}</a>
-        <span class="ct-arrow">←</span>
-        <span class="ct-badge ct-badge-exit">
-          <span class="l-en">exited {{ _STATE_PLAIN_EN[item.prev_state] if item.prev_state is not none and item.prev_state in _STATE_PLAIN_EN else (item.prev_state if item.prev_state is not none else '') }}</span>
-          <span class="l-zh">退出{{ _STATE_PLAIN_ZH[item.prev_state] if item.prev_state is not none and item.prev_state in _STATE_PLAIN_ZH else (item.prev_state if item.prev_state is not none else '') }}</span>
-        </span>
-      </div>
-      {% set ns_ct.shown = ns_ct.shown + 1 %}
-      {% endif %}
-    {% endfor %}
-    {% if _ct_total > 12 %}
-    <div class="ct-overflow">{{ t('+' + (_ct_total - 12)|string + ' more', '其余' + (_ct_total - 12)|string + '个') }}</div>
-    {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# Cooled — the de-noised de-escalations, one muted line #}
+  {% if nsf.cooled | length > 0 %}
+    <div class="tonight-cooled">
+      <span>{{ t('Also', '另有') }} <b class="num">{{ nsf.cooled | length }}</b> {{ t('names cooled out of earlier stages', '个标的自早前阶段回落') }}</span>
+      <span class="cooled-list">{% for item in nsf.cooled %}{% if loop.index <= 14 %}{{ item.ticker }}{% if not loop.last and loop.index < 14 %} · {% endif %}{% endif %}{% endfor %}{% if nsf.cooled | length > 14 %} +{{ nsf.cooled | length - 14 }}{% endif %}</span>
+    </div>
   {% endif %}
   </div>
-</section>
-
-{# ── ONE SIGNAL AWAY shelf ── #}
-{% set _nt = lr.near_trigger if lr.near_trigger is defined and lr.near_trigger is not none else [] %}
-{% if _nt | length > 0 %}
-<section class="near-trigger-section">
-  <div class="section-header">
-    <span class="section-title">{{ t('One signal away', '差一个信号') }}</span>
-    <span class="q-afford" style="margin-left:6px;" data-tip-en="Quiet-build names missing exactly one signal from a full set. Not a buy list." data-tip-zh="酝酿中个股距信号齐备仅差一项。非买入清单。">?</span>
-    <span class="section-rule"></span>
-    <span style="font-size:0.72rem;color:var(--text-muted);font-weight:500;">{{ t('Watch — not a buy list', '观察——非买入清单') }}</span>
-  </div>
-  <div class="glass near-trigger-wrap">
-    {% for item in _nt %}
-    {% if loop.index <= 8 %}
-    <div class="nt-row">
-      <a class="nt-ticker" href="us_stocks.html#{{ item.ticker }}" style="color:inherit;text-decoration:none;">{{ item.ticker }}</a>
-      <div class="nt-missing">
-        {% for chip_key in item.missing_chips if item.missing_chips is defined and item.missing_chips is not none %}
-        <span class="nt-chip-missing">
-          <span class="l-en js-chip-en" data-chip-key="{{ chip_key }}">{{ chip_key | replace('_',' ') | title }}</span>
-          <span class="l-zh js-chip-zh" data-chip-key="{{ chip_key }}">{{ chip_key | replace('_',' ') | title }}</span>
-        </span>
-        {% else %}
-        <span class="nt-chip-missing" style="font-style:italic;opacity:0.7;">{{ t('one chip pending', '待确认一项') }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
+</section>{# /tonight-section #}
 
 {# ── EARLY ENTRY BOARD ── #}
 <section class="early-entry-section">
@@ -1065,102 +1220,11 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
   </div>{# /lane-grid #}
 </section>
 
-{# ── LIFECYCLE PIPELINE ── #}
-<section class="pipeline-section">
-  <div class="section-header">
-    <span class="section-title">{{ t('Lifecycle pipeline', '生命周期管道') }}</span>
-    <span class="section-count">— {{ t('state machine', '状态机') }}</span>
-    <span class="section-rule"></span>
-  </div>
-  <div class="glass pipeline-wrap">
-    {# Pipeline segments (SUPPRESSED→QUIET→CATALYST→BREAKAWAY→LEADERSHIP→CROWDED) #}
-    {# flex proportional to max(count, 2) #}
-    {% set pipe_stages = [
-      ('SUPPRESSED',         'col-gray',   ns.cnt_suppressed,  ns.suppressed_rows,  'Left for dead', '无人问津',    'Ignore', '暂不关注'),
-      ('QUIET_ACCUMULATION', 'col-violet', ns.cnt_quiet,       ns.quiet_rows,       'Quiet build',   '静默筑底',    "Watch — don't chase", '观察——勿追高'),
-      ('CATALYST_WINDOW',    'col-blue',   ns.cnt_catalyst,    ns.catalyst_rows,    'Ignition window','点火窗口',   'Get ready', '做好准备'),
-      ('BREAKAWAY',          'col-green',  ns.cnt_breakaway,   ns.breakaway_rows,   'Breaking away', '突破启动',    "In motion — don't chase", '行情进行中——勿追'),
-      ('LEADERSHIP',         'col-led',    ns.cnt_leadership,  ns.leadership_rows,  'Leading',        '领涨中',     'In favour', '顺风期'),
-      ('CROWDED',            'col-amber',  ns.cnt_crowded,     ns.crowded_rows,     'Crowded',        '过度拥挤',    'Protect gains', '保护利润'),
-    ] %}
-    {% set pipe_colors = {
-      'SUPPRESSED':         'var(--col-suppressed)',
-      'QUIET_ACCUMULATION': 'var(--col-quiet)',
-      'CATALYST_WINDOW':    'var(--col-ignition)',
-      'BREAKAWAY':          'var(--col-breakaway)',
-      'LEADERSHIP':         'var(--col-leading)',
-      'CROWDED':            'var(--col-crowded)',
-    } %}
-    <div class="pipe-sm-row">
-    {% for stage_key, count_cls, cnt, stage_rows, label_en, label_zh, stance_en, stance_zh in pipe_stages %}
-      {% set flex_val = [cnt, 2] | max %}
-      {% set is_empty = cnt == 0 %}
-      {% set dot_color = pipe_colors[stage_key] if stage_key in pipe_colors else 'var(--text-dim)' %}
-      <div class="pipe-seg {% if is_empty %}empty-stage{% endif %}" style="flex:{{ flex_val }} {{ flex_val }} 0;min-width:92px;">
-        <div class="pipe-seg-header">
-          <span class="pipe-seg-dot" style="background:{{ dot_color }};{% if is_empty %}opacity:0.4;{% endif %}"></span>
-          <span class="pipe-seg-name"><span class="l-en">{{ label_en }}</span><span class="l-zh">{{ label_zh }}</span></span>
-        </div>
-        <div class="pipe-seg-count {{ count_cls }}">{{ cnt }}</div>
-        <div class="pipe-seg-stance"><span class="l-en">{{ stance_en }}</span><span class="l-zh">{{ stance_zh }}</span></div>
-        {% if is_empty %}
-        <span class="pipe-seg-none-label"><span class="l-en">none today</span><span class="l-zh">今日无</span></span>
-        {% else %}
-        <div class="pipe-seg-chips">
-          {% set shown_chips = namespace(n=0) %}
-          {% for r in stage_rows %}
-            {% if shown_chips.n < 4 %}
-            <a class="pipe-seg-chip" href="us_stocks.html#{{ r.ticker }}">{{ r.ticker }}</a>
-            {% set shown_chips.n = shown_chips.n + 1 %}
-            {% endif %}
-          {% endfor %}
-          {% if cnt > 4 %}
-          <span class="pipe-seg-chip-more">+{{ cnt - 4 }}</span>
-          {% endif %}
-        </div>
-        {% endif %}
-        {# Arrow connector (not on last segment) #}
-        {% if not loop.last %}
-        <div class="pipe-seg-arrow">&#8250;</div>
-        {% endif %}
-      </div>
-    {% endfor %}
-    </div>
-
-    {# Failed side-pile #}
-    <div class="pipe-failed-row">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" style="flex-shrink:0;opacity:0.5"><path d="M20 8C20 8 16 4 10 6C5 8 4 14 4 14" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/><polyline points="4,10 4,14 8,14" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="pipe-failed-label">{{ t('Failed breaks', '突破失败') }}</span>
-      <span class="pipe-failed-count">{{ ns.cnt_failed }}</span>
-      <span class="pipe-failed-note" style="margin-right:10px;">{{ t('recycling · Stand aside', '循环中 · 观望回避') }}</span>
-      <div class="pipe-failed-chips">
-        {% set shown_f = namespace(n=0) %}
-        {% for r in ns.failed_rows %}
-          {% if shown_f.n < 20 %}
-          <a class="pipe-failed-chip" href="us_stocks.html#{{ r.ticker }}">{{ r.ticker }}</a>
-          {% set shown_f.n = shown_f.n + 1 %}
-          {% endif %}
-        {% endfor %}
-        {% if ns.cnt_failed > 20 %}
-        <span class="pipe-seg-chip-more">+{{ ns.cnt_failed - 20 }}</span>
-        {% endif %}
-      </div>
-    </div>
-
-    {# No-signal reservoir #}
-    <div class="pipe-reservoir">
-      <span class="pipe-reservoir-label">{{ t('No signal', '无信号') }}</span>
-      <span class="pipe-reservoir-count">{{ ns.cnt_none }} {{ t('watching', '观察中') }}</span>
-      <span class="pipe-reservoir-label">— {{ t('accumulating context nightly', '每晚积累背景数据') }}</span>
-    </div>
-  </div>
-</section>
-
 {# ── DUAL CARDS: Handoff Watch + Rerating Watch ── #}
 <div class="dual-cards">
 
   {# Handoff Watch #}
-  <div class="glass side-card">
+  <div class="glass side-card sc-handoff">
     <div class="side-card-title">{{ t('Handoff watch', '接力观察') }}</div>
     <div class="side-card-sub">{{ t("Stretched leaders basing — who steps up next", '已超伸领涨股筑底 — 谁将接棒') }}</div>
 
@@ -1188,7 +1252,6 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
     {% else %}
     {# Empty state #}
     <div class="empty-state">
-      <div class="empty-icon">—</div>
       <div class="empty-label">{{ t('No handoff candidates today', '今日无接力候选') }}</div>
       <div class="empty-sub">{{ t('Nothing is extended enough to trigger a handoff watch. When names in Breaking away become stretched, candidates appear here.', '目前无标的超伸至触发接力观察。当"突破启动"中的标的超伸时，候选将出现在此处。') }}</div>
     </div>
@@ -1265,19 +1328,31 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
   </div>
 
   {# Rerating Watch #}
-  <div class="glass side-card">
+  {# Partition positives-first; disclose systemic valuation-null once, not per row #}
+  {% set _rrp = namespace(pos=[], neg=[], val_any=false) %}
+  {% for rr in rerating_watch %}
+    {% set rc = rr.chips if rr.chips is defined and rr.chips is not none else {} %}
+    {% if rc.multiple_compressed is sameas true %}{% set _rrp.val_any = true %}{% endif %}
+    {% if (rc.revision_positive is sameas true) or (rc.revision_breadth_60 is sameas true) or (rc.multiple_compressed is sameas true) %}
+      {% set _rrp.pos = _rrp.pos + [rr] %}
+    {% else %}
+      {% set _rrp.neg = _rrp.neg + [rr] %}
+    {% endif %}
+  {% endfor %}
+  <div class="glass side-card sc-rerate">
     <div class="side-card-title">{{ t('Rerating watch', '重估观察') }}</div>
     <div class="side-card-sub">
       {{ t('Estimates turning up while still cheap', '预期上调而估值仍低') }}
-      {% if rerating_watch | length > 0 %} — {{ rerating_watch | length }} {{ t('names', '个标的') }}{% endif %}
+      {% if _rrp.pos | length > 0 %} — <span style="color:var(--col-breakaway);font-weight:700;">{{ _rrp.pos | length }}</span> {{ t('with a live signal', '有活跃信号') }}{% elif rerating_watch | length > 0 %} — {{ rerating_watch | length }} {{ t('tracked', '追踪中') }}{% endif %}
     </div>
 
     {% if rerating_watch %}
     <div class="rerating-rows">
-      {% for rr in rerating_watch %}
+      {% for rr in (_rrp.pos + _rrp.neg) %}
       {% set rc = rr.chips if rr.chips is defined and rr.chips is not none else {} %}
       {% set rs = rr.state if rr.state is defined and rr.state is not none else 'NONE' %}
-      <div class="rerating-row">
+      {% set _has_pos = (rc.revision_positive is sameas true) or (rc.revision_breadth_60 is sameas true) or (rc.multiple_compressed is sameas true) %}
+      <div class="rerating-row{% if not _has_pos %} rr-dim{% endif %}">
         <a class="rerating-ticker" href="us_stocks.html#{{ rr.ticker }}" style="text-decoration:none;">{{ rr.ticker }}</a>
         <span class="rerating-stage-chip {% if rs == 'BREAKAWAY' %}s-breakaway{% elif rs == 'QUIET_ACCUMULATION' %}s-quiet{% elif rs == 'SUPPRESSED' %}s-suppressed{% elif rs == 'LEADERSHIP' %}s-leadership{% elif rs == 'CROWDED' %}s-crowded{% else %}s-none{% endif %}">
           {% if rs == 'BREAKAWAY' %}{{ t('Breaking away', '突破启动') }}
@@ -1288,26 +1363,18 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           {% else %}{{ t('No signal', '无信号') }}{% endif %}
         </span>
         <div class="rerating-chips">
-          {% if rc.revision_positive is defined %}
-            {% if rc.revision_positive is sameas true %}<span class="rerate-chip">{{ t('Estimates turning up', '盈利预期转正') }}</span>
-            {% elif rc.revision_positive is sameas false %}<span class="rerate-chip null-chip">{{ t('Estimates not turning up', '盈利预期未转正') }}</span>
-            {% elif rc.revision_positive is none %}<span class="rerate-chip null-chip">{{ t('no revision data', '无预测修订数据') }}</span>
-            {% endif %}
-          {% endif %}
-          {% if rc.revision_breadth_60 is defined %}
-            {% if rc.revision_breadth_60 is sameas true %}<span class="rerate-chip">{{ t('Broad breadth', '广泛修正') }}</span>
-            {% endif %}
-          {% endif %}
-          {% if rc.multiple_compressed is defined and rc.multiple_compressed is none %}<span class="rerate-chip null-chip">{{ t('no valuation data', '无估值数据') }}</span>
-          {% elif rc.multiple_compressed is defined and rc.multiple_compressed is sameas true %}<span class="rerate-chip">{{ t('Cheap vs own history', '估值处于自身低位') }}</span>
-          {% endif %}
-          {% if rc.earnings_within_14d is defined and rc.earnings_within_14d is sameas true %}
-          <span class="rerate-chip warn">{{ t('Earnings &lt;14d', '财报&lt;14天') }}</span>
-          {% endif %}
+          {% if rc.revision_positive is sameas true %}<span class="rerate-chip">{{ t('Estimates ↑', '盈利预期↑') }}</span>{% endif %}
+          {% if rc.revision_breadth_60 is sameas true %}<span class="rerate-chip">{{ t('Broad breadth', '广泛修正') }}</span>{% endif %}
+          {% if rc.multiple_compressed is sameas true %}<span class="rerate-chip">{{ t('Cheap vs history', '估值处于低位') }}</span>{% endif %}
+          {% if rc.earnings_within_14d is defined and rc.earnings_within_14d is sameas true %}<span class="rerate-chip warn">{{ t('Earnings &lt;14d', '财报&lt;14天') }}</span>{% endif %}
+          {% if not _has_pos %}<span class="rr-watching">{{ t('watching — no rerating signal yet', '观察中——暂无重估信号') }}</span>{% endif %}
         </div>
       </div>
       {% endfor %}
     </div>
+    {% if not _rrp.val_any %}
+    <div class="rr-footer">{{ t('Valuation-compression leg is seeding — snapshot history still young, so the "cheap vs history" chip is quiet.', '估值压缩指标积累中——快照历史尚浅，"估值处于低位"暂不显示。') }}</div>
+    {% endif %}
     {% else %}
     <div class="muted" style="font-size:0.78rem;color:var(--text-muted);">{{ t('No rerating conditions met today.', '今日未满足重估观察条件。') }}</div>
     {% endif %}
