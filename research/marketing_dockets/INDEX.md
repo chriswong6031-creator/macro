@@ -38,7 +38,7 @@ D11's recommended affiliate economics, dated Founding 20 offer, product-native a
 | [D08](D08_SENTINEL_TRUST_OFFICE_W1.md) | Sentinel W1: pre-publication policy gate + ban-risk rails | Sentinel | **P0** | — | No — build before launch |
 | [D03](D03_ENGAGEMENT_TELEMETRY_LAB.md) | Engagement telemetry → Lab learning loop | Lab | P1 | D02 live | Analytics access for W1 |
 | [D04](D04_INDICATORS_M2_VWAP_VOLUME_PROFILE.md) | Indicators M2: VWAP / AVWAP / Volume Profile / POC — **COMPLETE 2026-07-19 (#3088 + terminal#147)** | Workshop + Studio | P1 | — | No |
-| [D05](D05_BREAKING_DESKS.md) | Breaking desks: news / policy-feed ingestion + cite cards | Radar + Studio | P1 | feeds D01 | No for W0 |
+| [D05](D05_BREAKING_DESKS.md) | Breaking desks: news / policy-feed ingestion + cite cards (+ [Truth-Social/official-account red-team](D05_APPENDIX_TRUTH_SOCIAL_AND_OFFICIAL_ACCOUNT_REDTEAM.md), item-7 DONE 2026-07-22 → use wire-relay, scrape lanes killed) | Radar + Studio | P1 | feeds D01 | No for W0 |
 | [D06](D06_RADAR_INTELLIGENCE_W1.md) | Radar W1: real opportunity feeds + cashtag traffic tiers | Radar | P2 | — | No |
 | [D07](D07_FUNNEL_LIFECYCLE_MNZ.md) | Funnel W1: UTM attribution + trial-conversion join (MNZ) | Funnel | P2 | D02 live for real data | Analytics/Supabase join |
 | [D09](D09_STUDIO_FORMATS_WAVE2.md) | Studio W2: heatmap cards, day-recap, threads, weekly receipts | Studio | P2 | — | No |
