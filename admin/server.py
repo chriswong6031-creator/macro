@@ -25,7 +25,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_first_party, auth, brief, causal_lab,
+from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_first_party, auth, brain_guest, brief, causal_lab,
                codex_panel,
                config_store,
                content, context_lobe, experiments,
@@ -395,6 +395,10 @@ class Handler(BaseHTTPRequestHandler):
                 })
             if path == "/api/flags":
                 return self._json(flags.snapshot())
+            if path == "/api/brain/guest":
+                # Mastermind AI guest-access knob (anonymous free Fast lane). Read-only state
+                # for the card; the POST twin persists changes.
+                return self._json({"ok": True, "guest": brain_guest.read()})
             if path == "/api/brief":
                 return self._json(brief.panel())
             if path == "/api/experiments":
@@ -647,6 +651,17 @@ class Handler(BaseHTTPRequestHandler):
                 if settings.deployed():
                     return self._json(github_config.set_bool(flag_path, value))
                 return self._json(config_store.set_bool(flag_path, value))
+
+            # Mastermind AI guest-access knob — anonymous free Fast lane on/off + daily cap.
+            # NOT routed through config_store/github_config (those target config.yml + a deploy);
+            # this is a gitignored, hot-reloaded JSON the gateway re-reads within ~20s.
+            if path == "/api/brain/guest":
+                enabled = bool(b.get("enabled"))
+                raw_limit = b.get("daily_limit")
+                if isinstance(raw_limit, bool) or not isinstance(raw_limit, int):
+                    return self._json({"ok": False, "error": "daily_limit must be an integer"}, 400)
+                res = brain_guest.write(enabled, raw_limit)
+                return self._json(res, 200 if res.get("ok") else 400)
 
             if path == "/api/analytics/fp/geo_enrich":
                 if not b.get("confirm"):

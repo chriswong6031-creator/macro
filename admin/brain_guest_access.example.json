@@ -1,0 +1,9 @@
+{
+  "_comment": "TEMPLATE — copy to an UNTRACKED file (admin/brain_guest_access.json, gitignored) to control anonymous free Fast-lane access to Mastermind AI. Toggle from the admin console (Mastermind AI card) — no restart needed; changes apply within ~20s. Optionally point BRAIN_GUEST_CFG at a different path (e.g. /opt/macro/admin/brain_guest_access.json). Resolution: BRAIN_GUEST_CFG env → <repo>/admin/brain_guest_access.json → absent = access OFF. See engine/neuralweb/brain_gateway.py:_guest_cfg.",
+  "_keys": {
+    "enabled": "When true, anonymous (not-logged-in) visitors get the free Fast lane, and signed-in FREE users' Fast allowance flips to daily_limit/day. When false (default), the brain is sign-in-gated exactly as before. Fails CLOSED (off) if this file is missing or malformed.",
+    "daily_limit": "Free Fast messages per day, per visitor. Guests are capped per cookie AND per IP (clearing cookies does not reset the cap). Clamped to [1, 500]. Pro, Deep Research, and image attach are never free — they stay sign-in/paid."
+  },
+  "enabled": false,
+  "daily_limit": 30
+}

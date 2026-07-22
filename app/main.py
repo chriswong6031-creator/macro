@@ -677,6 +677,64 @@ def _brain_identity(request: Request) -> tuple[str, str, str]:
     return aid, ip, device_hash
 
 
+def _brain_guest_identity(request: Request) -> tuple[str, str, str]:
+    """Derive (user_id, aid_hash, ip_hash) for a GUEST (anonymous) brain request.
+
+    Unlike _brain_identity (which collapses to ONE device key), a guest needs BOTH the cookie
+    and the IP hashed SEPARATELY so the quota is debited against each ledger independently
+    (the per cookie + IP anti-farm). Reuses the same aid/ip source + trusted-proxy override.
+    user_id = 'guest:<aid>' (or 'guest:ip:<iphash>' when no cookie, else 'guest:anon') — NEVER
+    a Supabase id, so it can never collide with a real user's ledger."""
+    aid, ip, _ = _brain_identity(request)
+    aid_hash = hashlib.sha256(("aid:" + aid).encode()).hexdigest()[:16] if aid else ""
+    ip_hash = (hashlib.sha256(("ip:" + ip).encode()).hexdigest()[:16]
+               if ip and ip != "unknown" else "")
+    if aid:
+        user_id = "guest:" + aid[:48]
+    elif ip_hash:
+        user_id = "guest:ip:" + ip_hash
+    else:
+        user_id = "guest:anon"
+    return user_id, aid_hash, ip_hash
+
+
+def _guest_access_enabled() -> bool:
+    """True iff the operator has turned anonymous free Fast access ON (gitignored config)."""
+    try:
+        return bool(_brain_module()._guest_cfg(REPO).get("enabled"))
+    except Exception:  # noqa: BLE001 — config/module trouble must fail CLOSED (no guest access)
+        return False
+
+
+def _brain_user_or_guest(request: Request,
+                         authorization: str | None = Header(default=None)) -> dict:
+    """Auth for the public brain routes: a verified Supabase user when a valid Bearer is sent;
+    otherwise, when guest access is ENABLED, a synthetic guest identity; else 401.
+
+    Security invariants:
+      * A real, valid token ALWAYS wins (verified via require_user's secretless check) — the
+        guest path is only reached on a MISSING/INVALID token (401), never a transient 502.
+      * A guest's email is ALWAYS '' → the internals/unlimited allowlists can never match a
+        guest, and the CXI-R23a internals tools stay off.
+      * Guests are marked with _is_guest=True and carry their split cookie/IP hashes.
+    Returns a user dict shaped like require_user's, plus _is_guest/_guest_aid/_guest_ip.
+    """
+    try:
+        user = require_user(authorization)
+        user["_is_guest"] = False
+        user["_guest_aid"] = ""
+        user["_guest_ip"] = ""
+        return user
+    except HTTPException as exc:
+        # Only a bad/absent token (401) may degrade to guest; a 502 (upstream auth down) or any
+        # other status is a real failure and must surface unchanged.
+        if exc.status_code != 401 or not _guest_access_enabled():
+            raise
+    guest_id, aid_hash, ip_hash = _brain_guest_identity(request)
+    return {"id": guest_id, "email": "", "_is_guest": True,
+            "_guest_aid": aid_hash, "_guest_ip": ip_hash}
+
+
 def _brain_track_event(aid: str, ip: str, user_id: str) -> None:
     """Fire-and-forget admin cross-tracking row (type 'brain_chat'), mirroring the beacon's
     row columns. If the analytics table's type CHECK rejects it, the insert silently no-ops
@@ -703,8 +761,11 @@ def _brain_track_event(aid: str, ip: str, user_id: str) -> None:
 
 @app.post("/api/brain/chat")
 def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundTasks,
-               user: dict = Depends(require_user)):
+               user: dict = Depends(_brain_user_or_guest)):
     """Brain chat — non-streaming.
+
+    Verified users AND (when guest access is enabled) anonymous guests. Guests get the free
+    Fast lane only, day-capped per cookie+IP; Pro/research/vision are locked for them.
 
     POST body: {message, lane?, thread_id?, history?, context?}
     Response: {ok, reply, citations, annotations?, symbol?, lane, model, thread_id,
@@ -712,15 +773,18 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
     HTTP 402 when quota exhausted; 429 when the burst throttle trips.
     """
     gw = _brain_module()
+    is_guest = bool(user.get("_is_guest"))
     # mode validation: only 'chat' and 'research' are accepted
     mode = body.mode if body.mode in ("chat", "research") else "chat"
     # research mode forces pro lane (gateway also enforces this, but be explicit here)
     lane = "pro" if mode == "research" else (body.lane if body.lane in ("fast", "pro") else "fast")
     user_id = user.get("id") or user.get("email") or "unknown"
-    # CXI-R23a: email comes ONLY from the Supabase-verified require_user result — never body/headers.
+    # CXI-R23a: email comes ONLY from the Supabase-verified session — never body/headers, and
+    # ALWAYS '' for a guest (so internals/unlimited allowlists can never match).
     user_email = (user.get("email") or "").strip().lower()
 
-    # Burst throttle FIRST — a throttled request must not consume quota.
+    # Burst throttle FIRST — a throttled request must not consume quota. (Guest user_id is
+    # 'guest:<aid>'/'guest:ip:<h>', so throttling is per-guest-identity too.)
     _brain_throttle_check(user_id)
 
     # Device-linked identity (PART A): aid/ip → hashed device_key for the free-credit pool.
@@ -743,6 +807,9 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
         images=body.images,
         device_key=device_hash,
         user_email=user_email,
+        is_guest=is_guest,
+        guest_aid=user.get("_guest_aid") or "",
+        guest_ip=user.get("_guest_ip") or "",
     )
 
     if result.get("quota_exhausted"):
@@ -753,9 +820,10 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
 
 @app.post("/api/brain/stream")
 def brain_stream(body: BrainChatRequest, request: Request, background: BackgroundTasks,
-                 user: dict = Depends(require_user)):
+                 user: dict = Depends(_brain_user_or_guest)):
     """Brain chat — SSE streaming.
 
+    Verified users AND (when guest access is enabled) anonymous guests (free Fast lane only).
     POST body: same as /api/brain/chat.
     SSE events (always in this order):
         {"type":"meta","lane":...,"model":...,"thread_id":...,"quota":{...}}
@@ -766,11 +834,14 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
     HTTP 429 when the burst throttle trips.
     """
     gw = _brain_module()
+    is_guest = bool(user.get("_is_guest"))
     mode = body.mode if body.mode in ("chat", "research") else "chat"
     lane = "pro" if mode == "research" else (body.lane if body.lane in ("fast", "pro") else "fast")
     user_id = user.get("id") or user.get("email") or "unknown"
-    # CXI-R23a: email comes ONLY from the Supabase-verified require_user result — never body/headers.
+    # CXI-R23a: email comes ONLY from the verified session (never body/headers); '' for guests.
     user_email = (user.get("email") or "").strip().lower()
+    guest_aid = user.get("_guest_aid") or ""
+    guest_ip = user.get("_guest_ip") or ""
 
     # Burst throttle FIRST — a throttled request must not consume quota.
     _brain_throttle_check(user_id)
@@ -794,18 +865,26 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
             images=body.images,
             device_key=device_hash,
             user_email=user_email,
+            is_guest=is_guest,
+            guest_aid=guest_aid,
+            guest_ip=guest_ip,
         )
 
     return StreamingResponse(_gen(), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
 
 
 @app.get("/api/brain/me")
-def brain_me(user: dict = Depends(require_user)):
+def brain_me(request: Request, user: dict = Depends(_brain_user_or_guest)):
     """Return tier + quota status for both lanes.
 
-    Response: {tier, quotas: {fast: {remaining, limit, period}, pro: {...}}}
+    Verified users get {tier, quotas:{fast,pro}}. When guest access is enabled, an anonymous
+    caller gets {tier:'guest', quotas:{fast:{remaining,limit,period:'day'}, pro:{0,0,'day'}}}
+    so the widget shows the chat UI (not the sign-in gate). When guest access is DISABLED, an
+    anonymous caller gets today's 401 exactly (via _brain_user_or_guest re-raising).
     """
     gw = _brain_module()
+    if user.get("_is_guest"):
+        return gw.get_guest_quotas(user.get("_guest_aid") or "", user.get("_guest_ip") or "", root=REPO)
     user_id = user.get("id") or user.get("email") or "unknown"
     # email from the Supabase-verified session only (never body/headers) — drives the
     # unlimited-operator UI unlock, matching the backend's BRAIN_UNLIMITED_ALLOWLIST bypass.
