@@ -9,202 +9,422 @@
 {% block title %}PBoC & Policy Watch — Macro Dashboard{% endblock %}
 
 {%- block head_extra %}
-{% set seo_title = "PBoC & Policy Watch — Mastermind" %}
-{% set seo_desc = "China's policy pulse — central bank operations, stimulus signals and what they mean for A-shares. Updated daily." %}
+{% set seo_title = "China Policy Watch & National Team Radar — Mastermind" %}
+{% set seo_desc = "Is Beijing's hand on the market? A live read on state intervention — the national team's ETF footprint, policy rescue impulse, and PBoC stance for A-shares. Updated daily." %}
 {% set seo_path = "china_policy_watch.html" %}
 {%- include "_seo_head.html.j2" %}
 {%- endblock %}
 
 {% block base_css %}
-  .pw-hero { max-width:1060px; margin:18px auto 0; }
-  .pw-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
-  .pw-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
-  html[data-lang="zh"] .pw-hero h1 { letter-spacing:0; }
-  .pw-hero .lens { font-size:12px; color:var(--muted); }
-  .pw-wrap { max-width:1060px; margin:0 auto; }
-  h2.sec { font-size:19px; margin:28px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
-  .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
-  .callout .co-h { font-weight:700; display:block; margin-bottom:4px; }
-  .callout.key { border-left:4px solid #46b87a; }
-  .callout.warn { border-left:4px solid var(--warn); }
-  .stance-hero { display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin:14px 0; }
-  .stance-badge { font-size:22px; font-weight:800; padding:6px 16px; border-radius:999px; }
-  .st-easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); }
-  .st-tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 14%,transparent); }
-  html[data-lang="zh"] .st-easing { color:#d23f3f; background:color-mix(in srgb,#d23f3f 14%,transparent); }
-  html[data-lang="zh"] .st-tightening { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); }
-  .st-neutral { color:var(--muted); background:var(--panel2); }
-  .stance-hero .why { font-size:13px; color:var(--muted); flex:1; min-width:240px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
-  .card .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
-  .card .v { font-size:22px; font-weight:700; margin-top:3px; }
-  .card .s { font-size:11px; color:var(--muted); margin-top:3px; }
-  .moves { list-style:none; padding:0; margin:8px 0; }
-  .moves li { font-size:13px; padding:5px 0; border-bottom:1px solid var(--line); display:flex; gap:10px; }
-  .moves .dt { color:var(--muted); font-variant-numeric:tabular-nums; min-width:92px; }
-  .ease { color:#1f9a55; } .tighten { color:#d23f3f; }
-  html[data-lang="zh"] .ease { color:#d23f3f; } html[data-lang="zh"] .tighten { color:#1f9a55; }
-  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
-  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
-  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
-  .pill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap; }
-  .p-supportive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
-  .p-restrictive { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
-  html[data-lang="zh"] .p-supportive { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
-  html[data-lang="zh"] .p-restrictive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
-  .p-neutral { color:var(--muted); background:var(--panel2); }
-  .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
-  .nchip { font-size:12px; padding:4px 11px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
-  .nchip b { color:var(--link); }
-  .feed { list-style:none; padding:0; margin:10px 0; }
-  .feed li { padding:8px 0; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:flex-start; }
-  .feed .tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); white-space:nowrap; min-width:74px; text-align:center; }
-  .feed .tt { font-size:13.5px; line-height:1.45; }
-  .feed .tt a { color:var(--text); } .feed .tt a:hover { color:var(--link); }
-  .b-open { color:var(--muted); background:var(--panel2); }
-  .disc { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.55; }
+  /* ===== China Policy Watch — mx5 glass, scoped to .pw (self-contained; no shared-file edits) ===== */
+  .pw{position:relative;z-index:1;max-width:1080px;margin:0 auto;
+    --mx5-glass-bg:rgba(16,22,30,.55); --mx5-glass-border:rgba(255,255,255,.12);
+    --mx5-pop-bg:rgba(13,18,26,.97);
+    --sh-accent:var(--muted); --sh-glow:color-mix(in srgb,var(--muted) 22%,transparent);
+  }
+  [data-theme="light"] .pw{ --mx5-glass-bg:rgba(255,255,255,.82); --mx5-glass-border:rgba(0,0,0,.06); --mx5-pop-bg:rgba(255,255,255,.98); }
+  /* State-Hand accent = NON-flipping intensity tokens (act/warn/ok/muted). Never --up/--down. */
+  .pw.sh-act  { --sh-accent:var(--act);   --sh-glow:color-mix(in srgb,var(--act) 32%,transparent); }
+  .pw.sh-warn { --sh-accent:var(--warn);  --sh-glow:color-mix(in srgb,var(--warn) 32%,transparent); }
+  .pw.sh-ok   { --sh-accent:var(--ok);    --sh-glow:color-mix(in srgb,var(--ok) 30%,transparent); }
+  .pw.sh-muted{ --sh-accent:var(--muted); --sh-glow:color-mix(in srgb,var(--muted) 22%,transparent); }
+
+  /* aurora — auto-tints to the pressure accent */
+  .pw .aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .pw .aurora::before{content:"";position:absolute;top:-220px;left:10%;width:820px;height:560px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,color-mix(in srgb,var(--sh-accent) 13%,transparent) 0%,transparent 70%)}
+  .pw .aurora::after{content:"";position:absolute;bottom:-120px;right:-100px;width:680px;height:600px;border-radius:50%;filter:blur(90px);background:radial-gradient(ellipse,rgba(99,102,241,.09) 0%,transparent 70%)}
+  [data-theme="light"] .pw .aurora::before{background:radial-gradient(ellipse,color-mix(in srgb,var(--sh-accent) 6%,transparent) 0%,transparent 70%)}
+  [data-theme="light"] .pw .aurora::after{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%)}
+
+  .pw .cnx-card{background:var(--mx5-glass-bg);border:1px solid var(--mx5-glass-border);border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.4),0 1.5px 0 rgba(255,255,255,.06) inset;padding:18px 20px;margin-bottom:14px}
+  [data-theme="light"] .pw .cnx-card{box-shadow:0 4px 24px rgba(0,0,0,.08),0 1px 0 rgba(255,255,255,.9) inset}
+  .pw .cnx-ctitle{font-size:11.5px;font-weight:650;letter-spacing:.8px;text-transform:uppercase;color:var(--text);margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .pw .cnx-ctitle .sub{font-weight:500;letter-spacing:.02em;text-transform:none;color:var(--muted);font-size:11px}
+
+  /* hero */
+  .pw .pw-hero-head{margin:6px 2px 12px}
+  .pw .pw-eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--sh-accent);font-weight:700;margin:0 0 5px}
+  .pw .pw-hero-head h1{font-size:27px;margin:0 0 4px;letter-spacing:-.01em;font-weight:800}
+  html[data-lang="zh"] .pw .pw-hero-head h1{letter-spacing:0}
+  .pw .pw-hero-head .lens{font-size:12px;color:var(--muted)}
+  .pw .sh-hero{display:grid;grid-template-columns:minmax(320px,1fr) minmax(360px,1.1fr);gap:0;padding:0;position:relative;z-index:30;overflow:visible}
+  .pw .sh-hero-left{padding:20px 24px;border-right:1px solid var(--mx5-glass-border);position:relative}
+  .pw .sh-hero-right{padding:18px 22px}
+  @media(max-width:720px){.pw .sh-hero{grid-template-columns:1fr}.pw .sh-hero-left{border-right:0;border-bottom:1px solid var(--mx5-glass-border)}}
+
+  .pw .sh-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid color-mix(in srgb,var(--sh-accent) 40%,var(--mx5-glass-border));border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:600;background:color-mix(in srgb,var(--sh-accent) 10%,transparent);color:var(--sh-accent)}
+  .pw .sh-regime-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--sh-accent);box-shadow:0 0 7px var(--sh-glow);position:relative}
+  .pw .sh-regime-pill .dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid var(--sh-accent);opacity:0;animation:shPulse 3.6s ease-in-out infinite}
+  @keyframes shPulse{0%,100%{opacity:0;transform:scale(.8)}50%{opacity:.6;transform:scale(1.5)}}
+  @media(prefers-reduced-motion:reduce){.pw .sh-regime-pill .dot::after{animation:none}}
+  @media(pointer:coarse){.pw .sh-regime-pill .dot::after{animation:none}}
+
+  .pw .sh-gauge-row{display:flex;gap:16px;align-items:center;margin:14px 0 12px}
+  .pw .sh-gauge-svg{flex:0 0 176px;width:176px;height:110px;overflow:visible;display:block}
+  @media(max-width:560px){.pw .sh-gauge-svg{width:120px;height:76px;flex:0 0 120px}}
+  .pw .sh-gauge-fill{stroke:var(--sh-accent);transition:stroke .3s}
+  .pw .sh-numeral{fill:var(--sh-accent)}
+  .pw .sh-needle-hub{fill:var(--panel,#0e1013);stroke:var(--sh-accent);stroke-width:1.5}
+  .pw .sh-needle-core,.pw .sh-needle-tip{fill:var(--sh-accent)}
+  .pw .sh-needle-tip{filter:drop-shadow(0 0 3.5px var(--sh-accent))}
+  .pw .sh-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .pw .sh-big{font-size:60px;font-weight:800;line-height:.9;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--sh-accent);text-shadow:0 0 34px var(--sh-glow)}
+  @media(max-width:560px){.pw .sh-big{font-size:40px}}
+  .pw .sh-verdict{font-size:16px;font-weight:700;color:var(--text);white-space:nowrap}
+  .pw .sh-sub{font-size:11.5px;font-weight:650;letter-spacing:.3px;color:var(--sh-accent);margin-top:4px}
+  .pw .sh-stance{font-size:13px;line-height:1.6;color:var(--text);max-width:46ch;margin:6px 0 12px}
+  .pw .sh-hero-btns{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+  .pw .sh-hbtn{background:rgba(255,255,255,.05);border:1px solid var(--mx5-glass-border);color:var(--text);border-radius:999px;padding:5px 13px;font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:background .15s,border-color .15s}
+  [data-theme="light"] .pw .sh-hbtn{background:rgba(0,0,0,.03)}
+  .pw .sh-hbtn:hover{background:color-mix(in srgb,var(--sh-accent) 12%,transparent);border-color:color-mix(in srgb,var(--sh-accent) 45%,var(--mx5-glass-border))}
+
+  /* tell-stack (how we know) */
+  .pw .sh-stack-h{font-size:10.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+  .pw .sh-tier{display:flex;align-items:baseline;gap:8px;margin:13px 0 3px}
+  .pw .sh-tier:first-of-type{margin-top:2px}
+  .pw .sh-tier-k{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text)}
+  .pw .sh-tier-c{font-size:10.5px;color:var(--muted)}
+  .pw .sh-tell{display:flex;gap:10px;align-items:flex-start;padding:5px 0}
+  .pw .sh-dot{flex:0 0 9px;width:9px;height:9px;border-radius:50%;margin-top:4px;border:1.5px solid var(--muted);background:transparent}
+  .pw .sh-dot-firing{background:var(--sh-accent);border-color:var(--sh-accent);box-shadow:0 0 7px var(--sh-glow)}
+  .pw .sh-dot-quiet{border-color:var(--muted);background:transparent}
+  .pw .sh-dot-null{border-style:dashed;border-color:color-mix(in srgb,var(--muted) 55%,transparent)}
+  .pw .sh-tell-txt{flex:1;min-width:0}
+  .pw .sh-tell-top{display:flex;gap:8px;align-items:baseline;justify-content:space-between}
+  .pw .sh-tell-label{font-size:12.5px;font-weight:600;color:var(--text)}
+  .pw .sh-tell.is-null .sh-tell-label{color:var(--muted);font-weight:500}
+  .pw .sh-tell-val{font-size:11.5px;font-weight:700;color:var(--sh-accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pw .sh-tell-rc{font-size:11.5px;line-height:1.4;color:var(--muted);margin-top:1px}
+
+  /* popover — Tier-2 receipts */
+  .pw .sh-pop{position:absolute;top:calc(100% + 10px);left:0;width:min(340px,86vw);background:var(--mx5-pop-bg);border:1px solid var(--mx5-glass-border);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.55);padding:16px 18px;z-index:60;display:none}
+  .pw .sh-pop.open{display:block;animation:shPopIn .18s ease-out}
+  @keyframes shPopIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.pw .sh-pop.open{animation:none}}
+  .pw .sh-pop-h{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text);margin-bottom:12px}
+  .pw .sh-prow{margin:9px 0}
+  .pw .sh-prow-t{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:4px}
+  .pw .sh-prow-t b{font-weight:650}
+  .pw .sh-prow-t .st{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+  .pw .sh-prow-t .st.on{color:var(--sh-accent)}
+  .pw .sh-pbar{height:4px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+  [data-theme="light"] .pw .sh-pbar{background:rgba(0,0,0,.08)}
+  .pw .sh-pbar i{display:block;height:100%;border-radius:3px;background:var(--sh-accent)}
+  .pw .sh-prow-rc{font-size:11px;color:var(--muted);margin-top:3px}
+  .pw .sh-pop-flag{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--warn);margin:12px 0 4px}
+  .pw .sh-pop-note{font-size:11px;line-height:1.5;color:var(--muted);margin-top:10px;border-top:1px solid var(--mx5-glass-border);padding-top:9px}
+
+  /* pressure history sparkline */
+  .pw .sh-spark{margin-top:10px}
+  .pw .sh-spark svg{width:100%;height:34px;display:block;overflow:visible}
+  .pw .sh-spark .ln{fill:none;stroke:var(--sh-accent);stroke-width:1.6}
+  .pw .sh-spark .dot{fill:var(--sh-accent)}
+
+  /* ---- policy context sections (glass-native) ---- */
+  .pw .callout{border-radius:12px;padding:12px 15px;margin:0 0 12px;border:1px solid var(--mx5-glass-border);background:rgba(255,255,255,.03);font-size:13px;line-height:1.6}
+  [data-theme="light"] .pw .callout{background:rgba(0,0,0,.02)}
+  .pw .callout .co-h{font-weight:700;display:block;margin-bottom:3px}
+  .pw .callout.key{border-left:3px solid var(--ok)}
+  .pw .callout.warn{border-left:3px solid var(--warn)}
+  .pw .stale-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);border:1px solid var(--mx5-glass-border);border-radius:999px;padding:3px 10px}
+  .pw .stale-chip.old{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--mx5-glass-border))}
+  .pw .stance-hero{display:flex;flex-wrap:wrap;gap:13px;align-items:center;margin:2px 0 4px}
+  .pw .stance-badge{font-size:20px;font-weight:800;padding:5px 15px;border-radius:999px}
+  .pw .st-easing{color:#1f9a55;background:color-mix(in srgb,#1f9a55 15%,transparent)}
+  .pw .st-tightening{color:#d23f3f;background:color-mix(in srgb,#d23f3f 15%,transparent)}
+  html[data-lang="zh"] .pw .st-easing{color:#d23f3f;background:color-mix(in srgb,#d23f3f 15%,transparent)}
+  html[data-lang="zh"] .pw .st-tightening{color:#1f9a55;background:color-mix(in srgb,#1f9a55 15%,transparent)}
+  .pw .st-neutral,.pw .st-on_hold{color:var(--muted);background:rgba(255,255,255,.05)}
+  .pw .stance-hero .why{font-size:12.5px;color:var(--muted);flex:1;min-width:220px}
+  .pw .mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:2px 0}
+  .pw .metric{background:rgba(255,255,255,.03);border:1px solid var(--mx5-glass-border);border-radius:12px;padding:11px 13px}
+  [data-theme="light"] .pw .metric{background:rgba(0,0,0,.02)}
+  .pw .metric .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .pw .metric .v{font-size:20px;font-weight:750;margin-top:3px;font-variant-numeric:tabular-nums}
+  .pw .metric .s{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .pw .moves{list-style:none;padding:0;margin:4px 0 0}
+  .pw .moves li{font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--mx5-glass-border);display:flex;gap:10px}
+  .pw .moves li:last-child{border-bottom:0}
+  .pw .moves .dt{color:var(--muted);font-variant-numeric:tabular-nums;min-width:90px}
+  .pw .ease{color:#1f9a55}.pw .tighten{color:#d23f3f}
+  html[data-lang="zh"] .pw .ease{color:#d23f3f}html[data-lang="zh"] .pw .tighten{color:#1f9a55}
+  .pw table.pwd{border-collapse:collapse;width:100%;font-size:12.5px;margin:2px 0 0}
+  .pw table.pwd th{text-align:left;padding:7px 9px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--mx5-glass-border)}
+  .pw table.pwd td{padding:7px 9px;border-bottom:1px solid var(--mx5-glass-border);vertical-align:top}
+  .pw table.pwd tr:last-child td{border-bottom:0}
+  .pw .pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap}
+  .pw .p-supportive{color:#1f9a55;background:color-mix(in srgb,#1f9a55 14%,transparent)}
+  .pw .p-restrictive{color:#d23f3f;background:color-mix(in srgb,#d23f3f 14%,transparent)}
+  html[data-lang="zh"] .pw .p-supportive{color:#d23f3f;background:color-mix(in srgb,#d23f3f 14%,transparent)}
+  html[data-lang="zh"] .pw .p-restrictive{color:#1f9a55;background:color-mix(in srgb,#1f9a55 14%,transparent)}
+  .pw .p-neutral,.pw .p-open{color:var(--muted);background:rgba(255,255,255,.06)}
+  .pw .chips{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 0}
+  .pw .nchip{font-size:12px;padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--mx5-glass-border)}
+  .pw .nchip b{color:var(--sh-accent)}
+  .pw .feed{list-style:none;padding:0;margin:2px 0 0}
+  .pw .feed li{padding:8px 0;border-bottom:1px solid var(--mx5-glass-border);display:flex;gap:10px;align-items:flex-start}
+  .pw .feed li:last-child{border-bottom:0}
+  .pw .feed .tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--mx5-glass-border);white-space:nowrap;min-width:72px;text-align:center}
+  .pw .feed .tt{font-size:13px;line-height:1.45}
+  .pw .feed .tt a{color:var(--text)}.pw .feed .tt a:hover{color:var(--link)}
+  .pw .disc{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.55}
+  .pw .warming{border-radius:14px;border:1px solid var(--mx5-glass-border);background:rgba(255,255,255,.03);padding:16px 18px;font-size:13px;color:var(--muted)}
 {% endblock %}
 
 {% block content %}
-<section class="pw-hero">
-  <p class="eyebrow">🏛️ {{ t('PBoC & Policy Watch', '央行与政策观察') }}</p>
-  <h1>{{ t('China Central Bank & Policy Watch', '中国央行与政策观察') }}</h1>
-  <p class="lens">{{ t('PBoC rate corridor · liquidity · FX · NBS prints · State-Council/NDRC policy · context only · as of', '央行利率走廊 · 流动性 · 外汇 · 统计局数据 · 国务院/发改委政策 · 仅供参考 · 截至') }} {{ pw.asof if pw else '—' }}</p>
-</section>
+{% set nt = pw.national_team if pw else None %}
+{% set acc = (nt.pressure.accent if nt else 'muted') %}
+<div class="pw sh-{{ acc }}">
+  <div class="aurora" aria-hidden="true"></div>
 
-<div class="pw-wrap">
+  <div class="pw-hero-head">
+    <p class="pw-eyebrow">🇨🇳 {{ t('National Team Radar', '国家队雷达') }}</p>
+    <h1>{{ t('China Policy &amp; State-Hand Watch', '中国政策与国家队监测') }}</h1>
+    <p class="lens">{{ t('Is Beijing defending the market right now? — the national team footprint · PBoC stance · policy backdrop · context only · as of', '北京此刻是否在护盘？——国家队足迹 · 央行立场 · 政策背景 · 仅供参考 · 截至') }} {{ pw.asof if pw else '—' }}</p>
+  </div>
+
 {% if not pw %}
-  <div class="callout">{{ t('Policy data is still warming up — this page populates after the first collect + build cycle.', '政策数据仍在预热——本页将在首次采集与构建周期后填充。') }}</div>
+  <div class="warming">{{ t('Policy data is still warming up — this page populates after the first collect + build cycle.', '政策数据仍在预热——本页将在首次采集与构建周期后填充。') }}</div>
 {% else %}
 
-  {% if pw.intel and pw.intel.thesis %}
-  <div class="callout key"><span class="co-h">{{ t('The policy thesis', '政策核心论点') }}</span>{{ bl(pw.intel.thesis.en, pw.intel.thesis.zh) }}</div>
-  {% endif %}
-  {% if pw.intel and pw.intel.regime_read %}
-  <div class="callout warn"><span class="co-h">{{ t('How to read it', '如何解读') }}</span>{{ bl(pw.intel.regime_read.en, pw.intel.regime_read.zh) }}</div>
-  {% endif %}
-
-  {# Intel substrate age — show age badge always; escalate to warn callout when stale (>14d). #}
-  {# pw.intel_dates is None-safe: policy_dates.annotate({}) returns stale=False on missing as_of. #}
-  {% set id = pw.intel_dates if pw.intel_dates else {} %}
-  {% set st = id.staleness if id.staleness else {} %}
-  {% if st.as_of %}
-  <p style="font-size:11.5px;color:var(--muted);margin:6px 0 2px">
-    {{ t('Intel substrate', '情报底稿') }}:
-    <span style="font-variant-numeric:tabular-nums">{{ st.as_of }}</span>
-    {% if st.age_days is not none %}
-    ({{ st.age_days }}{{ t('d ago', '日前') }})
-    {% endif %}
-  </p>
-  {% if st.stale %}
-  <div class="callout warn" style="margin-top:4px">
-    <span class="co-h">{{ t('Intel substrate may be stale', '情报底稿可能过时') }}</span>
-    {{ t('The curated intel.json (as_of', '手工整理的 intel.json（截至') }} {{ st.as_of }}{{ t(') has not been refreshed in >', '）已超过') }} 14{{ t(' days. Qualitative policy reads on this page may not reflect recent developments.', ' 天未更新。本页政策解读可能未反映最新进展。') }}
-  </div>
-  {% endif %}
-  {% endif %}
-
-  <!-- ===== PBoC stance + rate corridor ===== -->
-  {% if pw.pboc %}
-  <h2 class="sec">🪙 {{ t('PBoC stance & rate corridor', '央行立场与利率走廊') }}</h2>
-  <div class="stance-hero">
-    <span class="stance-badge st-{{ pw.pboc.stance }}">{{ bl(pw.pboc.stance_en, pw.pboc.stance_zh) }}</span>
-    <span class="why">{{ bl(pw.pboc.rationale.en, pw.pboc.rationale.zh) }}</span>
-  </div>
-  <div class="grid">
-    {% for c in pw.pboc.corridor %}
-    <div class="card"><div class="k">{{ bl(c.label_en, c.label_zh) }}</div><div class="v">{{ '%.2f'|format(c.value) }}{{ c.unit }}</div></div>
-    {% endfor %}
-  </div>
-
-  <!-- ===== FX & reserves ===== -->
-  {% set fx = pw.pboc.fx %}
-  <h2 class="sec">💱 {{ t('FX & reserves', '外汇与储备') }}</h2>
-  <div class="grid">
-    {% if fx.reserves %}<div class="card"><div class="k">{{ t('FX reserves', '外汇储备') }}</div><div class="v">${{ (fx.reserves/10000)|round(2) }}T</div><div class="s">{% if fx.reserves_mom %}{{ '%+.0f'|format(fx.reserves_mom) }} {{ t('bn MoM', '亿环比') }}{% endif %} · {{ fx.asof_reserves }}</div></div>{% endif %}
-    {% if fx.gold %}<div class="card"><div class="k">{{ t('Gold reserves', '黄金储备') }}</div><div class="v">{{ fx.gold|round(0)|int }}t</div></div>{% endif %}
-    {% if fx.usd_cny %}<div class="card"><div class="k">{{ t('USD / CNY', '美元兑人民币') }}</div><div class="v">{{ '%.3f'|format(fx.usd_cny) }}</div><div class="s">{% if fx.usd_cny_chg_20d is not none %}{{ '%+.3f'|format(fx.usd_cny_chg_20d) }} {{ t('20d', '20日') }}{% endif %} · {{ fx.asof_cny }}</div></div>{% endif %}
-  </div>
-
-  {% if pw.pboc.last_moves %}
-  <h3 style="font-size:14px;color:var(--muted);margin:14px 0 4px">{{ t('Recent policy moves', '近期政策动作') }}</h3>
-  <ul class="moves">
-    {% for m in pw.pboc.last_moves %}
-    <li><span class="dt">{{ m.date }}</span><span class="{{ 'ease' if m.easing else 'tighten' }}">{{ bl(m.detail_en, m.detail_zh) }}</span></li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-  {% endif %}
-
-  <!-- ===== NBS latest prints ===== -->
-  {% if pw.nbs_prints %}
-  <h2 class="sec">📊 {{ t('NBS latest prints', '统计局最新数据') }}</h2>
-  <div class="grid">
-    {% for r in pw.nbs_prints %}
-    <div class="card"><div class="k">{{ bl(r.label_en, r.label_zh) }}</div><div class="v">{{ r.value }}{{ r.unit }}</div><div class="s">{{ r.asof }}</div></div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <!-- ===== NPC targets ===== -->
-  {% if pw.intel and pw.intel.npc_targets_2026 %}
-  <h2 class="sec">🎯 {{ t('NPC 2026 targets', '两会2026目标') }}</h2>
-  <div class="chips">
-    {% for tg in pw.intel.npc_targets_2026 %}
-    <span class="nchip">{{ bl(tg.label_en, tg.label_zh) }} <b>{{ tg.value }}</b></span>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <!-- ===== sector-policy tracker ===== -->
-  {% if pw.intel and pw.intel.sector_policy %}
-  <h2 class="sec">🧭 {{ t('Sector-policy tracker', '行业政策追踪') }}</h2>
-  <table class="data">
-    <thead><tr><th>{{ t('Sector', '行业') }}</th><th>{{ t('Stance', '立场') }}</th><th>{{ t('Policy read', '政策解读') }}</th></tr></thead>
-    <tbody>
-    {% for s in pw.intel.sector_policy %}
-      <tr>
-        <td>{{ bl(s.sector_en, s.sector_zh) }}{% if s.baskets %}<br><span class="bk" style="font-size:10px;color:var(--muted)">{{ s.baskets|join(' · ') }}</span>{% endif %}</td>
-        <td><span class="pill p-{{ s.stance }}">{{ t(s.stance|capitalize, ({'supportive':'支持','restrictive':'限制','neutral':'中性'}).get(s.stance, s.stance)) }}</span></td>
-        <td>{{ bl(s.note_en, s.note_zh) }}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% endif %}
-
-  <!-- ===== official policy tape ===== -->
-  {% if pw.policy_feed %}
-  <h2 class="sec">📰 {{ t('Official policy tape', '官方政策快讯') }}</h2>
-  <ul class="feed">
-    {% for it in pw.policy_feed %}
-    <li>
-      <span class="tag">{{ bl(it.theme_en, it.theme_zh) }}</span>
-      <div class="tt">
-        {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>{% else %}{{ it.title }}{% endif %}
-        {% if it.scheduled_ref %} <span style="font-size:10px;color:#e0973a">📅 {{ it.scheduled_ref }}</span>{% endif %}
+  <!-- ============ SIGNATURE: National Team Radar ============ -->
+  {% if nt %}
+  {% set p = nt.pressure %}
+  {% set arc_len = 175.93 %}
+  {% set filled = (p.score / 100 * arc_len) | round(1) %}
+  {% set gap = (arc_len - filled) | round(1) %}
+  {% set needle = (p.score / 100 * 180 - 90) | round(1) %}
+  <div class="cnx-card sh-hero">
+    <div class="sh-hero-left">
+      <span class="sh-regime-pill"><span class="dot"></span>{{ bl(p.band_en, p.band_zh) }} · {{ t('state-hand watch', '国家队监测') }}</span>
+      <div class="sh-gauge-row">
+        <svg class="sh-gauge-svg" viewBox="0 -4 140 101" fill="none"
+             role="img" aria-label="{{ p.band_en }} — State-Hand pressure {{ p.score }} of 100">
+          <defs>
+            <filter id="shNeedleGlow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="shArcGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round" fill="none"/>
+          <path class="sh-gauge-fill" d="M 14 75 A 56 56 0 0 1 126 75" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="{{ filled }} {{ gap }}" filter="url(#shArcGlow)"/>
+          <g stroke="rgba(255,255,255,.20)" stroke-width="1.2">
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-90 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-45 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(0 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(45 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(90 70 75)"/>
+          </g>
+          <text x="14" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">0</text>
+          <text x="70" y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">50</text>
+          <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">100</text>
+          <g class="sh-needle" transform="rotate({{ needle }} 70 75)" filter="url(#shNeedleGlow)">
+            <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
+            <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
+            <circle cx="70" cy="75" r="7" fill="rgba(255,255,255,.10)"/>
+            <circle class="sh-needle-hub" cx="70" cy="75" r="4.5"/>
+            <circle class="sh-needle-core" cx="70" cy="75" r="2"/>
+            <circle class="sh-needle-tip" cx="70" cy="25.5" r="2.5"/>
+          </g>
+          <text class="sh-numeral" x="70" y="62" font-size="24" font-weight="800" text-anchor="middle" font-family="Inter,sans-serif">{{ p.score }}</text>
+          <text x="70" y="73" fill="rgba(255,255,255,.32)" font-size="11" text-anchor="middle" font-family="Inter,sans-serif">/ 100</text>
+        </svg>
+        <div>
+          <div class="sh-score-line"><span class="sh-big">{{ p.score }}</span></div>
+          <div class="sh-verdict">{{ bl(p.band_en, p.band_zh) }}</div>
+          <div class="sh-sub">{{ t('State-Hand pressure', '国家队干预压力') }} · {{ nt.tell_counts.firing }}/{{ nt.tell_counts.total }} {{ t('tells firing', '迹象点亮') }}</div>
+        </div>
       </div>
-    </li>
-    {% endfor %}
-  </ul>
+      <p class="sh-stance">{{ bl(nt.stance.en, nt.stance.zh) }}</p>
+      <div class="sh-hero-btns">
+        <button class="sh-hbtn" onclick="shPop('sh-pop-receipts',event)">⌁ {{ t('Receipts &amp; method', '依据与方法') }}</button>
+        {% if nt.history and nt.history|length >= 2 %}
+        {% set hmax = 100 %}
+        <div class="sh-spark" style="flex-basis:100%">
+          <svg viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true">
+            {% set n = nt.history|length %}
+            {% set pts = [] %}
+            {% for h in nt.history %}{% set _ = pts.append('%s,%s'|format((loop.index0/(n-1)*198+1)|round(1), (32 - (h.score/hmax*30))|round(1))) %}{% endfor %}
+            <polyline class="ln" points="{{ pts|join(' ') }}"/>
+            {% set last = nt.history[-1] %}
+            <circle class="dot" cx="199" cy="{{ (32 - (last.score/hmax*30))|round(1) }}" r="2.4"/>
+          </svg>
+        </div>
+        {% endif %}
+
+        <div class="sh-pop" id="sh-pop-receipts" onclick="event.stopPropagation()">
+          <div class="sh-pop-h">{{ t('Detection receipts', '检测依据') }} — {{ nt.tell_counts.firing }}/{{ nt.tell_counts.total }} {{ t('firing', '点亮') }}</div>
+          {% for tl in nt.tells %}
+          <div class="sh-prow">
+            <div class="sh-prow-t"><b>{{ bl(tl.label_en, tl.label_zh) }}</b><span class="st {{ 'on' if tl.state=='firing' else '' }}">{{ t('firing','点亮') if tl.state=='firing' else (t('null','无') if tl.state=='null' else t('quiet','平静')) }}</span></div>
+            <div class="sh-pbar"><i style="width:{{ (tl.strength*100)|round|int }}%"></i></div>
+            <div class="sh-prow-rc">{% if tl.state=='null' %}{{ t('No reading — data not yet available.', '暂无读数——数据尚未具备。') }}{% else %}{{ bl(tl.receipt_en, tl.receipt_zh) }}{% endif %}</div>
+          </div>
+          {% endfor %}
+          {% if nt.gaps %}
+          <div class="sh-pop-flag">{{ t('Data limits', '数据限制') }}</div>
+          <div class="sh-prow-rc">{{ nt.gaps|join(' · ') }}</div>
+          {% endif %}
+          <div class="sh-pop-note">{{ t('Context only — a read on whether the state is defending the market, not a buy signal. State intervention is loud by design; this fuses its public footprint (ETF creation, policy impulse, index-heavyweight lift) into one intensity gauge. Nulls are shown, not hidden.', '仅作背景——用以判断国家队是否在护盘，并非买入信号。国家干预本就高调；本表将其公开足迹（ETF份额创设、政策脉冲、权重股护指数）汇成一个强度读数。空值如实显示，不予隐藏。') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sh-hero-right">
+      <p class="sh-stack-h">{{ t('How we read the hand', '我们如何读国家队之手') }}</p>
+      {% for tier, cap_en, cap_zh in [('leading', 'before the buying', '买入之前'), ('coincident', 'during — the fingerprint', '买入期间——指纹'), ('confirming', 'after — the relay', '之后——接力')] %}
+      <div class="sh-tier"><span class="sh-tier-k">{{ t(tier|capitalize, ({'leading':'先行','coincident':'同步','confirming':'确认'})[tier]) }}</span><span class="sh-tier-c">{{ t(cap_en, cap_zh) }}</span></div>
+      {% for tl in nt.tells if tl.tier == tier %}
+      <div class="sh-tell {{ 'is-null' if tl.state=='null' }}">
+        <span class="sh-dot sh-dot-{{ tl.state }}"></span>
+        <div class="sh-tell-txt">
+          <div class="sh-tell-top">
+            <span class="sh-tell-label">{{ bl(tl.label_en, tl.label_zh) }}</span>
+            {% if tl.value_fmt %}<span class="sh-tell-val">{{ tl.value_fmt }}</span>{% endif %}
+          </div>
+          <div class="sh-tell-rc">{% if tl.state=='null' %}{{ t('No reading yet', '暂无读数') }}{% else %}{{ bl(tl.receipt_en, tl.receipt_zh) }}{% endif %}</div>
+        </div>
+      </div>
+      {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
   {% endif %}
 
-  <!-- ===== prediction ledger ===== -->
+  <!-- curated policy thesis -->
+  {% if pw.intel and pw.intel.thesis %}
+  <div class="cnx-card">
+    <div class="callout key" style="margin-bottom:10px"><span class="co-h">{{ t('The policy thesis', '政策核心论点') }}</span>{{ bl(pw.intel.thesis.en, pw.intel.thesis.zh) }}</div>
+    {% if pw.intel.regime_read %}<div class="callout warn" style="margin-bottom:0"><span class="co-h">{{ t('How to read it', '如何解读') }}</span>{{ bl(pw.intel.regime_read.en, pw.intel.regime_read.zh) }}</div>{% endif %}
+    {% set id = pw.intel_dates if pw.intel_dates else {} %}
+    {% set st = id.staleness if id.staleness else {} %}
+    {% if st.as_of %}
+    <p style="margin:12px 0 0"><span class="stale-chip {{ 'old' if st.stale }}">{{ t('Intel substrate', '情报底稿') }} · {{ st.as_of }}{% if st.age_days is not none %} · {{ st.age_days }}{{ t('d ago', '日前') }}{% endif %}{% if st.stale %} · {{ t('may be stale', '可能过时') }}{% endif %}</span></p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- PBoC stance + corridor -->
+  {% if pw.pboc %}
+  <div class="cnx-card">
+    <div class="cnx-ctitle">🪙 {{ t('PBoC stance &amp; rate corridor', '央行立场与利率走廊') }}</div>
+    <div class="stance-hero">
+      <span class="stance-badge st-{{ pw.pboc.stance }}">{{ bl(pw.pboc.stance_en, pw.pboc.stance_zh) }}</span>
+      <span class="why">{{ bl(pw.pboc.rationale.en, pw.pboc.rationale.zh) }}</span>
+    </div>
+    <div class="mgrid">
+      {% for c in pw.pboc.corridor %}
+      <div class="metric"><div class="k">{{ bl(c.label_en, c.label_zh) }}</div><div class="v">{{ '%.2f'|format(c.value) }}{{ c.unit }}</div></div>
+      {% endfor %}
+    </div>
+    {% if pw.pboc.last_moves %}
+    <ul class="moves">
+      {% for m in pw.pboc.last_moves %}
+      <li><span class="dt">{{ m.date }}</span><span class="{{ 'ease' if m.easing else 'tighten' }}">{{ bl(m.detail_en, m.detail_zh) }}</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- FX & reserves -->
+  {% if pw.pboc and pw.pboc.fx %}
+  {% set fx = pw.pboc.fx %}
+  <div class="cnx-card">
+    <div class="cnx-ctitle">💱 {{ t('FX &amp; reserves', '外汇与储备') }}</div>
+    <div class="mgrid">
+      {% if fx.reserves %}<div class="metric"><div class="k">{{ t('FX reserves', '外汇储备') }}</div><div class="v">${{ (fx.reserves/10000)|round(2) }}T</div><div class="s">{% if fx.reserves_mom %}{{ '%+.0f'|format(fx.reserves_mom) }} {{ t('bn MoM', '亿环比') }}{% endif %} · {{ fx.asof_reserves }}</div></div>{% endif %}
+      {% if fx.gold %}<div class="metric"><div class="k">{{ t('Gold reserves', '黄金储备') }}</div><div class="v">{{ fx.gold|round(0)|int }}t</div></div>{% endif %}
+      {% if fx.usd_cny %}<div class="metric"><div class="k">{{ t('USD / CNY', '美元兑人民币') }}</div><div class="v">{{ '%.3f'|format(fx.usd_cny) }}</div><div class="s">{% if fx.usd_cny_chg_20d is not none %}{{ '%+.3f'|format(fx.usd_cny_chg_20d) }} {{ t('20d', '20日') }}{% endif %} · {{ fx.asof_cny }}</div></div>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- NBS prints -->
+  {% if pw.nbs_prints %}
+  <div class="cnx-card">
+    <div class="cnx-ctitle">📊 {{ t('NBS latest prints', '统计局最新数据') }}</div>
+    <div class="mgrid">
+      {% for r in pw.nbs_prints %}
+      <div class="metric"><div class="k">{{ bl(r.label_en, r.label_zh) }}</div><div class="v">{{ r.value }}{{ r.unit }}</div><div class="s">{{ r.asof }}</div></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- NPC targets -->
+  {% if pw.intel and pw.intel.npc_targets_2026 %}
+  <div class="cnx-card">
+    <div class="cnx-ctitle">🎯 {{ t('NPC 2026 targets', '两会2026目标') }}</div>
+    <div class="chips">
+      {% for tg in pw.intel.npc_targets_2026 %}
+      <span class="nchip">{{ bl(tg.label_en, tg.label_zh) }} <b>{{ tg.value }}</b></span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- sector-policy tracker -->
+  {% if pw.intel and pw.intel.sector_policy %}
+  <div class="cnx-card">
+    <div class="cnx-ctitle">🧭 {{ t('Sector-policy tracker', '行业政策追踪') }}</div>
+    <table class="pwd">
+      <thead><tr><th>{{ t('Sector', '行业') }}</th><th>{{ t('Stance', '立场') }}</th><th>{{ t('Policy read', '政策解读') }}</th></tr></thead>
+      <tbody>
+      {% for s in pw.intel.sector_policy %}
+        <tr>
+          <td>{{ bl(s.sector_en, s.sector_zh) }}{% if s.baskets %}<br><span style="font-size:10px;color:var(--muted)">{{ s.baskets|join(' · ') }}</span>{% endif %}</td>
+          <td><span class="pill p-{{ s.stance }}">{{ t(s.stance|capitalize, ({'supportive':'支持','restrictive':'限制','neutral':'中性'}).get(s.stance, s.stance)) }}</span></td>
+          <td>{{ bl(s.note_en, s.note_zh) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- official policy tape -->
+  {% if pw.policy_feed %}
+  <div class="cnx-card">
+    <div class="cnx-ctitle">📰 {{ t('Official policy tape', '官方政策快讯') }}</div>
+    <ul class="feed">
+      {% for it in pw.policy_feed %}
+      <li>
+        <span class="tag">{{ bl(it.theme_en, it.theme_zh) }}</span>
+        <div class="tt">
+          {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>{% else %}{{ it.title }}{% endif %}
+          {% if it.scheduled_ref %} <span style="font-size:10px;color:#e0973a">📅 {{ it.scheduled_ref }}</span>{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- prediction ledger -->
   {% if pw.intel and pw.intel.predictions %}
-  <h2 class="sec">🔮 {{ t('Policy prediction ledger', '政策预测台账') }}</h2>
-  <p style="font-size:12px;color:var(--muted)">{{ t('Dated, falsifiable PBoC / fiscal calls — accountability, not a forecast service.', '有日期、可证伪的央行／财政判断——问责，而非预测服务。') }}</p>
-  <table class="data">
-    <thead><tr><th>{{ t('Prediction', '预测') }}</th><th>{{ t('Check by', '核查日') }}</th><th>{{ t('Status', '状态') }}</th></tr></thead>
-    <tbody>
-    {% for p in pw.intel.predictions %}
-      <tr><td>{{ bl(p.text_en, p.text_zh) }}</td><td>{{ p.check_by }}</td><td><span class="pill b-open">{{ t(p.status|capitalize, ({'open':'未结','hit':'命中','miss':'落空'}).get(p.status, p.status)) }}</span></td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="cnx-card">
+    <div class="cnx-ctitle">🔮 {{ t('Policy prediction ledger', '政策预测台账') }} <span class="sub">{{ t('dated, falsifiable — accountability, not a forecast service', '有日期、可证伪——问责，而非预测服务') }}</span></div>
+    <table class="pwd">
+      <thead><tr><th>{{ t('Prediction', '预测') }}</th><th>{{ t('Check by', '核查日') }}</th><th>{{ t('Status', '状态') }}</th></tr></thead>
+      <tbody>
+      {% for p in pw.intel.predictions %}
+        <tr><td>{{ bl(p.text_en, p.text_zh) }}</td><td>{{ p.check_by }}</td><td><span class="pill p-open">{{ t(p.status|capitalize, ({'open':'未结','hit':'命中','miss':'落空'}).get(p.status, p.status)) }}</span></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% endif %}
 
-  <p class="disc">{{ t('Context only — not a signal, score or trade. PBoC corridor + NBS prints are point-in-time and may be revised; the sector matrix, NPC targets and prediction ledger are a hand-curated, dated intel substrate (data/china_policy/intel.json), not a model output.', '仅作背景，非信号、评分或交易。央行利率走廊与统计局数据为特定时点快照，可能修订；行业矩阵、两会目标与预测台账为人工整理、有日期的情报底稿（data/china_policy/intel.json），并非模型输出。') }}</p>
+  <p class="disc">{{ t('Context only — not a signal, score or trade. The National Team Radar fuses the public footprint of state intervention into a display-tier intensity read; it is not a buy signal and never gates a trade. PBoC corridor + NBS prints are point-in-time and may be revised; the sector matrix, NPC targets and prediction ledger are a hand-curated, dated intel substrate (data/china_policy/intel.json), not a model output.', '仅作背景，非信号、评分或交易。国家队雷达将国家干预的公开足迹汇成一个展示层强度读数；它不是买入信号，也从不用于交易闸口。央行利率走廊与统计局数据为特定时点快照，可能修订；行业矩阵、两会目标与预测台账为人工整理、有日期的情报底稿（data/china_policy/intel.json），并非模型输出。') }}</p>
 {% endif %}
 </div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function(){
+  window.shPop=function(id,e){if(e){e.stopPropagation();}var p=document.getElementById(id);if(!p)return;var open=p.classList.contains('open');document.querySelectorAll('.pw .sh-pop.open').forEach(function(x){x.classList.remove('open');});if(!open){p.classList.add('open');}};
+  document.addEventListener('click',function(){document.querySelectorAll('.pw .sh-pop.open').forEach(function(x){x.classList.remove('open');});});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.pw .sh-pop.open').forEach(function(x){x.classList.remove('open');});}});
+})();
+</script>
 {% endblock %}
