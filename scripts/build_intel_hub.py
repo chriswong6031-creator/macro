@@ -244,7 +244,15 @@ def build(write: bool = True) -> dict:
     track = {}
     try:
         today = date.today()
-        n_new = hub_track_record.snapshot(hub.get("track_rows"), today)
+        # macro regime (quad Q1-Q4) of the snapshot day — so a signal that only leads in one
+        # quadrant is measured per-regime and the governor won't demote on one-regime evidence.
+        regime = None
+        try:
+            from engine import regime_vector
+            regime = (regime_vector.get_vector_for_date(today) or {}).get("quad_hard_label") or None
+        except Exception as e:  # noqa: BLE001 — regime stamp is optional, never break the build
+            log.debug("intel_hub: regime stamp unavailable (%s)", e)
+        n_new = hub_track_record.snapshot(hub.get("track_rows"), today, regime=regime)
         track = hub_track_record.compute(today)
         # PERSIST the graded track-record (was ephemeral) so the signal governor + audits can
         # read it, and the page can show whether the hub's own claims have proven out.
