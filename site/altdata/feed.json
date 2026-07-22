@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-21T23:07:16.164823+00:00",
-  "as_of": "2026-07-21",
+  "generated_utc": "2026-07-22T00:23:48.120260+00:00",
+  "as_of": "2026-07-22",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5933,15 +5933,6 @@
           "parties": "D/Democratic"
         },
         {
-          "ticker": "AMD",
-          "net": 12,
-          "buys": 14,
-          "sells": 2,
-          "members": 4,
-          "est_usd": 112007.0,
-          "parties": "D/Democratic/R"
-        },
-        {
           "ticker": "STE",
           "net": 12,
           "buys": 12,
@@ -5967,6 +5958,15 @@
           "members": 1,
           "est_usd": 96006.0,
           "parties": "D"
+        },
+        {
+          "ticker": "AMD",
+          "net": 10,
+          "buys": 12,
+          "sells": 2,
+          "members": 4,
+          "est_usd": 96006.0,
+          "parties": "D/Democratic/R"
         },
         {
           "ticker": "BEP",
@@ -6005,15 +6005,6 @@
           "parties": "D/R"
         },
         {
-          "ticker": "ACI",
-          "net": 8,
-          "buys": 8,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 64004.0,
-          "parties": "Democratic"
-        },
-        {
           "ticker": "BWXT",
           "net": 8,
           "buys": 8,
@@ -6048,6 +6039,15 @@
           "members": 2,
           "est_usd": 56004.0,
           "parties": "D/Democratic"
+        },
+        {
+          "ticker": "ACI",
+          "net": 7,
+          "buys": 7,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 56004.0,
+          "parties": "Democratic"
         }
       ],
       "sells": [
@@ -6194,7 +6194,7 @@
         "total_usd": 84278790.0,
         "contracts": 18,
         "agencies": 2,
-        "accel_x": 1.0,
+        "accel_x": 1.01,
         "top_agency": "Department of Veterans Affairs"
       },
       {
@@ -6226,7 +6226,7 @@
         "total_usd": 27106907.0,
         "contracts": 57,
         "agencies": 7,
-        "accel_x": 1.37,
+        "accel_x": 1.45,
         "top_agency": "Department of Transportation"
       },
       {
@@ -6270,20 +6270,20 @@
         "top_agency": "National Aeronautics and Space Administration"
       },
       {
-        "ticker": "F",
-        "total_usd": 11364389.0,
-        "contracts": 232,
-        "agencies": 1,
-        "accel_x": 2.43,
-        "top_agency": "General Services Administration"
-      },
-      {
         "ticker": "ACM",
         "total_usd": 11333858.0,
         "contracts": 8,
         "agencies": 4,
         "accel_x": 8.45,
         "top_agency": "Department of Transportation"
+      },
+      {
+        "ticker": "F",
+        "total_usd": 10946519.0,
+        "contracts": 223,
+        "agencies": 1,
+        "accel_x": 2.2,
+        "top_agency": "General Services Administration"
       },
       {
         "ticker": "IBM",
@@ -6477,7 +6477,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 20,
+        "count": 19,
         "items": "8.01"
       },
       {
@@ -6486,17 +6486,12 @@
         "items": "1.01, 7.01, 8.01"
       },
       {
-        "ticker": "MSTR",
-        "count": 5,
+        "ticker": "JPM",
+        "count": 4,
         "items": "5.02, 7.01, 8.01"
       },
       {
-        "ticker": "PSA",
-        "count": 5,
-        "items": "1.01, 2.03, 5.02, 7.01"
-      },
-      {
-        "ticker": "JPM",
+        "ticker": "MSTR",
         "count": 4,
         "items": "5.02, 7.01, 8.01"
       },
@@ -6506,19 +6501,9 @@
         "items": "1.01, 2.03, 8.01"
       },
       {
-        "ticker": "AVAV",
-        "count": 3,
-        "items": "5.02, 7.01"
-      },
-      {
-        "ticker": "BLD",
-        "count": 3,
-        "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "DLR",
-        "count": 3,
-        "items": "7.01, 8.01"
+        "ticker": "PSA",
+        "count": 4,
+        "items": "1.01, 2.03, 5.02, 7.01"
       },
       {
         "ticker": "GS",
@@ -6531,11 +6516,6 @@
         "items": "1.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "MARA",
-        "count": 3,
-        "items": "1.01, 2.01, 5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "MLM",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
@@ -6546,19 +6526,9 @@
         "items": "5.02, 7.01, 8.01"
       },
       {
-        "ticker": "PSKY",
-        "count": 3,
-        "items": "7.01, 8.01"
-      },
-      {
         "ticker": "QBTS",
         "count": 3,
         "items": "7.01"
-      },
-      {
-        "ticker": "SPCX",
-        "count": 3,
-        "items": "7.01, 8.01"
       },
       {
         "ticker": "UUUU",
@@ -6571,11 +6541,6 @@
         "items": "1.01, 2.03, 8.01"
       },
       {
-        "ticker": "XEL",
-        "count": 3,
-        "items": "8.01"
-      },
-      {
         "ticker": "ACN",
         "count": 2,
         "items": "7.01, 8.01"
@@ -6586,11 +6551,6 @@
         "items": "8.01"
       },
       {
-        "ticker": "ALGN",
-        "count": 2,
-        "items": "5.02, 7.01"
-      },
-      {
         "ticker": "ALGT",
         "count": 2,
         "items": "1.01, 2.03, 8.01"
@@ -6599,6 +6559,46 @@
         "ticker": "ALL",
         "count": 2,
         "items": "5.02, 7.01"
+      },
+      {
+        "ticker": "ASTS",
+        "count": 2,
+        "items": "1.01, 2.03, 7.01, 8.01"
+      },
+      {
+        "ticker": "AVAV",
+        "count": 2,
+        "items": "5.02, 7.01"
+      },
+      {
+        "ticker": "AWK",
+        "count": 2,
+        "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "AXP",
+        "count": 2,
+        "items": "7.01"
+      },
+      {
+        "ticker": "AZO",
+        "count": 2,
+        "items": "1.01, 2.03"
+      },
+      {
+        "ticker": "BLD",
+        "count": 2,
+        "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "BLK",
+        "count": 2,
+        "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "BNY",
+        "count": 2,
+        "items": "7.01, 8.01"
       }
     ],
     "special_situations": [
@@ -45736,16 +45736,9 @@
       {
         "ticker": "NVS",
         "phase3_starts": 10,
-        "halts": 7,
+        "halts": 6,
         "hot": true,
         "sample": "A Study to Evaluate Efficacy, Safety and Tolerability of Remibrutinib in Adult Participants With Severe Chronic Pruritus of Unknown Origin (CPUO)"
-      },
-      {
-        "ticker": "MRK",
-        "phase3_starts": 8,
-        "halts": 2,
-        "hot": true,
-        "sample": "A Clinical Trial of MK-8748 Compared to Aflibercept in Participants With Diabetic Macular Edema (MK-8748-005)"
       },
       {
         "ticker": "LLY",
@@ -45753,6 +45746,13 @@
         "halts": 0,
         "hot": true,
         "sample": "A Study of Orforglipron (LY3502970) Compared With Dulaglutide in Pediatric Participants With Type 2 Diabetes"
+      },
+      {
+        "ticker": "MRK",
+        "phase3_starts": 7,
+        "halts": 2,
+        "hot": true,
+        "sample": "A Clinical Trial of MK-8748 Compared to Aflibercept in Participants With Diabetic Macular Edema (MK-8748-005)"
       },
       {
         "ticker": "AMGN",
@@ -45769,18 +45769,18 @@
         "sample": "Venous Thromboembolism (VTE) Prophylaxis With REGN7508 and REGN9933 in Adult and Adolescent Participants With a Peripherally Inserted Central Catheter (PICC)"
       },
       {
-        "ticker": "ABBV",
-        "phase3_starts": 4,
-        "halts": 2,
-        "hot": true,
-        "sample": "Surabgene Lomparvovec Administered in the Suprachoroidal Space in Adult Participants With Diabetic Retinopathy Without Center-Involved Diabetic Macular Edema"
-      },
-      {
         "ticker": "GILD",
         "phase3_starts": 3,
         "halts": 1,
         "hot": true,
         "sample": "Study of an Injectable Regimen of GS-3242 With Lenacapavir Compared to Biktarvy in People New to HIV-1 Treatment"
+      },
+      {
+        "ticker": "ABBV",
+        "phase3_starts": 3,
+        "halts": 2,
+        "hot": true,
+        "sample": "Surabgene Lomparvovec Administered in the Suprachoroidal Space in Adult Participants With Diabetic Retinopathy Without Center-Involved Diabetic Macular Edema"
       },
       {
         "ticker": "RHHBY",
@@ -47590,14 +47590,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -49397,7 +49397,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "congress_cluster: 4 members net +12 \u00b7 github_momentum: +0.33% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
+        "why": "congress_cluster: 4 members net +10 \u00b7 github_momentum: +0.33% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "GSK",
@@ -49432,7 +49432,7 @@
           "fda_label_expansion",
           "special_situation"
         ],
-        "why": "clinical_phase3_start: 8 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 special_situation: Tender Offers"
+        "why": "clinical_phase3_start: 7 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 special_situation: Tender Offers"
       },
       {
         "ticker": "AZN",
@@ -49463,7 +49463,7 @@
           "activist_13d",
           "gov_contract_accel"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $11,364,389, 2.4x accel"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $10,946,519, 2.2x accel"
       },
       {
         "ticker": "N/A",
@@ -49515,6 +49515,17 @@
           "lobbying"
         ],
         "why": "clinical_phase3_start: 2 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: ONUREG \u00b7 lobbying: $3,690,000 lobbied"
+      },
+      {
+        "ticker": "AZO",
+        "score": 3,
+        "weighted_score": 1.35,
+        "channel_list": [
+          "13f_add",
+          "material_8k",
+          "special_situation"
+        ],
+        "why": "13f_add: Curated Wealth Partners LLC +$1,929,062,992 \u00b7 material_8k: 2 material 8-Ks (items 1.01, 2.03) \u00b7 special_situation: Capital Returns"
       },
       {
         "ticker": "DASH",
@@ -49610,16 +49621,6 @@
           "unusual_options"
         ],
         "why": "trump: D R HORTON INC \u00b7 unusual_options: 4.12\u00d7 vol/OI, put-skew"
-      },
-      {
-        "ticker": "CFG",
-        "score": 2,
-        "weighted_score": 1.15,
-        "channel_list": [
-          "trump",
-          "unusual_options"
-        ],
-        "why": "trump: CITIZENS FINANCIAL GROUP INC \u00b7 unusual_options: 3.45\u00d7 vol/OI, put-skew"
       }
     ]
   }
