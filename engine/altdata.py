@@ -279,23 +279,62 @@ def _finnhub(dataset: str) -> pd.DataFrame | None:
 
 
 def analyst_trends(top: int = 25) -> list[dict]:
-    """Analyst recommendation tilt (Finnhub): per-ticker bull ratio + revision-delta.
+    """Analyst ESTIMATE-REVISION breadth — the validated Womack (1996) / Barber-Lehavy-
+    McNichols-Trueman (2001) signal, which is the DELTA (revisions), never the optimism-skewed
+    consensus LEVEL. Prefers the native revisions store (data/revisions/latest.parquet:
+    net_up_30d = net # of upward EPS-estimate revisions over 30d; breadth = (up−down)/total in
+    −1..1; est_chg_30d = % estimate change). A ticker fires `hot` when net upward revisions are
+    strong AND breadth is positive. Falls back to the legacy Finnhub-recommendation delta only
+    when the revisions store is absent — the Finnhub recommendation feed is no longer collected,
+    so this native path is what keeps the analyst channel alive."""
+    rows = _analyst_from_revisions(top)
+    return rows if rows else _analyst_from_finnhub(top)
 
-    Fix #43a: `hot` (the convergence-channel trigger) is now based on the validated
-    REVISION-DELTA construction from engine.analyst_revisions, NOT the consensus level.
-    analyst_revisions.py:4-7 states the consensus level "is near-useless and
-    optimism-skewed … we score the DELTA, never the level." A ticker fires hot when
-    direction=='upgrading' (net-buy count rose vs prior snapshot) — the signal the
-    literature (Womack 1996; Barber-Lehavy-McNichols-Trueman 2001) validates.
 
-    The `bull_ratio` level is still carried as display context (never the trigger)
-    so callers that render it as a label continue working unchanged.
-    """
+def _analyst_from_revisions(top: int) -> list[dict]:
+    """Native path: per-ticker estimate-revision breadth from the revisions store."""
+    p = config.data_dir() / "revisions" / "latest.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)   # ticker is the index
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read revisions/latest: %s", e)
+        return []
+    if df.empty:
+        return []
+    rows = []
+    for tk, r in df.iterrows():
+        tk = _s(tk)
+        nu, br = _f(r.get("net_up_30d")), _f(r.get("breadth"))
+        if not tk or pd.isna(nu) or pd.isna(br):
+            continue
+        ec = _f(r.get("est_chg_30d"))
+        na = _f(r.get("n_analysts"))
+        rows.append({
+            "ticker": tk,
+            "net_up_30d": int(nu),
+            "breadth": round(float(br), 2),
+            "est_chg_30d": round(float(ec), 2) if pd.notna(ec) else None,
+            "n_analysts": int(na) if pd.notna(na) else None,
+            # display-compat with the legacy Finnhub shape (breadth −1..1 → a 0..1 "bull" ratio)
+            "bull_ratio": round((float(br) + 1) / 2, 2),
+            "rising": nu > 0,
+            "revision_delta": int(nu),
+            # strong net upward revisions AND positive breadth — the DELTA, not the level
+            "hot": nu >= 3.0 and br >= 0.2,
+        })
+    rows.sort(key=lambda r: (r["net_up_30d"], r["breadth"]), reverse=True)
+    return rows[:top]
+
+
+def _analyst_from_finnhub(top: int) -> list[dict]:
+    """Legacy fallback: Finnhub recommendation-count revision delta (feed no longer collected,
+    so this normally returns [] — retained so a re-enabled Finnhub key resumes seamlessly)."""
     from engine import analyst_revisions  # local import to keep module boundary clean
     df = _finnhub("recommendation")
     if df is None or df.empty:
         return []
-    # Build the revision-delta map: {ticker -> {direction, revision_delta, ...}}
     rev_map = analyst_revisions.revision_map(df)
     rows = []
     for _, r in df.iterrows():
@@ -305,13 +344,10 @@ def analyst_trends(top: int = 25) -> list[dict]:
         if not tk or tot <= 0:
             continue
         bull = (((sb if pd.notna(sb) else 0) + (b if pd.notna(b) else 0)) / tot)
-        # Use the validated revision-DELTA as the hot trigger (level is display-only context)
         rev = rev_map.get(tk) or {}
         upgrading = rev.get("direction") == "upgrading"
-        rows.append({"ticker": tk, "bull_ratio": round(bull, 2),
-                     "rising": upgrading,            # kept for backward-compat display label
-                     "revision_delta": rev.get("revision_delta"),
-                     "hot": upgrading})              # DELTA-based, not level-based
+        rows.append({"ticker": tk, "bull_ratio": round(bull, 2), "rising": upgrading,
+                     "revision_delta": rev.get("revision_delta"), "hot": upgrading})
     rows.sort(key=lambda r: r["bull_ratio"], reverse=True)
     return rows[:top]
 
@@ -337,23 +373,152 @@ def insider_mspr(top: int = 25) -> list[dict]:
     return rows[:top]
 
 
-def earnings_beats(top: int = 25) -> list[dict]:
-    """Finnhub earnings surprises. `hot` when the most recent quarter beat estimates clearly."""
-    df = _finnhub("earnings")
-    if df is None or df.empty:
+def earnings_calendar(within_days: int = 21, top: int = 12,
+                      universe: set[str] | None = None) -> list[dict]:
+    """Upcoming earnings — a hard, dated, BINARY catalyst clock (native store
+    data/earnings/earnings.parquet: next_date + consensus eps_forecast, plus the most
+    recent reported surprise where the history is populated). An imminent earnings date
+    is NON-DIRECTIONAL — it could beat or miss — so this is a WATCH / timing overlay,
+    NEVER a bullish vote: a display-only signal feed that carries NO convergence weight
+    (the honest counterpart to the 'squeeze fuel — not a buy' short-interest card). Names
+    reporting within `within_days`, soonest first, so the card reads 'binary catalyst
+    imminent'.
+
+    Replaces the dead Finnhub earnings-surprise path (that feed is no longer collected;
+    the historical-surprise column is sparse, but next_date/eps_forecast is populated for
+    the full ~1.3k-name universe — so the ROBUST signal here is the forward catalyst
+    clock, not the backward beat)."""
+    p = config.data_dir() / "earnings" / "earnings.parquet"
+    if not p.exists():
         return []
-    df = df.assign(_d=_dt(df.get("period")))
+    try:
+        df = pd.read_parquet(p)   # ticker is the index
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read earnings store: %s", e)
+        return []
+    if df.empty:
+        return []
+    today = datetime.now(timezone.utc).date()
     rows = []
-    for tk, g in df.groupby("ticker"):
-        tk = _s(tk)
+    for tk, r in df.iterrows():
+        tk = models._valid_ticker(tk)          # hygiene gate — same bar as every other channel
         if not tk:
             continue
-        latest = g.sort_values("_d").iloc[-1]
-        sp = _f(latest.get("surprisePercent"))
-        if pd.isna(sp):
+        if universe is not None and tk not in universe:
+            continue                            # DRIVEN: only names our alt-data already flags —
+            #                                     turns a 1.2k-name calendar dump into 'the names
+            #                                     we're watching that have a catalyst imminent'
+        d = pd.to_datetime(r.get("next_date"), errors="coerce")
+        if pd.isna(d):
             continue
-        rows.append({"ticker": tk, "surprise_pct": round(float(sp), 1), "hot": sp >= 5.0})
-    rows.sort(key=lambda r: r["surprise_pct"], reverse=True)
+        days_to = (d.date() - today).days
+        if days_to < 0 or days_to > within_days:
+            continue                            # only genuinely imminent, FUTURE dates
+        # most recent reported surprise %, if the (sparse) history is populated
+        surp = None
+        sj = r.get("surprises_json")
+        if isinstance(sj, str) and sj and sj not in ("[]", "null", "None"):
+            try:
+                hist = json.loads(sj)
+                if isinstance(hist, list) and hist:
+                    s = _f(hist[0].get("surprise_pct"))
+                    surp = round(float(s), 1) if pd.notna(s) else None
+            except Exception:  # noqa: BLE001
+                pass
+        fc = _f(r.get("eps_forecast"))
+        rows.append({
+            "ticker": tk,
+            "next_date": d.date().isoformat(),
+            "days_to": int(days_to),
+            "eps_forecast": round(float(fc), 2) if pd.notna(fc) else None,
+            "last_surprise_pct": surp,
+        })
+    # soonest first; within a day, names with a consensus bar (more actionable) lead
+    rows.sort(key=lambda r: (r["days_to"], r["eps_forecast"] is None, r["ticker"]))
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- short interest
+def short_interest_signal(top: int = 20, dtc_hot: float = 5.0, top_hot: int = 40) -> list[dict]:
+    """FINRA consolidated short interest (collectors/finra.py -> data/finra/short_interest.parquet):
+    per-ticker days-to-cover (short_shares / avg_daily_vol) + the short-interest change vs the
+    prior settlement. HIGH days-to-cover is NOT bullish on its own — it is a crowded short that
+    becomes squeeze FUEL only IF a positive catalyst hits — so `hot` (days_to_cover >= `dtc_hot`)
+    lights a low-weight CONFLUENCE channel that never makes the board alone (count>=2 gate). The
+    strongest reads are surfaced as a display card. Bi-monthly FINRA cadence; settlement carried."""
+    p = config.data_dir() / "finra" / "short_interest.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)   # ticker is the index
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read finra short_interest: %s", e)
+        return []
+    if df.empty:
+        return []
+    rows = []
+    for tk, r in df.iterrows():
+        tk = _s(tk)
+        dtc = _f(r.get("days_to_cover"))
+        if not tk or pd.isna(dtc) or dtc <= 0:
+            continue
+        sic = _f(r.get("si_change_pct"))
+        rows.append({
+            "ticker": tk,
+            "days_to_cover": round(float(dtc), 1),
+            "si_change_pct": round(float(sic), 1) if pd.notna(sic) else None,
+            "short_shares": round(_f(r.get("short_shares")), 0) if pd.notna(_f(r.get("short_shares"))) else None,
+            "settlement": _s(r.get("settlement_date")),
+        })
+    rows.sort(key=lambda r: r["days_to_cover"], reverse=True)
+    # only the most-crowded names fire the channel (never the whole cross-section)
+    for i, r in enumerate(rows):
+        r["hot"] = r["days_to_cover"] >= dtc_hot and i < top_hot
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- stocktwits
+def stocktwits_sentiment(top: int = 15, bull_hot: float = 0.65,
+                         watch_min: int = 50_000, msg_min: int = 15) -> list[dict]:
+    """StockTwits retail conviction (collectors/stocktwits.py -> data/stocktwits/sentiment.parquet):
+    per-ticker bull_ratio over a real tagged-message base. StockTwits caps n_messages at 30 per
+    pull, so the VOLUME/conviction signal is the WATCHLIST size (how many users follow the name),
+    not message count. `hot` fires on a bullish lean (bull_ratio >= `bull_hot`) among a large
+    following (watchlist_count >= `watch_min`) over a real message base — selective, so it
+    corroborates WSB rather than floods. Lowest-weight context channel."""
+    p = config.data_dir() / "stocktwits" / "sentiment.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read stocktwits sentiment: %s", e)
+        return []
+    if df.empty:
+        return []
+    # the store keeps one row per (ticker, collection) — keep only the latest per ticker so a
+    # name never appears twice on the card or double-counts toward the channel.
+    if "_collected" in df.columns and "ticker" in df.columns:
+        df = df.sort_values("_collected").drop_duplicates("ticker", keep="last")
+    rows = []
+    for _, r in df.iterrows():
+        tk = _s(r.get("ticker"))
+        br = _f(r.get("bull_ratio"))
+        n = _f(r.get("n_messages"))
+        wl = _f(r.get("watchlist_count"))
+        if not tk or pd.isna(br) or pd.isna(n) or n <= 0:
+            continue
+        watchers = int(wl) if pd.notna(wl) else 0
+        rows.append({
+            "ticker": tk,
+            "bull_ratio": round(float(br), 2),
+            "messages": int(n),
+            "watchers": watchers,
+            "hot": br >= bull_hot and watchers >= watch_min and n >= msg_min,
+        })
+    # hot (bullish lean + large following) first, then by watchlist size — so a bull_ratio=1.0
+    # name with a tiny following never crowds the genuine signal out of the truncated top-N.
+    rows.sort(key=lambda r: (r["hot"], r["watchers"]), reverse=True)
     return rows[:top]
 
 
@@ -819,9 +984,10 @@ def inst_13f_changes(top: int = 15, window_days: int = 200) -> dict:
 
 
 # --------------------------------------------------------------------------- trump
-def trump_trades(n: int = 60, window_days: int = 365) -> list[dict]:
-    """Donald Trump stock trades. `window_days` filters by Filed date to prevent
-    indefinitely-old trades from anchoring the trump channel indefinitely."""
+def trump_trades(n: int = 60, window_days: int = 120) -> list[dict]:
+    """Donald Trump stock trades. `window_days` filters by Filed date so only a genuinely
+    RECENT trade lights the trump convergence channel — a year-old trade is not live context.
+    (Tightened 365 -> 120: the channel should read current positioning, not stale history.)"""
     df = _read("trump")
     if df is None or df.empty:
         return []
@@ -934,12 +1100,28 @@ def convergence(signals: dict, top: int = 25, affiliations: dict | None = None) 
 
 
 # --------------------------------------------------------------------------- feed
+# Only HARD, dated, deal-driven events light the `special_situation` convergence channel.
+# The desk emits ~4,800 names across 25 categories; the broad/soft ones (Capital Returns,
+# Restructuring, Rights Offerings, Domicile / Management / Litigation, "Other") made the
+# channel near-universal and diluted every convergence score. They stay on the Special-
+# Situations desk itself — this gate only decides what CONVERGES here. Activist campaigns
+# are exempt: they route to the higher-weight activist_13d channel regardless.
+_SPECIAL_SIT_ACTIONABLE = {
+    "Acquisitions", "M&A / Divestitures", "Divestitures", "Tender Offers",
+    "Issuer Tenders", "Going-Private", "Going-Private & Tender Offers", "Spin-Offs",
+    "Strategic Reviews", "Deal Terminations", "Restructuring & Busted M&A",
+    "Liquidations", "Insolvency", "Delistings",
+}
+
+
 def special_situations_signal() -> list[dict]:
     """P3.3 handshake: read the Special-Situations desk's last per-ticker emit and surface
-    high-confidence events so they light an Alt-Data convergence channel on the same name.
-    Display-only + slow signal, so last-known is fine; absent/low-confidence -> dropped.
-    (Build order: alt-data runs before special-situations, so this consumes yesterday's
-    emit — acceptable for a multi-week 13D/deal signal.)"""
+    high-confidence, ACTIONABLE events so they light an Alt-Data convergence channel on the
+    same name. Only hard dated deal-events (`_SPECIAL_SIT_ACTIONABLE`) + activist campaigns
+    converge — broad/soft categories are dropped so the channel stays selective. Display-only
+    + slow signal, so last-known is fine; absent/low-confidence -> dropped. (Build order:
+    alt-data runs before special-situations, so this consumes yesterday's emit — acceptable
+    for a multi-week 13D/deal signal.)"""
     p = config.ROOT / "site" / "allocationdata" / "special_situations.json"
     if not p.exists():
         return []
@@ -952,10 +1134,71 @@ def special_situations_signal() -> list[dict]:
         if str(r.get("confidence") or "").lower() == "low":
             continue                              # never propagate unverified keyword guesses
         cat = r.get("category")
+        is_activist = cat == "Activist Campaigns"
+        # Non-activist events must be a hard, dated deal-event to converge here.
+        if not is_activist and cat not in _SPECIAL_SIT_ACTIONABLE:
+            continue
         out.append({"ticker": tk, "category": cat, "confidence": r.get("confidence"),
-                    "activist": cat == "Activist Campaigns",
+                    "activist": is_activist,
                     "filer": r.get("activist_filer"), "detail": cat})
     return out
+
+
+def _flagged_universe(signals: dict, exclude: tuple[str, ...] = ("special_situations", "earnings")) -> set[str]:
+    """The set of tickers our alt-data actively flags — the union of validated tickers across
+    every DISPLAY signal channel, EXCLUDING `special_situations` (a ~2.9k-name event flood that
+    would re-admit the whole market) and `earnings` (self). Drives the earnings-catalyst filter so
+    the card reads 'watched names with a binary catalyst imminent', not a 1.2k-name calendar dump.
+    Handles the three signal shapes like `_scrub_signal_tickers`: ticker-keyed lists, buy/sell/
+    add/trim sub-lists (insiders / 13F / political), and dicts keyed by ticker (congress)."""
+    uni: set[str] = set()
+
+    def take(tk):
+        v = models._valid_ticker(tk)
+        if v:
+            uni.add(v)
+
+    for k, v in signals.items():
+        if k in exclude:
+            continue
+        if isinstance(v, list):
+            for r in v:
+                if isinstance(r, dict):
+                    take(r.get("ticker"))
+        elif isinstance(v, dict):
+            subs = [s for s in ("buys", "sells", "adds", "trims") if isinstance(v.get(s), list)]
+            if subs:
+                for s in subs:
+                    for r in v[s]:
+                        if isinstance(r, dict):
+                            take(r.get("ticker"))
+            else:  # dict keyed by ticker (congress_holdings)
+                for tk in v:
+                    take(tk)
+    return uni
+
+
+def _scrub_signal_tickers(signals: dict) -> None:
+    """Drop any signal row whose ticker fails hygiene ('N/A' and other placeholder junk) so no
+    invalid name reaches a DISPLAY card. In-place. Handles the three signal shapes: ticker-keyed
+    lists of dicts, buy/sell/add/trim sub-lists (political / insiders / 13F), and dicts keyed by
+    ticker (congress_holdings). Rows without a ticker field (bills) pass through untouched."""
+    valid = models._valid_ticker
+
+    def clean_list(lst):
+        return [r for r in lst if isinstance(r, dict)
+                and ("ticker" not in r or valid(r.get("ticker")) is not None)]
+
+    for k, v in list(signals.items()):
+        if isinstance(v, list):
+            signals[k] = clean_list(v)
+        elif isinstance(v, dict):
+            subs = [sub for sub in ("buys", "sells", "adds", "trims") if isinstance(v.get(sub), list)]
+            if subs:
+                for sub in subs:
+                    v[sub] = clean_list(v[sub])
+            else:  # dict keyed by ticker (congress_holdings)
+                signals[k] = {tk: val for tk, val in v.items() if valid(tk) is not None}
 
 
 def build_feed() -> dict:
@@ -988,7 +1231,8 @@ def build_feed() -> dict:
     signals["unusual_options"] = safe(unusual_options, [])
     signals["analyst"] = safe(analyst_trends, [])
     signals["insider_mspr"] = safe(insider_mspr, [])
-    signals["earnings"] = safe(earnings_beats, [])
+    signals["short_interest"] = safe(short_interest_signal, [])   # FINRA squeeze-fuel channel
+    signals["stocktwits"] = safe(stocktwits_sentiment, [])        # retail conviction (corroborates WSB)
     signals["news_sentiment"] = safe(news_sentiment_signals, [])
     signals["clinical"] = safe(clinical_events, [])
     signals["github"] = safe(github_momentum, [])
@@ -1008,6 +1252,15 @@ def build_feed() -> dict:
     signals["congress_holdings"] = safe(models.congress_holdings, {})
     signals["flights"] = safe(models.flights_proximity, [])
     signals["exec_comp"] = safe(models.exec_comp, [])
+    # hygiene sweep: drop junk tickers ('N/A' etc.) from every DISPLAY feed before the
+    # retail/convergence layers read them — the kernel guards convergence, this guards the cards.
+    _safe(lambda: _scrub_signal_tickers(signals), None)
+    # DRIVEN earnings clock: filter the ~1.2k-name upcoming-earnings calendar down to names our
+    # alt-data already flags, so the card reads 'watched names with a binary catalyst imminent'
+    # rather than an alphabetical dump. Built AFTER the scrub so the universe is hygiene-clean.
+    # top=300 so the by_ticker substrate carries the clock for EVERY imminent flagged name
+    # (consumed by the per-stock chip); the template card itself slices to the 10 soonest.
+    signals["earnings"] = _safe(lambda: earnings_calendar(universe=_flagged_universe(signals), top=300), [])
     signals["retail"] = _safe(lambda: models.retail_attention(signals.get("wsb", [])), [])
     signals["convergence"] = _safe(lambda: convergence(signals), [])
 

@@ -10,13 +10,22 @@
 {% set CH = {
   'congress_buy': ['Congress buy','国会买入'], 'congress_cluster': ['Congress cluster-buy','国会集群买入'],
   'insider_buy': ['Insider buy','内部人买入'], 'insider_cluster': ['Insider cluster-buy','内部人集群买入'],
+  'insider_mspr': ['Insider sentiment','内部人情绪'],
   'gov_contract': ['Gov contracts','政府合同'], 'gov_contract_accel': ['Contracts accelerating','合同加速'],
+  'gov_grant': ['Federal grant','联邦补助'], 'gov_grant_accel': ['Grants accelerating','补助加速'],
   'lobbying': ['Lobbying','游说'], 'lobbying_spike': ['Lobbying spike','游说激增'],
   'darkpool_accum': ['Dark-pool accum','暗池吸筹'], '13f_add': ['13F add','机构加仓'],
   'smart_money_13f': ['Smart-money 13F','聪明钱13F'], 'cnbc_pick': ['CNBC pick','CNBC推荐'],
   'trump': ['Trump trade','特朗普交易'], 'affiliation': ['Influence link','影响力关联'],
   'app_demand': ['App demand','应用需求'], 'patent_cluster': ['Patent cluster','专利集群'],
-  'retail_buzz': ['Retail buzz','散户热度']
+  'retail_buzz': ['Retail buzz','散户热度'], 'stocktwits_bull': ['StockTwits bulls','散户看涨'],
+  'fda_approval': ['FDA approval','FDA批准'], 'fda_label_expansion': ['FDA label expansion','适应症扩展'],
+  'clinical_phase3_start': ['Phase-3 start','三期启动'], 'earnings_beat': ['Earnings beat','财报超预期'],
+  'unusual_options': ['Unusual options','异常期权'], 'material_8k': ['Material 8-K cluster','重大8-K集群'],
+  'activist_13d': ['Activist 13D','维权13D'], 'special_situation': ['Special situation','特殊事件'],
+  'analyst_upgrade_cluster': ['Analyst upgrades','分析师上调'], 'bill_catalyst': ['Bill catalyst','法案催化'],
+  'hf_model_momentum': ['AI-model adoption','AI模型采用'], 'github_momentum': ['Developer adoption','开发者采用'],
+  'short_squeeze': ['Short-squeeze fuel','空头挤压燃料'], 'news_sentiment': ['Bullish news','看多新闻']
 } %}
 {% macro ch(c) %}{% set p = CH.get(c, [c, c]) %}<span class="l-en">{{ p[0] }}</span><span class="l-zh">{{ p[1] }}</span>{% endmacro %}
 
@@ -334,7 +343,7 @@
   {# ---------- SIGNAL CARDS (per-feed derived signals) ---------- #}
   <section class="sid-sec">
     <h2>🔬 {{ t('Signal feeds', '信号源') }}
-      <span class="h-note">{{ t('each feed as its derived signal — Quiver + federal grants · SEC 8-K · FDA · clinical · options · AI-adoption', '每个数据源呈现为其衍生信号 —— Quiver + 联邦补助 · SEC 8-K · FDA · 临床 · 期权 · AI采用') }}</span></h2>
+      <span class="h-note">{{ t('each feed as its derived signal — Quiver + federal grants · SEC 8-K · FDA · clinical · options · short interest · analyst revisions · earnings clock · retail · AI-adoption', '每个数据源呈现为其衍生信号 —— Quiver + 联邦补助 · SEC 8-K · FDA · 临床 · 期权 · 空头持仓 · 分析师修正 · 财报临近 · 散户 · AI采用') }}</span></h2>
     <div class="sid-grid">
 
       <div class="sid-card"><h3>📜 {{ t('Gov-contract leaders','政府合同领先') }} <span class="mut" style="font-size:11px;">30d</span></h3>
@@ -422,10 +431,12 @@
       {% endif %}
 
       {% if s.analyst %}
-      <div class="sid-card"><h3>📈 {{ t('Analyst upgrades','分析师上调') }}</h3>
-        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Bullish','看多占比') }}</th><th>{{ t('Rising','上升') }}</th></tr></thead>
-        <tbody>{% for r in s.analyst[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ (r.bull_ratio*100)|round|int }}%</td>
-          <td class="mut">{% if r.rising %}↑{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      <div class="sid-card"><h3>📈 {{ t('Analyst estimate revisions','分析师预期上调') }} <span class="mut" style="font-size:11px;">30d</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net rev.','净上调') }}</th><th class="num">{{ t('Breadth','广度') }}</th><th class="num">{{ t('Est Δ','预期') }}</th></tr></thead>
+        <tbody>{% for r in s.analyst[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
+          <td class="num">{% if r.get('net_up_30d') is not none %}{% if r.net_up_30d>0 %}<span class="r-pos">+{{ r.net_up_30d }}</span>{% else %}{{ r.net_up_30d }}{% endif %}{% else %}—{% endif %}</td>
+          <td class="num">{% if r.get('breadth') is not none %}{{ (r.breadth*100)|round|int }}%{% else %}—{% endif %}</td>
+          <td class="num">{% if r.get('est_chg_30d') is not none %}{{ '%+.1f'|format(r.est_chg_30d) }}%{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.insider_mspr %}
@@ -436,16 +447,33 @@
       {% endif %}
 
       {% if s.earnings %}
-      <div class="sid-card"><h3>🎯 {{ t('Earnings surprises','财报超预期') }}</h3>
-        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Surprise','超预期') }}</th></tr></thead>
+      <div class="sid-card"><h3>⚡ {{ t('Earnings imminent','财报临近') }} <span class="mut" style="font-size:11px;">{{ t('binary catalyst — watch, not a buy','二元催化 — 观察，非买入') }}</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Reports','公布') }}</th><th class="num">{{ t('Cons. EPS','预期EPS') }}</th></tr></thead>
         <tbody>{% for r in s.earnings[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
-          <td class="num">{% if r.surprise_pct>0 %}<span class="r-pos">+{{ r.surprise_pct }}%</span>{% else %}{{ r.surprise_pct }}%{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+          <td class="num">{% if r.days_to==0 %}<b>{{ t('today','今天') }}</b>{% elif r.days_to==1 %}{{ t('1 day','1天') }}{% else %}{{ r.days_to }}{{ t('d','天') }}{% endif %}</td>
+          <td class="num">{% if r.eps_forecast is not none %}{{ r.eps_forecast }}{% else %}<span class="mut">—</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
       {% if s.news_sentiment %}
       <div class="sid-card"><h3>📰 {{ t('Bullish news flow','看多新闻流') }}</h3>
         <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Bullish','看多占比') }}</th><th class="num">{{ t('Articles','文章') }}</th></tr></thead>
         <tbody>{% for r in s.news_sentiment[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ (r.bull_ratio*100)|round|int }}%</td><td class="num">{{ r.articles }}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.short_interest %}
+      <div class="sid-card"><h3>🩳 {{ t('Short-interest crowding','空头拥挤') }} <span class="mut" style="font-size:11px;">{{ t('squeeze fuel — not a buy','挤压燃料——非买入') }}</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Days to cover','回补天数') }}</th><th class="num">{{ t('SI Δ','空头变化') }}</th></tr></thead>
+        <tbody>{% for r in s.short_interest[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
+          <td class="num">{% if r.days_to_cover>=5 %}<b>{{ r.days_to_cover }}</b>{% else %}{{ r.days_to_cover }}{% endif %}</td>
+          <td class="num">{% if r.si_change_pct is not none %}{{ '%+.0f'|format(r.si_change_pct) }}%{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.stocktwits %}
+      <div class="sid-card"><h3>💬 {{ t('StockTwits retail buzz','StockTwits散户热度') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Bullish','看多占比') }}</th><th class="num">{{ t('Watchers','关注者') }}</th></tr></thead>
+        <tbody>{% for r in s.stocktwits[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
+          <td class="num">{% if r.bull_ratio>=0.65 %}<span class="r-pos">{{ (r.bull_ratio*100)|round|int }}%</span>{% else %}{{ (r.bull_ratio*100)|round|int }}%{% endif %}</td>
+          <td class="num">{% if r.watchers %}{{ '{:,.0f}'.format(r.watchers) }}{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
       {% endif %}
 
     </div>
@@ -460,8 +488,8 @@
         {% endfor %}
       </div>
       <p class="mut" style="font-size:11px;margin:11px 0 0;">{{ t(
-        'Sources: Quiver Quantitative + federal grants/loans (USAspending) · SEC 8-K material events · openFDA approvals · ClinicalTrials.gov · Polygon options/news · Finnhub · Hugging Face · GitHub + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the falsifiable ledger, not assumed right.',
-        '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · Finnhub · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。') }}</p>
+        'Sources: Quiver Quantitative + federal grants/loans (USAspending) · SEC 8-K material events · openFDA approvals · ClinicalTrials.gov · Polygon options/news · FINRA short interest · analyst estimate revisions · earnings calendar · StockTwits retail · Hugging Face · GitHub + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the falsifiable ledger, not assumed right.',
+        '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · FINRA 空头持仓 · 分析师预期修正 · 财报日历 · StockTwits 散户 · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。') }}</p>
     </div>
   </section>
 
