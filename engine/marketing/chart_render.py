@@ -1690,12 +1690,12 @@ def render_earnings_card(
     logo_datauri: str | None = None,
     logo_root: "Path | str | None" = None,
     width: int = 1000,
-    height: int = 560,
+    height: int = 610,
 ) -> str:
     """Render a branded earnings illustration SVG.
 
     Dark card (#0E1420), real Mastermind favicon lockup top-left + wordmark,
-    giant white company logo (centered hero when logo_datauri / logo_root provided),
+    full-color company logo (centered hero when logo_datauri / logo_root provided),
     big TICKER EARNINGS header + quarter label, two stat blocks (EPS + Revenue) with
     BEAT/MISS/INLINE chips (green/red/grey) + surprise %, revenue column suppressed
     when rev_actual/rev_est are None (EPS-only card), branded footer CTA.
@@ -1708,18 +1708,25 @@ def render_earnings_card(
         rev_actual: Reported revenue in dollars, or None to omit revenue block.
         rev_est: Consensus revenue estimate in dollars, or None to omit.
         quarter: Quarter label, e.g. "Q2 2026". Shown below ticker.
-        logo_datauri: Pre-resolved whitened data URI for company logo.
+        logo_datauri: Pre-resolved data URI for company logo (color hero icon).
         logo_root: If logo_datauri is None and logo_root is provided, calls
-            resolve_logo(ticker, logo_root) to auto-fetch + cache.
+            resolve_color_logo(ticker, logo_root) to auto-fetch + cache the
+            full-color brand icon.
         width: Card width in px (default 1000).
-        height: Card height in px (default 560).
+        height: Card height in px (default 610).
 
     Returns:
         Self-contained SVG string. No <script>. All text _xesc'd. < 60 KB with logo.
     """
     # ── Auto-resolve logo ────────────────────────────────────────────────────
+    # The hero logo is the PROMINENT brand identifier (front-and-center, high
+    # opacity) — its job is instant recognition, so it wants the ORIGINAL
+    # full-color icon, not the white silhouette used for chart watermarks.
+    # (Silhouette-whitening flattens internal contrast — e.g. TSMC's red
+    # wordmark-over-wafer-grid collapses to an unreadable white blob. The color
+    # path is the same one the watchlist avatar chips already use.)
     if logo_datauri is None and logo_root is not None:
-        logo_datauri = resolve_logo(ticker, logo_root)
+        logo_datauri = resolve_color_logo(ticker, logo_root)
 
     # ── Unique id suffix (deterministic, collision-safe) ────────────────────
     ec_uid = str(abs(hash(ticker + "ec")) % 10_000_000)
