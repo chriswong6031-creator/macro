@@ -440,6 +440,12 @@ html[data-lang="zh"] .l-en { display: none; }
 /* receipt popovers */
 .rcpt-toggle { font-size: 11px; color: var(--blue); cursor: pointer; margin-top: 3px;
                display: inline-block; border: none; background: none; padding: 0; font: inherit; }
+/* ── zh 红涨绿跌 (operator ruling 2026-07-21) ── */
+/* pill.u=up, lean-pos=positive, v-conf=confirmed, bcolb .ic=bullish column icon = direction reads */
+html[data-lang="zh"] .pill.u  { background:rgba(211,11,11,.10); }
+html[data-lang="zh"] .lean-pos { background:rgba(211,11,11,.10); }
+html[data-lang="zh"] .v-conf  { background:rgba(211,11,11,.10); }
+html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
@@ -1161,7 +1167,10 @@ html[data-lang="zh"] .l-en { display: none; }
     }
     var areaD = d + ' L' + pts[pts.length-1][0] + ',' + H + ' L' + pts[0][0] + ',' + H + ' Z';
     var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    var lineColor = isDark ? 'rgba(55,208,127,.85)' : 'rgba(26,127,67,.85)';
+    var _isZh = document.documentElement.getAttribute('data-lang') === 'zh';
+    /* zh 红涨绿跌: sparkline shows index price trajectory — direction read → red in zh */
+    var lineColor = _isZh ? (isDark ? 'rgba(224,100,100,.85)' : 'rgba(180,50,50,.85)')
+                          : (isDark ? 'rgba(55,208,127,.85)' : 'rgba(26,127,67,.85)');
     var gradId = 'sg' + Math.random().toString(36).slice(2,7);
     svg.innerHTML =
       '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">' +

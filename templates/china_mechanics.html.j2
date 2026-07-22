@@ -40,6 +40,11 @@
   --c-capitulation: #8b93a1;
   --c-grinding: #a07070;
 }
+/* zh 红涨绿跌 (operator ruling 2026-07-21): the local :root --up/--down are overridden
+   by theme.css html[data-lang="zh"] (higher specificity 0,1,0 > 0,0,1), so token-based
+   classes flip automatically. However --c-liquidity (#45b873 = bullish) and --c-euphoria
+   (#e06464 = bearish/top) are not theme-token aliases — add explicit zh redefinitions. */
+html[data-lang="zh"]{--c-liquidity:#e06464;--c-euphoria:#45b873}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -1671,14 +1676,18 @@ function phaseName(key){ var m = PHASE_META[key]; if(!m) return (key||'').replac
 
 // ═══════════════════════════════════════════════════
 // PHASE COLORS
+// zh 红涨绿跌 (operator ruling 2026-07-21): LIQUIDITY_IGNITION (bullish accumulation)
+// and EUPHORIA (market top / bearish signal) swap hues in zh convention.
+// All other phase hues (blues, amber, grey) are direction-neutral → unchanged.
 // ═══════════════════════════════════════════════════
+var _zh = document.documentElement.getAttribute('data-lang') === 'zh';
 const PHASE_COLORS = {
   REPAIR:'#7aa7e0',
   POLICY_PUT:'#5b9bf0',
-  LIQUIDITY_IGNITION:'#45b873',
+  LIQUIDITY_IGNITION: _zh ? '#e06464' : '#45b873',
   BROADENING:'#3da564',
   THEME_LEADERSHIP:'#e08b45',
-  EUPHORIA:'#e06464',
+  EUPHORIA: _zh ? '#45b873' : '#e06464',
   DISTRIBUTION:'#e07070',
   DELEVERAGING:'#c04040',
   CAPITULATION:'#8b93a1',

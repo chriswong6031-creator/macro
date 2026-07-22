@@ -240,6 +240,18 @@ html[data-theme="dark"] .more-dd-menu .cat-chip-btn:hover{background:#222732}
 .amend-mark{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
 .xb-mark{font-size:10.5px;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:0 5px;font-weight:700;margin-left:4px}
 .live-mark{font-size:10.5px;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:0 5px;font-weight:700;margin-left:4px}
+/* zh 红涨绿跌 (operator ruling 2026-07-21): direction bullish reads (accumulation,
+   constructive grade, live-confirmed setup) paint red in zh convention.
+   .hero-stat.green = headline bullish stat; .grade-B = constructive quality;
+   .ichip-s = signal-positive; .ichip-acc = accumulation read; .live-mark = confirmed entry.
+   Warning/risk surfaces that use --red (not green) already stay red in both langs.
+   NOTE: .grade-A uses var(--blue) which does NOT flip (blue is direction-neutral here). */
+html[data-lang="zh"] .hero-stat.green .v{color:var(--red)}
+html[data-lang="zh"] .grade-B .grade-letter{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,transparent)}
+html[data-lang="zh"] .grade-B{color:var(--red)}
+html[data-lang="zh"] .ichip-s{color:var(--red);border-color:color-mix(in srgb,var(--red) 35%,transparent);background:color-mix(in srgb,var(--red) 8%,transparent)}
+html[data-lang="zh"] .ichip-acc{color:var(--red);border-color:color-mix(in srgb,var(--red) 35%,transparent);background:color-mix(in srgb,var(--red) 8%,transparent)}
+html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
 
 /* ---- coverage section ---- */
 .section-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:28px 2px 12px;display:flex;align-items:center;gap:8px}

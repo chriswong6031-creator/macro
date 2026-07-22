@@ -68,6 +68,13 @@ a{color:var(--blue);text-decoration:none}
 .stance-chip.watch{background:rgba(242,178,77,.16);color:var(--amb)}
 .stance-chip.act{background:rgba(55,208,127,.16);color:var(--up)}
 .stance-chip.caution{background:rgba(255,106,106,.14);color:var(--dn)}
+/* zh 红涨绿跌 (operator ruling 2026-07-21): act = risk-on/bullish → red in zh; caution =
+   bearish → green in zh. Text: theme.css's html[data-lang="zh"] --up swap outranks this
+   page's :root literal, so var(--up) already reads red in zh — only the wash needs a
+   mirror. --red is NOT defined on this page (never reference it); the caution text uses
+   var(--down), which the zh swap resolves to green (the local --dn literal never flips). */
+html[data-lang="zh"] .stance-chip.act{background:rgba(211,11,11,.13)}
+html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:var(--down)}
 .stance-chip.neutral{background:var(--panel2);color:var(--mut);border:1px solid var(--line)}
 /* ── help tooltip ── */
 .help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--faint);color:var(--faint);font-size:9.5px;font-weight:700;cursor:help;position:relative;vertical-align:middle;margin-left:5px}
