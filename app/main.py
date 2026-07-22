@@ -964,6 +964,51 @@ def brain_thread_detail(thread_id: str, user: dict = Depends(require_user)):
     return result
 
 
+class ThreadRenameRequest(BaseModel):
+    """Body for PATCH /api/brain/threads/{thread_id}. An empty/whitespace-only title
+    is a 422 (validation error); a valid title is trimmed + clamped to 80 chars, matching
+    the store's own normalization so the two never disagree."""
+    title: str = Field(..., description="New thread title (trimmed, clamped to 80 chars)")
+
+    @field_validator("title")
+    @classmethod
+    def _clean_title(cls, v: str) -> str:
+        cleaned = " ".join((v or "").split()).strip()[:80]
+        if not cleaned:
+            raise ValueError("title must not be empty")
+        return cleaned
+
+
+@app.patch("/api/brain/threads/{thread_id}")
+def brain_thread_rename(thread_id: str, body: ThreadRenameRequest,
+                        user: dict = Depends(require_user)):
+    """Rename a thread owned by the authenticated user (verified user required — a guest
+    or anonymous caller gets 401 via require_user; guests own no threads).
+
+    PATCH body: {title}. Response: 200 {ok: true} | 404 {ok: false} when the thread is
+    absent or not owned | 422 when the title is empty/invalid.
+    """
+    gw = _brain_module()
+    user_id = user.get("id") or user.get("email") or "unknown"
+    if not gw.rename_thread(thread_id, user_id, body.title):
+        return JSONResponse({"ok": False}, status_code=404)
+    return {"ok": True}
+
+
+@app.delete("/api/brain/threads/{thread_id}")
+def brain_thread_delete(thread_id: str, user: dict = Depends(require_user)):
+    """Delete a thread (and its messages) owned by the authenticated user (verified user
+    required — a guest or anonymous caller gets 401 via require_user).
+
+    Response: 200 {ok: true} | 404 {ok: false} when the thread is absent or not owned.
+    """
+    gw = _brain_module()
+    user_id = user.get("id") or user.get("email") or "unknown"
+    if not gw.delete_thread(thread_id, user_id):
+        return JSONResponse({"ok": False}, status_code=404)
+    return {"ok": True}
+
+
 # ---------------------------------------------------------------------------
 # /api/flow/* — live options-flow feed (unauthenticated read-through of R2)
 # ---------------------------------------------------------------------------
