@@ -2,27 +2,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>China News Feed - Macro Dashboard</title>
+<title>China Tape — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=a1aa8c55">
-<link rel="stylesheet" href="assets/css/f5b5ce34.css?v=f5b5ce34">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  body { padding-bottom:56px; }
+  @media(min-width:1220px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
+  .cn { max-width:1180px; margin:0 auto; }
+  /* channel identity hues — category, not price-direction, so no zh red/green flip */
+  .th-monetary{--ch:#5b8def}.th-inflation{--ch:#e08b45}.th-growth{--ch:#6cb85a}.th-credit{--ch:#a78bfa}
+  .th-fiscal{--ch:#e0a030}.th-policy{--ch:#d0554f}.th-politics{--ch:#c86b8a}.th-tech{--ch:#3fb6c0}
+  .th-markets{--ch:#3bb277}.th-macro{--ch:var(--muted)}
+
+  /* ---------- hero ---------- */
+  .cn-hero{ padding:26px 0 6px; animation:cnUp .5s cubic-bezier(.2,.7,.3,1) both; }
+  .cn-eyebrow{ display:flex; align-items:center; gap:9px; font-size:12px; font-weight:800; color:var(--muted); letter-spacing:.02em; }
+  .cn-brand{ font-weight:850; font-size:20px; letter-spacing:-.01em; color:var(--text); }
+  .cn-brand .gn{ background:linear-gradient(92deg,#d0554f,#e0a030 52%,#3fb6c0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cn-live{ width:8px; height:8px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 15%,transparent); animation:cnBreathe 2.6s ease-in-out infinite; }
+  .cn-lead{ font-size:clamp(19px,2.5vw,25px); line-height:1.32; font-weight:800; color:var(--text); letter-spacing:-.018em; margin:15px 0 0; max-width:60ch; font-family:Inter,-apple-system,sans-serif; }
+  .cn-lead b{ color:var(--text); }
+  .cn-lead .q{ color:var(--muted); font-weight:800; }
+  .cn-asof{ display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); margin-top:10px; }
+  .cn-glance{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .cn-gchip{ display:inline-flex; align-items:center; gap:7px; padding:7px 13px; border-radius:999px; border:1px solid var(--line); background:var(--panel); font-size:12.5px; font-weight:600; color:var(--text); }
+  .cn-gchip b{ font-weight:850; }
+  .cn-gchip .dot{ width:7px; height:7px; border-radius:50%; background:var(--c,var(--muted)); flex:none; }
+  .cn-gchip.st-supportive{ --c:var(--up); } .cn-gchip.st-cautious{ --c:var(--warn); } .cn-gchip.st-steady,.cn-gchip.st-building{ --c:var(--muted); }
+  .cn-gchip.hot{ border-color:color-mix(in srgb,#d0554f 40%,var(--line)); color:#d0554f; } .cn-gchip.hot .dot{ background:#d0554f; }
+  .cn-gchip.led .dot{ background:var(--ch,var(--link)); }
+
+  /* ---------- overview 3-up (the dashboard) ---------- */
+  .cn-rail3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:22px 0 4px; }
+  .ov-card{ position:relative; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 18px 15px; overflow:hidden; box-shadow:var(--card-shadow); animation:cnUp .5s cubic-bezier(.2,.7,.3,1) both; }
+  .cn-rail3 .ov-card:nth-child(2){ animation-delay:.06s; } .cn-rail3 .ov-card:nth-child(3){ animation-delay:.12s; }
+  .ov-card::before{ content:''; position:absolute; inset:0 0 auto 0; height:3px; background:var(--ac,var(--link)); }
+  .ov-tone{ --ac:var(--up); } .ov-mix{ --ac:#e0a030; } .ov-next{ --ac:#3fb6c0; }
+  .ov-h{ display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 0 12px; }
+  html[data-lang="zh"] .ov-h{ letter-spacing:.02em; }
+  .ov-h .ic{ font-size:13px; }
+  .ov-foot{ font-size:11px; color:var(--muted); margin-top:12px; padding-top:10px; border-top:1px solid var(--line); line-height:1.5; }
+
+  /* tone gauge */
+  .tg-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .tg-state{ font-size:20px; font-weight:850; color:var(--text); letter-spacing:-.01em; line-height:1.15; }
+  .tg-z{ font-size:24px; font-weight:850; font-variant-numeric:tabular-nums; color:var(--ac); }
+  .tg-track{ position:relative; height:8px; border-radius:999px; background:color-mix(in srgb,var(--muted) 22%,transparent); margin:14px 0 4px; }
+  .tg-track .mid{ position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--muted); opacity:.5; }
+  .tg-fill{ position:absolute; top:0; bottom:0; border-radius:999px; background:var(--ac); animation:cnGrow .7s cubic-bezier(.2,.7,.3,1) both; }
+  .tg-scale{ display:flex; justify-content:space-between; font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-top:5px; }
+  .ov-empty{ font-size:13px; color:var(--muted); padding:6px 0 10px; }
+
+  /* tape mix bars */
+  .mx-row{ display:grid; grid-template-columns:74px 1fr 26px; align-items:center; gap:9px; padding:4px 0; }
+  .mx-name{ font-size:11.5px; font-weight:700; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mx-bar{ height:7px; border-radius:999px; background:color-mix(in srgb,var(--muted) 18%,transparent); overflow:hidden; }
+  .mx-bar i{ display:block; height:100%; border-radius:999px; background:var(--ch,var(--link)); transform-origin:left; animation:cnGrow .7s cubic-bezier(.2,.7,.3,1) both; }
+  .mx-n{ font-size:11.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--muted); text-align:right; }
+
+  /* next catalyst */
+  .nx-when{ display:inline-flex; align-items:baseline; gap:6px; }
+  .nx-days{ font-size:30px; font-weight:850; font-variant-numeric:tabular-nums; color:var(--text); line-height:1; letter-spacing:-.02em; }
+  .nx-unit{ font-size:12px; font-weight:700; color:var(--muted); }
+  .nx-name{ font-size:14px; font-weight:750; color:var(--text); margin:9px 0 2px; line-height:1.3; }
+  .nx-date{ font-size:11.5px; color:var(--muted); }
+
+  /* ---------- main: the tape + rail ---------- */
+  .cn-main{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; align-items:start; margin-top:30px; }
+  .cn-toolbar{ position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:9px; align-items:center; padding:10px 0 12px; background:linear-gradient(180deg,var(--bg) 74%,transparent); }
+  .cn-search{ position:relative; flex:1 1 240px; min-width:190px; }
+  .cn-search input{ width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:9px 12px 9px 33px; outline:none; font-size:13px; }
+  .cn-search input:focus{ border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
+  .cn-search .mag{ position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px; }
+  .cn-filters{ display:flex; flex-wrap:wrap; gap:6px; }
+  .fbtn{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:6px 11px; font-size:11.5px; font-weight:600; cursor:pointer; }
+  .fbtn:hover{ color:var(--text); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); }
+  .fbtn.on{ color:var(--text); border-color:var(--link); background:color-mix(in srgb,var(--link) 12%,var(--panel)); }
+  .fbtn .fc{ font-size:10.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--muted); }
+  .fbtn.on .fc{ color:var(--link); }
+  .fbtn.hidden{ display:none; }
+  .cn-count{ margin-left:auto; color:var(--muted); font-size:12px; white-space:nowrap; }
+
+  /* the tape */
+  .tp-feed{ position:relative; }
+  .tp-item{ display:grid; grid-template-columns:56px 20px minmax(0,1fr); gap:0 13px; padding:0 0 16px; color:var(--text); position:relative; animation:cnUp .45s cubic-bezier(.2,.7,.3,1) both; }
+  .tp-when{ grid-column:1; text-align:right; font-size:11.5px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--muted); padding-top:17px; line-height:1.3; white-space:nowrap; }
+  .tp-spine{ grid-column:2; position:relative; }
+  .tp-spine::before{ content:''; position:absolute; left:50%; transform:translateX(-50%); top:27px; bottom:-16px; width:2px; background:linear-gradient(180deg,color-mix(in srgb,var(--ch,var(--muted)) 45%,var(--line)),color-mix(in srgb,var(--muted) 22%,transparent)); }
+  .tp-item:last-child .tp-spine::before{ display:none; }
+  .tp-node{ position:absolute; left:50%; top:19px; transform:translateX(-50%); width:12px; height:12px; border-radius:50%; background:var(--ch,var(--muted)); border:3px solid var(--bg); z-index:1; }
+  .tp-node.fresh-live{ box-shadow:0 0 0 4px color-mix(in srgb,var(--ch,var(--up)) 20%,transparent); }
+  .tp-node.fresh-old{ background:color-mix(in srgb,var(--ch,var(--muted)) 45%,var(--muted)); opacity:.75; }
+  .tp-body{ grid-column:3; min-width:0; background:var(--panel); border:1px solid color-mix(in srgb,var(--ch,var(--muted)) 16%,var(--line)); border-left:3px solid color-mix(in srgb,var(--ch,var(--muted)) 62%,var(--line)); border-radius:5px 13px 13px 5px; padding:13px 15px; box-shadow:var(--card-shadow); transition:transform .16s,border-color .16s,box-shadow .16s; }
+  .tp-item:hover .tp-body{ transform:translateY(-2px); border-color:color-mix(in srgb,var(--ch,var(--link)) 45%,var(--line)); border-left-color:var(--ch,var(--link)); box-shadow:0 14px 30px -20px color-mix(in srgb,var(--ch,var(--link)) 55%,transparent); }
+  .tp-top{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+  .cn-tag{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:7px; font-size:10.5px; font-weight:700; letter-spacing:.01em; color:var(--ch,var(--link)); background:color-mix(in srgb,var(--ch,var(--link)) 12%,var(--panel)); border:1px solid color-mix(in srgb,var(--ch,var(--link)) 26%,var(--line)); }
+  .cn-src{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .cn-imp{ display:inline-flex; align-items:center; gap:5px; margin-left:auto; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:7px; border:1px solid var(--line); color:var(--muted); }
+  .cn-imp b{ font-variant-numeric:tabular-nums; }
+  .cn-imp.imp-high{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); background:color-mix(in srgb,var(--up) 9%,var(--panel)); }
+  .cn-imp.imp-medium{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 42%,var(--line)); }
+  .tp-title{ font-size:15.5px; line-height:1.32; font-weight:730; margin:0; color:var(--text); }
+  .tp-item:hover .tp-title{ color:var(--ch,var(--link)); }
+  .tp-sum{ color:var(--muted); font-size:12.5px; line-height:1.5; margin:7px 0 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .tp-chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:9px; }
+  .cn-cchip{ font-size:10.5px; font-weight:600; color:var(--muted); background:color-mix(in srgb,var(--muted) 11%,transparent); border-radius:6px; padding:2px 8px; }
+  .cn-tk{ font-size:10.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--link); background:color-mix(in srgb,var(--link) 11%,transparent); border-radius:6px; padding:2px 8px; }
+  /* the lead story sits larger at the head of the tape */
+  .tp-item.lead .tp-body{ border-color:color-mix(in srgb,var(--ch,var(--link)) 28%,var(--line)); border-left-color:var(--ch,var(--link)); background:linear-gradient(180deg,color-mix(in srgb,var(--ch,var(--link)) 5%,var(--panel)),var(--panel)); }
+  .tp-item.lead .tp-title{ font-size:19px; line-height:1.26; font-weight:800; letter-spacing:-.01em; }
+  .tp-item.lead .tp-sum{ -webkit-line-clamp:3; font-size:13px; }
+  .tp-item.lead .tp-node{ width:14px; height:14px; }
+
+  /* ---------- rail (context alongside the tape) ---------- */
+  .cn-side{ display:grid; gap:16px; position:sticky; top:12px; }
+  .side-card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 16px; box-shadow:var(--card-shadow); }
+  .sc-h{ display:flex; align-items:center; gap:7px; margin:0 0 11px; font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  html[data-lang="zh"] .sc-h{ letter-spacing:.02em; }
+  .cal-row{ display:grid; grid-template-columns:52px 1fr; gap:11px; align-items:start; padding:9px 0; border-bottom:1px solid var(--line); }
+  .cal-row:last-child{ border-bottom:0; padding-bottom:0; }
+  .cal-when{ text-align:center; }
+  .cal-when .cd{ font-size:16px; font-weight:850; font-variant-numeric:tabular-nums; color:var(--text); line-height:1; }
+  .cal-when .cu{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); display:block; margin-top:2px; }
+  .cal-when.soon .cd{ color:#d0554f; }
+  .cal-name{ font-size:12px; font-weight:600; color:var(--text); line-height:1.35; min-width:0; }
+  .cal-tag{ display:inline-block; font-size:9.5px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); background:color-mix(in srgb,var(--muted) 13%,transparent); border-radius:5px; padding:1px 6px; margin-right:6px; vertical-align:1px; }
+  .cal-tag.hi{ color:#d0554f; background:color-mix(in srgb,#d0554f 12%,transparent); }
+  .exp-pills{ display:flex; flex-wrap:wrap; gap:6px; }
+  .exp-pill{ display:inline-flex; flex-direction:column; gap:1px; padding:6px 10px; border-radius:9px; border:1px solid var(--line); background:var(--panel2); min-width:0; }
+  .exp-pill .tk{ font-size:11.5px; font-weight:850; font-variant-numeric:tabular-nums; color:var(--link); }
+  .exp-pill .nm{ font-size:10px; color:var(--muted); }
+  .exp-pill .ct{ font-size:9.5px; font-weight:700; color:var(--muted); }
+  .sc-empty{ font-size:12px; color:var(--muted); }
+
+  /* ---------- empty state + disclaimer ---------- */
+  .cn-empty{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:34px 28px; text-align:center; box-shadow:var(--card-shadow); }
+  .cn-empty h2{ font-size:20px; color:var(--text); margin:0 0 8px; letter-spacing:-.01em; }
+  .cn-empty p{ color:var(--muted); font-size:13.5px; margin:0; }
+  .cn-none{ padding:30px 24px; text-align:center; background:var(--panel); border:1px dashed var(--line); border-radius:14px; }
+  .cn-none h3{ font-size:15px; margin:0 0 6px; color:var(--text); }
+  .cn-none p{ color:var(--muted); font-size:12.5px; margin:0; }
+  .cn-disc{ color:var(--muted); font-size:11.5px; line-height:1.6; margin:26px 0 0; padding-top:14px; border-top:1px solid var(--line); }
+  .hidden{ display:none !important; }
+
+  @keyframes cnUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  @keyframes cnBreathe{ 0%,100%{ opacity:.5; transform:scale(.82); } 50%{ opacity:1; transform:scale(1.08); } }
+  @keyframes cnGrow{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+
+  @media(max-width:940px){ .cn-rail3{ grid-template-columns:1fr; } .cn-main{ grid-template-columns:1fr; } .cn-side{ position:static; } }
+  @media(max-width:560px){
+    .cn-toolbar{ position:static; }
+    .tp-item{ grid-template-columns:1fr; gap:0; }
+    .tp-spine{ display:none; }
+    .tp-when{ grid-column:1; text-align:left; padding:0 0 6px; }
+    .tp-body{ grid-column:1; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .cn-hero,.ov-card,.tp-item,.cn-live,.tg-fill,.mx-bar i{ animation:none; }
+    *{ transition:none !important; }
+  }
+
+</style>
 
 
 
-<meta name="description" content="China market news distilled — what moved, why it matters and which groups care, through each session.">
+<meta name="description" content="China market news distilled — what moved, why it matters and which groups care, timestamped through each session.">
 <link rel="canonical" href="https://www.mastermind-x.com/china_news.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mastermind">
 <meta property="og:title" content="China News Feed — Mastermind">
-<meta property="og:description" content="China market news distilled — what moved, why it matters and which groups care, through each session.">
+<meta property="og:description" content="China market news distilled — what moved, why it matters and which groups care, timestamped through each session.">
 <meta property="og:url" content="https://www.mastermind-x.com/china_news.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="China News Feed — Mastermind">
-<meta name="twitter:description" content="China market news distilled — what moved, why it matters and which groups care, through each session.">
+<meta name="twitter:description" content="China market news distilled — what moved, why it matters and which groups care, timestamped through each session.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -183,7 +366,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -242,8 +489,8 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=e1a3ca0d" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -268,503 +515,654 @@
 </nav>
 
 
-<main class="shell">
-  <section class="hero">
-    <article class="hero-main">
-      <div>
-        <p class="eyebrow"><span class="live"></span><span class="l-en">China News Intelligence</span><span class="l-zh">中国新闻情报流</span><span></span></p>
+<main class="cn">
+
+  <!-- ===================== HERO ===================== -->
+  <header class="cn-hero">
+    <p class="cn-eyebrow"><span class="cn-live"></span><span class="cn-brand">📡 <span class="gn"><span class="l-en">China Tape</span><span class="l-zh">中国快讯</span></span></span></p>
+    
+      
+      
+      
+      
+      <p class="cn-lead">
+        <span class="l-en"><b>24</b> stories cleared the macro filter; official policy tone leans supportive. <b>16</b> rated high-impact, led by <b>equity market</b>.</span>
+        <span class="l-zh"><b>24</b> 条通过宏观筛选；官方政策基调偏积极。其中 <b>16</b> 条高影响，主导<b>股票市场</b>。</span>
+      </p>
+      <p class="cn-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-22 · <span class="l-en">context, not trade calls</span><span class="l-zh">仅为背景，非交易信号</span></p>
+      <div class="cn-glance">
         
-        <h1><a href="https://wallstreetcn.com/livenews/3138085" target="_blank" rel="noopener"><span class="l-en">中国证监会：稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度</span><span class="l-zh">中国证监会：稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度</span></a></h1>
         
-        <p class="dek"><span class="l-en">7月21日，中国证监会主席吴清在京会见了加拿大养老基金投资公司总裁兼首席执行官格雷厄姆（John Graham）。双方就全球及中国经济金融形势、投资中国资本市场等议题交换了意见。</span><span class="l-zh">7月21日，中国证监会主席吴清在京会见了加拿大养老基金投资公司总裁兼首席执行官格雷厄姆（John Graham）。双方就全球及中国经济金融形势、投资中国资本市场等议题交换了意见。</span></p>
+        <span class="cn-gchip st-supportive"><span class="dot"></span><span class="l-en">Policy tone</span><span class="l-zh">政策基调</span> <b><span class="l-en">leans supportive</span><span class="l-zh">偏积极</span></b></span>
         
-        
+        <span class="cn-gchip hot"><span class="dot"></span><b>16</b> <span class="l-en">high-impact</span><span class="l-zh">高影响</span></span>
+        <span class="cn-gchip led th-markets"><span class="dot"></span><span class="l-en">Led by</span><span class="l-zh">主导</span> <b><span class="l-en">equity market</span><span class="l-zh">股票市场</span></b></span>
+        <span class="cn-gchip"><b>24</b> <span class="l-en">on the tape</span><span class="l-zh">条在流</span></span>
+        <span class="cn-gchip hidden" id="fresh"><span class="dot" style="background:var(--up)"></span><span id="fresh-t"></span></span>
       </div>
-      <div>
-        <div class="meta">
-          
-          
-          <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-          <span class="chip"><b>华尔街见闻</b></span>
-          <span class="chip imp-high"><b>96</b>/100 <span class="l-en">high</span><span class="l-zh">高</span></span>
-          <a class="read" href="https://wallstreetcn.com/livenews/3138085" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读来源</span></a>
-          
+    
+  </header>
+
+  
+  <!-- ===================== OVERVIEW 3-UP ===================== -->
+  <section class="cn-rail3">
+
+    <!-- policy tone -->
+    <article class="ov-card ov-tone st-supportive" style="--ac:#3bb277">
+      <p class="ov-h"><span class="ic">🏛️</span><span class="l-en">Policy tone</span><span class="l-zh">政策基调</span></p>
+      
+      
+      <div class="tg-top">
+        <div class="tg-state"><span class="l-en">leans supportive</span><span class="l-zh">偏积极</span></div>
+        <div class="tg-z">+0.9</div>
+      </div>
+      
+      
+      <div class="tg-track"><span class="mid"></span>
+        <span class="tg-fill" style="left:50%;width:18.2%"></span>
+      </div>
+      <div class="tg-scale"><span><span class="l-en">cautious</span><span class="l-zh">谨慎</span></span><span><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">supportive</span><span class="l-zh">积极</span></span></div>
+      <p class="ov-foot"><span class="l-en">CCTV 新闻联播 tone · z-score vs</span><span class="l-zh">央视《新闻联播》基调 · z 分数对比</span> 39<span class="l-en">d baseline</span><span class="l-zh">天基线</span> · 2026-07-21</p>
+      
+    </article>
+
+    <!-- what's on the tape -->
+    <article class="ov-card ov-mix">
+      <p class="ov-h"><span class="ic">🌡️</span><span class="l-en">What's on the tape</span><span class="l-zh">快讯结构</span></p>
+      
+        
+        
+        
+        
+        <div class="mx-row th-markets">
+          <span class="mx-name"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+          <span class="mx-bar"><i style="width:100%"></i></span>
+          <span class="mx-n">8</span>
         </div>
         
-        <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
+        
+        <div class="mx-row th-fiscal">
+          <span class="mx-name"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+          <span class="mx-bar"><i style="width:50%"></i></span>
+          <span class="mx-n">4</span>
+        </div>
+        
+        
+        <div class="mx-row th-monetary">
+          <span class="mx-name"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+          <span class="mx-bar"><i style="width:38%"></i></span>
+          <span class="mx-n">3</span>
+        </div>
+        
+        
+        <div class="mx-row th-growth">
+          <span class="mx-name"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+          <span class="mx-bar"><i style="width:38%"></i></span>
+          <span class="mx-n">3</span>
+        </div>
+        
+        
+        <div class="mx-row th-inflation">
+          <span class="mx-name"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
+          <span class="mx-bar"><i style="width:25%"></i></span>
+          <span class="mx-n">2</span>
+        </div>
+        
+      
+      
+      <p class="ov-foot"><span class="l-en">Sources</span><span class="l-zh">来源</span>: <span class="l-en">Chinese financial press</span><span class="l-zh">中国财经媒体</span> 22 · <span class="l-en">official releases</span><span class="l-zh">官方发布</span> 1 · <span class="l-en">global wire</span><span class="l-zh">国际通讯社</span> 1</p>
+      
+    </article>
+
+    <!-- next catalyst -->
+    <article class="ov-card ov-next">
+      <p class="ov-h"><span class="ic">📅</span><span class="l-en">Next catalyst</span><span class="l-zh">下一催化</span></p>
+      
+      
+      <div class="nx-when">
+        
+          <span class="nx-days">10</span><span class="nx-unit"><span class="l-en">days out</span><span class="l-zh">天后</span></span>
         
       </div>
+      <p class="nx-name"><span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></p>
+      <p class="nx-date"><span class="l-en">Jul 31</span><span class="l-zh">7月31日</span> · <span style="color:#d0554f;font-weight:700"><span class="l-en">high-impact print</span><span class="l-zh">高影响数据</span></span></p>
+      
     </article>
-    <aside class="side">
-      <div class="tile">
-        <div><div class="k"><span class="l-en">Official Policy Tone</span><span class="l-zh">官方政策基调</span></div><div class="v"><span class="l-en">supportive / pro-growth lean</span><span class="l-zh">偏积极 / 稳增长</span></div><div class="s"><span class="l-en">CCTV 新闻联播 z-score</span><span class="l-zh">央视新闻联播 z 分数</span></div></div>
-        <div class="num">+1.3</div>
-      </div>
-      <div class="tile">
-        <div><div class="k"><span class="l-en">Official Sources</span><span class="l-zh">官方来源</span></div><div class="v">116 <span class="l-en">items</span><span class="l-zh">条</span></div><div class="s"><span class="l-en">PBoC · NBS · MOF</span><span class="l-zh">央行 · 统计局 · 财政部</span></div></div>
-        <div class="num">116</div>
-      </div>
-      <div class="tile">
-        <div><div class="k"><span class="l-en">Native + Global Wire</span><span class="l-zh">中文源 + 全球新闻线</span></div><div class="v">535 <span class="l-en">items</span><span class="l-zh">条</span></div><div class="s"><span class="l-en">WSCN · Jin10 · GLH · Yicai · SCMP · Caixin</span><span class="l-zh">华尔街见闻 · 金十 · 格隆汇 · 一财 · SCMP · 财新</span></div></div>
-        <div class="num">535</div>
-      </div>
-      <div class="tile">
-        <div><div class="k"><span class="l-en">Kept Feed</span><span class="l-zh">保留新闻</span></div><div class="v">24 <span class="l-en">kept</span><span class="l-zh">保留</span></div><div class="s">24/731 <span class="l-en">raw candidates</span><span class="l-zh">原始候选</span></div></div>
-        <div class="num">24</div>
-      </div>
-      <div class="tile">
-        <div><div class="k"><span class="l-en">Intelligence Mix</span><span class="l-zh">情报结构</span></div><div class="v">14 <span class="l-en">high impact</span><span class="l-zh">高影响</span></div><div class="s"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></div></div>
-        <div class="num">69</div>
-      </div>
-    </aside>
   </section>
 
-  <section class="layout">
-    <div>
-      <div class="toolbar">
-        <div class="search"><span class="mag">⌕</span><input id="q" type="search" autocomplete="off" placeholder="Search China headlines, channels or tickers..." data-ph-en="Search China headlines, channels or tickers..." data-ph-zh="搜索中国头条、通道或标的..."></div>
-        <div class="filters" id="filters">
+  <!-- ===================== THE TAPE + RAIL ===================== -->
+  <section class="cn-main">
+    <div class="cn-feed-col">
+      <div class="cn-toolbar">
+        <div class="cn-search"><span class="mag">⌕</span><input id="q" type="search" autocomplete="off" placeholder="Search headlines, channels or tickers…" data-ph-en="Search headlines, channels or tickers…" data-ph-zh="搜索头条、通道或标的…"></div>
+        <div class="cn-filters" id="filters">
           <button class="fbtn on" data-theme="all"><span class="l-en">All</span><span class="l-zh">全部</span></button>
           <button class="fbtn" data-importance="high"><span class="l-en">High impact</span><span class="l-zh">高影响</span></button>
-          <button class="fbtn" data-theme="monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></button><button class="fbtn" data-theme="inflation"><span class="l-en">Inflation</span><span class="l-zh">物价</span></button><button class="fbtn" data-theme="growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></button><button class="fbtn" data-theme="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></button><button class="fbtn" data-theme="fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></button><button class="fbtn" data-theme="policy"><span class="l-en">Policy</span><span class="l-zh">政策</span></button><button class="fbtn" data-theme="politics"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></button><button class="fbtn" data-theme="tech"><span class="l-en">Tech</span><span class="l-zh">科技</span></button><button class="fbtn" data-theme="markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></button><button class="fbtn" data-theme="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></button>
+          <button class="fbtn" data-theme="monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span><span class="fc" data-fc="monetary"></span></button><button class="fbtn" data-theme="inflation"><span class="l-en">Inflation</span><span class="l-zh">物价</span><span class="fc" data-fc="inflation"></span></button><button class="fbtn" data-theme="growth"><span class="l-en">Growth</span><span class="l-zh">增长</span><span class="fc" data-fc="growth"></span></button><button class="fbtn" data-theme="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span><span class="fc" data-fc="credit"></span></button><button class="fbtn" data-theme="fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span><span class="fc" data-fc="fiscal"></span></button><button class="fbtn" data-theme="policy"><span class="l-en">Policy</span><span class="l-zh">政策</span><span class="fc" data-fc="policy"></span></button><button class="fbtn" data-theme="politics"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span><span class="fc" data-fc="politics"></span></button><button class="fbtn" data-theme="tech"><span class="l-en">Tech</span><span class="l-zh">科技</span><span class="fc" data-fc="tech"></span></button><button class="fbtn" data-theme="markets"><span class="l-en">Markets</span><span class="l-zh">市场</span><span class="fc" data-fc="markets"></span></button><button class="fbtn" data-theme="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span><span class="fc" data-fc="macro"></span></button>
         </div>
-        <span class="count" id="count"></span>
+        <span class="cn-count" id="count"></span>
       </div>
-      
-      <div class="feed" id="feed">
+
+      <div class="tp-feed" id="feed">
         
         
-        <a class="card" href="https://flash.jin10.com/detail/20260722163328864800" target="_blank" rel="noopener"
-           data-theme="credit" data-importance="high" data-search="金十数据整理：每日债券市场要闻速递（2026-07-22）  金十数据整理：每日债券市场要闻速递（2026-07-22） <span class="section-news">1. 财政部：将指导督促各地进一步强化专项债券“借用管还”闭环管理。</span><br/><span class="section-news">2. 上半年新增专项债券发行2.07万亿元，发行进度约47%。</span><br/><span class="section-news">3. 民生银行：成功发行150亿元绿色金融债券。</span><br/><span class="section-news">4. 财政部拟发行2026年记账式贴现（四十四期）国债。</span><br/><span c  <span class="section-news">1. 财政部：将指导督促各地进一步强化专项债券“借用管还”闭环管理。</span><br/><span class="section-news">2. 上半年新增专项债券发行2.07万亿元，发行进度约47%。</span><br/><span class="section-news">3. 民生银行：成功发行150亿元绿色金融债券。</span><br/><span class="section-news">4. 财政部拟发行2026年记账式贴现（四十四期）国债。</span><br/><span c 金十数据 fiscal_trade fiscal & trade 财政与贸易 cbon 512800.ss">
-          <div class="rank"><b>#2</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-markets lead" href="https://wallstreetcn.com/livenews/3138085" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high"
+           data-search="中国证监会：稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度  中国证监会：稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度 7月21日，中国证监会主席吴清在京会见了加拿大养老基金投资公司总裁兼首席执行官格雷厄姆（john graham）。双方就全球及中国经济金融形势、投资中国资本市场等议题交换了意见。  7月21日，中国证监会主席吴清在京会见了加拿大养老基金投资公司总裁兼首席执行官格雷厄姆（john graham）。双方就全球及中国经济金融形势、投资中国资本市场等议题交换了意见。 华尔街见闻 markets equity market 股票市场 ">
+          <time class="tp-when" data-t="2026-07-22T08:05:12+00:00" datetime="2026-07-22T08:05:12+00:00">07-22<br>08:05</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T08:05:12+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
-              <span class="chip"><b>金十数据</b></span>
-              <span class="chip imp-high"><b>90</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>96</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">金十数据整理：每日债券市场要闻速递（2026-07-22）</span><span class="l-zh">金十数据整理：每日债券市场要闻速递（2026-07-22）</span></h2>
-            <p class="summary"><span class="l-en"><span class="section-news">1. 财政部：将指导督促各地进一步强化专项债券“借用管还”闭环管理。</span><br/><span class="section-news">2. 上半年新增专项债券发行2.07万亿元，发行进度约47%。</span><br/><span class="section-news">3. 民生银行：成功发行150亿元绿色金融债券。</span><br/><span class="section-news">4. 财政部拟发行2026年记账式贴现（四十四期）国债。</span><br/><span c</span><span class="l-zh"><span class="section-news">1. 财政部：将指导督促各地进一步强化专项债券“借用管还”闭环管理。</span><br/><span class="section-news">2. 上半年新增专项债券发行2.07万亿元，发行进度约47%。</span><br/><span class="section-news">3. 民生银行：成功发行150亿元绿色金融债券。</span><br/><span class="section-news">4. 财政部拟发行2026年记账式贴现（四十四期）国债。</span><br/><span c</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="chip tk">CBON</span><span class="chip tk">512800.SS</span></div>
+            <h2 class="tp-title"><span class="l-en">中国证监会：稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度</span><span class="l-zh">中国证监会：稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度</span></h2>
+            <p class="tp-sum"><span class="l-en">7月21日，中国证监会主席吴清在京会见了加拿大养老基金投资公司总裁兼首席执行官格雷厄姆（John Graham）。双方就全球及中国经济金融形势、投资中国资本市场等议题交换了意见。</span><span class="l-zh">7月21日，中国证监会主席吴清在京会见了加拿大养老基金投资公司总裁兼首席执行官格雷厄姆（John Graham）。双方就全球及中国经济金融形势、投资中国资本市场等议题交换了意见。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138065" target="_blank" rel="noopener"
-           data-theme="credit" data-importance="high" data-search="上半年新增专项债券发行2.07万亿元 发行进度约47%  上半年新增专项债券发行2.07万亿元 发行进度约47% 财政部债务管理司副司长赵则永22日在财政部新闻发布会上介绍说，今年上半年新增专项债券发行2.07万亿元，发行进度约47%，主要是用于市政和产业园区基础设施、交通基础设施、城市更新和社会事业等重点领域，切实保障重大项目重点领域资金需求，用作项目资本金专项债超1700亿元，更好发挥政府投资四两拨千斤的撬动作用。（新华财经）  财政部债务管理司副司长赵则永22日在财政部新闻发布会上介绍说，今年上半年新增专项债券发行2.07万亿元，发行进度约47%，主要是用于市政和产业园区基础设施、交通基础设施、城市更新和社会事业等重点领域，切实保障重大项目重点领域资金需求，用作项目资本金专项债超1700亿元，更好发挥政府投资四两拨千斤的撬动作用。（新华财经） 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
-          <div class="rank"><b>#3</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-credit" href="https://wallstreetcn.com/livenews/3138065" target="_blank" rel="noopener"
+           data-theme="credit" data-importance="high"
+           data-search="上半年新增专项债券发行2.07万亿元 发行进度约47%  上半年新增专项债券发行2.07万亿元 发行进度约47% 财政部债务管理司副司长赵则永22日在财政部新闻发布会上介绍说，今年上半年新增专项债券发行2.07万亿元，发行进度约47%，主要是用于市政和产业园区基础设施、交通基础设施、城市更新和社会事业等重点领域，切实保障重大项目重点领域资金需求，用作项目资本金专项债超1700亿元，更好发挥政府投资四两拨千斤的撬动作用。（新华财经）  财政部债务管理司副司长赵则永22日在财政部新闻发布会上介绍说，今年上半年新增专项债券发行2.07万亿元，发行进度约47%，主要是用于市政和产业园区基础设施、交通基础设施、城市更新和社会事业等重点领域，切实保障重大项目重点领域资金需求，用作项目资本金专项债超1700亿元，更好发挥政府投资四两拨千斤的撬动作用。（新华财经） 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
+          <time class="tp-when" data-t="2026-07-22T07:31:42+00:00" datetime="2026-07-22T07:31:42+00:00">07-22<br>07:31</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:31:42+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-high"><b>82</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>82</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">上半年新增专项债券发行2.07万亿元 发行进度约47%</span><span class="l-zh">上半年新增专项债券发行2.07万亿元 发行进度约47%</span></h2>
-            <p class="summary"><span class="l-en">财政部债务管理司副司长赵则永22日在财政部新闻发布会上介绍说，今年上半年新增专项债券发行2.07万亿元，发行进度约47%，主要是用于市政和产业园区基础设施、交通基础设施、城市更新和社会事业等重点领域，切实保障重大项目重点领域资金需求，用作项目资本金专项债超1700亿元，更好发挥政府投资四两拨千斤的撬动作用。（新华财经）</span><span class="l-zh">财政部债务管理司副司长赵则永22日在财政部新闻发布会上介绍说，今年上半年新增专项债券发行2.07万亿元，发行进度约47%，主要是用于市政和产业园区基础设施、交通基础设施、城市更新和社会事业等重点领域，切实保障重大项目重点领域资金需求，用作项目资本金专项债超1700亿元，更好发挥政府投资四两拨千斤的撬动作用。（新华财经）</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
+            <h2 class="tp-title"><span class="l-en">上半年新增专项债券发行2.07万亿元 发行进度约47%</span><span class="l-zh">上半年新增专项债券发行2.07万亿元 发行进度约47%</span></h2>
+            <p class="tp-sum"><span class="l-en">财政部债务管理司副司长赵则永22日在财政部新闻发布会上介绍说，今年上半年新增专项债券发行2.07万亿元，发行进度约47%，主要是用于市政和产业园区基础设施、交通基础设施、城市更新和社会事业等重点领域，切实保障重大项目重点领域资金需求，用作项目资本金专项债超1700亿元，更好发挥政府投资四两拨千斤的撬动作用。（新华财经）</span><span class="l-zh">财政部债务管理司副司长赵则永22日在财政部新闻发布会上介绍说，今年上半年新增专项债券发行2.07万亿元，发行进度约47%，主要是用于市政和产业园区基础设施、交通基础设施、城市更新和社会事业等重点领域，切实保障重大项目重点领域资金需求，用作项目资本金专项债超1700亿元，更好发挥政府投资四两拨千斤的撬动作用。（新华财经）</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138095" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="high" data-search="北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场  北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场 7月22日，北京国有资本运营管理有限公司发文，截至目前，北京国管已统筹自有资金累计投入近百亿元布局股票市场。下一步，北京国管将依托自有资金及旗下证券公司、公募基金持续增持上市公司股票，支持北交所建设，立足国有资本运营公司功能定位，坚决维护上市企业核心资产战略价值，以实际行动为资本市场平稳健康发展贡献首都国企力量。  7月22日，北京国有资本运营管理有限公司发文，截至目前，北京国管已统筹自有资金累计投入近百亿元布局股票市场。下一步，北京国管将依托自有资金及旗下证券公司、公募基金持续增持上市公司股票，支持北交所建设，立足国有资本运营公司功能定位，坚决维护上市企业核心资产战略价值，以实际行动为资本市场平稳健康发展贡献首都国企力量。 华尔街见闻 markets equity market 股票市场 512880.ss">
-          <div class="rank"><b>#4</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3138095" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high"
+           data-search="北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场  北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场 7月22日，北京国有资本运营管理有限公司发文，截至目前，北京国管已统筹自有资金累计投入近百亿元布局股票市场。下一步，北京国管将依托自有资金及旗下证券公司、公募基金持续增持上市公司股票，支持北交所建设，立足国有资本运营公司功能定位，坚决维护上市企业核心资产战略价值，以实际行动为资本市场平稳健康发展贡献首都国企力量。  7月22日，北京国有资本运营管理有限公司发文，截至目前，北京国管已统筹自有资金累计投入近百亿元布局股票市场。下一步，北京国管将依托自有资金及旗下证券公司、公募基金持续增持上市公司股票，支持北交所建设，立足国有资本运营公司功能定位，坚决维护上市企业核心资产战略价值，以实际行动为资本市场平稳健康发展贡献首都国企力量。 华尔街见闻 markets equity market 股票市场 512880.ss">
+          <time class="tp-when" data-t="2026-07-22T08:12:42+00:00" datetime="2026-07-22T08:12:42+00:00">07-22<br>08:12</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T08:12:42+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-high"><b>76</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场</span><span class="l-zh">北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场</span></h2>
-            <p class="summary"><span class="l-en">7月22日，北京国有资本运营管理有限公司发文，截至目前，北京国管已统筹自有资金累计投入近百亿元布局股票市场。下一步，北京国管将依托自有资金及旗下证券公司、公募基金持续增持上市公司股票，支持北交所建设，立足国有资本运营公司功能定位，坚决维护上市企业核心资产战略价值，以实际行动为资本市场平稳健康发展贡献首都国企力量。</span><span class="l-zh">7月22日，北京国有资本运营管理有限公司发文，截至目前，北京国管已统筹自有资金累计投入近百亿元布局股票市场。下一步，北京国管将依托自有资金及旗下证券公司、公募基金持续增持上市公司股票，支持北交所建设，立足国有资本运营公司功能定位，坚决维护上市企业核心资产战略价值，以实际行动为资本市场平稳健康发展贡献首都国企力量。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip tk">512880.SS</span></div>
+            <h2 class="tp-title"><span class="l-en">北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场</span><span class="l-zh">北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场</span></h2>
+            <p class="tp-sum"><span class="l-en">7月22日，北京国有资本运营管理有限公司发文，截至目前，北京国管已统筹自有资金累计投入近百亿元布局股票市场。下一步，北京国管将依托自有资金及旗下证券公司、公募基金持续增持上市公司股票，支持北交所建设，立足国有资本运营公司功能定位，坚决维护上市企业核心资产战略价值，以实际行动为资本市场平稳健康发展贡献首都国企力量。</span><span class="l-zh">7月22日，北京国有资本运营管理有限公司发文，截至目前，北京国管已统筹自有资金累计投入近百亿元布局股票市场。下一步，北京国管将依托自有资金及旗下证券公司、公募基金持续增持上市公司股票，支持北交所建设，立足国有资本运营公司功能定位，坚决维护上市企业核心资产战略价值，以实际行动为资本市场平稳健康发展贡献首都国企力量。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://www.stcn.com/article/detail/4035070.html" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="high" data-search="证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资  证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资    证券时报 markets equity market 股票市场 512880.ss">
-          <div class="rank"><b>#5</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-markets" href="https://www.stcn.com/article/detail/4035070.html" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high"
+           data-search="证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资  证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资    证券时报 markets equity market 股票市场 512880.ss">
+          <time class="tp-when" data-t="" >—</time>
+          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>证券时报</b></span>
-              <span class="chip imp-high"><b>82</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">证券时报</span>
+              <span class="cn-imp imp-high"><b>82</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资</span><span class="l-zh">证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资</span></h2>
+            <h2 class="tp-title"><span class="l-en">证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资</span><span class="l-zh">证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资</span></h2>
             
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip tk">512880.SS</span></div>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://finance.eastmoney.com/a/202607223817259915.html" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high" data-search="吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度  吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度 【吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度】吴清表示，在复杂多变的国际形势下，今年上半年中国经济运行总体平稳，保持向新向优发展态势，展现出韧性与活力。中国证监会将坚持稳中求进，坚决维护资本市场平稳健康运行，稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度。欢迎包括加拿大养老基金投资公司在内的国际机构投资者扩大对华投资，共享中国经济和资本市场改革发展红利。  【吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度】吴清表示，在复杂多变的国际形势下，今年上半年中国经济运行总体平稳，保持向新向优发展态势，展现出韧性与活力。中国证监会将坚持稳中求进，坚决维护资本市场平稳健康运行，稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度。欢迎包括加拿大养老基金投资公司在内的国际机构投资者扩大对华投资，共享中国经济和资本市场改革发展红利。 eastmoney markets equity market 股票市场 ">
-          <div class="rank"><b>#6</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-monetary" href="https://www.gelonghui.com/live/2565305" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="high"
+           data-search="央行：6月同业拆借日均成交3292.2亿元 同比减少21.9%  央行：6月同业拆借日均成交3292.2亿元 同比减少21.9% 央行数据显示，2026年6月，同业拆借日均成交3292.2亿元，同比减少21.9%；银行间市场债券回购日均成交6.2万亿元，同比减少21.0%。2026年6月末，同业拆借未到期余额0.9万亿元，银行间市场债券回购未到期余额10.9万亿元。  央行数据显示，2026年6月，同业拆借日均成交3292.2亿元，同比减少21.9%；银行间市场债券回购日均成交6.2万亿元，同比减少21.0%。2026年6月末，同业拆借未到期余额0.9万亿元，银行间市场债券回购未到期余额10.9万亿元。 格隆汇 pboc_liquidity pboc & liquidity 央行与流动性 512800.ss">
+          <time class="tp-when" data-t="2026-07-22T10:05:41+00:00" datetime="2026-07-22T10:05:41+00:00">07-22<br>10:05</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T10:05:41+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-policy"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="chip"><b>Eastmoney</b></span>
-              <span class="chip imp-high"><b>71</b>/100</span>
+              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="cn-src">格隆汇</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度</span><span class="l-zh">吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度</span></h2>
-            <p class="summary"><span class="l-en">【吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度】吴清表示，在复杂多变的国际形势下，今年上半年中国经济运行总体平稳，保持向新向优发展态势，展现出韧性与活力。中国证监会将坚持稳中求进，坚决维护资本市场平稳健康运行，稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度。欢迎包括加拿大养老基金投资公司在内的国际机构投资者扩大对华投资，共享中国经济和资本市场改革发展红利。</span><span class="l-zh">【吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度】吴清表示，在复杂多变的国际形势下，今年上半年中国经济运行总体平稳，保持向新向优发展态势，展现出韧性与活力。中国证监会将坚持稳中求进，坚决维护资本市场平稳健康运行，稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度。欢迎包括加拿大养老基金投资公司在内的国际机构投资者扩大对华投资，共享中国经济和资本市场改革发展红利。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
+            <h2 class="tp-title"><span class="l-en">央行：6月同业拆借日均成交3292.2亿元 同比减少21.9%</span><span class="l-zh">央行：6月同业拆借日均成交3292.2亿元 同比减少21.9%</span></h2>
+            <p class="tp-sum"><span class="l-en">央行数据显示，2026年6月，同业拆借日均成交3292.2亿元，同比减少21.9%；银行间市场债券回购日均成交6.2万亿元，同比减少21.0%。2026年6月末，同业拆借未到期余额0.9万亿元，银行间市场债券回购未到期余额10.9万亿元。</span><span class="l-zh">央行数据显示，2026年6月，同业拆借日均成交3292.2亿元，同比减少21.9%；银行间市场债券回购日均成交6.2万亿元，同比减少21.0%。2026年6月末，同业拆借未到期余额0.9万亿元，银行间市场债券回购未到期余额10.9万亿元。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-tk">512800.SS</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138091" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="high" data-search="量化私募因诺资产宣布1亿元自购旗下基金产品  量化私募因诺资产宣布1亿元自购旗下基金产品 7月22日，量化私募因诺资产发布公告称，基于对中国资本市场长期稳健发展及公司主动管理能力的坚定信心，公司及股东计划使用自有资金人民币1亿元参与申购公司旗下基金产品。  7月22日，量化私募因诺资产发布公告称，基于对中国资本市场长期稳健发展及公司主动管理能力的坚定信心，公司及股东计划使用自有资金人民币1亿元参与申购公司旗下基金产品。 华尔街见闻 yuan yuan & fx 人民币与汇率 cny">
-          <div class="rank"><b>#7</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3138091" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high"
+           data-search="量化私募因诺资产宣布1亿元自购旗下基金产品  量化私募因诺资产宣布1亿元自购旗下基金产品 7月22日，量化私募因诺资产发布公告称，基于对中国资本市场长期稳健发展及公司主动管理能力的坚定信心，公司及股东计划使用自有资金人民币1亿元参与申购公司旗下基金产品。  7月22日，量化私募因诺资产发布公告称，基于对中国资本市场长期稳健发展及公司主动管理能力的坚定信心，公司及股东计划使用自有资金人民币1亿元参与申购公司旗下基金产品。 华尔街见闻 yuan yuan & fx 人民币与汇率 cny">
+          <time class="tp-when" data-t="2026-07-22T08:09:02+00:00" datetime="2026-07-22T08:09:02+00:00">07-22<br>08:09</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T08:09:02+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-high"><b>68</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">量化私募因诺资产宣布1亿元自购旗下基金产品</span><span class="l-zh">量化私募因诺资产宣布1亿元自购旗下基金产品</span></h2>
-            <p class="summary"><span class="l-en">7月22日，量化私募因诺资产发布公告称，基于对中国资本市场长期稳健发展及公司主动管理能力的坚定信心，公司及股东计划使用自有资金人民币1亿元参与申购公司旗下基金产品。</span><span class="l-zh">7月22日，量化私募因诺资产发布公告称，基于对中国资本市场长期稳健发展及公司主动管理能力的坚定信心，公司及股东计划使用自有资金人民币1亿元参与申购公司旗下基金产品。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">yuan & FX</span><span class="l-zh">人民币与汇率</span></span><span class="chip tk">CNY</span></div>
+            <h2 class="tp-title"><span class="l-en">量化私募因诺资产宣布1亿元自购旗下基金产品</span><span class="l-zh">量化私募因诺资产宣布1亿元自购旗下基金产品</span></h2>
+            <p class="tp-sum"><span class="l-en">7月22日，量化私募因诺资产发布公告称，基于对中国资本市场长期稳健发展及公司主动管理能力的坚定信心，公司及股东计划使用自有资金人民币1亿元参与申购公司旗下基金产品。</span><span class="l-zh">7月22日，量化私募因诺资产发布公告称，基于对中国资本市场长期稳健发展及公司主动管理能力的坚定信心，公司及股东计划使用自有资金人民币1亿元参与申购公司旗下基金产品。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">yuan & FX</span><span class="l-zh">人民币与汇率</span></span><span class="cn-tk">CNY</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138048" target="_blank" rel="noopener"
-           data-theme="fiscal" data-importance="high" data-search="财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%  财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7% 财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%。其中，全国税收收入97865亿元，同比增长5.3%；非税收入23182亿元，同比增长2.3%。分中央和地方看，中央一般公共预算收入52240亿元，同比增长7.5%；地方一般公共预算本级收入68807亿元，同比增长2.7%。 主要税收收入项目情况如下：印花税2752亿元，同比增长40.9%。其中，证券交易印花税1549亿元，同比增长97.3%。  财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%。其中，全国税收收入97865亿元，同比增长5.3%；非税收入23182亿元，同比增长2.3%。分中央和地方看，中央一般公共预算收入52240亿元，同比增长7.5%；地方一般公共预算本级收入68807亿元，同比增长2.7%。 主要税收收入项目情况如下：印花税2752亿元，同比增长40.9%。其中，证券交易印花税1549亿元，同比增长97.3%。 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 512880.ss">
-          <div class="rank"><b>#8</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-fiscal" href="https://wallstreetcn.com/livenews/3138048" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="high"
+           data-search="财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%  财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7% 财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%。其中，全国税收收入97865亿元，同比增长5.3%；非税收入23182亿元，同比增长2.3%。分中央和地方看，中央一般公共预算收入52240亿元，同比增长7.5%；地方一般公共预算本级收入68807亿元，同比增长2.7%。 主要税收收入项目情况如下：印花税2752亿元，同比增长40.9%。其中，证券交易印花税1549亿元，同比增长97.3%。  财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%。其中，全国税收收入97865亿元，同比增长5.3%；非税收入23182亿元，同比增长2.3%。分中央和地方看，中央一般公共预算收入52240亿元，同比增长7.5%；地方一般公共预算本级收入68807亿元，同比增长2.7%。 主要税收收入项目情况如下：印花税2752亿元，同比增长40.9%。其中，证券交易印花税1549亿元，同比增长97.3%。 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 512880.ss">
+          <time class="tp-when" data-t="2026-07-22T07:09:19+00:00" datetime="2026-07-22T07:09:19+00:00">07-22<br>07:09</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:09:19+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-high"><b>68</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%</span><span class="l-zh">财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%</span></h2>
-            <p class="summary"><span class="l-en">财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%。其中，全国税收收入97865亿元，同比增长5.3%；非税收入23182亿元，同比增长2.3%。分中央和地方看，中央一般公共预算收入52240亿元，同比增长7.5%；地方一般公共预算本级收入68807亿元，同比增长2.7%。 主要税收收入项目情况如下：印花税2752亿元，同比增长40.9%。其中，证券交易印花税1549亿元，同比增长97.3%。</span><span class="l-zh">财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%。其中，全国税收收入97865亿元，同比增长5.3%；非税收入23182亿元，同比增长2.3%。分中央和地方看，中央一般公共预算收入52240亿元，同比增长7.5%；地方一般公共预算本级收入68807亿元，同比增长2.7%。 主要税收收入项目情况如下：印花税2752亿元，同比增长40.9%。其中，证券交易印花税1549亿元，同比增长97.3%。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="chip tk">512880.SS</span></div>
+            <h2 class="tp-title"><span class="l-en">财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%</span><span class="l-zh">财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%</span></h2>
+            <p class="tp-sum"><span class="l-en">财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%。其中，全国税收收入97865亿元，同比增长5.3%；非税收入23182亿元，同比增长2.3%。分中央和地方看，中央一般公共预算收入52240亿元，同比增长7.5%；地方一般公共预算本级收入68807亿元，同比增长2.7%。 主要税收收入项目情况如下：印花税2752亿元，同比增长40.9%。其中，证券交易印花税1549亿元，同比增长97.3%。</span><span class="l-zh">财政部：上半年，全国一般公共预算收入121047亿元，同比增长4.7%。其中，全国税收收入97865亿元，同比增长5.3%；非税收入23182亿元，同比增长2.3%。分中央和地方看，中央一般公共预算收入52240亿元，同比增长7.5%；地方一般公共预算本级收入68807亿元，同比增长2.7%。 主要税收收入项目情况如下：印花税2752亿元，同比增长40.9%。其中，证券交易印花税1549亿元，同比增长97.3%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138033" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="high" data-search="“对资本市场长期稳健发展充满信心”，7月以来自购私募升至16家  “对资本市场长期稳健发展充满信心”，7月以来自购私募升至16家 7月22日，私募行业内又有思瑞投资、晨曦基金两家知名机构宣布自购公司旗下私募证券基金产品。至此，据记者不完全统计，7月以来宣布自购的私募已达16家。知名平台型私募思瑞投资7月22日发布公告称，基于对中国资本市场长期稳定发展和公司资产管理能力的信心，以及与投资者共享收益、共担风险的原则，思瑞投资及员工已于近期申购自有产品，金额为5000万元。(中证报)  7月22日，私募行业内又有思瑞投资、晨曦基金两家知名机构宣布自购公司旗下私募证券基金产品。至此，据记者不完全统计，7月以来宣布自购的私募已达16家。知名平台型私募思瑞投资7月22日发布公告称，基于对中国资本市场长期稳定发展和公司资产管理能力的信心，以及与投资者共享收益、共担风险的原则，思瑞投资及员工已于近期申购自有产品，金额为5000万元。(中证报) 华尔街见闻 markets equity market 股票市场 512880.ss">
-          <div class="rank"><b>#9</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3138033" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high"
+           data-search="“对资本市场长期稳健发展充满信心”，7月以来自购私募升至16家  “对资本市场长期稳健发展充满信心”，7月以来自购私募升至16家 7月22日，私募行业内又有思瑞投资、晨曦基金两家知名机构宣布自购公司旗下私募证券基金产品。至此，据记者不完全统计，7月以来宣布自购的私募已达16家。知名平台型私募思瑞投资7月22日发布公告称，基于对中国资本市场长期稳定发展和公司资产管理能力的信心，以及与投资者共享收益、共担风险的原则，思瑞投资及员工已于近期申购自有产品，金额为5000万元。(中证报)  7月22日，私募行业内又有思瑞投资、晨曦基金两家知名机构宣布自购公司旗下私募证券基金产品。至此，据记者不完全统计，7月以来宣布自购的私募已达16家。知名平台型私募思瑞投资7月22日发布公告称，基于对中国资本市场长期稳定发展和公司资产管理能力的信心，以及与投资者共享收益、共担风险的原则，思瑞投资及员工已于近期申购自有产品，金额为5000万元。(中证报) 华尔街见闻 markets equity market 股票市场 512880.ss">
+          <time class="tp-when" data-t="2026-07-22T06:53:31+00:00" datetime="2026-07-22T06:53:31+00:00">07-22<br>06:53</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T06:53:31+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-high"><b>68</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">“对资本市场长期稳健发展充满信心”，7月以来自购私募升至16家</span><span class="l-zh">“对资本市场长期稳健发展充满信心”，7月以来自购私募升至16家</span></h2>
-            <p class="summary"><span class="l-en">7月22日，私募行业内又有思瑞投资、晨曦基金两家知名机构宣布自购公司旗下私募证券基金产品。至此，据记者不完全统计，7月以来宣布自购的私募已达16家。知名平台型私募思瑞投资7月22日发布公告称，基于对中国资本市场长期稳定发展和公司资产管理能力的信心，以及与投资者共享收益、共担风险的原则，思瑞投资及员工已于近期申购自有产品，金额为5000万元。(中证报)</span><span class="l-zh">7月22日，私募行业内又有思瑞投资、晨曦基金两家知名机构宣布自购公司旗下私募证券基金产品。至此，据记者不完全统计，7月以来宣布自购的私募已达16家。知名平台型私募思瑞投资7月22日发布公告称，基于对中国资本市场长期稳定发展和公司资产管理能力的信心，以及与投资者共享收益、共担风险的原则，思瑞投资及员工已于近期申购自有产品，金额为5000万元。(中证报)</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip tk">512880.SS</span></div>
+            <h2 class="tp-title"><span class="l-en">“对资本市场长期稳健发展充满信心”，7月以来自购私募升至16家</span><span class="l-zh">“对资本市场长期稳健发展充满信心”，7月以来自购私募升至16家</span></h2>
+            <p class="tp-sum"><span class="l-en">7月22日，私募行业内又有思瑞投资、晨曦基金两家知名机构宣布自购公司旗下私募证券基金产品。至此，据记者不完全统计，7月以来宣布自购的私募已达16家。知名平台型私募思瑞投资7月22日发布公告称，基于对中国资本市场长期稳定发展和公司资产管理能力的信心，以及与投资者共享收益、共担风险的原则，思瑞投资及员工已于近期申购自有产品，金额为5000万元。(中证报)</span><span class="l-zh">7月22日，私募行业内又有思瑞投资、晨曦基金两家知名机构宣布自购公司旗下私募证券基金产品。至此，据记者不完全统计，7月以来宣布自购的私募已达16家。知名平台型私募思瑞投资7月22日发布公告称，基于对中国资本市场长期稳定发展和公司资产管理能力的信心，以及与投资者共享收益、共担风险的原则，思瑞投资及员工已于近期申购自有产品，金额为5000万元。(中证报)</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138040" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium" data-search="a股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨  a股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨 1、沪指全天横盘震荡，创业板指低开低走。贵金属板块集体大涨，山金国际、招金黄金涨停。煤炭板块再度拉升，大有能源、华电能源涨停。电力股反复活跃，立新能源5连板，华电辽能等多股涨停。油气股高开高走，中曼石油涨停，科力股份涨超10%。下跌方面，电池产业链下挫，鹏辉能源跌超10%。个股跌多涨少，沪深京三市约3900股飘绿，今日成交2.67万亿。截止收盘沪指涨0.07%，深成指跌1.42%，创业板指跌3.23%。 2、板块概念方面，贵金属、煤炭、电力、油气等板块涨幅居前，游戏、电子特气、光刻机、pcb等板块跌幅居前。 3、两市共1432只个股上涨，47只个股涨停，  1、沪指全天横盘震荡，创业板指低开低走。贵金属板块集体大涨，山金国际、招金黄金涨停。煤炭板块再度拉升，大有能源、华电能源涨停。电力股反复活跃，立新能源5连板，华电辽能等多股涨停。油气股高开高走，中曼石油涨停，科力股份涨超10%。下跌方面，电池产业链下挫，鹏辉能源跌超10%。个股跌多涨少，沪深京三市约3900股飘绿，今日成交2.67万亿。截止收盘沪指涨0.07%，深成指跌1.42%，创业板指跌3.23%。 2、板块概念方面，贵金属、煤炭、电力、油气等板块涨幅居前，游戏、电子特气、光刻机、pcb等板块跌幅居前。 3、两市共1432只个股上涨，47只个股涨停， 华尔街见闻 markets commodities equity market 股票市场 commodities 大宗商品 ashr 515030.ss">
-          <div class="rank"><b>#10</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3138040" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="a股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨  a股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨 1、沪指全天横盘震荡，创业板指低开低走。贵金属板块集体大涨，山金国际、招金黄金涨停。煤炭板块再度拉升，大有能源、华电能源涨停。电力股反复活跃，立新能源5连板，华电辽能等多股涨停。油气股高开高走，中曼石油涨停，科力股份涨超10%。下跌方面，电池产业链下挫，鹏辉能源跌超10%。个股跌多涨少，沪深京三市约3900股飘绿，今日成交2.67万亿。截止收盘沪指涨0.07%，深成指跌1.42%，创业板指跌3.23%。 2、板块概念方面，贵金属、煤炭、电力、油气等板块涨幅居前，游戏、电子特气、光刻机、pcb等板块跌幅居前。 3、两市共1432只个股上涨，47只个股涨停，  1、沪指全天横盘震荡，创业板指低开低走。贵金属板块集体大涨，山金国际、招金黄金涨停。煤炭板块再度拉升，大有能源、华电能源涨停。电力股反复活跃，立新能源5连板，华电辽能等多股涨停。油气股高开高走，中曼石油涨停，科力股份涨超10%。下跌方面，电池产业链下挫，鹏辉能源跌超10%。个股跌多涨少，沪深京三市约3900股飘绿，今日成交2.67万亿。截止收盘沪指涨0.07%，深成指跌1.42%，创业板指跌3.23%。 2、板块概念方面，贵金属、煤炭、电力、油气等板块涨幅居前，游戏、电子特气、光刻机、pcb等板块跌幅居前。 3、两市共1432只个股上涨，47只个股涨停， 华尔街见闻 markets commodities equity market 股票市场 commodities 大宗商品 ashr 515030.ss">
+          <time class="tp-when" data-t="2026-07-22T07:01:40+00:00" datetime="2026-07-22T07:01:40+00:00">07-22<br>07:01</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:01:40+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>62</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="title"><span class="l-en">A股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨</span><span class="l-zh">A股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨</span></h2>
-            <p class="summary"><span class="l-en">1、沪指全天横盘震荡，创业板指低开低走。贵金属板块集体大涨，山金国际、招金黄金涨停。煤炭板块再度拉升，大有能源、华电能源涨停。电力股反复活跃，立新能源5连板，华电辽能等多股涨停。油气股高开高走，中曼石油涨停，科力股份涨超10%。下跌方面，电池产业链下挫，鹏辉能源跌超10%。个股跌多涨少，沪深京三市约3900股飘绿，今日成交2.67万亿。截止收盘沪指涨0.07%，深成指跌1.42%，创业板指跌3.23%。 2、板块概念方面，贵金属、煤炭、电力、油气等板块涨幅居前，游戏、电子特气、光刻机、PCB等板块跌幅居前。 3、两市共1432只个股上涨，47只个股涨停，</span><span class="l-zh">1、沪指全天横盘震荡，创业板指低开低走。贵金属板块集体大涨，山金国际、招金黄金涨停。煤炭板块再度拉升，大有能源、华电能源涨停。电力股反复活跃，立新能源5连板，华电辽能等多股涨停。油气股高开高走，中曼石油涨停，科力股份涨超10%。下跌方面，电池产业链下挫，鹏辉能源跌超10%。个股跌多涨少，沪深京三市约3900股飘绿，今日成交2.67万亿。截止收盘沪指涨0.07%，深成指跌1.42%，创业板指跌3.23%。 2、板块概念方面，贵金属、煤炭、电力、油气等板块涨幅居前，游戏、电子特气、光刻机、PCB等板块跌幅居前。 3、两市共1432只个股上涨，47只个股涨停，</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip"><span class="l-en">commodities</span><span class="l-zh">大宗商品</span></span><span class="chip tk">ASHR</span><span class="chip tk">515030.SS</span></div>
+            <h2 class="tp-title"><span class="l-en">A股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨</span><span class="l-zh">A股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨</span></h2>
+            <p class="tp-sum"><span class="l-en">1、沪指全天横盘震荡，创业板指低开低走。贵金属板块集体大涨，山金国际、招金黄金涨停。煤炭板块再度拉升，大有能源、华电能源涨停。电力股反复活跃，立新能源5连板，华电辽能等多股涨停。油气股高开高走，中曼石油涨停，科力股份涨超10%。下跌方面，电池产业链下挫，鹏辉能源跌超10%。个股跌多涨少，沪深京三市约3900股飘绿，今日成交2.67万亿。截止收盘沪指涨0.07%，深成指跌1.42%，创业板指跌3.23%。 2、板块概念方面，贵金属、煤炭、电力、油气等板块涨幅居前，游戏、电子特气、光刻机、PCB等板块跌幅居前。 3、两市共1432只个股上涨，47只个股涨停，</span><span class="l-zh">1、沪指全天横盘震荡，创业板指低开低走。贵金属板块集体大涨，山金国际、招金黄金涨停。煤炭板块再度拉升，大有能源、华电能源涨停。电力股反复活跃，立新能源5连板，华电辽能等多股涨停。油气股高开高走，中曼石油涨停，科力股份涨超10%。下跌方面，电池产业链下挫，鹏辉能源跌超10%。个股跌多涨少，沪深京三市约3900股飘绿，今日成交2.67万亿。截止收盘沪指涨0.07%，深成指跌1.42%，创业板指跌3.23%。 2、板块概念方面，贵金属、煤炭、电力、油气等板块涨幅居前，游戏、电子特气、光刻机、PCB等板块跌幅居前。 3、两市共1432只个股上涨，47只个股涨停，</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-cchip"><span class="l-en">commodities</span><span class="l-zh">大宗商品</span></span><span class="cn-tk">ASHR</span><span class="cn-tk">515030.SS</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138057" target="_blank" rel="noopener"
-           data-theme="inflation" data-importance="high" data-search="英国通胀率降至15个月低点 消费者暂获喘息之机  英国通胀率降至15个月低点 消费者暂获喘息之机 受汽油和食品价格下跌影响，英国通胀率降至一年多来低点，给民众带来一丝喘息之机。但随着中东局势再度紧张推高能源价格，这种缓和势头可能只是昙花一现。英国国家统计局周三公布，6月英国消费者价格同比上涨2.6%，涨幅低于前月的2.8%，为去年3月以来最低水平。这一数字也低于经济学家平均预期的2.7%，是连续第三个月低于预期。  受汽油和食品价格下跌影响，英国通胀率降至一年多来低点，给民众带来一丝喘息之机。但随着中东局势再度紧张推高能源价格，这种缓和势头可能只是昙花一现。英国国家统计局周三公布，6月英国消费者价格同比上涨2.6%，涨幅低于前月的2.8%，为去年3月以来最低水平。这一数字也低于经济学家平均预期的2.7%，是连续第三个月低于预期。 华尔街见闻 consumer consumer 消费 ">
-          <div class="rank"><b>#11</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-monetary" href="https://wallstreetcn.com/livenews/3138145" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="high"
+           data-search="央行：6月上海黄金交易所黄金成交6491.2吨 同比增加19.8%  央行：6月上海黄金交易所黄金成交6491.2吨 同比增加19.8% 央行数据显示，2026年6月末，上海黄金交易所au（t+d）合约收于每克878.5元，环比下跌10.7%。2026年6月，上海黄金交易所黄金成交6491.2吨，同比增加19.8%；上海期货交易所黄金成交1.3万吨，同比减少15.9%。  央行数据显示，2026年6月末，上海黄金交易所au（t+d）合约收于每克878.5元，环比下跌10.7%。2026年6月，上海黄金交易所黄金成交6491.2吨，同比增加19.8%；上海期货交易所黄金成交1.3万吨，同比减少15.9%。 华尔街见闻 pboc_liquidity pboc & liquidity 央行与流动性 ">
+          <time class="tp-when" data-t="2026-07-22T10:06:21+00:00" datetime="2026-07-22T10:06:21+00:00">07-22<br>10:06</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T10:06:21+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-high"><b>68</b>/100</span>
+              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">英国通胀率降至15个月低点 消费者暂获喘息之机</span><span class="l-zh">英国通胀率降至15个月低点 消费者暂获喘息之机</span></h2>
-            <p class="summary"><span class="l-en">受汽油和食品价格下跌影响，英国通胀率降至一年多来低点，给民众带来一丝喘息之机。但随着中东局势再度紧张推高能源价格，这种缓和势头可能只是昙花一现。英国国家统计局周三公布，6月英国消费者价格同比上涨2.6%，涨幅低于前月的2.8%，为去年3月以来最低水平。这一数字也低于经济学家平均预期的2.7%，是连续第三个月低于预期。</span><span class="l-zh">受汽油和食品价格下跌影响，英国通胀率降至一年多来低点，给民众带来一丝喘息之机。但随着中东局势再度紧张推高能源价格，这种缓和势头可能只是昙花一现。英国国家统计局周三公布，6月英国消费者价格同比上涨2.6%，涨幅低于前月的2.8%，为去年3月以来最低水平。这一数字也低于经济学家平均预期的2.7%，是连续第三个月低于预期。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span></div>
+            <h2 class="tp-title"><span class="l-en">央行：6月上海黄金交易所黄金成交6491.2吨 同比增加19.8%</span><span class="l-zh">央行：6月上海黄金交易所黄金成交6491.2吨 同比增加19.8%</span></h2>
+            <p class="tp-sum"><span class="l-en">央行数据显示，2026年6月末，上海黄金交易所Au（T+D）合约收于每克878.5元，环比下跌10.7%。2026年6月，上海黄金交易所黄金成交6491.2吨，同比增加19.8%；上海期货交易所黄金成交1.3万吨，同比减少15.9%。</span><span class="l-zh">央行数据显示，2026年6月末，上海黄金交易所Au（T+D）合约收于每克878.5元，环比下跌10.7%。2026年6月，上海黄金交易所黄金成交6491.2吨，同比增加19.8%；上海期货交易所黄金成交1.3万吨，同比减少15.9%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://www.stcn.com/article/detail/4034143.html" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high" data-search="全国首单落地！贷款定价告别“唯lpr”时代  全国首单落地！贷款定价告别“唯lpr”时代    证券时报 pboc_liquidity credit_impulse pboc & liquidity 央行与流动性 credit & financing 信贷与社融 512800.ss 512880.ss">
-          <div class="rank"><b>#12</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-inflation" href="https://wallstreetcn.com/livenews/3138057" target="_blank" rel="noopener"
+           data-theme="inflation" data-importance="high"
+           data-search="英国通胀率降至15个月低点 消费者暂获喘息之机  英国通胀率降至15个月低点 消费者暂获喘息之机 受汽油和食品价格下跌影响，英国通胀率降至一年多来低点，给民众带来一丝喘息之机。但随着中东局势再度紧张推高能源价格，这种缓和势头可能只是昙花一现。英国国家统计局周三公布，6月英国消费者价格同比上涨2.6%，涨幅低于前月的2.8%，为去年3月以来最低水平。这一数字也低于经济学家平均预期的2.7%，是连续第三个月低于预期。  受汽油和食品价格下跌影响，英国通胀率降至一年多来低点，给民众带来一丝喘息之机。但随着中东局势再度紧张推高能源价格，这种缓和势头可能只是昙花一现。英国国家统计局周三公布，6月英国消费者价格同比上涨2.6%，涨幅低于前月的2.8%，为去年3月以来最低水平。这一数字也低于经济学家平均预期的2.7%，是连续第三个月低于预期。 华尔街见闻 consumer consumer 消费 ">
+          <time class="tp-when" data-t="2026-07-22T07:20:04+00:00" datetime="2026-07-22T07:20:04+00:00">07-22<br>07:20</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:20:04+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="chip"><b>证券时报</b></span>
-              <span class="chip imp-high"><b>68</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">全国首单落地！贷款定价告别“唯LPR”时代</span><span class="l-zh">全国首单落地！贷款定价告别“唯LPR”时代</span></h2>
+            <h2 class="tp-title"><span class="l-en">英国通胀率降至15个月低点 消费者暂获喘息之机</span><span class="l-zh">英国通胀率降至15个月低点 消费者暂获喘息之机</span></h2>
+            <p class="tp-sum"><span class="l-en">受汽油和食品价格下跌影响，英国通胀率降至一年多来低点，给民众带来一丝喘息之机。但随着中东局势再度紧张推高能源价格，这种缓和势头可能只是昙花一现。英国国家统计局周三公布，6月英国消费者价格同比上涨2.6%，涨幅低于前月的2.8%，为去年3月以来最低水平。这一数字也低于经济学家平均预期的2.7%，是连续第三个月低于预期。</span><span class="l-zh">受汽油和食品价格下跌影响，英国通胀率降至一年多来低点，给民众带来一丝喘息之机。但随着中东局势再度紧张推高能源价格，这种缓和势头可能只是昙花一现。英国国家统计局周三公布，6月英国消费者价格同比上涨2.6%，涨幅低于前月的2.8%，为去年3月以来最低水平。这一数字也低于经济学家平均预期的2.7%，是连续第三个月低于预期。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3138039" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="上证指数收报3867.03点，涨0.07%  上证指数收报3867.03点，涨0.07% 上证指数收报3867.03点，涨0.07%。 深证成指收报14061.44点，跌1.42%。 创业板指收报3566.73点，跌3.23%。 沪深300收报4717.24点，跌0.46%。 科创50收报1860.08点，跌2.26%。 中证500收报7751.66点，跌0.63%。 中证1000收报7158.76点，跌1.39%。  上证指数收报3867.03点，涨0.07%。 深证成指收报14061.44点，跌1.42%。 创业板指收报3566.73点，跌3.23%。 沪深300收报4717.24点，跌0.46%。 科创50收报1860.08点，跌2.26%。 中证500收报7751.66点，跌0.63%。 中证1000收报7158.76点，跌1.39%。 华尔街见闻 markets equity market 股票市场 510300.ss ashr">
+          <time class="tp-when" data-t="2026-07-22T07:01:01+00:00" datetime="2026-07-22T07:01:01+00:00">07-22<br>07:01</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:01:01+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">上证指数收报3867.03点，涨0.07%</span><span class="l-zh">上证指数收报3867.03点，涨0.07%</span></h2>
+            <p class="tp-sum"><span class="l-en">上证指数收报3867.03点，涨0.07%。 深证成指收报14061.44点，跌1.42%。 创业板指收报3566.73点，跌3.23%。 沪深300收报4717.24点，跌0.46%。 科创50收报1860.08点，跌2.26%。 中证500收报7751.66点，跌0.63%。 中证1000收报7158.76点，跌1.39%。</span><span class="l-zh">上证指数收报3867.03点，涨0.07%。 深证成指收报14061.44点，跌1.42%。 创业板指收报3566.73点，跌3.23%。 沪深300收报4717.24点，跌0.46%。 科创50收报1860.08点，跌2.26%。 中证500收报7751.66点，跌0.63%。 中证1000收报7158.76点，跌1.39%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">510300.SS</span><span class="cn-tk">ASHR</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-fiscal" href="https://wallstreetcn.com/livenews/3138049" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium"
+           data-search="ai算力产业链成为上海出口重要增长动能  ai算力产业链成为上海出口重要增长动能 从上海海关获悉，上半年，上海制造的服务器、光收发模块、集成电路、工业级变压器、储能电池等人工智能（ai）相关产品出口均实现快速增长，ai算力产业链已成为上海出口的重要增长动能。  从上海海关获悉，上半年，上海制造的服务器、光收发模块、集成电路、工业级变压器、储能电池等人工智能（ai）相关产品出口均实现快速增长，ai算力产业链已成为上海出口的重要增长动能。 华尔街见闻 industrial fiscal_trade tech_policy industry & manufacturing 工业与制造业 fiscal & trade 财政与贸易 tech policy 科技政策 515030.ss">
+          <time class="tp-when" data-t="2026-07-22T07:11:32+00:00" datetime="2026-07-22T07:11:32+00:00">07-22<br>07:11</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:11:32+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>58</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">AI算力产业链成为上海出口重要增长动能</span><span class="l-zh">AI算力产业链成为上海出口重要增长动能</span></h2>
+            <p class="tp-sum"><span class="l-en">从上海海关获悉，上半年，上海制造的服务器、光收发模块、集成电路、工业级变压器、储能电池等人工智能（AI）相关产品出口均实现快速增长，AI算力产业链已成为上海出口的重要增长动能。</span><span class="l-zh">从上海海关获悉，上半年，上海制造的服务器、光收发模块、集成电路、工业级变压器、储能电池等人工智能（AI）相关产品出口均实现快速增长，AI算力产业链已成为上海出口的重要增长动能。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="cn-tk">515030.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-monetary" href="https://www.stcn.com/article/detail/4035619.html" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="high"
+           data-search="央行：6月末债券市场托管余额205万亿元  央行：6月末债券市场托管余额205万亿元    证券时报 pboc_liquidity pboc & liquidity 央行与流动性 512880.ss">
+          <time class="tp-when" data-t="" >—</time>
+          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="cn-src">证券时报</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">央行：6月末债券市场托管余额205万亿元</span><span class="l-zh">央行：6月末债券市场托管余额205万亿元</span></h2>
             
-            <div class="intel"><span class="chip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="chip"><span class="l-en">credit & financing</span><span class="l-zh">信贷与社融</span></span><span class="chip tk">512800.SS</span><span class="chip tk">512880.SS</span></div>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://finance.eastmoney.com/a/202607223817244895.html" target="_blank" rel="noopener"
-           data-theme="credit" data-importance="medium" data-search="财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理  财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理 【财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理】财政部债务管理司副司长赵则永：下一步，财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理。更好统筹资金使用和项目建设，加快资金拨付使用进度，尽快形成实物工作量。严格落实“负面清单”管理，做好项目运营收益征缴，切实提高偿债能力。  【财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理】财政部债务管理司副司长赵则永：下一步，财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理。更好统筹资金使用和项目建设，加快资金拨付使用进度，尽快形成实物工作量。严格落实“负面清单”管理，做好项目运营收益征缴，切实提高偿债能力。 eastmoney fiscal_trade fiscal & trade 财政与贸易 ">
-          <div class="rank"><b>#13</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-markets" href="https://www.cnstock.com/commonDetail/749108" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high"
+           data-search="稳市场聚合力 证监会系列座谈会释放四大信号  稳市场聚合力 证监会系列座谈会释放四大信号    上海证券报 markets equity market 股票市场 512880.ss">
+          <time class="tp-when" data-t="" >—</time>
+          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
-              <span class="chip"><b>Eastmoney</b></span>
-              <span class="chip imp-medium"><b>65</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">上海证券报</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理</span><span class="l-zh">财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理</span></h2>
-            <p class="summary"><span class="l-en">【财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理】财政部债务管理司副司长赵则永：下一步，财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理。更好统筹资金使用和项目建设，加快资金拨付使用进度，尽快形成实物工作量。严格落实“负面清单”管理，做好项目运营收益征缴，切实提高偿债能力。</span><span class="l-zh">【财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理】财政部债务管理司副司长赵则永：下一步，财政部将指导督促各地进一步强化专项债券“借用管还”闭环管理。更好统筹资金使用和项目建设，加快资金拨付使用进度，尽快形成实物工作量。严格落实“负面清单”管理，做好项目运营收益征缴，切实提高偿债能力。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
-          </div>
-        </a>
-        
-        
-        <a class="card" href="https://wallstreetcn.com/livenews/3138039" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium" data-search="上证指数收报3867.03点，涨0.07%  上证指数收报3867.03点，涨0.07% 上证指数收报3867.03点，涨0.07%。 深证成指收报14061.44点，跌1.42%。 创业板指收报3566.73点，跌3.23%。 沪深300收报4717.24点，跌0.46%。 科创50收报1860.08点，跌2.26%。 中证500收报7751.66点，跌0.63%。 中证1000收报7158.76点，跌1.39%。  上证指数收报3867.03点，涨0.07%。 深证成指收报14061.44点，跌1.42%。 创业板指收报3566.73点，跌3.23%。 沪深300收报4717.24点，跌0.46%。 科创50收报1860.08点，跌2.26%。 中证500收报7751.66点，跌0.63%。 中证1000收报7158.76点，跌1.39%。 华尔街见闻 markets equity market 股票市场 510300.ss ashr">
-          <div class="rank"><b>#14</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
-              
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>62</b>/100</span>
-            </div>
-            <h2 class="title"><span class="l-en">上证指数收报3867.03点，涨0.07%</span><span class="l-zh">上证指数收报3867.03点，涨0.07%</span></h2>
-            <p class="summary"><span class="l-en">上证指数收报3867.03点，涨0.07%。 深证成指收报14061.44点，跌1.42%。 创业板指收报3566.73点，跌3.23%。 沪深300收报4717.24点，跌0.46%。 科创50收报1860.08点，跌2.26%。 中证500收报7751.66点，跌0.63%。 中证1000收报7158.76点，跌1.39%。</span><span class="l-zh">上证指数收报3867.03点，涨0.07%。 深证成指收报14061.44点，跌1.42%。 创业板指收报3566.73点，跌3.23%。 沪深300收报4717.24点，跌0.46%。 科创50收报1860.08点，跌2.26%。 中证500收报7751.66点，跌0.63%。 中证1000收报7158.76点，跌1.39%。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip tk">510300.SS</span><span class="chip tk">ASHR</span></div>
-          </div>
-        </a>
-        
-        
-        <a class="card" href="https://wallstreetcn.com/livenews/3138049" target="_blank" rel="noopener"
-           data-theme="fiscal" data-importance="medium" data-search="ai算力产业链成为上海出口重要增长动能  ai算力产业链成为上海出口重要增长动能 从上海海关获悉，上半年，上海制造的服务器、光收发模块、集成电路、工业级变压器、储能电池等人工智能（ai）相关产品出口均实现快速增长，ai算力产业链已成为上海出口的重要增长动能。  从上海海关获悉，上半年，上海制造的服务器、光收发模块、集成电路、工业级变压器、储能电池等人工智能（ai）相关产品出口均实现快速增长，ai算力产业链已成为上海出口的重要增长动能。 华尔街见闻 industrial fiscal_trade tech_policy industry & manufacturing 工业与制造业 fiscal & trade 财政与贸易 tech policy 科技政策 515030.ss">
-          <div class="rank"><b>#15</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
-              
-              <span class="chip theme th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>58</b>/100</span>
-            </div>
-            <h2 class="title"><span class="l-en">AI算力产业链成为上海出口重要增长动能</span><span class="l-zh">AI算力产业链成为上海出口重要增长动能</span></h2>
-            <p class="summary"><span class="l-en">从上海海关获悉，上半年，上海制造的服务器、光收发模块、集成电路、工业级变压器、储能电池等人工智能（AI）相关产品出口均实现快速增长，AI算力产业链已成为上海出口的重要增长动能。</span><span class="l-zh">从上海海关获悉，上半年，上海制造的服务器、光收发模块、集成电路、工业级变压器、储能电池等人工智能（AI）相关产品出口均实现快速增长，AI算力产业链已成为上海出口的重要增长动能。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span><span class="chip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="chip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span><span class="chip tk">515030.SS</span></div>
-          </div>
-        </a>
-        
-        
-        <a class="card" href="https://www.cnstock.com/commonDetail/749108" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="high" data-search="稳市场聚合力 证监会系列座谈会释放四大信号  稳市场聚合力 证监会系列座谈会释放四大信号    上海证券报 markets equity market 股票市场 512880.ss">
-          <div class="rank"><b>#16</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
-              
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>上海证券报</b></span>
-              <span class="chip imp-high"><b>68</b>/100</span>
-            </div>
-            <h2 class="title"><span class="l-en">稳市场聚合力 证监会系列座谈会释放四大信号</span><span class="l-zh">稳市场聚合力 证监会系列座谈会释放四大信号</span></h2>
+            <h2 class="tp-title"><span class="l-en">稳市场聚合力 证监会系列座谈会释放四大信号</span><span class="l-zh">稳市场聚合力 证监会系列座谈会释放四大信号</span></h2>
             
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="chip tk">512880.SS</span></div>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://flash.jin10.com/detail/20260722165031449800" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="medium" data-search="德意志银行：英国通胀为英国央行争取到更多时间  德意志银行：英国通胀为英国央行争取到更多时间 金十数据7月22日讯，德意志银行分析师sanjay raja表示，6月份的通胀数据将为英国央行决策者争取到更多时间。在通胀率为2.6%（较5月份的2.8%有所下降）的背景下，目前的总体cpi通胀率比英国央行4月份货币政策报告中的预测低0.4个百分点。坏消息是，能源和化肥等大宗商品价格的反弹将使通胀预测保持在高位。通胀率将从目前的水平进一步走高，在第四季度可能会逼近3.5%。我们认为，这将继续使任何降息前景暂时搁置，同时允许货币政策委员会保留其轻微的偏紧缩倾向。  金十数据7月22日讯，德意志银行分析师sanjay raja表示，6月份的通胀数据将为英国央行决策者争取到更多时间。在通胀率为2.6%（较5月份的2.8%有所下降）的背景下，目前的总体cpi通胀率比英国央行4月份货币政策报告中的预测低0.4个百分点。坏消息是，能源和化肥等大宗商品价格的反弹将使通胀预测保持在高位。通胀率将从目前的水平进一步走高，在第四季度可能会逼近3.5%。我们认为，这将继续使任何降息前景暂时搁置，同时允许货币政策委员会保留其轻微的偏紧缩倾向。 金十数据 pboc_liquidity consumer pboc & liquidity 央行与流动性 consumer 消费 512800.ss">
-          <div class="rank"><b>#17</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-growth" href="https://www.stats.gov.cn/english/PressRelease/202607/t20260717_1964160.html" target="_blank" rel="noopener"
+           data-theme="growth" data-importance="high"
+           data-search="preliminary accounting results of gdp for the second quarter and the first half of 2026  2026年第二季度及上半年gdp初步核算结果    nbs growth growth 增长 ">
+          <time class="tp-when" data-t="2026-07-17" datetime="2026-07-17">07-17</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-17"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="chip"><b>金十数据</b></span>
-              <span class="chip imp-medium"><b>57</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="cn-src">NBS</span>
+              <span class="cn-imp imp-high"><b>76</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">德意志银行：英国通胀为英国央行争取到更多时间</span><span class="l-zh">德意志银行：英国通胀为英国央行争取到更多时间</span></h2>
-            <p class="summary"><span class="l-en">金十数据7月22日讯，德意志银行分析师Sanjay Raja表示，6月份的通胀数据将为英国央行决策者争取到更多时间。在通胀率为2.6%（较5月份的2.8%有所下降）的背景下，目前的总体CPI通胀率比英国央行4月份货币政策报告中的预测低0.4个百分点。坏消息是，能源和化肥等大宗商品价格的反弹将使通胀预测保持在高位。通胀率将从目前的水平进一步走高，在第四季度可能会逼近3.5%。我们认为，这将继续使任何降息前景暂时搁置，同时允许货币政策委员会保留其轻微的偏紧缩倾向。</span><span class="l-zh">金十数据7月22日讯，德意志银行分析师Sanjay Raja表示，6月份的通胀数据将为英国央行决策者争取到更多时间。在通胀率为2.6%（较5月份的2.8%有所下降）的背景下，目前的总体CPI通胀率比英国央行4月份货币政策报告中的预测低0.4个百分点。坏消息是，能源和化肥等大宗商品价格的反弹将使通胀预测保持在高位。通胀率将从目前的水平进一步走高，在第四季度可能会逼近3.5%。我们认为，这将继续使任何降息前景暂时搁置，同时允许货币政策委员会保留其轻微的偏紧缩倾向。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="chip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="chip tk">512800.SS</span></div>
-          </div>
-        </a>
-        
-        
-        <a class="card" href="https://www.stats.gov.cn/english/PressRelease/202607/t20260717_1964160.html" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="high" data-search="preliminary accounting results of gdp for the second quarter and the first half of 2026  2026年第二季度及上半年gdp初步核算结果    nbs growth growth 增长 ">
-          <div class="rank"><b>#18</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
-              
-              <span class="chip theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="chip"><b>NBS</b></span>
-              <span class="chip imp-high"><b>76</b>/100</span>
-            </div>
-            <h2 class="title"><span class="l-en">Preliminary Accounting Results of GDP for the Second Quarter and the First Half of 2026</span><span class="l-zh">2026年第二季度及上半年GDP初步核算结果</span></h2>
+            <h2 class="tp-title"><span class="l-en">Preliminary Accounting Results of GDP for the Second Quarter and the First Half of 2026</span><span class="l-zh">2026年第二季度及上半年GDP初步核算结果</span></h2>
             
-            <div class="intel"><span class="chip"><span class="l-en">Growth</span><span class="l-zh">增长</span></span></div>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Growth</span><span class="l-zh">增长</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://www.scmp.com/economy/china-economy/article/3361205/shanghai-beats-gdp-estimates-56-growth-two-speed-recovery-persists?utm_source=rss_feed" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="high" data-search="shanghai beats gdp estimates with 5.6% growth – but two-speed recovery persists  上海gdp增长5.6%超预期，但双速复苏态势延续 shanghai’s economy expanded 5.6 per cent in the first half of the year, beating expectations on strong growth in hi-tech manufacturing and exports, even as weak consumer spending exposed the uneven nature of the recovery.
+        <a class="tp-item th-growth" href="https://www.scmp.com/economy/china-economy/article/3361205/shanghai-beats-gdp-estimates-56-growth-two-speed-recovery-persists?utm_source=rss_feed" target="_blank" rel="noopener"
+           data-theme="growth" data-importance="high"
+           data-search="shanghai beats gdp estimates with 5.6% growth – but two-speed recovery persists  上海gdp增长5.6%超预期，但双速复苏态势延续 shanghai’s economy expanded 5.6 per cent in the first half of the year, beating expectations on strong growth in hi-tech manufacturing and exports, even as weak consumer spending exposed the uneven nature of the recovery.
 according to data released by the municipal statistics bureau on monday, the reading surpassed both the national growth rate of 4.7 per cent for the same period and the city’s own growth rates in recent years, signalling a resilient rebound in the financial and commercial...  上海市上半年经济同比增长5.6%，受高科技制造业和出口强劲增长推动，表现优于预期，但消费支出疲软凸显复苏不均衡。
 根据市统计局周一发布的数据，该增速超过全国4.7%的增长水平 scmp - china economy consumer industrial consumer 消费 industry & manufacturing 工业与制造业 ">
-          <div class="rank"><b>#19</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+          <time class="tp-when" data-t="2026-07-21T01:00:11+00:00" datetime="2026-07-21T01:00:11+00:00">07-21<br>01:00</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-21T01:00:11+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="chip"><b>SCMP - China Economy</b></span>
-              <span class="chip imp-high"><b>70</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="cn-src">SCMP - China Economy</span>
+              <span class="cn-imp imp-high"><b>70</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">Shanghai beats GDP estimates with 5.6% growth – but two-speed recovery persists</span><span class="l-zh">上海GDP增长5.6%超预期，但双速复苏态势延续</span></h2>
-            <p class="summary"><span class="l-en">Shanghai’s economy expanded 5.6 per cent in the first half of the year, beating expectations on strong growth in hi-tech manufacturing and exports, even as weak consumer spending exposed the uneven nature of the recovery.
+            <h2 class="tp-title"><span class="l-en">Shanghai beats GDP estimates with 5.6% growth – but two-speed recovery persists</span><span class="l-zh">上海GDP增长5.6%超预期，但双速复苏态势延续</span></h2>
+            <p class="tp-sum"><span class="l-en">Shanghai’s economy expanded 5.6 per cent in the first half of the year, beating expectations on strong growth in hi-tech manufacturing and exports, even as weak consumer spending exposed the uneven nature of the recovery.
 According to data released by the municipal statistics bureau on Monday, the reading surpassed both the national growth rate of 4.7 per cent for the same period and the city’s own growth rates in recent years, signalling a resilient rebound in the financial and commercial...</span><span class="l-zh">上海市上半年经济同比增长5.6%，受高科技制造业和出口强劲增长推动，表现优于预期，但消费支出疲软凸显复苏不均衡。
 根据市统计局周一发布的数据，该增速超过全国4.7%的增长水平</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="chip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span></div>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="cn-cchip"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138024" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="medium" data-search="商务部新闻发言人就欧委会对全球速卖通罚款答记者问  商务部新闻发言人就欧委会对全球速卖通罚款答记者问 问：7月20日，欧委会宣布根据欧盟《数字服务法》，对全球速卖通处以5.5亿欧元罚款。请问中方对此有何评论？答：中方注意到有关情况，对此表示强烈不满和严正关切。中方坚决反对欧方以平台监管为由设置数字壁垒，并采取歧视性措施，限制打压中国电商企业在欧正常经营。中方敦促欧方停止利用法律条文的模糊性滥用自由裁量权，公平、公正对待中国企业。中方将坚定支持中国企业运用法律武器维权，并将采取有力措施坚定维护企业利益。  问：7月20日，欧委会宣布根据欧盟《数字服务法》，对全球速卖通处以5.5亿欧元罚款。请问中方对此有何评论？答：中方注意到有关情况，对此表示强烈不满和严正关切。中方坚决反对欧方以平台监管为由设置数字壁垒，并采取歧视性措施，限制打压中国电商企业在欧正常经营。中方敦促欧方停止利用法律条文的模糊性滥用自由裁量权，公平、公正对待中国企业。中方将坚定支持中国企业运用法律武器维权，并将采取有力措施坚定维护企业利益。 华尔街见闻 policy policy 政策 ">
-          <div class="rank"><b>#20</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-policy" href="https://wallstreetcn.com/livenews/3138118" target="_blank" rel="noopener"
+           data-theme="policy" data-importance="medium"
+           data-search="体育强国建设“十五五”规划发布 到2030年产业规模破7万亿元  体育强国建设“十五五”规划发布 到2030年产业规模破7万亿元 经国务院批复同意，体育总局今天发布《体育强国建设“十五五”规划》。这是首个以“体育强国”为主题的国家级专项规划。《规划》提出，到2030年，体育整体发展质量和效益显著提升，综合价值和多元功能充分彰显，体育成为中华民族伟大复兴的标志性事业基础更加坚实，设定5项主要发展指标：人均体育场地面积达到4平方米左右，经常参加体育锻炼人数比例达到40%左右，国民体质优良率达到31.1%，获得世界冠军数量位居前列，体育产业总规模突破7万亿元。（央视新闻）  经国务院批复同意，体育总局今天发布《体育强国建设“十五五”规划》。这是首个以“体育强国”为主题的国家级专项规划。《规划》提出，到2030年，体育整体发展质量和效益显著提升，综合价值和多元功能充分彰显，体育成为中华民族伟大复兴的标志性事业基础更加坚实，设定5项主要发展指标：人均体育场地面积达到4平方米左右，经常参加体育锻炼人数比例达到40%左右，国民体质优良率达到31.1%，获得世界冠军数量位居前列，体育产业总规模突破7万亿元。（央视新闻） 华尔街见闻 policy policy 政策 ">
+          <time class="tp-when" data-t="2026-07-22T09:02:10+00:00" datetime="2026-07-22T09:02:10+00:00">07-22<br>09:02</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T09:02:10+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-policy"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>62</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="title"><span class="l-en">商务部新闻发言人就欧委会对全球速卖通罚款答记者问</span><span class="l-zh">商务部新闻发言人就欧委会对全球速卖通罚款答记者问</span></h2>
-            <p class="summary"><span class="l-en">问：7月20日，欧委会宣布根据欧盟《数字服务法》，对全球速卖通处以5.5亿欧元罚款。请问中方对此有何评论？答：中方注意到有关情况，对此表示强烈不满和严正关切。中方坚决反对欧方以平台监管为由设置数字壁垒，并采取歧视性措施，限制打压中国电商企业在欧正常经营。中方敦促欧方停止利用法律条文的模糊性滥用自由裁量权，公平、公正对待中国企业。中方将坚定支持中国企业运用法律武器维权，并将采取有力措施坚定维护企业利益。</span><span class="l-zh">问：7月20日，欧委会宣布根据欧盟《数字服务法》，对全球速卖通处以5.5亿欧元罚款。请问中方对此有何评论？答：中方注意到有关情况，对此表示强烈不满和严正关切。中方坚决反对欧方以平台监管为由设置数字壁垒，并采取歧视性措施，限制打压中国电商企业在欧正常经营。中方敦促欧方停止利用法律条文的模糊性滥用自由裁量权，公平、公正对待中国企业。中方将坚定支持中国企业运用法律武器维权，并将采取有力措施坚定维护企业利益。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
+            <h2 class="tp-title"><span class="l-en">体育强国建设“十五五”规划发布 到2030年产业规模破7万亿元</span><span class="l-zh">体育强国建设“十五五”规划发布 到2030年产业规模破7万亿元</span></h2>
+            <p class="tp-sum"><span class="l-en">经国务院批复同意，体育总局今天发布《体育强国建设“十五五”规划》。这是首个以“体育强国”为主题的国家级专项规划。《规划》提出，到2030年，体育整体发展质量和效益显著提升，综合价值和多元功能充分彰显，体育成为中华民族伟大复兴的标志性事业基础更加坚实，设定5项主要发展指标：人均体育场地面积达到4平方米左右，经常参加体育锻炼人数比例达到40%左右，国民体质优良率达到31.1%，获得世界冠军数量位居前列，体育产业总规模突破7万亿元。（央视新闻）</span><span class="l-zh">经国务院批复同意，体育总局今天发布《体育强国建设“十五五”规划》。这是首个以“体育强国”为主题的国家级专项规划。《规划》提出，到2030年，体育整体发展质量和效益显著提升，综合价值和多元功能充分彰显，体育成为中华民族伟大复兴的标志性事业基础更加坚实，设定5项主要发展指标：人均体育场地面积达到4平方米左右，经常参加体育锻炼人数比例达到40%左右，国民体质优良率达到31.1%，获得世界冠军数量位居前列，体育产业总规模突破7万亿元。（央视新闻）</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138011" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium" data-search="创业板指、科创50均跌超3%  创业板指、科创50均跌超3% 创业板指、科创50均跌超3%。  创业板指、科创50均跌超3%。 华尔街见闻 markets equity market 股票市场 ">
-          <div class="rank"><b>#21</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-policy" href="https://wallstreetcn.com/livenews/3138024" target="_blank" rel="noopener"
+           data-theme="policy" data-importance="medium"
+           data-search="商务部新闻发言人就欧委会对全球速卖通罚款答记者问  商务部新闻发言人就欧委会对全球速卖通罚款答记者问 问：7月20日，欧委会宣布根据欧盟《数字服务法》，对全球速卖通处以5.5亿欧元罚款。请问中方对此有何评论？答：中方注意到有关情况，对此表示强烈不满和严正关切。中方坚决反对欧方以平台监管为由设置数字壁垒，并采取歧视性措施，限制打压中国电商企业在欧正常经营。中方敦促欧方停止利用法律条文的模糊性滥用自由裁量权，公平、公正对待中国企业。中方将坚定支持中国企业运用法律武器维权，并将采取有力措施坚定维护企业利益。  问：7月20日，欧委会宣布根据欧盟《数字服务法》，对全球速卖通处以5.5亿欧元罚款。请问中方对此有何评论？答：中方注意到有关情况，对此表示强烈不满和严正关切。中方坚决反对欧方以平台监管为由设置数字壁垒，并采取歧视性措施，限制打压中国电商企业在欧正常经营。中方敦促欧方停止利用法律条文的模糊性滥用自由裁量权，公平、公正对待中国企业。中方将坚定支持中国企业运用法律武器维权，并将采取有力措施坚定维护企业利益。 华尔街见闻 policy policy 政策 ">
+          <time class="tp-when" data-t="2026-07-22T06:31:57+00:00" datetime="2026-07-22T06:31:57+00:00">07-22<br>06:31</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T06:31:57+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>62</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>62</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="title"><span class="l-en">创业板指、科创50均跌超3%</span><span class="l-zh">创业板指、科创50均跌超3%</span></h2>
-            <p class="summary"><span class="l-en">创业板指、科创50均跌超3%。</span><span class="l-zh">创业板指、科创50均跌超3%。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span></div>
+            <h2 class="tp-title"><span class="l-en">商务部新闻发言人就欧委会对全球速卖通罚款答记者问</span><span class="l-zh">商务部新闻发言人就欧委会对全球速卖通罚款答记者问</span></h2>
+            <p class="tp-sum"><span class="l-en">问：7月20日，欧委会宣布根据欧盟《数字服务法》，对全球速卖通处以5.5亿欧元罚款。请问中方对此有何评论？答：中方注意到有关情况，对此表示强烈不满和严正关切。中方坚决反对欧方以平台监管为由设置数字壁垒，并采取歧视性措施，限制打压中国电商企业在欧正常经营。中方敦促欧方停止利用法律条文的模糊性滥用自由裁量权，公平、公正对待中国企业。中方将坚定支持中国企业运用法律武器维权，并将采取有力措施坚定维护企业利益。</span><span class="l-zh">问：7月20日，欧委会宣布根据欧盟《数字服务法》，对全球速卖通处以5.5亿欧元罚款。请问中方对此有何评论？答：中方注意到有关情况，对此表示强烈不满和严正关切。中方坚决反对欧方以平台监管为由设置数字壁垒，并采取歧视性措施，限制打压中国电商企业在欧正常经营。中方敦促欧方停止利用法律条文的模糊性滥用自由裁量权，公平、公正对待中国企业。中方将坚定支持中国企业运用法律武器维权，并将采取有力措施坚定维护企业利益。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">Policy</span><span class="l-zh">政策</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138056" target="_blank" rel="noopener"
-           data-theme="fiscal" data-importance="medium" data-search="财政部：上半年下达育儿补贴资金约1000亿元  财政部：上半年下达育儿补贴资金约1000亿元 从7月22日举行的财政部新闻发布会上获悉，今年上半年，财政加大保障和改善民生力度，下达基本养老保险补助资金1.2万亿元，支持地方按时足额发放养老金；下达城乡居民基本医疗保险补助资金3864亿元，巩固基本医疗保险参保率和保障水平；下达育儿补贴资金约1000亿元、学前一年免保育教育费补助资金241亿元，降低家庭生育养育成本。（新华社）  从7月22日举行的财政部新闻发布会上获悉，今年上半年，财政加大保障和改善民生力度，下达基本养老保险补助资金1.2万亿元，支持地方按时足额发放养老金；下达城乡居民基本医疗保险补助资金3864亿元，巩固基本医疗保险参保率和保障水平；下达育儿补贴资金约1000亿元、学前一年免保育教育费补助资金241亿元，降低家庭生育养育成本。（新华社） 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
-          <div class="rank"><b>#22</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-inflation" href="https://www.yicai.com/news/103287840.html" target="_blank" rel="noopener"
+           data-theme="inflation" data-importance="high"
+           data-search="“关税大棒”又抡起来了？美高官称很快将出台新政策，但通胀怎么办？ 格里尔说，他现在无法给出新关税政策出台具体时间点，政策在正式宣布前还需向国会和其他利益攸关方通报。  “关税大棒”又抡起来了？美高官称很快将出台新政策，但通胀怎么办？ 格里尔说，他现在无法给出新关税政策出台具体时间点，政策在正式宣布前还需向国会和其他利益攸关方通报。    第一财经 fiscal_trade fiscal & trade 财政与贸易 ">
+          <time class="tp-when" data-t="" >—</time>
+          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>60</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
+              <span class="cn-src">第一财经</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">财政部：上半年下达育儿补贴资金约1000亿元</span><span class="l-zh">财政部：上半年下达育儿补贴资金约1000亿元</span></h2>
-            <p class="summary"><span class="l-en">从7月22日举行的财政部新闻发布会上获悉，今年上半年，财政加大保障和改善民生力度，下达基本养老保险补助资金1.2万亿元，支持地方按时足额发放养老金；下达城乡居民基本医疗保险补助资金3864亿元，巩固基本医疗保险参保率和保障水平；下达育儿补贴资金约1000亿元、学前一年免保育教育费补助资金241亿元，降低家庭生育养育成本。（新华社）</span><span class="l-zh">从7月22日举行的财政部新闻发布会上获悉，今年上半年，财政加大保障和改善民生力度，下达基本养老保险补助资金1.2万亿元，支持地方按时足额发放养老金；下达城乡居民基本医疗保险补助资金3864亿元，巩固基本医疗保险参保率和保障水平；下达育儿补贴资金约1000亿元、学前一年免保育教育费补助资金241亿元，降低家庭生育养育成本。（新华社）</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
+            <h2 class="tp-title"><span class="l-en">“关税大棒”又抡起来了？美高官称很快将出台新政策，但通胀怎么办？ 格里尔说，他现在无法给出新关税政策出台具体时间点，政策在正式宣布前还需向国会和其他利益攸关方通报。</span><span class="l-zh">“关税大棒”又抡起来了？美高官称很快将出台新政策，但通胀怎么办？ 格里尔说，他现在无法给出新关税政策出台具体时间点，政策在正式宣布前还需向国会和其他利益攸关方通报。</span></h2>
+            
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138051" target="_blank" rel="noopener"
-           data-theme="tech" data-importance="medium" data-search="估值500亿美元 月之暗面计划8月启动上市前最后一轮融资  估值500亿美元 月之暗面计划8月启动上市前最后一轮融资 中国ai大模型独角兽月之暗面（moonshot ai）计划于8月启动上市前最后一轮融资谈判，目标估值高达500亿美元。据了解，月之暗面预计将在未来几天完成今年夏季启动的一轮融资，该轮融资估值约315亿美元。融资完成后，月之暗面将立即启动新一轮融资洽谈，这将成为月之暗面赴港上市前的最后一次资本注入，最快可能于今年内登陆香港资本市场。（澎湃新闻）  中国ai大模型独角兽月之暗面（moonshot ai）计划于8月启动上市前最后一轮融资谈判，目标估值高达500亿美元。据了解，月之暗面预计将在未来几天完成今年夏季启动的一轮融资，该轮融资估值约315亿美元。融资完成后，月之暗面将立即启动新一轮融资洽谈，这将成为月之暗面赴港上市前的最后一次资本注入，最快可能于今年内登陆香港资本市场。（澎湃新闻） 华尔街见闻 tech_policy tech policy 科技政策 ">
-          <div class="rank"><b>#23</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-growth" href="https://www.yicai.com/news/103287797.html" target="_blank" rel="noopener"
+           data-theme="growth" data-importance="high"
+           data-search="一文读懂上半年全国财政数据：收入增速与经济增速同步 上半年全国一般公共预算收入同比增长4.7%。  一文读懂上半年全国财政数据：收入增速与经济增速同步 上半年全国一般公共预算收入同比增长4.7%。    第一财经 fiscal_trade fiscal & trade 财政与贸易 ">
+          <time class="tp-when" data-t="" >—</time>
+          <div class="tp-spine"><span class="tp-node" data-t=""></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-tech"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>60</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="cn-src">第一财经</span>
+              <span class="cn-imp imp-high"><b>68</b> <span class="l-en">high</span><span class="l-zh">高</span></span>
             </div>
-            <h2 class="title"><span class="l-en">估值500亿美元 月之暗面计划8月启动上市前最后一轮融资</span><span class="l-zh">估值500亿美元 月之暗面计划8月启动上市前最后一轮融资</span></h2>
-            <p class="summary"><span class="l-en">中国AI大模型独角兽月之暗面（Moonshot AI）计划于8月启动上市前最后一轮融资谈判，目标估值高达500亿美元。据了解，月之暗面预计将在未来几天完成今年夏季启动的一轮融资，该轮融资估值约315亿美元。融资完成后，月之暗面将立即启动新一轮融资洽谈，这将成为月之暗面赴港上市前的最后一次资本注入，最快可能于今年内登陆香港资本市场。（澎湃新闻）</span><span class="l-zh">中国AI大模型独角兽月之暗面（Moonshot AI）计划于8月启动上市前最后一轮融资谈判，目标估值高达500亿美元。据了解，月之暗面预计将在未来几天完成今年夏季启动的一轮融资，该轮融资估值约315亿美元。融资完成后，月之暗面将立即启动新一轮融资洽谈，这将成为月之暗面赴港上市前的最后一次资本注入，最快可能于今年内登陆香港资本市场。（澎湃新闻）</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span></div>
+            <h2 class="tp-title"><span class="l-en">一文读懂上半年全国财政数据：收入增速与经济增速同步 上半年全国一般公共预算收入同比增长4.7%。</span><span class="l-zh">一文读懂上半年全国财政数据：收入增速与经济增速同步 上半年全国一般公共预算收入同比增长4.7%。</span></h2>
+            
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
           </div>
         </a>
         
         
-        <a class="card" href="https://wallstreetcn.com/livenews/3138050" target="_blank" rel="noopener"
-           data-theme="fiscal" data-importance="medium" data-search="财政部：上半年国有土地使用权出让收入9778亿元，同比下降31.5%  财政部：上半年国有土地使用权出让收入9778亿元，同比下降31.5% 财政部：上半年，全国政府性基金预算收入15244亿元，同比下降21.6%。分中央和地方看，中央政府性基金预算收入2397亿元，同比增长10.3%；地方政府性基金预算本级收入12847亿元，同比下降25.6%，其中，国有土地使用权出让收入9778亿元，同比下降31.5%。  财政部：上半年，全国政府性基金预算收入15244亿元，同比下降21.6%。分中央和地方看，中央政府性基金预算收入2397亿元，同比增长10.3%；地方政府性基金预算本级收入12847亿元，同比下降25.6%，其中，国有土地使用权出让收入9778亿元，同比下降31.5%。 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
-          <div class="rank"><b>#24</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
+        <a class="tp-item th-fiscal" href="https://wallstreetcn.com/livenews/3138056" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium"
+           data-search="财政部：上半年下达育儿补贴资金约1000亿元  财政部：上半年下达育儿补贴资金约1000亿元 从7月22日举行的财政部新闻发布会上获悉，今年上半年，财政加大保障和改善民生力度，下达基本养老保险补助资金1.2万亿元，支持地方按时足额发放养老金；下达城乡居民基本医疗保险补助资金3864亿元，巩固基本医疗保险参保率和保障水平；下达育儿补贴资金约1000亿元、学前一年免保育教育费补助资金241亿元，降低家庭生育养育成本。（新华社）  从7月22日举行的财政部新闻发布会上获悉，今年上半年，财政加大保障和改善民生力度，下达基本养老保险补助资金1.2万亿元，支持地方按时足额发放养老金；下达城乡居民基本医疗保险补助资金3864亿元，巩固基本医疗保险参保率和保障水平；下达育儿补贴资金约1000亿元、学前一年免保育教育费补助资金241亿元，降低家庭生育养育成本。（新华社） 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
+          <time class="tp-when" data-t="2026-07-22T07:18:39+00:00" datetime="2026-07-22T07:18:39+00:00">07-22<br>07:18</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:18:39+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
               
-              <span class="chip theme th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
-              <span class="chip"><b>华尔街见闻</b></span>
-              <span class="chip imp-medium"><b>60</b>/100</span>
+              <span class="cn-tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
             </div>
-            <h2 class="title"><span class="l-en">财政部：上半年国有土地使用权出让收入9778亿元，同比下降31.5%</span><span class="l-zh">财政部：上半年国有土地使用权出让收入9778亿元，同比下降31.5%</span></h2>
-            <p class="summary"><span class="l-en">财政部：上半年，全国政府性基金预算收入15244亿元，同比下降21.6%。分中央和地方看，中央政府性基金预算收入2397亿元，同比增长10.3%；地方政府性基金预算本级收入12847亿元，同比下降25.6%，其中，国有土地使用权出让收入9778亿元，同比下降31.5%。</span><span class="l-zh">财政部：上半年，全国政府性基金预算收入15244亿元，同比下降21.6%。分中央和地方看，中央政府性基金预算收入2397亿元，同比增长10.3%；地方政府性基金预算本级收入12847亿元，同比下降25.6%，其中，国有土地使用权出让收入9778亿元，同比下降31.5%。</span></p>
-            <div class="intel"><span class="chip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
+            <h2 class="tp-title"><span class="l-en">财政部：上半年下达育儿补贴资金约1000亿元</span><span class="l-zh">财政部：上半年下达育儿补贴资金约1000亿元</span></h2>
+            <p class="tp-sum"><span class="l-en">从7月22日举行的财政部新闻发布会上获悉，今年上半年，财政加大保障和改善民生力度，下达基本养老保险补助资金1.2万亿元，支持地方按时足额发放养老金；下达城乡居民基本医疗保险补助资金3864亿元，巩固基本医疗保险参保率和保障水平；下达育儿补贴资金约1000亿元、学前一年免保育教育费补助资金241亿元，降低家庭生育养育成本。（新华社）</span><span class="l-zh">从7月22日举行的财政部新闻发布会上获悉，今年上半年，财政加大保障和改善民生力度，下达基本养老保险补助资金1.2万亿元，支持地方按时足额发放养老金；下达城乡居民基本医疗保险补助资金3864亿元，巩固基本医疗保险参保率和保障水平；下达育儿补贴资金约1000亿元、学前一年免保育教育费补助资金241亿元，降低家庭生育养育成本。（新华社）</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-tech" href="https://wallstreetcn.com/livenews/3138051" target="_blank" rel="noopener"
+           data-theme="tech" data-importance="medium"
+           data-search="估值500亿美元 月之暗面计划8月启动上市前最后一轮融资  估值500亿美元 月之暗面计划8月启动上市前最后一轮融资 中国ai大模型独角兽月之暗面（moonshot ai）计划于8月启动上市前最后一轮融资谈判，目标估值高达500亿美元。据了解，月之暗面预计将在未来几天完成今年夏季启动的一轮融资，该轮融资估值约315亿美元。融资完成后，月之暗面将立即启动新一轮融资洽谈，这将成为月之暗面赴港上市前的最后一次资本注入，最快可能于今年内登陆香港资本市场。（澎湃新闻）  中国ai大模型独角兽月之暗面（moonshot ai）计划于8月启动上市前最后一轮融资谈判，目标估值高达500亿美元。据了解，月之暗面预计将在未来几天完成今年夏季启动的一轮融资，该轮融资估值约315亿美元。融资完成后，月之暗面将立即启动新一轮融资洽谈，这将成为月之暗面赴港上市前的最后一次资本注入，最快可能于今年内登陆香港资本市场。（澎湃新闻） 华尔街见闻 tech_policy tech policy 科技政策 ">
+          <time class="tp-when" data-t="2026-07-22T07:11:57+00:00" datetime="2026-07-22T07:11:57+00:00">07-22<br>07:11</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:11:57+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">估值500亿美元 月之暗面计划8月启动上市前最后一轮融资</span><span class="l-zh">估值500亿美元 月之暗面计划8月启动上市前最后一轮融资</span></h2>
+            <p class="tp-sum"><span class="l-en">中国AI大模型独角兽月之暗面（Moonshot AI）计划于8月启动上市前最后一轮融资谈判，目标估值高达500亿美元。据了解，月之暗面预计将在未来几天完成今年夏季启动的一轮融资，该轮融资估值约315亿美元。融资完成后，月之暗面将立即启动新一轮融资洽谈，这将成为月之暗面赴港上市前的最后一次资本注入，最快可能于今年内登陆香港资本市场。（澎湃新闻）</span><span class="l-zh">中国AI大模型独角兽月之暗面（Moonshot AI）计划于8月启动上市前最后一轮融资谈判，目标估值高达500亿美元。据了解，月之暗面预计将在未来几天完成今年夏季启动的一轮融资，该轮融资估值约315亿美元。融资完成后，月之暗面将立即启动新一轮融资洽谈，这将成为月之暗面赴港上市前的最后一次资本注入，最快可能于今年内登陆香港资本市场。（澎湃新闻）</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">tech policy</span><span class="l-zh">科技政策</span></span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-fiscal" href="https://wallstreetcn.com/livenews/3138050" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium"
+           data-search="财政部：上半年国有土地使用权出让收入9778亿元，同比下降31.5%  财政部：上半年国有土地使用权出让收入9778亿元，同比下降31.5% 财政部：上半年，全国政府性基金预算收入15244亿元，同比下降21.6%。分中央和地方看，中央政府性基金预算收入2397亿元，同比增长10.3%；地方政府性基金预算本级收入12847亿元，同比下降25.6%，其中，国有土地使用权出让收入9778亿元，同比下降31.5%。  财政部：上半年，全国政府性基金预算收入15244亿元，同比下降21.6%。分中央和地方看，中央政府性基金预算收入2397亿元，同比增长10.3%；地方政府性基金预算本级收入12847亿元，同比下降25.6%，其中，国有土地使用权出让收入9778亿元，同比下降31.5%。 华尔街见闻 fiscal_trade fiscal & trade 财政与贸易 ">
+          <time class="tp-when" data-t="2026-07-22T07:11:38+00:00" datetime="2026-07-22T07:11:38+00:00">07-22<br>07:11</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-22T07:11:38+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>60</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">财政部：上半年国有土地使用权出让收入9778亿元，同比下降31.5%</span><span class="l-zh">财政部：上半年国有土地使用权出让收入9778亿元，同比下降31.5%</span></h2>
+            <p class="tp-sum"><span class="l-en">财政部：上半年，全国政府性基金预算收入15244亿元，同比下降21.6%。分中央和地方看，中央政府性基金预算收入2397亿元，同比增长10.3%；地方政府性基金预算本级收入12847亿元，同比下降25.6%，其中，国有土地使用权出让收入9778亿元，同比下降31.5%。</span><span class="l-zh">财政部：上半年，全国政府性基金预算收入15244亿元，同比下降21.6%。分中央和地方看，中央政府性基金预算收入2397亿元，同比增长10.3%；地方政府性基金预算本级收入12847亿元，同比下降25.6%，其中，国有土地使用权出让收入9778亿元，同比下降31.5%。</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span></div>
           </div>
         </a>
         
       </div>
-      <div class="empty hidden" id="none"><h2><span class="l-en">No stories match that view.</span><span class="l-zh">没有符合当前视图的新闻。</span></h2><p><span class="l-en">Clear search or switch back to All themes.</span><span class="l-zh">清空搜索或切回全部主题。</span></p></div>
-      
-      <p class="disc"><span class="l-en">Context only — not a signal. The policy-tone read is a z-score of a crude lexicon proxy on the CCTV 新闻联播 broadcast (relative, never an absolute sentiment); the headlines are deterministically filtered (macro themes only, each tagged) Eastmoney flash-wire items. Nothing here is an input to any score, signal, regime or allocation, and the mechanical model never sees it.</span><span class="l-zh">仅作背景，非信号。政策基调读数是对央视《新闻联播》文本的粗略词典代理的 z 标准化（相对值，并非绝对情绪）；头条为东方财富快讯经确定性筛选（仅宏观主题，逐条标注）的条目。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。</span></p>
+      <div class="cn-none hidden" id="none"><h3><span class="l-en">No stories match that view.</span><span class="l-zh">没有符合当前视图的新闻。</span></h3><p><span class="l-en">Clear the search or switch back to All.</span><span class="l-zh">清空搜索或切回全部。</span></p></div>
+
+      <p class="cn-disc"><span class="l-en">Context only — not a signal. The policy-tone read is a z-score of a crude lexicon proxy on the CCTV 新闻联播 broadcast (relative, never an absolute sentiment); the headlines are deterministically filtered (macro themes only, each tagged) Eastmoney flash-wire items. Nothing here is an input to any score, signal, regime or allocation, and the mechanical model never sees it.</span><span class="l-zh">仅作背景，非信号。政策基调读数是对央视《新闻联播》文本的粗略词典代理的 z 标准化（相对值，并非绝对情绪）；头条为东方财富快讯经确定性筛选（仅宏观主题，逐条标注）的条目。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。</span></p>
     </div>
 
-    <aside class="rail">
-      <section class="rail-card">
-        <h2><span class="l-en">Feed intelligence</span><span class="l-zh">新闻情报</span></h2>
-        <div class="line"><div class="date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="main"><span class="l-en">14 high-impact China items; dominant channel equity market; sources Chinese financial press 20, domestic wire 2, official releases 1</span><span class="l-zh">14 条中国高影响信息；主导渠道：股票市场；来源：中国财经媒体 20、国内财经快讯 2、官方发布 1</span></div></div>
-        <div class="line"><div class="date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div><div class="main"><span class="tag"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="tag"><span class="l-en">fiscal & trade</span><span class="l-zh">财政与贸易</span></span><span class="tag"><span class="l-en">consumer</span><span class="l-zh">消费</span></span><span class="tag"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="tag"><span class="l-en">industry & manufacturing</span><span class="l-zh">工业与制造业</span></span></div></div>
-        <div class="line"><div class="date"><span class="l-en">Tickers</span><span class="l-zh">标的</span></div><div class="main"><span class="tag">512880.SS</span><span class="tag">512800.SS</span><span class="tag">ASHR</span><span class="tag">515030.SS</span><span class="tag">CBON</span><span class="tag">CNY</span><span class="tag">510300.SS</span></div></div>
-        <div class="line"><div class="date"><span class="l-en">Sources</span><span class="l-zh">来源</span></div><div class="main"><span class="tag"><span class="l-en">Chinese financial press</span><span class="l-zh">中国财经媒体</span> 20</span><span class="tag"><span class="l-en">domestic wire</span><span class="l-zh">国内财经快讯</span> 2</span><span class="tag"><span class="l-en">official releases</span><span class="l-zh">官方发布</span> 1</span><span class="tag"><span class="l-en">global wire</span><span class="l-zh">国际通讯社</span> 1</span></div></div>
+    <aside class="cn-side">
+      <section class="side-card">
+        <h2 class="sc-h"><span>📅</span><span class="l-en">Scheduled catalysts</span><span class="l-zh">排定催化</span></h2>
+        
+        
+        <div class="cal-row">
+          <div class="cal-when ">
+            <span class="cd">10</span><span class="cu"><span class="l-en">days</span><span class="l-zh">天</span></span>
+          </div>
+          <div class="cal-name"><span class="cal-tag hi">PMI</span><span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></div>
+        </div>
+        
+        
+        <div class="cal-row">
+          <div class="cal-when ">
+            <span class="cd">13</span><span class="cu"><span class="l-en">days</span><span class="l-zh">天</span></span>
+          </div>
+          <div class="cal-name"><span class="cal-tag ">CAIXIN M</span><span class="l-en">Caixin Manufacturing PMI</span><span class="l-zh">财新制造业 PMI</span></div>
+        </div>
+        
       </section>
 
-      <section class="rail-card">
-        <h2><span class="l-en">China high-impact calendar</span><span class="l-zh">中国高影响日程</span></h2>
-        
-        <div class="line"><div class="date">Fri Jul 31</div><div class="main"><span class="tag">PMI</span><span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></div></div>
-        
-      </section>
-      <section class="rail-card">
-        <h2><span class="l-en">All scheduled catalysts</span><span class="l-zh">全部排定催化</span></h2>
-        
-        <div class="line"><div class="date">2026-07-31</div><div class="main"><span class="tag">PMI</span><span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></div></div>
-        
-        <div class="line"><div class="date">2026-08-03</div><div class="main"><span class="tag">CAIXIN_M</span><span class="l-en">Caixin Manufacturing PMI</span><span class="l-zh">财新制造业 PMI</span></div></div>
-        
-      </section>
       
-      <section class="rail-card">
-        <h2><span class="l-en">Policy-tone provenance</span><span class="l-zh">政策基调来源</span></h2>
-        <div class="line"><div class="date">2026-07-20</div><div class="main"><span class="l-en">Tone z-score</span><span class="l-zh">基调 z 分数</span> <b>+1.31</b> · 38<span class="l-en">d series</span><span class="l-zh">天序列</span></div></div>
+      <section class="side-card">
+        <h2 class="sc-h"><span>🎯</span><span class="l-en">Exposures on the tape</span><span class="l-zh">相关标的</span></h2>
+        <div class="exp-pills">
+          
+          
+          <span class="exp-pill"><span class="tk">512880.SS</span><span class="nm"><span class="l-en">brokers</span><span class="l-zh">券商</span></span><span class="ct">×6</span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">ASHR</span><span class="nm"><span class="l-en">A-shares</span><span class="l-zh">A股</span></span><span class="ct">×2</span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">515030.SS</span><span class="nm"><span class="l-en">EV & battery</span><span class="l-zh">新能源车</span></span><span class="ct">×2</span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">512800.SS</span><span class="nm"><span class="l-en">banks</span><span class="l-zh">银行</span></span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">CNY</span><span class="nm"><span class="l-en">yuan</span><span class="l-zh">人民币</span></span></span>
+          
+          
+          <span class="exp-pill"><span class="tk">510300.SS</span><span class="nm"><span class="l-en">CSI 300</span><span class="l-zh">沪深300</span></span></span>
+          
+        </div>
       </section>
       
     </aside>
   </section>
+
+  
 </main>
 
 
@@ -775,11 +1173,50 @@ According to data released by the municipal statistics bureau on Monday, the rea
 <script>
 (function(){
   var feed=document.getElementById('feed');
-  var rows=feed ? Array.prototype.slice.call(feed.querySelectorAll('.card')) : [];
+  var rows=feed ? Array.prototype.slice.call(feed.querySelectorAll('.tp-item')) : [];
   var q=document.getElementById('q'), filters=document.getElementById('filters'), count=document.getElementById('count'), none=document.getElementById('none');
   var theme='all', importance='all', term='';
-  function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
-  function sync(){ if(q) q.placeholder=isZh()?(q.getAttribute('data-ph-zh')||''):(q.getAttribute('data-ph-en')||''); }
+  function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+
+  /* ---- timestamps: relative age from the machine-readable ISO (tz-independent) ---- */
+  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function ageStr(ms, zh){
+    var m=Math.max(0,(Date.now()-ms)/60000);
+    if(m<2) return zh?'刚刚':'just now';
+    if(m<60) return Math.round(m)+(zh?' 分钟前':'m ago');
+    var h=m/60; if(h<24) return Math.round(h)+(zh?' 小时前':'h ago');
+    var d=h/24; if(d<8) return Math.round(d)+(zh?' 天前':'d ago');
+    var dt=new Date(ms); return zh?((dt.getMonth()+1)+'月'+dt.getDate()+'日'):(MON[dt.getMonth()]+' '+dt.getDate());
+  }
+  function freshClass(ms){ var h=(Date.now()-ms)/3600000; return h<=8?'fresh-live':(h<=36?'':'fresh-old'); }
+  var freshest=null;
+  function paintTimes(){
+    var zh=isZh();
+    rows.forEach(function(r){
+      var when=r.querySelector('.tp-when'), node=r.querySelector('.tp-node');
+      var iso=when&&when.getAttribute('data-t'); if(!iso){ return; }
+      var ms=Date.parse(iso); if(isNaN(ms)){ return; }
+      when.textContent=ageStr(ms, zh);
+      when.setAttribute('title', iso);
+      if(node){ node.classList.remove('fresh-live','fresh-old'); var fc=freshClass(ms); if(fc) node.classList.add(fc); }
+      if(freshest===null||ms>freshest) freshest=ms;
+    });
+    var fw=document.getElementById('fresh'), ft=document.getElementById('fresh-t');
+    if(fw&&ft){ if(freshest){ ft.textContent=(zh?'最新 ':'freshest ')+ageStr(freshest, zh); fw.classList.remove('hidden'); } else { fw.classList.add('hidden'); } }
+  }
+
+  /* ---- per-theme counts on the filter chips ---- */
+  function paintCounts(){
+    var tally={};
+    rows.forEach(function(r){ var th=r.getAttribute('data-theme'); tally[th]=(tally[th]||0)+1; });
+    Array.prototype.forEach.call(document.querySelectorAll('.fc[data-fc]'), function(el){
+      var n=tally[el.getAttribute('data-fc')]||0;
+      el.textContent=n?n:'';
+      el.closest('.fbtn').classList.toggle('hidden', n===0);
+    });
+  }
+
+  /* ---- search + theme/importance filter ---- */
   function apply(){
     var shown=0;
     rows.forEach(function(r){
@@ -793,17 +1230,24 @@ According to data released by the municipal statistics bureau on Monday, the rea
     if(none) none.classList.toggle('hidden', shown>0 || rows.length===0);
     if(count) count.textContent=isZh()?(shown+' 条'):(shown+(shown===1?' story':' stories'));
   }
-  if(q) q.addEventListener('input',function(){term=(q.value||'').trim().toLowerCase();apply();});
+  function syncPh(){ if(q) q.placeholder=isZh()?(q.getAttribute('data-ph-zh')||''):(q.getAttribute('data-ph-en')||''); }
+
+  if(q) q.addEventListener('input',function(){ term=(q.value||'').trim().toLowerCase(); apply(); });
   if(filters) filters.addEventListener('click',function(e){
     var b=e.target.closest('.fbtn'); if(!b) return;
-    Array.prototype.forEach.call(filters.querySelectorAll('.fbtn'),function(x){x.classList.remove('on');});
-    b.classList.add('on'); theme=b.getAttribute('data-theme')||'all'; importance=b.getAttribute('data-importance')||'all'; apply();
+    Array.prototype.forEach.call(filters.querySelectorAll('.fbtn'),function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    theme=b.getAttribute('data-theme')||'all';
+    importance=b.getAttribute('data-importance')||'all';
+    if(b.getAttribute('data-importance')) theme='all';
+    apply();
   });
-  document.addEventListener('langchange',function(){sync();apply();});
-  sync(); apply();
+  document.addEventListener('langchange',function(){ syncPh(); paintTimes(); apply(); });
+
+  syncPh(); paintCounts(); paintTimes(); apply();
 })();
 </script>
 
-<script src="theme.js?v=195f6d56" defer></script>
+<script src="theme.js"></script>
 </body>
 </html>
