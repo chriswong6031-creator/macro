@@ -1,4 +1,6 @@
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,23 +10,21 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>IPO Radar — context, not a crystal ball</title>
 
-<meta name="description" content="IPO context and radar for new listings — what the tape says about recent debuts and where each deal stands in the cycle. Not a crystal ball.">
+<meta name="description" content="IPO context and radar for new listings — is the issuance window open, should you chase, and what to avoid. Lock-up cliffs, aftermarket reality-check, issuance froth. Not a buy signal.">
 <link rel="canonical" href="https://www.mastermind-x.com/ipo.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mastermind">
 <meta property="og:title" content="IPO Radar — Mastermind">
-<meta property="og:description" content="IPO context and radar for new listings — what the tape says about recent debuts and where each deal stands in the cycle. Not a crystal ball.">
+<meta property="og:description" content="IPO context and radar for new listings — is the issuance window open, should you chase, and what to avoid. Lock-up cliffs, aftermarket reality-check, issuance froth. Not a buy signal.">
 <meta property="og:url" content="https://www.mastermind-x.com/ipo.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="IPO Radar — Mastermind">
-<meta name="twitter:description" content="IPO context and radar for new listings — what the tape says about recent debuts and where each deal stands in the cycle. Not a crystal ball.">
+<meta name="twitter:description" content="IPO context and radar for new listings — is the issuance window open, should you chase, and what to avoid. Lock-up cliffs, aftermarket reality-check, issuance froth. Not a buy signal.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>window.__plotlyQ=[];window.Plotly={newPlot:function(){window.__plotlyQ.push(['newPlot',[].slice.call(arguments)]);return Promise.resolve();},react:function(){window.__plotlyQ.push(['react',[].slice.call(arguments)]);return Promise.resolve();},relayout:function(){window.__plotlyQ.push(['relayout',[].slice.call(arguments)]);}};
-</script><script defer src="plotly-2.32.0.min.js?v=0a17719a"></script><script>document.addEventListener('DOMContentLoaded',function(){var q=window.__plotlyQ||[];window.__plotlyQ=null;q.forEach(function(c){try{window.Plotly[c[0]].apply(window.Plotly,c[1]);}catch(e){}});});</script>
 <style>
 @font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
@@ -33,9 +33,13 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 </style>
-<link rel="stylesheet" href="assets/css/d474955d.css?v=d474955d">
+<link rel="stylesheet" href="illus.css?v=a2237d45">
+<link rel="stylesheet" href="assets/css/6cc1ef63.css?v=6cc1ef63">
 </head>
 <body>
+
+
+
 <div class="wrap">
   <div class="topbar">
       
@@ -250,8 +254,6 @@
   
   <script src="live_config.js?v=0add7ac4" defer></script>
   <script src="live.js?v=e1a3ca0d" defer></script>
-  
-  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
     <div class="nav-ctrls">
       <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
       <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
@@ -264,764 +266,659 @@
     </div>
   </div>
 
-  <div class="section-title"><span class="l-en">IPO Radar · context, not a crystal ball</span><span class="l-zh">新股雷达 · 背景，而非水晶球</span></div>
-  <div class="h1"><span class="l-en">Is the IPO window open — and is it worth chasing?</span><span class="l-zh">新股窗口是否开启 —— 值得追吗？</span></div>
-  <div class="sub" style="margin-bottom:6px"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-21</div>
-  <div class="tag"><span class="l-en">Display-only · avoidance + context, never a buy signal</span><span class="l-zh">仅供参考 · 规避与背景，绝非买入信号</span></div>
+  <!-- ============ HERO — glance verdict ============ -->
+  <div class="hero">
+    <div class="brand">
+      <svg class="radar" viewBox="0 0 32 32" aria-hidden="true">
+        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--acc)"/><stop offset="1" stop-color="var(--acc2)"/></linearGradient></defs>
+        <circle cx="16" cy="16" r="13" fill="none" stroke="url(#rg)" stroke-width="1.4" opacity=".5"/>
+        <circle cx="16" cy="16" r="7.5" fill="none" stroke="url(#rg)" stroke-width="1.4" opacity=".7"/>
+        <path d="M16,16 L16,3 A13,13 0 0 1 28,13 Z" fill="url(#rg)" opacity=".28"/>
+        <circle cx="16" cy="16" r="2.2" fill="url(#rg)"/>
+      </svg>
+      <span class="gn">IPO <span class="l-en">Radar</span><span class="l-zh">雷达</span></span>
+    </div>
+    <div class="hero-eyebrow"><span class="l-en">New listings · is the window open, should you chase, what to avoid</span><span class="l-zh">新股 · 窗口是否开启、是否该追、应规避什么</span></div>
+    
+    <div class="verdict"><span class="l-en">The issuance window is open — but new listings bought in the market have lagged the S&amp;P, and a big lock-up unlocks this week. Watch — don&#39;t chase.</span><span class="l-zh">新股发行窗口开启 —— 但在二级市场买入的新股跑输了标普，且本周有大额解禁。观望，别追。</span></div>
+    
+    <div class="hero-row">
+      <span class="stance warn"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观望，别追</span></span>
+      <span class="asof"><span class="dot"></span><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-21</span>
+      <span class="tag"><span class="l-en">Context, not a buy signal</span><span class="l-zh">背景，而非买入信号</span></span>
+    </div>
+  </div>
 
-  <!-- ===== the honest disclaimer, up top ===== -->
-  <div class="note r" style="margin-top:14px"><span class="l-en">The day-1 IPO “pop” is genuinely predictable — but it is measured from the rationed OFFER price, and the opening trade already prices it in (Ritter–Welch). Without an offer-price allocation (which retail and small funds structurally cannot get), it is NOT capturable. Held from the first close, IPOs underperform (Ritter: median 3-year return ≈ −26%). So this page does not predict pops. It reads whether the issuance window is open and shows what buying new issues in the secondary market has actually returned — an avoidance + context tool.</span><span class="l-zh">新股上市首日的“爆涨”确实可预测 —— 但它是相对被配售的发行价计量的，而开盘价已将其计入（Ritter–Welch）。没有发行价配售（散户与小型基金在结构上拿不到），这部分收益无法捕获。若从首日收盘买入并持有，新股长期跑输（Ritter：3 年中位回报约 −26%）。因此本页不预测爆涨，而是判断发行窗口是否开启，并展示在二级市场买入新股的真实回报 —— 一个规避与背景工具。</span></div>
+  <!-- ============ WHAT CHANGED ============ -->
+  
 
-  <!-- ===== window band + aftermarket verdict ===== -->
-  <div class="grid cols-2" style="margin-top:14px">
-    <div class="card">
-      <h3><span class="l-en">Is the issuance window open?</span><span class="l-zh">发行窗口是否开启？</span></h3>
-      <div class="dialwrap">
-        <div class="dialnum" style="color:#1FA971"><span class="l-en">OPEN</span><span class="l-zh">开启</span></div>
-        <div>
-          <div class="sub">5/6 <span class="l-en">risk-appetite legs constructive</span><span class="l-zh">风险偏好分项为偏好</span></div>
-          <div class="sub faint" style="margin-top:8px;font-size:12px"><span class="l-en">Coincident read — it describes whether the window is open NOW; it does not forecast it, and it is never scored.</span><span class="l-zh">同步读数 —— 它描述窗口当前是否开启，并不预测，且从不计分。</span></div>
-        </div>
+  <!-- ============ AVOID panel — the honest deliverable ============ -->
+  
+  <div class="avoid">
+    <h3>⚠ <span class="l-en">What to avoid right now</span><span class="l-zh">当前应规避</span></h3>
+    <div class="ah-sub"><span class="l-en">The honest edge in IPOs is discipline about what NOT to buy. Assembled from the calendar — display-only, never a trade.</span><span class="l-zh">新股中诚实的优势在于「不买什么」的纪律。取自日历 —— 仅供展示，非交易。</span></div>
+    <div class="avoid-list">
+      
+      <div class="avoid-item red">
+        <span class="ai-ic">🔓</span>
+        <div><div class="ai-t"><span class="l-en">Names near un-lock — don&#39;t add into the cliff</span><span class="l-zh">临近解禁 —— 勿加仓</span></div><div class="ai-d"><span class="l-en">EQPT unlocks Jul 22 (~$747M); 23 more within 45 days.</span><span class="l-zh">EQPT 于7月22日解禁（约$747M）；45 天内还有 23 只。</span></div></div>
+      </div>
+      
+      <div class="avoid-item warn">
+        <span class="ai-ic">📉</span>
+        <div><div class="ai-t"><span class="l-en">Don&#39;t chase new-issue baskets</span><span class="l-zh">别追新股篮子</span></div><div class="ai-d"><span class="l-en">Recent-IPO ETF returned about −3%/yr vs the S&amp;P +13%/yr over five years.</span><span class="l-zh">近五年新股ETF年化约 −3%，而标普约 +13%。</span></div></div>
+      </div>
+      
+      <div class="avoid-item warn">
+        <span class="ai-ic">🎈</span>
+        <div><div class="ai-t"><span class="l-en">Frothy issuance — stand aside on hot deals</span><span class="l-zh">发行泡沫 —— 热门票靠边站</span></div><div class="ai-d"><span class="l-en">About half of recent deals are blank-check SPACs (52%); ~16% of filed deals were pulled.</span><span class="l-zh">近期约一半新股为空白支票SPAC（52%）；约 16% 的申报交易被撤回。</span></div></div>
+      </div>
+      
+    </div>
+  </div>
+  
+
+  <!-- ============ SIGNATURE TRIAD — window · reality-check · froth ============ -->
+  <div class="triad">
+    <!-- 1) window -->
+    <div class="tcard good">
+      <div class="tc-eyebrow"><span class="l-en">Issuance window</span><span class="l-zh">发行窗口</span><span class="qtip" tabindex="0" role="note">?<span class="qtip-body"><span class="l-en">Coincident risk-appetite read across up to six market legs (macro de-risk, VIX, HY-vs-IG credit, small-caps, high-beta, the IPO ETF trend). It describes whether issuers can sell deals NOW — it does not forecast, and it is never scored.</span><span class="l-zh">跨最多六个市场分项的同步风险偏好读数（宏观降险、VIX、高收益对投资级信用、小盘、高贝塔、新股ETF趋势）。描述当前发行环境，并不预测，且从不计分。</span></span></span></div>
+      <div class="tc-state"><span class="l-en">Open</span><span class="l-zh">开启</span></div>
+      <div class="tc-sub"><span class="l-en">Risk appetite is on — issuers can price deals.</span><span class="l-zh">风险偏好在线 —— 发行方能顺利定价。</span></div>
+      <div class="dotbar" aria-hidden="true">
+        <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i>
+      </div>
+      <div class="tc-sub" style="min-height:0;margin-top:2px">5/6 <span class="l-en">legs supportive</span><span class="l-zh">分项偏好</span></div>
+      <div class="tc-foot">
+        <span class="stance warn"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观望，别追</span></span>
+        <a class="xlink" href="transmission.html"><span class="l-en">Drivers →</span><span class="l-zh">驱动 →</span></a>
       </div>
     </div>
-    <div class="card">
-      <h3><span class="l-en">Reality check: “buy new IPOs” in the aftermarket</span><span class="l-zh">现实检验：在二级市场“买新股”</span></h3>
+
+    <!-- 2) aftermarket reality check -->
+    <div class="tcard red">
+      <div class="tc-eyebrow"><span class="l-en">Reality check</span><span class="l-zh">现实检验</span><span class="qtip" tabindex="0" role="note">?<span class="qtip-body"><span class="l-en">“Buy recent IPOs in the open market” = the Renaissance IPO ETF vs the S&amp;P, 5-year annualised total return. The day-1 pop accrues to offer-price allocation, which retail cannot get — so the honest anchor is how the aftermarket basket actually did.</span><span class="l-zh">“在二级市场买近期新股” = 复兴新股ETF对比标普，5年年化总回报。首日爆涨归于发行价配售（散户拿不到）—— 故诚实的锚点是二级市场篮子的真实表现。</span></span></span></div>
+      <div class="tc-state" style="color:var(--red)"><span class="l-en">Trails</span><span class="l-zh">跑输</span></div>
+      <div class="tc-sub"><span class="l-en">“Own recent IPOs” has lagged simply owning the S&amp;P.</span><span class="l-zh">“持有近期新股”跑输了单纯持有标普。</span></div>
+      <div class="tc-metrics">
+        <div class="tcm"><div class="tcm-v" style="color:var(--red)">-2.9%</div><div class="tcm-l"><span class="l-en">IPO ETF 5y/yr</span><span class="l-zh">新股ETF 5年/年</span></div></div>
+        <div class="tcm"><div class="tcm-v" style="color:var(--green)">+12.9%</div><div class="tcm-l"><span class="l-en">S&amp;P 5y/yr</span><span class="l-zh">标普 5年/年</span></div></div>
+        <div class="tcm"><div class="tcm-v">-15.9</div><div class="tcm-l"><span class="l-en">gap pp/yr</span><span class="l-zh">差距 个百分点/年</span></div></div>
+      </div>
+      <div class="tc-foot">
+        <span class="stance red"><span class="l-en">Don&#39;t chase the basket</span><span class="l-zh">别追新股篮子</span></span>
+        <a class="xlink" href="baskets.html"><span class="l-en">Rotation →</span><span class="l-zh">轮动 →</span></a>
+      </div>
+    </div>
+
+    <!-- 3) issuance froth -->
+    <div class="tcard warn">
+      <div class="tc-eyebrow"><span class="l-en">Issuance froth</span><span class="l-zh">发行热度</span><span class="qtip" tabindex="0" role="note">?<span class="qtip-body"><span class="l-en">How busy and how speculative the new-issue tape is: deals priced in 90 days, the blank-check (SPAC) share, and the share of filed deals later pulled. A high SPAC share + a busy pace = a frothy, promotional tape to stand aside from.</span><span class="l-zh">新股发行的繁忙度与投机度：90天定价交易数、空白支票（SPAC）占比、以及已申报后撤回的比例。高SPAC占比＋繁忙节奏＝泡沫化、炒作型盘面，应靠边站。</span></span></span></div>
+      <div class="tc-state"><span class="l-en">Busy</span><span class="l-zh">繁忙</span></div>
       
-      <div class="dialwrap">
-        <div class="dialnum" style="font-size:34px;color:#D30B0B">-2.9%</div>
-        <div>
-          <span class="pill" style="background:#D30B0B"><span class="l-en">IPO ETF</span><span class="l-zh">新股ETF</span> <span class="l-en">trails</span><span class="l-zh">跑输</span> <span class="l-en">the S&amp;P</span><span class="l-zh">标普</span></span>
-          <div class="sub" style="margin-top:8px"><span class="l-en">Renaissance IPO ETF, 5-yr annualised</span><span class="l-zh">复兴新股ETF，5年年化</span>: <b style="color:var(--ink)">-2.9%</b> <span class="l-en">vs S&amp;P</span><span class="l-zh">对比标普</span> <b style="color:var(--ink)">+12.9%</b> (-15.9 pp/yr)</div>
-        </div>
+      <svg class="arc" viewBox="0 0 130 74" aria-hidden="true">
+        <path class="arc-bg" d="M12,66 A53,53 0 0 1 118,66" pathLength="100"/>
+        <path class="arc-fill" d="M12,66 A53,53 0 0 1 118,66" pathLength="100" stroke-dasharray="52 100"/>
+        <path class="arc-tick" d="M12,66 A53,53 0 0 1 118,66" pathLength="100" stroke-dasharray="1.3 100" stroke-dashoffset="-40"/>
+      </svg>
+      <div class="arc-cap"><b style="color:var(--ink)">52%</b> <span class="l-en">blank-check share · frothy above the 40% tick</span><span class="l-zh">空白支票占比 · 超过40%刻度为泡沫</span></div>
+      
+      <div class="tc-foot">
+        <span class="stance warn"><span class="l-en">Stand aside on hot deals</span><span class="l-zh">热门新股靠边站</span></span>
+        <span class="asof" style="font-size:11px">113 <span class="l-en">priced · 90d</span><span class="l-zh">定价 · 90天</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LOCK-UP CLIFF — the most actionable leg ============ -->
+  
+  <div class="sec"><span class="l-en">Lock-up cliff</span><span class="l-zh">解禁悬崖</span> <span class="sec-hint"><span class="l-en">the one thing worth watching</span><span class="l-zh">唯一值得关注的一环</span></span></div>
+  <div class="sec-sub"><span class="l-en">~180 days after listing, insider / VC / PE shares un-lock into a thin float — a documented one-sided supply push. The date is free and deterministic. It is a “don’t add into the cliff” flag, not a short.</span><span class="l-zh">上市约180天后，内部人／风投／私募股份解禁冲击稀薄流通盘 —— 有据可查的单边供给压力。日期免费且确定。这是“临近解禁勿加仓”的提示，而非做空。</span></div>
+  <div class="card">
+    <div class="cliff-lead">
+      <div class="cliff-next"><span class="l-en">Next un-lock</span><span class="l-zh">下一解禁</span>: <b>EQPT</b> · 2026-07-22 · $747M <span class="cliff-meta">(<span class="l-en">today</span><span class="l-zh">今天</span>)</span></div>
+      <div class="cliff-meta">23 <span class="l-en">approaching ≤45d</span><span class="l-zh">临近 ≤45天</span> · 4 <span class="l-en">just un-locked</span><span class="l-zh">刚解禁</span></div>
+    </div>
+    <div class="timeline">
+      <div class="tl-axis"></div>
+      <div class="tl-today" style="left:20%"><span class="tl-lbl"><span class="l-en">TODAY</span><span class="l-zh">今天</span></span></div>
+      
+      <div class="tl-mark sm just-expired" tabindex="0" style="left:10.0%">
+        <span class="tl-tip"><b>BUDA</b> · BUDA JUICE, INC.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-07 · $20M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
       </div>
       
+      <div class="tl-mark md just-expired" tabindex="0" style="left:10.7%">
+        <span class="tl-tip"><b>AKTS</b> · Aktis Oncology, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-08 · $318M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark sm just-expired" tabindex="0" style="left:13.3%">
+        <span class="tl-tip"><b>GCDT</b> · Green Circle Decarbonize Technology Ltd<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-12 · $10M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md just-expired" tabindex="0" style="left:19.3%">
+        <span class="tl-tip"><b>BTGO</b> · BITGO HOLDINGS, INC.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-21 · $213M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark lg approaching" tabindex="0" style="left:20.0%">
+        <span class="tl-tip"><b>EQPT</b> · EquipmentShare.com Inc<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-22 · $747M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark sm approaching" tabindex="0" style="left:22.7%">
+        <span class="tl-tip"><b>VTIX</b> · Virtuix Holdings Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-26 · —<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark sm approaching" tabindex="0" style="left:23.3%">
+        <span class="tl-tip"><b>PPHC</b> · Public Policy Holding Company, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-27 · $51M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:24.0%">
+        <span class="tl-tip"><b>LIFE</b> · Ethos Technologies Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-28 · $200M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark lg approaching" tabindex="0" style="left:24.0%">
+        <span class="tl-tip"><b>YSS</b> · York Space Systems Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-28 · $629M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:24.0%">
+        <span class="tl-tip"><b>PICS</b> · PicS N.V.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-28 · $434M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark sm approaching" tabindex="0" style="left:24.7%">
+        <span class="tl-tip"><b>VHUB</b> · VenHub Global, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-07-29 · —<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d <span style="color:var(--faint)">(<span class="l-en">est</span><span class="l-zh">估</span>)</span></span>
+      </div>
+      
+      <div class="tl-mark sm approaching" tabindex="0" style="left:26.7%">
+        <span class="tl-tip"><b>PLYX</b> · Polaryx Therapeutics, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-01 · —<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark sm approaching" tabindex="0" style="left:28.0%">
+        <span class="tl-tip"><b>OBAI</b> · Our Bond, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-03 · —<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:28.7%">
+        <span class="tl-tip"><b>EIKN</b> · Eikon Therapeutics, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-04 · $381M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:28.7%">
+        <span class="tl-tip"><b>BOBS</b> · Bob&#39;s Discount Furniture, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-04 · $331M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:28.7%">
+        <span class="tl-tip"><b>CEPS</b> · Cantor Equity Partners VI, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-04 · $100M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d <span style="color:var(--faint)">(<span class="l-en">est</span><span class="l-zh">估</span>)</span></span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:29.3%">
+        <span class="tl-tip"><b>OFRM</b> · Once Upon a Farm, PBC<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-05 · $198M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:29.3%">
+        <span class="tl-tip"><b>AGMB</b> · Agomab Therapeutics NV<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-05 · $200M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:29.3%">
+        <span class="tl-tip"><b>SGP</b> · SpyGlass Pharma, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-05 · $150M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark lg approaching" tabindex="0" style="left:32.7%">
+        <span class="tl-tip"><b>MWH</b> · SOLV Energy, Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-10 · $512M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:32.7%">
+        <span class="tl-tip"><b>AGBK</b> · AGI Inc<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-10 · $240M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark sm approaching" tabindex="0" style="left:33.3%">
+        <span class="tl-tip"><b>BRAI</b> · Braiin Ltd<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-11 · —<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:33.3%">
+        <span class="tl-tip"><b>APC</b> · ARKO Petroleum Corp.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-11 · $200M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-mark md approaching" tabindex="0" style="left:37.3%">
+        <span class="tl-tip"><b>SHAZ</b> · SharonAI Holdings Inc.<br><span class="l-en">un-locks</span><span class="l-zh">解禁</span> 2026-08-17 · $125M<br><span class="l-en">lock-up</span><span class="l-zh">禁售</span> 180d</span>
+      </div>
+      
+      <div class="tl-scale"><span><span class="l-en">30d ago</span><span class="l-zh">30天前</span></span><span><span class="l-en">+45d</span><span class="l-zh">+45天</span></span><span><span class="l-en">+120d</span><span class="l-zh">+120天</span></span></div>
     </div>
+    <div class="tl-legend">
+      <span class="k"><i style="background:var(--red)"></i><span class="l-en">just un-locked (supply live)</span><span class="l-zh">刚解禁（供给中）</span></span>
+      <span class="k"><i style="background:var(--amber)"></i><span class="l-en">approaching (≤45d)</span><span class="l-zh">临近（≤45天）</span></span>
+      <span class="k"><i style="background:var(--muted)"></i><span class="l-en">still locked</span><span class="l-zh">仍锁定</span></span>
+      <span class="k" style="margin-left:auto"><span class="l-en">dot size = deal size</span><span class="l-zh">点大小＝交易规模</span></span>
+    </div>
+    <div class="note warn"><span class="l-en">Don’t add into the cliff. This is a supply-date calendar, not a forecast — history shows no reliable tradeable edge here.</span><span class="l-zh">临近解禁勿加仓。这是供给日历，而非预测 —— 历史上此处没有可靠、可交易的优势。</span><span class="qtip" tabindex="0" role="note">?<span class="qtip-body"><span class="l-en">Field &amp; Hanka document a small one-sided drift (~−1.5%, ~−3% for VC-backed names) with ~+40% volume around unlock. Our own event study of recent unlocks finds no measurable, tradeable edge on a small, survivorship-biased sample. Lock-up length is prospectus-confirmed where available, else the 180-day market standard.</span><span class="l-zh">Field &amp; Hanka 记录到解禁前后约 −1.5%（风投支持约 −3%）的小幅单边漂移，成交量约 +40%。我们对近期解禁的事件研究在小样本（含幸存者偏差）上未发现可测量、可交易的优势。禁售期长度在可得时取自招股书，否则取 180 天市场标准。</span></span></span></div>
   </div>
-
-  <!-- ===== window legs ===== -->
-  <div class="section-title"><span class="l-en">What the window read is made of</span><span class="l-zh">窗口读数的构成</span></div>
-  <div class="card">
-    <table class="legtbl">
-      <tr><th class="l"><span class="l-en">Risk-appetite leg</span><span class="l-zh">风险偏好分项</span></th><th><span class="l-en">Reading</span><span class="l-zh">读数</span></th><th><span class="l-en">State</span><span class="l-zh">状态</span></th></tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">Macro risk backdrop</span><span class="l-zh">宏观风险背景</span><div class="sub faint" style="font-size:11.5px"><span class="l-en">validated de-risk score (reused, not new)</span><span class="l-zh">复用已验证的降险评分（非新建）</span></div></td>
-        <td><b>12/100</b></td>
-        <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">constructive</span><span class="l-zh">偏好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">Volatility (VIX)</span><span class="l-zh">波动率（VIX）</span><div class="sub faint" style="font-size:11.5px"><span class="l-en">low vol = receptive tape</span><span class="l-zh">低波动 = 接纳新股的盘面</span></div></td>
-        <td><b>17.0</b></td>
-        <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">neutral</span><span class="l-zh">中性</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">Credit appetite (HY vs IG)</span><span class="l-zh">信用偏好（高收益 vs 投资级）</span><div class="sub faint" style="font-size:11.5px"><span class="l-en">high-yield leading = risk-on credit</span><span class="l-zh">高收益领先 = 信用风险偏好</span></div></td>
-        <td><b>+2.1%</b></td>
-        <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">constructive</span><span class="l-zh">偏好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">Small-cap leadership (IWM vs SPY)</span><span class="l-zh">小盘领先（IWM vs SPY）</span><div class="sub faint" style="font-size:11.5px"><span class="l-en">small-caps leading = appetite for risk/new names</span><span class="l-zh">小盘领先 = 对风险/新名的偏好</span></div></td>
-        <td><b>+1.3%</b></td>
-        <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">constructive</span><span class="l-zh">偏好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">Speculative appetite (high-beta vs low-vol)</span><span class="l-zh">投机偏好（高贝塔 vs 低波）</span><div class="sub faint" style="font-size:11.5px"><span class="l-en">high-beta leading = speculative bid</span><span class="l-zh">高贝塔领先 = 投机性买盘</span></div></td>
-        <td><b>+6.6%</b></td>
-        <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">constructive</span><span class="l-zh">偏好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">IPO basket trend (IPO vs SPY)</span><span class="l-zh">新股篮子趋势（IPO vs SPY）</span><div class="sub faint" style="font-size:11.5px"><span class="l-en">recent-IPO ETF leading = aftermarket demand</span><span class="l-zh">新股ETF领先 = 二级市场需求</span></div></td>
-        <td><b>+3.9%</b></td>
-        <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">constructive</span><span class="l-zh">偏好</span></span></td>
-      </tr>
-      
-    </table>
-    <div class="sub faint" style="margin-top:10px;font-size:12px"><span class="l-en">Legs reuse existing market reads (the validated macro de-risk score, VIX, HY-vs-IG credit, small-cap &amp; high-beta leadership, the IPO ETF trend). The window is a description of risk appetite, not a forecast of it — and nothing here feeds any score or allocation.</span><span class="l-zh">各分项复用既有市场读数（已验证的宏观降险评分、VIX、高收益对投资级信用、小盘与高贝塔领先、新股ETF趋势）。窗口是对风险偏好的描述而非预测 —— 且此处任何内容都不进入任何评分或仓位。</span></div>
-  </div>
-
-  <!-- ===== aftermarket chart + table ===== -->
-  <div class="section-title"><span class="l-en">The aftermarket trade · IPO &amp; IPOX vs the S&amp;P (5y, rebased)</span><span class="l-zh">二级市场交易 · 新股与IPOX对比标普（5年，归一）</span></div>
-  <div class="card">
-    <div style="height:340px; width:100%;">                            <div id="984b0bc2-0622-45cd-afb1-2bc3c0b35ff5" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("984b0bc2-0622-45cd-afb1-2bc3c0b35ff5")) {                    Plotly.newPlot(                        "984b0bc2-0622-45cd-afb1-2bc3c0b35ff5",                        [{"line":{"color":"#9AA4B2","width":1.5},"name":"S&P 500","x":["2021-07-21","2021-07-22","2021-07-23","2021-07-26","2021-07-27","2021-07-28","2021-07-29","2021-07-30","2021-08-02","2021-08-03","2021-08-04","2021-08-05","2021-08-06","2021-08-09","2021-08-10","2021-08-11","2021-08-12","2021-08-13","2021-08-16","2021-08-17","2021-08-18","2021-08-19","2021-08-20","2021-08-23","2021-08-24","2021-08-25","2021-08-26","2021-08-27","2021-08-30","2021-08-31","2021-09-01","2021-09-02","2021-09-03","2021-09-07","2021-09-08","2021-09-09","2021-09-10","2021-09-13","2021-09-14","2021-09-15","2021-09-16","2021-09-17","2021-09-20","2021-09-21","2021-09-22","2021-09-23","2021-09-24","2021-09-27","2021-09-28","2021-09-29","2021-09-30","2021-10-01","2021-10-04","2021-10-05","2021-10-06","2021-10-07","2021-10-08","2021-10-11","2021-10-12","2021-10-13","2021-10-14","2021-10-15","2021-10-18","2021-10-19","2021-10-20","2021-10-21","2021-10-22","2021-10-25","2021-10-26","2021-10-27","2021-10-28","2021-10-29","2021-11-01","2021-11-02","2021-11-03","2021-11-04","2021-11-05","2021-11-08","2021-11-09","2021-11-10","2021-11-11","2021-11-12","2021-11-15","2021-11-16","2021-11-17","2021-11-18","2021-11-19","2021-11-22","2021-11-23","2021-11-24","2021-11-26","2021-11-29","2021-11-30","2021-12-01","2021-12-02","2021-12-03","2021-12-06","2021-12-07","2021-12-08","2021-12-09","2021-12-10","2021-12-13","2021-12-14","2021-12-15","2021-12-16","2021-12-17","2021-12-20","2021-12-21","2021-12-22","2021-12-23","2021-12-27","2021-12-28","2021-12-29","2021-12-30","2021-12-31","2022-01-03","2022-01-04","2022-01-05","2022-01-06","2022-01-07","2022-01-10","2022-01-11","2022-01-12","2022-01-13","2022-01-14","2022-01-18","2022-01-19","2022-01-20","2022-01-21","2022-01-24","2022-01-25","2022-01-26","2022-01-27","2022-01-28","2022-01-31","2022-02-01","2022-02-02","2022-02-03","2022-02-04","2022-02-07","2022-02-08","2022-02-09","2022-02-10","2022-02-11","2022-02-14","2022-02-15","2022-02-16","2022-02-17","2022-02-18","2022-02-22","2022-02-23","2022-02-24","2022-02-25","2022-02-28","2022-03-01","2022-03-02","2022-03-03","2022-03-04","2022-03-07","2022-03-08","2022-03-09","2022-03-10","2022-03-11","2022-03-14","2022-03-15","2022-03-16","2022-03-17","2022-03-18","2022-03-21","2022-03-22","2022-03-23","2022-03-24","2022-03-25","2022-03-28","2022-03-29","2022-03-30","2022-03-31","2022-04-01","2022-04-04","2022-04-05","2022-04-06","2022-04-07","2022-04-08","2022-04-11","2022-04-12","2022-04-13","2022-04-14","2022-04-18","2022-04-19","2022-04-20","2022-04-21","2022-04-22","2022-04-25","2022-04-26","2022-04-27","2022-04-28","2022-04-29","2022-05-02","2022-05-03","2022-05-04","2022-05-05","2022-05-06","2022-05-09","2022-05-10","2022-05-11","2022-05-12","2022-05-13","2022-05-16","2022-05-17","2022-05-18","2022-05-19","2022-05-20","2022-05-23","2022-05-24","2022-05-25","2022-05-26","2022-05-27","2022-05-31","2022-06-01","2022-06-02","2022-06-03","2022-06-06","2022-06-07","2022-06-08","2022-06-09","2022-06-10","2022-06-13","2022-06-14","2022-06-15","2022-06-16","2022-06-17","2022-06-21","2022-06-22","2022-06-23","2022-06-24","2022-06-27","2022-06-28","2022-06-29","2022-06-30","2022-07-01","2022-07-05","2022-07-06","2022-07-07","2022-07-08","2022-07-11","2022-07-12","2022-07-13","2022-07-14","2022-07-15","2022-07-18","2022-07-19","2022-07-20","2022-07-21","2022-07-22","2022-07-25","2022-07-26","2022-07-27","2022-07-28","2022-07-29","2022-08-01","2022-08-02","2022-08-03","2022-08-04","2022-08-05","2022-08-08","2022-08-09","2022-08-10","2022-08-11","2022-08-12","2022-08-15","2022-08-16","2022-08-17","2022-08-18","2022-08-19","2022-08-22","2022-08-23","2022-08-24","2022-08-25","2022-08-26","2022-08-29","2022-08-30","2022-08-31","2022-09-01","2022-09-02","2022-09-06","2022-09-07","2022-09-08","2022-09-09","2022-09-12","2022-09-13","2022-09-14","2022-09-15","2022-09-16","2022-09-19","2022-09-20","2022-09-21","2022-09-22","2022-09-23","2022-09-26","2022-09-27","2022-09-28","2022-09-29","2022-09-30","2022-10-03","2022-10-04","2022-10-05","2022-10-06","2022-10-07","2022-10-10","2022-10-11","2022-10-12","2022-10-13","2022-10-14","2022-10-17","2022-10-18","2022-10-19","2022-10-20","2022-10-21","2022-10-24","2022-10-25","2022-10-26","2022-10-27","2022-10-28","2022-10-31","2022-11-01","2022-11-02","2022-11-03","2022-11-04","2022-11-07","2022-11-08","2022-11-09","2022-11-10","2022-11-11","2022-11-14","2022-11-15","2022-11-16","2022-11-17","2022-11-18","2022-11-21","2022-11-22","2022-11-23","2022-11-25","2022-11-28","2022-11-29","2022-11-30","2022-12-01","2022-12-02","2022-12-05","2022-12-06","2022-12-07","2022-12-08","2022-12-09","2022-12-12","2022-12-13","2022-12-14","2022-12-15","2022-12-16","2022-12-19","2022-12-20","2022-12-21","2022-12-22","2022-12-23","2022-12-27","2022-12-28","2022-12-29","2022-12-30","2023-01-03","2023-01-04","2023-01-05","2023-01-06","2023-01-09","2023-01-10","2023-01-11","2023-01-12","2023-01-13","2023-01-17","2023-01-18","2023-01-19","2023-01-20","2023-01-23","2023-01-24","2023-01-25","2023-01-26","2023-01-27","2023-01-30","2023-01-31","2023-02-01","2023-02-02","2023-02-03","2023-02-06","2023-02-07","2023-02-08","2023-02-09","2023-02-10","2023-02-13","2023-02-14","2023-02-15","2023-02-16","2023-02-17","2023-02-21","2023-02-22","2023-02-23","2023-02-24","2023-02-27","2023-02-28","2023-03-01","2023-03-02","2023-03-03","2023-03-06","2023-03-07","2023-03-08","2023-03-09","2023-03-10","2023-03-13","2023-03-14","2023-03-15","2023-03-16","2023-03-17","2023-03-20","2023-03-21","2023-03-22","2023-03-23","2023-03-24","2023-03-27","2023-03-28","2023-03-29","2023-03-30","2023-03-31","2023-04-03","2023-04-04","2023-04-05","2023-04-06","2023-04-10","2023-04-11","2023-04-12","2023-04-13","2023-04-14","2023-04-17","2023-04-18","2023-04-19","2023-04-20","2023-04-21","2023-04-24","2023-04-25","2023-04-26","2023-04-27","2023-04-28","2023-05-01","2023-05-02","2023-05-03","2023-05-04","2023-05-05","2023-05-08","2023-05-09","2023-05-10","2023-05-11","2023-05-12","2023-05-15","2023-05-16","2023-05-17","2023-05-18","2023-05-19","2023-05-22","2023-05-23","2023-05-24","2023-05-25","2023-05-26","2023-05-30","2023-05-31","2023-06-01","2023-06-02","2023-06-05","2023-06-06","2023-06-07","2023-06-08","2023-06-09","2023-06-12","2023-06-13","2023-06-14","2023-06-15","2023-06-16","2023-06-20","2023-06-21","2023-06-22","2023-06-23","2023-06-26","2023-06-27","2023-06-28","2023-06-29","2023-06-30","2023-07-03","2023-07-05","2023-07-06","2023-07-07","2023-07-10","2023-07-11","2023-07-12","2023-07-13","2023-07-14","2023-07-17","2023-07-18","2023-07-19","2023-07-20","2023-07-21","2023-07-24","2023-07-25","2023-07-26","2023-07-27","2023-07-28","2023-07-31","2023-08-01","2023-08-02","2023-08-03","2023-08-04","2023-08-07","2023-08-08","2023-08-09","2023-08-10","2023-08-11","2023-08-14","2023-08-15","2023-08-16","2023-08-17","2023-08-18","2023-08-21","2023-08-22","2023-08-23","2023-08-24","2023-08-25","2023-08-28","2023-08-29","2023-08-30","2023-08-31","2023-09-01","2023-09-05","2023-09-06","2023-09-07","2023-09-08","2023-09-11","2023-09-12","2023-09-13","2023-09-14","2023-09-15","2023-09-18","2023-09-19","2023-09-20","2023-09-21","2023-09-22","2023-09-25","2023-09-26","2023-09-27","2023-09-28","2023-09-29","2023-10-02","2023-10-03","2023-10-04","2023-10-05","2023-10-06","2023-10-09","2023-10-10","2023-10-11","2023-10-12","2023-10-13","2023-10-16","2023-10-17","2023-10-18","2023-10-19","2023-10-20","2023-10-23","2023-10-24","2023-10-25","2023-10-26","2023-10-27","2023-10-30","2023-10-31","2023-11-01","2023-11-02","2023-11-03","2023-11-06","2023-11-07","2023-11-08","2023-11-09","2023-11-10","2023-11-13","2023-11-14","2023-11-15","2023-11-16","2023-11-17","2023-11-20","2023-11-21","2023-11-22","2023-11-24","2023-11-27","2023-11-28","2023-11-29","2023-11-30","2023-12-01","2023-12-04","2023-12-05","2023-12-06","2023-12-07","2023-12-08","2023-12-11","2023-12-12","2023-12-13","2023-12-14","2023-12-15","2023-12-18","2023-12-19","2023-12-20","2023-12-21","2023-12-22","2023-12-26","2023-12-27","2023-12-28","2023-12-29","2024-01-02","2024-01-03","2024-01-04","2024-01-05","2024-01-08","2024-01-09","2024-01-10","2024-01-11","2024-01-12","2024-01-16","2024-01-17","2024-01-18","2024-01-19","2024-01-22","2024-01-23","2024-01-24","2024-01-25","2024-01-26","2024-01-29","2024-01-30","2024-01-31","2024-02-01","2024-02-02","2024-02-05","2024-02-06","2024-02-07","2024-02-08","2024-02-09","2024-02-12","2024-02-13","2024-02-14","2024-02-15","2024-02-16","2024-02-20","2024-02-21","2024-02-22","2024-02-23","2024-02-26","2024-02-27","2024-02-28","2024-02-29","2024-03-01","2024-03-04","2024-03-05","2024-03-06","2024-03-07","2024-03-08","2024-03-11","2024-03-12","2024-03-13","2024-03-14","2024-03-15","2024-03-18","2024-03-19","2024-03-20","2024-03-21","2024-03-22","2024-03-25","2024-03-26","2024-03-27","2024-03-28","2024-04-01","2024-04-02","2024-04-03","2024-04-04","2024-04-05","2024-04-08","2024-04-09","2024-04-10","2024-04-11","2024-04-12","2024-04-15","2024-04-16","2024-04-17","2024-04-18","2024-04-19","2024-04-22","2024-04-23","2024-04-24","2024-04-25","2024-04-26","2024-04-29","2024-04-30","2024-05-01","2024-05-02","2024-05-03","2024-05-06","2024-05-07","2024-05-08","2024-05-09","2024-05-10","2024-05-13","2024-05-14","2024-05-15","2024-05-16","2024-05-17","2024-05-20","2024-05-21","2024-05-22","2024-05-23","2024-05-24","2024-05-28","2024-05-29","2024-05-30","2024-05-31","2024-06-03","2024-06-04","2024-06-05","2024-06-06","2024-06-07","2024-06-10","2024-06-11","2024-06-12","2024-06-13","2024-06-14","2024-06-17","2024-06-18","2024-06-20","2024-06-21","2024-06-24","2024-06-25","2024-06-26","2024-06-27","2024-06-28","2024-07-01","2024-07-02","2024-07-03","2024-07-05","2024-07-08","2024-07-09","2024-07-10","2024-07-11","2024-07-12","2024-07-15","2024-07-16","2024-07-17","2024-07-18","2024-07-19","2024-07-22","2024-07-23","2024-07-24","2024-07-25","2024-07-26","2024-07-29","2024-07-30","2024-07-31","2024-08-01","2024-08-02","2024-08-05","2024-08-06","2024-08-07","2024-08-08","2024-08-09","2024-08-12","2024-08-13","2024-08-14","2024-08-15","2024-08-16","2024-08-19","2024-08-20","2024-08-21","2024-08-22","2024-08-23","2024-08-26","2024-08-27","2024-08-28","2024-08-29","2024-08-30","2024-09-03","2024-09-04","2024-09-05","2024-09-06","2024-09-09","2024-09-10","2024-09-11","2024-09-12","2024-09-13","2024-09-16","2024-09-17","2024-09-18","2024-09-19","2024-09-20","2024-09-23","2024-09-24","2024-09-25","2024-09-26","2024-09-27","2024-09-30","2024-10-01","2024-10-02","2024-10-03","2024-10-04","2024-10-07","2024-10-08","2024-10-09","2024-10-10","2024-10-11","2024-10-14","2024-10-15","2024-10-16","2024-10-17","2024-10-18","2024-10-21","2024-10-22","2024-10-23","2024-10-24","2024-10-25","2024-10-28","2024-10-29","2024-10-30","2024-10-31","2024-11-01","2024-11-04","2024-11-05","2024-11-06","2024-11-07","2024-11-08","2024-11-11","2024-11-12","2024-11-13","2024-11-14","2024-11-15","2024-11-18","2024-11-19","2024-11-20","2024-11-21","2024-11-22","2024-11-25","2024-11-26","2024-11-27","2024-11-29","2024-12-02","2024-12-03","2024-12-04","2024-12-05","2024-12-06","2024-12-09","2024-12-10","2024-12-11","2024-12-12","2024-12-13","2024-12-16","2024-12-17","2024-12-18","2024-12-19","2024-12-20","2024-12-23","2024-12-24","2024-12-26","2024-12-27","2024-12-30","2024-12-31","2025-01-02","2025-01-03","2025-01-06","2025-01-07","2025-01-08","2025-01-10","2025-01-13","2025-01-14","2025-01-15","2025-01-16","2025-01-17","2025-01-21","2025-01-22","2025-01-23","2025-01-24","2025-01-27","2025-01-28","2025-01-29","2025-01-30","2025-01-31","2025-02-03","2025-02-04","2025-02-05","2025-02-06","2025-02-07","2025-02-10","2025-02-11","2025-02-12","2025-02-13","2025-02-14","2025-02-18","2025-02-19","2025-02-20","2025-02-21","2025-02-24","2025-02-25","2025-02-26","2025-02-27","2025-02-28","2025-03-03","2025-03-04","2025-03-05","2025-03-06","2025-03-07","2025-03-10","2025-03-11","2025-03-12","2025-03-13","2025-03-14","2025-03-17","2025-03-18","2025-03-19","2025-03-20","2025-03-21","2025-03-24","2025-03-25","2025-03-26","2025-03-27","2025-03-28","2025-03-31","2025-04-01","2025-04-02","2025-04-03","2025-04-04","2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-20","2026-07-21"],"y":[100.0,100.2,101.2,101.5,101.0,101.0,101.4,100.9,100.7,101.5,101.0,101.7,101.8,101.7,101.9,102.1,102.4,102.6,102.9,102.2,101.1,101.2,102.0,102.9,103.1,103.3,102.7,103.6,104.1,103.9,104.0,104.3,104.3,103.9,103.8,103.3,102.5,102.8,102.2,103.1,102.9,101.9,100.2,100.1,101.1,102.3,102.5,102.2,100.1,100.3,99.1,100.2,99.0,100.0,100.4,101.3,101.1,100.4,100.1,100.5,102.2,102.9,103.2,104.0,104.4,104.7,104.6,105.2,105.3,104.8,105.8,106.0,106.2,106.6,107.3,107.8,108.2,108.3,107.9,107.0,107.1,107.9,107.9,108.3,108.1,108.4,108.2,107.9,108.1,108.4,106.0,107.3,105.2,104.0,105.6,104.7,105.9,108.1,108.4,107.7,108.7,107.7,107.0,108.6,107.7,106.5,105.4,107.3,108.4,109.0,110.6,110.5,110.6,110.3,110.0,110.7,110.6,108.5,108.4,108.0,107.8,108.8,109.1,107.6,107.7,105.8,104.7,103.5,101.5,101.9,100.7,100.4,99.9,102.4,104.2,104.9,106.0,103.5,104.0,103.6,104.5,106.0,104.1,102.0,101.7,103.3,103.5,101.3,100.6,99.5,97.8,99.2,101.4,101.2,99.6,101.4,100.9,100.1,97.2,96.4,99.0,98.6,97.3,96.6,98.7,100.9,102.2,103.3,103.3,104.5,103.1,104.7,105.2,105.9,107.3,106.6,105.0,105.3,106.2,104.8,103.8,104.3,104.0,102.2,101.9,103.0,101.7,101.8,103.4,103.3,101.8,99.0,99.6,96.7,97.0,99.4,95.7,96.3,96.8,99.7,96.2,95.6,92.5,92.7,91.3,91.2,93.4,93.0,94.9,91.1,90.5,90.5,92.2,91.5,92.3,94.2,96.5,96.0,95.2,97.0,95.4,95.7,96.6,95.6,93.3,90.6,87.1,86.9,88.1,85.2,85.4,87.5,87.4,88.2,91.0,90.7,88.8,88.8,88.0,89.0,89.1,89.4,90.8,90.7,89.7,88.9,88.4,88.2,89.9,89.1,91.6,92.1,93.1,92.2,92.3,91.2,93.6,94.8,96.2,95.9,95.2,96.7,96.7,96.5,96.4,96.0,98.0,98.0,99.7,100.1,100.3,99.6,99.9,98.5,96.5,96.2,96.5,97.9,94.6,94.0,92.9,92.2,92.5,91.5,91.2,92.8,93.4,94.9,95.9,91.7,92.1,91.1,90.4,91.1,90.0,88.4,87.7,86.2,85.4,85.2,86.8,85.0,83.7,85.9,88.6,88.4,87.5,85.0,84.4,83.8,83.6,85.8,83.8,86.0,87.0,86.4,85.6,87.7,88.8,90.2,89.5,89.0,91.2,90.5,90.1,87.9,86.9,88.2,89.0,89.5,87.7,92.5,93.4,92.6,93.4,92.7,92.4,92.8,92.5,93.7,94.3,94.3,92.8,92.6,95.5,95.5,95.4,93.6,92.3,92.1,92.9,92.2,93.5,94.2,93.6,91.3,90.2,89.5,89.6,90.9,89.6,90.1,89.8,88.7,90.3,90.0,89.7,90.3,89.3,91.4,91.3,92.0,93.1,93.5,93.8,93.6,92.2,91.5,93.2,94.3,94.2,94.3,95.3,95.5,94.3,95.7,96.7,98.1,97.1,96.5,97.7,96.7,95.8,96.1,97.2,97.1,97.5,96.1,95.9,94.0,93.8,94.3,93.3,93.6,93.3,92.9,93.7,95.2,95.2,93.8,93.9,92.2,90.9,90.7,92.2,91.6,93.3,92.2,93.1,94.3,92.7,92.9,93.5,93.7,93.5,94.9,95.4,96.8,97.1,96.6,96.3,96.7,96.8,96.8,96.4,97.7,97.5,97.8,97.9,97.9,97.3,97.4,97.5,96.0,95.6,97.5,98.3,98.2,97.1,96.4,95.7,97.5,97.5,97.1,97.6,97.4,97.3,97.6,97.0,98.1,99.1,98.9,99.0,97.9,97.2,98.0,99.3,99.3,98.7,99.7,101.1,100.9,101.2,100.8,101.4,101.6,102.5,103.2,103.3,104.6,104.2,103.7,103.2,103.5,102.8,102.3,103.5,103.5,103.9,105.1,105.3,105.1,104.3,104.0,104.3,105.0,105.8,106.6,106.6,106.9,107.7,108.0,107.3,107.3,107.7,108.0,108.0,107.3,108.4,108.6,108.3,106.8,106.5,106.0,106.9,106.4,105.7,105.8,105.7,106.3,105.1,104.3,103.5,103.5,104.2,103.9,105.1,103.6,104.4,105.0,106.5,107.0,106.8,107.0,106.6,105.8,105.5,105.7,106.4,105.8,105.9,106.8,105.5,105.6,105.4,104.4,102.7,102.5,102.9,101.4,101.4,102.0,101.8,101.7,100.4,101.1,101.0,102.2,102.9,103.4,103.9,103.2,102.7,103.8,103.8,102.4,101.5,100.3,100.1,100.8,99.4,98.2,97.8,98.9,99.5,100.6,102.5,103.5,103.7,104.0,104.1,103.3,104.9,104.8,106.8,107.0,107.2,107.3,108.1,107.9,108.3,108.4,108.2,108.3,108.2,108.6,109.3,108.7,108.7,108.3,109.1,109.5,110.0,110.5,112.0,112.4,112.2,112.8,113.5,111.9,113.0,113.2,113.7,113.9,113.9,113.6,113.0,112.0,111.7,111.8,113.4,113.3,113.9,113.9,113.9,113.5,112.9,113.9,115.3,115.5,115.9,116.0,116.6,116.5,117.4,117.3,115.4,116.9,118.2,117.7,118.1,119.0,119.1,119.8,119.7,118.1,119.2,120.0,119.4,118.7,118.8,121.3,121.4,120.9,121.2,121.0,121.4,122.6,122.4,121.2,121.8,123.0,122.3,122.2,123.5,123.3,123.1,122.2,123.0,123.6,124.8,125.2,125.0,124.6,124.4,125.4,125.4,125.2,124.4,124.5,123.0,124.3,124.4,124.5,123.3,124.2,122.5,120.9,120.7,120.0,119.8,118.7,119.8,121.2,121.2,120.7,121.9,122.3,120.4,120.0,121.1,122.6,123.8,124.0,124.0,124.7,124.9,124.9,125.5,127.0,126.8,126.9,127.1,127.4,127.0,126.1,126.9,127.0,126.1,125.3,126.4,126.5,126.7,128.2,128.2,128.0,128.4,128.7,129.8,130.1,130.1,131.2,131.5,131.1,131.0,130.5,131.0,131.2,131.4,130.9,131.2,132.1,132.6,133.4,133.6,133.7,135.0,133.8,134.7,135.1,135.9,134.0,132.9,132.0,133.4,133.2,130.2,129.5,131.0,131.0,130.4,132.5,130.6,128.2,124.4,125.6,124.8,127.6,128.2,128.3,130.4,130.8,133.0,133.3,134.6,134.4,134.8,133.8,135.2,134.9,135.1,134.3,134.3,135.6,132.8,132.5,132.2,130.0,131.4,132.0,133.4,134.5,135.2,135.4,135.4,135.0,137.3,137.1,137.4,137.8,137.5,138.1,137.9,138.4,137.2,137.2,137.0,138.2,137.0,138.3,139.2,139.0,139.8,141.0,139.9,140.5,140.5,141.0,140.8,140.7,139.4,139.7,139.7,140.1,140.4,139.9,137.2,137.8,137.5,139.1,142.6,143.7,144.3,144.5,144.0,144.1,143.2,141.3,141.9,142.4,142.5,143.2,143.7,144.2,144.9,144.5,145.4,145.6,145.7,146.6,146.4,146.6,145.9,145.4,146.6,145.8,145.8,146.4,145.8,141.4,141.4,143.1,144.0,145.6,145.6,144.0,142.4,141.9,141.5,143.3,144.1,142.5,142.7,140.5,140.7,140.9,143.5,143.2,144.7,146.0,146.8,147.6,147.2,145.1,146.3,145.7,146.5,145.7,144.7,145.7,146.3,146.8,145.4,146.4,146.5,146.1,147.6,147.6,148.0,148.4,147.8,145.2,144.6,143.9,143.9,141.6,143.8,141.3,139.6,141.1,138.6,139.4,135.7,134.6,135.3,133.5,136.2,137.3,135.8,137.3,136.9,136.9,139.4,139.7,138.1,137.7,134.9,135.8,136.2,137.1,130.3,122.7,122.5,120.5,133.2,127.4,129.6,130.9,130.5,127.6,127.8,124.8,128.0,130.0,132.7,133.7,133.7,134.6,134.6,135.6,137.6,136.8,135.7,136.2,137.2,137.0,141.6,142.5,142.7,143.4,144.3,144.4,143.9,141.5,141.6,140.6,143.5,142.7,143.3,143.1,143.9,144.7,144.7,144.0,145.5,145.6,146.4,146.0,146.6,145.0,146.3,145.1,145.1,144.7,146.1,147.8,147.8,149.0,149.7,150.5,150.4,151.1,152.3,151.1,151.1,152.0,152.4,151.9,152.2,151.5,152.0,152.9,152.8,153.1,153.1,154.4,154.5,155.1,155.1,154.7,154.5,153.9,151.4,153.7,152.9,154.1,154.0,155.2,154.9,156.5,157.0,157.1,156.7,156.7,155.8,155.4,154.8,157.1,156.5,157.1,157.5,158.0,157.1,155.9,156.8,158.1,157.6,158.0,158.4,158.8,160.1,160.1,160.9,160.7,160.5,161.3,162.1,162.8,162.0,161.4,160.7,161.6,162.1,162.7,163.2,163.4,163.4,164.0,163.4,164.4,163.9,159.5,161.9,161.7,162.4,161.3,162.2,163.9,163.9,163.1,164.0,165.4,167.3,167.8,167.9,166.0,166.6,166.9,164.9,165.5,163.7,163.8,166.4,166.8,166.9,164.1,164.1,162.6,161.2,161.8,159.3,160.9,163.3,164.8,166.0,166.9,166.1,166.4,167.0,167.1,167.4,166.9,166.8,167.9,168.3,166.5,166.2,165.8,164.0,165.2,166.7,167.7,168.5,169.1,169.1,168.5,168.3,167.0,167.3,168.4,169.4,168.9,168.9,170.0,170.3,169.9,169.1,169.5,169.4,166.0,167.9,168.7,168.8,169.7,170.3,170.3,170.0,169.5,170.3,168.9,168.1,166.0,169.1,170.0,169.5,169.5,166.9,167.0,167.2,168.1,167.6,168.9,167.1,168.3,169.8,168.8,168.0,168.1,166.6,167.8,166.9,164.7,166.1,165.9,165.6,163.1,162.2,163.9,164.3,162.0,161.6,159.3,161.0,160.4,161.3,158.4,155.7,155.2,159.7,160.9,161.1,161.8,161.9,166.0,167.0,166.9,168.5,170.5,171.9,172.3,174.4,174.1,172.9,174.7,174.0,175.3,175.6,174.8,174.8,176.5,177.0,176.3,177.7,180.2,179.7,181.1,181.6,181.3,182.3,183.7,181.5,181.4,179.7,181.6,181.9,182.6,183.9,183.8,184.8,185.3,185.8,186.1,184.8,185.5,180.7,181.1,180.5,177.7,180.7,181.7,184.9,183.8,181.5,183.4,182.8,180.2,180.1,180.3,179.0,182.0,183.4,183.1,182.9,184.5,183.6,183.1,184.6,185.4,184.0,184.6,185.4,184.4,182.5,182.2,183.8],"type":"scatter"},{"line":{"color":"#4559DC","width":1.4},"name":"First Trust IPOX-100","x":["2021-07-21","2021-07-22","2021-07-23","2021-07-26","2021-07-27","2021-07-28","2021-07-29","2021-07-30","2021-08-02","2021-08-03","2021-08-04","2021-08-05","2021-08-06","2021-08-09","2021-08-10","2021-08-11","2021-08-12","2021-08-13","2021-08-16","2021-08-17","2021-08-18","2021-08-19","2021-08-20","2021-08-23","2021-08-24","2021-08-25","2021-08-26","2021-08-27","2021-08-30","2021-08-31","2021-09-01","2021-09-02","2021-09-03","2021-09-07","2021-09-08","2021-09-09","2021-09-10","2021-09-13","2021-09-14","2021-09-15","2021-09-16","2021-09-17","2021-09-20","2021-09-21","2021-09-22","2021-09-23","2021-09-24","2021-09-27","2021-09-28","2021-09-29","2021-09-30","2021-10-01","2021-10-04","2021-10-05","2021-10-06","2021-10-07","2021-10-08","2021-10-11","2021-10-12","2021-10-13","2021-10-14","2021-10-15","2021-10-18","2021-10-19","2021-10-20","2021-10-21","2021-10-22","2021-10-25","2021-10-26","2021-10-27","2021-10-28","2021-10-29","2021-11-01","2021-11-02","2021-11-03","2021-11-04","2021-11-05","2021-11-08","2021-11-09","2021-11-10","2021-11-11","2021-11-12","2021-11-15","2021-11-16","2021-11-17","2021-11-18","2021-11-19","2021-11-22","2021-11-23","2021-11-24","2021-11-26","2021-11-29","2021-11-30","2021-12-01","2021-12-02","2021-12-03","2021-12-06","2021-12-07","2021-12-08","2021-12-09","2021-12-10","2021-12-13","2021-12-14","2021-12-15","2021-12-16","2021-12-17","2021-12-20","2021-12-21","2021-12-22","2021-12-23","2021-12-27","2021-12-28","2021-12-29","2021-12-30","2021-12-31","2022-01-03","2022-01-04","2022-01-05","2022-01-06","2022-01-07","2022-01-10","2022-01-11","2022-01-12","2022-01-13","2022-01-14","2022-01-18","2022-01-19","2022-01-20","2022-01-21","2022-01-24","2022-01-25","2022-01-26","2022-01-27","2022-01-28","2022-01-31","2022-02-01","2022-02-02","2022-02-03","2022-02-04","2022-02-07","2022-02-08","2022-02-09","2022-02-10","2022-02-11","2022-02-14","2022-02-15","2022-02-16","2022-02-17","2022-02-18","2022-02-22","2022-02-23","2022-02-24","2022-02-25","2022-02-28","2022-03-01","2022-03-02","2022-03-03","2022-03-04","2022-03-07","2022-03-08","2022-03-09","2022-03-10","2022-03-11","2022-03-14","2022-03-15","2022-03-16","2022-03-17","2022-03-18","2022-03-21","2022-03-22","2022-03-23","2022-03-24","2022-03-25","2022-03-28","2022-03-29","2022-03-30","2022-03-31","2022-04-01","2022-04-04","2022-04-05","2022-04-06","2022-04-07","2022-04-08","2022-04-11","2022-04-12","2022-04-13","2022-04-14","2022-04-18","2022-04-19","2022-04-20","2022-04-21","2022-04-22","2022-04-25","2022-04-26","2022-04-27","2022-04-28","2022-04-29","2022-05-02","2022-05-03","2022-05-04","2022-05-05","2022-05-06","2022-05-09","2022-05-10","2022-05-11","2022-05-12","2022-05-13","2022-05-16","2022-05-17","2022-05-18","2022-05-19","2022-05-20","2022-05-23","2022-05-24","2022-05-25","2022-05-26","2022-05-27","2022-05-31","2022-06-01","2022-06-02","2022-06-03","2022-06-06","2022-06-07","2022-06-08","2022-06-09","2022-06-10","2022-06-13","2022-06-14","2022-06-15","2022-06-16","2022-06-17","2022-06-21","2022-06-22","2022-06-23","2022-06-24","2022-06-27","2022-06-28","2022-06-29","2022-06-30","2022-07-01","2022-07-05","2022-07-06","2022-07-07","2022-07-08","2022-07-11","2022-07-12","2022-07-13","2022-07-14","2022-07-15","2022-07-18","2022-07-19","2022-07-20","2022-07-21","2022-07-22","2022-07-25","2022-07-26","2022-07-27","2022-07-28","2022-07-29","2022-08-01","2022-08-02","2022-08-03","2022-08-04","2022-08-05","2022-08-08","2022-08-09","2022-08-10","2022-08-11","2022-08-12","2022-08-15","2022-08-16","2022-08-17","2022-08-18","2022-08-19","2022-08-22","2022-08-23","2022-08-24","2022-08-25","2022-08-26","2022-08-29","2022-08-30","2022-08-31","2022-09-01","2022-09-02","2022-09-06","2022-09-07","2022-09-08","2022-09-09","2022-09-12","2022-09-13","2022-09-14","2022-09-15","2022-09-16","2022-09-19","2022-09-20","2022-09-21","2022-09-22","2022-09-23","2022-09-26","2022-09-27","2022-09-28","2022-09-29","2022-09-30","2022-10-03","2022-10-04","2022-10-05","2022-10-06","2022-10-07","2022-10-10","2022-10-11","2022-10-12","2022-10-13","2022-10-14","2022-10-17","2022-10-18","2022-10-19","2022-10-20","2022-10-21","2022-10-24","2022-10-25","2022-10-26","2022-10-27","2022-10-28","2022-10-31","2022-11-01","2022-11-02","2022-11-03","2022-11-04","2022-11-07","2022-11-08","2022-11-09","2022-11-10","2022-11-11","2022-11-14","2022-11-15","2022-11-16","2022-11-17","2022-11-18","2022-11-21","2022-11-22","2022-11-23","2022-11-25","2022-11-28","2022-11-29","2022-11-30","2022-12-01","2022-12-02","2022-12-05","2022-12-06","2022-12-07","2022-12-08","2022-12-09","2022-12-12","2022-12-13","2022-12-14","2022-12-15","2022-12-16","2022-12-19","2022-12-20","2022-12-21","2022-12-22","2022-12-23","2022-12-27","2022-12-28","2022-12-29","2022-12-30","2023-01-03","2023-01-04","2023-01-05","2023-01-06","2023-01-09","2023-01-10","2023-01-11","2023-01-12","2023-01-13","2023-01-17","2023-01-18","2023-01-19","2023-01-20","2023-01-23","2023-01-24","2023-01-25","2023-01-26","2023-01-27","2023-01-30","2023-01-31","2023-02-01","2023-02-02","2023-02-03","2023-02-06","2023-02-07","2023-02-08","2023-02-09","2023-02-10","2023-02-13","2023-02-14","2023-02-15","2023-02-16","2023-02-17","2023-02-21","2023-02-22","2023-02-23","2023-02-24","2023-02-27","2023-02-28","2023-03-01","2023-03-02","2023-03-03","2023-03-06","2023-03-07","2023-03-08","2023-03-09","2023-03-10","2023-03-13","2023-03-14","2023-03-15","2023-03-16","2023-03-17","2023-03-20","2023-03-21","2023-03-22","2023-03-23","2023-03-24","2023-03-27","2023-03-28","2023-03-29","2023-03-30","2023-03-31","2023-04-03","2023-04-04","2023-04-05","2023-04-06","2023-04-10","2023-04-11","2023-04-12","2023-04-13","2023-04-14","2023-04-17","2023-04-18","2023-04-19","2023-04-20","2023-04-21","2023-04-24","2023-04-25","2023-04-26","2023-04-27","2023-04-28","2023-05-01","2023-05-02","2023-05-03","2023-05-04","2023-05-05","2023-05-08","2023-05-09","2023-05-10","2023-05-11","2023-05-12","2023-05-15","2023-05-16","2023-05-17","2023-05-18","2023-05-19","2023-05-22","2023-05-23","2023-05-24","2023-05-25","2023-05-26","2023-05-30","2023-05-31","2023-06-01","2023-06-02","2023-06-05","2023-06-06","2023-06-07","2023-06-08","2023-06-09","2023-06-12","2023-06-13","2023-06-14","2023-06-15","2023-06-16","2023-06-20","2023-06-21","2023-06-22","2023-06-23","2023-06-26","2023-06-27","2023-06-28","2023-06-29","2023-06-30","2023-07-03","2023-07-05","2023-07-06","2023-07-07","2023-07-10","2023-07-11","2023-07-12","2023-07-13","2023-07-14","2023-07-17","2023-07-18","2023-07-19","2023-07-20","2023-07-21","2023-07-24","2023-07-25","2023-07-26","2023-07-27","2023-07-28","2023-07-31","2023-08-01","2023-08-02","2023-08-03","2023-08-04","2023-08-07","2023-08-08","2023-08-09","2023-08-10","2023-08-11","2023-08-14","2023-08-15","2023-08-16","2023-08-17","2023-08-18","2023-08-21","2023-08-22","2023-08-23","2023-08-24","2023-08-25","2023-08-28","2023-08-29","2023-08-30","2023-08-31","2023-09-01","2023-09-05","2023-09-06","2023-09-07","2023-09-08","2023-09-11","2023-09-12","2023-09-13","2023-09-14","2023-09-15","2023-09-18","2023-09-19","2023-09-20","2023-09-21","2023-09-22","2023-09-25","2023-09-26","2023-09-27","2023-09-28","2023-09-29","2023-10-02","2023-10-03","2023-10-04","2023-10-05","2023-10-06","2023-10-09","2023-10-10","2023-10-11","2023-10-12","2023-10-13","2023-10-16","2023-10-17","2023-10-18","2023-10-19","2023-10-20","2023-10-23","2023-10-24","2023-10-25","2023-10-26","2023-10-27","2023-10-30","2023-10-31","2023-11-01","2023-11-02","2023-11-03","2023-11-06","2023-11-07","2023-11-08","2023-11-09","2023-11-10","2023-11-13","2023-11-14","2023-11-15","2023-11-16","2023-11-17","2023-11-20","2023-11-21","2023-11-22","2023-11-24","2023-11-27","2023-11-28","2023-11-29","2023-11-30","2023-12-01","2023-12-04","2023-12-05","2023-12-06","2023-12-07","2023-12-08","2023-12-11","2023-12-12","2023-12-13","2023-12-14","2023-12-15","2023-12-18","2023-12-19","2023-12-20","2023-12-21","2023-12-22","2023-12-26","2023-12-27","2023-12-28","2023-12-29","2024-01-02","2024-01-03","2024-01-04","2024-01-05","2024-01-08","2024-01-09","2024-01-10","2024-01-11","2024-01-12","2024-01-16","2024-01-17","2024-01-18","2024-01-19","2024-01-22","2024-01-23","2024-01-24","2024-01-25","2024-01-26","2024-01-29","2024-01-30","2024-01-31","2024-02-01","2024-02-02","2024-02-05","2024-02-06","2024-02-07","2024-02-08","2024-02-09","2024-02-12","2024-02-13","2024-02-14","2024-02-15","2024-02-16","2024-02-20","2024-02-21","2024-02-22","2024-02-23","2024-02-26","2024-02-27","2024-02-28","2024-02-29","2024-03-01","2024-03-04","2024-03-05","2024-03-06","2024-03-07","2024-03-08","2024-03-11","2024-03-12","2024-03-13","2024-03-14","2024-03-15","2024-03-18","2024-03-19","2024-03-20","2024-03-21","2024-03-22","2024-03-25","2024-03-26","2024-03-27","2024-03-28","2024-04-01","2024-04-02","2024-04-03","2024-04-04","2024-04-05","2024-04-08","2024-04-09","2024-04-10","2024-04-11","2024-04-12","2024-04-15","2024-04-16","2024-04-17","2024-04-18","2024-04-19","2024-04-22","2024-04-23","2024-04-24","2024-04-25","2024-04-26","2024-04-29","2024-04-30","2024-05-01","2024-05-02","2024-05-03","2024-05-06","2024-05-07","2024-05-08","2024-05-09","2024-05-10","2024-05-13","2024-05-14","2024-05-15","2024-05-16","2024-05-17","2024-05-20","2024-05-21","2024-05-22","2024-05-23","2024-05-24","2024-05-28","2024-05-29","2024-05-30","2024-05-31","2024-06-03","2024-06-04","2024-06-05","2024-06-06","2024-06-07","2024-06-10","2024-06-11","2024-06-12","2024-06-13","2024-06-14","2024-06-17","2024-06-18","2024-06-20","2024-06-21","2024-06-24","2024-06-25","2024-06-26","2024-06-27","2024-06-28","2024-07-01","2024-07-02","2024-07-03","2024-07-05","2024-07-08","2024-07-09","2024-07-10","2024-07-11","2024-07-12","2024-07-15","2024-07-16","2024-07-17","2024-07-18","2024-07-19","2024-07-22","2024-07-23","2024-07-24","2024-07-25","2024-07-26","2024-07-29","2024-07-30","2024-07-31","2024-08-01","2024-08-02","2024-08-05","2024-08-06","2024-08-07","2024-08-08","2024-08-09","2024-08-12","2024-08-13","2024-08-14","2024-08-15","2024-08-16","2024-08-19","2024-08-20","2024-08-21","2024-08-22","2024-08-23","2024-08-26","2024-08-27","2024-08-28","2024-08-29","2024-08-30","2024-09-03","2024-09-04","2024-09-05","2024-09-06","2024-09-09","2024-09-10","2024-09-11","2024-09-12","2024-09-13","2024-09-16","2024-09-17","2024-09-18","2024-09-19","2024-09-20","2024-09-23","2024-09-24","2024-09-25","2024-09-26","2024-09-27","2024-09-30","2024-10-01","2024-10-02","2024-10-03","2024-10-04","2024-10-07","2024-10-08","2024-10-09","2024-10-10","2024-10-11","2024-10-14","2024-10-15","2024-10-16","2024-10-17","2024-10-18","2024-10-21","2024-10-22","2024-10-23","2024-10-24","2024-10-25","2024-10-28","2024-10-29","2024-10-30","2024-10-31","2024-11-01","2024-11-04","2024-11-05","2024-11-06","2024-11-07","2024-11-08","2024-11-11","2024-11-12","2024-11-13","2024-11-14","2024-11-15","2024-11-18","2024-11-19","2024-11-20","2024-11-21","2024-11-22","2024-11-25","2024-11-26","2024-11-27","2024-11-29","2024-12-02","2024-12-03","2024-12-04","2024-12-05","2024-12-06","2024-12-09","2024-12-10","2024-12-11","2024-12-12","2024-12-13","2024-12-16","2024-12-17","2024-12-18","2024-12-19","2024-12-20","2024-12-23","2024-12-24","2024-12-26","2024-12-27","2024-12-30","2024-12-31","2025-01-02","2025-01-03","2025-01-06","2025-01-07","2025-01-08","2025-01-10","2025-01-13","2025-01-14","2025-01-15","2025-01-16","2025-01-17","2025-01-21","2025-01-22","2025-01-23","2025-01-24","2025-01-27","2025-01-28","2025-01-29","2025-01-30","2025-01-31","2025-02-03","2025-02-04","2025-02-05","2025-02-06","2025-02-07","2025-02-10","2025-02-11","2025-02-12","2025-02-13","2025-02-14","2025-02-18","2025-02-19","2025-02-20","2025-02-21","2025-02-24","2025-02-25","2025-02-26","2025-02-27","2025-02-28","2025-03-03","2025-03-04","2025-03-05","2025-03-06","2025-03-07","2025-03-10","2025-03-11","2025-03-12","2025-03-13","2025-03-14","2025-03-17","2025-03-18","2025-03-19","2025-03-20","2025-03-21","2025-03-24","2025-03-25","2025-03-26","2025-03-27","2025-03-28","2025-03-31","2025-04-01","2025-04-02","2025-04-03","2025-04-04","2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-20","2026-07-21"],"y":[100.0,100.3,102.7,102.4,101.0,102.6,102.7,101.5,101.4,101.8,102.7,103.3,102.9,103.4,102.5,102.2,102.5,102.3,101.0,100.0,99.6,99.0,100.0,102.0,103.3,104.1,103.0,104.1,104.4,103.2,103.7,104.5,105.1,104.7,103.0,103.4,102.7,101.9,101.4,102.6,103.2,102.9,100.4,101.3,102.9,104.4,104.5,103.1,99.5,98.9,98.8,100.0,97.4,98.8,99.9,101.6,100.7,100.0,100.6,101.8,103.6,103.9,104.8,105.6,105.6,106.4,104.2,104.8,104.6,102.5,104.2,104.7,105.5,105.2,106.1,106.9,107.2,108.4,109.0,105.4,106.1,107.9,107.0,108.2,107.4,107.2,106.1,102.3,101.1,102.2,100.9,101.7,99.0,94.9,96.6,95.3,96.1,99.8,101.3,98.6,97.6,95.9,94.2,96.0,93.0,94.4,93.2,96.3,97.1,98.0,99.6,98.2,98.1,98.4,98.1,97.5,96.2,92.3,92.7,91.9,91.8,93.9,93.6,90.5,90.6,87.6,86.6,85.4,83.2,83.9,81.3,80.4,79.1,81.3,85.2,86.7,85.8,82.6,85.1,85.4,87.0,89.5,88.3,85.6,85.3,88.2,87.6,84.7,83.3,82.0,79.7,82.9,84.0,84.6,83.1,84.7,82.4,80.2,77.0,77.7,80.5,80.1,78.1,76.2,78.4,81.6,83.5,85.5,84.8,86.3,85.6,87.3,86.8,87.6,89.4,88.4,87.4,88.0,88.9,86.4,84.8,85.2,84.6,83.6,83.5,86.0,84.7,83.6,85.3,84.3,81.5,79.5,80.7,78.0,78.0,79.8,77.0,77.8,77.3,79.5,75.4,73.6,68.8,69.1,67.7,68.4,71.8,70.3,71.9,68.9,69.9,69.9,70.6,68.8,70.3,72.2,74.8,73.3,72.8,75.2,73.9,74.2,75.5,74.7,72.4,70.0,66.1,65.9,67.1,64.1,64.8,66.5,66.0,66.9,69.0,69.0,67.6,66.9,66.0,66.7,67.2,66.9,68.4,68.4,67.3,66.6,66.4,65.7,66.9,66.8,68.4,69.5,70.0,68.8,69.3,68.3,70.2,71.2,71.9,71.6,72.3,73.3,72.8,73.3,73.6,72.9,74.8,74.6,75.9,76.2,76.0,75.0,75.5,74.3,72.9,73.2,73.9,75.2,72.9,72.4,71.6,71.3,70.4,70.0,69.5,70.8,71.8,73.3,74.0,71.6,72.6,71.5,70.0,70.3,69.4,68.4,66.7,65.3,64.6,65.1,66.9,65.4,65.2,66.8,69.4,69.3,68.9,66.9,66.0,65.3,65.2,66.2,63.9,66.0,67.3,66.5,66.5,67.9,68.2,69.8,69.6,69.5,70.5,69.9,70.2,68.3,68.1,67.6,67.8,67.9,66.3,69.8,69.8,69.3,70.3,68.9,68.3,68.4,67.8,68.6,69.1,69.1,67.9,67.7,69.3,69.5,69.5,67.5,66.6,66.7,67.3,66.4,67.1,67.3,67.2,65.3,64.7,63.4,63.8,64.7,63.7,63.7,63.2,62.4,63.8,63.7,62.9,63.5,62.2,63.6,63.8,64.5,65.8,66.4,66.7,66.9,65.8,64.8,66.2,67.5,67.3,67.5,68.2,68.8,67.4,68.8,70.1,71.2,69.9,69.4,70.2,69.4,68.5,68.6,69.3,70.0,71.0,69.9,69.2,67.5,67.7,68.2,67.7,68.0,67.6,67.5,68.0,69.4,69.2,68.5,68.3,66.6,64.8,64.5,65.5,64.6,65.7,64.8,65.2,66.7,65.1,65.2,64.8,65.0,64.9,66.1,66.7,68.1,68.0,67.0,65.8,65.6,66.2,66.4,66.0,66.8,66.6,67.2,67.5,67.5,66.8,66.8,66.5,64.6,64.3,64.6,64.9,65.3,64.6,64.8,64.2,65.5,66.3,66.3,66.2,65.4,64.9,65.6,64.9,65.9,66.9,66.5,66.8,66.0,65.4,64.9,65.8,65.9,65.9,66.8,68.2,68.5,69.5,69.2,69.5,69.4,70.2,71.3,71.1,72.0,71.5,70.6,70.1,69.8,69.0,68.8,70.0,70.8,70.4,71.5,71.8,71.1,69.9,70.5,72.0,73.4,73.7,75.0,74.1,75.4,76.5,75.5,74.0,74.2,73.5,73.8,73.9,73.4,75.2,77.4,76.1,74.5,74.3,73.4,73.6,72.7,71.4,71.2,70.6,71.0,69.8,68.9,67.8,68.0,68.3,68.5,69.5,68.2,68.5,69.2,70.8,71.3,71.6,72.1,71.8,71.4,71.2,71.3,72.1,71.0,70.4,70.7,69.7,69.6,69.3,68.2,66.3,66.3,66.8,66.1,67.5,68.2,68.2,67.5,65.6,66.4,65.7,67.2,67.7,68.7,69.1,67.8,66.2,67.6,68.1,66.1,65.1,64.1,64.2,65.2,62.8,62.3,62.0,61.9,62.4,62.9,64.6,66.7,66.2,67.0,66.2,65.3,66.6,66.9,69.7,69.7,69.2,69.8,70.4,70.2,70.7,70.9,71.1,70.7,71.2,71.1,73.9,74.0,73.4,73.2,73.4,74.2,75.2,75.3,76.9,78.4,77.6,77.9,78.7,76.3,77.7,78.1,78.7,78.6,78.9,77.8,75.5,73.8,73.6,73.5,75.4,75.5,75.9,75.8,75.4,75.1,74.4,74.9,75.9,77.2,77.1,75.9,76.4,76.5,78.5,77.9,76.0,77.5,78.7,77.9,77.8,78.6,80.3,81.4,81.3,79.3,81.8,83.1,81.5,80.2,79.4,80.7,81.0,81.6,83.0,82.8,83.3,84.4,84.4,82.1,83.4,84.5,84.6,83.8,84.8,84.6,83.6,82.8,83.3,83.9,85.2,86.6,85.9,86.5,86.4,86.2,85.9,85.0,84.0,84.2,82.6,83.8,84.2,83.9,82.7,83.6,81.7,79.5,79.8,79.1,78.8,77.7,78.4,80.7,80.6,80.9,82.0,82.3,80.4,80.1,81.4,82.5,84.1,84.0,83.7,83.8,83.2,83.0,83.7,85.4,84.2,84.2,84.7,84.6,84.1,82.6,83.8,83.2,82.2,81.7,80.9,80.7,79.9,81.2,81.0,79.7,80.7,80.1,81.8,80.7,79.9,80.5,81.2,80.6,80.7,80.4,80.6,80.1,80.7,80.6,80.6,80.8,81.2,81.4,81.6,81.2,81.7,82.1,83.0,83.5,84.7,82.4,81.3,81.3,82.2,82.7,79.6,79.4,80.9,80.9,79.7,81.3,78.9,76.4,75.0,76.6,75.0,78.1,78.5,77.9,79.9,80.4,82.0,82.0,82.9,82.2,83.5,82.7,84.2,83.8,83.8,82.9,83.0,84.1,81.5,81.3,80.9,80.1,81.6,81.8,83.2,84.3,85.5,86.1,86.8,86.9,88.7,89.8,89.6,89.4,89.4,88.9,89.2,89.5,88.6,88.8,88.7,90.4,89.5,90.3,90.9,91.0,92.3,92.6,92.1,92.9,92.6,93.0,92.8,92.0,91.2,91.4,91.3,92.1,92.8,92.9,90.7,90.5,89.6,92.5,96.2,98.8,101.0,102.1,100.8,100.0,98.5,98.1,98.5,101.0,101.0,102.4,104.3,104.1,104.4,103.7,104.3,103.6,104.8,106.0,106.1,107.1,103.4,100.9,102.6,101.7,101.3,102.9,101.5,96.6,97.4,100.2,100.0,101.0,101.2,99.2,98.1,97.1,98.5,101.4,101.7,99.1,98.9,98.2,97.0,98.6,101.2,102.6,103.7,105.3,106.7,107.3,107.3,102.0,105.0,105.3,107.3,106.8,106.1,108.9,109.9,110.4,110.2,111.7,109.7,110.1,113.8,115.6,116.6,114.4,110.7,105.6,103.5,101.2,101.6,98.7,99.7,96.9,95.6,96.9,91.2,91.1,86.3,88.2,90.6,88.2,91.7,94.0,91.8,94.2,94.1,94.6,98.3,98.5,95.9,93.1,91.1,90.8,91.9,93.9,87.6,80.6,81.5,80.9,90.7,86.9,87.5,88.6,89.9,87.9,88.5,85.2,88.1,90.9,94.4,95.5,96.1,97.0,96.8,97.9,102.0,101.9,100.0,100.1,102.6,102.2,105.9,108.8,109.0,108.5,109.7,110.0,109.7,107.5,107.6,108.3,111.0,110.8,109.8,111.6,112.6,113.5,113.7,112.6,113.9,113.1,112.1,113.3,113.4,111.8,114.1,113.2,113.6,112.9,114.6,116.5,115.2,116.9,115.9,117.8,115.1,115.5,117.0,117.5,116.5,117.3,116.8,116.2,118.5,117.9,118.8,120.1,121.0,119.7,118.6,121.7,121.0,122.4,122.3,121.4,122.7,123.8,121.3,124.2,123.2,124.3,125.3,125.2,124.4,126.4,125.2,122.8,122.8,123.0,119.8,119.4,119.4,121.5,121.3,122.7,122.5,124.9,122.6,121.5,121.6,122.5,122.6,125.1,126.2,127.9,129.1,129.1,130.6,130.0,130.0,132.4,133.9,135.2,134.4,133.1,131.8,132.9,134.9,135.6,135.7,136.5,135.2,134.6,134.9,136.7,136.3,131.3,135.1,135.1,136.2,133.8,133.3,133.5,132.6,130.6,133.5,136.6,138.7,137.7,138.9,136.2,138.1,137.4,133.1,135.1,131.3,133.2,135.8,133.5,132.7,127.6,128.3,126.5,125.3,126.2,121.8,122.5,126.9,128.0,130.2,132.0,131.0,132.6,133.9,136.5,137.5,137.3,138.3,140.7,141.4,136.5,135.5,135.8,131.2,134.4,137.4,138.8,138.5,138.3,137.5,136.4,135.7,133.6,134.9,136.5,138.3,137.3,135.6,137.1,138.4,138.6,136.9,137.2,137.3,135.8,135.4,136.3,135.4,135.4,135.7,136.7,137.0,133.7,134.6,135.1,129.9,127.5,133.0,135.3,134.3,134.7,131.0,132.4,132.8,134.5,134.8,135.4,132.9,135.4,136.6,138.0,136.2,137.0,134.2,136.4,135.7,133.1,135.2,134.5,134.0,131.1,130.7,132.9,134.6,134.0,135.2,130.9,133.1,133.4,134.7,129.4,127.2,124.3,129.8,131.9,133.3,134.0,134.2,138.2,138.8,139.5,142.1,142.7,142.7,143.9,145.5,145.0,143.4,147.2,146.0,146.4,147.5,143.7,144.6,148.2,149.9,151.1,154.1,154.4,150.4,153.0,155.4,153.2,152.9,153.7,151.3,148.5,148.5,150.8,154.0,154.4,158.1,158.2,159.4,159.0,158.4,158.9,158.1,157.7,151.2,151.8,151.6,148.9,155.6,157.3,162.9,161.0,160.5,163.8,165.4,159.9,159.0,164.2,160.0,164.6,168.5,164.5,159.5,160.5,156.3,156.7,160.0,160.0,154.7,156.6,154.3,150.0,150.2,150.2,155.4],"type":"scatter"},{"line":{"color":"#285FFF","width":1.9},"name":"Renaissance IPO ETF","x":["2021-07-21","2021-07-22","2021-07-23","2021-07-26","2021-07-27","2021-07-28","2021-07-29","2021-07-30","2021-08-02","2021-08-03","2021-08-04","2021-08-05","2021-08-06","2021-08-09","2021-08-10","2021-08-11","2021-08-12","2021-08-13","2021-08-16","2021-08-17","2021-08-18","2021-08-19","2021-08-20","2021-08-23","2021-08-24","2021-08-25","2021-08-26","2021-08-27","2021-08-30","2021-08-31","2021-09-01","2021-09-02","2021-09-03","2021-09-07","2021-09-08","2021-09-09","2021-09-10","2021-09-13","2021-09-14","2021-09-15","2021-09-16","2021-09-17","2021-09-20","2021-09-21","2021-09-22","2021-09-23","2021-09-24","2021-09-27","2021-09-28","2021-09-29","2021-09-30","2021-10-01","2021-10-04","2021-10-05","2021-10-06","2021-10-07","2021-10-08","2021-10-11","2021-10-12","2021-10-13","2021-10-14","2021-10-15","2021-10-18","2021-10-19","2021-10-20","2021-10-21","2021-10-22","2021-10-25","2021-10-26","2021-10-27","2021-10-28","2021-10-29","2021-11-01","2021-11-02","2021-11-03","2021-11-04","2021-11-05","2021-11-08","2021-11-09","2021-11-10","2021-11-11","2021-11-12","2021-11-15","2021-11-16","2021-11-17","2021-11-18","2021-11-19","2021-11-22","2021-11-23","2021-11-24","2021-11-26","2021-11-29","2021-11-30","2021-12-01","2021-12-02","2021-12-03","2021-12-06","2021-12-07","2021-12-08","2021-12-09","2021-12-10","2021-12-13","2021-12-14","2021-12-15","2021-12-16","2021-12-17","2021-12-20","2021-12-21","2021-12-22","2021-12-23","2021-12-27","2021-12-28","2021-12-29","2021-12-30","2021-12-31","2022-01-03","2022-01-04","2022-01-05","2022-01-06","2022-01-07","2022-01-10","2022-01-11","2022-01-12","2022-01-13","2022-01-14","2022-01-18","2022-01-19","2022-01-20","2022-01-21","2022-01-24","2022-01-25","2022-01-26","2022-01-27","2022-01-28","2022-01-31","2022-02-01","2022-02-02","2022-02-03","2022-02-04","2022-02-07","2022-02-08","2022-02-09","2022-02-10","2022-02-11","2022-02-14","2022-02-15","2022-02-16","2022-02-17","2022-02-18","2022-02-22","2022-02-23","2022-02-24","2022-02-25","2022-02-28","2022-03-01","2022-03-02","2022-03-03","2022-03-04","2022-03-07","2022-03-08","2022-03-09","2022-03-10","2022-03-11","2022-03-14","2022-03-15","2022-03-16","2022-03-17","2022-03-18","2022-03-21","2022-03-22","2022-03-23","2022-03-24","2022-03-25","2022-03-28","2022-03-29","2022-03-30","2022-03-31","2022-04-01","2022-04-04","2022-04-05","2022-04-06","2022-04-07","2022-04-08","2022-04-11","2022-04-12","2022-04-13","2022-04-14","2022-04-18","2022-04-19","2022-04-20","2022-04-21","2022-04-22","2022-04-25","2022-04-26","2022-04-27","2022-04-28","2022-04-29","2022-05-02","2022-05-03","2022-05-04","2022-05-05","2022-05-06","2022-05-09","2022-05-10","2022-05-11","2022-05-12","2022-05-13","2022-05-16","2022-05-17","2022-05-18","2022-05-19","2022-05-20","2022-05-23","2022-05-24","2022-05-25","2022-05-26","2022-05-27","2022-05-31","2022-06-01","2022-06-02","2022-06-03","2022-06-06","2022-06-07","2022-06-08","2022-06-09","2022-06-10","2022-06-13","2022-06-14","2022-06-15","2022-06-16","2022-06-17","2022-06-21","2022-06-22","2022-06-23","2022-06-24","2022-06-27","2022-06-28","2022-06-29","2022-06-30","2022-07-01","2022-07-05","2022-07-06","2022-07-07","2022-07-08","2022-07-11","2022-07-12","2022-07-13","2022-07-14","2022-07-15","2022-07-18","2022-07-19","2022-07-20","2022-07-21","2022-07-22","2022-07-25","2022-07-26","2022-07-27","2022-07-28","2022-07-29","2022-08-01","2022-08-02","2022-08-03","2022-08-04","2022-08-05","2022-08-08","2022-08-09","2022-08-10","2022-08-11","2022-08-12","2022-08-15","2022-08-16","2022-08-17","2022-08-18","2022-08-19","2022-08-22","2022-08-23","2022-08-24","2022-08-25","2022-08-26","2022-08-29","2022-08-30","2022-08-31","2022-09-01","2022-09-02","2022-09-06","2022-09-07","2022-09-08","2022-09-09","2022-09-12","2022-09-13","2022-09-14","2022-09-15","2022-09-16","2022-09-19","2022-09-20","2022-09-21","2022-09-22","2022-09-23","2022-09-26","2022-09-27","2022-09-28","2022-09-29","2022-09-30","2022-10-03","2022-10-04","2022-10-05","2022-10-06","2022-10-07","2022-10-10","2022-10-11","2022-10-12","2022-10-13","2022-10-14","2022-10-17","2022-10-18","2022-10-19","2022-10-20","2022-10-21","2022-10-24","2022-10-25","2022-10-26","2022-10-27","2022-10-28","2022-10-31","2022-11-01","2022-11-02","2022-11-03","2022-11-04","2022-11-07","2022-11-08","2022-11-09","2022-11-10","2022-11-11","2022-11-14","2022-11-15","2022-11-16","2022-11-17","2022-11-18","2022-11-21","2022-11-22","2022-11-23","2022-11-25","2022-11-28","2022-11-29","2022-11-30","2022-12-01","2022-12-02","2022-12-05","2022-12-06","2022-12-07","2022-12-08","2022-12-09","2022-12-12","2022-12-13","2022-12-14","2022-12-15","2022-12-16","2022-12-19","2022-12-20","2022-12-21","2022-12-22","2022-12-23","2022-12-27","2022-12-28","2022-12-29","2022-12-30","2023-01-03","2023-01-04","2023-01-05","2023-01-06","2023-01-09","2023-01-10","2023-01-11","2023-01-12","2023-01-13","2023-01-17","2023-01-18","2023-01-19","2023-01-20","2023-01-23","2023-01-24","2023-01-25","2023-01-26","2023-01-27","2023-01-30","2023-01-31","2023-02-01","2023-02-02","2023-02-03","2023-02-06","2023-02-07","2023-02-08","2023-02-09","2023-02-10","2023-02-13","2023-02-14","2023-02-15","2023-02-16","2023-02-17","2023-02-21","2023-02-22","2023-02-23","2023-02-24","2023-02-27","2023-02-28","2023-03-01","2023-03-02","2023-03-03","2023-03-06","2023-03-07","2023-03-08","2023-03-09","2023-03-10","2023-03-13","2023-03-14","2023-03-15","2023-03-16","2023-03-17","2023-03-20","2023-03-21","2023-03-22","2023-03-23","2023-03-24","2023-03-27","2023-03-28","2023-03-29","2023-03-30","2023-03-31","2023-04-03","2023-04-04","2023-04-05","2023-04-06","2023-04-10","2023-04-11","2023-04-12","2023-04-13","2023-04-14","2023-04-17","2023-04-18","2023-04-19","2023-04-20","2023-04-21","2023-04-24","2023-04-25","2023-04-26","2023-04-27","2023-04-28","2023-05-01","2023-05-02","2023-05-03","2023-05-04","2023-05-05","2023-05-08","2023-05-09","2023-05-10","2023-05-11","2023-05-12","2023-05-15","2023-05-16","2023-05-17","2023-05-18","2023-05-19","2023-05-22","2023-05-23","2023-05-24","2023-05-25","2023-05-26","2023-05-30","2023-05-31","2023-06-01","2023-06-02","2023-06-05","2023-06-06","2023-06-07","2023-06-08","2023-06-09","2023-06-12","2023-06-13","2023-06-14","2023-06-15","2023-06-16","2023-06-20","2023-06-21","2023-06-22","2023-06-23","2023-06-26","2023-06-27","2023-06-28","2023-06-29","2023-06-30","2023-07-03","2023-07-05","2023-07-06","2023-07-07","2023-07-10","2023-07-11","2023-07-12","2023-07-13","2023-07-14","2023-07-17","2023-07-18","2023-07-19","2023-07-20","2023-07-21","2023-07-24","2023-07-25","2023-07-26","2023-07-27","2023-07-28","2023-07-31","2023-08-01","2023-08-02","2023-08-03","2023-08-04","2023-08-07","2023-08-08","2023-08-09","2023-08-10","2023-08-11","2023-08-14","2023-08-15","2023-08-16","2023-08-17","2023-08-18","2023-08-21","2023-08-22","2023-08-23","2023-08-24","2023-08-25","2023-08-28","2023-08-29","2023-08-30","2023-08-31","2023-09-01","2023-09-05","2023-09-06","2023-09-07","2023-09-08","2023-09-11","2023-09-12","2023-09-13","2023-09-14","2023-09-15","2023-09-18","2023-09-19","2023-09-20","2023-09-21","2023-09-22","2023-09-25","2023-09-26","2023-09-27","2023-09-28","2023-09-29","2023-10-02","2023-10-03","2023-10-04","2023-10-05","2023-10-06","2023-10-09","2023-10-10","2023-10-11","2023-10-12","2023-10-13","2023-10-16","2023-10-17","2023-10-18","2023-10-19","2023-10-20","2023-10-23","2023-10-24","2023-10-25","2023-10-26","2023-10-27","2023-10-30","2023-10-31","2023-11-01","2023-11-02","2023-11-03","2023-11-06","2023-11-07","2023-11-08","2023-11-09","2023-11-10","2023-11-13","2023-11-14","2023-11-15","2023-11-16","2023-11-17","2023-11-20","2023-11-21","2023-11-22","2023-11-24","2023-11-27","2023-11-28","2023-11-29","2023-11-30","2023-12-01","2023-12-04","2023-12-05","2023-12-06","2023-12-07","2023-12-08","2023-12-11","2023-12-12","2023-12-13","2023-12-14","2023-12-15","2023-12-18","2023-12-19","2023-12-20","2023-12-21","2023-12-22","2023-12-26","2023-12-27","2023-12-28","2023-12-29","2024-01-02","2024-01-03","2024-01-04","2024-01-05","2024-01-08","2024-01-09","2024-01-10","2024-01-11","2024-01-12","2024-01-16","2024-01-17","2024-01-18","2024-01-19","2024-01-22","2024-01-23","2024-01-24","2024-01-25","2024-01-26","2024-01-29","2024-01-30","2024-01-31","2024-02-01","2024-02-02","2024-02-05","2024-02-06","2024-02-07","2024-02-08","2024-02-09","2024-02-12","2024-02-13","2024-02-14","2024-02-15","2024-02-16","2024-02-20","2024-02-21","2024-02-22","2024-02-23","2024-02-26","2024-02-27","2024-02-28","2024-02-29","2024-03-01","2024-03-04","2024-03-05","2024-03-06","2024-03-07","2024-03-08","2024-03-11","2024-03-12","2024-03-13","2024-03-14","2024-03-15","2024-03-18","2024-03-19","2024-03-20","2024-03-21","2024-03-22","2024-03-25","2024-03-26","2024-03-27","2024-03-28","2024-04-01","2024-04-02","2024-04-03","2024-04-04","2024-04-05","2024-04-08","2024-04-09","2024-04-10","2024-04-11","2024-04-12","2024-04-15","2024-04-16","2024-04-17","2024-04-18","2024-04-19","2024-04-22","2024-04-23","2024-04-24","2024-04-25","2024-04-26","2024-04-29","2024-04-30","2024-05-01","2024-05-02","2024-05-03","2024-05-06","2024-05-07","2024-05-08","2024-05-09","2024-05-10","2024-05-13","2024-05-14","2024-05-15","2024-05-16","2024-05-17","2024-05-20","2024-05-21","2024-05-22","2024-05-23","2024-05-24","2024-05-28","2024-05-29","2024-05-30","2024-05-31","2024-06-03","2024-06-04","2024-06-05","2024-06-06","2024-06-07","2024-06-10","2024-06-11","2024-06-12","2024-06-13","2024-06-14","2024-06-17","2024-06-18","2024-06-20","2024-06-21","2024-06-24","2024-06-25","2024-06-26","2024-06-27","2024-06-28","2024-07-01","2024-07-02","2024-07-03","2024-07-05","2024-07-08","2024-07-09","2024-07-10","2024-07-11","2024-07-12","2024-07-15","2024-07-16","2024-07-17","2024-07-18","2024-07-19","2024-07-22","2024-07-23","2024-07-24","2024-07-25","2024-07-26","2024-07-29","2024-07-30","2024-07-31","2024-08-01","2024-08-02","2024-08-05","2024-08-06","2024-08-07","2024-08-08","2024-08-09","2024-08-12","2024-08-13","2024-08-14","2024-08-15","2024-08-16","2024-08-19","2024-08-20","2024-08-21","2024-08-22","2024-08-23","2024-08-26","2024-08-27","2024-08-28","2024-08-29","2024-08-30","2024-09-03","2024-09-04","2024-09-05","2024-09-06","2024-09-09","2024-09-10","2024-09-11","2024-09-12","2024-09-13","2024-09-16","2024-09-17","2024-09-18","2024-09-19","2024-09-20","2024-09-23","2024-09-24","2024-09-25","2024-09-26","2024-09-27","2024-09-30","2024-10-01","2024-10-02","2024-10-03","2024-10-04","2024-10-07","2024-10-08","2024-10-09","2024-10-10","2024-10-11","2024-10-14","2024-10-15","2024-10-16","2024-10-17","2024-10-18","2024-10-21","2024-10-22","2024-10-23","2024-10-24","2024-10-25","2024-10-28","2024-10-29","2024-10-30","2024-10-31","2024-11-01","2024-11-04","2024-11-05","2024-11-06","2024-11-07","2024-11-08","2024-11-11","2024-11-12","2024-11-13","2024-11-14","2024-11-15","2024-11-18","2024-11-19","2024-11-20","2024-11-21","2024-11-22","2024-11-25","2024-11-26","2024-11-27","2024-11-29","2024-12-02","2024-12-03","2024-12-04","2024-12-05","2024-12-06","2024-12-09","2024-12-10","2024-12-11","2024-12-12","2024-12-13","2024-12-16","2024-12-17","2024-12-18","2024-12-19","2024-12-20","2024-12-23","2024-12-24","2024-12-26","2024-12-27","2024-12-30","2024-12-31","2025-01-02","2025-01-03","2025-01-06","2025-01-07","2025-01-08","2025-01-10","2025-01-13","2025-01-14","2025-01-15","2025-01-16","2025-01-17","2025-01-21","2025-01-22","2025-01-23","2025-01-24","2025-01-27","2025-01-28","2025-01-29","2025-01-30","2025-01-31","2025-02-03","2025-02-04","2025-02-05","2025-02-06","2025-02-07","2025-02-10","2025-02-11","2025-02-12","2025-02-13","2025-02-14","2025-02-18","2025-02-19","2025-02-20","2025-02-21","2025-02-24","2025-02-25","2025-02-26","2025-02-27","2025-02-28","2025-03-03","2025-03-04","2025-03-05","2025-03-06","2025-03-07","2025-03-10","2025-03-11","2025-03-12","2025-03-13","2025-03-14","2025-03-17","2025-03-18","2025-03-19","2025-03-20","2025-03-21","2025-03-24","2025-03-25","2025-03-26","2025-03-27","2025-03-28","2025-03-31","2025-04-01","2025-04-02","2025-04-03","2025-04-04","2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-01","2025-05-02","2025-05-05","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-02","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-20","2026-07-21"],"y":[100.0,100.1,99.3,99.0,96.5,99.7,98.9,98.6,99.7,99.9,100.4,101.6,100.2,102.2,100.9,101.0,101.9,102.2,99.5,99.0,99.7,97.8,98.4,100.5,103.1,103.2,102.7,104.2,104.6,105.1,105.9,107.6,108.1,108.8,107.1,108.7,108.3,106.7,106.4,107.2,108.8,109.1,105.7,107.4,108.6,110.0,108.5,106.5,101.7,100.3,101.1,100.8,97.4,98.7,99.1,101.2,100.1,99.3,100.5,103.1,104.7,105.2,106.8,107.4,107.8,109.1,107.8,109.7,108.2,105.8,107.5,107.8,108.7,107.8,108.8,107.6,105.7,107.2,107.0,103.8,104.5,107.6,106.8,108.6,107.1,106.2,105.1,100.6,98.3,99.9,101.3,101.9,99.1,92.4,93.9,90.3,89.5,93.5,95.4,91.7,89.9,89.1,88.1,89.7,86.6,89.5,87.7,91.9,92.0,92.8,92.9,90.7,89.9,92.1,90.9,89.8,86.2,81.7,81.8,81.4,81.7,84.1,83.3,79.1,78.4,75.0,74.2,73.7,70.2,71.6,68.5,67.2,65.3,67.7,73.1,75.0,72.0,68.5,72.6,73.1,74.3,77.9,77.0,73.7,73.4,76.8,75.8,72.1,69.9,67.9,65.4,69.8,70.3,72.1,70.9,71.2,66.8,63.3,60.0,60.4,64.3,62.9,59.7,56.6,58.3,63.9,66.2,69.1,67.1,69.9,69.2,70.5,68.1,69.8,72.8,70.9,69.3,70.1,72.5,69.2,66.2,65.7,64.6,64.2,63.9,66.5,64.4,62.4,64.7,62.2,59.2,57.7,59.4,56.6,56.1,58.2,56.0,57.1,56.4,57.5,53.2,50.4,45.5,45.3,42.7,44.7,48.8,46.5,47.8,45.6,47.8,47.4,47.4,44.3,46.0,47.6,49.8,48.9,48.0,51.1,49.3,50.1,51.0,51.4,49.2,47.0,43.6,44.1,45.9,43.3,45.0,46.9,47.0,49.9,52.3,51.1,48.9,48.5,47.3,48.5,51.4,50.3,52.4,52.2,50.0,49.0,48.8,47.5,48.5,49.1,50.2,52.4,52.8,50.1,49.6,47.8,50.1,50.7,51.2,51.6,52.9,54.9,55.6,56.4,56.5,54.5,57.3,56.2,57.3,57.2,56.5,54.7,54.2,52.2,50.9,51.0,51.9,53.7,51.8,51.0,50.6,50.5,49.0,48.5,47.9,49.4,50.1,52.4,53.4,50.9,51.8,51.5,49.1,48.9,48.0,47.1,45.2,44.6,44.3,45.0,46.5,44.7,44.6,45.5,48.1,47.9,47.9,45.2,44.0,43.2,43.9,43.8,41.7,44.1,44.8,43.2,43.4,44.2,43.3,45.4,44.8,44.5,44.5,44.0,44.0,41.4,41.4,41.0,40.6,40.9,38.7,42.4,44.8,43.9,45.5,43.5,42.4,41.8,40.7,40.8,41.8,41.5,40.8,40.8,43.4,43.8,44.2,42.1,41.2,41.0,42.2,41.6,42.1,42.1,42.1,40.4,40.0,38.9,39.1,39.7,38.8,38.3,37.7,37.4,38.7,38.9,38.2,39.2,38.1,38.3,39.5,40.3,41.1,41.7,42.0,42.6,41.7,40.8,42.3,43.7,42.9,43.0,43.9,45.4,43.9,45.0,46.6,48.6,46.7,46.1,46.7,46.0,45.5,44.0,45.1,46.5,49.1,47.8,46.3,44.9,45.1,44.8,43.7,44.1,44.4,43.9,43.9,45.1,44.7,44.2,44.0,42.4,41.1,41.6,42.1,42.0,43.1,42.9,42.9,44.5,43.3,43.6,43.3,43.2,43.1,44.1,44.7,46.0,45.6,45.4,44.0,44.1,44.7,44.7,43.9,44.7,44.6,45.2,45.4,45.1,44.3,44.4,43.8,42.6,42.9,43.4,43.6,43.8,42.9,42.8,43.2,44.0,45.2,45.7,46.1,46.2,45.2,46.1,45.4,46.1,47.1,46.4,47.0,46.6,46.4,45.0,45.7,46.3,47.0,47.5,48.4,48.7,49.4,48.5,49.0,48.8,49.7,50.5,50.6,51.7,51.2,50.4,49.5,49.4,48.9,48.6,50.5,51.2,50.7,51.4,52.3,51.9,50.9,51.5,52.3,53.7,54.2,55.8,55.0,56.0,56.3,56.5,54.9,54.8,54.8,55.1,55.6,54.5,56.7,57.6,56.9,54.8,54.8,54.3,54.2,53.0,51.6,51.7,51.0,51.3,50.4,50.0,48.8,48.6,49.0,49.1,49.8,48.6,49.0,49.2,51.0,51.5,51.4,51.9,52.0,51.8,51.7,52.0,53.0,52.6,52.0,52.3,51.8,51.6,50.8,50.1,48.7,48.5,48.7,48.2,49.0,49.8,50.3,50.0,48.1,49.0,48.2,49.4,49.7,50.6,50.5,49.6,48.6,49.4,50.1,48.9,48.5,47.7,47.9,49.0,47.1,46.4,46.0,46.4,46.8,46.7,48.4,50.0,49.1,50.2,49.3,48.6,49.7,49.9,51.8,52.0,51.2,51.8,52.7,51.6,52.1,52.4,52.4,53.0,53.4,53.1,55.0,54.5,54.2,53.6,54.3,55.0,55.0,55.0,56.8,58.1,57.7,58.0,59.5,57.8,59.0,59.4,59.5,60.3,60.4,59.3,56.9,55.3,55.2,55.1,56.6,56.3,56.5,56.2,55.4,54.7,54.0,53.7,54.0,54.8,55.0,54.1,54.3,54.5,55.9,54.6,53.5,54.3,55.1,53.8,54.6,55.5,57.4,58.2,59.3,57.1,59.4,60.7,60.6,59.4,58.1,58.9,58.6,60.6,61.6,61.4,61.7,62.4,62.5,60.7,62.5,63.1,63.5,63.7,64.1,64.4,62.7,62.6,63.3,63.0,65.0,65.8,65.0,65.8,65.1,65.0,65.3,64.4,63.4,63.7,62.9,63.1,64.1,63.7,63.0,63.3,61.3,59.2,59.0,58.4,58.3,57.1,58.1,59.6,59.2,58.9,60.2,59.9,58.4,58.5,59.8,60.6,61.5,61.6,60.9,60.6,60.1,60.5,61.4,62.6,61.8,62.3,63.0,63.1,63.0,61.6,62.9,63.6,62.8,62.4,61.7,61.9,61.1,62.5,62.9,62.0,62.6,62.2,63.1,62.6,62.2,62.6,62.7,62.1,62.2,61.6,62.5,63.5,64.0,63.4,62.8,63.3,63.7,64.4,64.8,64.3,64.4,64.6,65.7,65.9,67.0,65.5,64.6,64.9,65.1,65.5,62.8,62.6,63.6,63.0,62.2,63.3,60.6,58.2,56.3,58.1,57.3,59.6,59.9,59.8,61.1,61.4,63.2,63.4,64.3,63.7,64.6,63.9,66.2,66.4,66.3,64.8,65.0,65.7,63.8,63.5,63.7,62.3,63.3,63.2,64.9,65.8,66.6,66.8,67.2,67.3,67.9,67.5,67.8,68.1,67.6,67.6,67.8,67.4,66.0,66.0,65.8,66.7,66.4,66.9,67.4,67.5,68.6,69.7,68.5,68.9,69.0,69.8,69.8,70.2,69.1,69.8,69.9,71.0,71.3,71.4,70.4,70.1,69.7,71.0,72.3,72.8,73.0,73.5,72.8,72.6,71.2,69.7,69.7,70.3,70.2,71.7,72.5,73.9,73.4,72.9,72.5,72.3,72.2,73.3,72.9,73.8,73.8,72.1,72.6,72.8,72.9,73.3,72.4,68.9,68.7,70.1,70.0,71.1,71.6,70.5,69.5,68.6,70.0,71.6,72.7,70.9,70.4,69.4,68.2,69.1,70.7,71.5,72.4,73.4,74.5,74.2,73.3,68.8,70.6,71.9,73.9,73.8,73.0,74.6,75.6,74.9,74.1,74.7,72.7,72.5,73.5,73.4,74.3,72.8,71.6,69.4,68.4,67.1,67.8,65.4,66.3,63.8,63.6,63.9,61.5,61.9,59.1,60.0,60.7,59.1,61.4,62.5,61.0,61.8,61.6,61.6,63.8,63.9,61.9,60.9,59.4,59.2,59.6,60.8,56.6,52.4,52.5,51.4,58.1,55.4,56.3,57.0,57.2,56.2,56.7,54.5,56.2,58.3,60.3,61.1,61.2,61.2,60.5,61.3,63.2,63.0,62.9,63.7,64.3,64.4,67.0,68.4,68.6,68.9,69.5,68.7,69.0,67.4,67.7,67.8,69.2,68.2,67.8,67.4,68.2,68.5,68.8,68.0,69.0,69.4,69.1,69.3,69.4,68.0,69.5,68.9,69.5,68.6,68.2,69.6,69.1,70.8,70.7,71.0,70.0,70.5,71.8,70.7,70.2,70.8,70.2,69.6,69.7,69.9,70.4,70.9,71.4,72.7,72.5,73.1,72.7,73.2,73.4,72.4,72.9,72.7,72.2,75.0,74.0,77.1,77.1,77.5,77.8,80.0,79.8,78.8,79.3,79.6,77.1,76.4,76.7,78.3,77.3,77.7,77.7,79.5,78.6,76.9,76.9,78.5,79.1,80.4,81.0,83.0,83.9,82.5,83.1,83.7,84.6,85.3,84.2,83.4,81.4,79.8,78.7,78.8,78.9,78.5,78.1,79.9,79.4,80.3,79.8,81.9,82.7,78.6,80.0,78.0,79.0,77.0,76.2,77.2,77.5,76.0,77.2,78.8,79.8,78.0,77.7,75.6,77.5,77.9,74.9,75.9,72.9,73.6,75.1,74.3,72.8,69.9,70.2,68.4,68.5,68.9,67.2,68.4,69.9,71.5,72.0,73.1,73.0,72.2,73.4,74.0,75.4,75.8,76.1,76.5,76.7,73.9,72.5,72.8,71.8,72.3,74.2,75.5,74.2,74.3,73.7,73.7,73.2,72.3,74.5,74.1,75.4,75.5,75.1,75.2,76.7,76.6,75.8,75.6,76.3,74.9,74.2,75.0,74.9,75.2,75.1,75.0,73.1,70.7,70.2,69.4,67.7,66.0,70.1,72.1,72.1,69.7,67.6,68.8,68.6,70.6,70.8,70.0,68.7,70.2,71.5,71.8,69.0,69.3,67.7,69.0,68.4,67.6,68.7,68.5,69.4,67.3,67.6,69.7,70.3,69.5,68.9,67.4,68.9,67.7,68.8,66.6,64.3,62.9,66.4,66.6,67.3,67.5,67.3,69.5,69.0,70.0,73.2,75.1,76.2,76.3,77.3,78.6,77.3,78.9,77.6,78.7,78.0,75.4,76.1,76.8,78.7,79.6,81.2,82.9,79.9,78.2,78.8,77.3,78.9,80.0,77.7,77.6,78.2,81.3,83.8,84.1,85.3,85.3,88.4,89.7,92.1,91.3,90.1,89.9,84.9,85.9,85.4,83.8,87.3,88.4,92.1,90.9,91.2,94.4,93.5,90.6,89.7,89.4,90.3,93.2,94.3,92.7,91.2,93.0,89.8,89.6,92.0,91.3,88.4,87.9,86.8,84.4,83.7,83.9,86.2],"type":"scatter"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"light"},"paper_bgcolor":"white","plot_bgcolor":"white","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.05},"xaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2}}},"yaxis":{"title":{"text":"Rebased to 100"},"gridcolor":"#EAECF0","zeroline":false},"font":{"size":11,"color":"#344054","family":"Inter, sans-serif"},"margin":{"l":48,"r":24,"t":28,"b":28},"legend":{"orientation":"h","y":1.1,"x":0},"xaxis":{"gridcolor":"#EAECF0","zeroline":false},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","height":340},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div>
-    <table class="legtbl" style="margin-top:12px">
-      <tr><th class="l"><span class="l-en">Basket</span><span class="l-zh">篮子</span></th><th>1Y</th><th>3Y</th><th>5Y</th></tr>
-      
-      <tr style="font-weight:700"><td class="l">Renaissance IPO ETF <span class="faint">(IPO)</span></td><td>+18.7%</td><td>+16.3%</td><td>-2.9%</td></tr>
-      
-      <tr><td class="l">First Trust IPOX-100 <span class="faint">(FPX)</span></td><td>+29.8%</td><td>+28.0%</td><td>+9.2%</td></tr>
-      
-      <tr><td class="l">S&amp;P 500 <span class="faint">(SPY)</span></td><td>+20.0%</td><td>+19.7%</td><td>+12.9%</td></tr>
-      
-    </table>
-    <div class="note b" style="margin-top:10px"><span class="l-en">This is the crux: the day-1 pop accrues to offer-price allocants, not to anyone buying in the open market. A mechanical “own recent IPOs” basket (the Renaissance IPO ETF) has trailed the S&amp;P over five years; the quality-tilted IPOX (FPX) does better but is a large-cap/quality factor tilt, not underpricing capture. The honest edge in IPOs is discipline about what to AVOID.</span><span class="l-zh">这是关键：首日爆涨归于发行价配售者，而非任何在公开市场买入的人。机械式“持有近期新股”篮子（复兴新股ETF）五年来跑输标普；偏质量的 IPOX（FPX）表现较好，但那是大盘/质量因子倾斜，并非对低定价的捕获。新股中诚实的优势在于对“应当规避什么”的纪律。</span></div>
-  </div>
-
-  <!-- ===== lock-up expiry overhang (the most watchable leg) ===== -->
   
-  <div class="section-title"><span class="l-en">Lock-up expiry overhang · the most watchable leg</span><span class="l-zh">禁售期到期压力 · 最值得关注的一环</span></div>
+
+  <!-- ============ AFTERMARKET chart ============ -->
+  <div class="sec"><span class="l-en">The aftermarket trade</span><span class="l-zh">二级市场交易</span> <span class="sec-hint"><span class="l-en">IPO &amp; IPOX vs the S&amp;P · 5y, rebased</span><span class="l-zh">新股与IPOX对比标普 · 5年，归一</span></span></div>
   <div class="card">
-    <div class="sub" style="margin-bottom:8px"><span class="l-en">When a fresh IPO&#39;s ~180-day lock-up expires, insider / VC / PE supply hits a thin float — a documented one-sided overhang (Field &amp; Hanka: ~−1.5% / −3% VC-backed 3-day drift, ~+40% volume). The date is deterministic and free from the prospectus. Honest framing: this is an AVOID / don&#39;t-add-into-the-cliff flag, NOT a tradeable short — borrow is scarce and the drift is small net of cost.</span><span class="l-zh">当新股约180天的禁售期到期时，内部人／风投／私募的供给会冲击稀薄的流通盘 —— 有据可查的单边压力（Field &amp; Hanka：约 −1.5%／风投支持 −3% 的三日漂移，成交量约 +40%）。该日期可从招股书免费且确定地获得。诚实说明：这是“临近解禁回避／勿加仓”的提示，而非可交易做空 —— 借券稀缺，且扣成本后漂移很小。</span></div>
+    <div class="after-chart"><figure class="ilx ilx-multi" style="--ilx-h:300px" role="img" aria-label="Five-year total-return paths of the Renaissance IPO ETF, the First Trust IPOX-100 and the S&amp;P 500, each rebased to 100 at the start."><svg viewBox="0 0 560 300" preserveAspectRatio="none" aria-hidden="true"><path class="ilx-path ilx-m" d="M0.0 169.3 L2.55 166.8 L5.09 164.6 L7.64 167.55 L10.18 165.96 L12.73 162.24 L15.27 163.1 L17.82 169.13 L20.36 165.22 L22.91 171.02 L25.45 169.13 L28.0 160.79 L30.55 161.4 L33.09 155.71 L35.64 155.4 L38.18 159.49 L40.73 162.71 L43.27 155.02 L45.82 160.4 L48.36 151.82 L50.91 151.73 L53.45 156.76 L56.0 159.82 L58.55 169.46 L61.09 159.42 L63.64 167.24 L66.18 166.92 L68.73 173.96 L71.27 175.18 L73.82 161.92 L76.36 157.35 L78.91 163.1 L81.45 162.7 L84.0 170.94 L86.55 169.78 L89.09 183.68 L91.64 177.72 L94.18 184.94 L96.73 174.25 L99.27 190.9 L101.82 193.66 L104.36 184.05 L106.91 184.47 L109.45 188.73 L112.0 183.74 L114.55 174.69 L117.09 175.88 L119.64 168.83 L122.18 171.73 L124.73 183.79 L127.27 176.02 L129.82 188.33 L132.36 196.13 L134.91 188.11 L137.45 196.37 L140.0 187.76 L142.55 183.85 L145.09 190.8 L147.64 189.59 L150.18 178.68 L152.73 176.65 L155.27 182.25 L157.82 178.85 L160.36 187.95 L162.91 186.89 L165.45 179.48 L168.0 183.3 L170.55 174.71 L173.09 172.39 L175.64 176.15 L178.18 180.94 L180.73 177.17 L183.27 184.58 L185.82 178.73 L188.36 180.02 L190.91 174.05 L193.45 172.78 L196.0 175.94 L198.55 176.61 L201.09 172.11 L203.64 174.32 L206.18 170.52 L208.73 171.36 L211.27 163.84 L213.82 165.45 L216.36 160.82 L218.91 162.67 L221.45 156.56 L224.0 155.16 L226.55 158.65 L229.09 157.92 L231.64 163.55 L234.18 163.32 L236.73 157.73 L239.27 158.06 L241.82 164.87 L244.36 168.72 L246.91 164.52 L249.45 162.94 L252.0 169.16 L254.55 172.99 L257.09 162.58 L259.64 163.91 L262.18 155.5 L264.73 155.77 L267.27 152.05 L269.82 149.68 L272.36 146.36 L274.91 150.06 L277.45 146.36 L280.0 146.44 L282.55 140.62 L285.09 140.12 L287.64 136.39 L290.18 138.28 L292.73 132.13 L295.27 132.75 L297.82 127.81 L300.36 127.43 L302.91 131.41 L305.45 129.47 L308.0 138.48 L310.55 136.44 L313.09 128.35 L315.64 128.32 L318.18 124.19 L320.73 127.65 L323.27 119.81 L325.82 119.68 L328.36 117.43 L330.91 116.53 L333.45 110.25 L336.0 114.29 L338.55 122.91 L341.09 129.05 L343.64 112.33 L346.18 110.71 L348.73 116.29 L351.27 119.95 L353.82 107.82 L356.36 106.03 L358.91 108.39 L361.45 105.08 L364.0 101.72 L366.55 108.06 L369.09 97.34 L371.64 96.09 L374.18 101.26 L376.73 96.07 L379.27 92.5 L381.82 92.9 L384.36 101.12 L386.91 96.65 L389.45 102.58 L392.0 95.76 L394.55 90.91 L397.09 94.49 L399.64 89.64 L402.18 94.82 L404.73 105.68 L407.27 114.16 L409.82 103.89 L412.36 106.64 L414.91 135.47 L417.45 128.51 L420.0 113.81 L422.55 113.73 L425.09 99.34 L427.64 96.14 L430.18 102.43 L432.73 98.32 L435.27 92.58 L437.82 95.66 L440.36 85.17 L442.91 85.21 L445.45 82.13 L448.0 78.49 L450.55 84.66 L453.09 80.44 L455.64 75.34 L458.18 79.11 L460.73 73.67 L463.27 73.19 L465.82 65.82 L468.36 69.36 L470.91 63.3 L473.45 71.38 L476.0 61.64 L478.55 57.56 L481.09 64.43 L483.64 59.17 L486.18 71.58 L488.73 60.42 L491.27 56.85 L493.82 63.99 L496.36 55.54 L498.91 58.45 L501.45 53.61 L504.0 60.7 L506.55 53.48 L509.09 60.68 L511.64 54.1 L514.18 54.42 L516.73 62.8 L519.27 60.86 L521.82 71.69 L524.36 78.4 L526.91 59.01 L529.45 56.51 L532.0 44.75 L534.55 46.2 L537.09 33.78 L539.64 38.01 L542.18 28.83 L544.73 27.59 L547.27 41.36 L549.82 39.16 L552.36 31.97 L554.91 28.67 L557.45 33.87 L560.0 31.36" style="stroke:#9AA4B2;--ilx-len:1357.7;--i:0"/><circle class="ilx-dot ilx-m" cx="560.0" cy="31.36" r="2.8" style="fill:#9AA4B2;--i:0"/><path class="ilx-path ilx-m" d="M0.0 169.3 L2.53 175.1 L5.07 168.63 L7.6 165.63 L10.14 172.93 L12.67 171.92 L15.2 154.81 L17.74 154.34 L20.27 159.98 L22.81 152.79 L25.34 173.63 L27.87 170.49 L30.41 153.38 L32.94 154.78 L35.48 159.93 L38.01 155.14 L40.54 172.1 L43.08 166.25 L45.61 187.19 L48.14 191.31 L50.68 180.98 L53.21 184.24 L55.75 204.85 L58.28 210.44 L60.81 226.51 L63.35 221.13 L65.88 205.62 L68.42 215.2 L70.95 235.14 L73.48 240.75 L76.02 218.9 L78.55 214.09 L81.09 225.79 L83.62 224.5 L86.15 238.94 L88.69 238.09 L91.22 263.61 L93.76 253.57 L96.29 260.97 L98.82 249.32 L101.36 262.19 L103.89 262.68 L106.43 247.87 L108.96 247.74 L111.49 255.77 L114.03 255.25 L116.56 243.63 L119.1 239.61 L121.63 244.66 L124.16 245.46 L126.7 255.07 L129.23 246.06 L131.76 256.47 L134.3 260.97 L136.83 254.71 L139.37 265.24 L141.9 260.27 L144.43 259.21 L146.97 267.16 L149.5 270.32 L152.04 259.08 L154.57 266.77 L157.1 261.2 L159.64 264.6 L162.17 272.41 L164.71 271.25 L167.24 263.9 L169.77 266.72 L172.31 257.24 L174.84 261.54 L177.38 253.13 L179.91 261.98 L182.44 259.7 L184.98 266.3 L187.51 260.76 L190.05 263.02 L192.58 258.2 L195.11 259.24 L197.65 263.9 L200.18 263.56 L202.71 257.94 L205.25 256.34 L207.78 259.83 L210.32 257.68 L212.85 250.59 L215.38 248.91 L217.92 253.96 L220.45 250.12 L222.99 241.24 L225.52 244.2 L228.05 239.15 L230.59 244.58 L233.12 253.9 L235.66 254.01 L238.19 248.34 L240.72 246.68 L243.26 253.77 L245.79 251.21 L248.33 254.76 L250.86 250.69 L253.39 255.38 L255.93 258.23 L258.46 251.37 L261.0 253.93 L263.53 247.23 L266.06 246.73 L268.6 243.37 L271.13 240.44 L273.67 234.54 L276.2 240.26 L278.73 245.1 L281.27 241.87 L283.8 245.83 L286.33 245.41 L288.87 233.97 L291.4 238.24 L293.94 231.07 L296.47 230.81 L299.0 225.69 L301.54 225.63 L304.07 230.37 L306.61 229.67 L309.14 239.95 L311.67 237.75 L314.21 232.49 L316.74 234.38 L319.28 229.28 L321.81 233.3 L324.34 230.04 L326.88 232.58 L329.41 228.54 L331.95 229.76 L334.48 223.7 L337.01 226.16 L339.55 238.09 L342.08 241.23 L344.62 228.1 L347.15 224.65 L349.68 229.45 L352.22 231.41 L354.75 222.12 L357.29 221.86 L359.82 225.59 L362.35 222.95 L364.89 218.44 L367.42 219.17 L369.95 214.04 L372.49 219.24 L375.02 212.25 L377.56 212.38 L380.09 215.18 L382.62 213.33 L385.16 220.76 L387.69 214.23 L390.23 221.59 L392.76 211.25 L395.29 220.63 L397.83 209.41 L400.36 216.1 L402.9 219.7 L405.43 232.76 L407.96 236.65 L410.5 228.68 L413.03 232.02 L415.57 249.32 L418.1 244.2 L420.63 233.43 L423.17 234.36 L425.7 221.27 L428.24 219.48 L430.77 223.01 L433.3 223.04 L435.84 219.5 L438.37 221.68 L440.9 217.13 L443.44 215.75 L445.97 219.29 L448.51 215.16 L451.04 210.42 L453.57 202.31 L456.11 208.21 L458.64 207.69 L461.18 201.56 L463.71 200.54 L466.24 193.58 L468.78 205.45 L471.31 197.78 L473.85 202.29 L476.38 208.76 L478.91 202.53 L481.45 213.87 L483.98 211.68 L486.52 223.37 L489.05 215.13 L491.58 207.74 L494.12 215.78 L496.65 209.73 L499.19 211.89 L501.72 207.67 L504.25 210.14 L506.79 219.67 L509.32 225.35 L511.86 215.18 L514.39 215.73 L516.92 222.61 L519.46 223.21 L521.99 218.22 L524.52 230.42 L527.06 218.69 L529.59 213.39 L532.13 204.02 L534.66 209.84 L537.19 197.47 L539.73 206.14 L542.26 186.22 L544.8 182.25 L547.33 196.03 L549.86 178.46 L552.4 186.79 L554.93 180.86 L557.47 196.11 L560.0 191.99" style="stroke:#285FFF;--ilx-len:1570.2;--i:1"/><circle class="ilx-dot ilx-m" cx="560.0" cy="191.99" r="2.8" style="fill:#285FFF;--i:1"/><path class="ilx-path ilx-m" d="M0.0 169.3 L2.55 164.82 L5.09 163.66 L7.64 170.98 L10.18 169.34 L12.73 160.92 L15.27 163.69 L17.82 168.63 L20.36 161.97 L22.91 173.56 L25.45 169.27 L28.0 158.71 L30.55 165.24 L33.09 154.56 L35.64 155.84 L38.18 167.87 L40.73 166.55 L43.27 177.76 L45.82 180.75 L48.36 169.94 L50.91 172.39 L53.45 185.01 L56.0 189.75 L58.55 203.66 L61.09 198.03 L63.64 186.61 L66.18 194.47 L68.73 207.11 L71.27 208.44 L73.82 191.87 L76.36 186.72 L78.91 194.25 L81.45 192.34 L84.0 203.0 L86.55 202.49 L89.09 222.5 L91.64 221.41 L94.18 215.04 L96.73 209.57 L99.27 225.52 L101.82 228.5 L104.36 220.34 L106.91 221.29 L109.45 225.84 L112.0 221.54 L114.55 213.31 L117.09 214.08 L119.64 208.55 L122.18 210.06 L124.73 219.54 L127.27 212.08 L129.82 221.38 L132.36 227.65 L134.91 219.64 L137.45 228.71 L140.0 221.72 L142.55 217.91 L145.09 222.61 L147.64 224.75 L150.18 218.21 L152.73 219.58 L155.27 224.64 L157.82 223.18 L160.36 231.27 L162.91 231.51 L165.45 223.74 L168.0 227.28 L170.55 218.52 L173.09 216.76 L175.64 221.17 L178.18 222.86 L180.73 219.64 L183.27 221.43 L185.82 227.82 L188.36 227.3 L190.91 221.78 L193.45 222.78 L196.0 227.61 L198.55 228.22 L201.09 224.73 L203.64 227.18 L206.18 223.74 L208.73 225.5 L211.27 216.62 L213.82 215.44 L216.36 220.6 L218.91 218.88 L221.45 208.02 L224.0 213.18 L226.55 206.5 L229.09 212.79 L231.64 222.34 L234.18 221.7 L236.73 215.33 L239.27 215.32 L241.82 224.73 L244.36 221.63 L246.91 225.95 L249.45 220.27 L252.0 228.44 L254.55 231.96 L257.09 223.6 L259.64 226.42 L262.18 216.93 L264.73 217.62 L267.27 210.06 L269.82 208.28 L272.36 204.1 L274.91 212.91 L277.45 209.06 L280.0 210.58 L282.55 204.72 L285.09 205.89 L287.64 197.12 L290.18 203.28 L292.73 195.05 L295.27 197.71 L297.82 191.43 L300.36 191.51 L302.91 197.88 L305.45 196.25 L308.0 206.02 L310.55 202.01 L313.09 195.43 L315.64 193.39 L318.18 197.99 L320.73 198.61 L323.27 202.75 L325.82 202.38 L328.36 200.29 L330.91 200.93 L333.45 194.5 L336.0 197.77 L338.55 208.21 L341.09 210.53 L343.64 197.4 L346.18 195.33 L348.73 200.69 L351.27 202.02 L353.82 186.17 L356.36 188.07 L358.91 185.11 L361.45 184.32 L364.0 180.82 L366.55 186.43 L369.09 171.25 L371.64 172.38 L374.18 162.21 L376.73 157.62 L379.27 167.84 L381.82 164.54 L384.36 174.91 L386.91 174.26 L389.45 165.04 L392.0 157.21 L394.55 165.95 L397.09 154.66 L399.64 141.92 L402.18 160.03 L404.73 183.96 L407.27 191.85 L409.82 171.77 L412.36 176.12 L414.91 201.23 L417.45 193.71 L420.0 176.7 L422.55 175.69 L425.09 154.85 L427.64 156.89 L430.18 151.21 L432.73 150.27 L435.27 146.13 L437.82 148.1 L440.36 139.93 L442.91 142.7 L445.45 134.78 L448.0 138.61 L450.55 129.43 L453.09 125.83 L455.64 137.41 L458.18 137.41 L460.73 127.92 L463.27 126.17 L465.82 111.41 L468.36 116.89 L470.91 108.88 L473.45 118.97 L476.0 109.05 L478.55 105.32 L481.09 117.75 L483.64 114.16 L486.18 133.4 L488.73 118.18 L491.27 101.09 L493.82 117.9 L496.36 105.35 L498.91 111.88 L501.45 105.75 L504.0 108.4 L506.55 113.79 L509.09 124.07 L511.64 111.06 L514.18 115.11 L516.73 106.71 L519.27 118.72 L521.82 111.32 L524.36 129.21 L526.91 104.27 L529.45 99.92 L532.0 91.09 L534.55 97.3 L537.09 78.06 L539.64 89.42 L542.18 71.49 L544.73 88.84 L547.27 65.78 L549.82 72.18 L552.36 56.48 L554.91 69.6 L557.45 86.97 L560.0 78.04" style="stroke:#4559DC;--ilx-len:1701.5;--i:2"/><circle class="ilx-dot ilx-m" cx="560.0" cy="78.04" r="2.8" style="fill:#4559DC;--i:2"/></svg><span class="ilx-chips"><span class="ilx-chip" style="--dot:#9AA4B2"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></span><span class="ilx-chip" style="--dot:#285FFF"><span class="l-en">Renaissance IPO ETF</span><span class="l-zh">文艺复兴新股ETF</span></span><span class="ilx-chip" style="--dot:#4559DC"><span class="l-en">First Trust IPOX-100</span><span class="l-zh">IPOX-100</span></span></span><span class="ilx-d ilx-d0">2021-07-21</span><span class="ilx-d ilx-d1">2026-07-21</span></figure></div>
+    <div class="tbl-wrap">
+      <table class="legtbl">
+        <thead><tr><th class="l" scope="col"><span class="l-en">Basket</span><span class="l-zh">篮子</span></th><th scope="col">1Y</th><th scope="col">3Y</th><th scope="col">5Y</th></tr></thead>
+        <tbody>
+        
+        <tr style="font-weight:700"><td class="l" scope="row">Renaissance IPO ETF <span class="faint" style="color:var(--faint)">(IPO)</span></td><td>+18.7%</td><td>+16.3%</td><td>-2.9%</td></tr>
+        
+        <tr><td class="l" scope="row">First Trust IPOX-100 <span class="faint" style="color:var(--faint)">(FPX)</span></td><td>+29.8%</td><td>+28.0%</td><td>+9.2%</td></tr>
+        
+        <tr><td class="l" scope="row">S&amp;P 500 <span class="faint" style="color:var(--faint)">(SPY)</span></td><td>+20.0%</td><td>+19.7%</td><td>+12.9%</td></tr>
+        
+        </tbody>
+      </table>
+    </div>
+    <div class="mini"><span class="l-en">The day-1 pop accrues to offer-price allocation, not to open-market buyers. A mechanical “own recent IPOs” basket (Renaissance IPO ETF) has trailed the S&amp;P over five years; the quality-tilted IPOX (FPX) does better, but that is a large-cap / quality tilt, not underpricing capture.</span><span class="l-zh">首日爆涨归于发行价配售，而非公开市场买家。机械式“持有近期新股”篮子（复兴新股ETF）五年跑输标普；偏质量的 IPOX（FPX）表现较好，但那是大盘/质量倾斜，并非对低定价的捕获。</span></div>
+  </div>
+
+  <!-- ============ UPCOMING deals (cards) ============ -->
+  <div class="sec"><span class="l-en">Expected to price soon</span><span class="l-zh">预计即将定价</span> <span class="sec-hint">3 <span class="l-en">on the calendar</span><span class="l-zh">在日历上</span></span></div>
+  
+  <div class="dealgrid">
     
-    <div class="note b"><span class="l-en">Phase-0 event study</span><span class="l-zh">Phase-0 事件研究</span> (77 <span class="l-en">recent IPOs</span><span class="l-zh">近期新股</span>, 2026-06-16): <span class="l-en">the [-1,+3]-day abnormal return vs the S&amp;P averaged</span><span class="l-zh">解禁日 [-1,+3] 相对标普的超额收益平均为</span> +0.9% (44.2% <span class="l-en">negative</span><span class="l-zh">为负</span>, t=0.812) — <span class="l-en">no measurable, tradeable edge on our (survivorship-biased) sample. This is a deterministic supply-event calendar, NOT a forecast — and it is never scored.</span><span class="l-zh">在我们（含幸存者偏差的）样本上没有可测量、可交易的优势。这是一个确定的供给事件日历，而非预测 —— 且从不计分。</span></div>
-    
-    
-    <div class="chips" style="margin-bottom:8px">
-      <span class="chip" style="border-color:var(--amber);color:var(--amber)">23 <span class="l-en">approaching (≤45d)</span><span class="l-zh">临近（≤45天）</span></span>
-      <span class="chip" style="border-color:var(--red);color:var(--red)">4 <span class="l-en">overhang active (≤30d)</span><span class="l-zh">解禁压力中（≤30天）</span></span>
-      <span class="chip">38 <span class="l-en">prospectus-confirmed</span><span class="l-zh">招股书已确认</span></span>
+    <div class="deal">
+      <div class="d-tkr">SCTX</div>
+      <div class="d-co">Scribe Therapeutics, Inc.</div>
+      <div class="d-row"><span class="k"><span class="l-en">Expected</span><span class="l-zh">预期</span></span><span class="v">2026-07-24</span></div>
+      <div class="d-row"><span class="k"><span class="l-en">Range</span><span class="l-zh">区间</span></span><span class="v">$13–15</span></div>
+      <div class="d-row"><span class="k"><span class="l-en">Size</span><span class="l-zh">规模</span></span><span class="v">$123M</span></div>
     </div>
     
-    <table class="tbl">
-      <tr><th><span class="l-en">Lock-up expiry</span><span class="l-zh">禁售期到期</span></th><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Company</span><span class="l-zh">公司</span></th><th class="n"><span class="l-en">Priced</span><span class="l-zh">定价</span></th><th class="n"><span class="l-en">Lock-up</span><span class="l-zh">禁售</span></th><th><span class="l-en">Status</span><span class="l-zh">状态</span></th></tr>
-      
-      <tr>
-        <td>2026-07-07<span class="sub"> · <span class="l-en">15d ago</span><span class="l-zh">15天前</span></span></td>
-        <td><b>BUDA</b></td>
-        <td>BUDA JUICE, INC.</td>
-        <td class="n faint">2026-01-08</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#D30B0B;color:#D30B0B"><span class="l-en">📉 overhang active</span><span class="l-zh">📉 解禁压力中</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-08<span class="sub"> · <span class="l-en">14d ago</span><span class="l-zh">14天前</span></span></td>
-        <td><b>AKTS</b></td>
-        <td>Aktis Oncology, Inc.</td>
-        <td class="n faint">2026-01-09</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#D30B0B;color:#D30B0B"><span class="l-en">📉 overhang active</span><span class="l-zh">📉 解禁压力中</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-12<span class="sub"> · <span class="l-en">10d ago</span><span class="l-zh">10天前</span></span></td>
-        <td><b>GCDT</b></td>
-        <td>Green Circle Decarbonize Technology Ltd</td>
-        <td class="n faint">2026-01-13</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#D30B0B;color:#D30B0B"><span class="l-en">📉 overhang active</span><span class="l-zh">📉 解禁压力中</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-21<span class="sub"> · <span class="l-en">1d ago</span><span class="l-zh">1天前</span></span></td>
-        <td><b>BTGO</b></td>
-        <td>BITGO HOLDINGS, INC.</td>
-        <td class="n faint">2026-01-22</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#D30B0B;color:#D30B0B"><span class="l-en">📉 overhang active</span><span class="l-zh">📉 解禁压力中</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-22<span class="sub"> · <span class="l-en">today</span><span class="l-zh">今天</span></span></td>
-        <td><b>EQPT</b></td>
-        <td>EquipmentShare.com Inc</td>
-        <td class="n faint">2026-01-23</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-26<span class="sub"> · <span class="l-en">in 4d</span><span class="l-zh">4天后</span></span></td>
-        <td><b>VTIX</b></td>
-        <td>Virtuix Holdings Inc.</td>
-        <td class="n faint">2026-01-27</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-27<span class="sub"> · <span class="l-en">in 5d</span><span class="l-zh">5天后</span></span></td>
-        <td><b>PPHC</b></td>
-        <td>Public Policy Holding Company, Inc.</td>
-        <td class="n faint">2026-01-28</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-28<span class="sub"> · <span class="l-en">in 6d</span><span class="l-zh">6天后</span></span></td>
-        <td><b>LIFE</b></td>
-        <td>Ethos Technologies Inc.</td>
-        <td class="n faint">2026-01-29</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-28<span class="sub"> · <span class="l-en">in 6d</span><span class="l-zh">6天后</span></span></td>
-        <td><b>YSS</b></td>
-        <td>York Space Systems Inc.</td>
-        <td class="n faint">2026-01-29</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-28<span class="sub"> · <span class="l-en">in 6d</span><span class="l-zh">6天后</span></span></td>
-        <td><b>PICS</b></td>
-        <td>PicS N.V.</td>
-        <td class="n faint">2026-01-29</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-07-29<span class="sub"> · <span class="l-en">in 7d</span><span class="l-zh">7天后</span></span></td>
-        <td><b>VHUB</b></td>
-        <td>VenHub Global, Inc.</td>
-        <td class="n faint">2026-01-30</td>
-        <td class="n">180d<span class="sub faint"> <span class="l-en">est</span><span class="l-zh">估</span></span></td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-01<span class="sub"> · <span class="l-en">in 10d</span><span class="l-zh">10天后</span></span></td>
-        <td><b>PLYX</b></td>
-        <td>Polaryx Therapeutics, Inc.</td>
-        <td class="n faint">2026-02-02</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-03<span class="sub"> · <span class="l-en">in 12d</span><span class="l-zh">12天后</span></span></td>
-        <td><b>OBAI</b></td>
-        <td>Our Bond, Inc.</td>
-        <td class="n faint">2026-02-04</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-04<span class="sub"> · <span class="l-en">in 13d</span><span class="l-zh">13天后</span></span></td>
-        <td><b>EIKN</b></td>
-        <td>Eikon Therapeutics, Inc.</td>
-        <td class="n faint">2026-02-05</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-04<span class="sub"> · <span class="l-en">in 13d</span><span class="l-zh">13天后</span></span></td>
-        <td><b>BOBS</b></td>
-        <td>Bob&#39;s Discount Furniture, Inc.</td>
-        <td class="n faint">2026-02-05</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-04<span class="sub"> · <span class="l-en">in 13d</span><span class="l-zh">13天后</span></span></td>
-        <td><b>CEPS</b></td>
-        <td>Cantor Equity Partners VI, Inc.</td>
-        <td class="n faint">2026-02-05</td>
-        <td class="n">180d<span class="sub faint"> <span class="l-en">est</span><span class="l-zh">估</span></span></td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-05<span class="sub"> · <span class="l-en">in 14d</span><span class="l-zh">14天后</span></span></td>
-        <td><b>OFRM</b></td>
-        <td>Once Upon a Farm, PBC</td>
-        <td class="n faint">2026-02-06</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-05<span class="sub"> · <span class="l-en">in 14d</span><span class="l-zh">14天后</span></span></td>
-        <td><b>AGMB</b></td>
-        <td>Agomab Therapeutics NV</td>
-        <td class="n faint">2026-02-06</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-05<span class="sub"> · <span class="l-en">in 14d</span><span class="l-zh">14天后</span></span></td>
-        <td><b>SGP</b></td>
-        <td>SpyGlass Pharma, Inc.</td>
-        <td class="n faint">2026-02-06</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-10<span class="sub"> · <span class="l-en">in 19d</span><span class="l-zh">19天后</span></span></td>
-        <td><b>MWH</b></td>
-        <td>SOLV Energy, Inc.</td>
-        <td class="n faint">2026-02-11</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-10<span class="sub"> · <span class="l-en">in 19d</span><span class="l-zh">19天后</span></span></td>
-        <td><b>AGBK</b></td>
-        <td>AGI Inc</td>
-        <td class="n faint">2026-02-11</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-11<span class="sub"> · <span class="l-en">in 20d</span><span class="l-zh">20天后</span></span></td>
-        <td><b>BRAI</b></td>
-        <td>Braiin Ltd</td>
-        <td class="n faint">2026-02-12</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-11<span class="sub"> · <span class="l-en">in 20d</span><span class="l-zh">20天后</span></span></td>
-        <td><b>APC</b></td>
-        <td>ARKO Petroleum Corp.</td>
-        <td class="n faint">2026-02-12</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-      <tr>
-        <td>2026-08-17<span class="sub"> · <span class="l-en">in 26d</span><span class="l-zh">26天后</span></span></td>
-        <td><b>SHAZ</b></td>
-        <td>SharonAI Holdings Inc.</td>
-        <td class="n faint">2026-02-18</td>
-        <td class="n">180d</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">⚠ approaching</span><span class="l-zh">⚠ 临近解禁</span></span></td>
-      </tr>
-      
-    </table>
-    <div class="sub faint" style="margin-top:10px;font-size:12px"><span class="l-en">Operating companies only (SPACs excluded — different mechanics). Lock-up length is parsed from the final S-1/424B prospectus where confirmed, else the 180-day market standard (&#39;est&#39;). Display-only, never scored — there is no validated forecast here, only a deterministic supply-event calendar.</span><span class="l-zh">仅营运公司（剔除 SPAC —— 机制不同）。禁售期长度在已确认处取自最终 S-1／424B 招股书，否则取 180 天市场标准（“估”）。仅供展示，从不计分 —— 此处没有经验证的预测，只有一个确定的供给事件日历。</span></div>
-  </div>
-  
-
-  <!-- ===== issuance pipeline ===== -->
-  
-  <div class="section-title"><span class="l-en">Issuance pipeline · how busy &amp; how frothy</span><span class="l-zh">发行管道 · 繁忙度与泡沫度</span></div>
-  <div class="grid cols-4">
-    <div class="scoretile"><div class="k"><span class="l-en">Priced · 30d</span><span class="l-zh">定价 · 30天</span></div><div class="v">26</div><div class="d"><span class="l-en">new deals priced</span><span class="l-zh">新交易定价</span></div></div>
-    <div class="scoretile"><div class="k"><span class="l-en">Priced · 90d</span><span class="l-zh">定价 · 90天</span></div><div class="v">111</div><div class="d"><span class="l-en">pace</span><span class="l-zh">节奏</span>: <span class="l-en">busy</span><span class="l-zh">繁忙</span></div></div>
-    <div class="scoretile"><div class="k"><span class="l-en">SPAC share · 90d</span><span class="l-zh">SPAC占比 · 90天</span></div><div class="v" style="color:var(--amber)">51%</div><div class="d">57/111 <span class="l-en">blank-checks</span><span class="l-zh">空白支票</span></div></div>
-    <div class="scoretile"><div class="k"><span class="l-en">Upcoming / Filed</span><span class="l-zh">即将 / 已申报</span></div><div class="v">4 / 330</div><div class="d"><span class="l-en">expected · on file (S-1)</span><span class="l-zh">预期 · 在档（S-1）</span></div></div>
-  </div>
-  <div class="chips">
-    <span class="chip"><span class="l-en">Withdrawn · 90d</span><span class="l-zh">撤回 · 90天</span>: <b>21</b></span>
-    <span class="chip"><span class="l-en">Median operating-co deal · 90d</span><span class="l-zh">营运公司交易中位 · 90天</span>: <b>$279M</b></span>
-    <span class="chip" style="border-color:var(--amber);color:var(--amber)">⚠ <span class="l-en">elevated SPAC share</span><span class="l-zh">SPAC占比偏高</span></span>
-  </div>
-  
-
-  <!-- ===== recently priced ===== -->
-  
-  <div class="section-title"><span class="l-en">Recently priced · last 120 days</span><span class="l-zh">近期定价 · 最近120天</span></div>
-  <div class="card">
-    <table class="tbl">
-      <tr><th><span class="l-en">Priced</span><span class="l-zh">定价日</span></th><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Company</span><span class="l-zh">公司</span></th><th class="n"><span class="l-en">Offer</span><span class="l-zh">发行价</span></th><th class="n"><span class="l-en">Size</span><span class="l-zh">规模</span></th><th><span class="l-en">Demand (vs range)</span><span class="l-zh">需求（对比区间）</span></th><th class="n"><span class="l-en">vs offer</span><span class="l-zh">对比发行</span></th></tr>
-      
-      <tr>
-        <td class="faint">2026-07-17<span class="sub"> · d+5</span></td>
-        <td><b>AMACU</b></td>
-        <td>AMR Resources Acquisition Corp.<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$250M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-16<span class="sub"> · d+6</span></td>
-        <td><b>QMLS</b></td>
-        <td>QumulusAI, Inc.</td>
-        <td class="n">$nan</td>
-        <td class="n">$nan</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-16<span class="sub"> · d+6</span></td>
-        <td><b>STDN</b></td>
-        <td>Standard Nuclear, Inc.</td>
-        <td class="n">$15.00</td>
-        <td class="n">$150M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-16<span class="sub"> · d+6</span></td>
-        <td><b>CSQR</b></td>
-        <td>Csquare, Inc.</td>
-        <td class="n">$21.00</td>
-        <td class="n">$1.1B</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-14<span class="sub"> · d+8</span></td>
-        <td><b>JONEU</b></td>
-        <td>Jones Ventures INTL Acquisition1 Corp<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$200M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-13<span class="sub"> · d+9</span></td>
-        <td><b>RACD</b></td>
-        <td>Research Alliance Corp IV</td>
-        <td class="n">$10.00</td>
-        <td class="n">$75M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-10<span class="sub"> · d+12</span></td>
-        <td><b>SKHY</b></td>
-        <td>SK hynix Inc.</td>
-        <td class="n">$149.00</td>
-        <td class="n">$26.5B</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-10<span class="sub"> · d+12</span></td>
-        <td><b>SAMOU</b></td>
-        <td>Samos Energy Acquisition Corp<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$200M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-09<span class="sub"> · d+13</span></td>
-        <td><b>MRCOU</b></td>
-        <td>Mercator Acquisition Corp.<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$150M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-09<span class="sub"> · d+13</span></td>
-        <td><b>CCCTU</b></td>
-        <td>Columbus Circle Capital Corp III<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$200M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-08<span class="sub"> · d+14</span></td>
-        <td><b>FDMMU</b></td>
-        <td>Freedom Metals Acquisition Corp.<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$275M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-07<span class="sub"> · d+15</span></td>
-        <td><b>BCCQU</b></td>
-        <td>Bleichroeder Acquisition Corp. III<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$300M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-02<span class="sub"> · d+20</span></td>
-        <td><b>VIIU</b></td>
-        <td>Viking Acquisition Corp. II<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$200M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-02<span class="sub"> · d+20</span></td>
-        <td><b>MIACU</b></td>
-        <td>Meridian3 Industrials Acquisition Corp<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$175M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-01<span class="sub"> · d+21</span></td>
-        <td><b>LIME</b></td>
-        <td>Neutron Holdings, Inc.</td>
-        <td class="n">$25.00</td>
-        <td class="n">$174M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-01<span class="sub"> · d+21</span></td>
-        <td><b>OSPRU</b></td>
-        <td>Osprey Acquisition Corp. III<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$261M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-01<span class="sub"> · d+21</span></td>
-        <td><b>BSP</b></td>
-        <td>Bending Spoons S.p.A.</td>
-        <td class="n">$29.00</td>
-        <td class="n">$1.7B</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-01<span class="sub"> · d+21</span></td>
-        <td><b>ITG</b></td>
-        <td>ITG, Inc./DE/</td>
-        <td class="n">$16.00</td>
-        <td class="n">$312M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-30<span class="sub"> · d+22</span></td>
-        <td><b>AAC&#39;U</b></td>
-        <td>Ares Acquisition Corp III<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$345M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-26<span class="sub"> · d+26</span></td>
-        <td><b>SIND</b></td>
-        <td>Sinda Ltd.</td>
-        <td class="n">$12.00</td>
-        <td class="n">$213M</td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42;font-size:11.5px;padding:3px 8px"><span class="l-en">bottom of range</span><span class="l-zh">区间下沿</span> -2%</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-25<span class="sub"> · d+27</span></td>
-        <td><b>ALPXU</b></td>
-        <td>Alpex Acquisition Corp<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$100M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-25<span class="sub"> · d+27</span></td>
-        <td><b>DSC</b></td>
-        <td>DSC Holdings Ltd.</td>
-        <td class="n">$17.00</td>
-        <td class="n">$51M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-25<span class="sub"> · d+27</span></td>
-        <td><b>DPC</b></td>
-        <td>DPC Holdings Ltd</td>
-        <td class="n">$33.00</td>
-        <td class="n">$919M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-25<span class="sub"> · d+27</span></td>
-        <td><b>FWACU</b></td>
-        <td>Futurewave Acquisition Corp<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$75M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-25<span class="sub"> · d+27</span></td>
-        <td><b>CGCFU</b></td>
-        <td>Cartesian Growth Corp IV<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$250M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-23<span class="sub"> · d+29</span></td>
-        <td><b>GHXIU</b></td>
-        <td>Gores Holdings XI, Inc.<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$312M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-18<span class="sub"> · d+34</span></td>
-        <td><b>TVIVU</b></td>
-        <td>Texas Ventures Acquisition IV Corp<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$150M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-18<span class="sub"> · d+34</span></td>
-        <td><b>WLCOU</b></td>
-        <td>Wilco 63 Corp<span class="spac">SPAC</span></td>
-        <td class="n">$10.00</td>
-        <td class="n">$200M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-18<span class="sub"> · d+34</span></td>
-        <td><b>KARD</b></td>
-        <td>Kardigan, Inc.</td>
-        <td class="n">$16.00</td>
-        <td class="n">$400M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-06-18<span class="sub"> · d+34</span></td>
-        <td><b>FCBM</b></td>
-        <td>First Carolina Financial Services, Inc.</td>
-        <td class="n">$12.50</td>
-        <td class="n">$69M</td>
-        <td><span class="faint">—</span></td>
-        <td class="n" style="color:#6F6F6F">—</td>
-      </tr>
-      
-    </table>
-    <div class="sub faint" style="margin-top:10px;font-size:12px"><span class="l-en">“vs offer” shows only where we already hold the price series — most fresh IPOs are outside our coverage universe, so it is usually blank by design (we do not chase per-name quotes for a context page). SPACs are flagged, never dropped: they price at $10, rarely pop, and distort IPO base rates. Post-listing quality/factor coverage (accruals, profitability, valuation-vs-comps) only switches on after a name has its first annual report (~12 months) or joins an index — so fresh IPOs sit in a deliberate coverage hole rather than getting a fabricated quality score.</span><span class="l-zh">“对比发行”仅在我们已持有该价格序列时显示 —— 多数新上市公司不在我们的覆盖范围内，故通常按设计留空（背景页不逐一抓取报价）。SPAC 被标记而非剔除：它们以 $10 定价、极少爆涨，会扭曲新股基准比率。上市后的质量/因子覆盖（应计、盈利能力、相对估值）只有在公司发布首份年报（约12个月）或被纳入指数后才会启用 —— 因此新上市公司处于刻意的覆盖空窗，而非被赋予虚构的质量评分。</span></div>
-    <div class="sub faint" style="margin-top:6px;font-size:12px"><span class="l-en">“Demand (vs range)” = the final offer price vs the marketed range (partial-adjustment, Hanley) — the single strongest day-1 predictor, but it is finalised the night before trading and is not capturable without an allocation, so it is context, never a buy signal. It accrues forward as deals move from the upcoming calendar to priced.</span><span class="l-zh">“需求（对比区间）” = 最终发行价相对营销区间（部分调整，Hanley）—— 单日最强的预测因子，但在交易前夜才敲定，且没有配售便无法捕获，故为背景而非买入信号。它随着交易从“即将”日历转为“已定价”而向前累积。</span></div>
-  </div>
-  
-
-  <!-- ===== upcoming ===== -->
-  
-  <div class="section-title"><span class="l-en">Expected to price soon</span><span class="l-zh">预计即将定价</span></div>
-  <div class="card">
-    <table class="tbl">
-      <tr><th><span class="l-en">Expected</span><span class="l-zh">预期日</span></th><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Company</span><span class="l-zh">公司</span></th><th class="n"><span class="l-en">Range</span><span class="l-zh">区间</span></th><th class="n"><span class="l-en">Size</span><span class="l-zh">规模</span></th></tr>
-      
-      <tr>
-        <td class="faint">2026-07-21</td>
-        <td><b>NCOU</b></td>
-        <td>Southern Cross Acquisition I Corp.<span class="spac">SPAC</span></td>
-        <td class="n">$10</td>
-        <td class="n">$100M</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-24</td>
-        <td><b>SCTX</b></td>
-        <td>Scribe Therapeutics, Inc.</td>
-        <td class="n">$13–15</td>
-        <td class="n">$123M</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-30</td>
-        <td><b>REF</b></td>
-        <td>Reformation Inc.</td>
-        <td class="n">$15–17</td>
-        <td class="n">$275M</td>
-      </tr>
-      
-      <tr>
-        <td class="faint">2026-07-30</td>
-        <td><b>JMKE</b></td>
-        <td>Jersey Mike&#39;s Subs Inc.</td>
-        <td class="n">$21–25</td>
-        <td class="n">$1.2B</td>
-      </tr>
-      
-    </table>
-  </div>
-  
-
-  <!-- ===== Hong Kong IPO backdrop (Phase 3) ===== -->
-  
-  <div class="section-title"><span class="l-en">Hong Kong IPO backdrop · the more retail-tradeable market</span><span class="l-zh">香港新股背景 · 更适合散户参与的市场</span></div>
-  <div class="card">
-    <div class="dialwrap" style="margin-bottom:8px">
-      <div class="dialnum" style="font-size:30px;color:#F5AD42"><span class="l-en">MIXED</span><span class="l-zh">混合</span></div>
-      <div class="sub"><span class="l-en">Liquidity-backdrop read</span><span class="l-zh">流动性背景读数</span> · <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-22</div>
+    <div class="deal">
+      <div class="d-tkr">REF</div>
+      <div class="d-co">Reformation Inc.</div>
+      <div class="d-row"><span class="k"><span class="l-en">Expected</span><span class="l-zh">预期</span></span><span class="v">2026-07-30</span></div>
+      <div class="d-row"><span class="k"><span class="l-en">Range</span><span class="l-zh">区间</span></span><span class="v">$15–17</span></div>
+      <div class="d-row"><span class="k"><span class="l-en">Size</span><span class="l-zh">规模</span></span><span class="v">$275M</span></div>
     </div>
-    <table class="legtbl">
-      <tr><th class="l"><span class="l-en">Backdrop leg</span><span class="l-zh">背景分项</span></th><th><span class="l-en">Reading</span><span class="l-zh">读数</span></th><th><span class="l-en">State</span><span class="l-zh">状态</span></th></tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">Southbound flow (20d net)</span><span class="l-zh">南向资金（20日净额）</span><div class="sub faint" style="font-size:11.5px">mainland capital into HK = primary-market fuel</div></td>
-        <td><b><span class="l-en">+90,106 HK$mn</span><span class="l-zh">+90,106 HK$mn</span></b></td>
-        <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">constructive</span><span class="l-zh">偏好</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">Subscription funding (1M HIBOR)</span><span class="l-zh">认购融资成本（1个月 HIBOR）</span><div class="sub faint" style="font-size:11.5px">cheap HK$ funding = leveraged retail subscription</div></td>
-        <td><b><span class="l-en">2.72%</span><span class="l-zh">2.72%</span></b></td>
-        <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">neutral</span><span class="l-zh">中性</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">HKD peg pressure</span><span class="l-zh">港元联系汇率压力</span><div class="sub faint" style="font-size:11.5px">inflow side supports issuance</div></td>
-        <td><b><span class="l-en">weak-side (outflow)</span><span class="l-zh">弱方（资金流出）</span></b></td>
-        <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">cautious</span><span class="l-zh">谨慎</span></span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><span class="l-en">HK risk appetite</span><span class="l-zh">香港风险偏好</span><div class="sub faint" style="font-size:11.5px">risk-on tape welcomes new issues</div></td>
-        <td><b><span class="l-en">Neutral</span><span class="l-zh">中性</span></b></td>
-        <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">neutral</span><span class="l-zh">中性</span></span></td>
-      </tr>
-      
-    </table>
-    <div class="note b" style="margin-top:10px"><span class="l-en">Liquidity backdrop only — HK is structurally more retail-tradeable (public-offer tranche + clawback, published subscription multiple, grey market) but those keyless primary-market feeds are currently broken/blocked, so this is the issuance environment, not a deal signal. Never scored.</span><span class="l-zh">仅为流动性背景 —— 香港在结构上更适合散户参与（公开发售部分＋回拨机制、公开的超额认购倍数、暗盘），但这些免密钥的一级市场数据目前失效／受阻，故此处是发行环境而非交易级信号。从不计分。</span></div>
+    
+    <div class="deal">
+      <div class="d-tkr">JMKE</div>
+      <div class="d-co">Jersey Mike&#39;s Subs Inc.</div>
+      <div class="d-row"><span class="k"><span class="l-en">Expected</span><span class="l-zh">预期</span></span><span class="v">2026-07-30</span></div>
+      <div class="d-row"><span class="k"><span class="l-en">Range</span><span class="l-zh">区间</span></span><span class="v">$21–25</span></div>
+      <div class="d-row"><span class="k"><span class="l-en">Size</span><span class="l-zh">规模</span></span><span class="v">$1.2B</span></div>
+    </div>
+    
   </div>
   
 
-  <!-- ===== methodology / why-not-scored ===== -->
-  <div class="section-title"><span class="l-en">Why this is context, not a prediction — and US vs Hong Kong</span><span class="l-zh">为何这是背景而非预测 —— 以及美国 vs 香港</span></div>
-  <div class="card">
-    <div class="sub" style="color:var(--text);margin-bottom:8px"><span class="l-en">The pre-pricing public-data edge on day-1 underpricing is real and replicated out-of-sample (Huang–Jiang–Li–Wu; Çolak–Fu–Hasan find XGBoost predicts the direction well) — its strongest input is the bookbuilding price revision, finalised the night before trading. But it is an allocation good we cannot capture, so we never turn it into a score or a buy signal here.</span><span class="l-zh">发行前公开数据对首日低定价的预测优势是真实且经样本外复现的（Huang–Jiang–Li–Wu；Çolak–Fu–Hasan 发现 XGBoost 能较好预测方向）—— 其最强输入是簿记建档中的定价修正，在交易前夜才敲定。但这是我们无法捕获的配售品，因此本页绝不将其转化为评分或买入信号。</span></div>
-    <div class="sub" style="color:var(--text)"><span class="l-en">Hong Kong is structurally more retail-tradeable (a mandatory public-offer tranche with a clawback, a published over-subscription multiple, and a grey market that trades the night before listing) — but the keyless data for those signals is currently broken/blocked, so an HK leg is deferred. The next, more capturable leg is the 180-day LOCKUP-EXPIRY overhang: a deterministic, free-from-the-prospectus date with documented one-sided supply pressure — an avoid/de-risk-into-the-cliff flag rather than a tradeable short.</span><span class="l-zh">香港在结构上对散户更可交易（强制公开发售部分与回拨机制、公开的超额认购倍数，以及上市前夜交易的暗盘）—— 但这些信号的免密钥数据目前失效/受阻，故香港分项暂缓。下一个更可捕获的分项是 180 天禁售期到期的供给压制：一个确定的、可从招股书免费获取的日期，且有据可查的单边供给压力 —— 属于“临近解禁回避/降险”的提示，而非可交易的做空。</span></div>
+  <!-- ============ STUDY SHELVES — progressive disclosure ============ -->
+  <div class="sec"><span class="l-en">The detail</span><span class="l-zh">细节</span> <span class="sec-hint"><span class="l-en">open a shelf for the full tape</span><span class="l-zh">展开查看完整数据</span></span></div>
+  <div class="shelf">
+
+    <!-- window legs -->
+    <details>
+      <summary><span class="sh-ic">🧭</span><span class="l-en">What the window read is made of</span><span class="l-zh">窗口读数的构成</span><span class="sh-hint">5/6 <span class="l-en">supportive</span><span class="l-zh">偏好</span></span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <div class="tbl-wrap">
+          <table class="legtbl">
+            <thead><tr><th class="l" scope="col"><span class="l-en">Risk-appetite leg</span><span class="l-zh">风险偏好分项</span></th><th scope="col"><span class="l-en">Reading</span><span class="l-zh">读数</span></th><th scope="col"><span class="l-en">State</span><span class="l-zh">状态</span></th></tr></thead>
+            <tbody>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">Macro risk backdrop</span><span class="l-zh">宏观风险背景</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">validated de-risk score (reused, not new)</span><span class="l-zh">复用已验证的降险评分（非新建）</span></div></td>
+              <td><b style="color:var(--ink)">12/100</b></td>
+              <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
+            </tr>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">Volatility (VIX)</span><span class="l-zh">波动率（VIX）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">low vol = receptive tape</span><span class="l-zh">低波动 = 接纳新股的盘面</span></div></td>
+              <td><b style="color:var(--ink)">17.0</b></td>
+              <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></td>
+            </tr>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">Credit appetite (HY vs IG)</span><span class="l-zh">信用偏好（高收益 vs 投资级）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">high-yield leading = risk-on credit</span><span class="l-zh">高收益领先 = 信用风险偏好</span></div></td>
+              <td><b style="color:var(--ink)">+2.1%</b></td>
+              <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
+            </tr>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">Small-cap leadership (IWM vs SPY)</span><span class="l-zh">小盘领先（IWM vs SPY）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">small-caps leading = appetite for risk/new names</span><span class="l-zh">小盘领先 = 对风险/新名的偏好</span></div></td>
+              <td><b style="color:var(--ink)">+1.3%</b></td>
+              <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
+            </tr>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">Speculative appetite (high-beta vs low-vol)</span><span class="l-zh">投机偏好（高贝塔 vs 低波）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">high-beta leading = speculative bid</span><span class="l-zh">高贝塔领先 = 投机性买盘</span></div></td>
+              <td><b style="color:var(--ink)">+6.6%</b></td>
+              <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
+            </tr>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">IPO basket trend (IPO vs SPY)</span><span class="l-zh">新股篮子趋势（IPO vs SPY）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">recent-IPO ETF leading = aftermarket demand</span><span class="l-zh">新股ETF领先 = 二级市场需求</span></div></td>
+              <td><b style="color:var(--ink)">+3.9%</b></td>
+              <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
+            </tr>
+            
+            </tbody>
+          </table>
+        </div>
+        <div class="mini"><span class="l-en">Legs reuse existing market reads — the macro de-risk score (from the main dashboard, not rebuilt here), VIX, HY-vs-IG credit, small-cap &amp; high-beta leadership, the IPO-ETF trend. A description of risk appetite, not a forecast — and nothing here feeds any score or allocation.</span><span class="l-zh">各分项复用既有市场读数 —— 宏观降险评分（取自主看板，非在此新建）、VIX、高收益对投资级信用、小盘与高贝塔领先、新股ETF趋势。是对风险偏好的描述而非预测 —— 且此处任何内容都不进入任何评分或仓位。</span></div>
+      </div>
+    </details>
+
+    <!-- recently priced -->
+    
+    <details>
+      <summary><span class="sh-ic">🧾</span><span class="l-en">Recently priced</span><span class="l-zh">近期定价</span><span class="sh-hint"><span class="l-en">last 120 days</span><span class="l-zh">最近120天</span></span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th scope="col"><span class="l-en">Priced</span><span class="l-zh">定价日</span></th><th scope="col"><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th scope="col"><span class="l-en">Company</span><span class="l-zh">公司</span></th><th class="n" scope="col"><span class="l-en">Offer</span><span class="l-zh">发行价</span></th><th class="n" scope="col"><span class="l-en">Size</span><span class="l-zh">规模</span></th></tr></thead>
+            <tbody>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-21<span style="color:var(--faint)"> · d+1</span></td>
+              <td><b style="color:var(--ink)">NCOOU</b></td>
+              <td>Southern Cross Acquisition I Corp.<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$100M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-21<span style="color:var(--faint)"> · d+1</span></td>
+              <td><b style="color:var(--ink)">BRTMU</b></td>
+              <td>B&amp;R Technology Merger Corp.<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$325M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-17<span style="color:var(--faint)"> · d+5</span></td>
+              <td><b style="color:var(--ink)">AMACU</b></td>
+              <td>AMR Resources Acquisition Corp.<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$250M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-16<span style="color:var(--faint)"> · d+6</span></td>
+              <td><b style="color:var(--ink)">QMLS</b></td>
+              <td>QumulusAI, Inc.</td>
+              <td class="n">$nan</td>
+              <td class="n">$nan</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-16<span style="color:var(--faint)"> · d+6</span></td>
+              <td><b style="color:var(--ink)">STDN</b></td>
+              <td>Standard Nuclear, Inc.</td>
+              <td class="n">$15.00</td>
+              <td class="n">$150M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-16<span style="color:var(--faint)"> · d+6</span></td>
+              <td><b style="color:var(--ink)">CSQR</b></td>
+              <td>Csquare, Inc.</td>
+              <td class="n">$21.00</td>
+              <td class="n">$1.1B</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-14<span style="color:var(--faint)"> · d+8</span></td>
+              <td><b style="color:var(--ink)">JONEU</b></td>
+              <td>Jones Ventures INTL Acquisition1 Corp<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$200M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-13<span style="color:var(--faint)"> · d+9</span></td>
+              <td><b style="color:var(--ink)">RACD</b></td>
+              <td>Research Alliance Corp IV</td>
+              <td class="n">$10.00</td>
+              <td class="n">$75M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-10<span style="color:var(--faint)"> · d+12</span></td>
+              <td><b style="color:var(--ink)">SKHY</b></td>
+              <td>SK hynix Inc.</td>
+              <td class="n">$149.00</td>
+              <td class="n">$26.5B</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-10<span style="color:var(--faint)"> · d+12</span></td>
+              <td><b style="color:var(--ink)">SAMOU</b></td>
+              <td>Samos Energy Acquisition Corp<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$200M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-09<span style="color:var(--faint)"> · d+13</span></td>
+              <td><b style="color:var(--ink)">MRCOU</b></td>
+              <td>Mercator Acquisition Corp.<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$150M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-09<span style="color:var(--faint)"> · d+13</span></td>
+              <td><b style="color:var(--ink)">CCCTU</b></td>
+              <td>Columbus Circle Capital Corp III<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$200M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-08<span style="color:var(--faint)"> · d+14</span></td>
+              <td><b style="color:var(--ink)">FDMMU</b></td>
+              <td>Freedom Metals Acquisition Corp.<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$275M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-07<span style="color:var(--faint)"> · d+15</span></td>
+              <td><b style="color:var(--ink)">BCCQU</b></td>
+              <td>Bleichroeder Acquisition Corp. III<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$300M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-02<span style="color:var(--faint)"> · d+20</span></td>
+              <td><b style="color:var(--ink)">VIIU</b></td>
+              <td>Viking Acquisition Corp. II<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$200M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-02<span style="color:var(--faint)"> · d+20</span></td>
+              <td><b style="color:var(--ink)">MIACU</b></td>
+              <td>Meridian3 Industrials Acquisition Corp<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$175M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-01<span style="color:var(--faint)"> · d+21</span></td>
+              <td><b style="color:var(--ink)">LIME</b></td>
+              <td>Neutron Holdings, Inc.</td>
+              <td class="n">$25.00</td>
+              <td class="n">$174M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-01<span style="color:var(--faint)"> · d+21</span></td>
+              <td><b style="color:var(--ink)">OSPRU</b></td>
+              <td>Osprey Acquisition Corp. III<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$261M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-01<span style="color:var(--faint)"> · d+21</span></td>
+              <td><b style="color:var(--ink)">BSP</b></td>
+              <td>Bending Spoons S.p.A.</td>
+              <td class="n">$29.00</td>
+              <td class="n">$1.7B</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-07-01<span style="color:var(--faint)"> · d+21</span></td>
+              <td><b style="color:var(--ink)">ITG</b></td>
+              <td>ITG, Inc./DE/</td>
+              <td class="n">$16.00</td>
+              <td class="n">$312M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-30<span style="color:var(--faint)"> · d+22</span></td>
+              <td><b style="color:var(--ink)">AAC&#39;U</b></td>
+              <td>Ares Acquisition Corp III<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$345M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-26<span style="color:var(--faint)"> · d+26</span></td>
+              <td><b style="color:var(--ink)">SIND</b></td>
+              <td>Sinda Ltd.</td>
+              <td class="n">$12.00</td>
+              <td class="n">$213M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-25<span style="color:var(--faint)"> · d+27</span></td>
+              <td><b style="color:var(--ink)">ALPXU</b></td>
+              <td>Alpex Acquisition Corp<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$100M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-25<span style="color:var(--faint)"> · d+27</span></td>
+              <td><b style="color:var(--ink)">DSC</b></td>
+              <td>DSC Holdings Ltd.</td>
+              <td class="n">$17.00</td>
+              <td class="n">$51M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-25<span style="color:var(--faint)"> · d+27</span></td>
+              <td><b style="color:var(--ink)">DPC</b></td>
+              <td>DPC Holdings Ltd</td>
+              <td class="n">$33.00</td>
+              <td class="n">$919M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-25<span style="color:var(--faint)"> · d+27</span></td>
+              <td><b style="color:var(--ink)">FWACU</b></td>
+              <td>Futurewave Acquisition Corp<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$75M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-25<span style="color:var(--faint)"> · d+27</span></td>
+              <td><b style="color:var(--ink)">CGCFU</b></td>
+              <td>Cartesian Growth Corp IV<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$250M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-23<span style="color:var(--faint)"> · d+29</span></td>
+              <td><b style="color:var(--ink)">GHXIU</b></td>
+              <td>Gores Holdings XI, Inc.<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$312M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-18<span style="color:var(--faint)"> · d+34</span></td>
+              <td><b style="color:var(--ink)">TVIVU</b></td>
+              <td>Texas Ventures Acquisition IV Corp<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$150M</td>
+            </tr>
+            
+            <tr>
+              <td style="color:var(--faint)">2026-06-18<span style="color:var(--faint)"> · d+34</span></td>
+              <td><b style="color:var(--ink)">WLCOU</b></td>
+              <td>Wilco 63 Corp<span class="spac">SPAC</span></td>
+              <td class="n">$10.00</td>
+              <td class="n">$200M</td>
+            </tr>
+            
+            </tbody>
+          </table>
+        </div>
+        <div class="mini"><span class="l-en">SPACs are flagged, never dropped: they price at $10, rarely pop, and distort IPO base rates. Per-name price return vs the offer is shown only where we already hold the series — most fresh IPOs are outside our coverage, so we don’t fabricate it.</span><span class="l-zh">SPAC 被标记而非剔除：它们以 $10 定价、极少爆涨，会扭曲新股基准比率。相对发行价的个股回报仅在我们已持有序列时显示 —— 多数新上市公司不在覆盖范围内，故不会虚构。</span></div>
+      </div>
+    </details>
+    
+
+    <!-- hong kong -->
+    
+    <details>
+      <summary><span class="sh-ic">🇭🇰</span><span class="l-en">Hong Kong issuance backdrop</span><span class="l-zh">香港发行背景</span><span class="sh-hint"><span class="l-en">MIXED</span><span class="l-zh">混合</span></span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <div class="sec-sub" style="margin:10px 0"><span class="l-en">Liquidity backdrop only. HK is structurally more retail-tradeable (a public-offer tranche with clawback, a published subscription multiple, a grey market) — but those deal-level demand feeds are keyless and currently blocked, so we show the liquidity that drives HK’s hot windows, not a deal signal. Never scored.</span><span class="l-zh">仅为流动性背景。香港在结构上更适合散户参与（公开发售部分＋回拨机制、公开的超额认购倍数、暗盘）—— 但这些交易级需求数据无密钥且目前受阻，故此处展示驱动香港热窗的流动性，而非交易信号。从不计分。</span></div>
+        
+        <div class="tbl-wrap">
+          <table class="legtbl">
+            <thead><tr><th class="l" scope="col"><span class="l-en">Backdrop leg</span><span class="l-zh">背景分项</span></th><th scope="col"><span class="l-en">Reading</span><span class="l-zh">读数</span></th><th scope="col"><span class="l-en">State</span><span class="l-zh">状态</span></th></tr></thead>
+            <tbody>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">Southbound flow (20d net)</span><span class="l-zh">南向资金（20日净额）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">mainland capital into HK = primary-market fuel</span><span class="l-zh">内地资金流入香港 = 一级市场的燃料</span></div></td>
+              <td><b style="color:var(--ink)"><span class="l-en">+90,106 HK$mn</span><span class="l-zh">+90,106 HK$mn</span></b></td>
+              <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
+            </tr>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">Subscription funding (1M HIBOR)</span><span class="l-zh">认购融资成本（1个月 HIBOR）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">cheap HK$ funding = leveraged retail subscription</span><span class="l-zh">港元融资便宜 = 散户杠杆认购活跃</span></div></td>
+              <td><b style="color:var(--ink)"><span class="l-en">2.72%</span><span class="l-zh">2.72%</span></b></td>
+              <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></td>
+            </tr>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">HKD peg pressure</span><span class="l-zh">港元联系汇率压力</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">inflow side supports issuance</span><span class="l-zh">资金流入一侧支撑新股发行</span></div></td>
+              <td><b style="color:var(--ink)"><span class="l-en">weak-side (outflow)</span><span class="l-zh">弱方（资金流出）</span></b></td>
+              <td><span class="chip" style="border-color:#F5AD42;color:#F5AD42"><span class="l-en">Cautious</span><span class="l-zh">谨慎</span></span></td>
+            </tr>
+            
+            <tr>
+              <td class="l" scope="row"><span class="l-en">HK risk appetite</span><span class="l-zh">香港风险偏好</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">risk-on tape welcomes new issues</span><span class="l-zh">风险偏好升温的盘面欢迎新股</span></div></td>
+              <td><b style="color:var(--ink)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></b></td>
+              <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></td>
+            </tr>
+            
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+    
+
+    <!-- methodology (Tier-3 home for the academic depth) -->
+    <details>
+      <summary><span class="sh-ic">📚</span><span class="l-en">Why this is context, not a prediction</span><span class="l-zh">为何这是背景而非预测</span><span class="sh-hint"><span class="l-en">methodology</span><span class="l-zh">方法</span></span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <h4><span class="l-en">The honest thesis</span><span class="l-zh">诚实的论点</span></h4>
+        <div class="mini" style="font-size:13px;color:var(--text)"><span class="l-en">The day-1 IPO “pop” is genuinely predictable out-of-sample (Huang–Jiang–Li–Wu; Çolak–Fu–Hasan) — its strongest input is the bookbuilding price revision, finalised the night before trading. But it is measured from the rationed offer price and the opening trade already prices it in (Ritter–Welch), so without an offer-price allocation (which retail and small funds structurally cannot get) it is NOT capturable. Held from the first close, IPOs underperform (Ritter: median 3-year return ≈ −26%). So this page never predicts pops — it reads whether the window is open and shows what buying new issues in the secondary market has actually returned.</span><span class="l-zh">新股首日“爆涨”在样本外确实可预测（Huang–Jiang–Li–Wu；Çolak–Fu–Hasan）—— 其最强输入是簿记建档中的定价修正，在交易前夜才敲定。但它是相对被配售的发行价计量的，开盘价已将其计入（Ritter–Welch），因此没有发行价配售（散户与小型基金结构上拿不到）便无法捕获。若从首日收盘持有，新股长期跑输（Ritter：3 年中位回报约 −26%）。故本页从不预测爆涨 —— 它判断窗口是否开启，并展示在二级市场买入新股的真实回报。</span></div>
+        <h4><span class="l-en">US vs Hong Kong</span><span class="l-zh">美国 vs 香港</span></h4>
+        <div class="mini" style="font-size:13px;color:var(--text)"><span class="l-en">Hong Kong is structurally more retail-tradeable — a mandatory public-offer tranche with a clawback, a published over-subscription multiple, and a grey market that trades the night before listing. But the keyless data for those deal-level demand signals is currently broken/blocked, so the HK shelf shows the liquidity backdrop (southbound flow, HIBOR, the HKD peg, HK risk appetite) rather than a deal signal.</span><span class="l-zh">香港在结构上更适合散户参与 —— 强制公开发售部分与回拨机制、公开的超额认购倍数，以及上市前夜交易的暗盘。但这些交易级需求信号的免密钥数据目前失效/受阻，故香港栏目展示流动性背景（南向资金、HIBOR、港元联系汇率、香港风险偏好），而非交易信号。</span></div>
+      </div>
+    </details>
   </div>
 
   <div class="foot">
-    <span class="l-en">Display-only, never scored. Deal calendar: Nasdaq public JSON (community-sourced, not official; the predictive demand signals — over-subscription, book demand, allocation — live in paid feeds and are not here). Aftermarket: Renaissance IPO ETF (IPO) &amp; First Trust IPOX-100 (FPX) vs SPY, total-return adjusted closes. Evidence: Ritter (Univ. of Florida IPO data), Huang-Jiang-Li-Wu (SSRN 4012288), Çolak-Fu-Hasan (J. Banking &amp; Finance 2025), Ritter-Welch (2002). Not investment advice. Built</span><span class="l-zh">仅供展示，从不计分。交易日历：纳斯达克公开 JSON（社区来源，非官方；具预测性的需求信号 —— 超额认购、簿记需求、配售 —— 存在于付费数据源，此处没有）。二级市场：复兴新股ETF (IPO) 与 First Trust IPOX-100 (FPX) 对比 SPY，总回报调整收盘价。证据：Ritter（佛罗里达大学新股数据）、Huang-Jiang-Li-Wu (SSRN 4012288)、Çolak-Fu-Hasan（《银行与金融杂志》2025）、Ritter-Welch (2002)。非投资建议。生成于</span> 2026-07-22 11:36 UTC.
+    <span class="l-en">Display-only, never scored — an avoidance + context tool, not a buy signal. Deal calendar: Nasdaq public JSON (community-sourced, not official; the predictive demand signals — over-subscription, book demand, allocation — live in paid feeds and are not here). Aftermarket: Renaissance IPO ETF (IPO) &amp; First Trust IPOX-100 (FPX) vs SPY, total-return adjusted closes. Evidence: Ritter (Univ. of Florida IPO data), Huang-Jiang-Li-Wu (SSRN 4012288), Çolak-Fu-Hasan (J. Banking &amp; Finance 2025), Ritter-Welch (2002), Field &amp; Hanka (2001). Not investment advice. Built</span><span class="l-zh">仅供展示，从不计分 —— 一个规避与背景工具，而非买入信号。交易日历：纳斯达克公开 JSON（社区来源，非官方；具预测性的需求信号 —— 超额认购、簿记需求、配售 —— 存在于付费数据源，此处没有）。二级市场：复兴新股ETF (IPO) 与 First Trust IPOX-100 (FPX) 对比 SPY，总回报调整收盘价。证据：Ritter（佛罗里达大学新股数据）、Huang-Jiang-Li-Wu (SSRN 4012288)、Çolak-Fu-Hasan（《银行与金融杂志》2025）、Ritter-Welch (2002)、Field &amp; Hanka (2001)。非投资建议。生成于</span> 2026-07-22 13:07 UTC.
   </div>
 </div>
+
+<link rel="stylesheet" href="assets/css/4e16fcd2.css?v=4e16fcd2">
+<script defer src="illus.js?v=8e0a3779"></script>
 <script src="theme.js?v=62a16bd4" defer></script>
 </body></html>

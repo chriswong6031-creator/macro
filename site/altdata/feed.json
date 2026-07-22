@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-22T10:11:49.782418+00:00",
+  "generated_utc": "2026-07-22T11:52:44.785349+00:00",
   "as_of": "2026-07-22",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -30292,17 +30292,6 @@
         "why": "analyst_upgrade_cluster: net upgrades +41 revision delta \u00b7 github_momentum: +0.19% stars \u00b7 patent_cluster: 110 grants, 17 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
-        "ticker": "F",
-        "score": 3,
-        "weighted_score": 1.6,
-        "channel_list": [
-          "activist_13d",
-          "gov_contract_accel",
-          "stocktwits_bull"
-        ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $12,101,448, 2.4x accel \u00b7 stocktwits_bull: 88% bull \u00b7 186,188 watching"
-      },
-      {
         "ticker": "GSK",
         "score": 3,
         "weighted_score": 1.55,
@@ -30410,6 +30399,17 @@
         "why": "congress_cluster: 4 members net +10 \u00b7 github_momentum: +0.36% stars \u00b7 retail_buzz: 51 WSB mentions"
       },
       {
+        "ticker": "F",
+        "score": 3,
+        "weighted_score": 1.25,
+        "channel_list": [
+          "activist_13d",
+          "gov_contract_accel",
+          "stocktwits_bull"
+        ],
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $12,101,448, 2.4x accel \u00b7 stocktwits_bull: 88% bull \u00b7 186,188 watching"
+      },
+      {
         "ticker": "BA",
         "score": 3,
         "weighted_score": 1.2,
@@ -30441,16 +30441,6 @@
           "stocktwits_bull"
         ],
         "why": "clinical_phase3_start: 10 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE \u00b7 stocktwits_bull: 100% bull \u00b7 106,143 watching"
-      },
-      {
-        "ticker": "SRE",
-        "score": 2,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "activist_13d",
-          "unusual_options"
-        ],
-        "why": "activist_13d: 13D activist campaign \u00b7 unusual_options: 11.37\u00d7 vol/OI, call-skew"
       },
       {
         "ticker": "VST",
@@ -30525,6 +30515,16 @@
           "special_situation"
         ],
         "why": "clinical_phase3_start: 7 new Phase-3 \u00b7 lobbying: $4,198,850 lobbied \u00b7 special_situation: Delistings"
+      },
+      {
+        "ticker": "NVS",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion"
+        ],
+        "why": "clinical_phase3_start: 10 new Phase-3, 6 halt(s) \u00b7 fda_label_expansion: KISQALI FEMARA CO-PACK (COPACKAGED)"
       }
     ]
   }

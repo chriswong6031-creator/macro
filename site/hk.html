@@ -244,8 +244,6 @@
   
   <script src="live_config.js?v=0add7ac4" defer></script>
   <script src="live.js?v=e1a3ca0d" defer></script>
-  
-  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search HK stocks"
@@ -269,6 +267,16 @@
 <div class="grid">
 
   
+  
+  
+  
+  <div class="panel span12 health-banner" id="hk-freshness-banner" style="border-color:color-mix(in srgb,var(--down) 50%,var(--line));background:color-mix(in srgb,var(--down) 7%,var(--panel));">
+    <p class="hb-h">&#9888; <span class="l-en">HK data STALE — do not act on displayed values</span><span class="l-zh">港股数据已过期 — 请勿依据当前数值操作</span></p>
+    <ul class="hb-list">
+      <li class="hb-item"><span class="l-en">HK data stale — snapshot incoherent — standouts 2026-07-22 vs regime 2026-07-21</span><span class="l-zh">港股数据已过期 — 快照不一致 — 精选个股 2026-07-22 vs 周期判断 2026-07-21</span></li>
+      <li class="hb-item" style="color:var(--muted)"><span class="l-en">Expected session: 2026-07-22</span><span class="l-zh">预期交易日：2026-07-22</span></li>
+    </ul>
+  </div>
   
 
   
@@ -1085,14 +1093,14 @@
       
       
       <div class="hkx-lbl"><span class="l-en">Turning up — cheap and getting bought</span><span class="l-zh">转强 — 便宜且被资金买入</span></div>
-      <div class="hkx-chips"><span class="hkx-chip turn"><span class="l-en">Exchange & Diversified</span><span class="l-zh">Exchange & Diversified</span></span><span class="hkx-chip turn"><span class="l-en">Internet & Tech</span><span class="l-zh">Internet & Tech</span></span><span class="hkx-chip turn"><span class="l-en">Financials & Banks</span><span class="l-zh">Financials & Banks</span></span></div>
+      <div class="hkx-chips"><span class="hkx-chip turn"><span class="l-en">Insurance</span><span class="l-zh">Insurance</span></span><span class="hkx-chip turn"><span class="l-en">Financials & Banks</span><span class="l-zh">Financials & Banks</span></span></div>
       
       <div class="hkx-lbl"><span class="l-en">Sector heat · green = leading · red = lagging</span><span class="l-zh">板块温度 · 绿=领涨 · 红=滞涨</span></div>
       <div class="hkx-heat">
         
-        <i class="h2"></i>
+        <i class="c2"></i>
         
-        <i class="c"></i>
+        <i class="h2"></i>
         
         <i class="c"></i>
         
@@ -1100,9 +1108,9 @@
         
         <i class="h"></i>
         
-        <i class="c"></i>
-        
         <i class="h2"></i>
+        
+        <i class="c"></i>
         
         <i class="c"></i>
         
@@ -1265,8 +1273,8 @@
     <div class="hkx-card" role="button" tabindex="0" onclick="hkxOpenDlg('hkx-dlg-health')" style="align-self:start;cursor:pointer">
       <div class="hkx-ctitle"><span class="l-en">Data Health</span><span class="l-zh">数据状态</span></div>
       <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-        <span style="width:8px;height:8px;border-radius:50%;background:var(--up);flex:0 0 8px;display:inline-block"></span>
-        <b><span class="l-en">OK</span><span class="l-zh">正常</span></b>
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--warn);flex:0 0 8px;display:inline-block"></span>
+        <b><span class="l-en">Check data</span><span class="l-zh">请检查数据</span></b>
         <span style="margin-left:auto;opacity:.6;font-size:10px"><span class="l-en">tap for details</span><span class="l-zh">点击查看详情</span> ↓</span>
       </div>
     </div>
@@ -1936,80 +1944,80 @@
           <tr><th><span class="l-en">Sector</span><span class="l-zh">板块</span></th><th class="r"><span class="l-en">20d RS</span><span class="l-zh">20日相对</span></th><th class="r"><span class="l-en">State</span><span class="l-zh">状态</span></th></tr>
           
           <tr>
-            <td><span class="l-en">Exchange & Diversified</span><span class="l-zh">Exchange & Diversified</span></td>
-            <td class="r hkx-up">+1.8%</td>
-            <td class="r"><span class="hkx-stword ok"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
-          </tr>
-          
-          <tr>
-            <td><span class="l-en">Internet & Tech</span><span class="l-zh">Internet & Tech</span></td>
-            <td class="r hkx-dn">-4.3%</td>
+            <td><span class="l-en">Insurance</span><span class="l-zh">Insurance</span></td>
+            <td class="r hkx-dn">-0.6%</td>
             <td class="r"><span class="hkx-stword ok"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></td>
           </tr>
           
           <tr>
+            <td><span class="l-en">Exchange & Diversified</span><span class="l-zh">Exchange & Diversified</span></td>
+            <td class="r hkx-up">+2.6%</td>
+            <td class="r"><span class="hkx-stword warn"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td>
+          </tr>
+          
+          <tr>
             <td><span class="l-en">Financials & Banks</span><span class="l-zh">Financials & Banks</span></td>
-            <td class="r hkx-dn">-4.1%</td>
-            <td class="r"><span class="hkx-stword ok"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
+            <td class="r hkx-dn">-4.9%</td>
+            <td class="r"><span class="hkx-stword ok"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></td>
           </tr>
           
           <tr>
-            <td><span class="l-en">Insurance</span><span class="l-zh">Insurance</span></td>
-            <td class="r hkx-dn">-3.4%</td>
-            <td class="r"><span class="hkx-stword ok"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
-          </tr>
-          
-          <tr>
-            <td><span class="l-en">Healthcare & Pharma</span><span class="l-zh">Healthcare & Pharma</span></td>
-            <td class="r hkx-up">+8.4%</td>
+            <td><span class="l-en">Internet & Tech</span><span class="l-zh">Internet & Tech</span></td>
+            <td class="r hkx-dn">-4.8%</td>
             <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
           <tr>
-            <td><span class="l-en">Telecom & Utilities</span><span class="l-zh">Telecom & Utilities</span></td>
-            <td class="r hkx-dn">-2.5%</td>
-            <td class="r"><span class="hkx-stword ok"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
+            <td><span class="l-en">Healthcare & Pharma</span><span class="l-zh">Healthcare & Pharma</span></td>
+            <td class="r hkx-up">+7.3%</td>
+            <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
           <tr>
             <td><span class="l-en">Consumer</span><span class="l-zh">Consumer</span></td>
             <td class="r hkx-up">+1.5%</td>
-            <td class="r"><span class="hkx-stword ok"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
+            <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
+          </tr>
+          
+          <tr>
+            <td><span class="l-en">Telecom & Utilities</span><span class="l-zh">Telecom & Utilities</span></td>
+            <td class="r hkx-dn">-2.7%</td>
+            <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
           <tr>
             <td><span class="l-en">Property</span><span class="l-zh">Property</span></td>
-            <td class="r hkx-dn">-1.7%</td>
-            <td class="r"><span class="hkx-stword ok"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
+            <td class="r hkx-dn">-1.4%</td>
+            <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
           <tr>
             <td><span class="l-en">Industrials & Transport</span><span class="l-zh">Industrials & Transport</span></td>
-            <td class="r hkx-dn">-5.0%</td>
-            <td class="r"><span class="hkx-stword ok"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
+            <td class="r hkx-dn">-2.7%</td>
+            <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
           <tr>
             <td><span class="l-en">Energy</span><span class="l-zh">Energy</span></td>
-            <td class="r hkx-dn">-4.0%</td>
-            <td class="r"><span class="hkx-stword ok"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
+            <td class="r hkx-dn">-2.3%</td>
+            <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
           <tr>
             <td><span class="l-en">Gaming & Leisure</span><span class="l-zh">Gaming & Leisure</span></td>
-            <td class="r hkx-dn">-5.7%</td>
+            <td class="r hkx-dn">-4.9%</td>
             <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
           <tr>
             <td><span class="l-en">Materials</span><span class="l-zh">Materials</span></td>
-            <td class="r hkx-dn">-10.5%</td>
+            <td class="r hkx-dn">-3.8%</td>
             <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
           <tr>
             <td><span class="l-en">Auto & EV</span><span class="l-zh">Auto & EV</span></td>
-            <td class="r hkx-dn">-5.0%</td>
+            <td class="r hkx-dn">-7.2%</td>
             <td class="r"><span class="hkx-stword warn"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td>
           </tr>
           
@@ -2179,8 +2187,8 @@ Hong Kong shares the same stagflation label, but it dances to the dollar's tune.
         <div class="hkx-sep"></div>
         <div class="hkx-eyebrow"><span class="l-en">Sector playbook</span><span class="l-zh">板块操盘</span></div>
         <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Favour</span><span class="l-zh">偏好</span></span><span class="hkx-v"><span class="hkx-nchip"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="hkx-nchip"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span><span class="hkx-nchip"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span></span><span class="hkx-nchip"><span class="l-en">Insurance</span><span class="l-zh">保险</span></span></span></div>
-        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Leaders</span><span class="l-zh">领先</span></span><span class="hkx-v"><span class="hkx-nchip"><span class="l-en">Exchange &amp; Diversified</span><span class="l-zh">交易所与综合企业</span></span></span></div>
-        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Avoid</span><span class="l-zh">回避</span></span><span class="hkx-v"><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Healthcare &amp; Pharma</span><span class="l-zh">医疗与制药</span></span><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Gaming &amp; Leisure</span><span class="l-zh">博彩与休闲</span></span><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Auto &amp; EV</span><span class="l-zh">汽车与新能源车</span></span></span></div>
+        
+        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Avoid</span><span class="l-zh">回避</span></span><span class="hkx-v"><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Internet &amp; Tech</span><span class="l-zh">互联网与科技</span></span><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Healthcare &amp; Pharma</span><span class="l-zh">医疗与制药</span></span><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Consumer</span><span class="l-zh">消费</span></span><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span></span><span class="hkx-nchip" style="color:var(--down)"><span class="l-en">Property</span><span class="l-zh">地产</span></span></span></div>
         
         <div class="hkx-receipt"><span class="l-en">Research context only — never a buy or sell signal.</span><span class="l-zh">仅供研究参考 — 绝非买卖信号。</span></div>
       </div>
@@ -2261,11 +2269,13 @@ Hong Kong shares the same stagflation label, but it dances to the dollar's tune.
         <div class="hkx-plain"><span class="l-en">Each data feed has a freshness check. Stale feeds are noted here — values still display, but treat them with caution until the next nightly update.</span><span class="l-zh">每个数据来源都有新鲜度检查。过期数据在此标注 — 数值仍会显示，但在下次夜间更新前请谨慎对待。</span></div>
         <div class="hkx-eyebrow"><span class="l-en">Overall status</span><span class="l-zh">整体状态</span></div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--up);flex:0 0 10px;display:inline-block"></span>
-          <b><span class="l-en">OK — all feeds current</span><span class="l-zh">正常 — 所有数据源最新</span></b>
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--warn);flex:0 0 10px;display:inline-block"></span>
+          <b><span class="l-en">Degraded — some feeds behind</span><span class="l-zh">降级 — 部分数据来源落后</span></b>
         </div>
         
         
+        
+        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Detail</span><span class="l-zh">详情</span></span><span class="hkx-v" style="color:var(--warn)"><span class="l-en">HK data stale — snapshot incoherent — standouts 2026-07-22 vs regime 2026-07-21</span><span class="l-zh">港股数据已过期 — 快照不一致 — 精选个股 2026-07-22 vs 周期判断 2026-07-21</span></span></div>
         
         
         <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Expected session</span><span class="l-zh">预期交易日</span></span><span class="hkx-v">2026-07-22</span></div>
@@ -2381,7 +2391,7 @@ Hong Kong shares the same stagflation label, but it dances to the dollar's tune.
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-22 10:45 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-22 12:23 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
