@@ -2983,6 +2983,15 @@ body.page-macro .isle-heatmap-chrome-head{font-size:11px;font-weight:700;text-tr
   body.page-macro #heatmap-scorecard [style*="font-size:6."],
   body.page-macro #heatmap-scorecard [style*="font-size:7."]{color:transparent!important}
 }
+/* PERMA-FIX — recurring black-label regression (operator: the institutional board is
+   ALWAYS white text). This guard lives in the freshly-rendered page CSS, so it overrides
+   a STALE cached heatmap.js (script tag carries no ?v=) that still computes a dark
+   contrast colour for some tiles — heatmap.js sets the label colour as an inline style,
+   which a stylesheet !important beats. Kept at low specificity (no #id) so the MOB-05
+   sublabel-hide above still wins on mobile and silences tiny sub-labels. */
+body.page-macro .hm-tile,
+body.page-macro .hm-tile .sym,
+body.page-macro .hm-tile .pc{color:#fff!important}
 body.page-macro .mx2-tray-stamp{font-size:10px;color:var(--muted);padding:8px 0 4px;text-align:right;font-variant-numeric:tabular-nums}
 
 /* Section eyebrow label */
@@ -4732,6 +4741,98 @@ body.page-macro .igd-footer{
 .mx5-dlg-sector-rk{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
 [data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.38);}
 
+/* ── Sector Temperature — rotation ladder (dlg-sector rebuild) ─────────────────
+   Each sector is a rung; the little trace is its 5-day rank move (an honest 2-point
+   trajectory — up = climbed, down = slipped), coloured green/red via --up/--down so
+   ZH flips. Lane = current standing (leading / lagging); trace + delta = the move. */
+.sct-lane{margin:0 0 20px;}
+.sct-lane:last-of-type{margin-bottom:6px;}
+.sct-lane-head{display:flex;align-items:center;gap:8px;margin:0 0 11px;
+  font:700 11px/1 var(--font-ui,inherit);letter-spacing:.09em;text-transform:uppercase;}
+.sct-lane-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 9px currentColor;}
+.sct-lane.lead .sct-lane-head{color:color-mix(in srgb,var(--up,#22d97a) 78%,var(--text));}
+.sct-lane.lag  .sct-lane-head{color:color-mix(in srgb,var(--down,#ef4444) 78%,var(--text));}
+.sct-lane.lead .sct-lane-dot{color:var(--up,#22d97a);background:currentColor;}
+.sct-lane.lag  .sct-lane-dot{color:var(--down,#ef4444);background:currentColor;}
+.sct-lane-n{margin-left:auto;font:600 10.5px/1 var(--font-ui,inherit);letter-spacing:.01em;text-transform:none;color:var(--ink-3,rgba(255,255,255,.42));}
+.sct-rung{display:grid;grid-template-columns:32px 1fr 132px 54px;align-items:center;gap:12px;
+  padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);transition:border-color .2s,background .2s,transform .16s;}
+.sct-rung + .sct-rung{margin-top:8px;}
+[data-theme="light"] .sct-rung{background:rgba(0,0,0,.018);border-color:rgba(0,0,0,.06);}
+.sct-rung:hover{transform:translateY(-1px);background:rgba(255,255,255,.05);
+  border-color:color-mix(in srgb,var(--sct-c,var(--up,#22d97a)) 36%,var(--line,rgba(255,255,255,.1)));}
+[data-theme="light"] .sct-rung:hover{background:rgba(0,0,0,.035);}
+.sct-badge{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+  color:var(--sct-c,var(--up,#22d97a));background:color-mix(in srgb,var(--sct-c,var(--up,#22d97a)) 14%,transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--sct-c,var(--up,#22d97a)) 28%,transparent);}
+.sct-badge svg{width:15px;height:15px;display:block;}
+.sct-body{min-width:0;}
+.sct-name{font:700 13px/1.25 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.92));
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sct-sub{margin-top:2px;font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.44));display:flex;align-items:center;gap:7px;}
+.sct-sub .sct-rk{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));}
+.sct-sub .sct-stance{text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sct-trace{width:132px;height:30px;display:block;overflow:visible;}
+.sct-trace .sct-base{stroke:color-mix(in srgb,var(--ink-3,#8b93a1) 45%,transparent);stroke-width:1;stroke-dasharray:2 3;}
+.sct-trace .sct-ln{fill:none;stroke:var(--sct-c,var(--up,#22d97a));stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.sct-trace .sct-dot-old{fill:none;stroke:color-mix(in srgb,var(--sct-c,var(--up,#22d97a)) 55%,transparent);stroke-width:1.6;}
+.sct-trace .sct-dot-now{fill:var(--sct-c,var(--up,#22d97a));}
+.sct-delta{display:flex;flex-direction:column;align-items:flex-end;}
+.sct-delta-v{font:800 16px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;color:var(--sct-c,var(--up,#22d97a));letter-spacing:-.01em;}
+.sct-delta-k{margin-top:3px;font-size:9px;color:var(--ink-3,rgba(255,255,255,.4));letter-spacing:.02em;white-space:nowrap;}
+@media(max-width:430px){
+  .sct-rung{grid-template-columns:28px 1fr 82px 44px;gap:9px;padding:10px;}
+  .sct-trace{width:82px;}
+  .sct-delta-v{font-size:15px;}
+}
+@media(prefers-reduced-motion:no-preference){
+  #dlg-sector .sct-rung{opacity:0;transform:translateY(8px);
+    transition:opacity .44s ease,transform .44s cubic-bezier(.22,.9,.26,1.02),border-color .2s,background .2s;}
+  #dlg-sector.mx5-dlg-in .sct-rung{opacity:1;transform:translateY(0);}
+  #dlg-sector.mx5-dlg-in .sct-rung:nth-child(2){transition-delay:.05s}
+  #dlg-sector.mx5-dlg-in .sct-rung:nth-child(3){transition-delay:.11s}
+  #dlg-sector.mx5-dlg-in .sct-rung:nth-child(4){transition-delay:.17s}
+  #dlg-sector.mx5-dlg-in .sct-rung:nth-child(5){transition-delay:.23s}
+  #dlg-sector .sct-trace .sct-ln{stroke-dasharray:150;stroke-dashoffset:150;}
+  #dlg-sector.mx5-dlg-in .sct-trace .sct-ln{transition:stroke-dashoffset .72s cubic-bezier(.22,.9,.26,1.02) .22s;stroke-dashoffset:0;}
+  #dlg-sector .sct-trace .sct-dot-now{opacity:0;}
+  #dlg-sector.mx5-dlg-in .sct-trace .sct-dot-now{transition:opacity .3s ease .6s;opacity:1;}
+}
+
+/* ── News modal — Market Intelligence headline list (nbx-*): each headline is a
+     tappable card with a theme tag, the outlet + date, and a summary snippet — replaces
+     the bare title-only accordion (the "no context / no dates" complaint). ── */
+.nbx-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.nbx-item{display:block;text-decoration:none;color:inherit;padding:11px 13px;border-radius:11px;
+  background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.06);
+  transition:border-color .2s,background .2s,transform .16s;}
+[data-theme="light"] .nbx-item{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06);}
+.nbx-item:hover{transform:translateY(-1px);background:rgba(255,255,255,.05);
+  border-color:color-mix(in srgb,var(--link,#22d97a) 34%,var(--line,rgba(255,255,255,.1)));}
+[data-theme="light"] .nbx-item:hover{background:rgba(0,0,0,.035);}
+.nbx-top{display:flex;align-items:baseline;gap:9px;min-width:0;}
+.nbx-theme{flex:0 0 auto;font:700 9px/1 var(--font-ui,inherit);letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 7px;border-radius:5px;color:var(--ink-2,rgba(255,255,255,.6));
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);white-space:nowrap;margin-top:1px;}
+[data-theme="light"] .nbx-theme{background:rgba(0,0,0,.045);border-color:rgba(0,0,0,.09);}
+.nbx-title{flex:1;min-width:0;font:600 13px/1.4 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.92));}
+.nbx-meta{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.42));}
+.nbx-src{font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+.nbx-dot{opacity:.5;}
+.nbx-date{font-variant-numeric:tabular-nums;white-space:nowrap;}
+.nbx-arrow{margin-left:auto;font-weight:700;color:var(--link,#22d97a);white-space:nowrap;}
+.nbx-sum{margin-top:6px;font-size:11.5px;line-height:1.5;color:var(--ink-3,rgba(255,255,255,.5));
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+@media(prefers-reduced-motion:no-preference){
+  #dlg-news .nbx-item{opacity:0;transform:translateY(6px);transition:opacity .4s ease,transform .4s cubic-bezier(.22,.9,.26,1.02),border-color .2s,background .2s;}
+  #dlg-news.mx5-dlg-in .nbx-item{opacity:1;transform:translateY(0);}
+  #dlg-news.mx5-dlg-in .nbx-item:nth-child(2){transition-delay:.04s}
+  #dlg-news.mx5-dlg-in .nbx-item:nth-child(3){transition-delay:.08s}
+  #dlg-news.mx5-dlg-in .nbx-item:nth-child(4){transition-delay:.12s}
+  #dlg-news.mx5-dlg-in .nbx-item:nth-child(n+5){transition-delay:.15s}
+}
+
 /* Asset tiles (MARKETS dialog) */
 .mx5-dlg-asset-row{
   display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;
@@ -5418,15 +5519,19 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .fbm-beam-head.ease{color:var(--up,#22d97a);}
 .fbm-beam-head .fbm-wt{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;}
 /* The physical scale: fulcrum + rotating beam + two chip pans */
-.fbm-beam-stage{position:relative;height:132px;}
+.fbm-beam-stage{position:relative;height:160px;}
 .fbm-beam-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
 /* beam bar rotates around the centre fulcrum by --tilt degrees */
 .fbm-beam-bar{position:absolute;left:8%;right:8%;top:26px;height:4px;border-radius:3px;
   background:linear-gradient(90deg,var(--down,#ef4444),color-mix(in srgb,var(--down,#ef4444) 40%,var(--up,#22d97a)) 50%,var(--up,#22d97a));
   transform-origin:50% 50%;transform:rotate(var(--tilt,0deg));
   box-shadow:0 1px 6px -1px color-mix(in srgb,var(--isle-policy,#a070e8) 40%,transparent);}
-.fbm-beam-pans{position:absolute;inset:0;transform-origin:50% 50%;transform:rotate(var(--tilt,0deg));}
-.fbm-beam-pan{position:absolute;top:30px;width:42%;display:flex;flex-direction:column;align-items:center;gap:5px;
+/* Pans pivot about the BEAM's centreline (y≈28px), NOT the stage centre — otherwise the
+   raised chip pan sweeps up THROUGH the beam line on the heavy side (the "Equity risk-off"
+   clip). Matching the pivot keeps a constant gap between beam and chips across all tilts;
+   pan top then just sets that gap (must clear the ±9° sweep of the top chip row). */
+.fbm-beam-pans{position:absolute;inset:0;transform-origin:50% 28px;transform:rotate(var(--tilt,0deg));}
+.fbm-beam-pan{position:absolute;top:54px;width:42%;display:flex;flex-direction:column;align-items:center;gap:5px;
   transform:rotate(calc(-1 * var(--tilt,0deg)));/* keep chips level while the beam tilts */}
 .fbm-beam-pan.hawk{left:0;}
 .fbm-beam-pan.ease{right:0;}
@@ -5541,8 +5646,8 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 
 /* — 390px bottom-sheet: keep the beam legible, stack benchmark odds tighter — */
 @media(max-width:430px){
-  .fbm-beam-stage{height:150px;}
-  .fbm-beam-pan{top:34px;width:44%;}
+  .fbm-beam-stage{height:156px;}
+  .fbm-beam-pan{top:48px;width:44%;}
   .fbm-leg{font-size:10px;padding:3px 7px;}
   .fbm-bench-odds{font-size:22px;min-width:44px;}
   .fbm-row-state{min-width:82px;font-size:11.5px;}
@@ -5636,11 +5741,14 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   background:color-mix(in srgb,var(--lens-text,#d7dce3) 4%,transparent);
   border:1px solid color-mix(in srgb,var(--lens-text,#d7dce3) 9%,transparent);}
 .rlx-viz-cap{font:600 10px/1.4 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);margin-top:8px;}
-/* comparison bars — two labelled horizontal bars (deeper vs shallower, cohort vs cohort) */
-.rlx-bars{display:flex;flex-direction:column;gap:8px;}
-.rlx-bar-row{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:9px;min-width:0;}
-.rlx-bar-lbl{font:600 9.5px/1.2 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);
-  overflow-wrap:anywhere;}
+/* comparison bars — a label ABOVE each full-width bar. (Was a 64px label column, which
+   crushed descriptive leg names like "Cyclicals fading vs defensives" into 4-line,
+   mid-word-broken wraps — the "bad layout". Stacking gives the name full width and the
+   bars share one left edge so length still compares cleanly.) */
+.rlx-bars{display:flex;flex-direction:column;gap:12px;}
+.rlx-bar-row{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.rlx-bar-lbl{font:600 11px/1.3 var(--font-ui,Inter,sans-serif);
+  color:color-mix(in srgb,var(--lens-text,#d7dce3) 84%,var(--lens-mut,#8b93a1));overflow-wrap:break-word;}
 .rlx-bar-track{position:relative;height:9px;border-radius:5px;
   background:color-mix(in srgb,var(--lens-mut,#8b93a1) 20%,transparent);overflow:hidden;}
 .rlx-bar-fill{position:absolute;inset:0 auto 0 0;border-radius:5px;
@@ -5663,8 +5771,8 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rlx-chips{margin:0 16px 12px;display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center;}
 .rlx-chips-lbl{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.1em;text-transform:uppercase;
   color:color-mix(in srgb,var(--lens-mut,#8b93a1) 80%,transparent);margin-right:1px;}
-.rlx-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-mono,ui-monospace,Menlo,monospace);
-  letter-spacing:.02em;padding:3px 7px;border-radius:6px;white-space:nowrap;}
+.rlx-chip{display:inline-flex;align-items:center;font:700 10.5px/1 var(--font-ui,Inter,sans-serif);
+  letter-spacing:.02em;padding:3px 8px;border-radius:6px;white-space:nowrap;}
 .rlx-chip.up{color:var(--ok,var(--up,#3da564));background:color-mix(in srgb,var(--ok,var(--up,#3da564)) 14%,transparent);
   border:1px solid color-mix(in srgb,var(--ok,var(--up,#3da564)) 30%,transparent);}
 .rlx-chip.dn{color:var(--down,#ef4444);background:color-mix(in srgb,var(--down,#ef4444) 13%,transparent);
@@ -5678,11 +5786,11 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 /* — 3. US Leaders chart block (mono tickers, animated gradient bars, count chip) — */
 .rkc-ldr-head{display:flex;align-items:center;gap:9px;margin:2px 0 10px;}
 .rkc-ldr-state{flex:1;min-width:0;font:600 13px/1.4 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
-.rkc-ldr-count{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:4px;font:800 12px/1 var(--font-ui,inherit);
-  font-variant-numeric:tabular-nums;padding:5px 9px;border-radius:999px;color:var(--down,#ef4444);
+.rkc-ldr-count{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:6px;font:800 14px/1 var(--font-ui,inherit);
+  font-variant-numeric:tabular-nums;padding:5px 10px;border-radius:999px;color:var(--down,#ef4444);
   background:color-mix(in srgb,var(--down,#ef4444) 12%,transparent);
   border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
-.rkc-ldr-count small{font-size:9px;font-weight:600;color:var(--ink-3,rgba(255,255,255,.42));letter-spacing:.03em;}
+.rkc-ldr-count small{font-size:9.5px;font-weight:600;color:color-mix(in srgb,var(--down,#ef4444) 78%,var(--ink-2));letter-spacing:.02em;}
 .rkc-ldr-bars{display:flex;flex-direction:column;gap:6px;position:relative;}
 .rkc-ldr-row{display:grid;grid-template-columns:52px 1fr 46px;align-items:center;gap:9px;}
 .rkc-ldr-tkr{font:700 11px/1 var(--font-mono,ui-monospace,'SF Mono',monospace);
@@ -10810,6 +10918,37 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         {% endif %}
 
+        {# — Inline Release Radar panel — sits directly under the calendar so tapping a card
+             surfaces its projection right below, before the market-pricing strip (the calendar
+             cards above are its selector) — #}
+        {% if macro_catalysts %}
+        <div class="mx5-dlg-sep"></div>
+        <div class="mx5-dlg-eyebrow"><span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span></div>
+        <div style="margin:-4px 0 14px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
+          <span class="l-en">What our model expects for the print you pick above. Tap a card for the full read.</span>
+          <span class="l-zh">上方选中日期，模型对该日数据的预测如下。点击卡片查看完整解读。</span>
+        </div>
+        <div id="rr-inline">
+          <div class="rr-inline-head">
+            <span class="rr-inline-date" id="rr-inline-date"></span>
+            <span class="rr-inline-sub" id="rr-inline-sub">
+              <span class="l-en">our projection vs benchmarks</span>
+              <span class="l-zh">本方预测 vs 基准</span>
+            </span>
+          </div>
+          <div class="rr-inline-body" id="rr-inline-body">
+            <div class="rr-placeholder">
+              <span class="l-en">Loading release projections…</span>
+              <span class="l-zh">加载发布预测中…</span>
+            </div>
+          </div>
+          <div class="rr-inline-foot">
+            <span class="l-en">display-only — not a signal · benchmarks, not investment advice · scored forward in public</span>
+            <span class="l-zh">仅展示 — 非信号 · 基准对比，非投资建议 · 正向评分公开记录</span>
+          </div>
+        </div>
+        {% endif %}
+
         {# — W4 EVW collision chip (display-only, RIC program) — #}
         {# Shown ONLY when a collision state is active: plain-word copy, no scoring, no internal state names. #}
         {# is_context_only=True throughout; engine/risk_radar.py untouched. #}
@@ -10854,6 +10993,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {# Outcome enum → ZH display map, shared by this strip and dlg-fed below #}
         {% set _fed_out_zh = {'No change':'按兵不动','Rate cut':'降息','Rate hike':'加息','25bps cut':'降息25bp','50bps cut':'降息50bp','25bps hike':'加息25bp','25 bps increase':'加息25bp','25 bps decrease':'降息25bp','50+ bps increase':'加息50bp以上','50+ bps decrease':'降息50bp以上','0.1%':'0.1%','0.2%':'0.2%','0.3%':'0.3%','0.4%':'0.4%'} %}
         {% if prediction_markets and prediction_markets.events %}
+        {% if macro_catalysts %}<div class="mx5-dlg-sep"></div>{% endif %}
         {# Unified benchmark strip (same component as dlg-fed). Plain "X in 10" read kept below. #}
         {% set _ev_bench_rows = [] %}
         {% set _ev_head_top = none %}
@@ -10872,35 +11012,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-zh">通俗地说：约{% if _fed_zh_digit %}{{ _fed_zh_digit }}成{% else %}{{ _fed_prob | round | int }}%{% endif %}交易者预期下次会议「{{ _fed_out_zh.get(_ev_head_top.outcome, _ev_head_top.outcome) }}」。</span>
         </div>
         {% endif %}
-        {% endif %}
-
-        {# — Inline Release Radar panel: the calendar cards above are its selector — #}
-        {% if macro_catalysts %}
-        <div class="mx5-dlg-sep"></div>
-        <div class="mx5-dlg-eyebrow"><span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span></div>
-        <div style="margin:-4px 0 14px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
-          <span class="l-en">What our model expects for the print you pick above. Tap a card for the full read.</span>
-          <span class="l-zh">上方选中日期，模型对该日数据的预测如下。点击卡片查看完整解读。</span>
-        </div>
-        <div id="rr-inline">
-          <div class="rr-inline-head">
-            <span class="rr-inline-date" id="rr-inline-date"></span>
-            <span class="rr-inline-sub" id="rr-inline-sub">
-              <span class="l-en">our projection vs benchmarks</span>
-              <span class="l-zh">本方预测 vs 基准</span>
-            </span>
-          </div>
-          <div class="rr-inline-body" id="rr-inline-body">
-            <div class="rr-placeholder">
-              <span class="l-en">Loading release projections…</span>
-              <span class="l-zh">加载发布预测中…</span>
-            </div>
-          </div>
-          <div class="rr-inline-foot">
-            <span class="l-en">display-only — not a signal · benchmarks, not investment advice · scored forward in public</span>
-            <span class="l-zh">仅展示 — 非信号 · 基准对比，非投资建议 · 正向评分公开记录</span>
-          </div>
-        </div>
         {% endif %}
 
         {% if not macro_catalysts and not (prediction_markets and prediction_markets.events) %}
@@ -11227,7 +11338,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 </div>
               </div>
               <div class="lens-receipt">
-                <span class="l-en">{{ _l0p }}th pctile{% if _l1p is not none %} · second at {{ _l1p }}th{% endif %} · 5-year window · display context</span>
+                <span class="l-en">{{ _l0p }}{{ _l0ord }} pctile{% if _l1p is not none %} · second at {{ _l1p }}{{ _l1ord }}{% endif %} · 5-year window · display context</span>
                 <span class="l-zh">{{ _l0p }} 分位{% if _l1p is not none %} · 次高 {{ _l1p }} 分位{% endif %} · 5 年区间 · 展示背景</span>
               </div>
             </span>{# end .lens-src #}
@@ -11284,11 +11395,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <div class="rlx-viz" style="--rlx-c:var(--isle-events,#e0a030)">
                 <div class="rlx-bars">
                   <div class="rlx-bar-row">
-                    <span class="rlx-bar-lbl"><span class="l-en">Midterm<br>Apr–Oct</span><span class="l-zh">中期年<br>4–10月</span></span>
+                    <span class="rlx-bar-lbl"><span class="l-en">Midterm · Apr–Oct</span><span class="l-zh">中期年 · 4–10月</span></span>
                     <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:82%"></span></span>
                   </div>
                   <div class="rlx-bar-row">
-                    <span class="rlx-bar-lbl"><span class="l-en">Other<br>years</span><span class="l-zh">其他<br>年份</span></span>
+                    <span class="rlx-bar-lbl"><span class="l-en">Other years</span><span class="l-zh">其他年份</span></span>
                     <span class="rlx-bar-track"><span class="rlx-bar-fill muted" style="--rlx-w:58%"></span></span>
                   </div>
                 </div>
@@ -11413,7 +11524,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               {% if _rk_cx_ap is not none %}
               <div class="rlx-viz" style="--rlx-c:var(--isle-markets,#4d8ef5)">
                 <div class="rlx-bar-row" style="grid-template-columns:70px 1fr">
-                  <span class="rlx-bar-lbl"><span class="l-en">vs 5-year<br>range</span><span class="l-zh">相对5年<br>区间</span></span>
+                  <span class="rlx-bar-lbl"><span class="l-en">vs 5-year range</span><span class="l-zh">相对5年区间</span></span>
                   <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:{{ _rk_cx_ap }}%"></span></span>
                 </div>
                 <div class="rlx-viz-cap"><span class="l-en">Further right = markets moving more tightly together than usual.</span><span class="l-zh">越靠右，代表市场比平常联动得更紧。</span></div>
@@ -11431,8 +11542,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 {% for c in _rk_cx.dominant_cluster[:4] %}<span class="rlx-chip dn">{{ c }}</span>{% endfor %}
               </div>
               {% endif %}
+              {%- set _cxord = ('th' if (11 <= (_rk_cx_ap % 100) <= 13) else {1:'st',2:'nd',3:'rd'}.get(_rk_cx_ap % 10, 'th')) if _rk_cx_ap is not none else 'th' -%}
               <div class="lens-receipt">
-                <span class="l-en">{% if _rk_cx_ap is not none %}{{ _rk_cx_ap }}th pctile co-movement · 5-year window · {% endif %}display context, not a trigger</span>
+                <span class="l-en">{% if _rk_cx_ap is not none %}{{ _rk_cx_ap }}{{ _cxord }} pctile co-movement · 5-year window · {% endif %}display context, not a trigger</span>
                 <span class="l-zh">{% if _rk_cx_ap is not none %}联动度 {{ _rk_cx_ap }} 分位 · 5 年区间 · {% endif %}展示背景，非触发</span>
               </div>
             </span>{# end .lens-src #}
@@ -11531,15 +11643,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="rkc-ldr-head">
             <div class="rkc-ldr-state">
               {% if _lc.state == 'BROKEN' %}
-              <span class="l-en">Leaders broken — typical AI-hardware name {% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}{% else %}—{% endif %}% off its high while the index holds.</span>
-              <span class="l-zh">龙头受损——AI硬件个股中位数较高点回撤{% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}{% else %}—{% endif %}%，而指数仍稳。</span>
+              <span class="l-en">Leaders broken — the median AI-hardware leader is {% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}well{% endif %} off its high while the index still holds.</span>
+              <span class="l-zh">龙头受损——AI硬件龙头中位数已较高点回撤{% if _lc.med_dd is defined and _lc.med_dd is not none %}{{ (_lc.med_dd * 100)|abs|round|int }}%{% else %}明显{% endif %}，而指数仍稳。</span>
               {% else %}
-              <span class="l-en">Leaders cracking — early stress in AI-hardware names{% if _lc.med_dd is defined and _lc.med_dd is not none %}, median {{ (_lc.med_dd * 100)|abs|round|int }}% off high{% endif %}.</span>
-              <span class="l-zh">龙头出现裂痕——AI硬件个股初显压力{% if _lc.med_dd is defined and _lc.med_dd is not none %}，中位数距高点下跌{{ (_lc.med_dd * 100)|abs|round|int }}%{% endif %}。</span>
+              <span class="l-en">Leaders cracking — early stress in the AI-hardware leaders{% if _lc.med_dd is defined and _lc.med_dd is not none %}, the median name {{ (_lc.med_dd * 100)|abs|round|int }}% off its high{% endif %}.</span>
+              <span class="l-zh">龙头出现裂痕——AI硬件龙头初显压力{% if _lc.med_dd is defined and _lc.med_dd is not none %}，中位数较高点回撤{{ (_lc.med_dd * 100)|abs|round|int }}%{% endif %}。</span>
               {% endif %}
             </div>
             {% if _lc_n30h is not none %}
-            <span class="rkc-ldr-count">{{ _lc_n30h }}<small><span class="l-en">30%+ off</span><span class="l-zh">跌超30%</span></small></span>
+            <span class="rkc-ldr-count">{{ _lc_n30h }}<small><span class="l-en">names ≥30% off</span><span class="l-zh">只跌超30%</span></small></span>
             {% endif %}
           </div>
           {% if _lc.worst_members is defined and _lc.worst_members %}
@@ -11574,8 +11686,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% set _lc_n10 = (_lc.share10 * _lc.n_total) | round | int %}
           {% set _lc_n30 = (_lc.share30 * _lc.n_total) | round | int %}
           <div class="rkc-ldr-sub">
-            <span class="l-en"><b>{{ _lc_n10 }}</b> of {{ _lc.n_total }} names 10%+ off their highs; <b>{{ _lc_n30 }}</b> are 30%+ off.</span>
-            <span class="l-zh">{{ _lc.n_total }}个成分中<b>{{ _lc_n10 }}</b>个较高点跌超10%；其中<b>{{ _lc_n30 }}</b>个跌超30%。</span>
+            <span class="l-en"><b>{{ _lc_n10 }}</b> of {{ _lc.n_total }} names are 10%+ off their highs — the breadth behind the broken leaders above.</span>
+            <span class="l-zh">{{ _lc.n_total }}个成分中<b>{{ _lc_n10 }}</b>个较高点跌超10%——即上方龙头受损背后的广度。</span>
           </div>
           {% endif %}
           {# Receipt fields in data-tip-en/zh #}
@@ -11698,10 +11810,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   {% endif %}
                 </div>
                 {% endif %}
-                <div class="row-pop-ft">
-                  <span class="l-en">Context only — see intl.html for full detail.</span>
-                  <span class="l-zh">仅供背景参考——完整详情见国际页面。</span>
-                </div>
               </span>{# end .rp-src #}
             </a>
             {% endfor %}
@@ -11896,7 +12004,26 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="rsx-froth" id="froth-fragility">
             <div class="rsx-froth-hd">
               <span style="color:{{ _ffc }}">{{ t('Top-risk gauge','顶部风险表') }}</span>
-              {{ help('Internal gauge: Froth & Fragility — face A Euphoria × face B Fragility / distribution. Only meaningful when both run high together.','内部量表：狂热与脆弱——A面亢奋 × B面脆弱／派发。两者同高才具意义。') }}
+              <span class="lens-q" data-lens-kind="caution" tabindex="0" role="button" aria-label="Top-risk gauge — what it measures">?<span class="lens-src" data-lens-kind="caution" hidden>
+                <div class="lens-hd">
+                  <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15a8 8 0 0116 0"/><path d="M12 15l4.2-4.2"/><circle cx="12" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg></span>
+                  <span class="lens-hgroup">
+                    <span class="lens-kick"><span class="l-en">TOP-RISK GAUGE</span><span class="l-zh">顶部风险表</span></span>
+                    <span class="lens-title"><span class="l-en">Froth × Fragility</span><span class="l-zh">狂热 × 脆弱</span></span>
+                  </span>
+                </div>
+                <div class="rlx-rows">
+                  <div class="rlx-row">
+                    <span class="rlx-k"><span class="l-en">What it is</span><span class="l-zh">这是什么</span></span>
+                    <span class="rlx-v"><span class="l-en">Two reads at once: how giddy the crowd is (<b>euphoria</b>) and whether big holders are quietly selling into the strength (<b>hidden selling</b>).</span><span class="l-zh">同时看两件事：人群有多亢奋（<b>亢奋度</b>），以及大户是否在悄悄逢强派发（<b>暗中派发</b>）。</span></span>
+                  </div>
+                  <div class="rlx-row">
+                    <span class="rlx-k"><span class="l-en">When it bites</span><span class="l-zh">何时才危险</span></span>
+                    <span class="rlx-v"><span class="l-en"><b>Only when both run high together</b> — a giddy tape that insiders are distributing. Either one alone is just noise.</span><span class="l-zh"><b>唯有两者同时走高</b>——亢奋的行情叠加内部人派发。任一单独出现只是噪音。</span></span>
+                  </div>
+                </div>
+                <div class="lens-receipt"><span class="l-en">display context · not a signal</span><span class="l-zh">展示背景 · 非信号</span></div>
+              </span></span>
               <span style="font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;color:{{ _ffc }}">{{ _ff_score|round|int }}</span>
               <span class="chip {{ 'c-down' if (ff.band is defined and ff.band in ('high','extreme')) else ('c-warn' if (ff.band is defined and ff.band in ('watch','elevated')) else 'c-muted') }}">
                 <span class="l-en">{{ ff.band|capitalize if ff.band is defined and ff.band else '—' }}</span>
@@ -12699,18 +12826,27 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if macro_news and macro_news.headlines %}
         <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Market Intelligence</span><span class="l-zh">市场情报</span></span><div class="isle-head-line"></div></div>
         {% set _dlg_TL_nb = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
-        <div class="nb-acc" style="margin-top:12px">
+        <div class="nbx-list">
           {% for h in macro_news.headlines[:10] %}
           {% set _dlg_tl = _dlg_TL_nb.get(h.theme, [h.theme, h.theme]) %}
-          <details class="nb-item"{% if loop.first %} open{% endif %}>
-            <summary class="nb-sum">
-              <span class="nb-theme">{{ t(_dlg_tl[0], _dlg_tl[1]) }}</span>
-              <span class="nb-htitle"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
-            </summary>
-            <div class="nb-body">
-              <a class="nb-read" href="{{ h.url }}" target="_blank" rel="noopener">{{ t('Read source','阅读原文') }} →</a>
+          {# short date from ISO seendate (YYYY-MM-DD…) → "Jul 21"; guarded #}
+          {% set _hd = h.seendate if (h.seendate is defined and h.seendate) else '' %}
+          {% set _hd_lbl = (_mos2[_hd[5:7]|int] ~ ' ' ~ (_hd[8:10]|int)) if (_hd and _hd[5:7]|int > 0) else '' %}
+          <a class="nbx-item" href="{{ h.url }}" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme">{{ t(_dlg_tl[0], _dlg_tl[1]) }}</span>
+              <span class="nbx-title"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
             </div>
-          </details>
+            <div class="nbx-meta">
+              {% if h.source is defined and h.source %}<span class="nbx-src">{{ h.source }}</span>{% endif %}
+              {% if (h.source is defined and h.source) and _hd_lbl %}<span class="nbx-dot">·</span>{% endif %}
+              {% if _hd_lbl %}<span class="nbx-date">{{ _hd_lbl }}</span>{% endif %}
+              <span class="nbx-arrow">{{ t('Read','阅读') }} →</span>
+            </div>
+            {% if h.summary is defined and h.summary %}
+            <div class="nbx-sum"><span class="l-en">{{ h.summary }}</span><span class="l-zh">{{ h.summary_zh or h.summary }}</span></div>
+            {% endif %}
+          </a>
           {% endfor %}
         </div>
         {% endif %}
@@ -13445,6 +13581,39 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>
 
   {# dlg-sector: Full sector heat detail #}
+  {# One rung of the rotation ladder: badge + name/rank + 5-day rank-move trace + delta. #}
+  {% macro _sct_rung(s) %}
+  {%- set _d = (s.get('rank_delta_5d')|int) if (s.get('rank_delta_5d') is not none) else 0 -%}
+  {%- set _dc = 'var(--up,#22d97a)' if _d > 0 else ('var(--down,#ef4444)' if _d < 0 else 'var(--ink-3,rgba(255,255,255,.42))') -%}
+  {%- set _dcl = [[_d, 28]|min, -28]|max -%}
+  {%- set _h = (_dcl / 28.0 * 9.0) -%}
+  {%- set _stance = s.get('label') or s.get('reco') -%}
+  <div class="sct-rung" style="--sct-c:{{ _dc }}">
+    <span class="sct-badge">
+      {%- if _d > 0 -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 12l6-6 6 6"/></svg>
+      {%- elif _d < 0 -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 12l6 6 6-6"/></svg>
+      {%- else -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>{%- endif -%}
+    </span>
+    <div class="sct-body">
+      <div class="sct-name"><span class="l-en">{{ s.get('name','') }}</span><span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span></div>
+      <div class="sct-sub">
+        {% if s.get('rank') is not none %}<span class="sct-rk">#{{ s.get('rank') }}</span>{% endif %}
+        {% if _stance %}<span class="sct-stance"><span class="l-en">{{ _stance }}</span><span class="l-zh">{{ _stance }}</span></span>{% endif %}
+      </div>
+    </div>
+    <svg class="sct-trace" viewBox="0 0 132 30" fill="none" aria-hidden="true">
+      <line class="sct-base" x1="8" y1="15" x2="124" y2="15"/>
+      <path class="sct-ln" d="M8 {{ '%.1f'|format(15 + _h) }} L124 {{ '%.1f'|format(15 - _h) }}"/>
+      <circle class="sct-dot-old" cx="8" cy="{{ '%.1f'|format(15 + _h) }}" r="2.4"/>
+      <circle class="sct-dot-now" cx="124" cy="{{ '%.1f'|format(15 - _h) }}" r="3.4"/>
+    </svg>
+    <div class="sct-delta">
+      <span class="sct-delta-v">{{ '+' if _d > 0 }}{{ _d }}</span>
+      <span class="sct-delta-k"><span class="l-en">vs 5d</span><span class="l-zh">对比5日</span></span>
+    </div>
+  </div>
+  {% endmacro %}
+
   <div class="mx5-dlg" id="dlg-sector" role="dialog" aria-modal="true" tabindex="-1">
     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
@@ -13456,48 +13625,37 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% if sector_heat %}
         {% set _dlg_sh_hot = sector_heat.get('heating') or [] %}
         {% set _dlg_sh_cold = sector_heat.get('cooling') or [] %}
-        {# Hot sectors #}
+        <div style="margin:-2px 0 16px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
+          <span class="l-en">Where money is rotating over the last week. Each trace is a sector&rsquo;s 5-day move up or down the rankings.</span>
+          <span class="l-zh">过去一周资金的轮动方向。每条轨迹为该板块 5 日内的排名升降。</span>
+        </div>
+        {# Leading lane — rotating in #}
         {% if _dlg_sh_hot %}
-        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(34,217,122,.7);margin-bottom:10px"><span class="l-en">Leading sectors &mdash; rotating into</span><span class="l-zh">领跑板块 — 资金流入方向</span></div>
-        <div class="mx5-dlg-sector-cols" style="grid-template-columns:1fr;margin-bottom:16px">
-          {% for s in _dlg_sh_hot %}
-          {% set _srk = s.get('rank', loop.index) %}
-          {% set _sdelta = s.get('rank_delta_5d') %}
-          <div class="mx5-dlg-sector-row">
-            <span class="mx5-dlg-sector-arr heat">&#9650;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">{{ s.get('name','') }}</span><span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span></span>
-            {% if _sdelta is not none and _sdelta is not undefined %}
-            <span class="mx5-dlg-sector-rk" style="color:{{ 'rgba(34,217,122,.7)' if (_sdelta | float) > 0 else 'rgba(239,68,68,.7)' if (_sdelta | float) < 0 else 'var(--ink-3)' }}">{{ '+' if (_sdelta | float) > 0 }}{{ _sdelta | int }}<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
-            {% endif %}
-            {% set _slabel = s.get('label') or s.get('reco') %}
-            {% if _slabel %}
-            <span style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">{{ _slabel }}</span></span>
-            {% endif %}
+        <div class="sct-lane lead">
+          <div class="sct-lane-head">
+            <span class="sct-lane-dot"></span>
+            <span class="l-en">Rotating in &mdash; leading</span><span class="l-zh">资金流入 — 领跑</span>
+            <span class="sct-lane-n">{{ _dlg_sh_hot|length }}<span class="l-en"> sectors</span><span class="l-zh"> 个板块</span></span>
           </div>
-          {% endfor %}
+          {% for s in _dlg_sh_hot %}{{ _sct_rung(s) }}{% endfor %}
         </div>
         {% endif %}
-        {# Cold sectors #}
+        {# Lagging lane — losing momentum #}
         {% if _dlg_sh_cold %}
-        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(239,68,68,.7);margin-bottom:10px"><span class="l-en">Lagging sectors &mdash; losing momentum</span><span class="l-zh">落后板块 — 动能减弱</span></div>
-        <div class="mx5-dlg-sector-cols" style="grid-template-columns:1fr;margin-bottom:16px">
-          {% for s in _dlg_sh_cold %}
-          {% set _sdelta2 = s.get('rank_delta_5d') %}
-          <div class="mx5-dlg-sector-row">
-            <span class="mx5-dlg-sector-arr cool">&#9660;</span>
-            <span class="mx5-dlg-sector-name"><span class="l-en">{{ s.get('name','') }}</span><span class="l-zh">{{ s.get('name_zh') or s.get('name','') }}</span></span>
-            {% if _sdelta2 is not none and _sdelta2 is not undefined %}
-            <span class="mx5-dlg-sector-rk" style="color:{{ 'rgba(34,217,122,.7)' if (_sdelta2 | float) > 0 else 'rgba(239,68,68,.7)' if (_sdelta2 | float) < 0 else 'var(--ink-3)' }}">{{ '+' if (_sdelta2 | float) > 0 }}{{ _sdelta2 | int }}<span class="l-en"> rank vs 5d ago</span><span class="l-zh"> 5日排名变化</span></span>
-            {% endif %}
+        <div class="sct-lane lag">
+          <div class="sct-lane-head">
+            <span class="sct-lane-dot"></span>
+            <span class="l-en">Losing momentum &mdash; lagging</span><span class="l-zh">动能减弱 — 落后</span>
+            <span class="sct-lane-n">{{ _dlg_sh_cold|length }}<span class="l-en"> sectors</span><span class="l-zh"> 个板块</span></span>
           </div>
-          {% endfor %}
+          {% for s in _dlg_sh_cold %}{{ _sct_rung(s) }}{% endfor %}
         </div>
         {% endif %}
         {# What to watch #}
         <div class="mx5-dlg-sep"></div>
         <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.6">
-          <span class="l-en">Sector rankings update nightly. Leading sectors show sustained money flow in; lagging sectors are seeing consistent outflows. Rankings reflect relative strength, not an absolute view.</span>
-          <span class="l-zh">板块排名每晚更新。领跑板块显示持续资金流入；落后板块持续资金外流。排名反映相对强弱，非绝对判断。</span>
+          <span class="l-en">Rankings update nightly and reflect relative strength, not an absolute call. A rising trace means a sector is climbing the pack; a falling one, slipping. Watch — don&rsquo;t chase a single week&rsquo;s move.</span>
+          <span class="l-zh">排名每晚更新，反映相对强弱而非绝对判断。轨迹向上表示板块排名上升，向下则为下滑。观望为主，勿追单周变动。</span>
         </div>
         {% if sector_heat.get('as_of') %}
         <div style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.3));text-align:right;margin-top:6px"><span class="l-en">As of {{ sector_heat.as_of }}</span><span class="l-zh">数据日期 {{ sector_heat.as_of }}</span></div>

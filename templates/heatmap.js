@@ -434,11 +434,16 @@
 
   var _card = null, _cardFor = null, _cardTimer = null;
   var _ptrX = null, _ptrY = null;   // latest pointer position (for async re-anchoring)
+  var _tapScrim = null, _cardTapHref = null;   // touch: preview-card scrim + its full-read target
   function card() {
     if (_card) return _card;
     _card = document.createElement('div');
     _card.className = 'hm-card';
     _card.setAttribute('role', 'tooltip');
+    // On touch the card is a tap-preview: a tap anywhere on it opens the full read
+    // (Terminal / analyzer). _cardTapHref is set only in that mode, so desktop hover
+    // cards stay inert.
+    _card.addEventListener('click', function () { if (_cardTapHref) window.location.href = _cardTapHref; });
     document.body.appendChild(_card);
     return _card;
   }
@@ -552,7 +557,25 @@
   }
   function hideCard() {
     _cardFor = null; clearTimeout(_cardTimer);
-    if (_card) _card.classList.remove('on');
+    if (_card) _card.classList.remove('on', 'hm-card-tap');
+    if (_tapScrim) _tapScrim.classList.remove('on');
+    _cardTapHref = null;
+  }
+  function tapScrim() {
+    if (_tapScrim) return _tapScrim;
+    _tapScrim = document.createElement('div');
+    _tapScrim.className = 'hm-tap-scrim';
+    _tapScrim.addEventListener('click', hideCard);
+    document.body.appendChild(_tapScrim);
+    return _tapScrim;
+  }
+  // Touch entry point: preview a tapped tile in the card (instead of jumping straight
+  // to the full page) and arm the scrim + the card's "full read" (Terminal) target.
+  function showCardTap(data, t, cx, cy, href) {
+    showCard(data, t, cx, cy);
+    _cardTapHref = href + encodeURIComponent(t.t);
+    tapScrim().classList.add('on');
+    card().classList.add('hm-card-tap');
   }
 
   /* ====================================================================== */
@@ -1483,8 +1506,17 @@
       var el = e.target.closest && e.target.closest('.hm-tile');
       if (!el) return;
       var rec = tileEls[+el.getAttribute('data-i')];
+      if (!rec) return;
       var scUrl = data.stock_url || 'stock.html#';
-      if (rec) window.location.href = scUrl + encodeURIComponent(rec.t.t);
+      if (!canHover()) {                    // touch: preview the name in a card first, don't jump
+        if (_cardFor === rec.t.t) { hideCard(); e.preventDefault(); e.stopPropagation(); return; }  // tap again = close
+        data._tf = TF;
+        var r = el.getBoundingClientRect();
+        showCardTap(data, rec.t, r.left + r.width / 2, r.top + r.height / 2, scUrl);
+        e.preventDefault(); e.stopPropagation();
+        return;
+      }
+      window.location.href = scUrl + encodeURIComponent(rec.t.t);
     }
     tm.addEventListener('mousemove', onMove);
     tm.addEventListener('mouseleave', onLeave);
@@ -1654,6 +1686,11 @@
       + 'border-radius:13px;padding:13px 14px;box-shadow:0 8px 24px rgba(0,0,0,.34);'
       + 'pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .13s,transform .13s;}'
       + '.hm-card.on{opacity:1;transform:none;}'
+      // touch preview: a dimming scrim behind a now-tappable card (tap the card → full read; tap the scrim → dismiss)
+      + '.hm-tap-scrim{position:fixed;inset:0;z-index:1190;background:rgba(4,7,13,.44);opacity:0;pointer-events:none;transition:opacity .2s ease;}'
+      + '.hm-tap-scrim.on{opacity:1;pointer-events:auto;}'
+      + '.hm-card.hm-card-tap{pointer-events:auto;cursor:pointer;}'
+      + '.hm-card.hm-card-tap .hm-c-foot{margin-top:11px;padding-top:9px;border-top:1px solid color-mix(in srgb,var(--text) 12%,var(--line));}'
       + '.hm-card .up{color:var(--up);} .hm-card .dn{color:var(--down);}'
       + '.hm-c-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}'
       + '.hm-c-sym{font-size:18px;font-weight:800;color:var(--text);line-height:1;}'

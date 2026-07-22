@@ -3130,22 +3130,43 @@
       closeT = setTimeout(close, ms);
     }
 
+    // touch devices have no hover — a tap TOGGLES the card (see the click handler below);
+    // synthetic pointerover from a tap must not also trip the hover path.
+    function coarse() { return !!(window.matchMedia && window.matchMedia('(hover: none)').matches); }
     document.addEventListener('pointerover', function (e) {
+      if (e.pointerType === 'touch') return;
       if (!e.target || !e.target.closest) return;
       var row = e.target.closest('[data-rpop]');
       if (row) {
         clearTimeout(closeT); clearTimeout(openT);
-        if (row !== cur) openT = setTimeout(function () { open(row); }, 70);
+        if (row !== cur) openT = setTimeout(function () { open(row); }, 32);   // snappy open, still debounces sweeps
         return;
       }
       if (!pop.hidden && e.target.closest('.row-pop')) { clearTimeout(closeT); return; }
       // a scroll shifts content under a stationary pointer, firing pointerover on whatever
       // slid beneath it — that must not count as the user leaving the row
       if (Date.now() - lastScroll < 250) return;
-      if (cur || openT) { clearTimeout(openT); openT = 0; if (cur) scheduleClose(160); }
+      if (cur || openT) { clearTimeout(openT); openT = 0; if (cur) scheduleClose(80); }
     });
     document.addEventListener('pointerout', function (e) {
-      if (!e.relatedTarget && cur) scheduleClose(160);   // pointer left the window
+      if (e.pointerType === 'touch') return;
+      if (!e.relatedTarget && cur) scheduleClose(80);   // pointer left the window
+    });
+    // Touch: first tap on a row opens its card (previewing instead of navigating a link);
+    // tapping the same row again, the card, or outside dismisses / lets the link through.
+    document.addEventListener('click', function (e) {
+      if (!coarse()) return;                            // desktop keeps hover + normal link clicks
+      if (!e.target || !e.target.closest) return;
+      if (e.target.closest('.row-pop')) return;         // taps inside the card act on the card
+      var row = e.target.closest('[data-rpop]');
+      if (row) {
+        if (cur === row) { close(); return; }           // 2nd tap closes (a link then navigates on the next tap)
+        if (row.matches('a[href], [href]') || row.closest('a[href]')) e.preventDefault();
+        clearTimeout(closeT); clearTimeout(openT);
+        open(row);
+        return;
+      }
+      if (cur) close();                                 // tap elsewhere dismisses
     });
     // wheel fires BEFORE the resulting scroll/hover updates — stamp it too, or the
     // scroll-grace check below sees a stale timestamp on the first wheel tick
@@ -3161,6 +3182,7 @@
     window.addEventListener('resize', function () { if (cur) close(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
     document.addEventListener('focusin', function (e) {
+      if (coarse()) return;                             // touch: the click handler owns open/close
       var row = e.target && e.target.closest && e.target.closest('[data-rpop]');
       if (row) { clearTimeout(closeT); open(row); }
       else if (cur && !(e.target.closest && e.target.closest('.row-pop'))) scheduleClose(0);
@@ -3521,7 +3543,7 @@
     '.lens-body b,.lens-body strong{font-weight:650;color:var(--lens-text)}' +
     '.lens-receipt{display:flex;flex-wrap:wrap;gap:5px 14px;align-items:baseline;margin:0 16px;padding:10px 0 13px;' +
       'border-top:1px dashed color-mix(in srgb,var(--lens-text) 17%,transparent);' +
-      'font:500 10px/1.5 var(--font-mono,ui-monospace,Menlo,monospace);color:var(--lens-mut)}' +
+      'font:600 10px/1.5 var(--font-ui,Inter,sans-serif);letter-spacing:.02em;color:var(--lens-mut)}' +
     '.lens-receipt .r-i{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}' +
     '.lens-receipt .r-k{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.12em;text-transform:uppercase;' +
       'color:color-mix(in srgb,var(--lens-mut) 75%,transparent)}' +
