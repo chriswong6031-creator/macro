@@ -101,6 +101,42 @@ def test_lockout_is_per_client_not_global():
         _restore(old)
 
 
+def test_client_id_ignores_spoofable_forwarding_headers():
+    """SECURITY regression (critical): the per-client lockout only holds if _client_id()
+    is a peer IP the caller cannot forge. On the deployed admin host it must trust Caddy's
+    injected X-Admin-Client-IP, else the LAST X-Forwarded-For hop (the real peer Caddy
+    appends) — NEVER the attacker-controlled FIRST hop, which let a brute-force client
+    rotate the header per request to land every guess in a fresh lockout bucket."""
+    h = Handler.__new__(Handler)
+
+    def _cid(headers, peer=("127.0.0.1", 1)):
+        h.headers, h.client_address = headers, peer
+        return h._client_id()
+
+    old = _set_env(ADMIN_DEPLOYED="1")
+    try:
+        # Caddy-injected trusted header wins over any client-sent X-Forwarded-For
+        assert _cid({"X-Admin-Client-IP": "9.9.9.9", "X-Forwarded-For": "1.1.1.1"}) == "9.9.9.9"
+        # no trusted header → LAST XFF hop (the real peer Caddy appends), NOT the first
+        assert _cid({"X-Forwarded-For": "1.1.1.1, 2.2.2.2, 3.3.3.3"}) == "3.3.3.3"
+        # no forwarding headers at all → the real TCP peer
+        assert _cid({}, peer=("5.5.5.5", 1)) == "5.5.5.5"
+        # site-gate self-allow IP ignores spoofable CDN headers on the non-CDN admin host
+        h.headers = {"CF-Connecting-IP": "6.6.6.6", "EO-Connecting-IP": "7.7.7.7",
+                     "X-Admin-Client-IP": "9.9.9.9"}
+        h.client_address = ("127.0.0.1", 1)
+        assert h._real_client_ip() == "9.9.9.9"
+    finally:
+        _restore(old)
+    # local mode (not deployed): forwarding headers ignored, use the real TCP peer
+    old = _set_env(ADMIN_DEPLOYED=None)
+    try:
+        assert _cid({"X-Admin-Client-IP": "9.9.9.9", "X-Forwarded-For": "1.1.1.1"},
+                    peer=("10.0.0.5", 1)) == "10.0.0.5"
+    finally:
+        _restore(old)
+
+
 def test_csrf_double_submit():
     assert auth.csrf_ok("abc", "abc") is True
     assert auth.csrf_ok("abc", "xyz") is False

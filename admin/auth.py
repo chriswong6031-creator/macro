@@ -70,11 +70,14 @@ def csrf_ok(cookie_token: str | None, header_token: str | None) -> bool:
 # ---- login throttle ----------------------------------------------------------
 # PER-CLIENT, not global: a global lockout would let any anonymous internet client
 # DoS the single operator out of their own console by spamming wrong passwords
-# (the panel is public + direct-to-origin, no upstream WAF). Each client id (the
-# real peer IP, via X-Forwarded-For from the local Caddy) gets its own counter, so
-# one attacker can only lock out *themselves*. The gate-check and the attempt
-# increment happen in ONE held critical section (the count is reserved up front,
-# BEFORE the unlocked compare), so concurrent guesses can't slip past the lockout.
+# (the panel is public + direct-to-origin, no upstream WAF). Each client id gets its
+# own counter, so one attacker can only lock out *themselves*. SECURITY: this only
+# holds if client_id is a VERIFIED peer IP the caller cannot forge — server.py
+# _client_id() derives it from Caddy's injected X-Admin-Client-IP (or the last, not
+# first, X-Forwarded-For hop). Trusting a client-controlled hop here would let an
+# attacker rotate the id per request and dodge the lockout entirely. The gate-check
+# and the attempt increment happen in ONE held critical section (the count is reserved
+# up front, BEFORE the unlocked compare), so concurrent guesses can't slip past.
 _LOCK = threading.Lock()
 _attempts: dict[str, dict] = {}   # client_id -> {"fails": int, "until": float, "ts": float}
 _LOCKOUT_AT = 5                   # failures before the first lockout

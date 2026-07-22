@@ -340,7 +340,15 @@ http://admin.mastermind-x.com {
 
 admin.mastermind-x.com {
 	encode zstd gzip
-	reverse_proxy 127.0.0.1:8787
+	reverse_proxy 127.0.0.1:8787 {
+		# admin.* is grey-cloud / direct-to-origin (no CDN), so the TCP peer IS the real
+		# client. Inject it as a trusted header the app reads for its per-client login
+		# lockout; header_up REPLACES any client-supplied X-Admin-Client-IP, so it can't
+		# be spoofed to rotate lockout buckets and defeat the throttle (admin/server.py
+		# _client_id). Without this the app falls back to the last X-Forwarded-For hop,
+		# which Caddy also sets to the real peer — belt and suspenders.
+		header_up X-Admin-Client-IP {remote_host}
+	}
 	header {
 		X-Robots-Tag "noindex, nofollow, noarchive"
 		X-Frame-Options "DENY"

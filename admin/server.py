@@ -45,6 +45,24 @@ _CTYPES = {".html": "text/html; charset=utf-8",
            ".css": "text/css; charset=utf-8",
            ".js": "application/javascript; charset=utf-8"}
 
+# Content-Security-Policy for the console document + every API response. default-src
+# 'none' is the floor. script-src/style-src keep 'unsafe-inline' because the hand-rolled
+# SPA renders ~31 inline on*= handlers + inline style attributes (refactoring those to
+# delegated listeners is the follow-up that lets us drop 'unsafe-inline' from script-src);
+# https://unpkg.com is the Leaflet map on Analytics -> Map. The real teeth even with
+# inline scripts allowed: connect-src 'self' stops an injected script exfiltrating to an
+# external origin, and object-src/base-uri/form-action shut the classic XSS pivots.
+_CSP = ("default-src 'none'; "
+        "script-src 'self' 'unsafe-inline' https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://unpkg.com; "
+        "img-src 'self' data: https:; "
+        "font-src 'self'; "
+        "connect-src 'self'; "
+        "base-uri 'none'; "
+        "form-action 'self'; "
+        "object-src 'none'; "
+        "frame-ancestors 'none'")
+
 
 def _int_param(q: dict, key: str, default: int, lo: int, hi: int) -> int:
     """Parse an integer query parameter, returning *default* on error and clamping to [lo, hi]."""
@@ -220,7 +238,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
+        self.send_header("Content-Security-Policy", _CSP)
         for c in (cookies or []):
             self.send_header("Set-Cookie", c)
         self.end_headers()
@@ -238,7 +256,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
+        self.send_header("Content-Security-Policy", _CSP)
         self.end_headers()
         self.wfile.write(body)
 
@@ -275,26 +293,34 @@ class Handler(BaseHTTPRequestHandler):
         return auth.valid_session(self._cookie_val(auth.SESSION_COOKIE))
 
     def _client_id(self) -> str:
-        """Real client IP for per-client login throttling. Behind Caddy the TCP peer
-        is always loopback, so trust X-Forwarded-For (first hop) in deployed mode."""
+        """Real client IP for per-client login throttling. SECURITY: the admin host is
+        grey-cloud / direct-to-origin (see app/deploy/Caddyfile), so the HTTP client is
+        the open internet and any forwarding header it sends is untrusted. Caddy injects
+        the verified TCP peer as X-Admin-Client-IP (header_up replaces a spoofed one) —
+        trust that first. Fall back to the LAST X-Forwarded-For hop, which is the element
+        Caddy appends (the real peer); the FIRST hop is attacker-controlled and must
+        never be trusted — reading it let a brute-force client rotate the header per
+        request to land every guess in a fresh lockout bucket and defeat the throttle."""
         if settings.deployed():
-            xff = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
-            if xff:
-                return xff
+            trusted = (self.headers.get("X-Admin-Client-IP") or "").strip()
+            if trusted:
+                return trusted[:64]
+            hops = [h.strip() for h in (self.headers.get("X-Forwarded-For") or "").split(",") if h.strip()]
+            if hops:
+                return hops[-1][:64]
         try:
             return self.client_address[0]
         except Exception:  # noqa: BLE001
             return "-"
 
     def _real_client_ip(self) -> str:
-        """The visitor IP as the SITE gate would see it — mirrors app/main.py
-        _mm_client_ip: prefer the CDN real-client headers, then fall back to
-        _client_id(). Used for the site-access gate's self-lockout allow-list so the
-        IP we auto-allow matches the IP the gate actually evaluates on the site."""
-        for k in ("EO-Connecting-IP", "CF-Connecting-IP", "True-Client-IP"):
-            v = (self.headers.get(k) or "").strip()
-            if v:
-                return v.split(",")[0].strip()[:64]
+        """The visitor IP for the site-access gate's self-lockout allow-list. SECURITY:
+        the admin host is NOT behind the site's CDN, so the CDN real-client headers
+        (EO-/CF-Connecting-IP, True-Client-IP) are never set by our infra here — an
+        inbound one is attacker-supplied and must not be honoured (it would let a caller
+        poison the gate's auto-allow list). Use the verified IP from _client_id(); the
+        operator's public IP is the same whether they reach the admin host directly or
+        the CDN-fronted site, so the auto-allowed IP still matches what the gate sees."""
         return self._client_id()
 
     def _secure_cookie(self) -> bool:
