@@ -155,7 +155,7 @@ html.still{scroll-behavior:auto}
 @keyframes ping{0%{transform:scale(.5);opacity:1}70%,100%{transform:scale(1.7);opacity:0}}
 
 /* ---- the field ---- */
-.field{position:relative;z-index:10;width:100%;max-width:1240px;margin:clamp(26px,4vh,44px) auto 0;height:min(56vh,590px);min-height:540px}
+.field{position:relative;z-index:10;width:100%;max-width:1240px;margin:clamp(26px,4vh,44px) auto 0;height:min(58vh,600px);min-height:565px}
 .field::before{content:"";position:absolute;inset:-8% -5%;pointer-events:none;
   background:
     radial-gradient(38% 34% at 50% 44%,rgba(40,95,255,.075),transparent 70%),
@@ -172,18 +172,20 @@ html.still{scroll-behavior:auto}
 .pulse{opacity:.9}
 
 /* ---- the brain ---- */
-.brain{position:absolute;left:49%;top:45%;transform:translate(-50%,-50%);z-index:19;width:210px;text-align:center;pointer-events:none}
-.brain .halo{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:290px;height:290px;border-radius:50%;
+.brain{position:absolute;left:47.5%;top:52.8%;transform:translate(-50%,-50%);z-index:19;display:flex;align-items:center;gap:16px;text-align:left;pointer-events:none}
+.brain .bdisc{position:relative;flex:none}
+.brain .halo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:216px;height:216px;border-radius:50%;
   background:radial-gradient(circle,rgba(40,95,255,.16),rgba(40,95,255,.05) 52%,transparent 72%);
   animation:breathe 5.5s ease-in-out infinite}
 @keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}}
-.brain svg{position:relative;width:164px;height:164px;margin:0 auto;display:block;filter:drop-shadow(0 16px 30px rgba(28,60,160,.22))}
+.brain svg{position:relative;width:124px;height:124px;display:block;filter:drop-shadow(0 16px 30px rgba(28,60,160,.22))}
+.brain .btxt{position:relative}
 .orbit{transform-origin:86px 86px;animation:spin 70s linear infinite}
 .knotg{transform-origin:86px 86px;animation:spin 140s linear infinite reverse}
 @keyframes spin{to{transform:rotate(360deg)}}
 .corepulse{transform-origin:86px 86px;animation:corebeat 3.2s ease-in-out infinite}
 @keyframes corebeat{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-.brain .bname{position:relative;margin:4px 0 0;font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;letter-spacing:.22em;color:var(--ink)}
+.brain .bname{position:relative;margin:0;font-family:'Archivo',sans-serif;font-weight:800;font-size:12.5px;letter-spacing:.2em;color:var(--ink)}
 .brain .bsub{position:relative;font-size:11px;color:var(--faint);margin:0;font-weight:500}
 
 /* ---- scattered cards ----
@@ -198,13 +200,15 @@ html.still{scroll-behavior:auto}
 .crd .kicker .asof{letter-spacing:.03em;color:var(--faint);text-transform:none;font-weight:600;font-size:.62rem}
 
 /* today's read */
-.s-read{left:1%;top:3%;width:min(292px,25%)}
+.s-read{left:40%;top:1%;width:min(330px,27%)}
 .s-read .crd{--rot:-3.2deg}
 .s-read .pin{right:-4px;bottom:16%;background:var(--blue)}
-.read-top{display:flex;align-items:center;gap:12px;margin-top:8px;text-align:left;width:100%}
-.score{font-family:'Archivo Expanded',sans-serif;font-weight:900;font-size:52px;line-height:1;letter-spacing:-.03em}
-.odo{width:126px;flex:none}
-.chip-reg{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--hair-2);border-radius:99px;padding:5px 11px;font-weight:600;font-size:12.5px;background:#fff;margin-top:9px;position:relative}
+.gz-row{display:flex;align-items:center;gap:15px;margin-top:7px}
+.gz{width:108px;flex:none}
+.gz-num{display:flex;align-items:baseline;gap:9px}
+.gz-num b{font-family:'Archivo Expanded',sans-serif;font-weight:900;font-size:44px;line-height:1;letter-spacing:-.03em;color:var(--q-gold)}
+.gz-num .gzw{font-weight:700;font-size:15.5px;color:var(--ink-soft)}
+.chip-reg{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--hair-2);border-radius:99px;padding:5px 11px;font-weight:600;font-size:12.5px;background:#fff;margin-top:8px;position:relative}
 .chip-reg .dotg{width:7px;height:7px;border-radius:50%;background:var(--q-green)}
 .stance{margin:9px 0 0;color:var(--ink-soft);font-size:12.5px;line-height:1.5}
 .stance b{font-weight:600}
@@ -221,7 +225,7 @@ html.still{scroll-behavior:auto}
 .quad-note{margin:9px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
 
 /* economies */
-.s-econ{left:26.5%;top:0;width:min(226px,18.5%);z-index:18}
+.s-econ{left:1%;top:2%;width:min(452px,36.5%);z-index:18}
 .s-econ .crd{--rot:1.8deg;padding:11px 13px}
 .s-econ .pin{left:-4px;top:42%;background:var(--violet)}
 .ec-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0 8px;align-items:center;padding:4.5px 0;border-bottom:1px solid var(--hair);font-size:11.5px}
@@ -235,7 +239,7 @@ html.still{scroll-behavior:auto}
 .st.stdy{color:var(--q-green);background:var(--green-wash)}
 
 /* risk radar — percentages always visible */
-.s-risk{left:74%;top:2%;width:min(300px,25.5%)}
+.s-risk{left:74.5%;top:2%;width:min(296px,24.5%)}
 .s-risk .crd{--rot:-1.6deg}
 .s-risk .pin{left:26%;bottom:-4px;background:var(--q-red)}
 .s-risk .kicker,.s-risk .kicker .asof{white-space:nowrap}
@@ -255,7 +259,7 @@ html.still{scroll-behavior:auto}
 @keyframes rowFlash{0%{background:rgba(40,95,255,.07)}100%{background:transparent}}
 
 /* heatmap 3x3 — half-coverable */
-.s-heat{left:3%;top:55%;width:min(238px,20%);z-index:14}
+.s-heat{left:1.5%;top:60%;width:min(238px,20%);z-index:14}
 .s-heat .crd{--rot:1.8deg}
 .s-heat .pin{right:-4px;top:22%;background:var(--teal)}
 .heat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:9px}
@@ -268,31 +272,30 @@ html.still{scroll-behavior:auto}
 .hm.flash{background:var(--blue-wash) !important}
 
 /* prophet — single scorecard-v2 card (Prophet DNA, porcelain-adapted) */
-.s-proph{left:24.5%;top:61%;width:min(272px,23%);z-index:26}
+.s-proph{left:21.5%;top:62%;width:min(282px,23%);z-index:26}
 .s-proph .pin{right:8%;top:-4px;background:var(--q-green)}
 .s-proph .crd{--rot:-2.2deg;padding:12px 14px;animation:none;translate:none}
-.pr-id{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px}
-.pr-id .tk{font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.01em}
-.pr-badge{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.08em;border-radius:5px;padding:3px 7px;white-space:nowrap}
-.pr-badge.dir{color:var(--q-green);background:var(--green-wash)}
-.pr-badge.phase{color:var(--q-gold);background:var(--gold-wash)}
-.pr-rr{margin-left:auto;font-family:ui-monospace,monospace;font-weight:600;font-size:9.5px;color:var(--muted);border:1px solid var(--hair-2);border-radius:99px;padding:2px 8px;white-space:nowrap}
-/* — horizontal geometry rail — */
-.pr-rail{position:relative;height:19px;margin:12px 0 0}
-.pr-track{position:absolute;left:0;right:0;top:7px;height:5px;border-radius:99px;background:var(--hair)}
-.pr-fill{position:absolute;top:21px;height:5px;border-radius:99px;background:rgba(15,157,143,.6)}
-.pr-mk{position:absolute;top:1px;width:2px;height:17px;border-radius:2px;transform:translateX(-1px)}
-.pr-mk.stop{background:var(--q-red)} .pr-mk.entry{background:var(--ink)}
-.pr-mk.t1{background:var(--q-green)}
-.pr-mk.t2{background:rgba(31,139,65,.45)}
-.pr-dot{position:absolute;top:5px;width:9px;height:9px;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 1px 4px rgba(15,157,143,.45);transform:translateX(-4.5px)}
-.pr-legend{display:flex;justify-content:space-between;gap:4px;margin:7px 0 0;font-family:ui-monospace,monospace;font-size:8px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
-.pr-legend b{font-weight:500}
-.pr-brief{margin:9px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5}
-.s-proph .crd .gr{margin-top:9px;border-top:1px solid var(--hair);padding-top:6px;font-size:9.5px;color:var(--faint)}
+.psc-top{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.psc-pill{font-family:'Archivo',sans-serif;font-weight:800;font-size:9.5px;letter-spacing:.09em;color:var(--q-green);background:var(--green-wash);border:1px solid rgba(31,139,65,.35);border-radius:99px;padding:3.5px 11px}
+.psc-px{font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;color:var(--ink)}
+.psc-spark{display:block;width:100%;height:58px;margin-top:7px;border-radius:6px;background:linear-gradient(180deg,rgba(31,139,65,.045),transparent)}
+.psc-id{display:flex;align-items:baseline;gap:7px;margin-top:9px}
+.psc-id .tk{font-family:'Archivo',sans-serif;font-weight:800;font-size:15px}
+.psc-id .nm2{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.psc-edge{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+.psc-edge b{font-size:15px;color:var(--q-green);margin-left:2px}
+.psc-stages{display:flex;justify-content:space-between;position:relative;margin-top:12px;padding-top:9px}
+.psc-stages::before{content:"";position:absolute;top:3.5px;left:8px;right:8px;height:2px;border-radius:2px;background:var(--hair)}
+.stg{position:relative;font-size:9.5px;color:var(--faint);font-weight:600}
+.stg::before{content:"";position:absolute;top:-8.5px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:50%;background:#d3d9e2;border:2px solid #fff}
+.stg.on{color:var(--ink);font-weight:700}
+.stg.on::before{background:var(--q-green);box-shadow:0 0 0 3px rgba(31,139,65,.18)}
+.psc-zone{display:flex;align-items:baseline;gap:7px;margin-top:11px;border-top:1px solid var(--hair);padding-top:8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.09em;color:var(--q-green)}
+.psc-zone b{font-size:11.5px;color:var(--ink);letter-spacing:.02em}
+.psc-zone .dt{margin-left:auto;color:var(--faint);font-weight:600}
 
 /* events — a naked deck, fans UPWARD on hover */
-.s-ev{left:57.5%;top:64.5%;width:min(250px,21%);z-index:28}
+.s-ev{left:51%;top:66%;width:min(250px,21%);z-index:28}
 .s-ev .pin{left:-2px;top:12%;background:var(--q-gold)}
 .s-ev:hover,.s-ev:focus-within,.s-ev:has(.fanned){z-index:70}
 .deck{position:relative;height:150px;outline:none;animation:bob var(--bd,6.5s) ease-in-out var(--bdel,0s) infinite}
@@ -314,7 +317,7 @@ html.still{scroll-behavior:auto}
 .deck.fanned .e3{transform:translate(26%,-24px) rotate(7deg)}
 
 /* hard assets */
-.s-assets{left:81.5%;top:44%;width:min(224px,18.5%);z-index:13}
+.s-assets{left:76%;top:60%;width:min(244px,20%);z-index:13}
 .s-assets .crd{--rot:1.2deg;padding:11px 13px}
 .s-assets .pin{left:-4px;top:42%;background:var(--q-gold)}
 .as-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:baseline;padding:4.5px 0;border-bottom:1px solid var(--hair);font-size:11.5px}
@@ -374,13 +377,14 @@ html.still{scroll-behavior:auto}
 .wl-row .c{font-weight:600;font-size:10.5px}
 .wl-row .c.u{color:#34d399} .wl-row .c.d{color:#f87171}
 .term-flow{border-top:1px solid rgba(160,180,215,.12);padding:8px 12px 10px}
+.term-flow #flow{height:94px;overflow:hidden}
 .term-flow .rl{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.14em;color:#6d7f9e;display:flex;align-items:center;gap:7px;margin-bottom:6px}
 .term-flow .rl i{width:5px;height:5px;border-radius:50%;background:#5eead4;font-style:normal}
-.fl-row{display:grid;grid-template-columns:44px 84px 46px 1fr auto;gap:8px;align-items:center;padding:4px 2px;font-size:10.5px;color:#93a5c4}
+.fl-row{display:grid;grid-template-columns:44px 96px 46px 1fr auto;gap:8px;align-items:center;height:23.5px;padding:0 2px;font-size:10.5px;color:#93a5c4}
 .fl-row.enter{animation:flIn .45s cubic-bezier(.2,.8,.3,1)}
 @keyframes flIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
 .fl-row .tm{font-variant-numeric:tabular-nums;color:#63769a}
-.fl-row .ty{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.08em;border-radius:5px;padding:2.5px 6px;text-align:center}
+.fl-row .ty{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.08em;border-radius:5px;padding:2.5px 6px;text-align:center;white-space:nowrap}
 .fl-row .ty.cs{color:#34d399;background:rgba(52,211,153,.12)}
 .fl-row .ty.ps{color:#f87171;background:rgba(248,113,113,.12)}
 .fl-row .ty.bl{color:#7ea8ff;background:rgba(126,168,255,.13)}
@@ -596,7 +600,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
   .field{height:auto;min-height:0;margin-top:26px;padding-bottom:30px}
   .field::before{inset:0}
   .web{display:none}
-  .brain{position:relative;left:auto;top:auto;transform:none;margin:6px auto 22px;pointer-events:auto}
+  .brain{position:relative;left:auto;top:auto;transform:none;margin:6px auto 22px;pointer-events:auto;flex-direction:column;align-items:center;text-align:center;gap:8px}
   .spot{position:relative;left:auto !important;top:auto !important;width:min(420px,100%) !important;margin:14px auto 0}
   .spot .crd,.deck{rotate:var(--mr,0deg);animation:none;translate:none}
   .spot .pin{display:none}
@@ -618,7 +622,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
   .nav-right{gap:10px}
   .sits{grid-template-columns:1fr}
   .tri3{grid-template-columns:1fr}
-  .fl-row{grid-template-columns:38px 76px 40px 1fr auto;gap:6px;font-size:10px}
+  .fl-row{grid-template-columns:38px 86px 40px 1fr auto;gap:6px;font-size:10px}
   .demo{padding:13px}
 }
 </style>
@@ -679,6 +683,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
 
       <!-- brain core -->
       <div class="brain" id="brain">
+        <div class="bdisc">
         <div class="halo"></div>
         <svg viewBox="0 0 172 172" aria-hidden="true">
           <g class="orbit">
@@ -706,8 +711,11 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
             <circle cx="86" cy="86" r="7" fill="#285fff"/>
           </g>
         </svg>
-        <p class="bname">MASTERMIND AI</p>
-        <p class="bsub" data-zh="神经网络 · 实时">the neural web · live</p>
+        </div>
+        <div class="btxt">
+          <p class="bname">MASTERMIND AI</p>
+          <p class="bsub" data-zh="神经网络 · 实时">the neural web · live</p>
+        </div>
       </div>
 
       <!-- today's read -->
@@ -715,10 +723,6 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <span class="pin" data-tether="brain" data-color="#285fff"></span>
         <div class="crd">
           <p class="kicker" data-zh="今日研判 · 美国 <span class='asof'>收盘</span>">TODAY'S READ · US <span class="asof">last close</span></p>
-          <div class="read-top">
-            <span class="score tnum">50</span>
-            <span class="odo"><svg id="odo-svg" viewBox="0 0 150 92" aria-hidden="true"></svg></span>
-          </div>
           <span class="chip-reg" id="reg-chip" tabindex="0" role="button" aria-describedby="quad-pop">
             <span class="dotg"></span><span class="lbl" data-zh="温和增长 · 转变中">Goldilocks · shifting</span>
             <span class="quad-pop" id="quad-pop" role="tooltip">
@@ -730,6 +734,22 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
               <span class="quad-note" data-zh="增长为正、通胀不烫——但正向再通胀漂移。并非完全无忧。">Growth positive, inflation not hot — but drifting toward Reflation. Not all-clear.</span>
             </span>
           </span>
+          <div class="gz-row">
+            <svg class="gz" viewBox="0 -6 140 103" aria-hidden="true">
+              <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="var(--hair-2)" stroke-width="10" stroke-linecap="round" fill="none"/>
+              <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="var(--q-gold)" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="87.9 100" opacity=".92"/>
+              <g font-family="Archivo,sans-serif" font-size="9" fill="var(--faint)" font-weight="600">
+                <text x="8" y="93">0</text><text x="70" y="2" text-anchor="middle">50</text><text x="116" y="93">100</text>
+              </g>
+              <g id="needle" style="transform-origin:70px 75px;transform:rotate(-90deg);transition:transform 1.1s cubic-bezier(.3,.8,.3,1)">
+                <line x1="70" y1="73" x2="70" y2="30" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>
+                <circle cx="70" cy="30" r="3" fill="var(--q-gold)"/>
+              </g>
+              <circle cx="70" cy="75" r="7" fill="#fff" stroke="var(--hair-2)" stroke-width="1.5"/>
+              <circle cx="70" cy="75" r="3.2" fill="var(--ink)"/>
+            </svg>
+            <div class="gz-num"><b class="tnum">50</b><span class="gzw" data-zh="分化">Mixed</span></div>
+          </div>
           <p class="stance" data-zh="<b>分化——减小仓位、偏向优质；</b>不要追高。"><b>Mixed — trade smaller, favour quality;</b> don't chase.</p>
         </div>
       </div>
@@ -783,24 +803,24 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <span class="pin" data-tether="brain" data-color="#1f8b41"></span>
         <div class="crd">
           <p class="kicker"><span data-zh="Prophet · 今日">PROPHET · TODAY</span><span class="asof" data-zh="免费">free</span></p>
-          <div class="pr-id">
-            <span class="tk">XLE</span>
-            <span class="pr-badge dir" data-zh="▲ 看多">▲ BULL</span>
-            <span class="pr-badge phase" data-zh="待触发">PRE-TRIGGER</span>
-            <span class="pr-rr tnum">R/R 2.5</span>
+          <div class="psc-top">
+            <span class="psc-pill" data-zh="接近">NEAR</span>
+            <span class="psc-px tnum">$58.50</span>
           </div>
-          <div class="pr-rail" aria-label="Price geometry: stop 85.9, entry 88.4, last 89.2, target 1 at 94.6, target 2 at 99.8">
-            <div class="pr-track"></div>
-            <div class="pr-fill" style="left:18%;width:5.7%"></div>
-            <div class="pr-mk stop" style="left:0"></div>
-            <div class="pr-mk entry" style="left:18%"></div>
-            <div class="pr-mk t1" style="left:62.6%"></div>
-            <div class="pr-mk t2" style="left:100%"></div>
-            <div class="pr-dot" style="left:23.7%"></div>
+          <svg class="psc-spark" viewBox="0 0 260 64" preserveAspectRatio="none" aria-label="XLE — real closing prices for the last 40 sessions, rising toward the entry zone.">
+            <path d="M2.0 6.0 L 8.6 22.0 L 15.1 28.7 L 21.7 29.0 L 28.3 34.0 L 34.8 26.2 L 41.4 21.2 L 47.9 15.3 L 54.5 15.0 L 61.1 23.4 L 67.6 18.3 L 74.2 25.5 L 80.8 18.9 L 87.3 27.6 L 93.9 24.3 L 100.5 39.8 L 107.0 41.3 L 113.6 46.6 L 120.2 53.5 L 126.7 48.3 L 133.3 45.2 L 139.8 52.1 L 146.4 48.0 L 153.0 50.0 L 159.5 52.0 L 166.1 55.7 L 172.7 58.0 L 179.2 54.8 L 185.8 55.5 L 192.4 43.8 L 198.9 36.3 L 205.5 42.4 L 212.1 40.3 L 218.6 27.4 L 225.2 25.8 L 231.7 29.3 L 238.3 25.2 L 244.9 20.1 L 251.4 18.1 L 258.0 13.7 L 258 58 L 2 58 Z" fill="rgba(31,139,65,.10)"/>
+            <polyline points="2.0,6.0 8.6,22.0 15.1,28.7 21.7,29.0 28.3,34.0 34.8,26.2 41.4,21.2 47.9,15.3 54.5,15.0 61.1,23.4 67.6,18.3 74.2,25.5 80.8,18.9 87.3,27.6 93.9,24.3 100.5,39.8 107.0,41.3 113.6,46.6 120.2,53.5 126.7,48.3 133.3,45.2 139.8,52.1 146.4,48.0 153.0,50.0 159.5,52.0 166.1,55.7 172.7,58.0 179.2,54.8 185.8,55.5 192.4,43.8 198.9,36.3 205.5,42.4 212.1,40.3 218.6,27.4 225.2,25.8 231.7,29.3 238.3,25.2 244.9,20.1 251.4,18.1 258.0,13.7" fill="none" stroke="#1f8b41" stroke-width="1.8" stroke-linejoin="round"/>
+            <rect x="196" y="10" width="62" height="11" fill="rgba(31,139,65,.07)" stroke="rgba(31,139,65,.55)" stroke-width="1" stroke-dasharray="3 2.5" rx="2"/>
+            <circle cx="258" cy="13.7" r="2.6" fill="#1f8b41"/>
+          </svg>
+          <div class="psc-id">
+            <span class="tk">XLE</span><span class="nm2" data-zh="能源精选">Energy Select</span>
+            <span class="psc-edge">EDGE <b class="tnum">74</b></span>
           </div>
-          <p class="pr-legend"><span style="color:var(--q-red)" data-zh="止损 <b class='tnum'>85.9</b>">STOP <b class="tnum">85.9</b></span><span style="color:var(--ink)" data-zh="入场 <b class='tnum'>88.4</b>">ENTRY <b class="tnum">88.4</b></span><span style="color:var(--teal)" data-zh="现价 <b class='tnum'>89.2</b>">LAST <b class="tnum">89.2</b></span><span style="color:var(--q-green)">T1 <b class="tnum">94.6</b></span><span style="color:rgba(31,139,65,.65)">T2 <b class="tnum">99.8</b></span></p>
-          <p class="pr-brief" data-zh="等待触发——90.1 确认前不建仓。">Wait for the trigger — no position until 90.1 confirms.</p>
-          <p class="gr" data-zh="今日6条中的第1条 · 出手前锁定 · 免费">1 of 6 today · stamped before the move · free</p>
+          <div class="psc-stages" aria-label="Setup stage: Ready">
+            <span class="stg" data-zh="筑底">Bottoming</span><span class="stg" data-zh="转折">Turning</span><span class="stg on" data-zh="就绪">Ready</span><span class="stg" data-zh="趋势">Trend</span>
+          </div>
+          <div class="psc-zone"><span data-zh="区间">ZONE</span> <b class="tnum">57.95 – 58.60</b><span class="dt" data-zh="7月21日">Jul 21</span></div>
         </div>
       </div>
 
@@ -1385,33 +1405,8 @@ requestAnimationFrame(buildWeb);
 new ResizeObserver(() => requestAnimationFrame(buildWeb)).observe(field);
 window.addEventListener('load', buildWeb);
 
-/* ───── segmented odometer ───── */
-(function(){
-  const svg = document.getElementById('odo-svg');
-  const cx = 75, cy = 82, R = 58, SEGS = 26, GAP = 1.6;
-  const mk = (t,a)=>{ const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
-  const pol = (ang,r)=>{ const rad=(ang-90)*Math.PI/180; return [cx+r*Math.cos(rad), cy+r*Math.sin(rad)]; };
-  const col = t => { const h = t < .5 ? 4 + 41*(t/.5) : 45 + 95*((t-.5)/.5);
-    return `hsl(${h} ${t<.5?60:52}% ${t<.5?44:34}%)`; };
-  const [tx0,ty0]=pol(-80,R), [tx1,ty1]=pol(80,R);
-  svg.appendChild(mk('path',{d:`M${tx0} ${ty0} A${R} ${R} 0 0 1 ${tx1} ${ty1}`,fill:'none',stroke:'#eef0f4','stroke-width':11,'stroke-linecap':'round'}));
-  for(let i=0;i<SEGS;i++){
-    const a0=-80+160*i/SEGS, a1=-80+160*(i+1)/SEGS-GAP;
-    const [x0,y0]=pol(a0,R), [x1,y1]=pol(a1,R);
-    svg.appendChild(mk('path',{d:`M${x0} ${y0} A${R} ${R} 0 0 1 ${x1} ${y1}`,fill:'none',stroke:col(i/(SEGS-1)),'stroke-width':i%5===0?9:7,opacity:.92}));
-  }
-  [0,25,50,75,100].forEach(v=>{
-    const a=-80+160*v/100, [x0,y0]=pol(a,R+9), [x1,y1]=pol(a,R+13);
-    svg.appendChild(mk('line',{x1:x0,y1:y0,x2:x1,y2:y1,stroke:'#c3cad6','stroke-width':1.4,'stroke-linecap':'round'}));
-  });
-  const ng = mk('g',{id:'needle',style:'transform-origin:75px 82px;transform:rotate(-80deg);transition:transform 1.2s cubic-bezier(.3,.8,.3,1)'});
-  ng.appendChild(mk('path',{d:'M75 82 L71.8 78.5 L74 34 L76 34 L78.2 78.5 Z',fill:'#1c2430'}));
-  ng.appendChild(mk('circle',{cx:75,cy:36,r:2.6,fill:'#285fff'}));
-  svg.appendChild(ng);
-  svg.appendChild(mk('circle',{cx,cy,r:7.5,fill:'#fff',stroke:'#dfe3e9','stroke-width':1.5}));
-  svg.appendChild(mk('circle',{cx,cy,r:3.4,fill:'#1c2430'}));
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ document.getElementById('needle').style.transform='rotate(0deg)'; }));
-})();
+/* ───── gauge needle settle (50 = straight up on the mx5-style arc) ───── */
+requestAnimationFrame(()=>requestAnimationFrame(()=>{ const n=document.getElementById('needle'); if(n) n.style.transform='rotate(0deg)'; }));
 
 /* ───── quadrant popover: hover via CSS; click toggle for touch ───── */
 const reg = document.getElementById('reg-chip');
