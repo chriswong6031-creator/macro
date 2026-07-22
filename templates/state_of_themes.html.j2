@@ -1,183 +1,257 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
+{# The signature: a "line of conviction" — a current running through the theme
+   lifecycle. Shape is a gentle rising spine; the pulse travels left→right the
+   way belief spreads through a story. Reduced-motion → static. #}
+{% macro convline() -%}
+<svg class="sot-spark" viewBox="0 0 300 40" preserveAspectRatio="none" aria-hidden="true">
+  <path class="sot-spark-base" d="M0,33 C60,33 92,27 132,20 S232,7 300,5" pathLength="100"/>
+  <path class="sot-spark-pulse" d="M0,33 C60,33 92,27 132,20 S232,7 300,5" pathLength="100"/>
+</svg>
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>State of Themes — Market Intelligence</title>
-{% set seo_title = "State of Themes — Mastermind" %}{% set seo_desc = "The market's themes ranked by health — which stories are gaining money and breadth, which are fading. Updated nightly." %}{% set seo_path = "state_of_themes.html" %}
+{% set seo_title = "State of Themes — Mastermind" %}{% set seo_desc = "The market's themes ranked by health — which stories are gaining money and breadth, which are early and under-owned, and which just tripped a break-rule. Updated nightly." %}{% set seo_path = "state_of_themes.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
-* { box-sizing:border-box; }
-body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 0 40px; }
-a { text-decoration:none; color:var(--link); }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;margin:0;padding:0 0 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+a{color:var(--link);text-decoration:none}
+:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:6px}
 
-/* ── Nav ── */
-.site-nav { display:flex; align-items:center; gap:10px; padding:10px 18px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-.site-nav .nav-logo { font-weight:800; font-size:15px; color:var(--text); text-decoration:none; }
-.site-nav .nav-links { display:flex; gap:8px; flex-wrap:wrap; flex:1; }
-.site-nav .nav-links a { font-size:13px; color:var(--muted); padding:4px 8px; border-radius:7px; }
-.site-nav .nav-links a:hover { color:var(--text); background:var(--panel); }
-.nav-ctrls { display:flex; align-items:center; gap:8px; margin-left:auto; }
-.theme-switch { background:none; border:1px solid var(--line); border-radius:20px; padding:4px 8px; cursor:pointer; font-size:14px; color:var(--text); display:flex; align-items:center; gap:4px; }
-.theme-switch .sun,.theme-switch .moon { display:none; }
-[data-theme="dark"] .theme-switch .sun { display:inline; }
-[data-theme="light"] .theme-switch .moon { display:inline; }
-:not([data-theme]) .theme-switch .moon { display:inline; }
-.theme-switch .knob { display:none; }
-.lang-toggle { display:flex; gap:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; font-size:12px; font-weight:700; }
-.lang-toggle .opt { padding:3px 9px; cursor:pointer; color:var(--muted); }
-.lang-toggle .opt.active,.lang-toggle .opt:hover { background:var(--link); color:#fff; }
+/* ── design tokens: stance-health + lifecycle spectrum (zh-STABLE — these are
+      severity / stage-identity hues, never price-direction reads, so they do
+      NOT flip under the 红涨绿跌 rule) ── */
+:root{
+  --good:#1f9a55; --early:#3b6fe0; --warn:#c07d16; --bad:#d3453f; --quiet:#7a8494;
+  --lc-watch:#6b7686; --lc-broad:#0d9488; --lc-rerate:#4f5fd0; --lc-accel:#7c3aed; --lc-prec:#c07d16; --lc-corr:#d3453f;
+  --sot-shadow:0 12px 30px -16px rgba(15,25,55,.30);
+}
+html[data-theme="dark"]{
+  --good:#43c07a; --early:#7aa2ff; --warn:#e0a84e; --bad:#e06b66; --quiet:#8b93a1;
+  --lc-watch:#8b96a6; --lc-broad:#2dd4bf; --lc-rerate:#8b96f8; --lc-accel:#a684f5; --lc-prec:#e6b45a; --lc-corr:#e58a86;
+  --sot-shadow:0 16px 40px -20px rgba(0,0,0,.6);
+}
+.lane-working{--acc:var(--good)} .lane-early{--acc:var(--early)}
+.lane-caution{--acc:var(--warn)} .lane-review{--acc:var(--bad)} .lane-quiet{--acc:var(--quiet)}
 
-/* ── Wrap ── */
-.wrap { padding:18px 20px; max-width:1360px; margin:0 auto; }
-@media (min-width:1100px) { .wrap { padding:20px max(28px,calc((100vw - 1360px)/2)); } }
+/* ── HERO ── */
+.sot-hero{padding:30px 0 6px;animation:sotUp .55s cubic-bezier(.2,.7,.3,1) both}
+.sot-brand{display:inline-flex;align-items:center;gap:11px;font-size:27px;font-weight:800;letter-spacing:-.022em;color:var(--text)}
+.sot-brand .gl{font-size:24px;filter:drop-shadow(0 3px 8px rgba(60,90,200,.3))}
+.sot-brand .gn{background:linear-gradient(96deg,var(--lc-broad),var(--lc-rerate) 44%,var(--lc-accel) 78%,var(--lc-prec));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sot-tag{color:var(--muted);font-size:14px;margin:5px 0 0}
+.sot-verdict{font-size:clamp(20px,3vw,29px);font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.3;margin:17px 0 6px;max-width:920px}
+.sot-verdict b{color:var(--text)}
+.sot-asof{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:3px}
+.sot-asof .bdot{width:7px;height:7px;border-radius:50%;background:var(--good);animation:sotBreathe 2.8s ease-in-out infinite;flex:none}
 
-/* ── Header ── */
-.sot-head { display:flex; flex-wrap:wrap; align-items:flex-start; gap:12px 20px; margin-bottom:14px; }
-.sot-title { margin:0; font-size:22px; font-weight:800; letter-spacing:-.02em; }
-.sot-asof { font-size:12px; color:var(--muted); margin-top:3px; }
-.sot-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-left:auto; }
+/* ── what changed ── */
+.sot-changes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:20px 0 4px}
+.sot-changes .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.chg-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font-size:12.5px;font-weight:600;color:var(--text)}
+.chg-chip .bdot{width:6px;height:6px;border-radius:50%;background:var(--warn);animation:sotBreathe 2.2s ease-in-out infinite;flex:none}
+.chg-chip.fired .bdot{background:var(--bad)}
+.chg-chip.calm{color:var(--muted);font-weight:500}
+.chg-chip.calm .bdot{background:var(--good)}
 
-/* header summary chips */
-.hchip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; border:1px solid var(--line); background:var(--panel); font-size:12px; font-weight:600; }
-.hchip-val { font-weight:800; font-size:14px; }
-.hchip.alert { border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
-.hchip.alert .hchip-val { color:var(--down); }
+/* ── section chrome ── */
+.sec-head{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.07em;margin:38px 0 3px}
+.sec-head .sh-dot{width:8px;height:8px;border-radius:3px;background:var(--sh-c,var(--quiet));align-self:center}
+.sec-sub{font-size:13px;color:var(--muted);margin:0 0 14px;max-width:760px}
 
-/* ── Filter chips ── */
-.filter-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.fchip { padding:6px 14px; border-radius:20px; border:1.5px solid var(--line); background:var(--panel); font-size:13px; font-weight:600; cursor:pointer; color:var(--muted); transition:all .15s; user-select:none; }
-.fchip:hover { border-color:var(--link); color:var(--text); }
-.fchip.on { border-color:var(--link); background:color-mix(in srgb,var(--link) 12%,var(--panel)); color:var(--link); }
-.fchip.disabled { opacity:.45; cursor:default; pointer-events:none; }
-.fchip .fc-n { font-weight:400; color:var(--muted); font-size:12px; margin-left:3px; }
-.fchip.on .fc-n { color:var(--link); }
+/* ── SIGNATURE: lifecycle ribbon ── */
+.ribbon{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px 26px 18px;overflow:visible;box-shadow:var(--sot-shadow);animation:sotUp .55s cubic-bezier(.2,.7,.3,1) both}
+.ribbon-track{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:6px}
+.ribbon-line{position:absolute;left:5%;right:5%;top:23px;height:3px;border-radius:3px;
+  background:linear-gradient(90deg,var(--lc-watch),var(--lc-broad) 20%,var(--lc-rerate) 40%,var(--lc-accel) 60%,var(--lc-prec) 80%,var(--lc-corr));opacity:.34}
+.ribbon-line::after{content:'';position:absolute;inset:0;border-radius:3px;
+  background:linear-gradient(90deg,transparent,#fff8,transparent);background-size:34% 100%;background-repeat:no-repeat;
+  mix-blend-mode:overlay;animation:sotSweep 4.2s linear infinite}
+.rb-node{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;z-index:1;padding-top:2px}
+.rb-dot{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;
+  color:#fff;background:var(--nc);border:3px solid var(--panel);box-shadow:0 4px 12px -4px var(--nc);transition:transform .18s ease}
+.rb-node:hover .rb-dot{transform:translateY(-2px) scale(1.05)}
+.rb-node.empty .rb-dot{background:transparent;color:var(--muted);border-color:var(--line);box-shadow:none;font-weight:700}
+.rb-node.empty .rb-dot{border-style:dashed}
+.rb-lab{font-size:11.5px;font-weight:700;color:var(--text);line-height:1.2}
+.rb-node.empty .rb-lab{color:var(--muted);font-weight:600}
+.rb-s-watch{--nc:var(--lc-watch)} .rb-s-broad{--nc:var(--lc-broad)} .rb-s-rerate{--nc:var(--lc-rerate)}
+.rb-s-accel{--nc:var(--lc-accel)} .rb-s-prec{--nc:var(--lc-prec)} .rb-s-corr{--nc:var(--lc-corr)}
+.rb-node .rb-pop{display:none;position:absolute;top:58px;left:50%;transform:translateX(-50%);z-index:20;width:190px;padding:9px 12px;border-radius:11px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--sot-shadow);font-size:11.5px;font-weight:500;color:var(--muted);line-height:1.5;text-transform:none;letter-spacing:0}
+.rb-node:hover .rb-pop,.rb-node:focus-within .rb-pop{display:block}
+.rb-pop b{color:var(--text);font-weight:700}
+.ribbon-foot{font-size:11.5px;color:var(--muted);margin-top:16px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
-/* ── Legend ── */
-.legend-row { display:flex; flex-wrap:wrap; gap:12px 20px; margin-bottom:14px; font-size:11.5px; color:var(--muted); align-items:center; }
-.leg-item { display:flex; align-items:center; gap:5px; }
-.dot { display:inline-block; width:11px; height:11px; border-radius:50%; flex:none; }
-/* Valence-based dot classes (polarity-correct per leg) */
-.dot.fav  { background:color-mix(in srgb,var(--up) 60%,transparent); border:1px solid color-mix(in srgb,var(--up) 80%,transparent); }
-.dot.mid  { background:color-mix(in srgb,var(--warn) 70%,transparent); border:1px solid color-mix(in srgb,var(--warn) 80%,transparent); }
-.dot.caut { background:color-mix(in srgb,var(--down) 70%,transparent); border:1px solid color-mix(in srgb,var(--down) 80%,transparent); }
-.dot.neut { background:color-mix(in srgb,var(--muted) 35%,transparent); border:1px solid color-mix(in srgb,var(--muted) 50%,transparent); }
-.dot.null { background:transparent; border:1.5px dashed var(--muted); opacity:.55; }
-.stage-pill { display:inline-block; padding:1px 7px; border-radius:8px; font-size:10.5px; font-weight:700; letter-spacing:.03em; }
+/* ── filter bar ── */
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 2px;align-items:center}
+.fchip{padding:6px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;user-select:none;display:inline-flex;align-items:center;gap:6px}
+.fchip:hover{border-color:var(--fc,var(--link));color:var(--text)}
+.fchip.on{border-color:var(--fc,var(--link));background:color-mix(in srgb,var(--fc,var(--link)) 12%,var(--panel));color:var(--fc,var(--link))}
+.fchip .fc-n{font-weight:800;font-size:12px;opacity:.85}
+.fchip .fc-sw{width:9px;height:9px;border-radius:3px;background:var(--fc)}
 
-/* ── Matrix table ── */
-.matrix-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--line); background:var(--panel); }
-.matrix { width:100%; border-collapse:collapse; font-size:13px; }
-.matrix th { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; cursor:pointer; user-select:none; }
-.matrix th:hover { color:var(--text); }
-.matrix th.sorted-asc::after { content:" ▲"; font-size:9px; }
-.matrix th.sorted-desc::after { content:" ▼"; font-size:9px; }
-.matrix td { padding:9px 10px; border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent); vertical-align:middle; }
-.matrix tr:last-child td { border-bottom:none; }
-.matrix tr.hidden { display:none; }
-.matrix tbody tr { cursor:pointer; transition:background .1s; }
-.matrix tbody tr:hover td { background:color-mix(in srgb,var(--link) 5%,transparent); }
-.matrix tbody tr.expanded td { background:color-mix(in srgb,var(--link) 7%,transparent); }
+/* ── stance lane ── */
+.lane{margin-top:26px;scroll-margin-top:14px}
+.lane.dim{display:none}
+.lane-head{display:flex;align-items:center;gap:12px 14px;flex-wrap:wrap;margin-bottom:13px}
+.lane-badge{display:inline-flex;align-items:center;gap:9px;padding:7px 15px 7px 12px;border-radius:12px;background:color-mix(in srgb,var(--acc) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--acc) 34%,var(--line))}
+.lane-badge .em{font-size:14px;line-height:1}
+.lane-badge .lb-t{font-size:14.5px;font-weight:800;color:var(--acc);letter-spacing:-.01em}
+.lane-badge .lb-n{font-size:12px;font-weight:800;color:var(--acc);background:color-mix(in srgb,var(--acc) 18%,var(--panel));padding:1px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
+.lane-stance{font-size:13px;font-weight:700;color:var(--text)}
+.lane-guide{font-size:12.5px;color:var(--muted);flex:1;min-width:200px}
+.lane-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+@media(max-width:560px){.lane-grid{grid-template-columns:1fr}}
+/* mobile: the lifecycle line stays one coherent swipeable strip */
+@media(max-width:600px){
+  .ribbon{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:20px 16px 14px;scrollbar-width:thin}
+  .ribbon-track{min-width:540px}
+  .rb-dot{width:40px;height:40px;font-size:16px}
+  .ribbon-foot{min-width:540px}
+  .lane-head{gap:8px 12px}
+  .lane-guide{min-width:100%}
+}
 
-/* theme name cell */
-.theme-name { font-weight:700; font-size:13.5px; }
-.theme-zh { font-size:11px; color:var(--muted); display:block; margin-top:1px; }
-.l-zh .theme-zh { display:block; }
-.l-en .theme-zh { display:none; }
+/* ── theme card ── */
+.theme-row{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:0;overflow:hidden;cursor:pointer;
+  transition:transform .16s ease,box-shadow .2s ease,border-color .2s ease;animation:sotUp .5s cubic-bezier(.2,.7,.3,1) both}
+.theme-row::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--acc)}
+.theme-row:hover{transform:translateY(-2px);box-shadow:var(--sot-shadow);border-color:color-mix(in srgb,var(--acc) 35%,var(--line))}
+.theme-row.hidden{display:none}
+.tc-top{padding:16px 17px 4px}
+.tc-nameline{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.tc-name{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.015em;line-height:1.2}
+.stage-pill{flex:none;display:inline-block;padding:3px 10px;border-radius:8px;font-size:10.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;
+  background:color-mix(in srgb,var(--sc,var(--quiet)) 15%,var(--panel));color:var(--sc,var(--quiet));border:1px solid color-mix(in srgb,var(--sc,var(--quiet)) 30%,var(--line))}
+.stage-WATCH{--sc:var(--lc-watch)} .stage-BROADENING{--sc:var(--lc-broad)} .stage-RE-RATING{--sc:var(--lc-rerate)}
+.stage-ACCELERATING{--sc:var(--lc-accel)} .stage-PRECIPICE{--sc:var(--lc-prec)} .stage-CORRECTING{--sc:var(--lc-corr)}
+.tc-story{font-size:13px;color:var(--muted);line-height:1.5;margin:9px 0 0}
+.tc-meta{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:12px 17px 14px;margin-top:12px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.legs-row{display:flex;gap:5px;align-items:center}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;flex:none}
+.dot.fav{background:var(--good)} .dot.mid{background:var(--warn)} .dot.caut{background:var(--bad)}
+.dot.neut{background:color-mix(in srgb,var(--quiet) 45%,transparent);border:1px solid color-mix(in srgb,var(--quiet) 55%,transparent)}
+.dot.null{background:transparent;border:1.5px dashed var(--quiet);opacity:.6}
+.health-word{font-size:12px;font-weight:700;color:var(--muted)}
+.health-word b{color:var(--good)}
+.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.badge.opp{background:color-mix(in srgb,var(--early) 14%,var(--panel));color:var(--early)}
+.badge.crowd{background:color-mix(in srgb,var(--warn) 16%,var(--panel));color:var(--warn)}
+.badge.fired{background:color-mix(in srgb,var(--bad) 15%,var(--panel));color:var(--bad)}
+.badge.clean{background:color-mix(in srgb,var(--good) 12%,var(--panel));color:var(--good)}
+.tc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 17px 15px}
+.tc-stance{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;font-size:12px;font-weight:700;
+  background:color-mix(in srgb,var(--acc) 11%,var(--panel));color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 26%,var(--line))}
+.tc-stance .bdot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:sotBreathe 2.5s ease-in-out infinite;flex:none}
+.tc-more{font-size:11.5px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.tc-more .cv{font-size:9px;transition:transform .22s}
+.theme-row.expanded .tc-more .cv{transform:rotate(90deg)}
+.theme-row.expanded{cursor:default}
 
-/* stage chips */
-.stage-WATCH { background:color-mix(in srgb,var(--muted) 20%,var(--panel2)); color:var(--muted); }
-.stage-BROADENING { background:color-mix(in srgb,var(--up) 18%,var(--panel2)); color:color-mix(in srgb,var(--up) 90%,var(--text)); }
-.stage-RE-RATING { background:color-mix(in srgb,var(--link) 18%,var(--panel2)); color:var(--link); }
-.stage-PRECIPICE { background:color-mix(in srgb,var(--warn) 20%,var(--panel2)); color:var(--warn); }
-.stage-ACCELERATING { background:color-mix(in srgb,var(--up) 25%,var(--panel2)); color:var(--up); }
-.stage-CORRECTING { background:color-mix(in srgb,var(--down) 18%,var(--panel2)); color:var(--down); }
+/* ── drawer ── */
+.drawer{display:none;padding:4px 17px 18px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--panel2) 55%,var(--panel));animation:sotFade .3s ease both}
+.theme-row.expanded{grid-column:1/-1}
+.theme-row.expanded .drawer{display:block}
+.drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px 20px;margin-top:12px}
+@media(max-width:720px){.drawer-grid{grid-template-columns:1fr}}
+.drawer-sec h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 5px;font-weight:800}
+.drawer-sec p{margin:0;font-size:13px;line-height:1.6;color:var(--text)}
+.drawer-sec.full{grid-column:1/-1}
+.pathway-flow{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px}
+.pnode{padding:3px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-weight:600;white-space:nowrap}
+.pnode.driver{border-color:color-mix(in srgb,var(--early) 40%,var(--line));color:var(--early)}
+.pnode.bottleneck{border-color:color-mix(in srgb,var(--warn) 40%,var(--line));color:var(--warn)}
+.pnode.winner{border-color:color-mix(in srgb,var(--good) 40%,var(--line));color:var(--good)}
+.pnode.avoid{border-color:color-mix(in srgb,var(--bad) 40%,var(--line));color:var(--bad)}
+.parrow{color:var(--muted);font-size:15px}
+.fals-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.fals-table th{text-align:left;color:var(--muted);font-weight:700;font-size:10px;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid var(--line)}
+.fals-table td{padding:5px 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent);vertical-align:top;line-height:1.45}
+.fals-table tr:last-child td{border-bottom:none}
+.fals-state{font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px;white-space:nowrap;text-transform:uppercase}
+.fals-state.FIRED{background:color-mix(in srgb,var(--bad) 18%,var(--panel));color:var(--bad)}
+.fals-state.ARMED{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:var(--warn)}
+.fals-state.qualitative,.fals-state.data_missing{background:var(--panel2);color:var(--muted)}
+.evid-list{font-size:12px;color:var(--muted);margin:4px 0 0;padding:0;list-style:none;line-height:1.6}
+.evid-list li::before{content:"· "}
+.ctx-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:3px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 30%,transparent);font-size:12.5px;line-height:1.5}
+.ctx-row:last-child{border-bottom:none}
+.ctx-row-label{color:var(--muted);flex:0 0 auto;max-width:58%;display:flex;align-items:center;gap:5px}
+.ctx-row-value{font-weight:700;text-align:right}
+.ctx-stance{font-size:12px;color:var(--muted);margin:0 0 6px;padding:0 0 5px;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
+.ctx-plain{font-size:12.5px;color:var(--text);margin:0;line-height:1.6}
+.ctx-h4-wrap{display:flex;align-items:center;gap:6px;margin:0 0 5px}
+.ctx-h4-wrap h4{margin:0}
+.ctx-tip-icon,.help-q{font-size:10px;color:var(--muted);cursor:help;border:1px solid var(--line);border-radius:50%;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;flex:none;font-weight:700}
 
-/* leg dots row */
-.legs-row { display:flex; gap:5px; align-items:center; }
+/* ── study shelf (tier 3) ── */
+.shelf{margin-top:20px}
+.shelf details{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:11px;overflow:hidden}
+.shelf summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:700;color:var(--text);transition:background .18s}
+.shelf summary::-webkit-details-marker{display:none}
+.shelf summary:hover{background:color-mix(in srgb,var(--link) 5%,var(--panel))}
+.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:color-mix(in srgb,var(--link) 10%,var(--panel))}
+.shelf summary .sh-hint{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted)}
+.shelf summary .sh-caret{flex:none;font-size:11px;color:var(--muted);transition:transform .25s}
+.shelf details[open] summary .sh-caret{transform:rotate(90deg)}
+.shelf .sh-body{padding:8px 20px 20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.65}
+.legend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 18px;margin:8px 0 4px}
+.leg-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text)}
+.leg-item .dot{width:11px;height:11px}
+.leg-item b{color:var(--text);font-weight:700}
+.leg-def{display:flex;gap:9px;font-size:12.5px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 35%,transparent)}
+.leg-def:last-child{border-bottom:none}
+.leg-def .k{font-weight:700;color:var(--text);flex:0 0 168px}
+.leg-def .v{color:var(--muted)}
+.shelf-note{margin-top:8px}
+.sot-disclosure{font-size:12.5px;color:var(--muted);margin:28px 0 0;padding-top:14px;border-top:1px solid var(--line);line-height:1.6}
 
-/* falsifier badge */
-.falsbadge { font-size:11.5px; font-weight:700; padding:2px 7px; border-radius:7px; white-space:nowrap; }
-.falsbadge.fired { background:color-mix(in srgb,var(--down) 18%,var(--panel2)); color:var(--down); }
-.falsbadge.clean { background:color-mix(in srgb,var(--up) 12%,var(--panel2)); color:color-mix(in srgb,var(--up) 90%,var(--text)); }
-.falsbadge.null { color:var(--muted); background:var(--panel2); }
+/* ── empty state ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state h2{font-size:18px;margin:0 0 8px;color:var(--text)}
 
-/* divergence label */
-.divlabel { font-size:11.5px; color:var(--muted); white-space:nowrap; }
-.divlabel.opp { color:var(--up); font-weight:600; }
-.divlabel.crowd { color:var(--warn); font-weight:600; }
+/* ── bilingual ── */
+[data-lang="zh"] .l-en{display:none}
+[data-lang="zh"] .l-zh{display:inline}
+.l-zh{display:none}.l-en{display:inline}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
 
-/* ── Drawer ── */
-.drawer-row td { padding:0; }
-.drawer { padding:14px 16px 18px; border-top:1px solid var(--line); background:color-mix(in srgb,var(--panel2) 60%,var(--panel)); }
-.drawer-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 20px; }
-@media (max-width:720px) { .drawer-grid { grid-template-columns:1fr; } }
-.drawer-sec h4 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 5px; font-weight:700; }
-.drawer-sec p { margin:0; font-size:13px; line-height:1.6; color:var(--text); }
-.drawer-sec.full { grid-column:1/-1; }
+/* ── motion ── */
+@keyframes sotUp{from{opacity:0;transform:translateY(11px)}to{opacity:1;transform:none}}
+@keyframes sotFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes sotBreathe{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.12)}}
+@keyframes sotFlow{to{stroke-dashoffset:0}}
+@keyframes sotSweep{0%{background-position:-40% 0}100%{background-position:140% 0}}
+.sot-spark{display:block;width:100%;height:22px;margin-top:4px}
+.sot-spark-base{fill:none;stroke:color-mix(in srgb,var(--lc-rerate) 30%,var(--line));stroke-width:2}
+.sot-spark-pulse{fill:none;stroke:var(--lc-rerate);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:18 82;stroke-dashoffset:100;animation:sotFlow 3.8s linear infinite;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--lc-rerate) 55%,transparent))}
+@media (prefers-reduced-motion:reduce){
+  .sot-hero,.ribbon,.theme-row,.drawer{animation:none}
+  .sot-spark-pulse,.sot-asof .bdot,.chg-chip .bdot,.tc-stance .bdot,.ribbon-line::after{animation:none}
+  .sot-spark-pulse{stroke-dashoffset:0;stroke-dasharray:none;opacity:.6}
+  *{transition:none!important}
+}
 
-/* pathway flow */
-.pathway-flow { display:flex; flex-wrap:wrap; align-items:center; gap:5px; font-size:12.5px; }
-.pnode { padding:3px 9px; border-radius:8px; border:1px solid var(--line); background:var(--panel); font-weight:600; white-space:nowrap; }
-.pnode.driver { border-color:color-mix(in srgb,var(--link) 40%,var(--line)); color:var(--link); }
-.pnode.bottleneck { border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); color:var(--warn); }
-.pnode.winner { border-color:color-mix(in srgb,var(--up) 40%,var(--line)); color:color-mix(in srgb,var(--up) 90%,var(--text)); }
-.pnode.avoid { border-color:color-mix(in srgb,var(--down) 40%,var(--line)); color:var(--down); }
-.parrow { color:var(--muted); font-size:15px; }
-
-/* falsifier table */
-.fals-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
-.fals-table th { text-align:left; color:var(--muted); font-weight:600; font-size:10.5px; text-transform:uppercase; padding:4px 6px; border-bottom:1px solid var(--line); }
-.fals-table td { padding:5px 6px; border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent); vertical-align:top; line-height:1.45; }
-.fals-table tr:last-child td { border-bottom:none; }
-.fals-state { font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:5px; white-space:nowrap; }
-.fals-state.FIRED { background:color-mix(in srgb,var(--down) 20%,var(--panel2)); color:var(--down); }
-.fals-state.ARMED { background:color-mix(in srgb,var(--warn) 20%,var(--panel2)); color:var(--warn); }
-.fals-state.qualitative { background:var(--panel); color:var(--muted); }
-.fals-state.data_missing { background:var(--panel); color:var(--muted); }
-
-/* evidence refs */
-.evid-list { font-size:12px; color:var(--muted); margin:4px 0 0; padding:0; list-style:none; }
-.evid-list li::before { content:"· "; }
-
-/* ── Weekly delta strip ── */
-.delta-strip { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:16px; }
-.delta-strip h3 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; font-weight:700; }
-.delta-items { display:flex; flex-wrap:wrap; gap:8px; }
-.delta-item { font-size:12.5px; padding:4px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); }
-.delta-item.transition { border-color:color-mix(in srgb,var(--link) 35%,var(--line)); }
-.delta-item.fired { border-color:color-mix(in srgb,var(--down) 35%,var(--line)); color:var(--down); }
-.delta-none { font-size:12.5px; color:var(--muted); font-style:italic; }
-
-/* ── Collision footnote ── */
-.collision-note { font-size:11.5px; color:var(--muted); margin-top:14px; padding-top:10px; border-top:1px solid var(--line); line-height:1.6; }
-
-/* ── Context drawer sections ── */
-.ctx-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:3px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 30%,transparent); font-size:12.5px; line-height:1.5; }
-.ctx-row:last-child { border-bottom:none; }
-.ctx-row-label { color:var(--muted); flex:0 0 auto; max-width:55%; }
-.ctx-row-value { font-weight:600; text-align:right; }
-.ctx-stance { font-size:12.5px; color:var(--text); margin:0 0 6px; padding:4px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent); font-weight:600; }
-.ctx-plain { font-size:12.5px; color:var(--text); margin:0; line-height:1.6; }
-.ctx-page-note { font-size:11.5px; color:var(--muted); margin-top:10px; padding-top:10px; border-top:1px solid var(--line); line-height:1.6; font-style:italic; }
-.ctx-h4-wrap { display:flex; align-items:center; gap:6px; margin:0 0 5px; }
-.ctx-h4-wrap h4 { margin:0; }
-.ctx-tip-icon { font-size:11px; color:var(--muted); cursor:default; border:1px solid var(--line); border-radius:50%; width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; flex:none; }
-
-/* ── Bilingual toggle ── */
-[data-lang="zh"] .l-en { display:none; }
-[data-lang="zh"] .l-zh { display:inline; }
-.l-zh { display:none; }
-.l-en { display:inline; }
-
-/* ── Empty state ── */
-.empty-state { text-align:center; padding:48px 20px; color:var(--muted); }
-.empty-state h2 { font-size:17px; margin:0 0 8px; }
+/* ambient aurora backdrop (matches the Vector family) */
+html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(680px 440px at 8% -8%,color-mix(in srgb,var(--lc-broad) 8%,transparent),transparent 66%),
+   radial-gradient(620px 440px at 96% 0%,color-mix(in srgb,var(--lc-accel) 7%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 116%,color-mix(in srgb,var(--lc-rerate) 6%,transparent),transparent 70%)}
+html[data-theme="dark"] body::before{
+  background:
+   radial-gradient(680px 440px at 8% -8%,color-mix(in srgb,var(--lc-broad) 15%,transparent),transparent 66%),
+   radial-gradient(620px 440px at 96% 0%,color-mix(in srgb,var(--lc-accel) 13%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 116%,color-mix(in srgb,var(--lc-rerate) 12%,transparent),transparent 70%)}
 </style>
 </head>
 <body>
@@ -185,6 +259,8 @@ a { text-decoration:none; color:var(--link); }
 <nav class="site-nav">
   {% include "_navlinks.html.j2" %}
   <div class="nav-ctrls">
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
     <div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>
   </div>
@@ -192,362 +268,256 @@ a { text-decoration:none; color:var(--link); }
 
 <div class="wrap">
 
-{# ── Header ── #}
-<div class="sot-head">
-  <div>
-    <h1 class="sot-title">{{ t('State of Themes', '主题态势') }}</h1>
-    <div class="sot-asof" id="sot-asof">{{ t('as of', '数据截止') }} {{ as_of }}</div>
-  </div>
-  <div class="sot-chips">
-    <div class="hchip">
-      <span class="hchip-val">{{ n_themes }}</span>
-      <span>{{ t('themes', '主题') }}</span>
-    </div>
-    <div class="hchip{% if n_falsifier_fired > 0 %} alert{% endif %}">
-      <span class="hchip-val">{{ n_falsifier_fired }}</span>
-      <span>{{ t('falsifiers fired', '已触发假证伪') }}</span>
-    </div>
-    <div class="hchip">
-      <span class="hchip-val">{{ n_stale_legs }}</span>
-      <span>{{ t('stale legs', '过期数据腿') }}</span>
-    </div>
-  </div>
-</div>
+{# ── HERO ── #}
+<header class="sot-hero">
+  <div class="sot-brand"><span class="gl">🗺️</span><span class="gn">{{ t('State of Themes', '主题态势') }}</span></div>
+  <p class="sot-tag">{{ t('Which market stories are gaining money and breadth — and which just tripped a break-rule.', '哪些市场主题正在吸金、扩散——哪些刚刚触发否定条件。') }}</p>
+  {% if n_themes and hero_en %}<div class="sot-verdict"><span class="l-en">{{ hero_en|safe }}</span><span class="l-zh">{{ hero_zh|safe }}</span></div>{% endif %}
+  <div class="sot-asof"><span class="bdot"></span>{{ t('As of', '截至') }} {{ as_of }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</div>
+</header>
 
-{# ── Filter chips ── #}
-<div class="filter-row" id="filter-row">
-  <button class="fchip on" data-filter="all">
-    {{ t('All', '全部') }} <span class="fc-n">{{ n_themes }}</span>
-  </button>
-  <button class="fchip" data-filter="secular_at_cyclical">
-    {{ t('Secular at cyclical prices', '周期价格中的长期结构') }}
-    <span class="fc-n">{{ chip_secular_at_cyclical }}</span>
-  </button>
-  <button class="fchip" data-filter="bottleneck_tight">
-    {{ t('Bottleneck tight', '供应瓶颈收紧') }}
-    <span class="fc-n">{{ chip_bottleneck_tight }}</span>
-  </button>
-  <button class="fchip" data-filter="thesis_review">
-    {{ t('Thesis review', '论题待审') }}
-    <span class="fc-n">{{ chip_thesis_review }}</span>
-  </button>
-  <button class="fchip" data-filter="crowded">
-    {{ t('Crowded', '拥挤') }}
-    <span class="fc-n">{{ chip_crowded }}</span>
-  </button>
-  <button class="fchip disabled" data-filter="citrini">
-    {{ t('Citrini divergence', 'Citrini背离') }}
-    <span class="fc-n">—</span>
-  </button>
-</div>
-
-{# ── Legend ── #}
-<div class="legend-row">
-  <strong style="font-size:11px;color:var(--muted);">{{ t('Legs:', '数据腿：') }}</strong>
-  <span class="leg-item"><span class="dot fav"></span> {{ t('favorable', '有利') }}</span>
-  <span class="leg-item"><span class="dot mid"></span> {{ t('middling', '中等') }}</span>
-  <span class="leg-item"><span class="dot caut"></span> {{ t('caution', '谨慎') }}</span>
-  <span class="leg-item"><span class="dot neut"></span> {{ t('not present', '无支持') }}</span>
-  <span class="leg-item"><span class="dot null"></span> {{ t('accruing / no data', '累积中/无数据') }}</span>
-  <span style="margin-left:6px; padding-left:6px; border-left:1px solid var(--line);">
-    <strong style="font-size:11px;color:var(--muted);">{{ t('Leg order:', '数据腿顺序：') }}</strong>
-    {{ t('btl&nbsp;·&nbsp;gap&nbsp;·&nbsp;dis&nbsp;·&nbsp;cln&nbsp;·&nbsp;crw&nbsp;·&nbsp;fal&nbsp;·&nbsp;ort', 'btl·gap·dis·cln·crw·fal·ort') }}
-  </span>
-</div>
-
-{# ── Weekly delta strip ── #}
-<div class="delta-strip">
-  <h3>{{ t('This week', '本周') }}</h3>
-  <div class="delta-items" id="delta-items">
-    {% if weekly_transitions %}
-      {% for item in weekly_transitions %}
-        <div class="delta-item transition">{{ item | safe }}</div>
-      {% endfor %}
-    {% endif %}
-    {% if weekly_fired %}
-      {% for item in weekly_fired %}
-        <div class="delta-item fired">{{ item | safe }}</div>
-      {% endfor %}
-    {% endif %}
-    {% if not weekly_transitions and not weekly_fired %}
-      <span class="delta-none">{{ t('No stage transitions or newly-fired falsifiers this week.', '本周无阶段转换或新触发的假证伪。') }}</span>
-    {% endif %}
-  </div>
-</div>
-
-{# ── Matrix ── #}
 {% if themes %}
-<div class="matrix-wrap">
-<table class="matrix" id="sot-matrix">
-  <thead>
-    <tr>
-      <th data-col="name">{{ t('Theme', '主题') }}</th>
-      <th data-col="stage">{{ t('Stage', '阶段') }}</th>
-      <th data-col="legs" style="min-width:100px">
-        <span class="l-en" title="bottleneck · stale-gap · dislocation · clean-entry · crowding · falsifier · orthogonality">Legs</span>
-        <span class="l-zh" title="bottleneck · stale-gap · dislocation · clean-entry · crowding · falsifier · orthogonality">数据腿</span>
-      </th>
-      <th data-col="falsifiers">{{ t('Falsifiers', '假证伪') }}</th>
-      <th data-col="divergence">{{ t('Divergence', '背离') }}</th>
-    </tr>
-  </thead>
-  <tbody id="sot-tbody">
-    {% for th in themes %}
-    <tr class="theme-row"
-        data-theme-id="{{ th.theme_id }}"
-        data-stage="{{ th.stage_raw }}"
-        data-filters="{{ th.filter_flags }}"
-        data-sort-name="{{ th.name_en }}"
-        data-sort-stage="{{ th.stage_sort }}"
-        data-sort-falsifiers="{{ th.falsifier_sort }}"
-        data-sort-divergence="{{ th.divergence_sort }}">
-      <td>
-        <span class="theme-name">
-          <span class="l-en">{{ th.name_en }}</span>
-          <span class="l-zh">{{ th.name_zh }}</span>
-        </span>
-      </td>
-      <td>
-        <span class="stage-pill stage-{{ th.stage_key }}">
-          <span class="l-en">{{ th.stage_label_en }}</span>
-          <span class="l-zh">{{ th.stage_label_zh }}</span>
-        </span>
-      </td>
-      <td>
-        <div class="legs-row">
-          {% for leg in th.legs_ordered %}
-          <span class="dot {{ leg.dot_valence }}"
-                data-tip-en="{{ leg.tip_en }}"
-                data-tip-zh="{{ leg.tip_zh }}"></span>
-          {% endfor %}
-        </div>
-      </td>
-      <td>
-        {% if th.falsifier_any_fired %}
-          <span class="falsbadge fired">{{ th.falsifier_label }}</span>
-        {% elif th.falsifier_label %}
-          <span class="falsbadge clean">{{ th.falsifier_label }}</span>
-        {% else %}
-          <span class="falsbadge null">—</span>
-        {% endif %}
-      </td>
-      <td>
-        <span class="divlabel{% if th.div_class %} {{ th.div_class }}{% endif %}">
-          <span class="l-en">{{ th.div_label_en }}</span>
-          <span class="l-zh">{{ th.div_label_zh }}</span>
-        </span>
-      </td>
-    </tr>
-    <tr class="drawer-row" data-for="{{ th.theme_id }}" style="display:none;">
-      <td colspan="5">
-        <div class="drawer">
-          <div class="drawer-grid">
-            {% if th.variant_perception_en %}
-            <div class="drawer-sec">
-              <h4>{{ t('Variant perception', '差异认知') }}</h4>
-              <p><span class="l-en">{{ th.variant_perception_en }}</span><span class="l-zh">{{ th.variant_perception_zh or th.variant_perception_en }}</span></p>
-            </div>
-            {% endif %}
-            {% if th.mechanism_en %}
-            <div class="drawer-sec">
-              <h4>{{ t('Mechanism', '传导机制') }}</h4>
-              <p><span class="l-en">{{ th.mechanism_en }}</span><span class="l-zh">{{ th.mechanism_zh or th.mechanism_en }}</span></p>
-            </div>
-            {% endif %}
-            {% if th.pathway_nodes %}
-            <div class="drawer-sec full">
-              <h4>{{ t('Pathway', '传导路径') }}</h4>
-              <div class="pathway-flow">
-                {% for pn in th.pathway_nodes %}
-                  {% if not loop.first %}<span class="parrow">→</span>{% endif %}
-                  <span class="pnode {{ pn.css }}">
-                    <span class="l-en">{{ pn.label_en }}</span>
-                    <span class="l-zh">{{ pn.label_zh or pn.label_en }}</span>
-                  </span>
-                {% endfor %}
-              </div>
-            </div>
-            {% endif %}
-            {% if th.falsifiers %}
-            <div class="drawer-sec full">
-              <h4>{{ t('Falsifiers', '假证伪器') }}</h4>
-              <table class="fals-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('Status', '状态') }}</th>
-                    <th>{{ t('Rule', '规则') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for f in th.falsifiers %}
-                  <tr>
-                    <td><span class="fals-state {{ f.state }}">{{ f.state }}</span></td>
-                    <td>
-                      <span class="l-en">{{ f.rule_en | truncate(180, True, '…') }}</span>
-                      <span class="l-zh">{{ (f.rule_zh or f.rule_en) | truncate(180, True, '…') }}</span>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            {% endif %}
-            {% if th.evidence_refs %}
-            <div class="drawer-sec full">
-              <h4>{{ t('Evidence', '证据') }}</h4>
-              <ul class="evid-list">
-                {% for ref in th.evidence_refs[:4] %}
-                <li>{{ ref }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-            {% endif %}
 
-            {# ── Setup legs (asymmetry leg expansion) ── #}
-            {% if th.asym_legs_section %}
-            <div class="drawer-sec">
-              <h4>{{ t('Setup legs', '结构腿') }}</h4>
-              {% for leg in th.asym_legs_section %}
-              <div class="ctx-row"
-                   data-tip-en="{{ leg.tip_en }}"
-                   data-tip-zh="{{ leg.tip_zh }}">
-                <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
-                  <span class="dot {{ leg.valence_class }}"></span>
-                  <span class="l-en">{{ leg.name_en }}</span>
-                  <span class="l-zh">{{ leg.name_zh }}</span>
-                </span>
-                <span class="ctx-row-value">
-                  <span class="l-en">{{ leg.word_en }}</span>
-                  <span class="l-zh">{{ leg.word_zh }}</span>
-                </span>
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-
-            {# ── Options crowding check ── #}
-            {% if th.ow_section and th.ow_section.available %}
-            <div class="drawer-sec">
-              <div class="ctx-h4-wrap">
-                <h4>{{ t('Options crowding check', '期权拥挤度检查') }}</h4>
-                <span class="ctx-tip-icon"
-                      data-tip-en="{{ th.ow_section.h4_tip_en }}"
-                      data-tip-zh="{{ th.ow_section.h4_tip_zh }}">?</span>
-              </div>
-              {% if th.ow_section.covered %}
-              <p class="ctx-stance">
-                <span class="l-en">{{ th.ow_section.stance_en }}</span>
-                <span class="l-zh">{{ th.ow_section.stance_zh }}</span>
-              </p>
-              <div class="ctx-row"
-                   data-tip-en="{{ th.ow_section.leg_a.note_en }}"
-                   data-tip-zh="{{ th.ow_section.leg_a.note_zh or th.ow_section.leg_a.note_en }}">
-                <span class="ctx-row-label">
-                  <span class="l-en">Bets concentrated in few names?</span>
-                  <span class="l-zh">押注是否集中于少数标的？</span>
-                </span>
-                <span class="ctx-row-value">
-                  <span class="l-en">{{ th.ow_section.leg_a.word_en }}</span>
-                  <span class="l-zh">{{ th.ow_section.leg_a.word_zh }}</span>
-                </span>
-              </div>
-              <div class="ctx-row"
-                   data-tip-en="{{ th.ow_section.leg_b.note_en }}"
-                   data-tip-zh="{{ th.ow_section.leg_b.note_zh or th.ow_section.leg_b.note_en }}">
-                <span class="ctx-row-label">
-                  <span class="l-en">Hedging vs chasing</span>
-                  <span class="l-zh">对冲还是追涨</span>
-                </span>
-                <span class="ctx-row-value">
-                  <span class="l-en">{{ th.ow_section.leg_b.word_en }}</span>
-                  <span class="l-zh">{{ th.ow_section.leg_b.word_zh }}</span>
-                </span>
-              </div>
-              <div class="ctx-row"
-                   data-tip-en="{{ th.ow_section.leg_c.note_en }}"
-                   data-tip-zh="{{ th.ow_section.leg_c.note_zh or th.ow_section.leg_c.note_en }}">
-                <span class="ctx-row-label">
-                  <span class="l-en">Options priced rich?</span>
-                  <span class="l-zh">期权定价是否偏贵？</span>
-                </span>
-                <span class="ctx-row-value">
-                  <span class="l-en">{{ th.ow_section.leg_c.word_en }}</span>
-                  <span class="l-zh">{{ th.ow_section.leg_c.word_zh }}</span>
-                </span>
-              </div>
-              {% else %}
-              <p class="ctx-plain">
-                <span class="l-en">Not enough option coverage to read crowding.</span>
-                <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
-              </p>
-              {% endif %}
-            </div>
-            {% endif %}
-
-            {# ── Clinical pipeline ── #}
-            {% if th.cp_section and th.cp_section.available %}
-            <div class="drawer-sec">
-              <div class="ctx-h4-wrap">
-                <h4>{{ t('Clinical pipeline', '临床管线') }}</h4>
-                <span class="ctx-tip-icon"
-                      data-tip-en="{{ th.cp_section.h4_tip_en }}"
-                      data-tip-zh="{{ th.cp_section.h4_tip_zh }}">?</span>
-              </div>
-              <p class="ctx-stance">
-                <span class="l-en">Background evidence — informs the thesis, not a buy trigger.</span>
-                <span class="l-zh">背景证据——辅助论点判断，非买入信号。</span>
-              </p>
-              <p class="ctx-plain">
-                <span class="l-en">{{ th.cp_section.line1_en }}</span>
-                <span class="l-zh">{{ th.cp_section.line1_zh }}</span>
-              </p>
-            </div>
-            {% endif %}
-
-            {# ── Import flows (per-theme — only when data exists) ── #}
-            {% if th.tf_section and th.tf_section.available %}
-            <div class="drawer-sec">
-              <div class="ctx-h4-wrap">
-                <h4>{{ t('Import flows', '进口流量') }}</h4>
-                <span class="ctx-tip-icon"
-                      data-tip-en="{{ th.tf_section.h4_tip_en }}"
-                      data-tip-zh="{{ th.tf_section.h4_tip_zh }}">?</span>
-              </div>
-              <p class="ctx-stance">
-                <span class="l-en">Background evidence — a physical-demand check, not a buy trigger.</span>
-                <span class="l-zh">背景证据——实物需求核对，非买入信号。</span>
-              </p>
-              <p class="ctx-plain">
-                <span class="l-en">{{ th.tf_section.line_en }}</span>
-                <span class="l-zh">{{ th.tf_section.line_zh }}</span>
-              </p>
-              {# Mixed-direction: render one compact row per direction leg #}
-              {% if th.tf_section.is_mixed and th.tf_section.direction_leg_rows %}
-              {% for dl in th.tf_section.direction_leg_rows %}
-              <div class="ctx-row"
-                   {% if dl.cov_tip_en %}data-tip-en="{{ dl.cov_tip_en }}" data-tip-zh="{{ dl.cov_tip_zh }}"{% endif %}>
-                <span class="ctx-row-label" style="font-size:11.5px;">
-                  <span class="l-en">{{ dl.direction }}</span>
-                  <span class="l-zh">{{ dl.direction }}</span>
-                </span>
-                <span class="ctx-row-value">
-                  <span class="l-en">{{ dl.line_en }}</span>
-                  <span class="l-zh">{{ dl.line_zh }}</span>
-                </span>
-              </div>
-              {% endfor %}
-              {% endif %}
-            </div>
-            {% endif %}
-
-          </div>
-        </div>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+{# ── WHAT CHANGED THIS WEEK ── #}
+<div class="sot-changes">
+  <span class="eyebrow">{{ t('This week', '本周') }}</span>
+  {% if weekly_transitions or weekly_fired %}
+    {% for item in weekly_transitions %}<span class="chg-chip"><span class="bdot"></span><span class="l-en">{{ item.en }}</span><span class="l-zh">{{ item.zh }}</span></span>{% endfor %}
+    {% for item in weekly_fired %}<span class="chg-chip fired"><span class="bdot"></span><span class="l-en">{{ item.en }}</span><span class="l-zh">{{ item.zh }}</span></span>{% endfor %}
+  {% else %}
+    <span class="chg-chip calm"><span class="bdot"></span>{{ t('No stage changes or new break-rules this week.', '本周无阶段变化或新触发的否定条件。') }}</span>
+  {% endif %}
 </div>
+
+{# ── SIGNATURE: lifecycle ribbon ── #}
+<div class="sec-head"><span class="sh-dot" style="--sh-c:var(--lc-rerate)"></span>{{ t('Where every story sits', '每个主题所处阶段') }}</div>
+<p class="sec-sub">{{ t('The life of a theme runs left to right — first ignored, then believed and bought, finally crowded or cooling. Hover a stage to see which stories are there.', '主题的生命自左向右展开——先被忽视，继而被相信和买入，最终变得拥挤或降温。悬停某一阶段可查看其中的主题。') }}</p>
+{% set rb_cls = {'WATCH':'rb-s-watch','BROADENING':'rb-s-broad','RE-RATING':'rb-s-rerate','ACCELERATING':'rb-s-accel','PRECIPICE':'rb-s-prec','CORRECTING':'rb-s-corr'} %}
+<div class="ribbon">
+  <div class="ribbon-track">
+    <span class="ribbon-line"></span>
+    {% for r in ribbon %}
+    <div class="rb-node {{ rb_cls.get(r.stage_key,'') }}{{ ' empty' if r.count == 0 else '' }}" tabindex="0">
+      <span class="rb-dot">{{ r.count }}</span>
+      <span class="rb-lab"><span class="l-en">{{ r.label_en }}</span><span class="l-zh">{{ r.label_zh }}</span></span>
+      {% if r.count %}
+      <span class="rb-pop"><b><span class="l-en">{{ r.label_en }}</span><span class="l-zh">{{ r.label_zh }}</span> · {{ r.count }}</b><br>
+        <span class="l-en">{{ r.names_en | join(', ') }}</span><span class="l-zh">{{ r.names_zh | join('、') }}</span></span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {{ convline() }}
+  <div class="ribbon-foot">
+    <span>{{ t('18 themes tracked nightly across the market\'s biggest stories.', '每晚跟踪市场最大主题共 18 个。') if n_themes == 18 else t(n_themes ~ ' themes tracked nightly.', '每晚跟踪主题 ' ~ n_themes ~ ' 个。') }}</span>
+    <span>{{ t('Stage = lifecycle phase, not a buy/sell call.', '阶段＝生命周期位置，非买卖信号。') }}</span>
+  </div>
+</div>
+
+{# ── FILTER BAR ── #}
+<div class="sec-head"><span class="sh-dot" style="--sh-c:var(--good)"></span>{{ t('The board', '主题看板') }}</div>
+<p class="sec-sub">{{ t('Every theme sorted into one plain-word lane: what it\'s doing, and what to do about it. Tap a card for the full story, the setup, and what would break it.', '每个主题归入一个直白的分组：它在做什么、你该怎么应对。点击卡片查看完整故事、结构与证伪条件。') }}</p>
+<div class="filter-row" id="filter-row">
+  <button class="fchip on" data-filter="all" style="--fc:var(--link)">{{ t('All', '全部') }} <span class="fc-n">{{ n_themes }}</span></button>
+  <button class="fchip" data-filter="lane:working" style="--fc:var(--good)"><span class="fc-sw"></span>{{ t('Working', '正在奏效') }} <span class="fc-n">{{ n_working }}</span></button>
+  <button class="fchip" data-filter="lane:early" style="--fc:var(--early)"><span class="fc-sw"></span>{{ t('Early', '早期') }} <span class="fc-n">{{ n_early }}</span></button>
+  <button class="fchip" data-filter="opp" style="--fc:var(--early)">✨ {{ t('Hidden opportunity', '隐藏机会') }}</button>
+  <button class="fchip" data-filter="watchouts" style="--fc:var(--warn)">⚠ {{ t('Watch-outs', '需警惕') }} <span class="fc-n">{{ n_caution + n_review }}</span></button>
+</div>
+
+{# ── THE BOARD: stance lanes ── #}
+{% for lane in lanes %}
+<section class="lane lane-{{ lane.key }}" data-lane="{{ lane.key }}">
+  <div class="lane-head">
+    <span class="lane-badge"><span class="em">{{ lane.emoji }}</span><span class="lb-t"><span class="l-en">{{ lane.label_en }}</span><span class="l-zh">{{ lane.label_zh }}</span></span><span class="lb-n">{{ lane.count }}</span></span>
+    <span class="lane-stance"><span class="l-en">{{ lane.stance_en }}</span><span class="l-zh">{{ lane.stance_zh }}</span></span>
+    <span class="lane-guide"><span class="l-en">{{ lane.guide_en }}</span><span class="l-zh">{{ lane.guide_zh }}</span></span>
+  </div>
+  <div class="lane-grid">
+    {% for th in lane.themes %}
+    <article class="theme-row"
+        data-theme-id="{{ th.theme_id }}"
+        data-lane="{{ th.lane }}"
+        data-opp="{{ '1' if th.div_class == 'opp' else '0' }}"
+        data-fired="{{ '1' if th.falsifier_any_fired else '0' }}">
+      <div class="tc-top">
+        <div class="tc-nameline">
+          <span class="tc-name"><span class="l-en">{{ th.name_en }}</span><span class="l-zh">{{ th.name_zh }}</span></span>
+          <span class="stage-pill stage-{{ th.stage_key }}"><span class="l-en">{{ th.stage_label_en }}</span><span class="l-zh">{{ th.stage_label_zh }}</span></span>
+        </div>
+        {% if th.story_en %}<p class="tc-story"><span class="l-en">{{ th.story_en }}</span><span class="l-zh">{{ th.story_zh }}</span></p>{% endif %}
+      </div>
+      <div class="tc-meta">
+        <span class="legs-row">
+          {% for leg in th.legs_ordered %}
+          <span class="dot {{ leg.dot_valence }}" data-tip-en="{{ leg.tip_en }}" data-tip-zh="{{ leg.tip_zh }}"></span>
+          {% endfor %}
+        </span>
+        <span class="health-word">{% if th.fav_count %}<b>{{ th.fav_count }}</b> {{ t('favourable', '有利') }}{% if th.caut_count %} · {{ th.caut_count }} {{ t('caution', '谨慎') }}{% endif %}{% elif th.caut_count %}{{ th.caut_count }} {{ t('caution', '谨慎') }}{% else %}{{ t('setup accruing', '结构累积中') }}{% endif %}</span>
+        {% if th.div_class == 'opp' %}<span class="badge opp">✨ <span class="l-en">Hidden opportunity</span><span class="l-zh">隐藏机会</span></span>{% elif th.div_class == 'crowd' %}<span class="badge crowd"><span class="l-en">Crowded &amp; fading</span><span class="l-zh">拥挤衰退</span></span>{% endif %}
+        {% if th.falsifier_any_fired %}<span class="badge fired"><span class="l-en">{{ th.falsifier_label_en }}</span><span class="l-zh">{{ th.falsifier_label_zh }}</span></span>{% elif th.falsifier_label %}<span class="badge clean"><span class="l-en">{{ th.falsifier_label_en }}</span><span class="l-zh">{{ th.falsifier_label_zh }}</span></span>{% endif %}
+      </div>
+      <div class="tc-foot">
+        <span class="tc-stance"><span class="bdot"></span><span class="l-en">{{ th.stance_en }}</span><span class="l-zh">{{ th.stance_zh }}</span></span>
+        <span class="tc-more">{{ t('Details', '详情') }} <span class="cv">▶</span></span>
+      </div>
+
+      {# ── drawer (tier 2/3 depth) ── #}
+      <div class="drawer">
+        <div class="drawer-grid">
+          {% if th.variant_perception_en %}
+          <div class="drawer-sec">
+            <h4>{{ t('Variant perception', '差异认知') }}</h4>
+            <p><span class="l-en">{{ th.variant_perception_en }}</span><span class="l-zh">{{ th.variant_perception_zh or th.variant_perception_en }}</span></p>
+          </div>
+          {% endif %}
+          {% if th.mechanism_en %}
+          <div class="drawer-sec">
+            <h4>{{ t('How it works', '传导机制') }}</h4>
+            <p><span class="l-en">{{ th.mechanism_en }}</span><span class="l-zh">{{ th.mechanism_zh or th.mechanism_en }}</span></p>
+          </div>
+          {% endif %}
+          {% if th.pathway_nodes %}
+          <div class="drawer-sec full">
+            <h4>{{ t('Pathway', '传导路径') }}</h4>
+            <div class="pathway-flow">
+              {% for pn in th.pathway_nodes %}
+                {% if not loop.first %}<span class="parrow">→</span>{% endif %}
+                <span class="pnode {{ pn.css }}"><span class="l-en">{{ pn.label_en }}</span><span class="l-zh">{{ pn.label_zh or pn.label_en }}</span></span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% if th.asym_legs_section %}
+          <div class="drawer-sec">
+            <div class="ctx-h4-wrap"><h4>{{ t('Setup legs', '结构腿') }}</h4><span class="help-q" data-tip-en="Seven checks on the setup — supply tightness, how stale consensus is, how dislocated prices are, entry quality, crowding, how testable the thesis is, and whether it moves on its own story. Each is scored favourable, caution, or not present." data-tip-zh="对结构的七项检查——供应紧张度、共识滞后度、价格错位度、入场质量、拥挤度、论点可检验性，以及是否独立于大盘。每项判为有利、谨慎或无支持。">?</span></div>
+            {% for leg in th.asym_legs_section %}
+            <div class="ctx-row" data-tip-en="{{ leg.tip_en }}" data-tip-zh="{{ leg.tip_zh }}">
+              <span class="ctx-row-label"><span class="dot {{ leg.valence_class }}"></span><span class="l-en">{{ leg.name_en }}</span><span class="l-zh">{{ leg.name_zh }}</span></span>
+              <span class="ctx-row-value"><span class="l-en">{{ leg.word_en }}</span><span class="l-zh">{{ leg.word_zh }}</span></span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if th.falsifiers %}
+          <div class="drawer-sec full">
+            <h4>{{ t('What would break the story', '什么会证伪该论点') }}</h4>
+            <table class="fals-table">
+              <thead><tr><th>{{ t('Status', '状态') }}</th><th>{{ t('Rule', '规则') }}</th></tr></thead>
+              <tbody>
+                {% for f in th.falsifiers %}
+                <tr>
+                  <td><span class="fals-state {{ f.state }}">{{ f.state }}</span></td>
+                  <td><span class="l-en">{{ f.rule_en | truncate(180, True, '…') }}</span><span class="l-zh">{{ (f.rule_zh or f.rule_en) | truncate(180, True, '…') }}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+          {% if th.evidence_refs %}
+          <div class="drawer-sec full">
+            <h4>{{ t('Evidence', '证据') }}</h4>
+            <ul class="evid-list">{% for ref in th.evidence_refs[:4] %}<li>{{ ref }}</li>{% endfor %}</ul>
+          </div>
+          {% endif %}
+
+          {# ── Options crowding check ── #}
+          {% if th.ow_section and th.ow_section.available %}
+          <div class="drawer-sec">
+            <div class="ctx-h4-wrap"><h4>{{ t('Options crowding check', '期权拥挤度检查') }}</h4><span class="ctx-tip-icon" data-tip-en="{{ th.ow_section.h4_tip_en }}" data-tip-zh="{{ th.ow_section.h4_tip_zh }}">?</span></div>
+            {% if th.ow_section.covered %}
+            <p class="ctx-stance"><span class="l-en">{{ th.ow_section.stance_en }}</span><span class="l-zh">{{ th.ow_section.stance_zh }}</span></p>
+            <div class="ctx-row" data-tip-en="{{ th.ow_section.leg_a.note_en }}" data-tip-zh="{{ th.ow_section.leg_a.note_zh or th.ow_section.leg_a.note_en }}">
+              <span class="ctx-row-label"><span class="l-en">Bets concentrated in few names?</span><span class="l-zh">押注是否集中于少数标的？</span></span>
+              <span class="ctx-row-value"><span class="l-en">{{ th.ow_section.leg_a.word_en }}</span><span class="l-zh">{{ th.ow_section.leg_a.word_zh }}</span></span>
+            </div>
+            <div class="ctx-row" data-tip-en="{{ th.ow_section.leg_b.note_en }}" data-tip-zh="{{ th.ow_section.leg_b.note_zh or th.ow_section.leg_b.note_en }}">
+              <span class="ctx-row-label"><span class="l-en">Hedging vs chasing</span><span class="l-zh">对冲还是追涨</span></span>
+              <span class="ctx-row-value"><span class="l-en">{{ th.ow_section.leg_b.word_en }}</span><span class="l-zh">{{ th.ow_section.leg_b.word_zh }}</span></span>
+            </div>
+            <div class="ctx-row" data-tip-en="{{ th.ow_section.leg_c.note_en }}" data-tip-zh="{{ th.ow_section.leg_c.note_zh or th.ow_section.leg_c.note_en }}">
+              <span class="ctx-row-label"><span class="l-en">Options priced rich?</span><span class="l-zh">期权定价是否偏贵？</span></span>
+              <span class="ctx-row-value"><span class="l-en">{{ th.ow_section.leg_c.word_en }}</span><span class="l-zh">{{ th.ow_section.leg_c.word_zh }}</span></span>
+            </div>
+            {% else %}
+            <p class="ctx-plain"><span class="l-en">Not enough option coverage to read crowding.</span><span class="l-zh">期权覆盖不足，无法读取拥挤度。</span></p>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          {# ── Clinical pipeline ── #}
+          {% if th.cp_section and th.cp_section.available %}
+          <div class="drawer-sec">
+            <div class="ctx-h4-wrap"><h4>{{ t('Clinical pipeline', '临床管线') }}</h4><span class="ctx-tip-icon" data-tip-en="{{ th.cp_section.h4_tip_en }}" data-tip-zh="{{ th.cp_section.h4_tip_zh }}">?</span></div>
+            <p class="ctx-stance"><span class="l-en">Background evidence — informs the thesis, not a buy trigger.</span><span class="l-zh">背景证据——辅助论点判断，非买入信号。</span></p>
+            <p class="ctx-plain"><span class="l-en">{{ th.cp_section.line1_en }}</span><span class="l-zh">{{ th.cp_section.line1_zh }}</span></p>
+          </div>
+          {% endif %}
+
+          {# ── Import flows ── #}
+          {% if th.tf_section and th.tf_section.available %}
+          <div class="drawer-sec">
+            <div class="ctx-h4-wrap"><h4>{{ t('Import flows', '进口流量') }}</h4><span class="ctx-tip-icon" data-tip-en="{{ th.tf_section.h4_tip_en }}" data-tip-zh="{{ th.tf_section.h4_tip_zh }}">?</span></div>
+            <p class="ctx-stance"><span class="l-en">Background evidence — a physical-demand check, not a buy trigger.</span><span class="l-zh">背景证据——实物需求核对，非买入信号。</span></p>
+            <p class="ctx-plain"><span class="l-en">{{ th.tf_section.line_en }}</span><span class="l-zh">{{ th.tf_section.line_zh }}</span></p>
+            {% if th.tf_section.is_mixed and th.tf_section.direction_leg_rows %}
+            {% for dl in th.tf_section.direction_leg_rows %}
+            <div class="ctx-row"{% if dl.cov_tip_en %} data-tip-en="{{ dl.cov_tip_en }}" data-tip-zh="{{ dl.cov_tip_zh }}"{% endif %}>
+              <span class="ctx-row-label"><span class="l-en">{{ dl.direction }}</span><span class="l-zh">{{ dl.direction }}</span></span>
+              <span class="ctx-row-value"><span class="l-en">{{ dl.line_en }}</span><span class="l-zh">{{ dl.line_zh }}</span></span>
+            </div>
+            {% endfor %}
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+
+{# ── STUDY SHELF (tier 3) ── #}
+<div class="sec-head" style="margin-top:40px"><span class="sh-dot" style="--sh-c:var(--quiet)"></span>{{ t('The fine print', '细则与依据') }}</div>
+<p class="sec-sub">{{ t('How to read the board, and the receipts behind it.', '如何解读看板，及其背后的依据。') }}</p>
+<div class="shelf">
+  <details>
+    <summary><span class="sh-ic">🎯</span>{{ t('How to read a theme', '如何解读一个主题') }}<span class="sh-hint">{{ t('lanes · stages · setup legs', '分组 · 阶段 · 结构腿') }}</span><span class="sh-caret">▶</span></summary>
+    <div class="sh-body">
+      <p>{{ t('Each theme sits in one <b>lane</b> — a plain read of what to do: gaining ground, early and under-owned, crowded, in question, or quiet. The <b>stage</b> pill is where it is in its life (Watch → Broadening → Re-rating → Accelerating → Precipice → Correcting). The seven dots are its <b>setup legs</b>:', '每个主题位于一个<b>分组</b>——直白告诉你怎么做：正在奏效、早期低关注、拥挤、存疑或平静。<b>阶段</b>标签表示它处于生命周期的哪一步（观察→扩张→重估→加速→临界→回调）。七个圆点是它的<b>结构腿</b>：') }}</p>
+      <div class="legend-grid" style="margin-top:12px">
+        <span class="leg-item"><span class="dot fav"></span> <b>{{ t('favorable', '有利') }}</b></span>
+        <span class="leg-item"><span class="dot mid"></span> {{ t('middling', '中等') }}</span>
+        <span class="leg-item"><span class="dot caut"></span> {{ t('caution', '谨慎') }}</span>
+        <span class="leg-item"><span class="dot neut"></span> {{ t('not present', '无支持') }}</span>
+        <span class="leg-item"><span class="dot null"></span> {{ t('accruing / no data', '累积中/无数据') }}</span>
+      </div>
+      <div style="margin-top:14px">
+        <div class="leg-def"><span class="k">{{ t('Supply tightness', '供应瓶颈紧张度') }}</span><span class="v">{{ t('Is a real bottleneck supporting pricing power?', '是否存在真实瓶颈支撑定价权？') }}</span></div>
+        <div class="leg-def"><span class="k">{{ t('Stale consensus', '共识滞后') }}</span><span class="v">{{ t('How far behind the market\'s view has fallen.', '市场看法落后于现实的程度。') }}</span></div>
+        <div class="leg-def"><span class="k">{{ t('Cyclical dislocation', '周期错位') }}</span><span class="v">{{ t('A long-term story trading at cycle-lows.', '长期故事却处于周期低位。') }}</span></div>
+        <div class="leg-def"><span class="k">{{ t('Entry cleanliness', '入场质量') }}</span><span class="v">{{ t('Whether the entry looks clean or overheated.', '入场点是否干净、还是过热。') }}</span></div>
+        <div class="leg-def"><span class="k">{{ t('Crowding', '拥挤风险') }}</span><span class="v">{{ t('How many are already positioned here.', '已有多少人押注于此。') }}</span></div>
+        <div class="leg-def"><span class="k">{{ t('Testability', '假证伪清晰度') }}</span><span class="v">{{ t('Are there clear tripwires that would disprove it?', '是否有清晰的触发线可以证伪？') }}</span></div>
+        <div class="leg-def"><span class="k">{{ t('Moves on its own', '市场正交性') }}</span><span class="v">{{ t('Does it move on its story, not just the market?', '它是否走自身逻辑、而非随大盘？') }}</span></div>
+      </div>
+    </div>
+  </details>
+  <details>
+    <summary><span class="sh-ic">🧾</span>{{ t('Method & honesty', '方法与诚实声明') }}<span class="sh-hint">{{ t('display-tier context, never a signal', '展示层背景，非交易信号') }}</span><span class="sh-caret">▶</span></summary>
+    <div class="sh-body">
+      <p>{{ t('This board is <b>context, not trade calls</b>. Lanes and stances are a plain-word re-expression of the engine\'s lifecycle stage, break-rules, crowding and divergence reads — they surface what to look at, never a buy or sell instruction. "Gaining ground" describes breadth, not a forecast.', '本看板为<b>背景，而非交易信号</b>。分组与结论只是把引擎的生命周期阶段、否定条件、拥挤度与背离读数用直白语言重新表达——用于提示关注点，而非买卖指令。「正在奏效」描述的是参与面，而非预测。') }}</p>
+      {% if n_stale_legs %}<p class="shelf-note">{{ t('Data freshness: ' ~ n_stale_legs ~ ' setup leg(s) are running on older data and shown dashed until they refresh on a coming nightly build.', '数据新鲜度：' ~ n_stale_legs ~ ' 条结构腿使用较旧数据，以虚线显示，将在后续夜间构建中刷新。') }}</p>{% endif %}
+      {% if trade_flows_page_note_en %}<p class="shelf-note"><span class="l-en">{{ trade_flows_page_note_en }}</span><span class="l-zh">{{ trade_flows_page_note_zh or trade_flows_page_note_en }}</span></p>{% endif %}
+      {% if collision_note_en %}<p class="shelf-note"><span class="l-en">{{ collision_note_en }}</span><span class="l-zh">{{ collision_note_zh or collision_note_en }}</span></p>{% endif %}
+    </div>
+  </details>
+</div>
+
+<p class="sot-disclosure">{{ t('Everything here describes where each market story sits and what could change it — none of it is a prediction or a trade signal. Updated nightly.', '本页描述每个市场主题所处的位置及可能改变它的因素——皆非预测或交易信号。每晚更新。') }}</p>
+
 {% else %}
 <div class="empty-state">
   <h2>{{ t('No theme data available', '暂无主题数据') }}</h2>
@@ -555,156 +525,85 @@ a { text-decoration:none; color:var(--link); }
 </div>
 {% endif %}
 
-{# ── Collision footnote ── #}
-{% if collision_note_en %}
-<div class="collision-note">
-  <span class="l-en">{{ collision_note_en }}</span>
-  <span class="l-zh">{{ collision_note_zh or collision_note_en }}</span>
-</div>
-{% endif %}
-
-{# ── Trade-flows page-level accrual note (shown when all-null, once) ── #}
-{% if trade_flows_page_note_en %}
-<div class="ctx-page-note">
-  <span class="l-en">{{ trade_flows_page_note_en }}</span>
-  <span class="l-zh">{{ trade_flows_page_note_zh or trade_flows_page_note_en }}</span>
-</div>
-{% endif %}
-
 </div>{# /wrap #}
 
 <script src="theme.js"></script>
 <script>
-(function() {
+(function(){
   "use strict";
 
-  // ── Dot tooltip (data-tip-en / data-tip-zh) ──
-  var _tip = null;
-  function _makeTip() {
-    if (_tip) return _tip;
-    _tip = document.createElement('div');
-    _tip.style.cssText = 'position:fixed;z-index:999;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;max-width:260px;pointer-events:none;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.18);display:none;';
+  // ── data-tip hover tooltip (leg dots, ? icons, rows) ──
+  var _tip=null;
+  function _makeTip(){
+    if(_tip)return _tip;
+    _tip=document.createElement('div');
+    _tip.style.cssText='position:fixed;z-index:999;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;max-width:270px;pointer-events:none;line-height:1.5;box-shadow:0 8px 26px rgba(10,20,45,.28);display:none;color:var(--text)';
     document.body.appendChild(_tip);
     return _tip;
   }
-  function _lang() {
-    return (document.documentElement.getAttribute('data-lang') || '') === 'zh' ? 'zh' : 'en';
-  }
-  document.addEventListener('mouseover', function(e) {
-    var el = e.target;
-    var enTip = el.getAttribute('data-tip-en');
-    if (!enTip) return;
-    var zhTip = el.getAttribute('data-tip-zh') || enTip;
-    var tip = _makeTip();
-    tip.textContent = _lang() === 'zh' ? zhTip : enTip;
-    tip.style.display = 'block';
+  function _lang(){return (document.documentElement.getAttribute('data-lang')||'')==='zh'?'zh':'en';}
+  document.addEventListener('mouseover',function(e){
+    var el=e.target.closest('[data-tip-en]');
+    if(!el)return;
+    var en=el.getAttribute('data-tip-en');if(!en)return;
+    var zh=el.getAttribute('data-tip-zh')||en;
+    var tip=_makeTip();
+    tip.textContent=_lang()==='zh'?zh:en;
+    tip.style.display='block';
   });
-  document.addEventListener('mousemove', function(e) {
-    if (!_tip || _tip.style.display === 'none') return;
-    var x = e.clientX + 12, y = e.clientY + 12;
-    if (x + 270 > window.innerWidth) x = e.clientX - 270;
-    _tip.style.left = x + 'px';
-    _tip.style.top = y + 'px';
+  document.addEventListener('mousemove',function(e){
+    if(!_tip||_tip.style.display==='none')return;
+    var x=e.clientX+13,y=e.clientY+14;
+    if(x+280>window.innerWidth)x=e.clientX-280;
+    if(y+90>window.innerHeight)y=e.clientY-90;
+    _tip.style.left=x+'px';_tip.style.top=y+'px';
   });
-  document.addEventListener('mouseout', function(e) {
-    if (!e.target.getAttribute('data-tip-en')) return;
-    if (_tip) _tip.style.display = 'none';
+  document.addEventListener('mouseout',function(e){
+    var el=e.target.closest('[data-tip-en]');
+    if(!el)return;
+    if(_tip)_tip.style.display='none';
   });
 
-  // ── Filter chips ──
-  var activeFilter = 'all';
-  document.getElementById('filter-row').addEventListener('click', function(e) {
-    var btn = e.target.closest('.fchip');
-    if (!btn || btn.classList.contains('disabled')) return;
-    activeFilter = btn.getAttribute('data-filter');
-    document.querySelectorAll('#filter-row .fchip').forEach(function(b) {
-      b.classList.toggle('on', b === btn);
+  // ── card expand / collapse (one open at a time within a lane grid) ──
+  document.querySelectorAll('.theme-row').forEach(function(card){
+    card.addEventListener('click',function(e){
+      // ignore clicks originating on links / the tip icons
+      if(e.target.closest('a'))return;
+      card.classList.toggle('expanded');
     });
-    _applyFilter();
   });
 
-  function _applyFilter() {
-    var rows = document.querySelectorAll('#sot-tbody .theme-row');
-    rows.forEach(function(row) {
-      var flags = (row.getAttribute('data-filters') || '').split(',');
-      var show = activeFilter === 'all' || flags.indexOf(activeFilter) !== -1;
-      row.classList.toggle('hidden', !show);
-      // also hide the drawer row
-      var dr = document.querySelector('.drawer-row[data-for="' + row.getAttribute('data-theme-id') + '"]');
-      if (dr) dr.style.display = 'none';
-    });
-  }
-
-  // ── Row expand / collapse ──
-  document.getElementById('sot-tbody').addEventListener('click', function(e) {
-    var row = e.target.closest('.theme-row');
-    if (!row) return;
-    var id = row.getAttribute('data-theme-id');
-    var dr = document.querySelector('.drawer-row[data-for="' + id + '"]');
-    if (!dr) return;
-    var isOpen = dr.style.display !== 'none';
-    // close all others
-    document.querySelectorAll('.drawer-row').forEach(function(r) { r.style.display = 'none'; });
-    document.querySelectorAll('.theme-row').forEach(function(r) { r.classList.remove('expanded'); });
-    if (!isOpen) {
-      dr.style.display = '';
-      row.classList.add('expanded');
-    }
-  });
-
-  // ── Column sort ──
-  var sortCol = null;
-  var sortDir = 1;
-  document.querySelectorAll('.matrix th[data-col]').forEach(function(th) {
-    th.addEventListener('click', function() {
-      var col = th.getAttribute('data-col');
-      if (col === 'legs') return; // legs not sortable
-      if (sortCol === col) {
-        sortDir = -sortDir;
-      } else {
-        sortCol = col;
-        sortDir = 1;
-      }
-      document.querySelectorAll('.matrix th').forEach(function(h) {
-        h.classList.remove('sorted-asc', 'sorted-desc');
+  // ── filter bar ──
+  var fr=document.getElementById('filter-row');
+  if(fr){
+    fr.addEventListener('click',function(e){
+      var btn=e.target.closest('.fchip');
+      if(!btn)return;
+      var f=btn.getAttribute('data-filter');
+      fr.querySelectorAll('.fchip').forEach(function(b){b.classList.toggle('on',b===btn);});
+      var cards=document.querySelectorAll('.theme-row');
+      cards.forEach(function(c){
+        var show=true;
+        if(f==='all')show=true;
+        else if(f.indexOf('lane:')===0)show=c.getAttribute('data-lane')===f.slice(5);
+        else if(f==='opp')show=c.getAttribute('data-opp')==='1';
+        else if(f==='watchouts')show=(c.getAttribute('data-lane')==='caution'||c.getAttribute('data-lane')==='review');
+        c.classList.toggle('hidden',!show);
+        if(!show)c.classList.remove('expanded');
       });
-      th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
-      _sortMatrix(col, sortDir);
-    });
-  });
-
-  function _sortMatrix(col, dir) {
-    var tbody = document.getElementById('sot-tbody');
-    var rows = Array.from(tbody.querySelectorAll('.theme-row'));
-    rows.sort(function(a, b) {
-      var av = _sortVal(a, col);
-      var bv = _sortVal(b, col);
-      if (av < bv) return -dir;
-      if (av > bv) return dir;
-      return 0;
-    });
-    rows.forEach(function(row) {
-      var id = row.getAttribute('data-theme-id');
-      var dr = tbody.querySelector('.drawer-row[data-for="' + id + '"]');
-      tbody.appendChild(row);
-      if (dr) tbody.appendChild(dr);
+      // hide lanes with no visible cards
+      document.querySelectorAll('.lane').forEach(function(lane){
+        var any=lane.querySelectorAll('.theme-row:not(.hidden)').length>0;
+        lane.classList.toggle('dim',!any);
+      });
     });
   }
 
-  function _sortVal(row, col) {
-    if (col === 'name') return (row.getAttribute('data-sort-name') || '').toLowerCase();
-    if (col === 'stage') return parseFloat(row.getAttribute('data-sort-stage') || '0');
-    if (col === 'falsifiers') return parseFloat(row.getAttribute('data-sort-falsifiers') || '0');
-    if (col === 'divergence') return parseFloat(row.getAttribute('data-sort-divergence') || '0');
-    return '';
+  // ── clear the tip when the language flips ──
+  if(typeof MutationObserver!=='undefined'){
+    new MutationObserver(function(){if(_tip)_tip.style.display='none';})
+      .observe(document.documentElement,{attributes:true,attributeFilter:['data-lang']});
   }
-
-  // ── Lang toggle sync for tip tooltip ──
-  var _obs = typeof MutationObserver !== 'undefined' ? new MutationObserver(function() {
-    if (_tip) _tip.style.display = 'none';
-  }) : null;
-  if (_obs) _obs.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
-
 })();
 </script>
 </body>

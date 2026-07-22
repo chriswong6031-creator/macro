@@ -326,6 +326,134 @@ _DIV_LABELS = {
 
 
 # ---------------------------------------------------------------------------
+# Stance lanes (the glance-tier board)
+#
+# Every theme is placed in exactly one plain-word lane. The lane is a
+# DETERMINISTIC re-expression of fields the engines already computed — the
+# lifecycle stage, whether a falsifier fired, the crowding-hazard band, and the
+# divergence quadrant. Nothing here originates a new signal or an escalation
+# (Design Doctrine Law 5 / epistemics): the whole board is display-tier context,
+# and the stance vocabulary stays in the honest register — "watch", "don't
+# chase", "stand aside" — never a buy call. It answers Doctrine Law 1 ("so what
+# do I do?") in plain words for every theme, including the honest "nothing yet".
+# ---------------------------------------------------------------------------
+
+_LANE_ORDER = ["working", "early", "caution", "review", "quiet"]
+
+_LANE_META: dict[str, dict[str, str]] = {
+    "working": {
+        "key": "working",
+        "accent": "up",  # green
+        "emoji": "🟢",
+        "label_en": "Working now",
+        "label_zh": "正在奏效",
+        "stance_en": "Gaining ground — watch for entries",
+        "stance_zh": "势头向上——留意入场",
+        "guide_en": "Breadth is widening and the re-rating is underway. Watch — don't chase.",
+        "guide_zh": "参与面扩大、重估正在进行。观望——不要追高。",
+    },
+    "early": {
+        "key": "early",
+        "accent": "link",  # blue
+        "emoji": "🔵",
+        "label_en": "Early & under-owned",
+        "label_zh": "早期 · 低关注",
+        "stance_en": "Room to develop — watch",
+        "stance_zh": "仍有空间——保持观察",
+        "guide_en": "The crowd hasn't caught up yet. A watch-list, not a buy signal.",
+        "guide_zh": "市场尚未充分反映。属观察名单，而非买入信号。",
+    },
+    "caution": {
+        "key": "caution",
+        "accent": "warn",  # amber
+        "emoji": "🟠",
+        "label_en": "Crowded or cooling",
+        "label_zh": "拥挤或降温",
+        "stance_en": "Popular and stretched — don't chase",
+        "stance_zh": "拥挤且伸展——不要追高",
+        "guide_en": "Positioning is heavy or the trend is turning. Protect gains; don't chase.",
+        "guide_zh": "仓位偏重或趋势转向。保护盈利，不要追高。",
+    },
+    "review": {
+        "key": "review",
+        "accent": "down",  # red
+        "emoji": "🔴",
+        "label_en": "Thesis in question",
+        "label_zh": "论点存疑",
+        "stance_en": "A break-rule tripped — stand aside",
+        "stance_zh": "触发否定条件——暂避观望",
+        "guide_en": "A rule that would break the story has tripped. Stand aside until it clears.",
+        "guide_zh": "一条会证伪论点的规则已触发。在其解除前暂避。",
+    },
+    "quiet": {
+        "key": "quiet",
+        "accent": "muted",
+        "emoji": "⚪",
+        "label_en": "Quiet for now",
+        "label_zh": "暂时平静",
+        "stance_en": "Nothing notable yet — watch",
+        "stance_zh": "暂无值得关注之处——观察",
+        "guide_en": "No strong read either way. Keep it on the radar.",
+        "guide_zh": "尚无明确方向。留作观察。",
+    },
+}
+
+# Lifecycle order for the stage ribbon (early → hot → turning). Independent of
+# _STAGE_SORT (which ranks actionability); this ribbon reads as a life-story.
+_LIFECYCLE_ORDER = [
+    "WATCH", "BROADENING", "RE-RATING", "ACCELERATING", "PRECIPICE", "CORRECTING",
+]
+
+
+def _classify_lane(
+    stage_key: str, any_fired: bool, legs: dict, div_quadrant: str | None
+) -> str:
+    """Deterministically place a theme in one glance-tier stance lane.
+
+    Priority (first match wins): a fired falsifier dominates everything (the
+    story is in question); then heavy crowding / a turning stage (don't chase);
+    then a stage that says breadth is widening (working); then an under-owned
+    early read; else quiet.
+    """
+    if any_fired:
+        return "review"
+    crw = legs.get("crowding_hazard") if isinstance(legs, dict) else None
+    crw_band = crw.get("band") if isinstance(crw, dict) else None
+    if stage_key in ("CORRECTING", "PRECIPICE") or crw_band == "high" \
+            or div_quadrant == "crowded-and-fading":
+        return "caution"
+    if stage_key in ("BROADENING", "RE-RATING", "ACCELERATING"):
+        return "working"
+    if div_quadrant == "hidden-opportunity":
+        return "early"
+    return "quiet"
+
+
+def _first_sentence(text: str | None, max_len: int, zh: bool = False) -> str:
+    """First sentence of a thesis blurb, trimmed to a glance-tier length.
+
+    Used for the card's one-line 'what's the story' read; the full prose stays
+    in the drawer. Never raises; empty in → empty out.
+    """
+    if not text:
+        return ""
+    s = " ".join(text.strip().split())
+    stop = "。！？" if zh else ".!?"
+    cut = len(s)
+    for i, ch in enumerate(s):
+        if ch in stop and i >= 18:
+            cut = i + 1
+            break
+    frag = s[:cut].strip()
+    if len(frag) > max_len:
+        if zh:
+            frag = frag[:max_len].rstrip("，、 ") + "…"
+        else:
+            frag = frag[:max_len].rsplit(" ", 1)[0].rstrip(",;: ") + "…"
+    return frag
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -417,13 +545,23 @@ def _compute_filter_flags(legs: dict, falsifier_any_fired: bool) -> list[str]:
 # Weekly delta from phase history
 # ---------------------------------------------------------------------------
 
-def _compute_weekly_delta(history: list[dict]) -> tuple[list[str], list[str]]:
-    """Return (transitions, fired_falsifiers) string lists for this week."""
+def _compute_weekly_delta(
+    history: list[dict],
+    names_en: dict[str, str] | None = None,
+    names_zh: dict[str, str] | None = None,
+) -> tuple[list[dict], list[dict]]:
+    """Return (transitions, fired_falsifiers) as bilingual {en, zh} items.
+
+    Stage names are the plain title-case labels (never the raw upper-case enum),
+    and theme names use the display map when available (Doctrine Law 2).
+    """
     if not history:
         return [], []
+    names_en = names_en or {}
+    names_zh = names_zh or {}
 
     one_week_ago = datetime.now(tz=timezone.utc) - timedelta(days=7)
-    transitions: list[str] = []
+    transitions: list[dict] = []
     seen_transitions: set[str] = set()
 
     # Group by theme_id, find latest + prior records
@@ -455,11 +593,16 @@ def _compute_weekly_delta(history: list[dict]) -> tuple[list[str], list[str]]:
             key = f"{theme_id}:{prev_base}→{curr_base}"
             if key not in seen_transitions:
                 seen_transitions.add(key)
-                label = (
-                    f"{theme_id.replace('_', ' ').title()}: "
-                    f"{_strip_tier_suffix(prev_stage)} → {_strip_tier_suffix(curr_stage)}"
-                )
-                transitions.append(label)
+                nm_en = names_en.get(theme_id) or theme_id.replace("_", " ").title()
+                nm_zh = names_zh.get(theme_id) or nm_en
+                prev_en = _STAGE_EN.get(prev_base, prev_base.title())
+                curr_en = _STAGE_EN.get(curr_base, curr_base.title())
+                prev_zh = _STAGE_ZH.get(prev_base, prev_base)
+                curr_zh = _STAGE_ZH.get(curr_base, curr_base)
+                transitions.append({
+                    "en": f"{nm_en}: {prev_en} → {curr_en}",
+                    "zh": f"{nm_zh}：{prev_zh} → {curr_zh}",
+                })
 
     return transitions, []
 
@@ -726,8 +869,12 @@ def compose(root: Path) -> dict[str, Any]:
         n_total = n_fired + n_armed + fals_summary.get("n_qualitative", 0) + fals_summary.get("n_data_missing", 0)
         if n_total > 0:
             falsifier_label = f"{n_fired}/{n_total} fired"
+            falsifier_label_en = f"{n_fired}/{n_total} tripped"
+            falsifier_label_zh = f"{n_fired}/{n_total} 触发"
         else:
             falsifier_label = ""
+            falsifier_label_en = ""
+            falsifier_label_zh = ""
         falsifier_sort = n_fired * 10 + n_armed
 
         raw_falsifiers = th_data.get("falsifiers", []) or []
@@ -1036,10 +1183,43 @@ def compose(root: Path) -> dict[str, Any]:
                     "h4_tip_zh": tf_cov_tip_zh,
                 }
 
+        # ── Stance lane + glance-tier read (deterministic; display-tier) ──
+        lane = _classify_lane(stage_key, any_fired, raw_legs, quadrant)
+        lane_meta = _LANE_META[lane]
+
+        # Setup-health tally from the polarity-correct valence table (re-uses the
+        # words already computed above — no new signal, just a count).
+        fav_count = sum(1 for lg in asym_legs_section if lg["valence_class"] == "fav")
+        caut_count = sum(1 for lg in asym_legs_section if lg["valence_class"] == "caut")
+        present_count = sum(1 for lg in asym_legs_section if lg["valence_class"] != "null")
+
+        # One-line "what's the story" — first sentence of the variant view (the
+        # differentiated read); mechanism is the fallback. Full prose in drawer.
+        story_en = _first_sentence(variant_perception_en, 132) \
+            or _first_sentence(mechanism_en, 132)
+        story_zh = _first_sentence(variant_perception_zh, 46, zh=True) \
+            or _first_sentence(mechanism_zh, 46, zh=True) or story_en
+
+        # Within-lane ordering: healthier setup first, then further along the
+        # lifecycle, then more break-rules for the review lane (worst first).
+        if lane == "review":
+            lane_rank = (n_fired, fav_count - caut_count, stage_sort)
+        else:
+            lane_rank = (fav_count - caut_count, stage_sort, present_count)
+
         themes.append({
             "theme_id": tid,
             "name_en": st_th.get("name_en", tid),
             "name_zh": st_th.get("name_zh", ""),
+            "lane": lane,
+            "lane_rank": lane_rank,
+            "stance_en": lane_meta["stance_en"],
+            "stance_zh": lane_meta["stance_zh"],
+            "story_en": story_en,
+            "story_zh": story_zh,
+            "fav_count": fav_count,
+            "caut_count": caut_count,
+            "present_count": present_count,
             "stage_raw": stage_raw,
             "stage_key": stage_key,
             "stage_label_en": stage_label_en,
@@ -1048,6 +1228,8 @@ def compose(root: Path) -> dict[str, Any]:
             "legs_ordered": legs_ordered,
             "falsifier_any_fired": any_fired,
             "falsifier_label": falsifier_label,
+            "falsifier_label_en": falsifier_label_en,
+            "falsifier_label_zh": falsifier_label_zh,
             "falsifier_sort": falsifier_sort,
             "falsifiers": falsifiers,
             "div_label_en": div_label_en,
@@ -1068,15 +1250,92 @@ def compose(root: Path) -> dict[str, Any]:
             "tf_section": tf_section,
         })
 
-    # ── Weekly delta ──
-    weekly_transitions, weekly_fired = _compute_weekly_delta(history)
+    # ── Weekly delta (bilingual, plain stage labels) ──
+    _names_en = {t.get("theme_id", ""): t.get("name_en", "") for t in state_themes}
+    _names_zh = {t.get("theme_id", ""): t.get("name_zh", "") for t in state_themes}
+    weekly_transitions, weekly_fired = _compute_weekly_delta(history, _names_en, _names_zh)
 
     # ── Collision footnote ──
     collision_note_en, collision_note_zh = _build_collision_note(pathways_data)
 
+    # ── Group themes into the stance-lane board (references the same theme
+    #    dicts; the flat `themes` list is unchanged for downstream/test use) ──
+    lanes = []
+    lane_counts: dict[str, int] = {}
+    for key in _LANE_ORDER:
+        members = [t for t in themes if t["lane"] == key]
+        members.sort(key=lambda t: t["lane_rank"], reverse=True)
+        lane_counts[key] = len(members)
+        if not members:
+            continue
+        meta = _LANE_META[key]
+        lanes.append({**meta, "count": len(members), "themes": members})
+
+    # ── Lifecycle ribbon (stage distribution, life-story order) ──
+    ribbon = []
+    for sk in _LIFECYCLE_ORDER:
+        members = [t for t in themes if t["stage_key"] == sk]
+        ribbon.append({
+            "stage_key": sk,
+            "label_en": _STAGE_EN.get(sk, sk.title()),
+            "label_zh": _STAGE_ZH.get(sk, sk),
+            "count": len(members),
+            "names_en": [t["name_en"] for t in members],
+            "names_zh": [t["name_zh"] or t["name_en"] for t in members],
+        })
+
+    # ── Hero verdict — a plain-word synthesis built from the lane counts ──
+    n_work = lane_counts.get("working", 0)
+    n_early = lane_counts.get("early", 0)
+    n_caut = lane_counts.get("caution", 0)
+    n_rev = lane_counts.get("review", 0)
+
+    def _ns(n: int, one: str, many: str) -> str:
+        return one if n == 1 else many
+
+    if n_themes == 0:
+        hero_en = ""
+        hero_zh = ""
+    else:
+        good_en = []
+        if n_work:
+            good_en.append(f"<b>{n_work}</b> {_ns(n_work,'is','are')} gaining ground")
+        if n_early:
+            good_en.append(f"<b>{n_early}</b> {_ns(n_early,'is','are')} early and under-owned")
+        lead_en = " and ".join(good_en) if good_en else "none are clearly working"
+        tail_en = ""
+        if n_rev:
+            tail_en = (f"; <b>{n_rev}</b> tripped a break-rule and "
+                       f"{_ns(n_rev,'warrants','warrant')} a step back")
+        elif n_caut:
+            tail_en = (f"; <b>{n_caut}</b> {_ns(n_caut,'looks','look')} "
+                       f"crowded — don't chase")
+        hero_en = f"Of {n_themes} market stories, {lead_en}{tail_en}."
+
+        good_zh = []
+        if n_work:
+            good_zh.append(f"<b>{n_work}</b> 个正在奏效")
+        if n_early:
+            good_zh.append(f"<b>{n_early}</b> 个处于早期、关注度低")
+        lead_zh = "、".join(good_zh) if good_zh else "暂无明确奏效的主题"
+        tail_zh = ""
+        if n_rev:
+            tail_zh = f"；<b>{n_rev}</b> 个触发否定条件，需退一步观望"
+        elif n_caut:
+            tail_zh = f"；<b>{n_caut}</b> 个显得拥挤——不要追高"
+        hero_zh = f"{n_themes} 个市场主题中，{lead_zh}{tail_zh}。"
+
     return {
         "as_of": as_of,
         "n_themes": n_themes,
+        "lanes": lanes,
+        "ribbon": ribbon,
+        "hero_en": hero_en,
+        "hero_zh": hero_zh,
+        "n_working": n_work,
+        "n_early": n_early,
+        "n_caution": n_caut,
+        "n_review": n_rev,
         "n_falsifier_fired": n_falsifier_fired,
         "n_stale_legs": n_stale_legs,
         "chip_secular_at_cyclical": chip_secular_at_cyclical,
