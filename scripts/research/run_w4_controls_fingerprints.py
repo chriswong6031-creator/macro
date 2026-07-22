@@ -80,6 +80,11 @@ BOOT_SEED = 20260722  # spec §0.1 / §4
 # Control eligibility floor (spec §1): episodes with < 3 eligible controls are excluded.
 MIN_CONTROLS = 3
 
+# Detector volume-confirm gate floors (verbatim from engine constants DV_Z_FLOOR /
+# DV_5_60_RATIO). Used by the robustness grid to build gate-matched control subsets.
+GATE_DVZ_FLOOR: float = 1.0
+GATE_DVR_FLOOR: float = 1.5
+
 # 8-K B1 item codes (verbatim from engine constants).
 B1_HARD_ITEMS: frozenset[str] = frozenset({"1.01", "2.01"})
 B1_SOFT_ITEMS: frozenset[str] = frozenset({"7.01", "8.01"})
@@ -93,6 +98,38 @@ A2_FIREWALL = pd.Timestamp("2024-01-01")
 
 # NON-COMPARABLE coverage floor for fundamentals (spec §3).
 NON_COMPARABLE_FLOOR = 0.30
+
+# Review round 1 (2026-07-22) verdict relabels for the five features that separated at α/m
+# on the PRIMARY (all_matured) contrast in round 0. The robustness grid (out of m) showed
+# the two volume-window separators collapse to NULL once the onset bar is excluded AND
+# controls are gate-matched (they are onset-bar + selection-gate artifacts), the drawdown
+# separator is Bonferroni-fragile (α/m flips under gate-matching, 95%+cluster hold), and
+# only realized_vol_63d + updown_dollar_vol_ratio are clean pre-onset MOTION separators.
+# The relabel annotates the primary verdict line; the mechanical SEPARATES/NULL cell in the
+# tables is unchanged (α/m on all-controls at t0).
+ROUND1_RELABEL: dict[str, str] = {
+    "dollar_vol_z21": (
+        "ONSET-BAR + GATE ARTIFACT — NULL pre-onset (α/m [-0.026, 0.374] at t0−1 + "
+        "gate-matched; same class as excess_21d_pp, NOT a fingerprint)"
+    ),
+    "dv_5_60_ratio": (
+        "ONSET-BAR + GATE ARTIFACT — NULL pre-onset (α/m [-0.024, 0.136] at t0−1 + "
+        "gate-matched; same class as excess_21d_pp, NOT a fingerprint)"
+    ),
+    "drawdown_from_252d_high_at_t0m21": (
+        "SUGGESTIVE — Bonferroni-fragile (α/m flips to NULL under gate-matching "
+        "[-5.81, +0.093]; 95% [-4.64, -1.17] and cluster [-4.64, -1.13] still exclude 0; "
+        "non-mirror across the quality split)"
+    ),
+    "realized_vol_63d": (
+        "CLEAN SEPARATOR — motion-not-quality (holds gate-matched α/m [8.77, 15.06]; "
+        "holds in blow_off; a pre-onset participation/vol signature, not a quality mark)"
+    ),
+    "updown_dollar_vol_ratio": (
+        "CLEAN SEPARATOR — motion-not-quality (holds gate-matched α/m [0.080, 0.181]; "
+        "holds in blow_off, FAILS in kept_going — motion, not quality)"
+    ),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -366,6 +403,68 @@ def _parity_trio(
     return out
 
 
+def _dvz_dvr_at_offset(
+    ticker: str,
+    t0: pd.Timestamp,
+    bars: dict[str, pd.DataFrame],
+    bench_closes: dict[str, pd.Series],
+    sector_of: dict[str, str],
+    offset: int,
+) -> tuple[float | None, float | None]:
+    """Return (dollar_vol_z21, dv_5_60_ratio) read at bar position (pos_t0 + offset).
+
+    Mirrors `_parity_trio`'s bench-aligned-common-index construction exactly, but reads at
+    `pos + offset` instead of the t0 bar. offset == 0 reproduces the parity trio's dvz/dvr;
+    offset == -1 reads the bar immediately BEFORE onset (the "t0−1 variant"), whose rolling
+    z-score / ratio windows END at pos-1 and therefore EXCLUDE the onset bar's volume spike
+    entirely (spec robustness family — out of m). Used only by the robustness grid.
+    """
+    df = bars.get(ticker)
+    if df is None or df.empty or "close" not in df.columns or "volume" not in df.columns:
+        return None, None
+    close = df["close"].dropna().sort_index()
+    volume = df["volume"].dropna().sort_index()
+    bench_etf, _ = _resolve_benchmark(ticker, sector_of)
+    bench_s = bench_closes.get(bench_etf)
+    if bench_s is None or bench_s.empty:
+        bench_s = bench_closes.get(BENCH)
+    if bench_s is None or bench_s.empty:
+        return None, None
+    common = close.index.intersection(bench_s.index)
+    if len(common) < 65:
+        return None, None
+    dv_raw = _dollar_volume_series(close, volume)
+    if dv_raw is None:
+        return None, None
+    dv = dv_raw.reindex(common)
+    dvz = _dv_zscore(dv, 21)
+    dvr = _dv_ratio(dv, 5, 60)
+    pos = common.searchsorted(pd.Timestamp(t0), side="right") - 1
+    p = pos + offset
+    if p < 0 or p >= len(common):
+        return None, None
+    vz = dvz.iloc[p]
+    vr = dvr.iloc[p]
+    return (
+        None if np.isnan(vz) else float(vz),
+        None if np.isnan(vr) else float(vr),
+    )
+
+
+def _control_passes_vol_gate(cf: dict[str, Any]) -> bool:
+    """Whether a control's t0 features satisfy the detector's volume-confirm gate.
+
+    Gate (engine constants DV_Z_FLOOR=1.0, DV_5_60_RATIO=1.5):
+        dollar_vol_z21 >= 1  OR  dv_5_60_ratio >= 1.5
+    A control with BOTH values None is not gate-passing (mask, not pass). Used to build the
+    gate-matched control subset in the robustness grid (episodes pass this gate for 100% by
+    construction; controls are ungated in the primary — the grid re-matches on it).
+    """
+    z = cf.get("dollar_vol_z21")
+    r = cf.get("dv_5_60_ratio")
+    return (z is not None and z >= GATE_DVZ_FLOOR) or (r is not None and r >= GATE_DVR_FLOOR)
+
+
 def _realized_vol_63d(
     ticker: str,
     t0: pd.Timestamp,
@@ -473,6 +572,14 @@ def compute_features(
     feats["excess_21d_pp"] = trio["excess_21d_pp"]  # tautological — parity-only, not a fingerprint
     feats["dollar_vol_z21"] = trio["dollar_vol_z21"]
     feats["dv_5_60_ratio"] = trio["dv_5_60_ratio"]
+
+    # t0−1 variants of the two gate-linked volume features (robustness grid only, out of m):
+    # dvz/dvr read at the bar BEFORE onset, so their rolling windows exclude the onset spike.
+    z_m1, r_m1 = _dvz_dvr_at_offset(
+        ticker, pd.Timestamp(t0), bars, bench_closes, sector_of, offset=-1
+    )
+    feats["dollar_vol_z21__t0m1"] = z_m1
+    feats["dv_5_60_ratio__t0m1"] = r_m1
 
     # Realized vol.
     feats["realized_vol_63d"] = _realized_vol_63d(ticker, pd.Timestamp(t0), bars)
@@ -696,6 +803,153 @@ def analyze_feature(
 
 
 # ---------------------------------------------------------------------------
+# Robustness grid (review round 1). OUT-OF-m family: for each SEPARATES feature, recompute
+# the matched-set Δ under (a) gate-matched controls only, (b) t0−1 variant (dvz/dvr only),
+# (c) the combination. This is a robustness family, NOT part of the m=36 Bonferroni budget
+# (like the gap_leg_crossed stratum rerun) — the α/m CI is printed for reference but a NULL
+# here demotes the primary verdict rather than earning a new test slot.
+# ---------------------------------------------------------------------------
+
+def _matched_deltas_gridcell(
+    episode_records: list[dict[str, Any]],
+    feature_key: str,
+    gate_matched: bool,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Matched-set Δ over included episodes for one grid cell.
+
+    feature_key: the feature dict key to read on both sides (may be a __t0m1 variant).
+    gate_matched: if True, only controls passing the detector volume gate at t0 (via
+        `_control_passes_vol_gate`, always evaluated on the control's t0 dvz/dvr — never the
+        variant column) are used to form the control median. Episodes are ALWAYS gate-passing
+        by construction, so no episode-side filter is applied.
+    Continuous only (all grid features are continuous). Masking identical to _matched_deltas.
+    """
+    deltas: list[float] = []
+    months: list[str] = []
+    tickers: list[str] = []
+    for r in episode_records:
+        e_val = r.get(feature_key)
+        if e_val is None:
+            continue
+        c_vals: list[float] = []
+        for cf in r["_controls"]:
+            if gate_matched and not _control_passes_vol_gate(cf):
+                continue
+            cv = cf.get(feature_key)
+            if cv is None:
+                continue
+            c_vals.append(float(cv))
+        if not c_vals:
+            continue
+        deltas.append(float(e_val) - float(np.median(np.array(c_vals, dtype=float))))
+        months.append(r["_month"])
+        tickers.append(r["_ticker"])
+    return np.array(deltas, dtype=float), np.array(months), np.array(tickers)
+
+
+def robustness_grid_cell(
+    episode_records: list[dict[str, Any]],
+    feature_key: str,
+    gate_matched: bool,
+    alpha_bonf: float,
+    n_boot: int,
+    seed: int,
+) -> dict[str, Any]:
+    """One robustness-grid cell: point Δ, 95% CI, α/m CI, cluster CI, and separation flags."""
+    deltas, months, tickers = _matched_deltas_gridcell(
+        episode_records, feature_key, gate_matched
+    )
+    n_cov = len(deltas)
+    n_months = _distinct_months(months) if n_cov else 0
+    cell: dict[str, Any] = {
+        "feature_key": feature_key,
+        "gate_matched": gate_matched,
+        "n_covered": n_cov,
+        "n_months": n_months,
+        "point": None,
+        "ci95_lo": None, "ci95_hi": None,
+        "ci_bonf_lo": None, "ci_bonf_hi": None,
+        "ci_cluster_lo": None, "ci_cluster_hi": None,
+        "am_sep": None, "ci95_sep": None, "cluster_sep": None,
+        "note": "",
+    }
+    if n_cov < 5:
+        cell["note"] = "insufficient covered episodes (<5)"
+        return cell
+    if n_months < 12:
+        cell["note"] = f"degenerate: {n_months} distinct t0 months (<12) — no CI"
+        cell["point"] = round(float(np.median(deltas)), 4)
+        return cell
+    mb = month_block_matched_bootstrap(
+        deltas, months, n_reps=n_boot, seed=seed, alpha_bonf=alpha_bonf
+    )
+    cl_lo, cl_hi = ticker_cluster_matched_bootstrap(deltas, tickers, n_reps=n_boot, seed=seed)
+
+    def _excl0(lo: float, hi: float) -> bool:
+        return (lo > 0) or (hi < 0)
+
+    cell["point"] = round(mb["point"], 4)
+    cell["ci95_lo"] = round(mb["ci95_lo"], 4)
+    cell["ci95_hi"] = round(mb["ci95_hi"], 4)
+    cell["ci_bonf_lo"] = round(mb["ci_bonf_lo"], 4)
+    cell["ci_bonf_hi"] = round(mb["ci_bonf_hi"], 4)
+    cell["ci_cluster_lo"] = round(cl_lo, 4)
+    cell["ci_cluster_hi"] = round(cl_hi, 4)
+    cell["am_sep"] = _excl0(mb["ci_bonf_lo"], mb["ci_bonf_hi"])
+    cell["ci95_sep"] = _excl0(mb["ci95_lo"], mb["ci95_hi"])
+    cell["cluster_sep"] = _excl0(cl_lo, cl_hi)
+    return cell
+
+
+# Grid recipe: for each original SEPARATES feature, which variant cells to compute.
+# (label, feature_key, gate_matched)
+_GRID_VARIANTS_GATEONLY = [
+    ("gate-matched (t0)", None, True),
+]
+_GRID_VARIANTS_VOL = [
+    ("gate-matched (t0)", None, True),
+    ("t0−1 (all controls)", "__t0m1", False),
+    ("t0−1 + gate-matched", "__t0m1", True),
+]
+
+
+def build_robustness_grid(
+    episode_records: list[dict[str, Any]],
+    alpha_bonf: float,
+    n_boot: int,
+    seed: int,
+) -> list[dict[str, Any]]:
+    """Compute the full out-of-m robustness grid for the five original SEPARATES features.
+
+    dollar_vol_z21 / dv_5_60_ratio get the gate + t0−1 + combination variants; the three
+    non-gate separators (realized_vol_63d, updown_dollar_vol_ratio, drawdown) get gate-matched
+    only (no onset-bar to exclude — they are not volume-window features). Baseline (all
+    controls, t0) is included for each so the demotion is visible in one place.
+    """
+    grid_features = [
+        ("dollar_vol_z21", _GRID_VARIANTS_VOL),
+        ("dv_5_60_ratio", _GRID_VARIANTS_VOL),
+        ("realized_vol_63d", _GRID_VARIANTS_GATEONLY),
+        ("updown_dollar_vol_ratio", _GRID_VARIANTS_GATEONLY),
+        ("drawdown_from_252d_high_at_t0m21", _GRID_VARIANTS_GATEONLY),
+    ]
+    rows: list[dict[str, Any]] = []
+    for feat, variants in grid_features:
+        # Baseline (all controls, t0) for context.
+        base = robustness_grid_cell(episode_records, feat, False, alpha_bonf, n_boot, seed)
+        base["feature"] = feat
+        base["variant"] = "baseline (all controls, t0)"
+        rows.append(base)
+        for label, suffix, gate in variants:
+            fkey = feat + suffix if suffix else feat
+            cell = robustness_grid_cell(episode_records, fkey, gate, alpha_bonf, n_boot, seed)
+            cell["feature"] = feat
+            cell["variant"] = label
+            rows.append(cell)
+    return rows
+
+
+# ---------------------------------------------------------------------------
 # Study runner
 # ---------------------------------------------------------------------------
 
@@ -760,10 +1014,22 @@ def run_study(
     episode_records: list[dict[str, Any]] = []  # per kept episode: features + meta
     excluded_lt3 = 0
     excluded_no_bars = 0
+    excluded_lt3_sector_empty = 0  # of the <3-control exclusions, how many had empty sector
     control_pool_sizes: list[int] = []
     parity_fail_rows: list[dict[str, Any]] = []
     parity_checked = 0
     parity_pass = 0
+    # Population disclosure (review round 1): included-episode sector / ticker distribution
+    # and the committed-n_controls-vs-live-sampling divergence (spot-checked on the first N).
+    included_sectors: list[str] = []
+    included_tickers: list[str] = []
+    ncontrols_spotcheck_n = 0
+    ncontrols_spotcheck_div = 0
+    ncontrols_spotcheck_cap = 40
+
+    def _sector_empty(r: pd.Series) -> bool:
+        s = str(r.get("sector", "") or "").strip()
+        return s in ("", "nan", "None")
 
     for _, row in matured.iterrows():
         ticker = str(row["ticker"])
@@ -776,7 +1042,19 @@ def run_study(
         control_pool_sizes.append(n_ctrl)
         if n_ctrl < MIN_CONTROLS:
             excluded_lt3 += 1
+            if _sector_empty(row):
+                excluded_lt3_sector_empty += 1
             continue
+
+        included_sectors.append(str(row.get("sector", "") or "").strip() or "(unmapped)")
+        included_tickers.append(ticker)
+        # Committed n_controls vs live sample size (spot-check on the first N included).
+        if ncontrols_spotcheck_n < ncontrols_spotcheck_cap:
+            committed_nc = row.get("n_controls")
+            if not pd.isna(committed_nc):
+                ncontrols_spotcheck_n += 1
+                if int(committed_nc) != n_ctrl:
+                    ncontrols_spotcheck_div += 1
 
         ef = compute_features(ticker, t0, bars, bench_closes, sector_of, events_df)
         ef["_month"] = t0.strftime("%Y-%m")
@@ -861,6 +1139,29 @@ def run_study(
             results.append(res)
 
     # -----------------------------------------------------------------------
+    # Robustness grid (review round 1, OUT-OF-m). Recompute the five original SEPARATES
+    # under gate-matched controls / t0−1 variants / combination. Plus the two anchor
+    # diagnostics: control vol-gate-pass fraction at t0, and episode median dvz at t0 vs t0−1.
+    # -----------------------------------------------------------------------
+    robustness_grid = build_robustness_grid(episode_records, alpha_bonf, n_boot, seed)
+
+    ctrl_gate_pass = 0
+    ctrl_gate_total = 0
+    for r in episode_records:
+        for cf in r["_controls"]:
+            ctrl_gate_total += 1
+            if _control_passes_vol_gate(cf):
+                ctrl_gate_pass += 1
+
+    ep_dvz_t0 = [r["dollar_vol_z21"] for r in episode_records if r.get("dollar_vol_z21") is not None]
+    ep_dvz_t0m1 = [
+        r["dollar_vol_z21__t0m1"] for r in episode_records
+        if r.get("dollar_vol_z21__t0m1") is not None
+    ]
+    ep_dvz_t0_med = float(np.median(ep_dvz_t0)) if ep_dvz_t0 else float("nan")
+    ep_dvz_t0m1_med = float(np.median(ep_dvz_t0m1)) if ep_dvz_t0m1 else float("nan")
+
+    # -----------------------------------------------------------------------
     # excess_21d_pp tautology readout (parity-only; NOT a fingerprint — spec §3/§0.2).
     # Reported descriptively on the all_matured contrast for transparency.
     # -----------------------------------------------------------------------
@@ -928,11 +1229,41 @@ def run_study(
         "mean": round(float(pool_arr.mean()), 2),
     }
 
+    # -----------------------------------------------------------------------
+    # Population disclosure aggregates (review round 1).
+    # -----------------------------------------------------------------------
+    sector_counts: dict[str, int] = {}
+    for s in included_sectors:
+        sector_counts[s] = sector_counts.get(s, 0) + 1
+    sector_top = sorted(sector_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
+    it_included = sector_counts.get("Information Technology", 0)
+    ticker_counts: dict[str, int] = {}
+    for t in included_tickers:
+        ticker_counts[t] = ticker_counts.get(t, 0) + 1
+    ticker_top = sorted(ticker_counts.items(), key=lambda kv: (-kv[1], kv[0]))[:6]
+    n_distinct_tickers = len(ticker_counts)
+    committed_ge3 = int((matured["n_controls"] >= MIN_CONTROLS).sum()) if "n_controls" in matured else 0
+
+    # Engine reproducibility pin: SHA of the last commit touching engine/winner_autopsy.py
+    # on origin/main (the import surface). Control sets are re-derived LIVE by sample_controls,
+    # so population counts reproduce only at this SHA.
+    engine_sha = "N/A"
+    try:
+        import subprocess
+        engine_sha = subprocess.check_output(
+            ["git", "-C", str(_REPO_ROOT), "log", "-1", "--format=%H",
+             "origin/main", "--", "engine/winner_autopsy.py"],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip() or "N/A"
+    except Exception:  # noqa: BLE001
+        pass
+
     elapsed = time.time() - t_start
 
     summary = {
         "manifest_hash": manifest_hash,
         "harvest_date": harvest_date,
+        "engine_sha": engine_sha,
         "episodes_path": str(episodes_path),
         "n_equity_matured_total": int(len(matured)),
         "n_kept_going_labels": int(
@@ -962,6 +1293,20 @@ def run_study(
         "seed": seed,
         "elapsed": elapsed,
         "sample_n": sample_n,
+        # Review round 1 additions.
+        "robustness_grid": robustness_grid,
+        "ctrl_gate_pass": ctrl_gate_pass,
+        "ctrl_gate_total": ctrl_gate_total,
+        "ep_dvz_t0_med": ep_dvz_t0_med,
+        "ep_dvz_t0m1_med": ep_dvz_t0m1_med,
+        "excluded_lt3_sector_empty": excluded_lt3_sector_empty,
+        "sector_top": sector_top,
+        "it_included": it_included,
+        "ticker_top": ticker_top,
+        "n_distinct_tickers": n_distinct_tickers,
+        "committed_ge3": committed_ge3,
+        "ncontrols_spotcheck_n": ncontrols_spotcheck_n,
+        "ncontrols_spotcheck_div": ncontrols_spotcheck_div,
     }
 
     _write_report(out_path=out_path, summary=summary)
@@ -986,23 +1331,31 @@ def _fmt(v: Any, decs: int = 4) -> str:
 def _verdict_line(res: dict[str, Any]) -> str:
     """SEPARATES / NULL / UNTESTABLE (spec §6) for one feature × contrast.
 
-    SEPARATES = α/m CI (corrected Bonferroni) excludes zero.
+    SEPARATES = α/m CI (corrected Bonferroni) excludes zero (mechanical, all-controls at t0).
     NULL = α/m CI contains zero with adequate coverage.
     UNTESTABLE = insufficient coverage, degenerate (no CI), or NON-COMPARABLE.
+
+    On the PRIMARY (all_matured) contrast, a round-1 relabel (from the out-of-m robustness
+    grid) is appended for the five features that separated in round 0 — the honest verdict
+    after gate-matching / onset-bar exclusion. The mechanical cell is unchanged.
     """
     feat = res["feature"]
     con = res["contrast"]
+    relabel = ""
+    if con == "all_matured" and feat in ROUND1_RELABEL:
+        relabel = f" → **{ROUND1_RELABEL[feat]}**"
     if res.get("degenerate") or res.get("ci_bonf_lo") is None:
-        return f"- {feat} [{con}]: UNTESTABLE ({res.get('note') or 'no α/m CI'})"
+        return f"- {feat} [{con}]: UNTESTABLE ({res.get('note') or 'no α/m CI'}){relabel}"
     if res.get("bonf_survives"):
         direction = "higher in episodes" if (res["ci_bonf_lo"] or 0) > 0 else "lower in episodes"
         return (
-            f"- {feat} [{con}]: SEPARATES — α/m CI excludes 0 ({direction}; "
-            f"Δ={_fmt(res['point'])}, α/m [{_fmt(res['ci_bonf_lo'])}, {_fmt(res['ci_bonf_hi'])}])"
+            f"- {feat} [{con}]: SEPARATES (mechanical, all-controls@t0) — α/m CI excludes 0 "
+            f"({direction}; Δ={_fmt(res['point'])}, "
+            f"α/m [{_fmt(res['ci_bonf_lo'])}, {_fmt(res['ci_bonf_hi'])}]){relabel}"
         )
     return (
         f"- {feat} [{con}]: NULL — α/m CI contains 0 "
-        f"(Δ={_fmt(res['point'])}, 95% [{_fmt(res['ci95_lo'])}, {_fmt(res['ci95_hi'])}])"
+        f"(Δ={_fmt(res['point'])}, 95% [{_fmt(res['ci95_lo'])}, {_fmt(res['ci95_hi'])}]){relabel}"
     )
 
 
@@ -1034,38 +1387,44 @@ def _write_report(*, out_path: Path, summary: dict[str, Any]) -> None:
       f"α_Bonferroni = 0.05/{s['m_total']} = {s['alpha_bonf']:.6f}.")
     w(f"**Estimator:** matched-set Δ = value(E,t0) − median(value(controls,t0)); "
       f"month-block bootstrap with the matched set as the resampling atom (spec §4).")
+    w(f"**Engine pin:** `engine/winner_autopsy.py` @ `{s.get('engine_sha', 'N/A')}` "
+      f"(origin/main; control sets re-derived live by `sample_controls` — see Reproducibility).")
     w(f"**Wall time:** {s['elapsed']:.1f}s")
     w()
 
-    # Bottom line.
+    # Bottom line (rewritten, review round 1).
     w("## Bottom line")
     w()
-    sep = [r for r in s["results"] if r.get("bonf_survives")]
     w("Machine outputs — not adjudications. The main loop appends the ruling below.")
     w()
-    if sep:
-        sep_feats = sorted({r["feature"] for r in sep})
-        gate_feats = {"dollar_vol_z21", "dv_5_60_ratio"}
-        gate_hit = sorted(f for f in sep_feats if f in gate_feats)
-        w(f"**{len(sep)} feature × contrast cell(s) SEPARATE** at the α/m threshold "
-          f"(α/m CI excludes 0), across features: {', '.join(sep_feats)}. See per-feature "
-          "verdict lines.")
-        w()
-        if gate_hit:
-            w(f"**Construction caveat (mechanical, not an adjudication):** the separators are "
-              f"dominated by volume / realized-vol features. Of these, {', '.join(gate_hit)} "
-              "are DETECTOR-GATE ECHOES — the onset condition requires `dollar_vol_z21 ≥ 1 OR "
-              "dv_5_60_ratio ≥ 1.5`, which holds for 100% of episodes by construction while "
-              "controls are ungated on volume (see 'Volume-confirm selection linkage'). "
-              "Weigh those like `excess_21d_pp`. The non-gate separators "
-              "(`updown_dollar_vol_ratio`, `realized_vol_63d`, `drawdown_from_252d_high_at_t0m21`) "
-              "are not direct gate echoes. Every 8-K density and RS-turn cell is NULL; "
-              "`self_funded_at_t0` and `close_location_value` are UNTESTABLE (coverage).")
-    else:
-        w("**No feature SEPARATES at the α/m threshold on any of the three contrasts.** "
-          "Every tested pre-onset feature's α/m CI contains 0 (or the cell is UNTESTABLE). "
-          "Consistent with the W3 null: pre-onset t0 geometry does not cleanly mark the "
-          "eventual breakaway vs its same-day, same-sector control.")
+    w("**Two modest, genuine pre-onset participation signatures precede breakaway MOTION; "
+      "nothing pre-onset separates QUALITY — consistent with the W3 null.** After the "
+      "round-1 robustness grid (below, out of m), the honest reading of the primary "
+      "(all_matured) contrast is:")
+    w()
+    w("- **`realized_vol_63d`** and **`updown_dollar_vol_ratio`** are the two clean "
+      "separators — both survive gate-matching (α/m [8.77, 15.06] and [0.080, 0.181]) and "
+      "both hold in `blow_off`. They are **motion-not-quality**: `updown_dollar_vol_ratio` "
+      "FAILS in `kept_going`, so it marks *that a name breaks away*, not *whether the "
+      "breakaway holds*.")
+    w("- **`dollar_vol_z21`** and **`dv_5_60_ratio`** are **ONSET-BAR + GATE ARTIFACTS — "
+      "NULL pre-onset** (same class as `excess_21d_pp`, not fingerprints): their round-0 "
+      "separation collapses to NULL once the onset bar is excluded AND controls are "
+      "gate-matched (α/m [-0.026, 0.374] and [-0.024, 0.136]). The episode median "
+      "`dollar_vol_z21` is "
+      f"{_fmt(s.get('ep_dvz_t0_med'), 2)} at t0 but {_fmt(s.get('ep_dvz_t0m1_med'), 2)} at t0−1 — "
+      "the elevation lives on the onset bar, and the detector's `dollar_vol_z21≥1 OR "
+      "dv_5_60_ratio≥1.5` gate admits the episode partly *because* of it.")
+    w("- **`drawdown_from_252d_high_at_t0m21`** is **SUGGESTIVE — Bonferroni-fragile**: its "
+      "α/m CI flips to NULL under gate-matching ([-5.81, +0.093]), though the 95% "
+      "([-4.64, -1.17]) and cluster ([-4.64, -1.13]) CIs still exclude 0, and it does not "
+      "mirror across the quality split. Not promotable on this evidence.")
+    w("- Every 8-K density and RS-turn cell is NULL; `self_funded_at_t0` and "
+      "`close_location_value` are UNTESTABLE (coverage).")
+    w()
+    w("Net: pre-onset t0 geometry marks *participation before a breakaway onset* (volume/vol "
+      "elevation, a shallower drawdown), but nothing pre-onset cleanly separates the eventual "
+      "*winners from the blow-offs* — the W3 null carries into the controls frame.")
     w()
 
     # Population.
@@ -1088,6 +1447,31 @@ def _write_report(*, out_path: Path, summary: dict[str, Any]) -> None:
     w(f"| {pd_['n_episodes_sampled']} | {pd_['min']} | {_fmt(pd_['p25'],1)} | "
       f"{_fmt(pd_['median'],1)} | {pd_['mean']} | {_fmt(pd_['p75'],1)} | {pd_['max']} | "
       f"{pd_['eq_20']} | {pd_['lt_3']} |")
+    w()
+
+    # Population disclosure (review round 1).
+    excl3 = s["excluded_lt3"]
+    excl3_empty = s.get("excluded_lt3_sector_empty", 0)
+    excl3_pct = (excl3_empty / max(excl3, 1)) * 100
+    w("### What the excluded and included cohorts actually are (review round 1)")
+    w()
+    w(f"- The **{excl3:,}** episodes excluded for `< {MIN_CONTROLS}` controls are "
+      f"**{excl3_empty:,} ({excl3_pct:.1f}%) sector-unmapped**: their `sector` is empty, and "
+      "`sample_controls` returns zero controls by construction for an empty sector (an "
+      "unmapped sector would match every other unmapped ticker — wrong cohort). So the "
+      "exclusion is overwhelmingly a *sector-map coverage* artifact, not a market fact "
+      "about those names.")
+    w(f"- The **{s['n_included']:,}** included episodes are therefore the "
+      "**sector-mapped cohort**, and it is concentrated: "
+      f"**{s.get('it_included', 0)}/{s['n_included']} "
+      f"({s.get('it_included', 0)/max(s['n_included'],1)*100:.0f}%) Information Technology**. "
+      f"Top sectors: "
+      + ", ".join(f"{name} {cnt}" for name, cnt in s.get("sector_top", [])) + ".")
+    w(f"- **{s.get('n_distinct_tickers', 0)} distinct tickers** across the {s['n_included']:,} "
+      "included episodes (episodes repeat per ticker over time). Most-recurring: "
+      + ", ".join(f"{tk} ({cnt})" for tk, cnt in s.get("ticker_top", [])) + ". "
+      "The ticker-cluster bootstrap CI (in every results table) is the guard against this "
+      "recurrence inflating precision — it is printed alongside the month-block CI.")
     w()
 
     # Parity.
@@ -1145,6 +1529,68 @@ def _write_report(*, out_path: Path, summary: dict[str, Any]) -> None:
               f"{_fmt(res['ci_bonf_lo'])} | {_fmt(res['ci_bonf_hi'])} | {_fmt(res['bonf_survives'])} | "
               f"{_fmt(res['ci_cluster_lo'])} | {_fmt(res['ci_cluster_hi'])} | {res['note']} |")
         w()
+
+    # -----------------------------------------------------------------------
+    # Robustness grid (review round 1) — the load-bearing correction.
+    # -----------------------------------------------------------------------
+    w("## Robustness grid — the five round-0 SEPARATES, re-matched (OUT OF m)")
+    w()
+    w("**This is a robustness family, NOT part of the m=%d Bonferroni budget** (like the "
+      "`gap_leg_crossed` stratum rerun below): the α/m column is printed for reference, but a "
+      "NULL here *demotes* the round-0 primary verdict rather than earning a new test slot. "
+      "The five features below are the ones whose primary (all_matured) α/m CI excluded 0 in "
+      "round 0. We re-match under: **(a) gate-matched controls** — only controls that pass the "
+      "detector's `dollar_vol_z21≥1 OR dv_5_60_ratio≥1.5` gate at t0 (episodes pass it for "
+      "100%% by construction); **(b) t0−1** — read `dollar_vol_z21`/`dv_5_60_ratio` at the bar "
+      "BEFORE onset, whose rolling windows exclude the onset volume spike; **(c) the "
+      "combination.** Baseline (all controls, t0) is repeated per feature so the collapse is "
+      "visible in one place." % s["m_total"])
+    w()
+    w("Anchor diagnostics (all machine-recomputed, not pasted): control vol-gate-pass "
+      f"fraction at t0 = **{s.get('ctrl_gate_pass', 0):,}/{s.get('ctrl_gate_total', 0):,} = "
+      f"{s.get('ctrl_gate_pass', 0)/max(s.get('ctrl_gate_total', 1),1)*100:.1f}%** (episodes: "
+      "100% by construction); episode median `dollar_vol_z21` = "
+      f"**{_fmt(s.get('ep_dvz_t0_med'), 2)} at t0** vs "
+      f"**{_fmt(s.get('ep_dvz_t0m1_med'), 2)} at t0−1** — the volume elevation is an onset-bar "
+      "phenomenon.")
+    w()
+    w("| Feature | Variant | Δ | n_cov | mo | 95% CI | α/m CI | cluster CI | α/m? | 95%? | clus? |")
+    w("|---|---|---|---|---|---|---|---|---|---|---|")
+
+    def _ci(lo: Any, hi: Any) -> str:
+        if lo is None or hi is None:
+            return "—"
+        return f"[{_fmt(lo)}, {_fmt(hi)}]"
+
+    def _sepflag(v: Any) -> str:
+        if v is None:
+            return "—"
+        return "SEP" if v else "NULL"
+
+    for cell in s.get("robustness_grid", []):
+        w(f"| {cell['feature']} | {cell['variant']} | {_fmt(cell['point'])} | "
+          f"{cell['n_covered']} | {cell['n_months']} | "
+          f"{_ci(cell['ci95_lo'], cell['ci95_hi'])} | "
+          f"{_ci(cell['ci_bonf_lo'], cell['ci_bonf_hi'])} | "
+          f"{_ci(cell['ci_cluster_lo'], cell['ci_cluster_hi'])} | "
+          f"{_sepflag(cell['am_sep'])} | {_sepflag(cell['ci95_sep'])} | "
+          f"{_sepflag(cell['cluster_sep'])} |")
+    w()
+    w("**Reading the grid:**")
+    w()
+    w("- `dollar_vol_z21` / `dv_5_60_ratio`: baseline SEP → **t0−1 + gate-matched NULL** "
+      "(α/m CI contains 0). The separation was the onset-bar spike admitted by the volume "
+      "gate — an **onset-bar + gate artifact**, same class as `excess_21d_pp`. Gate-matched "
+      "alone or t0−1 alone still separates; it takes BOTH corrections to reveal the null, "
+      "because either alone leaves one channel of the selection linkage intact.")
+    w("- `realized_vol_63d` / `updown_dollar_vol_ratio`: **hold gate-matched** (α/m still "
+      "excludes 0). Neither is in the volume-confirm gate, and neither is an onset-bar "
+      "window feature, so gate-matching is the relevant robustness check — they pass it. "
+      "These are the two genuine pre-onset separators (motion, per the quality-split table).")
+    w("- `drawdown_from_252d_high_at_t0m21`: **α/m flips to NULL under gate-matching** "
+      "(upper bound crosses 0), while the 95% and cluster CIs still exclude 0 — "
+      "Bonferroni-fragile, not promotable.")
+    w()
 
     # Contrast 2/3 vs Contrast 1 comparison.
     w("## Contrast 2 / 3 vs Contrast 1 (motion vs quality)")
@@ -1211,8 +1657,11 @@ def _write_report(*, out_path: Path, summary: dict[str, Any]) -> None:
       "main-loop ruling should weigh them accordingly. `updown_dollar_vol_ratio` and "
       "`realized_vol_63d` are NOT in the candidate condition, so their separation is not a "
       "direct gate echo (though volume/vol elevation is correlated with the excess move "
-      "that IS gated). This note states a construction fact; it does not change any "
-      "SEPARATES/NULL/UNTESTABLE cell above.")
+      "that IS gated). **The robustness grid above now demonstrates this quantitatively:** "
+      "`dollar_vol_z21` and `dv_5_60_ratio` go NULL once controls are gate-matched AND the "
+      "onset bar is excluded (t0−1), while `updown_dollar_vol_ratio` and `realized_vol_63d` "
+      "hold gate-matched — so the round-1 verdict demotes the two gate features to artifacts "
+      "and keeps the other two as genuine (motion) separators.")
     w()
 
     # Honesty section.
@@ -1248,7 +1697,12 @@ def _write_report(*, out_path: Path, summary: dict[str, Any]) -> None:
     w(f"- crypto (7-day calendar + SPY benchmark category error): {s['crypto_matured_n']} matured")
     w(f"- unmatured (forward windows not closed): {s['unmatured_n']:,}")
     w()
-    w("### gap_leg_crossed == False stratum (Contrast 1 rerun)")
+    w("### gap_leg_crossed == False stratum (Contrast 1 rerun) — robustness family, OUT OF m")
+    w()
+    w("Like the robustness grid above, this stratum rerun is a robustness family **outside "
+      "the m=%d Bonferroni budget** — its α/m column is a reference tail, not an additional "
+      "test slot. A change here re-weights confidence in the primary verdict; it does not "
+      "add to m." % s["m_total"])
     w()
     w("| Feature | Type | Δ | n_cov | mo | CI95_lo | CI95_hi | CIbonf_lo | CIbonf_hi | Bonf | Note |")
     w("|---|---|---|---|---|---|---|---|---|---|---|")
@@ -1268,11 +1722,44 @@ def _write_report(*, out_path: Path, summary: dict[str, Any]) -> None:
       "exist').")
     w()
 
+    # Reproducibility pin (review round 1).
+    w("### Reproducibility pin (review round 1)")
+    w()
+    w(f"- **Engine SHA:** `engine/winner_autopsy.py` @ `{s.get('engine_sha', 'N/A')}` "
+      "(origin/main, last commit touching that file — the read-only import surface).")
+    w("- **Control sets are re-derived LIVE** by `sample_controls` at run time (deterministic: "
+      "sorted, no RNG), NOT read from the committed parquet. The committed `n_controls` column "
+      f"**diverges from live sampling**: spot-checked on the first {s.get('ncontrols_spotcheck_n', 0)} "
+      f"included episodes, **{s.get('ncontrols_spotcheck_div', 0)}/{s.get('ncontrols_spotcheck_n', 0)}** "
+      "differed. Consequently the committed-column inclusion count "
+      f"(`n_controls >= {MIN_CONTROLS}` = **{s.get('committed_ge3', 0):,}**) does not equal the "
+      f"live included count (**{s['n_included']:,}**). Population counts in this report reproduce "
+      "only at the pinned engine SHA (a later change to `sample_controls` would shift them).")
+    w()
+
+    # 8-K parser scope note (review round 1).
+    w("### 8-K item-parser scope (review round 1)")
+    w()
+    w("This script's `_parse_items_list` is more permissive than the engine's "
+      "(`engine/winner_autopsy.py:_parse_items_list`, a plain comma-split): the script also "
+      "handles `[...]`-style list reprs (`ast.literal_eval`) and normalizes `;`→`,`. The "
+      "committed `material_8k_events` store currently contains **zero** rows that would parse "
+      "differently between the two (no `items` value starts with `[` or contains `;`), so "
+      "on today's data the two produce identical output. The 'one feature code path' claim is "
+      "therefore scoped to the current store contents — it is NOT a byte-identical "
+      "reimplementation of the engine parser, and a future store row using bracket/semicolon "
+      "syntax could diverge.")
+    w()
+
     # Per-feature verdict lines (spec §6).
     w("## Per-feature verdicts (SEPARATES / NULL / UNTESTABLE)")
     w()
-    w("SEPARATES = α/m CI excludes 0; NULL = α/m CI contains 0 with adequate coverage; "
-      "UNTESTABLE = insufficient coverage / degenerate (no CI) / NON-COMPARABLE.")
+    w("SEPARATES = α/m CI excludes 0 (mechanical, all-controls at t0); NULL = α/m CI "
+      "contains 0 with adequate coverage; UNTESTABLE = insufficient coverage / degenerate "
+      "(no CI) / NON-COMPARABLE. On the **primary (all_matured)** contrast, the round-1 "
+      "relabel (`→ **…**`) is the honest verdict after the out-of-m robustness grid: the "
+      "mechanical cell describes the round-0 all-controls-at-t0 fit; the relabel records "
+      "whether it survives gate-matching / onset-bar exclusion.")
     w()
     for cname in contrasts_order:
         w(f"**{contrast_titles[cname]}**")

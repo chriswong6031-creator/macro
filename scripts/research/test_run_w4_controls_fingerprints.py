@@ -247,6 +247,116 @@ def test_matched_deltas_masks_missing_episode_and_controls():
 
 
 # ---------------------------------------------------------------------------
+# Robustness-grid pins (review round 1):
+#   - t0−1 variant: reading dvz at the bar BEFORE onset excludes the onset volume spike;
+#   - gate-matched control filter: only controls passing the vol-confirm gate contribute.
+# ---------------------------------------------------------------------------
+
+def _synthetic_bench_and_spike_ticker():
+    """Build a benchmark series and a ticker whose t0 bar is a huge volume spike.
+
+    Returns (bars, bench_closes, sector_of, t0). The ticker "SPK" trades on a flat-ish
+    price with steady volume EXCEPT the t0 bar, which carries a 50x volume spike. The
+    dollar_vol_z21 at t0 is therefore large-positive; at t0−1 (windows ending the bar
+    before onset) the spike is NOT yet in the window, so the z-score is near 0.
+    """
+    n = 120
+    idx = pd.bdate_range("2020-01-01", periods=n)
+    # Flat price so dollar-volume == volume (no price trend confounds the z-score); a tiny
+    # deterministic sawtooth on volume gives a small nonzero rolling std (so t0−1 z is
+    # defined, not a divide-by-zero), and one 50x volume spike sits ON the onset bar only.
+    close = pd.Series(np.full(n, 100.0), index=idx)
+    base = np.full(n, 1_000_000.0) + (np.arange(n) % 2) * 10_000.0  # +10k on alternate bars
+    volume = pd.Series(base, index=idx)
+    t0_pos = 100
+    t0 = idx[t0_pos]
+    volume.iloc[t0_pos] = 50_000_000.0  # 50x spike ON the onset bar only
+    bench = pd.Series(np.linspace(400.0, 404.0, n), index=idx)  # calm benchmark
+    bars = {
+        "SPK": pd.DataFrame({"close": close, "volume": volume}),
+        w4.BENCH: pd.DataFrame({"close": bench, "volume": pd.Series(np.full(n, 5e8), index=idx)}),
+    }
+    bench_closes = {w4.BENCH: bench}
+    sector_of = {"SPK": "Technology"}  # not in _GICS_ETF → resolves to SPY benchmark
+    return bars, bench_closes, sector_of, t0
+
+
+def test_t0m1_variant_excludes_the_onset_volume_spike():
+    """dvz at t0 sees the 50x spike; dvz at t0−1 (window ends the prior bar) does not."""
+    bars, bench_closes, sector_of, t0 = _synthetic_bench_and_spike_ticker()
+    z_t0, r_t0 = w4._dvz_dvr_at_offset("SPK", t0, bars, bench_closes, sector_of, offset=0)
+    z_m1, r_m1 = w4._dvz_dvr_at_offset("SPK", t0, bars, bench_closes, sector_of, offset=-1)
+    assert z_t0 is not None and z_m1 is not None
+    # The onset-bar z-score is strongly positive (the 50x spike is in-window at t0).
+    assert z_t0 > 3.0, f"expected a large t0 z-score from the spike, got {z_t0}"
+    # The t0−1 z-score EXCLUDES the onset bar → an ordinary sawtooth bar in its own window,
+    # small in magnitude and far below the onset-bar value (the mechanism under test).
+    assert abs(z_m1) < 1.5, f"expected t0−1 z-score to exclude the spike, got {z_m1}"
+    assert z_m1 < z_t0 - 3.0, f"t0−1 z ({z_m1}) must be far below t0 z ({z_t0})"
+    # Same story for the 5/60 dollar-volume ratio: spike inflates it at t0, not at t0−1.
+    assert r_t0 is not None and r_m1 is not None
+    assert r_t0 > 3.0 and r_m1 < 1.5 and r_m1 < r_t0 - 3.0
+
+
+def test_t0m1_variant_wired_into_compute_features():
+    """compute_features exposes __t0m1 columns and they differ from the t0 columns."""
+    bars, bench_closes, sector_of, t0 = _synthetic_bench_and_spike_ticker()
+    feats = w4.compute_features("SPK", t0, bars, bench_closes, sector_of, events_df=None)
+    assert "dollar_vol_z21__t0m1" in feats
+    assert "dv_5_60_ratio__t0m1" in feats
+    # Onset column present and much larger than the t0−1 column (spike on the onset bar).
+    assert feats["dollar_vol_z21"] is not None
+    assert feats["dollar_vol_z21__t0m1"] is not None
+    assert feats["dollar_vol_z21"] > feats["dollar_vol_z21__t0m1"] + 2.0
+
+
+def test_control_passes_vol_gate_filter():
+    """_control_passes_vol_gate: dvz>=1 OR dvr>=1.5; both-None → not passing (mask)."""
+    assert w4._control_passes_vol_gate({"dollar_vol_z21": 1.2, "dv_5_60_ratio": 0.5}) is True
+    assert w4._control_passes_vol_gate({"dollar_vol_z21": 0.2, "dv_5_60_ratio": 1.7}) is True
+    assert w4._control_passes_vol_gate({"dollar_vol_z21": 0.5, "dv_5_60_ratio": 1.0}) is False
+    # Both None → mask, not a pass (never counts a coverage hole as gate-passing).
+    assert w4._control_passes_vol_gate({"dollar_vol_z21": None, "dv_5_60_ratio": None}) is False
+    # Exactly-at-floor is inclusive (>=).
+    assert w4._control_passes_vol_gate({"dollar_vol_z21": 1.0, "dv_5_60_ratio": None}) is True
+    assert w4._control_passes_vol_gate({"dollar_vol_z21": None, "dv_5_60_ratio": 1.5}) is True
+
+
+def test_gate_matched_gridcell_drops_ungated_controls():
+    """robustness_grid_cell(gate_matched=True) forms the control median from gate-passers only.
+
+    Episode value 10; two controls: one gate-passing (value 2), one ungated (value 8).
+    All-controls median = 5 → Δ = 5. Gate-matched median = 2 → Δ = 8. The filter must bite.
+    """
+    recs = []
+    for i in range(20):
+        month = f"2020-{(i % 12) + 1:02d}"
+        recs.append({
+            "x": 10.0, "_month": month, "_ticker": f"T{i}",
+            "_controls": [
+                {"x": 2.0, "dollar_vol_z21": 3.0, "dv_5_60_ratio": None},   # gate-passing
+                {"x": 8.0, "dollar_vol_z21": 0.1, "dv_5_60_ratio": 0.1},    # ungated
+            ],
+        })
+    d_all, _, _ = w4._matched_deltas_gridcell(recs, "x", gate_matched=False)
+    d_gate, _, _ = w4._matched_deltas_gridcell(recs, "x", gate_matched=True)
+    assert np.allclose(d_all, 5.0)   # median(2,8)=5 → 10-5
+    assert np.allclose(d_gate, 8.0)  # median(2)=2 → 10-2 (ungated control dropped)
+
+
+def test_gate_matched_gridcell_masks_when_no_gate_control():
+    """If an episode has no gate-passing control, it is dropped (masked) in the gate cell."""
+    recs = [{
+        "x": 10.0, "_month": "2020-01", "_ticker": "A",
+        "_controls": [{"x": 8.0, "dollar_vol_z21": 0.1, "dv_5_60_ratio": 0.1}],  # ungated only
+    }]
+    d_all, _, _ = w4._matched_deltas_gridcell(recs, "x", gate_matched=False)
+    d_gate, _, _ = w4._matched_deltas_gridcell(recs, "x", gate_matched=True)
+    assert len(d_all) == 1
+    assert len(d_gate) == 0  # no gate-passing control → episode masked out
+
+
+# ---------------------------------------------------------------------------
 # Parity on a REAL episode row (spec §3): the recomputed trio equals the committed
 # columns within 1e-6. Reads read-only stores; skipped if the data root is absent.
 # ---------------------------------------------------------------------------
