@@ -106,11 +106,31 @@
   .mmb-search .x:hover{color:var(--mmb-text)}
   .mmb-search .x svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
   .mmb-search input:placeholder-shown~.x{opacity:0;pointer-events:none}
-  .mmb-ti{margin:2px 8px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mmb-ti{position:relative;display:flex;align-items:center;margin:2px 8px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid transparent}
   .mmb-ti:hover{background:color-mix(in srgb,#fff 6%,transparent)}
   .mmb-ti.on{background:color-mix(in srgb,var(--mmb-info) 14%,transparent);border-color:color-mix(in srgb,var(--mmb-info) 30%,transparent)}
+  .mmb-ti-body{flex:1;min-width:0}
   .mmb-ti .tt{font:600 13px/1.3 var(--mmb-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mmb-ti .tm{font:500 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;text-transform:capitalize}
+  .mmb-ti .tm{font:500 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* row action buttons (rename/delete) — reveal on hover; always 0.7 on coarse */
+  .mmb-ti-acts{display:flex;gap:2px;flex:none;margin-left:6px;opacity:0;transition:opacity .13s}
+  .mmb-ti:hover .mmb-ti-acts,.mmb-ti:focus-within .mmb-ti-acts{opacity:1}
+  @media(hover:none),(pointer:coarse){.mmb-ti-acts{opacity:.7}}
+  .mmb-ti.confirming .mmb-ti-acts{display:none}
+  .mmb-ti-act{width:22px;height:22px;border:none;background:transparent;border-radius:6px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;padding:0;transition:color .12s,background .12s}
+  .mmb-ti-act:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 9%,transparent)}
+  .mmb-ti-act svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7}
+  /* inline rename input (replaces the title in place) */
+  .mmb-ti-input{width:100%;border:1px solid color-mix(in srgb,var(--mmb-info) 40%,transparent);background:color-mix(in srgb,#000 22%,transparent);color:var(--mmb-text);font:600 13px/1.3 var(--mmb-font);border-radius:7px;padding:4px 7px;outline:none}
+  /* delete-confirm state: dim title, show Delete? + ✓/✕ */
+  .mmb-ti.confirming .mmb-ti-body{opacity:.4}
+  .mmb-ti-confirm{display:none;align-items:center;gap:4px;flex:none;margin-left:6px}
+  .mmb-ti.confirming .mmb-ti-confirm{display:flex}
+  .mmb-ti-q{font:600 11.5px/1 var(--mmb-font);color:#e0716b;margin-right:2px}
+  .mmb-ti-yes,.mmb-ti-no{width:22px;height:22px;border:none;border-radius:6px;cursor:pointer;display:grid;place-items:center;padding:0;background:color-mix(in srgb,#fff 6%,transparent);transition:background .12s,color .12s}
+  .mmb-ti-yes{color:#e0716b}.mmb-ti-yes:hover{background:color-mix(in srgb,#e05555 22%,transparent);color:#fff}
+  .mmb-ti-no{color:var(--mmb-muted)}.mmb-ti-no:hover{background:color-mix(in srgb,#fff 12%,transparent);color:var(--mmb-text)}
+  .mmb-ti-yes svg,.mmb-ti-no svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2}
   .mmb-th-empty{color:var(--mmb-muted);font:400 12.5px/1.5 var(--mmb-font);padding:14px 16px}
   .mmb-main{flex:1;display:flex;flex-direction:column;min-width:0}
   .mmb-head{display:flex;align-items:center;gap:8px;padding:14px 14px;flex:none;border-bottom:1px solid color-mix(in srgb,var(--mmb-line) 45%,transparent)}
@@ -704,13 +724,83 @@
       .then(function (d) { renderThreads((d && d.threads) || []); }).catch(function () {});
   }
   var allThreads = [];
+  var PENCIL = '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
+  var TRASH = '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/>';
   function buildThreadItem(t) {
-    var d = DOC.createElement('div'); d.className = 'mmb-ti' + (t.id === threadId ? ' on' : ''); d.dataset.id = t.id;
+    var d = el('div', 'mmb-ti' + (t.id === threadId ? ' on' : '')); d.dataset.id = t.id;
     var date = ''; try { date = new Date(t.updated_at).toLocaleDateString(); } catch (e) {}
-    d.innerHTML = '<div class="tt">' + esc(t.title || L('Untitled', '未命名')) + '</div><div class="tm">' + esc(t.lane || 'fast') + ' · ' + esc(date) + '</div>';
-    d.addEventListener('click', function () { openThread(t.id); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); });
+    var body = el('div', 'mmb-ti-body');
+    var tt = el('div', 'tt'); tt.textContent = t.title || L('Untitled', '未命名');
+    var tm = el('div', 'tm'); tm.textContent = (t.lane || 'fast') + ' · ' + date;
+    body.appendChild(tt); body.appendChild(tm);
+    /* row-open (guarded so action clicks don't also open the thread) */
+    body.addEventListener('click', function () { openThread(t.id); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); });
+    d.appendChild(body);
+
+    var acts = el('div', 'mmb-ti-acts');
+    var ren = el('button', 'mmb-ti-act'); ren.type = 'button'; ren.title = 'Rename'; ren.setAttribute('aria-label', L('Rename chat', '重命名对话')); ren.innerHTML = ic(PENCIL);
+    ren.addEventListener('click', function (e) { e.stopPropagation(); startRename(d, t, tt); });
+    var del = el('button', 'mmb-ti-act'); del.type = 'button'; del.title = 'Delete'; del.setAttribute('aria-label', L('Delete chat', '删除对话')); del.innerHTML = ic(TRASH);
+    del.addEventListener('click', function (e) { e.stopPropagation(); enterDelete(d, t); });
+    acts.appendChild(ren); acts.appendChild(del); d.appendChild(acts);
+
+    /* confirm-delete overlay (hidden until armed) */
+    var confirm = el('div', 'mmb-ti-confirm');
+    var q = el('span', 'mmb-ti-q'); q.textContent = L('Delete?', '删除？'); confirm.appendChild(q);
+    var yes = el('button', 'mmb-ti-yes'); yes.type = 'button'; yes.title = 'Confirm delete'; yes.setAttribute('aria-label', L('Confirm delete', '确认删除')); yes.innerHTML = ic('<path d="M5 12.5l4 4 10-10"/>');
+    var no = el('button', 'mmb-ti-no'); no.type = 'button'; no.title = 'Cancel'; no.setAttribute('aria-label', L('Cancel', '取消')); no.innerHTML = ic('<path d="M6 6l12 12M18 6L6 18"/>');
+    yes.addEventListener('click', function (e) { e.stopPropagation(); doDelete(d, t); });
+    no.addEventListener('click', function (e) { e.stopPropagation(); leaveDelete(d); });
+    confirm.appendChild(yes); confirm.appendChild(no); d.appendChild(confirm);
     return d;
   }
+  /* ── rename: swap title for an inline input (Enter=save, Esc=cancel, blur=save-if-changed) ── */
+  function startRename(row, t, tt) {
+    if (row.querySelector('.mmb-ti-input')) return;
+    var inp = el('input', 'mmb-ti-input'); inp.type = 'text'; inp.maxLength = 80; inp.value = t.title || '';
+    var orig = t.title || '';
+    tt.style.display = 'none'; tt.parentNode.insertBefore(inp, tt);
+    var done = false;
+    function save(commit) {
+      if (done) return; done = true;
+      var v = inp.value.trim().slice(0, 80);
+      inp.remove(); tt.style.display = '';
+      if (commit && v && v !== orig) { tt.textContent = v; t.title = v; patchThread(t.id, v, orig, tt); }
+    }
+    inp.addEventListener('keydown', function (e) {
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); save(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); save(false); }
+    });
+    inp.addEventListener('click', function (e) { e.stopPropagation(); });
+    inp.addEventListener('blur', function () { save(true); });
+    setTimeout(function () { inp.focus(); inp.select(); }, 0);
+  }
+  function patchThread(id, title, orig, tt) {
+    withAuth({ 'Content-Type': 'application/json' })
+      .then(function (h) { return fetch(API + '/api/brain/threads/' + id, { method: 'PATCH', headers: h, credentials: 'include', body: JSON.stringify({ title: title }) }); })
+      .then(function (r) { if (!r.ok) throw 0; })
+      .catch(function () { /* revert on 401/404/error */ if (tt) tt.textContent = orig || L('Untitled', '未命名'); var th = findThread(id); if (th) th.title = orig; loadThreads(); });
+  }
+  /* ── delete: row enters a confirm state (auto-reverts after 4s) ── */
+  function enterDelete(row, t) {
+    root.querySelectorAll('.mmb-ti.confirming').forEach(function (r) { if (r !== row) leaveDelete(r); });
+    row.classList.add('confirming');
+    if (row._delTimer) clearTimeout(row._delTimer);
+    row._delTimer = setTimeout(function () { leaveDelete(row); }, 4000);
+  }
+  function leaveDelete(row) { row.classList.remove('confirming'); if (row._delTimer) { clearTimeout(row._delTimer); row._delTimer = 0; } }
+  function doDelete(row, t) {
+    if (row._delTimer) { clearTimeout(row._delTimer); row._delTimer = 0; }
+    var id = t.id;
+    row.style.display = 'none';                              /* optimistic remove */
+    allThreads = allThreads.filter(function (x) { return x.id !== id; });
+    if (id === threadId) newChat();
+    withAuth().then(function (h) { return fetch(API + '/api/brain/threads/' + id, { method: 'DELETE', headers: h, credentials: 'include' }); })
+      .then(function (r) { if (!r.ok) throw 0; })
+      .catch(function () { loadThreads(); });                /* 401/404/error → reload truth */
+  }
+  function findThread(id) { for (var i = 0; i < allThreads.length; i++) if (allThreads[i].id === id) return allThreads[i]; return null; }
   function paintThreads() {
     if (guestMode) { paintGuestThreads(); return; }   /* guests see the sign-in prompt, not the (empty) list */
     if (!allThreads.length) { tlist.innerHTML = '<div class="mmb-th-empty">' + L('Your conversations appear here.', '你的对话会显示在这里。') + '</div>'; return; }
@@ -1222,7 +1312,7 @@
   fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
   if (searchIn) {
     searchIn.addEventListener('input', paintThreads);
-    searchIn.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); toggleSearch(false); } });
+    searchIn.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); toggleSearch(false); } });
   }
   /* follow the host's language switch live — dashboard fires 'langchange' on the
      document (theme.js setLang), the Terminal fires 'mm:lang' on window (i18n.tsx). */
