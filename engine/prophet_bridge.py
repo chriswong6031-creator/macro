@@ -76,12 +76,21 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 N_CANDIDATES = 6          # max picks per run
-HORIZON_DAYS_DEFAULT = 45
+HORIZON_DAYS_DEFAULT = 45  # BASE_HORIZON_DAYS in PSQ-TILT design; already a named constant
 MIN_HOLD_DAYS_DEFAULT = 10
 T1_MULTIPLIER = 1.5
 T2_MULTIPLIER = 3.0
 ATR_MULTIPLIER = 2.0       # invalidation = entry ± 2×ATR14 (protective backstop)
 TARGET_DELTA = 0.60        # nearest-delta strike for option resolution
+
+# ── PSQ-TILT W1: hold-leash (provisional, bear-gated, shadow auto-demote) ──────
+# The leash extends the intended HOLD horizon for Stage-2 ∩ EC-positive picks —
+# hold-quality evidence from the PSQ 2026-07-20 quality re-grade (median fwd126 /
+# EA right-shift). Authority boundary (binding): never an entry veto, never rank
+# suppression, never a win-rate gate or fused rank bonus. The cap 1.25× is the PSQ
+# adjudication ceiling (research/reports/PROPHET_STAGE_QUALITY_RESULTS.md §Adjudication).
+STAGE_TILT_LEASH = 1.25
+STAGE_TILT_DEMOTE_MIN_MATURED = 30   # §4 floor: n_matured_126 needed before diff can demote
 
 # Monthly expiry calendar helper: US options use 3rd Friday of month.
 # We find the first monthly expiry >= min_expiry_date.
@@ -911,6 +920,179 @@ def _load_price_history(ticker: str) -> pd.DataFrame | None:
     return None
 
 
+# ---------------------------------------------------------------------------
+# PSQ-TILT W1 — hold-leash (runs strictly AFTER select_candidates)
+# ---------------------------------------------------------------------------
+# Authority boundary (binding): the leash NEVER touches selection (ids/order),
+# NEVER vetoes an entry, NEVER suppresses rank, NEVER gates on a win-rate. It
+# only extends the intended HOLD horizon for a Stage-2 ∩ EC-positive pick. Any
+# tilt-input failure degrades to leash 1.0 with a ::warning:: — origination
+# NEVER raises because of the tilt. See research/PROPHET_STAGE_TILT_W1_DESIGN.md.
+
+def _bear_from_regime(data_root: "Path | None" = None) -> bool:
+    """§2 bear-gate — deterministic, artifact-based.
+
+    Reads data/regime/latest.json (committed nightly by engine/run.py):
+        bear = risk_radar.context_gate.spy_below_200dma is not False
+               OR risk_radar.state == "risk-off"
+    Missing file / missing keys / unparseable → bear = True (fail-safe: tilt off).
+    Strict tape leg (review #3203 hardening): only a definite False (SPY confirmed
+    above its 200dma) clears it — a present-but-None sentinel (upstream SPY data
+    gap) counts as bear.
+    Does NOT activate the macro_stance management socket (whole-book confidence
+    shift — out of scope). The bear boolean lives in the driver/bridge only.
+    """
+    try:
+        from lib import config  # noqa: PLC0415
+        root = Path(data_root) if data_root is not None else config.data_dir()
+        p = root / "regime" / "latest.json"
+        with p.open(encoding="utf-8") as f:
+            regime = json.load(f)
+        rr = regime["risk_radar"]
+        spy_below = rr["context_gate"]["spy_below_200dma"]
+        risk_off = rr.get("state") == "risk-off"
+        return bool(spy_below is not False or risk_off)
+    except Exception as e:  # noqa: BLE001
+        log.warning(
+            "::warning:: prophet_bridge: regime bear-gate unreadable (%s) — "
+            "tilt fails safe to bear=True (leash 1.0)", e)
+        return True
+
+
+def _stage_tilt_demoted(data_root: "Path | None" = None) -> bool:
+    """§4 auto-demote — read the shadow's committed summary (measurement, not memory).
+
+    DEMOTED when median_tilt.n_matured_126.stage2_ec >= STAGE_TILT_DEMOTE_MIN_MATURED (30)
+    AND median_tilt.diff <= 0. Until the floor is met the tilt stays provisional-active.
+    Missing summary / missing block / unparseable → NOT demoted (the floor simply
+    is not yet met; the tilt stays provisional until the shadow accrues). The shadow
+    itself never gates picks — the TILT reads the measurement and self-demotes.
+    """
+    try:
+        from lib import config  # noqa: PLC0415
+        root = Path(data_root) if data_root is not None else config.data_dir()
+        p = root / "prophet_stage_shadow" / "summary.json"
+        if not p.exists():
+            return False
+        with p.open(encoding="utf-8") as f:
+            summary = json.load(f)
+        mt = summary.get("median_tilt") or {}
+        n_matured = (mt.get("n_matured_126") or {}).get("stage2_ec")
+        diff = mt.get("diff")
+        if n_matured is None or diff is None:
+            return False
+        return int(n_matured) >= STAGE_TILT_DEMOTE_MIN_MATURED and float(diff) <= 0
+    except Exception as e:  # noqa: BLE001
+        log.warning(
+            "::warning:: prophet_bridge: shadow summary unreadable for demote check "
+            "(%s) — leaving tilt provisional-active", e)
+        return False
+
+
+def _load_stage_tilt_inputs(data_root: "Path | None" = None) -> dict:
+    """Load the once-per-run tilt inputs (EC table + bench + bear + demote).
+
+    Loaded once per nightly run (NOT per pick). Any load failure degrades that
+    input so the per-pick compute falls back to leash 1.0. Never raises.
+    """
+    from lib import config  # noqa: PLC0415
+    import engine.prophet_stage_fusion as psf  # noqa: PLC0415
+    root = Path(data_root) if data_root is not None else config.data_dir()
+
+    ec_by_ticker: dict = {}
+    ec_load_ok = True
+    try:
+        ec_by_ticker = psf.ec_index(psf.load_ec_table())
+    except Exception as e:  # noqa: BLE001
+        ec_load_ok = False
+        log.warning("::warning:: prophet_bridge: EC table load failed (%s) — "
+                    "tilt eligibility off (leash 1.0)", e)
+
+    try:
+        bench = psf.load_bench_close(root)
+    except Exception as e:  # noqa: BLE001
+        bench = None
+        log.warning("::warning:: prophet_bridge: bench close load failed (%s)", e)
+
+    return {
+        "root": root,
+        "psf": psf,
+        "ec_by_ticker": ec_by_ticker,
+        "ec_load_ok": ec_load_ok,
+        "bench": bench,
+        "bear": _bear_from_regime(root),
+        "demoted": _stage_tilt_demoted(root),
+    }
+
+
+def _compute_stage_tilt(ticker: str, signal_date: str, tilt_inputs: dict) -> tuple[int, dict]:
+    """§1 per-pick leash. Returns (horizon_days, stage_tilt_block).
+
+    Uses the SAME PIT functions the shadow uses (psf.stage_at_entry /
+    psf.ec_sent_at_entry) — one code path. Any classify/lookup failure degrades
+    this pick to leash 1.0 with a ::warning::; NEVER raises.
+    """
+    psf = tilt_inputs["psf"]
+    root = tilt_inputs["root"]
+    ec_by_ticker = tilt_inputs["ec_by_ticker"]
+    bench = tilt_inputs["bench"]
+    bear = bool(tilt_inputs["bear"])
+    demoted = bool(tilt_inputs["demoted"])
+
+    stage_at_entry_val: int | None = None
+    ec_sent: float | None = None
+    ec_call_date: str | None = None
+
+    try:
+        close, vol = psf.load_ticker_prices(ticker, root)
+        if close is not None and not close.empty:
+            st, _wis, _nwk = psf.stage_at_entry(close, vol, bench, signal_date)
+            stage_at_entry_val = int(st)
+        # EC most-recent call_date < signal_date (strictly-before, PIT).
+        if tilt_inputs.get("ec_load_ok", True):
+            ec_sent = psf.ec_sent_at_entry(ec_by_ticker, ticker, signal_date)
+            if ec_sent is not None:
+                g = ec_by_ticker.get(str(ticker))
+                if g is not None and not g.empty:
+                    import pandas as _pd  # noqa: PLC0415
+                    prior = g[g["call_date"] < _pd.Timestamp(signal_date)]
+                    if not prior.empty:
+                        ec_call_date = str(prior["call_date"].iloc[-1].date())
+    except Exception as e:  # noqa: BLE001
+        log.warning("::warning:: prophet_bridge: stage-tilt compute failed for %s "
+                    "(%s) — leash 1.0 for this pick", ticker, e)
+        stage_at_entry_val = None
+        ec_sent = None
+        ec_call_date = None
+
+    eligible = (
+        stage_at_entry_val == 2
+        and ec_sent is not None
+        and ec_sent >= tilt_inputs["psf"].EC_SENT_GATE
+    )
+    # bear gate and auto-demote both force the leash back to 1.0.
+    leash = STAGE_TILT_LEASH if (eligible and not bear and not demoted) else 1.0
+    # Scaled horizon flows to τ/overtime (management), the EXPIRED ledger close,
+    # and option-expiry min-date (longer intended hold → longer-dated contract).
+    horizon_days = round(HORIZON_DAYS_DEFAULT * leash)
+
+    stage_tilt = {
+        "leash": leash,
+        "eligible": bool(eligible),          # stage2 ∩ EC, before bear-gate / demote
+        "stage_at_entry": stage_at_entry_val,
+        "ec_sent": ec_sent,
+        "ec_call_date": ec_call_date,
+        "bear_gate": bool(bear),             # True = gate forced 1.0
+        "provisional": True,
+        "demoted": bool(demoted),
+        "basis": (
+            "PSQ 2026-07-20 quality re-grade; provisional — forward-shadow "
+            "checked (~2026-12)"
+        ),
+    }
+    return horizon_days, stage_tilt
+
+
 def originate_plans(
     standouts_path: str | Path,
     asof: str,
@@ -945,6 +1127,17 @@ def originate_plans(
         "prophet_bridge: %d candidates selected (gate_go=%s)",
         len(candidates), standouts.get("gate_go"),
     )
+
+    # ── PSQ-TILT W1: hold-leash inputs (once per run; NOT per pick) ────────────
+    # STRICTLY AFTER select_candidates — the tilt cannot read into selection, so
+    # the selected id set/order are byte-identical whether the tilt is on or off.
+    # Never raises: a failed input degrades the affected pick to leash 1.0.
+    try:
+        _tilt_inputs = _load_stage_tilt_inputs()
+    except Exception as e:  # noqa: BLE001
+        log.warning("::warning:: prophet_bridge: stage-tilt inputs unavailable "
+                    "(%s) — all picks default to leash 1.0", e)
+        _tilt_inputs = None
 
     plans: list[dict] = []
     for b in candidates:
@@ -985,6 +1178,25 @@ def originate_plans(
         # ATR from entry_signal.atr_pct
         atr_pct = es.get("atr_pct")
 
+        # ── PSQ-TILT W1: hold-leash for this pick (Stage-2 ∩ EC-positive) ──────
+        # Runs here — after selection, before geometry/option resolution. The
+        # scaled horizon flows into resolve_option (later expiry) and the plan
+        # dict (τ/overtime + EXPIRED ledger close read plan.horizon_days).
+        if _tilt_inputs is not None:
+            plan_horizon_days, stage_tilt = _compute_stage_tilt(
+                ticker=ticker, signal_date=signal_date, tilt_inputs=_tilt_inputs)
+        else:
+            plan_horizon_days = HORIZON_DAYS_DEFAULT
+            stage_tilt = {
+                "leash": 1.0, "eligible": False, "stage_at_entry": None,
+                "ec_sent": None, "ec_call_date": None, "bear_gate": True,
+                "provisional": True, "demoted": False,
+                "basis": (
+                    "PSQ 2026-07-20 quality re-grade; provisional — forward-shadow "
+                    "checked (~2026-12)"
+                ),
+            }
+
         # Geometry
         geo = compute_geometry(
             entry=entry,
@@ -1000,7 +1212,7 @@ def originate_plans(
             ticker=ticker,
             direction=direction,
             entry=entry,
-            horizon_days=HORIZON_DAYS_DEFAULT,
+            horizon_days=plan_horizon_days,  # PSQ-TILT: scaled hold → later-dated contract
             signal_date=signal_date,
             thetadata_store=thetadata_store,
             asof=standouts_asof,
@@ -1064,10 +1276,12 @@ def originate_plans(
             "targets": [
                 t for t in [t1_price, t2_price] if t is not None
             ],
-            "horizon_days": HORIZON_DAYS_DEFAULT,
-            "min_hold_days": MIN_HOLD_DAYS_DEFAULT,
+            "horizon_days": plan_horizon_days,  # PSQ-TILT: 45 base × leash (45 or 56)
+            "min_hold_days": MIN_HOLD_DAYS_DEFAULT,  # unchanged (10)
             "tranche": 1,
             "option_contract": opt,
+            # PSQ-TILT W1 provenance (provisional; display data field, not copy).
+            "stage_tilt": stage_tilt,
             "management_ref": f"prophet/state/{plan_id}.json",
             "authority_tier": "display",
             "reliability": {
