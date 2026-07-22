@@ -55,7 +55,7 @@ def lockup_rows(cal: pd.DataFrame, lockups: pd.DataFrame | None = None,
     with their lock-up expiry, days-to/from, and status. Sorted soonest-first."""
     if cal is None or cal.empty or "status" not in cal:
         return []
-    p = cal[(cal["status"] == "priced") & (~cal["is_spac"].astype(bool))].copy()
+    p = cal[(cal["status"] == "priced") & (~cal["is_spac"].fillna(False).astype(bool))].copy()
     if p.empty:
         return []
     today = _today()
@@ -106,5 +106,6 @@ def summary(rows: list[dict]) -> dict:
         "next_ticker": (nxt["ticker"] if nxt else None),
         "next_date": (nxt["expiry_date"] if nxt else None),
         "next_days": (nxt["days_to"] if nxt else None),
+        "next_size_usd": (nxt.get("size_usd") if nxt else None),
         "confirmed": sum(1 for r in rows if r["source"] == "confirmed"),
     }

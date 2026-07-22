@@ -1097,10 +1097,15 @@ def _ipo_state() -> dict:
         gap = d.get("gap_5y")
         return {"present": present, "band": d.get("window_band") or "—",
                 "verdict": d.get("verdict"), "priced_90d": d.get("priced_90d"),
-                "gap_5y_pp": (round(gap * 100, 1) if gap is not None else None)}
+                "gap_5y_pp": (round(gap * 100, 1) if gap is not None else None),
+                "next_lockup": d.get("next_lockup"),
+                "next_lockup_date": d.get("next_lockup_date"),
+                "lockups_approaching": d.get("lockups_approaching")}
     except Exception:  # noqa: BLE001
         return {"present": present, "band": "—", "verdict": None,
-                "priced_90d": None, "gap_5y_pp": None}
+                "priced_90d": None, "gap_5y_pp": None,
+                "next_lockup": None, "next_lockup_date": None,
+                "lockups_approaching": None}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
