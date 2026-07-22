@@ -92,20 +92,8 @@ html[data-theme="dark"] .stance{background:var(--grid)}
 </style>{% include "_vector_polish.html.j2" %}
 </head>
 <body>
+{% include "_site_nav.html.j2" %}
 <div class="wrap">
-  <div class="topbar">
-      {% include "_navlinks.html.j2" %}
-    <div class="nav-ctrls">
-      <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-      <div class="lang-toggle" role="group" aria-label="Language">
-        <span class="pill"></span>
-        <span class="opt en-opt" data-l="en">EN</span>
-        <span class="opt zh-opt" data-l="zh">中文</span>
-      </div>
-    </div>
-  </div>
 
   <div class="h1">🛢 {{ t('Commodity Strategy Scorecards','商品策略记分卡') }}</div>
   <div class="intro">{{ t('Per-commodity tactical strategies. Each commodity rises and falls for different reasons — gold on real yields and the dollar, copper on global growth, oil on inventories and the futures curve — so each gets its own factor model. Toggle a commodity below to see its strategies; each pairs a simple risk on/off trend swap with a deeper, commodity-specific multi-factor model.','分品种战术策略。每种商品的涨跌逻辑各异——黄金看实际收益率与美元、铜看全球增长、原油看库存与期货曲线——因此各有其因子模型。点击下方切换品种查看其策略；每个品种都包含一个简单的风险开关趋势策略与一个更深入的、品种特定的多因子模型。') }}</div>
