@@ -1,0 +1,755 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Short Selling Profit Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/short-selling.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Short Selling Profit Calculator">
+<meta property="og:description" content="Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/short-selling.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Short Selling Profit Calculator">
+<meta name="twitter:description" content="Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Short Selling Profit Calculator"}]}</script>
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
+   The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
+   deep canvas, hairline-precise panels, tabular mono numerals, Inter UI, and a
+   regime-rail section-header system. All tokens are SCOPED to body.estate so
+   the rest of the site is byte-untouched; theme.css (shared/global) is never
+   edited. Colour routes through house vars so dark/light + the zh red/green
+   swap propagate at paint. Aesthetic north star: reads in 2 seconds; colour
+   spent only on signal.
+   ══════════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;}
+body.estate{
+  /* deepened terminal canvas — richer "screen" black, scoped to the estate */
+  --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+  /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+  --num:"SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono",
+        "Roboto Mono", Menlo, Consolas, monospace;
+  /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+     genuine captions only (highest-leverage readability fix, per macro) */
+  --ink-1: var(--text);
+  --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+  --ink-3: var(--muted);
+  /* hairlines + inset surface material */
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --hair-strong: var(--line);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --rule: var(--hair-strong);                    /* legacy alias — section rules */
+  --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
+        0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+  /* type scale — the macro 10-step scale (estate prose runs a touch larger:
+     --fs-md/15px reading copy since /learn + /blog are long-form) */
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
+  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* spacing grid (4px) + radii + eyebrow tracking */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+  /* the single regime/accent rail on every section header */
+  --rail: var(--link);
+  --measure: 70ch;                               /* long-form reading line length */
+}
+html[data-theme="light"] body.estate{
+  /* restore the airy light canvas (mirrors macro's light override) */
+  --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+  --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --hair: color-mix(in srgb, var(--line) 90%, transparent);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
+        0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+}
+html body.estate{
+  background:var(--bg); color:var(--ink-1);
+  font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.6;
+  margin:0; padding:0 0 72px;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+html,body{overflow-x:clip;}                                 /* 390px bleed guard */
+body.estate a{color:var(--link); text-decoration:none;}
+body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
+.mono,body.estate .mono{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
+.est-wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
+
+/* ── the section-header signature: the REGIME RAIL ──────────────────────────
+   Every section title in the estate wears the macro rail — a 3px gradient bar
+   before a strong sentence-case title, a mono eyebrow above, a hairline rule to
+   the edge. This single shared rhythm is the motif that unifies hub, calculator
+   and article (it replaces the old plotted-line underline). Applied to the
+   estate section-header classes below. */
+.est-sec-rule{border:none; height:1px; background:var(--hair-strong); margin:0;}
+
+/* ── glyph family (.egl) — bespoke per-calculator line-art, macro idiom ──────
+   Hairline strokes, monochrome + one --link accent, draw-on reveal. Geometry
+   lives in _estate_glyphs.html.j2; styling is here so both variants share it. */
+.egl{color:var(--ink-2); overflow:visible;}
+.egl [class^="egl-"], .egl [class*=" egl-"]{
+  stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.egl path.egl-still, .egl path.egl-draw, .egl path.egl-draw2,
+.egl path.egl-mark, .egl path.egl-up, .egl path.egl-down{fill:none;}
+.egl .egl-still{stroke:var(--ink-3); stroke-width:1.5; opacity:.6;}
+.egl .egl-still-dot{fill:var(--ink-3); opacity:.7;}
+.egl .egl-draw, .egl .egl-draw2{stroke:var(--ink-1); stroke-width:1.7;}
+.egl .egl-fill{fill:color-mix(in srgb,var(--ink-2) 22%,transparent);
+  stroke:var(--ink-2); stroke-width:1.4;}
+/* the single accent — the --link mark (node, arrow, cap, ramp arc) */
+.egl .egl-mark, .egl .egl-mark-dot, .egl .egl-draw-fill{stroke:var(--link);}
+.egl .egl-mark{stroke-width:1.7;}
+.egl .egl-mark-dot{fill:var(--link); stroke:none;}
+.egl .egl-draw-fill{fill:color-mix(in srgb,var(--link) 22%,transparent); stroke-width:1.5;}
+.egl .egl-up{stroke:var(--up); stroke-width:1.7;}
+.egl .egl-down{stroke:var(--down); stroke-width:1.7;}
+.egl .egl-down-dot{fill:var(--down); stroke:none;}
+/* draw-on-reveal ink (traced lines) */
+.egl .egl-draw, .egl .egl-draw2{stroke-dasharray:120; stroke-dashoffset:120;
+  animation:eglDraw 1000ms cubic-bezier(.33,.62,.26,1) 140ms forwards;}
+.egl .egl-draw2{animation-delay:260ms;}
+.egl .egl-mark-dot, .egl .egl-down-dot{opacity:0;
+  animation:eglPop .01s linear 1140ms forwards;}
+@keyframes eglDraw{to{stroke-dashoffset:0;}}
+@keyframes eglPop{to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){
+  .egl .egl-draw, .egl .egl-draw2{animation:none; stroke-dashoffset:0;}
+  .egl .egl-mark-dot, .egl .egl-down-dot{animation:none; opacity:1;}
+}
+
+/* ── estate top bar (slim; own toggles reuse house .theme-switch/.lang-toggle) ── */
+.est-bar{position:sticky; top:0; z-index:60; background:color-mix(in srgb,var(--bg) 84%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px);
+  border-bottom:1px solid var(--line);}
+.est-bar-in{max-width:1120px; margin:0 auto; padding:9px 24px;
+  display:flex; align-items:center; gap:16px;}
+.est-brand{display:inline-flex; align-items:center; gap:9px; flex:none; text-decoration:none;
+  padding:3px 8px 3px 4px; border-radius:10px; transition:background .18s;}
+.est-brand:hover{background:color-mix(in srgb,var(--link) 10%,transparent); text-decoration:none;}
+.est-brand .glyph{width:26px; height:26px; flex:none; filter:drop-shadow(0 2px 6px rgba(40,56,128,.30));}
+.est-brand .word{font-family:var(--font-ui); font-weight:900; font-size:13px; letter-spacing:.06em;
+  color:var(--text); white-space:nowrap;}
+.est-brand .word .sub{display:block; font-weight:600; font-size:9px; letter-spacing:.14em;
+  color:var(--muted); margin-top:1px;}
+.est-nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex-wrap:wrap; min-width:0;}
+.est-nav a{font-family:var(--font-ui); font-size:13.5px; font-weight:500; color:var(--muted);
+  padding:6px 10px; border-radius:8px; text-decoration:none; white-space:nowrap;
+  transition:color .16s,background .16s;}
+.est-nav a:hover,.est-nav a[aria-current="page"]{color:var(--text);
+  background:color-mix(in srgb,var(--link) 11%,var(--panel2)); text-decoration:none;}
+.est-ctrls{margin-left:auto; display:flex; align-items:center; gap:9px; flex:none;}
+.est-ctrls .est-cta{font-family:var(--font-ui);}
+.est-ctrls .est-cta .cta-short{display:none;}
+/* the house animated toggles are styled by theme.css? No — those visuals live in
+   nav CSS the estate doesn't load. Give .theme-switch / .lang-toggle a compact,
+   self-contained skin here so the class-bound theme.js listeners still fire. */
+.est-ctrls .theme-switch{font:600 12px/1 var(--font-ui); cursor:pointer;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  border-radius:999px; padding:6px 10px; display:inline-flex; align-items:center; gap:5px;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:color .16s,border-color .16s;}
+.est-ctrls .theme-switch:hover{color:var(--text); border-color:var(--gbtn-brd-hover);}
+.est-ctrls .theme-switch .ic{font-size:13px; line-height:1;}
+.est-ctrls .theme-switch .sun{display:none;} .est-ctrls .theme-switch .moon{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .sun{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .moon{display:none;}
+.est-ctrls .theme-switch .knob{display:none;}
+.est-ctrls .lang-toggle{position:relative; display:inline-flex; cursor:pointer; user-select:none;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); border-radius:999px; overflow:hidden;
+  font:600 11.5px/1 var(--font-ui);}
+.est-ctrls .lang-toggle .opt{padding:6px 9px; color:var(--muted); transition:color .16s;}
+.est-ctrls .lang-toggle .pill{display:none;}
+html:not([data-lang="zh"]) .est-ctrls .lang-toggle .en-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+:where(.est-brand,.est-nav a,.est-ctrls .theme-switch,.est-ctrls .lang-toggle,.est-cta):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--link) 70%,transparent); outline-offset:2px;}
+@media (max-width:720px){
+  .est-bar-in{flex-wrap:wrap; gap:8px 12px; padding:8px 16px;}
+  .est-nav{order:3; width:100%; margin-left:0; gap:1px;}
+  .est-nav a{padding:6px 9px; font-size:13px;}
+  .est-ctrls{gap:7px;}
+  /* compact CTA on phones: hide the long label, show the short bilingual one */
+  .est-ctrls .est-cta .cta-long{display:none;}
+  .est-ctrls .est-cta .cta-short{display:inline;}
+}
+
+/* ── breadcrumb ─────────────────────────────────────────────────────────────── */
+.est-crumb{max-width:1120px; margin:18px auto 0; padding:0 24px;
+  font-family:var(--font-ui); font-size:12.5px; color:var(--muted);}
+.est-crumb ol{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:7px;}
+.est-crumb a{color:var(--muted);} .est-crumb a:hover{color:var(--text);}
+.est-crumb .sep{opacity:.4;}
+.est-crumb li[aria-current="page"]{color:var(--text);}
+
+/* ── shared prose vocabulary (CONTRACT §4 body classes) — terminal, not serif ── */
+.est-prose{font-size:var(--fs-md); line-height:1.72; color:var(--ink-1);}
+.est-prose > *{max-width:var(--measure);}
+/* h2 wears the REGIME RAIL — the estate-wide section signature. A 3px gradient
+   bar leads a strong sentence-case title with a hairline rule to the edge; the
+   mono "01/02" mark sits after the rail. This is the macro header idiom. */
+.est-prose h2{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 4px); font-weight:700;
+  line-height:1.28; letter-spacing:-.01em; margin:38px 0 14px; scroll-margin-top:76px;
+  display:flex; align-items:center; gap:11px; padding:0 0 var(--sp-3);
+  border-bottom:1px solid var(--hair-strong);}
+.est-prose h2::before{content:""; flex:none; align-self:center; width:3px; height:19px;
+  border-radius:2px; background:linear-gradient(180deg, var(--rail),
+    color-mix(in srgb, var(--rail) 35%, transparent));}
+.est-prose h2 .est-h2-mark{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--ink-3); flex:none;}
+html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
+.est-prose h3{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:700;
+  margin:26px 0 6px; color:var(--ink-1); letter-spacing:-.005em;}
+.est-prose p{margin:12px 0; color:var(--ink-1);}
+.est-prose ul,.est-prose ol{margin:12px 0; padding-left:24px;}
+.est-prose li{margin:7px 0;}
+.est-prose li::marker{color:var(--ink-3);}
+.est-prose strong{font-weight:700; color:var(--ink-1);}
+.est-prose em{font-style:italic;}
+.est-prose code{font-family:var(--num); font-size:.88em; background:var(--panel2);
+  border:1px solid var(--hair-strong); border-radius:5px; padding:1px 6px;}
+.est-prose a{border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-prose a:hover{border-bottom-color:var(--link); text-decoration:none;}
+.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rail);
+  color:var(--ink-1); font-style:italic; opacity:.94;}
+
+/* callouts — lead / warn / key (house colours, mono heading label) */
+.est-prose .callout{border-radius:var(--r-md); padding:15px 18px; margin:18px 0;
+  border:1px solid var(--hair-strong); background:var(--panel2); position:relative; max-width:var(--measure);}
+.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+.est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
+.est-prose .callout.lead{border-left:4px solid var(--link);}
+.est-prose .callout.lead .co-h{color:var(--link);}
+.est-prose .callout.warn{border-left:4px solid var(--warn);
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel2));}
+.est-prose .callout.warn .co-h{color:var(--warn);}
+.est-prose .callout.key{border-left:4px solid var(--ok);
+  background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
+.est-prose .callout.key .co-h{color:var(--ok);}
+
+/* formula — the desk's chalk line. Mono, on a faint tile with an accent edge. */
+.est-prose .formula{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:var(--fs-md); line-height:1.7; background:var(--tile);
+  border:1px solid var(--hair-strong); border-left:3px solid var(--rail);
+  border-radius:var(--r-md); padding:16px 18px; margin:18px 0; overflow-x:auto;
+  max-width:var(--measure); color:var(--ink-1); letter-spacing:.005em;}
+.est-prose .formula strong{color:var(--link); font-weight:700;}
+
+/* worked example — a machined tile with a mono heading + top hairline. */
+.est-prose .worked{border:1px solid var(--hair-strong); border-radius:var(--r-md); margin:18px 0;
+  padding:16px 18px; max-width:var(--measure); box-shadow:var(--ms);
+  background:linear-gradient(var(--hair-strong),var(--hair-strong)) 0 0/100% 1px no-repeat, var(--panel);}
+.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);}
+.est-prose .worked .num,.est-prose .worked code{font-family:var(--num); font-variant-numeric:tabular-nums;}
+
+/* data table — the terminal ruled column (mono body, mono caps head) */
+.est-prose table.data{border-collapse:collapse; width:100%; max-width:var(--measure);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm); margin:18px 0;}
+.est-prose table.data th{text-align:left; padding:9px 12px; background:var(--panel2);
+  color:var(--ink-3); font-family:var(--num); font-weight:700; font-size:var(--fs-micro);
+  letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid var(--hair-strong);}
+.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--hair); vertical-align:top; color:var(--ink-1);}
+.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--link) 6%,transparent);}
+.est-prose table.data .num{font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right;}
+.est-tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:18px 0; max-width:var(--measure);}
+.est-tbl-scroll table.data{margin:0;}
+
+.est-prose figure{margin:20px 0; max-width:var(--measure);}
+.est-prose figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin-top:8px;}
+
+/* ── related rail + CTA (shared by article + calculator layouts) ────────────── */
+.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--hair-strong);}
+.est-related .rel-h{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 12px;}
+.est-related .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+.est-relcard{display:block; border:1px solid var(--hair-strong); border-radius:var(--r-md); padding:13px 15px;
+  background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
+.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
+  box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-relcard .rc-kind{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.09em;
+  text-transform:uppercase; color:var(--link);}
+.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--font-ui); font-size:var(--fs-md);
+  font-weight:700; color:var(--ink-1); line-height:1.32; letter-spacing:-.005em;}
+
+.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--hair-strong));
+  border-radius:var(--r-lg); padding:22px 24px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
+    var(--panel); box-shadow:var(--ms); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
+.est-cta-block .cta-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--link);}
+.est-cta-block .cta-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+  margin:3px 0 0; line-height:1.3; letter-spacing:-.01em; color:var(--ink-1);}
+.est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
+
+/* ── estate footer ──────────────────────────────────────────────────────────── */
+.est-footer{max-width:1120px; margin:56px auto 0; padding:24px 24px 8px;
+  border-top:1px solid var(--hair-strong); font-family:var(--font-ui);}
+.est-foot-links{display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:14px;}
+.est-foot-col{display:flex; flex-direction:column; gap:5px; min-width:150px;}
+.est-foot-col .fh{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:3px;}
+.est-foot-col a{font-size:var(--fs-sm); color:var(--ink-2); text-decoration:none;}
+.est-foot-col a:hover{color:var(--ink-1);}
+.est-foot-disc{font-size:var(--fs-sm); color:var(--ink-3); line-height:1.6;
+  border-top:1px solid var(--hair-strong); padding-top:13px; margin-top:6px;}
+.est-foot-disc .mono{opacity:.85;}
+
+/* ── page header — the estate hero: mono kicker + terminal title + dek ────────
+   The plotted-line signature is retired (the regime rail is the new motif);
+   .est-kicker-plot / .plot-line are hidden so the inlined SVGs collapse cleanly
+   without touching every template. The eyebrow now wears a short accent rule. */
+.plot-line, .est-kicker-plot{display:none !important;}
+.est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+.est-kicker{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk);
+  text-transform:uppercase; color:var(--link); display:inline-flex; align-items:center; gap:9px;
+  margin:0 0 12px;}
+.est-kicker::before{content:""; width:22px; height:2px; border-radius:1px;
+  background:linear-gradient(90deg, var(--link), color-mix(in srgb,var(--link) 20%,transparent));}
+.est-title{font-family:var(--font-ui); font-size:clamp(28px,4.4vw,var(--fs-display)); font-weight:800;
+  line-height:1.06; letter-spacing:-.025em; margin:0; color:var(--ink-1);}
+html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
+.est-dek{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); line-height:1.5; color:var(--ink-2);
+  margin:14px 0 0; max-width:62ch;}
+.est-meta{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin:16px 0 0;
+  display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
+.est-meta .dot{opacity:.4;}
+
+@media (max-width:600px){
+  html body.estate{font-size:var(--fs-body);}
+  .est-wrap,.est-head,.est-crumb,.est-footer{padding-left:16px; padding-right:16px;}
+  .est-prose{font-size:var(--fs-md);}
+  .est-prose h2{font-size:var(--fs-h2); margin:30px 0 10px;}
+  .est-prose h3{font-size:var(--fs-body);}
+  .est-dek{font-size:var(--fs-md);}
+  .est-cta-block{padding:18px; gap:14px;}
+}
+
+  .cx-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+  .cx-shell{max-width:1120px; margin:22px auto 0; padding:0 24px;
+    display:grid; grid-template-columns:minmax(0,1fr) 210px; gap:44px; align-items:start;}
+  .cx-main{min-width:0;}
+  .cx-toc{position:sticky; top:76px; font-family:var(--font-ui); font-size:var(--fs-sm);
+    border-left:1px solid var(--hair-strong); padding-left:15px;}
+  .cx-toc .toc-h{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink-3); margin:0 0 9px;}
+  .cx-toc a{display:block; color:var(--ink-2); padding:5px 0 5px 14px; margin-left:-15px; line-height:1.35;
+    border-left:2px solid transparent; transition:color .15s,border-color .15s;}
+  .cx-toc a:hover{color:var(--ink-1);} .cx-toc a.active{color:var(--ink-1); border-left-color:var(--link); font-weight:700;}
+
+  /* ── the calculator card — the desk instrument, above the fold ──────────────
+     A machined terminal panel (hairline frame, inset top edge, house shadow)
+     crowned by the calculator's OWN glyph so it reads as one family with the
+     hub card that led here. */
+  .calc-card{position:relative; border:1px solid var(--hair-strong); border-radius:var(--r-lg);
+    background:var(--panel); box-shadow:var(--ms); padding:18px 22px 22px; overflow:hidden;}
+  .calc-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 20%,transparent));}
+  /* the crown row: a mono eyebrow + the per-calculator glyph */
+  .calc-card .cc-crown{display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin:0 0 14px; padding:0 0 12px; border-bottom:1px solid var(--hair);}
+  .calc-card .cc-eyebrow{font-family:var(--num); font-size:var(--fs-label); font-weight:700;
+    letter-spacing:var(--trk); text-transform:uppercase; color:var(--ink-3);}
+  .calc-card .cc-glyph{flex:none; width:72px; height:40px;}
+  .calc-card .cc-lede{font-family:var(--font-ui); font-size:var(--fs-md); color:var(--ink-2); margin:0 0 16px; line-height:1.5;}
+
+  .calc-in{display:grid; grid-template-columns:repeat(2,1fr); gap:14px 18px;}
+  @media (max-width:560px){ .calc-in{grid-template-columns:1fr;} }
+  .ci{display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .ci.ci-wide{grid-column:1 / -1;}
+  .ci-l{font-family:var(--font-ui); font-size:var(--fs-sm); font-weight:600; color:var(--ink-2); letter-spacing:.005em;}
+  .ci-l .hint{font-weight:400; color:var(--ink-3);}
+  .ci input, .ci select{font-family:var(--num); font-size:16px; font-variant-numeric:tabular-nums;
+    background:var(--tile); border:1px solid var(--hair-strong); border-radius:var(--r-md); color:var(--ink-1);
+    padding:11px 13px; width:100%; outline:none; transition:border-color .16s,box-shadow .16s;}
+  .ci input:focus, .ci select:focus{border-color:var(--link);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent);}
+  .ci input::placeholder{color:var(--ink-3); opacity:.7;}
+
+  /* segmented toggle (§6) — long/short, forward/inverse, etc. */
+  .ci-seg{display:inline-flex; background:var(--tile); border:1px solid var(--hair-strong); border-radius:var(--r-md);
+    padding:3px; gap:3px; align-self:start;}
+  .ci-seg button{font-family:var(--font-ui); font-size:var(--fs-sm); font-weight:600; color:var(--ink-3);
+    background:transparent; border:none; border-radius:7px; padding:8px 16px; cursor:pointer;
+    transition:color .16s,background .16s;}
+  .ci-seg button:hover{color:var(--ink-1);}
+  .ci-seg button.on{color:var(--ink-1); background:color-mix(in srgb,var(--link) 18%,var(--panel2));}
+  .ci-seg button:focus-visible{outline:2px solid var(--link); outline-offset:2px;}
+
+  /* ── the readout — the terminal signature: a big mono-tabular number ──────── */
+  .calc-out{margin:20px 0 0; padding:18px 20px; border-radius:var(--r-md); border:1px solid var(--hair-strong);
+    border-left:3px solid var(--rail); background:var(--panel2);}
+  .co-main{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;}
+  .co-main #out-main, .co-main [data-out-main]{font-family:var(--num); font-variant-numeric:tabular-nums;
+    font-feature-settings:"tnum" 1; font-size:clamp(var(--fs-num-xl),7vw,52px); font-weight:800; line-height:1;
+    letter-spacing:-.02em; color:var(--ink-1);}
+  .co-main .co-unit{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:600; color:var(--ink-3);}
+  /* Law 3: the big number ALWAYS carries a plain-word interpretation sentence */
+  .co-plain{font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.5; color:var(--ink-1); margin:10px 0 0; max-width:60ch;}
+  .co-plain.warn{color:var(--warn);}
+  .co-rows{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 20px;
+    margin:16px 0 0; padding-top:14px; border-top:1px solid var(--hair);}
+  .co-rows > div{display:flex; flex-direction:column; gap:2px;}
+  .co-rows dt{font-family:var(--num); font-size:var(--fs-label); color:var(--ink-3); letter-spacing:.04em; text-transform:uppercase;}
+  .co-rows dd{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-num-lg); font-weight:800;
+    color:var(--ink-1); margin:0; line-height:1.1;}
+  .co-rows dd.pos{color:var(--up);} .co-rows dd.neg{color:var(--down);}
+
+  .calc-actions{margin:16px 0 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .calc-actions .copied{font-family:var(--font-ui); font-size:var(--fs-sm); color:var(--ok); opacity:0;
+    transition:opacity .2s;}
+  .calc-actions .copied.show{opacity:1;}
+  .calc-actions .gbtn{font-family:var(--font-ui);}
+
+  .cx-explainer{margin:40px 0 0;}
+  @media (max-width:900px){
+    .cx-shell{grid-template-columns:1fr; gap:12px;}
+    .cx-toc{position:static; top:auto; border-left:none; padding:12px 14px; margin:22px 0 2px; order:2;
+      display:flex; flex-wrap:wrap; gap:6px; border:1px solid var(--hair-strong); border-radius:var(--r-md); background:var(--panel2);}
+    .cx-toc .toc-h{flex-basis:100%; margin:0 0 2px;}
+    .cx-toc a{border:1px solid var(--hair-strong); border-radius:999px; padding:6px 11px; margin:0; color:var(--ink-2);}
+    .cx-toc a.active{border-color:var(--link); color:var(--ink-1);}
+    .cx-main{order:1;}
+  }
+  @media (max-width:560px){ .calc-card{padding:16px 16px 18px;} }
+
+</style>
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Short Selling Profit Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Short Selling Profit Calculator</h1>
+  <p class="est-dek">Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 30 h48"/><path class="egl-fill" d="M16 12 L48 26 L48 30 L16 30 Z"/><path class="egl-draw" d="M16 12 L48 26"/><circle class="egl-mark-dot" cx="16" cy="12" r="2.6"/><path class="egl-down" d="M48 26 l-6 0.8 M48 26 l-0.8 -6"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter the price you shorted at, the price you cover at, and how many shares. Add the annual borrow fee and days held to net out the cost of borrowing the stock.</span><span class="l-zh">填入你的做空价、回补价和股数。加上年化借券费率与持有天数，即可扣除借入股票的成本，得到净盈亏。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Short entry price ($)</span><span class="l-zh">做空价（$）</span> <span class="hint"><span class="l-en">where you sold</span><span class="l-zh">卖出价</span></span></span>
+    <input id="entry" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Cover price ($)</span><span class="l-zh">回补价（$）</span> <span class="hint"><span class="l-en">where you bought back</span><span class="l-zh">买回价</span></span></span>
+    <input id="cover" inputmode="decimal" autocomplete="off" placeholder="40"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Shares</span><span class="l-zh">股数</span></span>
+    <input id="shares" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Annual borrow fee (%)</span><span class="l-zh">年化借券费（%）</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <input id="bfee" inputmode="decimal" autocomplete="off" placeholder="5"></label>
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">Days held</span><span class="l-zh">持有天数</span> <span class="hint"><span class="l-en">optional — used with the borrow fee</span><span class="l-zh">可选——与借券费一同计算</span></span></span>
+    <input id="days" inputmode="decimal" autocomplete="off" placeholder="30"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">net P/L</span><span class="l-zh">净盈亏</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in the entry, cover and share count to see the result.</span><span class="l-zh">填入做空价、回补价与股数即可查看结果。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Gross P/L</span><span class="l-zh">毛盈亏</span></dt><dd id="out-gross">—</dd></div>
+    <div><dt><span class="l-en">Borrow cost</span><span class="l-zh">借券成本</span></dt><dd id="out-borrow">—</dd></div>
+    <div><dt><span class="l-en">Return on notional</span><span class="l-zh">名义收益率</span></dt><dd id="out-ret">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">A short sale profits when the price you <strong>cover</strong> at is below the price you <strong>sold</strong> at: gross profit is the fall per share times the shares, and your net is that gross minus the fee you paid to borrow the stock. Because a short sells first and buys back later, the arithmetic runs the opposite way to a normal trade — but the borrow fee is a cost a long position never carries.</span><span class="l-zh">做空在<strong>回补</strong>价低于<strong>卖出</strong>价时获利：毛利润等于每股跌幅乘以股数，净利润则是毛利润减去借入股票所付的费用。由于做空是先卖后买，其算术方向与普通交易相反——而借券费则是多头持仓从不承担的一项成本。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Gross P/L</strong> = ( Entry − Cover ) × Shares</span><span class="l-zh"><strong>毛盈亏</strong> = ( 做空价 − 回补价 ) × 股数</span><br>
+<span class="l-en"><strong>Borrow cost</strong> = Entry × Shares × (Fee% ÷ 100) × (Days ÷ 365)</span><span class="l-zh"><strong>借券成本</strong> = 做空价 × 股数 × (费率% ÷ 100) × (天数 ÷ 365)</span><br>
+<span class="l-en"><strong>Net P/L</strong> = Gross − Borrow cost</span><span class="l-zh"><strong>净盈亏</strong> = 毛盈亏 − 借券成本</span><br>
+<span class="l-en">Return on notional = 100 × Net ÷ ( Entry × Shares )</span><span class="l-zh">名义收益率 = 100 × 净盈亏 ÷ ( 做空价 × 股数 )</span>
+</div>
+<p><span class="l-en">Notional is the value you sold short — Entry × Shares — which is what your broker charges the borrow fee against. Leaving the fee or days blank simply sets the borrow cost to zero, so the tool shows the raw price move on its own.</span><span class="l-zh">名义价值即你卖空的金额——做空价 × 股数——也是券商据以计收借券费的基数。留空费率或天数会将借券成本设为零，此时工具仅呈现价格变动本身。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader shorts <span class="num">100</span> shares at <span class="num">$50.00</span> and covers at <span class="num">$40.00</span>, holding for <span class="num">30</span> days at a <span class="num">5%</span> annual borrow fee.</span><span class="l-zh">假设一位交易者在 <span class="num">$50.00</span> 做空 <span class="num">100</span> 股，在 <span class="num">$40.00</span> 回补，以 <span class="num">5%</span> 的年化借券费持有 <span class="num">30</span> 天。</span></p>
+<ul>
+<li><span class="l-en">Gross P/L = <span class="num">( 50 − 40 ) × 100 = $1,000</span></span><span class="l-zh">毛盈亏 = <span class="num">( 50 − 40 ) × 100 = $1,000</span></span></li>
+<li><span class="l-en">Borrow cost = <span class="num">50 × 100 × 0.05 × (30 ÷ 365) ≈ $20.55</span></span><span class="l-zh">借券成本 = <span class="num">50 × 100 × 0.05 × (30 ÷ 365) ≈ $20.55</span></span></li>
+<li><span class="l-en">Net P/L = <span class="num">1,000 − 20.55 ≈ $979.45</span></span><span class="l-zh">净盈亏 = <span class="num">1,000 − 20.55 ≈ $979.45</span></span></li>
+<li><span class="l-en">Return on notional = <span class="num">100 × 979.45 ÷ 5,000 ≈ 19.6%</span></span><span class="l-zh">名义收益率 = <span class="num">100 × 979.45 ÷ 5,000 ≈ 19.6%</span></span></li>
+</ul>
+</div>
+<p><span class="l-en">The borrow fee shaved about $20 off a $1,000 win here — small on a fast, deep decline. Hold the same short for a year and the same fee subtracts <span class="num">$250</span>; on a stock that barely moves, the borrow can quietly eat the whole trade.</span><span class="l-zh">这里借券费从 $1,000 的盈利中削去约 $20——对一次快速、深度的下跌而言微不足道。若把同一笔做空持有一年，同样的费率会扣掉 <span class="num">$250</span>；而对一只几乎不动的股票，借券成本可能悄悄吞掉整笔交易。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Capped gain, uncapped loss</span><span class="l-zh">收益有顶，亏损无底</span></span>
+<p><span class="l-en">A short’s best case is the stock going to zero — the most you can make is the entry price per share, no more. But a short’s loss has no ceiling: a stock can rise 200%, 500%, or gap far higher overnight, and each dollar up is a dollar of loss on borrowed shares you must eventually buy back. A short squeeze can force that buying at the worst possible price. Size a short small and cover honestly — the payoff math is the reverse of a long, and so is the risk.</span><span class="l-zh">做空的最好结果是股价归零——你最多只能赚到每股的做空价，仅此而已。但做空的亏损没有上限：股价可以上涨 200%、500%，或隔夜大幅跳空，每上涨一美元就是借来的、终须买回的股票上的一美元亏损。轧空（逼空）可能迫使你在最糟的价格买回。做空仓位要小，回补要诚实——其收益算术与做多相反，风险亦然。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This math nets a <em>single</em> short cleanly, but a few real-world costs and frictions sit outside it:</span><span class="l-zh">这套算法能干净地结算<em>单</em>笔做空，但现实中有几项成本与摩擦不在其中：</span></p>
+<ul>
+<li><span class="l-en"><strong>Hard-to-borrow rates float.</strong> The borrow fee here is a single flat rate, but on crowded shorts it can spike day to day and dwarf a slow price decline. Check the live rate, not yesterday’s.</span><span class="l-zh"><strong>难借券费率会浮动。</strong>这里的借券费是单一固定值，但在拥挤的空头上，它可能逐日飙升，远超缓慢的价格下跌。要看实时费率，而非昨日的。</span></li>
+<li><span class="l-en"><strong>Dividends and recalls.</strong> A short owes any dividend paid while the position is open, and the lender can recall the shares — forcing you to cover early at a price you didn’t choose. Neither is in this figure.</span><span class="l-zh"><strong>股息与召回。</strong>做空期间需赔付所派发的任何股息，且出借方可召回股票——迫使你在非你所选的价格提前回补。二者均不在此数字中。</span></li>
+<li><span class="l-en"><strong>Margin and commissions.</strong> Short selling requires a margin account; margin interest, commissions, and regulatory fees all reduce the net further. This tool isolates the price move and the borrow, not your broker’s full bill.</span><span class="l-zh"><strong>保证金与佣金。</strong>做空需要保证金账户；保证金利息、佣金与监管费都会进一步侵蚀净利。本工具只隔离价格变动与借券成本，而非券商的全部账单。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">A short earns the fall and pays rent while it waits. The price move is your edge; the borrow fee is the clock running against it.</span><span class="l-zh">做空赚取跌幅，并在等待期间支付「租金」。价格变动是你的优势；借券费则是与之赛跑的时钟。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">For the long side of the same trade, use the <a href="</span><span class="l-zh">同一笔交易的多头一侧，可使用 <a href="</span>../../tools/calculators/trade-profit.html"><span class="l-en">trade profit calculator</span><span class="l-zh">交易盈亏计算器</span></a><span class="l-en">, or size the position first with the <a href="</span><span class="l-zh">，或先用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">.</span><span class="l-zh">为仓位定量。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/trade-profit.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Trade Profit &amp; Loss Calculator</span></a><a class="est-relcard" href="../../tools/calculators/roi.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">ROI Calculator</span></a><a class="est-relcard" href="../../tools/calculators/percentage-gain-loss.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Percentage Gain/Loss Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (short-sale P/L incl. borrow cost — do not re-derive) ──────
+  // inputs: {E entry, X cover, Q shares, bf annualBorrowFee%, d daysHeld}.
+  // bf/d optional (NaN/blank ⇒ borrow cost 0). Returns outputs, or {ok:false,msg}.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var E=inp.E, X=inp.X, Q=inp.Q, bf=inp.bf, d=inp.d;
+    if(!(E>0)) return {ok:false, msg:"Enter the price you shorted at."};
+    if(!(X>0)) return {ok:false, msg:"Enter the price you covered at."};
+    if(!(Q>0)) return {ok:false, msg:"Enter the number of shares."};
+    var notional = E * Q;
+    var gross = (E - X) * Q;
+    var hasFee = isFinite(bf) && bf > 0 && isFinite(d) && d > 0;
+    var borrowCost = hasFee ? notional * (bf / 100) * (d / 365) : 0;
+    var net = gross - borrowCost;
+    var returnPct = notional > 0 ? (100 * net / notional) : 0;
+    return {
+      ok:true, notional:notional, gross:gross, borrowCost:borrowCost,
+      net:net, returnPct:returnPct, hasFee:hasFee
+    };
+  }
+
+  // ── self-check: run the canonical fixtures on load, console.error on drift ──
+  var WORKED_EXAMPLES = [
+    { in:{E:50, X:40, Q:100},                 want:{gross:1000, borrowCost:0,     net:1000,   returnPct:20} },
+    { in:{E:50, X:40, Q:100, bf:5, d:30},      want:{gross:1000, borrowCost:20.55, net:979.45, returnPct:19.589} },
+    { in:{E:200, X:210, Q:10},                 want:{gross:-100, borrowCost:0,     net:-100,   returnPct:-5} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("short-selling self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.05){
+        console.error("short-selling self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { entry:$("entry"), cover:$("cover"), shares:$("shares"), bfee:$("bfee"), days:$("days") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outGross=$("out-gross"), outBorrow=$("out-borrow"), outRet=$("out-ret"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ var s=(n<0?"-$":"$")+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); return s; }
+    function pct(n){ return n.toFixed(Math.abs(n)<10?2:1) + "%"; }
+    function dash(){ outMain.textContent="—"; outMain.className="";
+      [outGross,outBorrow,outRet].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ E:numFrom(els.entry), X:numFrom(els.cover), Q:numFrom(els.shares),
+                bf:numFrom(els.bfee), d:numFrom(els.days) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outMain.textContent = money(res.net);
+      outMain.className = res.net>0 ? "" : (res.net<0 ? "" : "");
+      outGross.textContent = money(res.gross);
+      outGross.className = res.gross>0 ? "pos" : (res.gross<0 ? "neg" : "");
+      outBorrow.textContent = res.hasFee ? money(res.borrowCost) : "—";
+      outRet.textContent = pct(res.returnPct);
+      outRet.className = res.returnPct>0 ? "pos" : (res.returnPct<0 ? "neg" : "");
+
+      // Law 3: plain-word interpretation under the number
+      var plain;
+      if(res.net > 0){
+        plain = "This short made " + money(res.net) + " — a " + pct(res.returnPct) +
+          " return on the notional sold short";
+        plain += res.hasFee ? ", after a " + money(res.borrowCost) + " borrow fee." : ".";
+      } else if(res.net < 0){
+        plain = "This short lost " + money(res.net) + " — the stock rose against the position, a " +
+          pct(res.returnPct) + " return on the notional";
+        plain += res.hasFee ? ", including a " + money(res.borrowCost) + " borrow fee." : ".";
+        outPlain.className="co-plain warn";
+      } else {
+        plain = "This short broke even on the notional sold short.";
+      }
+      if(res.net >= 0) outPlain.className="co-plain";
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var verb = last.net>=0 ? "profit" : "loss";
+      var line = "Short selling " + verb + ": " + money(last.net) +
+        " (" + pct(last.returnPct) + " on notional) · gross " + money(last.gross);
+      if(last.hasFee) line += " · borrow " + money(last.borrowCost);
+      return line + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["entry","cover","shares","bfee","days"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js"></script>
+</body>
+</html>
