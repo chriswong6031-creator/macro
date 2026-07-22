@@ -495,6 +495,50 @@ def _win_split(rows: list[dict[str, Any]], param_field: str) -> dict[str, Any]:
     }
 
 
+def _median_tilt(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """PSQ-TILT W1 §4 measurement — median fwd_ret_126 for the Stage-2 ∩ EC-positive
+    subset vs the rest, over the matured-126 subset. This is a MEASUREMENT block the
+    self-demoting tilt reads (engine/prophet_bridge._stage_tilt_demoted); it NEVER
+    gates, ranks, or alters a Prophet pick. Nulls until cohorts mature (n tiny until
+    ~2026-12). No trading verbs; no 'validated'.
+
+    stage2_ec = stage_at_entry == STAGE2 AND last_ec.sent >= EC_SENT_GATE.
+    diff = median(stage2_ec) - median(rest) (null when either side is unmatured).
+    """
+    matured = [r for r in rows if (r.get("fwd") or {}).get("fwd_ret_126") is not None]
+
+    def _is_stage2_ec(r: dict[str, Any]) -> bool:
+        sent = (r.get("last_ec") or {}).get("sent")
+        return (
+            r.get("stage_at_entry") == STAGE2
+            and sent is not None
+            and sent >= psf.EC_SENT_GATE
+        )
+
+    s2ec = [r for r in matured if _is_stage2_ec(r)]
+    rest = [r for r in matured if not _is_stage2_ec(r)]
+
+    def _median(subset: list[dict[str, Any]]) -> float | None:
+        vals = [float((r.get("fwd") or {})["fwd_ret_126"]) for r in subset]
+        return float(pd.Series(vals).median()) if vals else None
+
+    med_s2ec = _median(s2ec)
+    med_rest = _median(rest)
+    diff = (med_s2ec - med_rest) if (med_s2ec is not None and med_rest is not None) else None
+
+    return {
+        "median_fwd_ret_126": {"stage2_ec": med_s2ec, "rest": med_rest},
+        "diff": diff,
+        "n_matured_126": {"stage2_ec": len(s2ec), "rest": len(rest)},
+        "note": (
+            "median fwd_ret_126 split for the Stage-2 ∩ EC-positive cohort vs the "
+            "rest, over matured-126 entries. MEASUREMENT ONLY — the hold-leash reads "
+            "diff/n to self-demote; this layer never gates, ranks, or alters a pick. "
+            "diff/medians are null until both sides mature (~2026-12)."
+        ),
+    }
+
+
 def summarize(root: str | Path | None = None, *, asof: str | None = None) -> dict[str, Any]:
     """Emit ``data/prophet_stage_shadow/summary.json`` — the accruing Stage-2-vs-rest
     comparison ON ACTUAL PROPHET ENTRIES, with an honest accrual disclaimer.
@@ -554,6 +598,8 @@ def summarize(root: str | Path | None = None, *, asof: str | None = None) -> dic
             "fresh_stage2": _both_params(fresh_stage2),
             "positive_ec": _both_params(pos_ec),
         },
+        # PSQ-TILT W1 §4: the median-fwd126 measurement the hold-leash self-demotes on.
+        "median_tilt": _median_tilt(rows),
         "note": (
             "The Stage-2-vs-rest / fresh-Stage-2 / positive-EC outcome split on ACTUAL "
             "Prophet entries. win = CLEAN_LIFTOFF (same ruler as the backtest). win_rate "
