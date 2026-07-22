@@ -119,16 +119,24 @@ def _fwd_rel(ticker: str, root: Path, start: str, horizon_d: int) -> float | Non
         return None
 
 
-def _matured(rows: list, root: Path, horizon_d: int, today: date) -> list[dict]:
+def _matured(rows: list, root: Path, horizon_d: int, today: date,
+             fwd_rel_fn=None) -> list[dict]:
+    """Rows old enough AND price-covered, tagged with forward rel-return. ``fwd_rel_fn`` lets a
+    non-US region inject its own price/benchmark layer as ``fn(ticker, start_date, horizon_d) ->
+    rel_return | None`` (None ⇒ not covered/matured; it folds in coverage). Default = the US
+    SPY-relative path, byte-for-byte unchanged."""
     out = []
     for r in rows:
         try:
             if (pd.Timestamp(today) - pd.Timestamp(r["date"])).days < horizon_d:
                 continue
-            end = (pd.Timestamp(r["date"]) + pd.Timedelta(days=horizon_d)).strftime("%Y-%m-%d")
-            if not (_covers(r["t"], root, end) and _covers(_BENCH, root, end)):
-                continue
-            fwd = _fwd_rel(r["t"], root, r["date"], horizon_d)
+            if fwd_rel_fn is not None:
+                fwd = fwd_rel_fn(r["t"], r["date"], horizon_d)
+            else:
+                end = (pd.Timestamp(r["date"]) + pd.Timedelta(days=horizon_d)).strftime("%Y-%m-%d")
+                if not (_covers(r["t"], root, end) and _covers(_BENCH, root, end)):
+                    continue
+                fwd = _fwd_rel(r["t"], root, r["date"], horizon_d)
             if fwd is None:
                 continue
             out.append({**r, "fwd": fwd})
@@ -202,16 +210,20 @@ def _by_stage(rows: list) -> dict:
 
 
 def compute(today: date | str | None = None, root: Path | None = None,
-            horizons=_HORIZONS) -> dict:
-    """Grade every matured snapshot across all horizons. Never raises; degrades to 'accruing'."""
+            horizons=_HORIZONS, *, rows: list | None = None, fwd_rel_fn=None,
+            bench: str = _BENCH) -> dict:
+    """Grade every matured snapshot across all horizons. Never raises; degrades to 'accruing'.
+    Region-parameterized: pass pre-normalized ``rows`` ({date,t,opp,edge,stage,lean}) + a
+    ``fwd_rel_fn(ticker, start, horizon_d)`` to grade a non-US hub against its own benchmark
+    (e.g. China vs CSI300). Defaults reproduce the US SPY-relative path exactly."""
     try:
         root = Path(root) if root else config.ROOT
         today_dt = pd.Timestamp(today).date() if today else date.today()
-        rows = _load(root)
+        rows = _load(root) if rows is None else rows
         out_h: dict[str, dict] = {}
         peak_ic, lead_time = None, None
         for h in horizons:
-            mat = _matured(rows, root, h, today_dt)
+            mat = _matured(rows, root, h, today_dt, fwd_rel_fn=fwd_rel_fn)
             opp_daily = _daily_ic(mat, "opp", h)       # rigorous, overlap-robust HAC path
             entry = {
                 "n_matured": len(mat),
@@ -247,9 +259,9 @@ def compute(today: date | str | None = None, root: Path | None = None,
             "schema": SCHEMA, "as_of": today_dt.isoformat(), "generated_at": _now_iso(),
             "is_context_only": True, "n_snapshots": len(rows),
             "horizons": out_h, "lead_time_d": lead_time, "peak_opportunity_ic": peak_ic,
-            "proven": proven, "any_matured": any_matured, "note": note,
+            "proven": proven, "any_matured": any_matured, "note": note, "benchmark": bench,
             "disclaimer": ("A falsifiable scorecard of the hub's own claims — opportunity rank and "
-                           "lifecycle stage graded against realized SPY-relative forward returns. "
+                           f"lifecycle stage graded against realized {bench}-relative forward returns. "
                            "Until a signal matures and clears a Newey-West significance bar it is "
                            "'measuring', never trusted. Nothing here sizes a position."),
         }

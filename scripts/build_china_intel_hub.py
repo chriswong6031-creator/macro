@@ -28,6 +28,23 @@ def build() -> dict | None:
         from engine import china_intel_hub
         cmd = china_intel_hub.load_and_build()
 
+        # FALSIFIABLE TRACK-RECORD (CN) + SIGNAL GOVERNOR — the measure→act loop, CN mirror.
+        # Grade the CN hub's own claims CSI300-relative (was ungraded), persist, then recompute
+        # the de-escalation trust map. Applied on the NEXT build (1-build lag). Degrade-safe.
+        try:
+            track = china_intel_hub.compute_track_record()
+            tp = config.ROOT / "data" / "china_hub" / "track_record.json"
+            tp.parent.mkdir(parents=True, exist_ok=True)
+            tp.write_text(json.dumps(track, indent=2, default=str))
+            cmd["track_record"] = track
+            from engine import signal_governor
+            gov = signal_governor.compute(persist=True, region="cn")
+            cmd["signal_governor"] = gov
+            if gov.get("n_demoted"):
+                log.info("china signal governor: %s", gov.get("note"))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal to the CN build
+            log.warning("china_intel_hub: track-record/governor step failed (%s)", e)
+
         out_dir = _site_dir() / "china_intel"
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / "command.json"
