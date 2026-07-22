@@ -738,6 +738,49 @@
   /* width parity with US macro.html: the body padding rule above already centers
      content at 1500px (same as page-macro) — no extra cap here. */
   body.page-china .cnx-wrap{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:0}
+
+  /* ═══ MX5 Aurora-Glass token layer (ported from US macro.html; §Model routing design lane) ═══
+     The US mx5-* scorecard components (hero gauge, path graph, market tiles, sentiment odometer)
+     read these tokens. theme.css already provides --up/--down/--warn/--ok/--act (all zh-flip aware);
+     this layer adds the glass surface + ink + mx5 accent tokens they need. Values mirror the US
+     block verbatim so a future DRY extraction is mechanical. */
+  body.page-china{
+    --ink-1: var(--text);
+    --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+    --ink-3: var(--muted);
+    --isle-brief: #38c472;
+    --glass-border: var(--mx5-glass-border);
+    --mx5-glass-bg:      rgba(16,22,30,.55);
+    --mx5-pop-bg:        rgba(13,18,26,.96);
+    --mx5-glass-border:  rgba(255,255,255,.12);
+    --mx5-glass-shadow:  0 8px 32px rgba(0,0,0,.55), 0 1.5px 0 rgba(255,255,255,.07) inset;
+    --mx5-glass-hover:   0 12px 40px rgba(0,0,0,.65), 0 1.5px 0 rgba(255,255,255,.09) inset;
+    --mx5-blur:          blur(20px);
+    --mx5-radius-card:   18px;
+    --mx5-radius-pill:   999px;
+    --mx5-accent:        var(--up);
+    --mx5-accent-glow:   color-mix(in srgb, var(--up) 30%, transparent);
+    --mx5-accent-dim:    color-mix(in srgb, var(--up) 10%, transparent);
+    --mx5-accent-ink:    var(--up);
+    --mx5-warn:          var(--warn);
+    --mx5-warn-dim:      color-mix(in srgb, var(--warn) 10%, transparent);
+    --mx5-warn-ink:      var(--warn);
+    --mx5-hover-bg:      rgba(22,29,38,.62);
+    --mx5-hover-border:  rgba(255,255,255,.16);
+    --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
+    --mx5-focus-ring:    0 0 0 2px color-mix(in srgb, var(--up) 55%, transparent);
+  }
+  [data-theme="light"] body.page-china{
+    --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+    --mx5-glass-bg:      rgba(255,255,255,.82);
+    --mx5-pop-bg:        rgba(255,255,255,.97);
+    --mx5-glass-border:  rgba(0,0,0,.06);
+    --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
+    --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
+    --mx5-hover-bg:      rgba(255,255,255,.92);
+    --mx5-hover-border:  rgba(0,0,0,.14);
+    --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.12);
+  }
   /* glass card */
   body.page-china .cnx-card{background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.07) inset;padding:18px 20px;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s;margin-bottom:14px}
   body.page-china .cnx-card[role="button"]{cursor:pointer}
@@ -776,9 +819,12 @@
      gauge and the whole pullback-risk family are market-DIRECTION reads (risk-on vs
      risk-off) — same family as theme.css's .rrx radar remap and the factor bars below —
      so they paint from the zh-flipping pair --up/--down. Asia convention in zh: red=bullish
-     /trend-following, green=defend capital. The zh legend words in .cnx-sub-line swap 红/绿
-     to match the paint. --warn is direction-neutral and never flips. Genuine health/
-     staleness signals (not market reads) keep --ok/--act so red=bad stays in both langs. */
+     /trend-following, green=defend capital. The zh legend words in .cnx-sub-line name the
+     TIER (偏多/避险) not the colour, so there is no colour-word contradiction (matches macro.html).
+     --warn is direction-neutral and never flips. Genuine health/staleness signals (not market
+     reads) keep --ok/--act so red=bad stays in both langs. The mx5 gauge arc/needle carry
+     .cnx-gauge-fill/.cnx-needle-* so these rules colour them; the mx5-only #mx5-score-numeral +
+     .cnx-needle-ring get their own .ms-* --up/--down rules near the needle-ring block. */
   body.page-china .ms-green .cnx-gauge-fill{stroke:var(--up)}
   body.page-china .ms-yellow .cnx-gauge-fill{stroke:var(--warn)}
   body.page-china .ms-red .cnx-gauge-fill{stroke:var(--down)}
@@ -1040,6 +1086,252 @@
   [data-theme="light"] body.page-china .cnx-chip.turn{color:#1f7a44}
   [data-theme="light"] body.page-china .cnx-tkr-btn{color:#2456a8}
   [data-theme="light"] body.page-china .cnx-fq.refl{color:#9a6b0e}
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     PORTED US mx5-* SCORECARD COMPONENTS (A hero gauge · B path graph ·
+     C market tiles · D sentiment odometer). Selectors re-scoped from the US
+     body.page-macro.mx4-grid → body.page-china. State colour routes through
+     --up/--warn/--down (theme.css), so the hero/needle/spark/zone reads flip
+     correctly in zh (红涨绿跌). See CLAUDE.md §Design lane.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* ── A · Scorecard left cluster (regime pill + semicircle gauge + score) ── */
+  body.page-china .mx5-sc-left{
+    padding:22px 26px;
+    display:flex;flex-direction:column;position:relative;overflow:visible;
+  }
+  body.page-china .mx5-sc-gauge-row{
+    display:flex;align-items:center;gap:20px;margin-bottom:14px;
+  }
+  body.page-china .mx5-gauge-svg{
+    width:184px;height:132px;overflow:visible;display:block;flex-shrink:0;
+  }
+  /* Light mode: the gauge's white-alpha track/ticks/scale-labels vanish on white —
+     repaint in dark ink. #mx5-score-numeral keeps its own id rule (state colour). */
+  [data-theme="light"] body.page-china .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
+  [data-theme="light"] body.page-china .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
+  [data-theme="light"] body.page-china .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
+  /* Regime pill (sizes to content, never clips) */
+  body.page-china .mx5-regime-pill{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:4px 11px;border-radius:var(--mx5-radius-pill);
+    border:1px solid var(--mx5-accent);background:var(--mx5-accent-dim);
+    font-size:11px;font-weight:600;color:var(--mx5-accent-ink);
+    letter-spacing:.02em;margin-bottom:12px;line-height:1.3;
+    max-width:100%;box-sizing:border-box;text-align:left;width:auto;
+  }
+  body.page-china .mx5-sc-gauge-row > div:last-child{min-width:0;}
+  body.page-china .mx5-regime-pill > span{flex:0 1 auto;min-width:0;}
+  body.page-china .mx5-regime-pill.rp-yellow{
+    border-color:var(--mx5-warn);background:var(--mx5-warn-dim);color:var(--mx5-warn-ink);
+  }
+  body.page-china .mx5-regime-pill.rp-yellow .mx5-dot{
+    background:var(--mx5-warn);box-shadow:0 0 6px color-mix(in srgb,var(--warn) 30%,transparent);
+  }
+  body.page-china .mx5-regime-pill.rp-red{
+    border-color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down);
+  }
+  body.page-china .mx5-regime-pill.rp-red .mx5-dot{
+    background:var(--down);box-shadow:0 0 6px color-mix(in srgb,var(--down) 30%,transparent);
+  }
+  body.page-china .mx5-regime-pill .mx5-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
+  }
+  body.page-china .mx5-pill-info{font-size:10px;opacity:.6;margin-left:3px;flex-shrink:0;}
+  /* Score + verdict beside gauge */
+  body.page-china .mx5-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+  body.page-china .mx5-verdict-word{
+    white-space:nowrap;font-size:19px;font-weight:700;color:var(--ink-1);
+  }
+  body.page-china .mx5-big-score{
+    font-size:64px;font-weight:800;line-height:.95;color:var(--mx5-accent-ink);
+    text-shadow:0 0 40px var(--mx5-accent-glow);
+    letter-spacing:-.035em;font-variant-numeric:tabular-nums;
+  }
+  body.page-china .mx5-sub-line{
+    font-size:11px;color:var(--mx5-accent-ink);font-weight:600;margin-top:3px;
+    letter-spacing:.02em;
+  }
+  body.page-china .mx5-score-yellow .mx5-sub-line{color:var(--mx5-warn-ink);}
+  body.page-china .mx5-score-red .mx5-sub-line{color:var(--down);}
+  /* In-gauge score numeral + needle inner-ring are mx5-only elements — paint them from the
+     zh-flipping --up/--warn/--down pair directly (as #3174 does for .cnx-gauge-fill/.cnx-needle-*
+     /.cnx-big-score/.cnx-verdict/.cnx-sub-line), so "risk-off = GREEN" in zh (operator ruling
+     2026-07-21). Default amber (Mixed); the .ms-* rules below override. */
+  body.page-china #mx5-score-numeral{fill:var(--warn);}
+  body.page-china .ms-green  #mx5-score-numeral{fill:var(--up);}
+  body.page-china .ms-red    #mx5-score-numeral{fill:var(--down);}
+  body.page-china .ms-yellow #mx5-score-numeral{fill:var(--warn);}
+  /* needle inner ring: accent STROKE, dark fill (kept from the presentation attr) */
+  body.page-china .cnx-needle-ring{stroke:var(--warn);}
+  body.page-china .ms-green .cnx-needle-ring{stroke:var(--up);}
+  body.page-china .ms-red   .cnx-needle-ring{stroke:var(--down);}
+
+  /* ── B · 60-session path panel (right) ── */
+  body.page-china .mx5-sc-right{padding:22px 28px 20px;display:flex;flex-direction:column;}
+  body.page-china .mx5-path-header{
+    display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;
+  }
+  body.page-china .mx5-path-title{
+    font-size:11px;font-weight:700;letter-spacing:.10em;
+    text-transform:uppercase;color:var(--ink-3);
+  }
+  body.page-china .mx5-path-meta{font-size:11px;color:var(--ink-3);}
+  body.page-china .mx5-path-plot{position:relative;flex:1;min-height:190px;display:flex;}
+  body.page-china .mx5-path-svg{
+    display:block;width:100%;flex:1;min-height:190px;overflow:visible;touch-action:pan-y;
+  }
+  body.page-china .mx5-path-labels{
+    position:absolute;inset:0;pointer-events:none;
+    font-family:Inter,-apple-system,sans-serif;font-size:11px;line-height:1;
+  }
+  body.page-china .mx5-path-labels > span{position:absolute;white-space:nowrap;}
+  body.page-china .mx5-pl-y{
+    left:6px;transform:translateY(-50%);color:var(--ink-3);font-variant-numeric:tabular-nums;
+  }
+  body.page-china .mx5-pl-zone{right:14px;transform:translateY(-50%);font-weight:600;}
+  body.page-china .mx5-pl-zone.on{color:color-mix(in srgb,var(--up) 62%,transparent);}
+  body.page-china .mx5-pl-zone.mid{color:color-mix(in srgb,var(--warn) 66%,transparent);}
+  body.page-china .mx5-pl-zone.off{color:color-mix(in srgb,var(--down) 60%,transparent);}
+  body.page-china .mx5-pl-x{top:96.4%;color:var(--ink-3);}
+  body.page-china .mx5-pl-today{
+    width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);
+    background:currentColor;box-shadow:0 0 6px currentColor;
+  }
+  body.page-china .mx5-path-cross{
+    position:absolute;top:0;width:1px;height:100%;
+    background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.06));
+    opacity:0;transform:translateX(-1px);pointer-events:none;
+    transition:opacity .12s ease-out;will-change:left,opacity;
+  }
+  body.page-china .mx5-path-dot{
+    position:absolute;width:11px;height:11px;border-radius:50%;
+    background:var(--mx5-accent);border:2px solid var(--mx5-pop-bg);
+    box-shadow:0 0 10px var(--mx5-accent-glow),0 0 0 1px rgba(255,255,255,.25);
+    opacity:0;pointer-events:none;transform:translate(-50%,-50%);
+    transition:opacity .12s ease-out;will-change:left,top,opacity;
+  }
+  body.page-china .mx5-path-tip{
+    position:absolute;z-index:6;pointer-events:none;
+    display:flex;flex-direction:column;gap:2px;padding:8px 11px;border-radius:10px;
+    background:rgba(15,19,26,.72);border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 8px 30px rgba(0,0,0,.5);
+    backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);
+    opacity:0;transform:translate(-50%,calc(-100% - 14px)) translateY(4px);
+    transition:opacity .13s ease-out,transform .13s ease-out;white-space:nowrap;
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    body.page-china .mx5-path-tip{background:var(--mx5-pop-bg);}
+  }
+  [data-theme="light"] body.page-china .mx5-path-tip{
+    background:rgba(255,255,255,.82);border-color:rgba(0,0,0,.10);box-shadow:0 8px 30px rgba(0,0,0,.16);
+  }
+  body.page-china .mx5-path-tip.show{opacity:1;transform:translate(-50%,calc(-100% - 14px));}
+  body.page-china .mx5-path-tip-date{
+    font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--ink-3);text-transform:uppercase;
+  }
+  body.page-china .mx5-path-tip-row{display:flex;align-items:baseline;gap:7px;}
+  body.page-china .mx5-path-tip-score{
+    font-size:16px;font-weight:800;line-height:1;color:var(--ink-1);font-variant-numeric:tabular-nums;
+  }
+  body.page-china .mx5-path-tip-verdict{font-size:12px;font-weight:600;}
+  @media(prefers-reduced-motion:reduce){
+    body.page-china .mx5-path-cross,
+    body.page-china .mx5-path-dot,
+    body.page-china .mx5-path-tip{transition:none;}
+  }
+
+  /* ── C · Market tiles face (ONE glass button → markets dialog) ── */
+  /* The face now replaces the four separate tiles inside .cnx-tiles (a 4-col grid),
+     so it must span the full row; its own .mx5-mkt-grid holds the four tiles. */
+  body.page-china .cnx-tiles > .sxg-face.mx5-card-face{grid-column:1 / -1;}
+  body.page-china .sxg-face{display:flex;}
+  body.page-china .sxg-face.mx5-card-face{
+    flex-direction:column;cursor:pointer;user-select:none;position:relative;
+    background:var(--mx5-glass-bg);border:1px solid var(--mx5-glass-border);
+    border-radius:var(--mx5-radius-card);backdrop-filter:var(--mx5-blur);-webkit-backdrop-filter:var(--mx5-blur);
+    box-shadow:var(--mx5-glass-shadow);
+    padding:18px 20px 14px;min-height:unset;height:100%;
+    transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
+  }
+  body.page-china .sxg-face.mx5-card-face::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;
+    background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);pointer-events:none;
+  }
+  body.page-china .sxg-face.mx5-card-face:hover{
+    background:var(--mx5-hover-bg);border-color:var(--mx5-hover-border);
+    box-shadow:var(--mx5-hover-shadow);transform:translateY(-1px);
+  }
+  body.page-china .sxg-face.mx5-card-face:focus-visible{
+    outline:none;box-shadow:var(--mx5-focus-ring),var(--mx5-hover-shadow);
+  }
+  body.page-china .mx5-mkt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  @media(max-width:1100px){body.page-china .mx5-mkt-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){body.page-china .mx5-mkt-grid{grid-template-columns:1fr 1fr;}}
+  body.page-china .mx5-mkt-tile{
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;padding:16px 18px 12px;position:relative;overflow:hidden;cursor:pointer;
+    transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
+  }
+  [data-theme="light"] body.page-china .mx5-mkt-tile{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+  body.page-china .mx5-mkt-tile.up,
+  body.page-china .mx5-mkt-tile.dn{border-color:var(--glass-border);}
+  body.page-china .mx5-mkt-tile:hover,
+  body.page-china .mx5-mkt-tile.up:hover,
+  body.page-china .mx5-mkt-tile.dn:hover{
+    background:var(--mx5-hover-bg);border-color:var(--mx5-hover-border);
+    box-shadow:var(--mx5-hover-shadow);transform:translateY(-1px);
+  }
+  body.page-china .mx5-mkt-tile:focus-visible{outline:none;box-shadow:var(--mx5-focus-ring),var(--mx5-hover-shadow);}
+  body.page-china .mx5-mkt-ticker{
+    font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--ink-3);text-transform:uppercase;margin-bottom:3px;
+  }
+  body.page-china .mx5-mkt-sub{
+    font-size:11px;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;
+  }
+  body.page-china .mx5-mkt-price{
+    font-size:19px;font-weight:700;line-height:1;color:var(--ink-1);margin-bottom:4px;font-variant-numeric:tabular-nums;
+  }
+  body.page-china .mx5-mkt-delta{font-size:13px;font-weight:600;}
+  body.page-china .mx5-mkt-delta.up{color:var(--up);}
+  body.page-china .mx5-mkt-delta.dn{color:var(--down);}
+  body.page-china .mx5-spark{margin-top:10px;}
+  body.page-china .mx5-spark svg{width:100%;height:32px;display:block;}
+  /* spark colour follows sign, routed through --up/--down so it flips in zh */
+  body.page-china .mx5-spark-up path.mx5-spark-area{fill:color-mix(in srgb,var(--up) 10%,transparent);}
+  body.page-china .mx5-spark-up path.mx5-spark-line,
+  body.page-china .mx5-spark-up polyline{stroke:var(--up);}
+  body.page-china .mx5-spark-dn path.mx5-spark-area{fill:color-mix(in srgb,var(--down) 8%,transparent);}
+  body.page-china .mx5-spark-dn path.mx5-spark-line,
+  body.page-china .mx5-spark-dn polyline{stroke:var(--down);}
+  @media(prefers-reduced-motion:reduce){
+    body.page-china .sxg-face.mx5-card-face,
+    body.page-china .mx5-mkt-tile{transition:none!important;}
+    body.page-china .sxg-face.mx5-card-face:hover,
+    body.page-china .mx5-mkt-tile:hover,
+    body.page-china .mx5-mkt-tile.up:hover,
+    body.page-china .mx5-mkt-tile.dn:hover{transform:none!important;}
+  }
+
+  /* ── D · Market Sentiment odometer (dial-only; lives in the cnx-rack cnx-card) ── */
+  body.page-china .mx5-sentiment-dial-wrap{text-align:center;margin-bottom:4px;}
+  body.page-china .mx5-sentiment-zone-text{
+    font-size:15px;font-weight:700;color:var(--mx5-accent-ink);text-align:center;margin-bottom:3px;
+  }
+  body.page-china .mx5-sentiment-label{
+    font-size:11px;color:var(--ink-3);text-align:center;margin-top:2px;
+  }
+  /* zh 红涨绿跌 for the sentiment gauge: Euphoria=bullish→red, Panic=bearish→green (neutral amber).
+     --fg-col routes through --up/--warn/--down so it auto-flips in zh; SVG marks + zone word read it. */
+  body.page-china .fg-greed{--fg-col:var(--up)}
+  body.page-china .fg-fear{--fg-col:var(--down)}
+  body.page-china .fg-neutral{--fg-col:var(--warn)}
+  body.page-china #cnx-sentiment .fg-mark-s{stroke:var(--fg-col)}
+  body.page-china #cnx-sentiment .fg-mark-f{fill:var(--fg-col)}
+  body.page-china #cnx-sentiment .fg-lab-panic{fill:var(--down)}
+  body.page-china #cnx-sentiment .fg-lab-euph{fill:var(--up)}
+
 {%- endif %}{# /mode != stocks — MX5 CSS #}
   /* ── AI BRIEF DIALOG — ABX v2: rules live in the shared _aibrief_css.j2 include
      (.aib2-* namespace, appended below). China keeps the ZH-safe blue accent by
@@ -1354,31 +1646,78 @@
       <span id="ms-live-pill" class="cnx-live-pill"><span class="d"></span>
         <span class="l-en">LIVE</span><span class="l-zh">实时</span>
         <span id="ms-date" style="margin-left:4px">{{ latest.date }}</span></span>
-      <div class="cnx-gauge-row">
-        {# semi-circle gauge — arc centre (60,68) r=50; needle rotates around the
-           centre: score 0→-90° (left) … 100→+90° (right), US mx5 idiom #}
-        {% set _needle_deg = ((_ms_score * 1.8) - 90) | round(1) %}
-        <svg class="cnx-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
-          <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
-          <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
-          {# needle (US idiom): stem + hub + accent tip dot; colours are CLASS-driven
-             via .ms-* so they always match the verdict, both themes #}
-          <g class="cnx-gauge-needle" transform="rotate({{ _needle_deg }} 60 68)">
-            <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
-            <circle class="cnx-needle-hub" cx="60" cy="68" r="5"/>
-            <circle class="cnx-needle-core" cx="60" cy="68" r="1.8"/>
-            <circle class="cnx-needle-tip" cx="60" cy="30" r="2.6"/>
+      {# ── A · US mx5 semicircle gauge (ported from dashboard.html.j2 6556–6631) ──
+         Geometry: arc M14,75 A56 → π·56≈175.93 arc-len; needle+numeral rotate around
+         (70,75). data-gauge-* attrs let china_risk_state_live.js patch geometry without
+         hardcoding it. Arc / needle / numeral colour comes from the .ms-{color} wrapper via
+         .cnx-gauge-fill / .cnx-needle-* / #mx5-score-numeral — DIRECTION reads that FLIP in zh
+         (risk-off → green, operator ruling 2026-07-21), same as the tiles/path/pullback family. #}
+      {% set _mx5_arc_len = 175.93 %}
+      {% set _mx5_filled = (_ms_score / 100 * _mx5_arc_len) | round(1) %}
+      {% set _mx5_gap = (_mx5_arc_len - _mx5_filled) | round(1) %}
+      {% set _mx5_needle_deg = (_ms_score / 100 * 180 - 90) | round(1) %}
+      {% set _mx5_sc_cls = 'mx5-score-green' if _ms_color == 'green' else ('mx5-score-yellow' if _ms_color == 'yellow' else 'mx5-score-red') %}
+      <div class="mx5-sc-gauge-row {{ _mx5_sc_cls }}">
+        <svg class="mx5-gauge-svg" viewBox="0 -4 140 101" fill="none"
+             aria-label="{{ _ms_label }} — {{ _ms_score }}"
+             data-gauge-arc-len="{{ _mx5_arc_len }}"
+             data-gauge-radius="56" data-gauge-cx="70" data-gauge-cy="75">
+          <defs>
+            <filter id="cnxNeedleGlow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="cnxArcGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          {# Track #}
+          <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round" fill="none"/>
+          {# Filled arc — dasharray baked by Jinja; CSS recolours via #mx5-gauge-arc-fill;
+             live JS patches dasharray via data-gauge-arc-len #}
+          <path id="mx5-gauge-arc-fill" class="cnx-gauge-fill"
+                d="M 14 75 A 56 56 0 0 1 126 75" stroke-width="10" stroke-linecap="round" fill="none"
+                stroke-dasharray="{{ _mx5_filled }} {{ _mx5_gap }}" filter="url(#cnxArcGlow)"/>
+          {# Tick marks at 0/25/50/75/100 #}
+          <g stroke="rgba(255,255,255,.22)" stroke-width="1.2">
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-90 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-45 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(0 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(45 70 75)"/>
+            <line x1="70" y1="19" x2="70" y2="26" transform="rotate(90 70 75)"/>
           </g>
+          <text x="14"  y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">0</text>
+          <text x="70"  y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
+          <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
+          {# Needle — rotation baked by Jinja; live JS patches via data attrs. Core/tip/
+             numeral fills are CSS-driven (.cnx-needle-core/tip, #mx5-score-numeral) so they
+             follow --mx5-gauge and flip in zh; the white stem stays neutral. #}
+          <g class="cnx-gauge-needle" id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#cnxNeedleGlow)">
+            <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
+            <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
+            <circle cx="70" cy="75" r="7"  fill="rgba(255,255,255,.10)"/>
+            <circle class="cnx-needle-ring" cx="70" cy="75" r="4.5" stroke-width="1.5" fill="rgba(8,12,18,.8)"/>
+            <circle class="cnx-needle-core" cx="70" cy="75" r="2"/>
+            <circle class="cnx-needle-tip" cx="70" cy="25.5" r="2.5"/>
+          </g>
+          {# Score numeral inside arc #}
+          <text id="mx5-score-numeral" x="70" y="62" font-size="24" font-weight="800"
+                text-anchor="middle" font-family="Inter,-apple-system,sans-serif">{{ _ms_score }}</text>
+          <text x="70" y="73" fill="rgba(255,255,255,.32)" font-size="11"
+                text-anchor="middle" font-family="Inter,-apple-system,sans-serif">/ 100</text>
         </svg>
+        {# Right of gauge: big score + verdict word. Colour comes from the .ms-{green|yellow|red}
+           wrapper via .cnx-big-score/.cnx-verdict/.cnx-sub-line rules (--up/--down), so these
+           DIRECTION reads flip in zh (risk-off → green), matching the gauge, tiles and path. #}
         <div>
           <div class="cnx-score-line"><span id="ms-score" class="cnx-big-score">{{ _ms_score }}</span><span id="ms-word" class="cnx-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>
-          {# The stance line is driven by the .ms-{green|yellow|red} class (which the live
-             lane swaps) so it can never contradict the live-patched score/verdict above. #}
           <div class="cnx-sub-line">
-            {# zh colour words mirror the zh paint (--up/--down flip): supported=红, defend=绿 #}
-            <span class="cnx-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">红 — 支持趋势跟随</span></span>
-            <span class="cnx-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">黄 — 谨慎交易</span></span>
-            <span class="cnx-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">绿 — 优先保住本金</span></span>
+            {# zh names the TIER (偏多/中性/避险), never the colour word — the paint flips 红涨绿跌
+               in zh (risk-off→green), so a literal 红/绿 would contradict it. Matches macro.html. #}
+            <span class="cnx-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">偏多 — 支持趋势跟随</span></span>
+            <span class="cnx-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">中性 — 谨慎交易</span></span>
+            <span class="cnx-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">避险 — 优先保住本金</span></span>
           </div>
         </div>
       </div>
@@ -1436,77 +1775,189 @@
         </div>
       </div>
     </div>
-    <div class="cnx-hero-right">
-      <div class="cnx-path-h"><span>{{ t('11-session path', '11交易日走势') }}</span></div>
-      {# Path SVG — dynamic from ms_history if available, else static placeholder #}
-      {% if ms_history and ms_history | length >= 2 %}
-      {% set _pts = ms_history %}
-      {% set _n = _pts | length %}
-      <svg class="cnx-path-svg" viewBox="0 0 560 232" aria-hidden="true">
-        <rect x="20" y="22" width="520" height="56" fill="color-mix(in srgb,var(--up) 6%,transparent)"/>
-        <rect x="20" y="134" width="520" height="56" fill="color-mix(in srgb,var(--down) 6%,transparent)"/>
-        <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
-        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-en">Risk-on</text>
-        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-zh">风险偏好</text>
-        <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-en">Mixed</text>
-        <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-zh">混合</text>
-        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-en">Risk-off</text>
-        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-zh">避险</text>
-        <text x="14" y="26" font-size="9" fill="var(--muted)" text-anchor="end">100</text>
-        <text x="14" y="109" font-size="9" fill="var(--muted)" text-anchor="end">50</text>
-        <text x="14" y="192" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
-        {# Plot line — map score 0-100 to y 22-190 (inverted) #}
-        {% set _step = 520 / ([_n - 1, 1] | max) %}
-        {% set _poly_pts = [] %}
-        {% for p in _pts %}{% set _x = 20 + loop.index0 * _step %}{% set _y = 190 - (p.score / 100) * 168 %}{% set _ = _poly_pts.append((_x|round(1)|string) + ' ' + (_y|round(1)|string)) %}{% endfor %}
-        <path d="M{{ _poly_pts | join(' L') }}"
-              fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="2.2" stroke-linejoin="round"/>
-        <text x="30" y="222" font-size="9" fill="var(--muted)">{{ _pts[0].date if _pts[0] else '' }}</text>
-        <text x="536" y="222" font-size="9" fill="var(--muted)" text-anchor="end">{{ _pts[-1].date if _pts[-1] else '' }}</text>
-      </svg>
+    {# ── B · US mx5 session-path graph (ported from dashboard.html.j2 6964–7106).
+       China's ms_history rows carry {date, score, verdict, color}; the US block keyed on
+       row.asof, so every .asof below is mapped to .date. Verdict bands: risk-off <42, mixed
+       42–60, risk-on ≥60 (same thresholds). Zone tints + line paint from the --up/--warn/--down
+       triad so they flip in zh (risk-off → green), matching the gauge above and macro.html.
+       Honest "<2 rows" placeholder kept. #}
+    {% set _mx5_hist = ms_history if (ms_history and ms_history | length >= 2) else none %}
+    {% set _mx5_hist_n = _mx5_hist | length if _mx5_hist else 0 %}
+    {# zh 红涨绿跌: the regime score is a DIRECTION read (risk-on=bullish) — paint from --up/--down
+       so it flips in zh (operator ruling 2026-07-21), matching macro.html + HK/Canada. #}
+    {% set _path_col = 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') %}
+    <div class="cnx-hero-right mx5-sc-right">
+      <div class="mx5-path-header">
+        <span class="mx5-path-title">
+          <span class="l-en">{% if _mx5_hist_n > 0 and _mx5_hist_n < 60 %}{{ _mx5_hist_n }}-session path{% else %}60-session path{% endif %}</span>
+          <span class="l-zh">{% if _mx5_hist_n > 0 and _mx5_hist_n < 60 %}近 {{ _mx5_hist_n }} 交易日走势{% else %}60 交易日走势{% endif %}</span>
+        </span>
+        <span class="mx5-path-meta"><span class="l-en">Score vs time</span><span class="l-zh">综合评分 · 时序</span></span>
+      </div>
+      {% if _mx5_hist %}
+      {% set _ph_n = _mx5_hist | length %}
+      {% set PX0 = 44 %}{% set PXW = 944 %}{% set PY0 = 10 %}{% set PYB = 194 %}
+      {% set _mx5_mos_en = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+      {% set _ph_yfor = PYB - PY0 %}
+      {% set _y100 = PY0 %}
+      {% set _y75  = (PY0 + 25.0/100 * _ph_yfor) | round(2) %}
+      {% set _y60  = (PY0 + 40.0/100 * _ph_yfor) | round(2) %}
+      {% set _y50  = (PY0 + 50.0/100 * _ph_yfor) | round(2) %}
+      {% set _y42  = (PY0 + 58.0/100 * _ph_yfor) | round(2) %}
+      {% set _y25  = (PY0 + 75.0/100 * _ph_yfor) | round(2) %}
+      {% set _y0   = PYB %}
+      {% set _ph_pts_line = [] %}
+      {% set _ph_json = [] %}
+      {% for row in _mx5_hist %}
+        {% set _ph_x = (PX0 + (loop.index0 / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+        {% set _row_s = row.score if (row.score is defined and row.score is not none) else 50 %}
+        {% set _ph_y = (PY0 + (100 - _row_s) / 100 * _ph_yfor) | round(2) %}
+        {% set _rv = 'Risk-on' if _row_s >= 60 else ('Mixed' if _row_s >= 42 else 'Risk-off') %}
+        {% set _rvz = '偏多' if _row_s >= 60 else ('中性' if _row_s >= 42 else '偏空') %}
+        {% if _ph_pts_line.append(_ph_x ~ ',' ~ _ph_y) %}{% endif %}
+        {% if _ph_json.append({'d': row.date, 'md': (_mx5_mos_en[row.date[5:7]|int] ~ ' ' ~ (row.date[8:10]|int)) if (row.date and row.date|length >= 10) else '', 'mz': ((row.date[5:7]|int)|string ~ '月' ~ (row.date[8:10]|int)|string) if (row.date and row.date|length >= 10) else '', 's': row.score, 'v': _rv, 'vz': _rvz, 'x': _ph_x, 'y': _ph_y}) %}{% endif %}
+      {% endfor %}
+      {% set _ph_nticks = [_ph_n, 5] | min %}
+      {% set _ph_tick_idx = [] %}
+      {% if _ph_n <= 6 %}
+        {% for i in range(_ph_n) %}{% if _ph_tick_idx.append(i) %}{% endif %}{% endfor %}
       {% else %}
-      <div style="height:232px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)">{{ t('Building score history…','评分历史积累中…') }}</div>
+        {% for k in range(_ph_nticks + 1) %}{% if _ph_tick_idx.append((k / _ph_nticks * (_ph_n - 1)) | round | int) %}{% endif %}{% endfor %}
+      {% endif %}
+      <div class="mx5-path-plot">
+      <svg class="mx5-path-svg" viewBox="0 0 1000 224" preserveAspectRatio="none"
+           data-points='{{ _ph_json | tojson }}'
+           data-px0="{{ PX0 }}" data-pxw="{{ PXW }}" data-py0="{{ PY0 }}" data-pyb="{{ PYB }}"
+           data-vbw="1000" data-vbh="224"
+           role="img" aria-label="{{ _mx5_hist_n }}-session China market score path">
+        <defs>
+          <linearGradient id="cnxPathAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="{{ _path_col }}" stop-opacity=".40"/>
+            <stop offset="62%"  stop-color="{{ _path_col }}" stop-opacity=".07"/>
+            <stop offset="100%" stop-color="{{ _path_col }}" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        {# Verdict-band tinted zones — routed through --up/--warn/--down so they flip in zh #}
+        <rect x="0" y="{{ _y100 }}" width="1000" height="{{ (_y60 - _y100) | round(2) }}" fill="color-mix(in srgb, var(--up) 5%, transparent)"/>
+        <rect x="0" y="{{ _y60 }}"  width="1000" height="{{ (_y42 - _y60) | round(2) }}" fill="color-mix(in srgb, var(--warn) 5%, transparent)"/>
+        <rect x="0" y="{{ _y42 }}"  width="1000" height="{{ (_y0 - _y42) | round(2) }}" fill="color-mix(in srgb, var(--down) 5%, transparent)"/>
+        <line x1="0" y1="{{ _y60 }}" x2="1000" y2="{{ _y60 }}" stroke="color-mix(in srgb, var(--up) 22%, transparent)" stroke-width="1" stroke-dasharray="2,5"/>
+        <line x1="0" y1="{{ _y42 }}" x2="1000" y2="{{ _y42 }}" stroke="color-mix(in srgb, var(--down) 20%, transparent)" stroke-width="1" stroke-dasharray="2,5"/>
+        {# Y gridlines at 0/25/50/75/100 #}
+        <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+          <line x1="{{ PX0 }}" y1="{{ _y100 }}" x2="988" y2="{{ _y100 }}"/>
+          <line x1="{{ PX0 }}" y1="{{ _y75 }}"  x2="988" y2="{{ _y75 }}"/>
+          <line x1="{{ PX0 }}" y1="{{ _y50 }}"  x2="988" y2="{{ _y50 }}" stroke-dasharray="4,5"/>
+          <line x1="{{ PX0 }}" y1="{{ _y25 }}"  x2="988" y2="{{ _y25 }}"/>
+        </g>
+        {# Area fill + line #}
+        <path d="M{{ _ph_pts_line | join(' L') }} L{{ (PX0 + PXW) | round(2) }},{{ PYB }} L{{ PX0 }},{{ PYB }} Z" fill="url(#cnxPathAreaGrad)" stroke="none"/>
+        <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="{{ _path_col }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
+        <line x1="{{ PX0 }}" y1="{{ PYB }}" x2="988" y2="{{ PYB }}" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+        <g>
+        {% for _ti in _ph_tick_idx %}
+          {% set _tx = (PX0 + (_ti / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+          <line x1="{{ _tx }}" y1="{{ PYB }}" x2="{{ _tx }}" y2="{{ (PYB + 4) | round(1) }}" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+        {% endfor %}
+        </g>
+        {% set _ph_last_x = (PX0 + PXW) | round(2) %}
+        {% set _ph_last_y = (PY0 + (100 - _mx5_hist[-1].score) / 100 * _ph_yfor) | round(2) %}
+      </svg>
+      {# Axis labels + today marker: screen-space HTML overlay (SVG uses non-uniform stretch) #}
+      <div class="mx5-path-labels" aria-hidden="true">
+        <span class="mx5-pl-y" style="top:{{ (_y100 / 224 * 100) | round(2) }}%">100</span>
+        <span class="mx5-pl-y" style="top:{{ (_y75  / 224 * 100) | round(2) }}%">75</span>
+        <span class="mx5-pl-y" style="top:{{ (_y50  / 224 * 100) | round(2) }}%">50</span>
+        <span class="mx5-pl-y" style="top:{{ (_y25  / 224 * 100) | round(2) }}%">25</span>
+        <span class="mx5-pl-y" style="top:{{ (_y0   / 224 * 100) | round(2) }}%">0</span>
+        <span class="mx5-pl-zone on"  style="top:{{ ((_y100 + 13) / 224 * 100) | round(2) }}%"><span class="l-en">Risk-on</span><span class="l-zh">偏多</span></span>
+        <span class="mx5-pl-zone mid" style="top:{{ (((_y60 + _y42) / 2) / 224 * 100) | round(2) }}%"><span class="l-en">Mixed</span><span class="l-zh">中性</span></span>
+        <span class="mx5-pl-zone off" style="top:{{ ((_y0 - 7) / 224 * 100) | round(2) }}%"><span class="l-en">Risk-off</span><span class="l-zh">偏空</span></span>
+        {% for _ti in _ph_tick_idx %}
+          {% set _tx = (PX0 + (_ti / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+          {% set _txf = 'translate(0,-50%)' if loop.first else ('translate(-100%,-50%)' if loop.last else 'translate(-50%,-50%)') %}
+          {% set _tdate = _mx5_hist[_ti].date %}
+          {% if _tdate and _tdate|length >= 10 %}
+          <span class="mx5-pl-x" style="left:{{ (_tx / 1000 * 100) | round(3) }}%;transform:{{ _txf }}"><span class="l-en">{{ _mx5_mos_en[_tdate[5:7]|int] }} {{ _tdate[8:10]|int }}</span><span class="l-zh">{{ _tdate[5:7]|int }}月{{ _tdate[8:10]|int }}</span></span>
+          {% endif %}
+        {% endfor %}
+        <span class="mx5-pl-today" style="left:{{ (_ph_last_x / 1000 * 100) | round(3) }}%;top:{{ (_ph_last_y / 224 * 100) | round(3) }}%;color:{{ _path_col }}"></span>
+      </div>
+      <div class="mx5-path-cross" aria-hidden="true"></div>
+      <div class="mx5-path-dot" aria-hidden="true"></div>
+      <div class="mx5-path-tip" role="status" aria-live="off">
+        <span class="mx5-path-tip-date"></span>
+        <span class="mx5-path-tip-row"><b class="mx5-path-tip-score"></b><span class="mx5-path-tip-verdict"></span></span>
+      </div>
+      </div>{# /mx5-path-plot #}
+      {% else %}
+      {# Honest placeholder when ms_history absent or <2 points #}
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:12px;color:var(--muted)">{{ t('Building score history…','评分历史积累中…') }}</span>
+      </div>
       {% endif %}
     </div>
   </div>
   {# /hero #}
 
-  <!-- =============== MARKET TILES (4 glance tiles: SSE / CSI300 / ChiNext / HSI) =============== -->
+  <!-- =============== MARKET TILES (C · US mx5 combined index face: SSE / CSI300 / ChiNext / HSI) =============== -->
   <div class="cnx-secbar"><b>{{ t('CHINA DASHBOARD','中国看板') }}</b><span>{{ latest.date }}</span></div>
+  {# ── C · One glass face → markets dialog (ported from dashboard.html.j2 9959–10042).
+     Preserves China's four indexes + their live data-sym/data-mkt hooks (SSE + HSI patch
+     via live.js; CSI/ChiNext read the nightly market_tiles level). tone (pos/neg) → up/dn
+     drives the delta colour, which routes through --up/--down so it flips in zh. No idx_spark
+     on the China VM, so sparklines are omitted (the same honest guard as the US block). #}
+  {% set _tile_by_sym = {} %}
+  {% for _mt in (market_tiles or []) %}{% set _ = _tile_by_sym.update({_mt.sym: _mt}) %}{% endfor %}
+  {% set _sse = _tile_by_sym.get('000001.SS') %}
+  {% set _csi = _tile_by_sym.get('510300.SS') %}
+  {% set _cnx_tile = _tile_by_sym.get('159915.SZ') %}
+  {% set _tone_dir = {'pos':'up','neg':'dn'} %}
   <div class="cnx-tiles">
-    {# SSE Composite — look up by stable sym key, not position (index can shift when series are missing) #}
-    {% set _tile_by_sym = {} %}
-    {% for _mt in (market_tiles or []) %}{% set _ = _tile_by_sym.update({_mt.sym: _mt}) %}{% endfor %}
-    {% set _sse = _tile_by_sym.get('000001.SS') %}
-    {% set _csi = _tile_by_sym.get('510300.SS') %}
-    {% set _cnx_tile = _tile_by_sym.get('159915.SZ') %}
-    <div class="cnx-card cnx-tile" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-markets')">
-      <div class="sym"><span class="l-en">SHANGHAI</span><span class="l-zh">上证</span></div>
-      <div class="nm"><span class="l-en">SSE Composite</span><span class="l-zh">上证综指</span></div>
-      <div class="cnx-lt-live">
-        {% if _sse %}<div class="px nb-px" data-sym="000001.SS" data-mkt="cn" data-bare>{{ _sse.level }}</div><div class="chg {{ _sse.tone }}">{{ _sse.chg }} ({{ _sse.pct }})</div>{% else %}<div class="px">—</div>{% endif %}
-      </div>
-    </div>
-    <div class="cnx-card cnx-tile" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-markets')">
-      <div class="sym">CSI 300</div>
-      <div class="nm"><span class="l-en">Large cap ETF</span><span class="l-zh">沪深300</span></div>
-      <div class="cnx-lt-live">
-        {% if _csi %}<div class="px">{{ _csi.level }}</div><div class="chg {{ _csi.tone }}">{{ _csi.chg }} ({{ _csi.pct }})</div>{% else %}<div class="px">—</div>{% endif %}
-      </div>
-    </div>
-    <div class="cnx-card cnx-tile" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-markets')">
-      <div class="sym">CHINEXT</div>
-      <div class="nm"><span class="l-en">Growth ETF</span><span class="l-zh">创业板</span></div>
-      <div class="cnx-lt-live">
-        {% if _cnx_tile %}<div class="px">{{ _cnx_tile.level }}</div><div class="chg {{ _cnx_tile.tone }}">{{ _cnx_tile.chg }} ({{ _cnx_tile.pct }})</div>{% else %}<div class="px">—</div>{% endif %}
-      </div>
-    </div>
-    {# HSI tile #}
-    <div class="cnx-card cnx-tile" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-markets')">
-      <div class="sym"><span class="l-en">HANG SENG</span><span class="l-zh">恒生</span></div>
-      <div class="nm"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></div>
-      <div class="cnx-lt-live">
-        {% if hsi_tile %}<div class="px nb-px" data-sym="^HSI" data-mkt="hk" data-bare>{{ hsi_tile.level }}</div><div class="chg {{ hsi_tile.tone }}">{{ hsi_tile.chg }} ({{ hsi_tile.pct }})</div>{% else %}<div class="px">—</div>{% endif %}
+    <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog"
+         aria-label="China and Hong Kong indexes" onclick="cnxOpenDlg('cnx-dlg-markets')"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cnxOpenDlg('cnx-dlg-markets');}">
+      <div class="mx5-mkt-grid">
+        {# Shanghai Composite (live) #}
+        {% set _d = _tone_dir.get(_sse.tone, '') if _sse else '' %}
+        <div class="mx5-mkt-tile {{ _d }}" data-sym="000001.SS" data-mkt="cn">
+          <div class="mx5-mkt-ticker">SSE</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Shanghai</span><span class="l-zh">上证综指</span></div>
+          {% if _sse %}
+          <div class="mx5-mkt-price nb-px" data-sym="000001.SS" data-mkt="cn" data-bare>{{ _sse.level }}</div>
+          <div class="mx5-mkt-delta {{ _d }}">{{ _sse.pct }}</div>
+          {% else %}<div class="mx5-mkt-price">—</div><div class="mx5-mkt-delta">—</div>{% endif %}
+        </div>
+        {# CSI 300 ETF #}
+        {% set _d = _tone_dir.get(_csi.tone, '') if _csi else '' %}
+        <div class="mx5-mkt-tile {{ _d }}">
+          <div class="mx5-mkt-ticker">CSI 300</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Large cap</span><span class="l-zh">沪深300</span></div>
+          {% if _csi %}
+          <div class="mx5-mkt-price">{{ _csi.level }}</div>
+          <div class="mx5-mkt-delta {{ _d }}">{{ _csi.pct }}</div>
+          {% else %}<div class="mx5-mkt-price">—</div><div class="mx5-mkt-delta">—</div>{% endif %}
+        </div>
+        {# ChiNext ETF #}
+        {% set _d = _tone_dir.get(_cnx_tile.tone, '') if _cnx_tile else '' %}
+        <div class="mx5-mkt-tile {{ _d }}">
+          <div class="mx5-mkt-ticker">ChiNext</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Growth</span><span class="l-zh">创业板</span></div>
+          {% if _cnx_tile %}
+          <div class="mx5-mkt-price">{{ _cnx_tile.level }}</div>
+          <div class="mx5-mkt-delta {{ _d }}">{{ _cnx_tile.pct }}</div>
+          {% else %}<div class="mx5-mkt-price">—</div><div class="mx5-mkt-delta">—</div>{% endif %}
+        </div>
+        {# Hang Seng (live) #}
+        {% set _d = _tone_dir.get(hsi_tile.tone, '') if hsi_tile else '' %}
+        <div class="mx5-mkt-tile {{ _d }}" data-sym="^HSI" data-mkt="hk">
+          <div class="mx5-mkt-ticker">HSI</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Hang Seng</span><span class="l-zh">恒生</span></div>
+          {% if hsi_tile %}
+          <div class="mx5-mkt-price nb-px" data-sym="^HSI" data-mkt="hk" data-bare>{{ hsi_tile.level }}</div>
+          <div class="mx5-mkt-delta {{ _d }}">{{ hsi_tile.pct }}</div>
+          {% else %}<div class="mx5-mkt-price">—</div><div class="mx5-mkt-delta">—</div>{% endif %}
+        </div>
       </div>
     </div>
   </div>
@@ -1602,40 +2053,74 @@
     </div>
     {% endif %}
 
-    {# Market Sentiment card #}
-    <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-sentiment')">
+    {# ── D · Market Sentiment odometer (ported from dashboard.html.j2 9808–9884) —
+       replaces the crude washed-out cnx-dial (the "torching" bug). Dial = fear_euphoria.score
+       (0–100), falling back to the turnover-heat percentile — the SAME series the fallback
+       band word comes from, so the needle can never contradict the word. Zone class
+       (fg-greed/fg-fear/fg-neutral) drives --fg-col → --up/--warn/--down so the needle + zone
+       text flip in zh (Euphoria=bullish→red, Panic=bearish→green). #}
+    {% set _fe = latest.fear_euphoria %}
+    {% set _fe_score = (_fe.score if _fe and _fe.score is defined and _fe.score is not none else none) %}
+    {% set _fe_label = (_fe.label if _fe and _fe.label is defined else 'Neutral') %}
+    {% set _to_pct = (I.turnover.pctile | float) if (I.turnover and I.turnover.get('pctile') is not none) else none %}
+    {% set _sent_dial = (_fe_score | float) if _fe_score is not none else _to_pct %}
+    {% set _sent_zone = ('fg-greed' if _sent_dial > 60 else ('fg-fear' if _sent_dial < 40 else 'fg-neutral')) if _sent_dial is not none else 'fg-neutral' %}
+    {% set _sent_rot = ((_sent_dial / 100 * 180 - 90) | round(1)) if _sent_dial is not none else 0 %}
+    <div class="cnx-card {{ _sent_zone }}" role="button" tabindex="0" aria-haspopup="dialog" onclick="cnxOpenDlg('cnx-dlg-sentiment')"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cnxOpenDlg('cnx-dlg-sentiment');}">
       <div class="cnx-ctitle">{{ t('Market Sentiment','市场情绪') }}</div>
       {% if I.margin or I.turnover %}
-      {% set _fe = latest.fear_euphoria %}
-      {% set _fe_score = (_fe.score if _fe and _fe.score is defined else none) %}
-      {% set _fe_label = (_fe.label if _fe and _fe.label is defined else 'Neutral') %}
-      <svg class="cnx-dial" style="width:100%;max-width:210px;margin:0 auto;display:block" viewBox="0 0 200 108">
-        <defs><linearGradient id="cnx-dg" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="var(--down)"/><stop offset=".5" stop-color="var(--warn)"/><stop offset="1" stop-color="var(--up)"/>
-        </linearGradient></defs>
-        <path d="M18 96 A82 82 0 0 1 182 96" fill="none" stroke="url(#cnx-dg)" stroke-width="11" stroke-linecap="round" opacity=".8"/>
-        {# needle position: the fear/euphoria score when scored; else the turnover-heat
-           percentile — the SAME series the fallback band word ("Mania") below comes
-           from, so the needle can never contradict the word. Hidden only when
-           neither exists. Exact rotation around the arc centre (100,96), 0→-90°. #}
-        {% set _to_pct = (I.turnover.pctile | float) if (I.turnover and I.turnover.get('pctile') is not none) else none %}
-        {% set _fe_pos = _fe_score if _fe_score is not none else _to_pct %}
-        {% if _fe_pos is not none %}
-        <g transform="rotate({{ (((_fe_pos | float) * 1.8) - 90) | round(1) }} 100 96)">
-          <line x1="100" y1="96" x2="100" y2="32" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
-          <circle cx="100" cy="31" r="3.2" fill="var(--text)"/>
-        </g>
+      <div class="mx5-sentiment-dial-wrap" id="cnx-sentiment">
+        <svg viewBox="0 0 380 212" style="width:100%;max-width:300px;height:170px;display:inline-block;overflow:visible">
+          <defs>
+            <linearGradient id="cnxSentGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%"   stop-color="var(--down)"/>
+              <stop offset="35%"  stop-color="var(--warn)"/>
+              <stop offset="65%"  stop-color="var(--up)"/>
+              <stop offset="100%" stop-color="var(--up)"/>
+            </linearGradient>
+            <filter id="cnxDialGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          {# Track #}
+          <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="18" stroke-linecap="round"/>
+          {# Gradient decorative track #}
+          <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="url(#cnxSentGrad)" stroke-width="18" stroke-linecap="round" opacity=".55"/>
+          {% if _sent_dial is not none %}
+          {# Needle wrapped in <g> so filter bbox is always non-zero (group includes the hub circles).
+             fg-mark-s/fg-mark-f pick up --fg-col via CSS so the needle flips colour in zh. #}
+          <g filter="url(#cnxDialGlow)">
+            <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
+                  stroke-width="4" stroke-linecap="round"
+                  transform="rotate({{ _sent_rot }}, 190, 185)"/>
+            <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke-width="2.5"/>
+            <circle class="fg-mark-f" cx="190" cy="185" r="4"/>
+          </g>
+          {% endif %}
+          {# Zone labels: bilingual dual-text; placed below arc for clearance #}
+          <text class="l-en fg-lab-panic" x="26"  y="208" font-size="13" font-family="Inter,-apple-system,sans-serif" font-weight="700" text-anchor="start">PANIC</text>
+          <text class="l-zh fg-lab-panic" x="26"  y="208" font-size="13" font-family="Inter,-apple-system,sans-serif" font-weight="700" text-anchor="start">恐慌</text>
+          <text class="l-en fg-lab-euph" x="354" y="208" font-size="13" font-family="Inter,-apple-system,sans-serif" text-anchor="end" font-weight="700">EUPHORIA</text>
+          <text class="l-zh fg-lab-euph" x="354" y="208" font-size="13" font-family="Inter,-apple-system,sans-serif" text-anchor="end" font-weight="700">亢奋</text>
+        </svg>
+      </div>
+      <div class="mx5-sentiment-zone-text" style="color:var(--fg-col)">
+        {% if _fe_score is not none %}
+        <span>{{ t(_fe_label, _fe_label) }}</span>
+        {% elif I.turnover %}
+        <span>{{ t(I.turnover.band | title, {'apathy':'清淡','normal':'正常','active':'活跃','mania':'狂热'}.get(I.turnover.band, I.turnover.band | title)) }}</span>
+        {% else %}
+        <span>{{ t('Neutral','中性') }}</span>
         {% endif %}
-        <circle cx="100" cy="96" r="5" fill="var(--text)"/>
-        <text x="16" y="106" font-size="9" fill="var(--muted)" class="l-en">PANIC</text><text x="16" y="106" font-size="9" fill="var(--muted)" class="l-zh">恐慌</text>
-        <text x="158" y="106" font-size="9" fill="var(--muted)" class="l-en">EUPHORIA</text><text x="158" y="106" font-size="9" fill="var(--muted)" class="l-zh">亢奋</text>
-      </svg>
-      {% if _fe_score is not none %}
-      <div class="cnx-dial-word">{{ _fe_score }} · {{ t(_fe_label, _fe_label) }}</div>
-      {% elif I.turnover %}
-      <div class="cnx-dial-word">{{ I.turnover.band | title }}</div>
-      {% endif %}
-      <div class="cnx-dial-sub">{{ t('a heads-up, not a scored signal','仅供参考，不构成评分信号') }}</div>
+      </div>
+      <div class="mx5-sentiment-label">
+        {% if _sent_dial is not none %}
+        <span class="l-en">Composite at {{ _sent_dial | int }} &middot; a heads-up, not a scored signal</span>
+        <span class="l-zh">综合指数 {{ _sent_dial | int }} &middot; 仅供参考，不构成评分信号</span>
+        {% else %}
+        <span class="l-en">a heads-up, not a scored signal</span>
+        <span class="l-zh">仅供参考，不构成评分信号</span>
+        {% endif %}
+      </div>
       {% else %}
       <div style="font-size:12px;color:var(--muted)">{{ t('Data building…','数据积累中…') }}</div>
       {% endif %}
@@ -3694,6 +4179,99 @@ window.__CHART_SWAP__ = {
   window.cnxToggleHm=cnxToggleHm;
   cnxResolveHash();
   window.addEventListener('hashchange',cnxResolveHash);
+})();
+</script>
+{# ── B · Path-chart hover enhancement (ported from dashboard.html.j2 ~7141) — pure
+   progressive layer. Reads data-points (viewBox x/y baked in) + the SVG's live bounding
+   rect, maps viewBox→screen so the crosshair/dot/tooltip stay pixel-crisp under the
+   non-uniform stretch. Chart is fully legible without this. Verdict colours resolve from
+   the page's --up/--warn/--down CSS vars (not hardcoded hex) so the dot + tooltip verdict
+   flip correctly in zh 红涨绿跌. #}
+<script>
+(function(){
+  var svg = document.querySelector('.mx5-sc-right .mx5-path-svg[data-points]');
+  if(!svg) return;
+  var plot = svg.closest('.mx5-path-plot'); if(!plot) return;
+  var cross = plot.querySelector('.mx5-path-cross');
+  var dot   = plot.querySelector('.mx5-path-dot');
+  var tip   = plot.querySelector('.mx5-path-tip');
+  if(!cross || !dot || !tip) return;
+  var tDate = tip.querySelector('.mx5-path-tip-date');
+  var tScore= tip.querySelector('.mx5-path-tip-score');
+  var tVerd = tip.querySelector('.mx5-path-tip-verdict');
+  var pts;
+  try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch(e){ return; }
+  if(!pts.length) return;
+  var VBW = +(svg.getAttribute('data-vbw')||1000);
+  var VBH = +(svg.getAttribute('data-vbh')||224);
+  /* Resolve verdict colours from CSS custom props so they follow the html[data-lang] zh
+     swap (risk-on=red / risk-off=green in Chinese). Re-read on langchange. */
+  var COL = {};
+  function refreshCol(){
+    var cs = getComputedStyle(document.documentElement);
+    COL = {
+      'Risk-on': (cs.getPropertyValue('--up')||'#22d97a').trim(),
+      'Mixed':   (cs.getPropertyValue('--warn')||'#f59e0b').trim(),
+      'Risk-off':(cs.getPropertyValue('--down')||'#ef4444').trim()
+    };
+  }
+  refreshCol();
+  function isZh(){
+    var el=document.documentElement;
+    return (el.getAttribute('data-lang')||'').slice(0,2)==='zh';
+  }
+  function nearest(clientX){
+    var r = svg.getBoundingClientRect();
+    var vx = (clientX - r.left) / r.width * VBW;
+    var best=0, bd=Infinity;
+    for(var i=0;i<pts.length;i++){
+      var d=Math.abs(pts[i].x - vx);
+      if(d<bd){ bd=d; best=i; }
+    }
+    return best;
+  }
+  function show(i){
+    var p = pts[i]; if(!p) return;
+    var r = svg.getBoundingClientRect();
+    var pr = plot.getBoundingClientRect();
+    var sx = (p.x / VBW) * r.width  + (r.left - pr.left);
+    var sy = (p.y / VBH) * r.height + (r.top  - pr.top);
+    cross.style.left = sx + 'px';   cross.style.opacity = '1';
+    dot.style.left = sx + 'px';     dot.style.top = sy + 'px';
+    dot.style.background = COL[p.v] || COL['Risk-on'];
+    dot.style.opacity = '1';
+    tDate.textContent = isZh() ? (p.mz || p.d) : (p.md || p.d);
+    tScore.textContent = p.s;
+    tVerd.textContent = isZh() ? (p.vz||p.v) : p.v;
+    tVerd.style.color = COL[p.v] || COL['Risk-on'];
+    var half = tip.offsetWidth/2 || 60;
+    var clx = Math.max(half+2, Math.min(pr.width-half-2, sx));
+    tip.style.left = clx + 'px';
+    tip.style.top  = sy + 'px';
+    tip.classList.add('show');
+  }
+  function hide(){
+    cross.style.opacity='0'; dot.style.opacity='0'; tip.classList.remove('show');
+  }
+  var raf=0, lastX=0;
+  function onMove(clientX){
+    lastX=clientX;
+    if(raf) return;
+    raf=requestAnimationFrame(function(){ raf=0; show(nearest(lastX)); });
+  }
+  svg.addEventListener('mousemove', function(e){ onMove(e.clientX); });
+  svg.addEventListener('mouseleave', hide);
+  svg.addEventListener('touchstart', function(e){
+    if(e.touches && e.touches[0]) show(nearest(e.touches[0].clientX));
+  }, {passive:true});
+  svg.addEventListener('touchmove', function(e){
+    if(e.touches && e.touches[0]) show(nearest(e.touches[0].clientX));
+  }, {passive:true});
+  svg.addEventListener('touchend', function(){ setTimeout(hide, 1400); }, {passive:true});
+  document.addEventListener('langchange', function(){
+    refreshCol();
+    if(tip.classList.contains('show')) show(nearest(lastX));
+  });
 })();
 </script>
 {%- endif %}

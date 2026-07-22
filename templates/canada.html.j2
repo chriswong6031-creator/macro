@@ -296,8 +296,12 @@
   body.page-canada .ms-yellow .cax-regime-pill{background:rgba(224,160,48,.10)}
   body.page-canada .ms-yellow .cax-regime-pill .dot{background:var(--warn)}
   body.page-canada .cax-gauge-row{display:flex;gap:20px;align-items:center;margin-bottom:16px;margin-top:10px}
-  body.page-canada .cax-gauge-svg{flex:0 0 192px;width:192px;height:120px;overflow:visible;display:block}
-  @media(max-width:560px){body.page-canada .cax-gauge-svg{flex:0 0 90px;width:90px;height:58px}}
+  /* Hero gauge — US mx5-gauge semicircle geometry (viewBox 0 -4 140 101, r=56, ticks + 0/50/100 scale) */
+  body.page-canada .cax-gauge-svg{flex:0 0 196px;width:196px;height:142px;overflow:visible;display:block}
+  @media(max-width:560px){body.page-canada .cax-gauge-svg{flex:0 0 108px;width:108px;height:80px}}
+  body.page-canada .cax-gauge-num{fill:var(--warn);font-weight:800}
+  body.page-canada .ms-green .cax-gauge-num{fill:var(--up)}
+  body.page-canada .ms-red .cax-gauge-num{fill:var(--down)}
   body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
   body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
   body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
@@ -338,9 +342,86 @@
   body.page-canada .cax-hero-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative}
   body.page-canada .cax-hbtn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);color:var(--text);border-radius:999px;padding:5px 12px;font-size:11.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
   body.page-canada .cax-hbtn:hover{background:rgba(255,255,255,.09)}
+  /* when a hero button also carries .gbtn, let the shared glass-button recipe own the surface */
+  body.page-canada .cax-hbtn.gbtn{background:var(--gbtn-bg);border:1px solid var(--gbtn-brd);gap:6px}
+  body.page-canada .cax-hbtn.gbtn:hover{background:var(--gbtn-bg-hover)}
   body.page-canada .cax-hbtn .n{font-weight:700}
   body.page-canada .cax-path-h{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
   body.page-canada .cax-path-svg{width:100%;height:auto;display:block}
+  /* ── 60-session path — ported from US mx5-sc-right (re-scoped to page-canada) ── */
+  body.page-canada .mx5-sc-right{padding:18px 24px 14px;display:flex;flex-direction:column}
+  body.page-canada .mx5-path-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  body.page-canada .mx5-path-title{font-size:11px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--muted)}
+  body.page-canada .mx5-path-meta{font-size:11px;color:var(--muted)}
+  body.page-canada .mx5-path-plot{position:relative;flex:1;min-height:190px;display:flex}
+  body.page-canada .mx5-path-svg{display:block;width:100%;flex:1;min-height:190px;overflow:visible;touch-action:pan-y}
+  /* verdict-band washes + boundary hairlines — paint via --up/--down/--warn so zh flips */
+  body.page-canada .cax-pz-on{fill:color-mix(in srgb,var(--up) 6%,transparent)}
+  body.page-canada .cax-pz-mid{fill:color-mix(in srgb,var(--warn) 6%,transparent)}
+  body.page-canada .cax-pz-off{fill:color-mix(in srgb,var(--down) 6%,transparent)}
+  body.page-canada .cax-pz-hl-on{stroke:color-mix(in srgb,var(--up) 24%,transparent)}
+  body.page-canada .cax-pz-hl-off{stroke:color-mix(in srgb,var(--down) 22%,transparent)}
+  body.page-canada .mx5-path-labels{position:absolute;inset:0;pointer-events:none;font-family:Inter,-apple-system,sans-serif;font-size:11px;line-height:1}
+  body.page-canada .mx5-path-labels > span{position:absolute;white-space:nowrap}
+  body.page-canada .mx5-pl-y{left:6px;transform:translateY(-50%);color:var(--muted);font-variant-numeric:tabular-nums}
+  body.page-canada .mx5-pl-zone{right:14px;transform:translateY(-50%);font-weight:600}
+  body.page-canada .mx5-pl-zone.on{color:color-mix(in srgb,var(--up) 66%,transparent)}
+  body.page-canada .mx5-pl-zone.mid{color:color-mix(in srgb,var(--warn) 70%,transparent)}
+  body.page-canada .mx5-pl-zone.off{color:color-mix(in srgb,var(--down) 64%,transparent)}
+  body.page-canada .mx5-pl-x{top:96.4%;color:var(--muted)}
+  body.page-canada .mx5-pl-today{width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);background:currentColor;box-shadow:0 0 6px currentColor}
+  /* hover enhancement layer — hidden until JS shows */
+  body.page-canada .mx5-path-cross{position:absolute;top:0;width:1px;height:100%;background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.06));opacity:0;transform:translateX(-1px);pointer-events:none;transition:opacity .12s ease-out;will-change:left,opacity}
+  body.page-canada .mx5-path-dot{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--up);border:2px solid rgba(13,18,26,.9);box-shadow:0 0 10px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.25);opacity:0;pointer-events:none;transform:translate(-50%,-50%);transition:opacity .12s ease-out;will-change:left,top,opacity}
+  body.page-canada .mx5-path-tip{position:absolute;z-index:6;pointer-events:none;display:flex;flex-direction:column;gap:2px;padding:8px 11px;border-radius:10px;background:rgba(15,19,26,.72);border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 30px rgba(0,0,0,.5);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);opacity:0;transform:translate(-50%,calc(-100% - 14px)) translateY(4px);transition:opacity .13s ease-out,transform .13s ease-out;white-space:nowrap}
+  [data-theme="light"] body.page-canada .mx5-path-tip{background:rgba(255,255,255,.82);border-color:rgba(0,0,0,.10);box-shadow:0 8px 30px rgba(0,0,0,.16)}
+  body.page-canada .mx5-path-tip.show{opacity:1;transform:translate(-50%,calc(-100% - 14px))}
+  body.page-canada .mx5-path-tip-date{font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--muted);text-transform:uppercase}
+  body.page-canada .mx5-path-tip-row{display:flex;align-items:baseline;gap:7px}
+  body.page-canada .mx5-path-tip-score{font-size:16px;font-weight:800;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+  body.page-canada .mx5-path-tip-verdict{font-size:12px;font-weight:600}
+  @media(prefers-reduced-motion:reduce){body.page-canada .mx5-path-cross,body.page-canada .mx5-path-dot,body.page-canada .mx5-path-tip{transition:none}}
+  @media(max-width:1000px){body.page-canada .mx5-sc-right{display:none}}
+  /* ── Markets face + Sentiment odometer row (ported from US mx5) ── */
+  body.page-canada .cax-mktrow{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;margin:0 0 16px;align-items:stretch}
+  @media(max-width:900px){body.page-canada .cax-mktrow{grid-template-columns:1fr}}
+  /* combined markets face — glass card wrapping the tile grid */
+  body.page-canada .sxg-face.mx5-card-face{position:relative;display:flex;flex-direction:column;background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.10));border-radius:18px;backdrop-filter:blur(20px) saturate(1.3);box-shadow:0 4px 22px rgba(0,0,0,.28),0 1px 0 rgba(255,255,255,.04) inset;padding:18px 20px 14px;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}
+  body.page-canada .sxg-face.mx5-card-face::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);pointer-events:none}
+  body.page-canada .sxg-face.mx5-card-face:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);box-shadow:0 6px 28px rgba(0,0,0,.35);transform:translateY(-1px)}
+  body.page-canada .sxg-face.mx5-card-face:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  body.page-canada .mx5-mkt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:1100px){body.page-canada .mx5-mkt-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){body.page-canada .mx5-mkt-grid{grid-template-columns:1fr 1fr}}
+  body.page-canada .mx5-mkt-tile{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 15px 11px;position:relative;overflow:hidden;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}
+  [data-theme="light"] body.page-canada .mx5-mkt-tile{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07)}
+  body.page-canada .mx5-mkt-ticker{font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:3px}
+  body.page-canada .mx5-mkt-sub{font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+  body.page-canada .mx5-mkt-price{font-size:19px;font-weight:700;line-height:1.05;color:var(--text);margin-bottom:4px;font-variant-numeric:tabular-nums}
+  body.page-canada .mx5-mkt-price.up{color:var(--up)}body.page-canada .mx5-mkt-price.dn{color:var(--down)}
+  body.page-canada .mx5-mkt-delta{font-size:12.5px;font-weight:600}
+  body.page-canada .mx5-mkt-delta.up{color:var(--up)}body.page-canada .mx5-mkt-delta.dn{color:var(--down)}
+  /* sentiment odometer card */
+  body.page-canada #cax-sentiment{display:flex}
+  body.page-canada #cax-sentiment .mx5-card{position:relative;overflow:hidden;display:flex;flex-direction:column;width:100%;background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.10));border-radius:18px;backdrop-filter:blur(20px) saturate(1.3);box-shadow:0 4px 22px rgba(0,0,0,.28),0 1px 0 rgba(255,255,255,.04) inset;padding:16px 18px 14px;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}
+  body.page-canada #cax-sentiment .mx5-card::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);pointer-events:none}
+  body.page-canada #cax-sentiment .mx5-card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);box-shadow:0 6px 28px rgba(0,0,0,.35);transform:translateY(-1px)}
+  body.page-canada #cax-sentiment .mx5-card:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  body.page-canada .mx5-card-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  body.page-canada .mx5-sentiment-dial-wrap{text-align:center;margin-bottom:2px}
+  body.page-canada .mx5-sentiment-zone-text{font-size:15px;font-weight:700;text-align:center;margin-bottom:3px;color:var(--fg-col,var(--warn))}
+  body.page-canada .mx5-sentiment-label{font-size:11px;color:var(--muted);text-align:center;margin-top:2px;line-height:1.35}
+  body.page-canada .plf-open{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:11px;font-weight:650;color:var(--link);opacity:.72;align-self:flex-end;margin-left:auto;transition:opacity .18s,transform .18s}
+  body.page-canada #cax-sentiment .mx5-card:hover .plf-open,body.page-canada #cax-sentiment .mx5-card:focus-within .plf-open{opacity:1;transform:translateX(2px)}
+  /* zh 红涨绿跌 for the participation dial: broad=constructive→red, thin→green, mixed→amber.
+     --fg-col routes through --up/--warn/--down so the SVG marks + zone word flip in zh. */
+  body.page-canada .fg-greed{--fg-col:var(--up)}
+  body.page-canada .fg-fear{--fg-col:var(--down)}
+  body.page-canada .fg-neutral{--fg-col:var(--warn)}
+  body.page-canada #cax-sentiment .fg-mark-s{stroke:var(--fg-col)}
+  body.page-canada #cax-sentiment .fg-mark-f{fill:var(--fg-col)}
+  body.page-canada #cax-sentiment .fg-lab-panic{fill:var(--down)}
+  body.page-canada #cax-sentiment .fg-lab-euph{fill:var(--up)}
   /* popovers */
   body.page-canada .cax-pop{position:absolute;top:calc(100% + 10px);left:0;width:300px;background:rgba(13,18,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.6);padding:16px 18px;z-index:40;display:none}
   body.page-canada .cax-pop.open{display:block}
@@ -717,25 +798,62 @@
     <span class="cax-regime-pill"><span class="dot"></span>
       {{ t(latest.quad_name, _QZH.get(latest.quad_name, latest.quad_name)) }}<span style="opacity:.55"> · {{ t(latest.cycle_tag or 'mid', _CZH.get(latest.cycle_tag or 'mid', latest.cycle_tag or 'mid')) }}</span></span>
     <div class="cax-gauge-row">
-      {# arc centre (60,68) r=50; needle rotates around the centre (US idiom):
-         score 0→-90° … 100→+90°; accents class-driven via .ms-* #}
+      {# Regime odometer — US mx5-gauge geometry (viewBox 0 -4 140 101, arc r=56 around
+         centre 70,75). Needle: score 0→-90° … 100→+90°. Colour is class-driven via .ms-*
+         (paints --up/--down/--warn) so it flips correctly in zh. Arc length = π·56 ≈ 175.9;
+         filled = score/100·175.9, gap fills the rest. #}
       {% set _needle_deg = ((_ms_score * 1.8) - 90) | round(1) %}
-      <svg class="cax-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
-        <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
-        <path class="cax-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ _ms_score * 1.57 }} 200"/>
-        <g class="cax-gauge-needle" transform="rotate({{ _needle_deg }} 60 68)">
-          <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
-          <circle class="cax-needle-hub" cx="60" cy="68" r="5"/>
-          <circle class="cax-needle-core" cx="60" cy="68" r="1.8"/>
-          <circle class="cax-needle-tip" cx="60" cy="30" r="2.6"/>
+      {% set _arc_len = 175.9 %}
+      {% set _filled = (_ms_score / 100 * _arc_len) | round(2) %}
+      {% set _gap = (_arc_len - _filled + 40) | round(2) %}
+      {% set _sc_col = 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') %}
+      <svg class="cax-gauge-svg" viewBox="0 -4 140 101" fill="none" aria-hidden="true">
+        <defs>
+          <filter id="caxNeedleGlow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="caxArcGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        {# Track #}
+        <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round" fill="none"/>
+        {# Filled arc — colour class-driven; length encodes the 0-100 score #}
+        <path class="cax-gauge-fill" d="M 14 75 A 56 56 0 0 1 126 75" stroke="{{ _sc_col }}" stroke-width="10" stroke-linecap="round" fill="none"
+              stroke-dasharray="{{ _filled }} {{ _gap }}" filter="url(#caxArcGlow)"/>
+        {# Tick marks at 0/25/50/75/100 #}
+        <g stroke="rgba(255,255,255,.22)" stroke-width="1.2">
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-90 70 75)"/>
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-45 70 75)"/>
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(0 70 75)"/>
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(45 70 75)"/>
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(90 70 75)"/>
         </g>
+        {# Scale labels #}
+        <text x="14"  y="95" fill="rgba(255,255,255,.30)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">0</text>
+        <text x="70"  y="10" fill="rgba(255,255,255,.30)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
+        <text x="126" y="95" fill="rgba(255,255,255,.30)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
+        {# Needle #}
+        <g class="cax-gauge-needle" transform="rotate({{ _needle_deg }} 70 75)" filter="url(#caxNeedleGlow)">
+          <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
+          <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
+          <circle cx="70" cy="75" r="7" fill="rgba(255,255,255,.10)"/>
+          <circle class="cax-needle-hub" cx="70" cy="75" r="4.5"/>
+          <circle class="cax-needle-core" cx="70" cy="75" r="2"/>
+          <circle class="cax-needle-tip" cx="70" cy="25.5" r="2.5"/>
+        </g>
+        {# Score numeral inside the arc (US idiom) #}
+        <text class="cax-gauge-num" x="70" y="62" font-size="24" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">{{ _ms_score }}</text>
+        <text x="70" y="73" fill="rgba(255,255,255,.32)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">/ 100</text>
       </svg>
       <div>
         <div class="cax-score-line"><span id="ms-score" class="cax-big-score">{{ _ms_score }}</span><span id="ms-word" class="cax-verdict">{{ t(_ms_label, _ms_label_zh) }} <span class="arr">▶</span></span></div>
         <div class="cax-sub-line">
-          <span class="cax-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">绿 — 支持趋势跟随</span></span>
-          <span class="cax-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">黄 — 谨慎交易</span></span>
-          <span class="cax-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">红 — 优先保住本金</span></span>
+          {# zh names the TIER (偏多/中性/避险), never the colour word — the paint flips 红涨绿跌
+             in zh (risk-off→green), so a literal 红/绿 would contradict it. Matches macro.html. #}
+          <span class="cax-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">偏多 — 支持趋势跟随</span></span>
+          <span class="cax-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">中性 — 谨慎交易</span></span>
+          <span class="cax-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">避险 — 优先保住本金</span></span>
         </div>
       </div>
     </div>
@@ -744,10 +862,12 @@
     <div class="cax-hero-btns">
       {% set _n_bull = (_comps | selectattr('tone', 'equalto', 'pos') | list | length) %}
       {% set _n_total = (_comps | length) %}
-      <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-signals',event)">⌁
+      <button class="cax-hbtn gbtn gbtn-pill gbtn-sm" onclick="caxTogglePop('cax-pop-signals',event)">⌁
         <span class="l-en">{{ _n_bull }} of {{ _n_total }} signals aligned</span><span class="l-zh">{{ _n_total }} 项中 {{ _n_bull }} 项一致</span>
         <span class="n">▾</span></button>
-      <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
+      {# gbtn styling (matches the signals button) + #3176's flipping --down score: the
+         pullback family is a DIRECTION read and flips 红涨绿跌 in zh (operator ruling 2026-07-21). #}
+      <button class="cax-hbtn gbtn gbtn-pill gbtn-sm" onclick="caxTogglePop('cax-pop-risk',event)">⚠
         <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span>{% if _rr_score is not none %} · <span class="n" style="color:var(--down)">{{ _rr_score }}</span>{% endif %} ▾</button>
 
       <!-- popover: factor breakdown -->
@@ -784,102 +904,253 @@
       </div>
     </div>
   </div>
-  <div class="cax-hero-right">
-    <div class="cax-path-h"><span>{{ t('11-session path', '11交易日走势') }}</span></div>
-    {% if ms_history and ms_history | length >= 2 %}
-    {% set _pts = ms_history %}
-    {% set _n = _pts | length %}
-    <svg class="cax-path-svg" viewBox="0 0 560 232" aria-hidden="true">
-      {# style= overrides presentation attrs and resolves var()/color-mix; bare fill= cannot #}
-      <rect x="20" y="22" width="520" height="56" style="fill:color-mix(in srgb,var(--up) 6%,transparent)"/>
-      <rect x="20" y="134" width="520" height="56" style="fill:color-mix(in srgb,var(--down) 6%,transparent)"/>
-      <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
-      <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end">{{ t('Risk-on','风险偏好') }}</text>
-      <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end">{{ t('Mixed','混合') }}</text>
-      <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end">{{ t('Risk-off','避险') }}</text>
-      <text x="14" y="26" font-size="9" fill="var(--muted)" text-anchor="end">100</text>
-      <text x="14" y="109" font-size="9" fill="var(--muted)" text-anchor="end">50</text>
-      <text x="14" y="192" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
-      {% set _step = 520 / ([_n - 1, 1] | max) %}
-      {% set _poly_pts = [] %}
-      {% for p in _pts %}{% set _x = 20 + loop.index0 * _step %}{% set _y = 190 - (p.score / 100) * 168 %}{% set _ = _poly_pts.append((_x|round(1)|string) + ' ' + (_y|round(1)|string)) %}{% endfor %}
-      <path d="M{{ _poly_pts | join(' L') }}"
-            fill="none" stroke="{{ 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') }}" stroke-width="2.2" stroke-linejoin="round"/>
-      <text x="30" y="222" font-size="9" fill="var(--muted)">{{ _pts[0].date if _pts[0] else '' }}</text>
-      <text x="536" y="222" font-size="9" fill="var(--muted)" text-anchor="end">{{ _pts[-1].date if _pts[-1] else '' }}</text>
-    </svg>
+  {# ── 60-session path panel (US mx5-sc-right; hidden ≤700px per CSS). Verdict bands:
+     risk-off <42, mixed 42–60, risk-on ≥60. Legit chart geometry: preserveAspectRatio=none
+     SVG fills the plot box; glyphs/dot are a screen-space HTML overlay so they never warp. #}
+  <div class="cax-hero-right mx5-sc-right">
+    {% set _mx5_hist = ms_history if (ms_history is defined and ms_history and ms_history | length >= 2) else none %}
+    {% set _mx5_hist_n = _mx5_hist | length if _mx5_hist else 0 %}
+    <div class="mx5-path-header">
+      <span class="mx5-path-title">
+        <span class="l-en">{% if _mx5_hist_n > 0 and _mx5_hist_n < 60 %}{{ _mx5_hist_n }}-session path{% else %}60-session path{% endif %}</span>
+        <span class="l-zh">{% if _mx5_hist_n > 0 and _mx5_hist_n < 60 %}近 {{ _mx5_hist_n }} 交易日走势{% else %}60 交易日走势{% endif %}</span>
+      </span>
+      <span class="mx5-path-meta"><span class="l-en">Score vs time</span><span class="l-zh">综合评分 · 时序</span></span>
+    </div>
+    {% if _mx5_hist %}
+    {% set _sc_col = 'var(--up)' if _ms_color == 'green' else ('var(--down)' if _ms_color == 'red' else 'var(--warn)') %}
+    {% set _ph_n = _mx5_hist | length %}
+    {% set PX0 = 44 %}{% set PXW = 944 %}{% set PY0 = 10 %}{% set PYB = 194 %}
+    {% set _mx5_mos_en = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+    {% set _ph_yfor = PYB - PY0 %}
+    {% set _y100 = PY0 %}
+    {% set _y75  = (PY0 + 25.0/100 * _ph_yfor) | round(2) %}
+    {% set _y60  = (PY0 + 40.0/100 * _ph_yfor) | round(2) %}
+    {% set _y50  = (PY0 + 50.0/100 * _ph_yfor) | round(2) %}
+    {% set _y42  = (PY0 + 58.0/100 * _ph_yfor) | round(2) %}
+    {% set _y25  = (PY0 + 75.0/100 * _ph_yfor) | round(2) %}
+    {% set _y0   = PYB %}
+    {% set _ph_pts_line = [] %}
+    {% set _ph_json = [] %}
+    {% for row in _mx5_hist %}
+      {% set _ph_x = (PX0 + (loop.index0 / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+      {% set _row_s = row.score if (row.score is defined and row.score is not none) else 50 %}
+      {% set _ph_y = (PY0 + (100 - _row_s) / 100 * _ph_yfor) | round(2) %}
+      {% set _rv = 'Risk-on' if _row_s >= 60 else ('Mixed' if _row_s >= 42 else 'Risk-off') %}
+      {% set _rvz = '偏多' if _row_s >= 60 else ('中性' if _row_s >= 42 else '偏空') %}
+      {% if _ph_pts_line.append(_ph_x ~ ',' ~ _ph_y) %}{% endif %}
+      {% if _ph_json.append({'d': row.date, 'md': (_mx5_mos_en[row.date[5:7]|int] ~ ' ' ~ (row.date[8:10]|int)) if (row.date and row.date|length >= 10) else '', 'mz': ((row.date[5:7]|int)|string ~ '月' ~ (row.date[8:10]|int)|string) if (row.date and row.date|length >= 10) else '', 's': row.score, 'v': _rv, 'vz': _rvz, 'x': _ph_x, 'y': _ph_y}) %}{% endif %}
+    {% endfor %}
+    {% set _ph_nticks = [_ph_n, 5] | min %}
+    {% set _ph_tick_idx = [] %}
+    {% if _ph_n <= 6 %}
+      {% for i in range(_ph_n) %}{% if _ph_tick_idx.append(i) %}{% endif %}{% endfor %}
     {% else %}
-    <div style="height:232px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)">{{ t('Building the trend view — ' ~ (ms_history|length if ms_history else 0) ~ ' of 11 sessions logged. Fills in nightly.','趋势图积累中 — 已记录 ' ~ (ms_history|length if ms_history else 0) ~ '/11 个交易日，每晚更新。') }}</div>
+      {% for k in range(_ph_nticks + 1) %}{% if _ph_tick_idx.append((k / _ph_nticks * (_ph_n - 1)) | round | int) %}{% endif %}{% endfor %}
+    {% endif %}
+    <div class="mx5-path-plot">
+    <svg class="mx5-path-svg" viewBox="0 0 1000 224" preserveAspectRatio="none"
+         data-points='{{ _ph_json | tojson }}'
+         data-px0="{{ PX0 }}" data-pxw="{{ PXW }}" data-py0="{{ PY0 }}" data-pyb="{{ PYB }}"
+         data-vbw="1000" data-vbh="224"
+         role="img" aria-label="{{ _mx5_hist_n }}-session macro score path, {{ _mx5_hist[0].score }} to {{ _mx5_hist[-1].score }}">
+      <defs>
+        <linearGradient id="caxPathAreaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="{{ _sc_col }}" stop-opacity=".40"/>
+          <stop offset="62%"  stop-color="{{ _sc_col }}" stop-opacity=".07"/>
+          <stop offset="100%" stop-color="{{ _sc_col }}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      {# Verdict-band tinted zones (paint via --up/--down/--warn washes; zh mirror below flips on/off) #}
+      <rect class="cax-pz-on"  x="0" y="{{ _y100 }}" width="1000" height="{{ (_y60 - _y100) | round(2) }}"/>
+      <rect class="cax-pz-mid" x="0" y="{{ _y60 }}"  width="1000" height="{{ (_y42 - _y60) | round(2) }}"/>
+      <rect class="cax-pz-off" x="0" y="{{ _y42 }}"  width="1000" height="{{ (_y0 - _y42) | round(2) }}"/>
+      <line class="cax-pz-hl-on"  x1="0" y1="{{ _y60 }}" x2="1000" y2="{{ _y60 }}" stroke-width="1" stroke-dasharray="2,5"/>
+      <line class="cax-pz-hl-off" x1="0" y1="{{ _y42 }}" x2="1000" y2="{{ _y42 }}" stroke-width="1" stroke-dasharray="2,5"/>
+      <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+        <line x1="{{ PX0 }}" y1="{{ _y100 }}" x2="988" y2="{{ _y100 }}"/>
+        <line x1="{{ PX0 }}" y1="{{ _y75 }}"  x2="988" y2="{{ _y75 }}"/>
+        <line x1="{{ PX0 }}" y1="{{ _y50 }}"  x2="988" y2="{{ _y50 }}" stroke-dasharray="4,5"/>
+        <line x1="{{ PX0 }}" y1="{{ _y25 }}"  x2="988" y2="{{ _y25 }}"/>
+      </g>
+      <path d="M{{ _ph_pts_line | join(' L') }} L{{ (PX0 + PXW) | round(2) }},{{ PYB }} L{{ PX0 }},{{ PYB }} Z" fill="url(#caxPathAreaGrad)" stroke="none"/>
+      <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="{{ _sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
+      <line x1="{{ PX0 }}" y1="{{ PYB }}" x2="988" y2="{{ PYB }}" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+      <g font-size="11" font-family="Inter,-apple-system,sans-serif">
+      {% for _ti in _ph_tick_idx %}
+        {% set _tx = (PX0 + (_ti / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+        <line x1="{{ _tx }}" y1="{{ PYB }}" x2="{{ _tx }}" y2="{{ (PYB + 4) | round(1) }}" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+      {% endfor %}
+      </g>
+      {% set _ph_last_x = (PX0 + PXW) | round(2) %}
+      {% set _ph_last_y = (PY0 + (100 - _mx5_hist[-1].score) / 100 * _ph_yfor) | round(2) %}
+    </svg>
+    {# Axis labels + today marker: screen-space HTML overlay (never stretched by the SVG's non-uniform scale) #}
+    <div class="mx5-path-labels" aria-hidden="true">
+      <span class="mx5-pl-y" style="top:{{ (_y100 / 224 * 100) | round(2) }}%">100</span>
+      <span class="mx5-pl-y" style="top:{{ (_y75  / 224 * 100) | round(2) }}%">75</span>
+      <span class="mx5-pl-y" style="top:{{ (_y50  / 224 * 100) | round(2) }}%">50</span>
+      <span class="mx5-pl-y" style="top:{{ (_y25  / 224 * 100) | round(2) }}%">25</span>
+      <span class="mx5-pl-y" style="top:{{ (_y0   / 224 * 100) | round(2) }}%">0</span>
+      <span class="mx5-pl-zone on"  style="top:{{ ((_y100 + 13) / 224 * 100) | round(2) }}%"><span class="l-en">Risk-on</span><span class="l-zh">偏多</span></span>
+      <span class="mx5-pl-zone mid" style="top:{{ (((_y60 + _y42) / 2) / 224 * 100) | round(2) }}%"><span class="l-en">Mixed</span><span class="l-zh">中性</span></span>
+      <span class="mx5-pl-zone off" style="top:{{ ((_y0 - 7) / 224 * 100) | round(2) }}%"><span class="l-en">Risk-off</span><span class="l-zh">偏空</span></span>
+      {% for _ti in _ph_tick_idx %}
+        {% set _tx = (PX0 + (_ti / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
+        {% set _txf = 'translate(0,-50%)' if loop.first else ('translate(-100%,-50%)' if loop.last else 'translate(-50%,-50%)') %}
+        {% set _tdate = _mx5_hist[_ti].date %}
+        {% if _tdate and _tdate|length >= 10 %}
+        <span class="mx5-pl-x" style="left:{{ (_tx / 1000 * 100) | round(3) }}%;transform:{{ _txf }}"><span class="l-en">{{ _mx5_mos_en[_tdate[5:7]|int] }} {{ _tdate[8:10]|int }}</span><span class="l-zh">{{ _tdate[5:7]|int }}月{{ _tdate[8:10]|int }}</span></span>
+        {% endif %}
+      {% endfor %}
+      <span class="mx5-pl-today" style="left:{{ (_ph_last_x / 1000 * 100) | round(3) }}%;top:{{ (_ph_last_y / 224 * 100) | round(3) }}%;color:{{ _sc_col }}"></span>
+    </div>
+    {# JS hover enhancement layer (screen-space; chart is complete without it) #}
+    <div class="mx5-path-cross" aria-hidden="true"></div>
+    <div class="mx5-path-dot" aria-hidden="true"></div>
+    <div class="mx5-path-tip" role="status" aria-live="off">
+      <span class="mx5-path-tip-date"></span>
+      <span class="mx5-path-tip-row"><b class="mx5-path-tip-score"></b><span class="mx5-path-tip-verdict"></span></span>
+    </div>
+    </div>{# /mx5-path-plot #}
+    {% else %}
+    {# Honest placeholder when ms_history absent or <2 points #}
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center">{{ t('Building the trend view — ' ~ (ms_history|length if ms_history else 0) ~ ' of 60 sessions logged. Fills in nightly.','趋势图积累中 — 已记录 ' ~ (ms_history|length if ms_history else 0) ~ '/60 个交易日，每晚更新。') }}</div>
     {% endif %}
   </div>
 </div>
 {# /hero #}
 
-<!-- =============== 4 MARKET TILES =============== -->
+<!-- =============== MARKETS FACE + SENTIMENT ODOMETER =============== -->
 <div class="cax-secbar"><b>{{ t('CANADA DASHBOARD','加拿大看板') }}</b><span>{{ latest.date }}</span></div>
-<div class="cax-tiles">
-  {# TSX Composite #}
-  {% if benchmark %}
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-markets')">
-    <div class="sym">^GSPTSE</div><div class="nm">{{ t('TSX COMPOSITE','TSX 综合') }}</div>
-    <div class="px">{{ '{:,.0f}'.format(benchmark.price) }}</div>
-    <div class="chg {{ 'up' if benchmark.chg >= 0 else 'dn' }}">{{ '%+.2f'|format(benchmark.chg) }}%</div>
+{# Overlay-factor lookup. Jinja gotcha: {% set %} inside {% for %} is LOOP-LOCAL and never
+   escapes — a plain `{% set _f = f %}` leaves the outer var none (tiles all '—' until namespace()). #}
+{% set _tf = namespace(spy=none, cad=none, oil=none) %}
+{% for f in (ov.factors or []) %}
+  {% set _lab = (f.label or '') %}
+  {% if _tf.spy is none and ('SPY' in _lab or 'SP500' in _lab or 'S&P' in _lab) %}{% set _tf.spy = f %}{% endif %}
+  {% if _tf.cad is none and ('CAD' in _lab) %}{% set _tf.cad = f %}{% endif %}
+  {% if _tf.oil is none and ('oil' in _lab|lower or 'crude' in _lab|lower or 'energy' in _lab|lower) %}{% set _tf.oil = f %}{% endif %}
+{% endfor %}
+{% set _spy_f = _tf.spy %}
+{% set _usdcad_f = _tf.cad %}
+{% set _oil_f = _tf.oil %}
+{% set _pr = pair or {} %}
+{% set _usdcad_pair = _pr.get('usdcad') %}
+<div class="cax-mktrow">
+  {# ── Combined markets container: ONE sxg-face mx5-card-face → markets dialog (US idiom C) ── #}
+  <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Markets" onclick="caxOpenDlg('cax-dlg-markets')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();caxOpenDlg('cax-dlg-markets');}">
+    <div class="mx5-mkt-grid">
+      {# TSX Composite — real index level; data-sym for live price patch #}
+      <div class="mx5-mkt-tile {{ 'up' if (benchmark and benchmark.chg >= 0) else ('dn' if benchmark else '') }}" data-sym="^GSPTSE" data-mkt="ca">
+        <div class="mx5-mkt-ticker">^GSPTSE</div>
+        <div class="mx5-mkt-sub"><span class="l-en">TSX Composite</span><span class="l-zh">TSX 综合</span></div>
+        {% if benchmark %}
+        <div class="mx5-mkt-price nb-px" data-sym="^GSPTSE" data-mkt="ca" data-bare>{{ '{:,.0f}'.format(benchmark.price) }}</div>
+        <div class="mx5-mkt-delta {{ 'up' if benchmark.chg >= 0 else 'dn' }} nb-chg" data-sym="^GSPTSE" data-mkt="ca">{{ '%+.2f'|format(benchmark.chg) }}%</div>
+        {% else %}
+        <div class="mx5-mkt-price" style="color:var(--muted)">—</div>
+        {% endif %}
+      </div>
+      {# S&P 500 — US backdrop via overlay (plain-word stance, not a raw price) #}
+      <div class="mx5-mkt-tile">
+        <div class="mx5-mkt-ticker">SPY</div>
+        <div class="mx5-mkt-sub"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></div>
+        {% if _spy_f is not none %}
+        <div class="mx5-mkt-price {{ 'up' if _spy_f.risk == 'on' else ('dn' if _spy_f.risk == 'off' else '') }}" style="font-size:16px">{{ t({'on':'Risk-on','off':'Risk-off','neutral':'Neutral'}.get(_spy_f.risk or '', '—'), {'on':'偏多','off':'偏空','neutral':'中性'}.get(_spy_f.risk or '', '—')) }}</div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_spy_f.z) }}σ vs 1y range" data-tip-zh="较1年区间 {{ '%+.2f'|format(_spy_f.z) }}σ">{{ t('US backdrop','美股背景') }}</div>
+        {% else %}
+        <div class="mx5-mkt-price" style="color:var(--muted)">—</div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)">{{ t('US backdrop','美股背景') }}</div>
+        {% endif %}
+      </div>
+      {# USD/CAD — real FX level when available, else overlay stance #}
+      <div class="mx5-mkt-tile">
+        <div class="mx5-mkt-ticker">USD/CAD</div>
+        <div class="mx5-mkt-sub"><span class="l-en">Loonie</span><span class="l-zh">加元</span></div>
+        {% if _usdcad_pair and _usdcad_pair.level %}
+        <div class="mx5-mkt-price nb-px" data-sym="CAD=X" data-mkt="fx" data-bare>{{ '%.4f'|format(_usdcad_pair.level) }}</div>
+        <div class="mx5-mkt-delta {{ 'dn' if (_usdcad_pair.chg_20d_pct or 0) > 0 else 'up' }}">CAD {{ t('firm','走强') if (_usdcad_pair.chg_20d_pct or 0) < 0 else t('soft','走弱') }} <span style="color:var(--muted);font-weight:400">{{ '%+.1f'|format(_usdcad_pair.chg_20d_pct) }}%</span></div>
+        {% elif _usdcad_f is not none %}
+        <div class="mx5-mkt-price {{ 'up' if _usdcad_f.risk == 'on' else ('dn' if _usdcad_f.risk == 'off' else '') }}" style="font-size:16px">{{ t('CAD ' + ('firm' if _usdcad_f.risk == 'on' else ('soft' if _usdcad_f.risk == 'off' else 'flat')), '加元' + ('走强' if _usdcad_f.risk == 'on' else ('走弱' if _usdcad_f.risk == 'off' else '平稳'))) }}</div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_usdcad_f.z) }}σ" data-tip-zh="{{ '%+.2f'|format(_usdcad_f.z) }}σ">{{ t('FX context','汇率背景') }}</div>
+        {% else %}
+        <div class="mx5-mkt-price" style="color:var(--muted)">—</div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)">{{ t('FX context','汇率背景') }}</div>
+        {% endif %}
+      </div>
+      {# Crude / Energy — overlay stance (plain word) #}
+      <div class="mx5-mkt-tile">
+        <div class="mx5-mkt-ticker">XEG / WTI</div>
+        <div class="mx5-mkt-sub"><span class="l-en">Crude / Energy</span><span class="l-zh">原油/能源</span></div>
+        {% if _oil_f is not none %}
+        <div class="mx5-mkt-price {{ 'up' if _oil_f.risk == 'on' else ('dn' if _oil_f.risk == 'off' else '') }}" style="font-size:16px">{{ t({'on':'Supportive','off':'Headwind','neutral':'Neutral'}.get(_oil_f.risk or '', '—'), {'on':'利多','off':'利空','neutral':'中性'}.get(_oil_f.risk or '', '—')) }}</div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_oil_f.z) }}σ vs 1y range" data-tip-zh="较1年区间 {{ '%+.2f'|format(_oil_f.z) }}σ">{{ t('Commodity context','商品背景') }}</div>
+        {% else %}
+        <div class="mx5-mkt-price" style="color:var(--muted)">—</div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)">{{ t('Commodity context','商品背景') }}</div>
+        {% endif %}
+      </div>
+    </div>
   </div>
-  {% else %}
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-markets')">
-    <div class="sym">^GSPTSE</div><div class="nm">{{ t('TSX COMPOSITE','TSX 综合') }}</div>
-    <div class="px" style="color:var(--muted)">—</div>
-  </div>
-  {% endif %}
-  {# Overlay-factor tiles. Jinja gotcha: {% set %} inside {% for %} is LOOP-LOCAL
-     and never escapes — a plain `{% set _f = f %}` in the loop leaves the outer
-     var none (all tiles rendered '—' until this used namespace()). #}
-  {% set _tf = namespace(spy=none, cad=none, oil=none) %}
-  {% for f in (ov.factors or []) %}
-    {% set _lab = (f.label or '') %}
-    {% if _tf.spy is none and ('SPY' in _lab or 'SP500' in _lab or 'S&P' in _lab) %}{% set _tf.spy = f %}{% endif %}
-    {% if _tf.cad is none and ('CAD' in _lab) %}{% set _tf.cad = f %}{% endif %}
-    {% if _tf.oil is none and ('oil' in _lab|lower or 'crude' in _lab|lower or 'energy' in _lab|lower) %}{% set _tf.oil = f %}{% endif %}
-  {% endfor %}
-  {# S&P 500 (US context via overlay) — pair.tsx_spx has TSX/SPX level #}
-  {% set _spy_f = _tf.spy %}
-  {% set _pr = pair or {} %}
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
-    <div class="sym">SPY</div><div class="nm">{{ t('S&P 500','标普500') }}</div>
-    {% if _spy_f is not none %}
-    <div class="px {{ 'up' if _spy_f.risk == 'on' else ('dn' if _spy_f.risk == 'off' else '') }}">{{ t({'on':'Risk-on','off':'Risk-off','neutral':'Neutral'}.get(_spy_f.risk or '', '—'), {'on':'偏多','off':'偏空','neutral':'中性'}.get(_spy_f.risk or '', '—')) }}</div>
-    <div class="chg" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_spy_f.z) }}σ vs 1y range" data-tip-zh="较1年区间 {{ '%+.2f'|format(_spy_f.z) }}σ">{{ t('US backdrop','美股背景') }}</div>
+
+  {# ── Market Sentiment odometer (US mx5-sentiment; computed participation composite) ── #}
+  {% set _cs = ca_sentiment if (ca_sentiment is defined and ca_sentiment) else none %}
+  {% set _cs_zone = (_cs.zone if _cs else '') %}
+  {# zh 红涨绿跌: broad participation = constructive → red (fg-greed); thin → green (fg-fear); mixed → amber #}
+  <div class="sx-v5-static {{ 'fg-greed' if _cs_zone == 'broad' else ('fg-fear' if _cs_zone == 'thin' else 'fg-neutral') }}" id="cax-sentiment">
+    {% if _cs %}
+    {% set _cs_dial = _cs.score %}
+    {% set _cs_rot = (_cs_dial / 100 * 180 - 90) | round(1) %}
+    <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="caxOpenDlg('cax-dlg-sentiment')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();caxOpenDlg('cax-dlg-sentiment');}">
+      <div class="mx5-card-title"><span class="l-en">Market Participation</span><span class="l-zh">市场参与度</span></div>
+      <div class="mx5-sentiment-dial-wrap">
+        <svg viewBox="0 0 380 212" style="width:100%;max-width:340px;height:180px;display:inline-block;overflow:visible">
+          <defs>
+            <linearGradient id="caxSentGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="var(--down)"/><stop offset="35%" stop-color="var(--warn)"/><stop offset="65%" stop-color="var(--up)"/><stop offset="100%" stop-color="var(--up)"/>
+            </linearGradient>
+            <filter id="caxDialGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="18" stroke-linecap="round"/>
+          <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="url(#caxSentGrad)" stroke-width="18" stroke-linecap="round" opacity=".55"/>
+          <g filter="url(#caxDialGlow)">
+            <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30" stroke-width="4" stroke-linecap="round" transform="rotate({{ _cs_rot }}, 190, 185)"/>
+            <circle class="fg-mark-s" cx="190" cy="185" r="9" fill="rgba(8,12,18,.8)" stroke-width="2.5"/>
+            <circle class="fg-mark-f" cx="190" cy="185" r="4"/>
+          </g>
+          <text class="l-en fg-lab-panic" x="26" y="208" font-size="12.5" font-family="Inter,-apple-system,sans-serif" font-weight="700" text-anchor="start">THIN</text>
+          <text class="l-zh fg-lab-panic" x="26" y="208" font-size="12.5" font-family="Inter,-apple-system,sans-serif" font-weight="700" text-anchor="start">稀薄</text>
+          <text class="l-en fg-lab-euph" x="354" y="208" font-size="12.5" font-family="Inter,-apple-system,sans-serif" text-anchor="end" font-weight="700">BROAD</text>
+          <text class="l-zh fg-lab-euph" x="354" y="208" font-size="12.5" font-family="Inter,-apple-system,sans-serif" text-anchor="end" font-weight="700">广泛</text>
+        </svg>
+      </div>
+      <div class="mx5-sentiment-zone-text"><span class="l-en">{{ _cs.label_en }}</span><span class="l-zh">{{ _cs.label_zh }}</span></div>
+      <div class="mx5-sentiment-label">
+        <span class="l-en">{{ _cs.pct_above_50 | round | int }}% of TSX names above their 50-day line</span>
+        <span class="l-zh">{{ _cs.pct_above_50 | round | int }}% 的 TSX 成分股站上 50 日均线</span>
+      </div>
+      <div class="plf-open"><span class="l-en">How it's measured</span><span class="l-zh">如何测算</span> &rarr;</div>
+    </div>
     {% else %}
-    <div class="px" style="color:var(--muted)">—</div>
-    <div class="chg" style="color:var(--muted)">{{ t('US backdrop','美股背景') }}</div>
-    {% endif %}
-  </div>
-  {# USDCAD — use pair.usdcad.level for actual FX rate #}
-  {% set _usdcad_f = _tf.cad %}
-  {% set _usdcad_pair = _pr.get('usdcad') %}
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
-    <div class="sym">USD/CAD</div><div class="nm">{{ t('LOONIE','加元') }}</div>
-    {% if _usdcad_pair and _usdcad_pair.level %}
-    <div class="px">{{ '%.4f'|format(_usdcad_pair.level) }}</div>
-    <div class="chg {{ 'dn' if (_usdcad_pair.chg_20d_pct or 0) > 0 else 'up' }}">CAD {{ t('firm','走强') if (_usdcad_pair.chg_20d_pct or 0) < 0 else t('soft','走弱') }} <span class="cax-sub">{{ '%+.1f'|format(_usdcad_pair.chg_20d_pct) }}%</span></div>
-    {% elif _usdcad_f is not none %}
-    <div class="px {{ 'up' if _usdcad_f.risk == 'on' else ('dn' if _usdcad_f.risk == 'off' else '') }}">{{ t('CAD ' + ('firm' if _usdcad_f.risk == 'on' else ('soft' if _usdcad_f.risk == 'off' else 'flat')), '加元' + ('走强' if _usdcad_f.risk == 'on' else ('走弱' if _usdcad_f.risk == 'off' else '平稳'))) }}</div>
-    <div class="chg" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_usdcad_f.z) }}σ" data-tip-zh="{{ '%+.2f'|format(_usdcad_f.z) }}σ">{{ t('FX context','汇率背景') }}</div>
-    {% else %}
-    <div class="px" style="color:var(--muted)">—</div>
-    <div class="chg" style="color:var(--muted)">{{ t('FX context','汇率背景') }}</div>
-    {% endif %}
-  </div>
-  {# Crude / Energy — overlay z-score with plain word stance #}
-  {% set _oil_f = _tf.oil %}
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
-    <div class="sym">XEG / WTI</div><div class="nm">{{ t('CRUDE / ENERGY','原油/能源') }}</div>
-    {% if _oil_f is not none %}
-    <div class="px {{ 'up' if _oil_f.risk == 'on' else ('dn' if _oil_f.risk == 'off' else '') }}">{{ t({'on':'Supportive','off':'Headwind','neutral':'Neutral'}.get(_oil_f.risk or '', '—'), {'on':'利多','off':'利空','neutral':'中性'}.get(_oil_f.risk or '', '—')) }}</div>
-    <div class="chg" style="color:var(--muted)" data-tip-en="{{ '%+.2f'|format(_oil_f.z) }}σ vs 1y range" data-tip-zh="较1年区间 {{ '%+.2f'|format(_oil_f.z) }}σ">{{ t('Commodity context','商品背景') }}</div>
-    {% else %}
-    <div class="px" style="color:var(--muted)">—</div>
-    <div class="chg" style="color:var(--muted)">{{ t('Commodity context','商品背景') }}</div>
+    {# Honest doctrine null-state — greyed dial, "watch — not enough data yet" #}
+    <div class="mx5-card fg-null" role="button" tabindex="0" aria-haspopup="dialog" onclick="caxOpenDlg('cax-dlg-sentiment')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();caxOpenDlg('cax-dlg-sentiment');}">
+      <div class="mx5-card-title"><span class="l-en">Market Participation</span><span class="l-zh">市场参与度</span></div>
+      <div class="mx5-sentiment-dial-wrap">
+        <svg viewBox="0 0 380 212" style="width:100%;max-width:340px;height:180px;display:inline-block;overflow:visible">
+          <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="18" stroke-linecap="round"/>
+          <g opacity=".4">
+            <line x1="190" y1="185" x2="190" y2="30" stroke="var(--muted)" stroke-width="4" stroke-linecap="round" transform="rotate(0, 190, 185)"/>
+            <circle cx="190" cy="185" r="9" fill="rgba(8,12,18,.8)" stroke="var(--muted)" stroke-width="2.5"/>
+          </g>
+          <text x="26" y="208" font-size="12.5" fill="var(--muted)" font-family="Inter,-apple-system,sans-serif" font-weight="700" text-anchor="start">{{ t('THIN','稀薄') }}</text>
+          <text x="354" y="208" font-size="12.5" fill="var(--muted)" font-family="Inter,-apple-system,sans-serif" text-anchor="end" font-weight="700">{{ t('BROAD','广泛') }}</text>
+        </svg>
+      </div>
+      <div class="mx5-sentiment-zone-text" style="color:var(--muted)"><span class="l-en">Watch — not enough data yet</span><span class="l-zh">观望 — 数据尚不足</span></div>
+      <div class="mx5-sentiment-label"><span class="l-en">Breadth read unavailable — fills in nightly</span><span class="l-zh">市场宽度数据暂缺 — 每晚更新</span></div>
+      <div class="plf-open"><span class="l-en">How it's measured</span><span class="l-zh">如何测算</span> &rarr;</div>
+    </div>
     {% endif %}
   </div>
 </div>
@@ -1366,6 +1637,43 @@
       <div class="cax-eyebrow">{{ t('Key rates','关键利率') }}</div>
       <div class="cax-kv"><span class="k">{{ t('BoC rate','加央行利率') }}</span><span class="v">{{ '%.2f'|format(cp.boc_rate) }}%</span></div>
       {% if cp.goc_curve_2s10s is not none %}<div class="cax-kv"><span class="k">{{ t('GoC 2s10s','加债 2s10s') }}</span><span class="v">{{ '%+.2f'|format(cp.goc_curve_2s10s) }}</span></div>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Market Participation dialog (Tier-2 receipt for the sentiment odometer) -->
+<div class="cax-dlg" id="cax-dlg-sentiment">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title">{{ t('Market Participation','市场参与度') }}</span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      {% set _cs = ca_sentiment if (ca_sentiment is defined and ca_sentiment) else none %}
+      {% if _cs %}
+      {% set _cs_col = 'var(--up)' if _cs.zone == 'broad' else ('var(--down)' if _cs.zone == 'thin' else 'var(--warn)') %}
+      <div class="cax-pop-big"><span class="n" style="color:{{ _cs_col }}">{{ _cs.score }}</span><span class="t" style="color:{{ _cs_col }}"><span class="l-en">{{ _cs.label_en }}</span><span class="l-zh">{{ _cs.label_zh }}</span></span></div>
+      <p class="cax-thesis" style="max-width:52ch;margin:2px 0 12px">{{ t(
+        'How much of the TSX is actually moving together. This is a computed breadth read — not a fear/greed index — rolled into one 0–100 number so a glance tells you whether strength is broad or just a few names.',
+        '衡量有多少 TSX 成分股在同向运行。这是一项基于市场宽度的计算读数 — 并非恐慌／贪婪指数 — 汇总为 0–100 的单一数字，让你一眼看出走强是广泛的还是仅由少数股票带动。') }}</p>
+      {# Plain-word stance #}
+      <div class="cax-lbl">{{ t('So what do I do','该怎么做') }}</div>
+      <p style="font-size:12.5px;color:var(--text);margin:0 0 14px">{% if _cs.zone == 'broad' %}{{ t('Broad participation — the move has support under it. Trend-following is on firmer ground; still size to the regime gauge above.','参与广泛 — 上涨有基础支撑。顺势交易的立足点更稳；仍需按上方周期表盘控制仓位。') }}{% elif _cs.zone == 'thin' %}{{ t('Thin participation — a few names carrying the tape. Watch, don’t chase; wait for breadth to confirm before trusting a breakout.','参与稀薄 — 少数股票在拉动指数。观望，勿追高；等待宽度确认后再相信突破。') }}{% else %}{{ t('Mixed participation — neither broad nor thin. No edge from breadth here; let the regime gauge lead.','参与中性 — 不广也不薄。此处宽度无优势；由周期表盘主导。') }}{% endif %}</p>
+      {# Tier-2 receipt — the honest inputs and weights #}
+      <div class="cax-lbl">{{ t('How it’s measured','如何测算') }}</div>
+      <div class="cax-kv"><span class="k">{{ t('Names above 50-day line','站上50日线的成分股') }} <span style="color:var(--muted)">· 45%</span></span><span class="v">{{ _cs.pct_above_50 }}%</span></div>
+      <div class="cax-kv"><span class="k">{{ t('Names above 200-day line','站上200日线的成分股') }} <span style="color:var(--muted)">· 30%</span></span><span class="v">{{ _cs.pct_above_200 }}%</span></div>
+      <div class="cax-kv"><span class="k">{{ t('Advancers share today','当日上涨占比') }} <span style="color:var(--muted)">· 15%</span></span><span class="v">{{ _cs.ad_ratio }}%</span></div>
+      <div class="cax-kv"><span class="k">{{ t('20-day change in participation','参与度20日变化') }} <span style="color:var(--muted)">· 10%</span></span><span class="v">{{ '%+.1f'|format(_cs.chg20) }} pts</span></div>
+      <div class="cax-foot">{{ t('Display-only composite of S&P/TSX Composite breadth (~220 names). Bands: broad ≥60 · mixed 40–59 · thin <40. Not scored, not a trading signal.',
+        '标普/TSX 综合指数市场宽度（约220只）的仅展示合成指标。区间：广泛 ≥60 · 中性 40–59 · 稀薄 <40。不计分，非交易信号。') }}{% if _cs.asof %} · {{ t('as of','截至') }} {{ _cs.asof }}{% endif %}</div>
+      {% else %}
+      <p class="cax-thesis" style="max-width:52ch">{{ t(
+        'Watch — not enough data yet. The market-participation read is built from S&P/TSX Composite breadth (how many names are above their moving averages), which isn’t available right now. It fills in on the nightly run.',
+        '观望 — 数据尚不足。市场参与度读数由标普/TSX 综合指数的市场宽度（多少成分股站上均线）计算，目前暂缺，将在每晚运行时补齐。') }}</p>
+      <div class="cax-foot">{{ t('Display-only breadth composite — never a trading signal.','仅展示的市场宽度合成指标 — 绝非交易信号。') }}</div>
       {% endif %}
     </div>
   </div>
@@ -1882,6 +2190,77 @@
 })();
 </script>
 {%- if mode != 'stocks' %}
+<script>
+/* Path-chart hover enhancement (ported from US mx5 path JS). Pure progressive layer:
+   reads data-points (viewBox x/y baked in) + the SVG's live rect, maps viewBox→screen
+   so the crosshair/dot/tooltip stay crisp under the SVG's non-uniform stretch. The verdict
+   colours are read from the page's --up/--down/--warn CSS vars (NOT hard-coded hex) so they
+   flip correctly in zh (红涨绿跌); chart is fully legible without this layer. */
+(function(){
+  var svg = document.querySelector('.cax-hero-right .mx5-path-svg[data-points]');
+  if(!svg) return;
+  var plot = svg.closest('.mx5-path-plot'); if(!plot) return;
+  var cross = plot.querySelector('.mx5-path-cross');
+  var dot   = plot.querySelector('.mx5-path-dot');
+  var tip   = plot.querySelector('.mx5-path-tip');
+  if(!cross || !dot || !tip) return;
+  var tDate = tip.querySelector('.mx5-path-tip-date');
+  var tScore= tip.querySelector('.mx5-path-tip-score');
+  var tVerd = tip.querySelector('.mx5-path-tip-verdict');
+  var pts;
+  try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch(e){ return; }
+  if(!pts.length) return;
+  var VBW = +(svg.getAttribute('data-vbw')||1000);
+  var VBH = +(svg.getAttribute('data-vbh')||224);
+  /* read live theme colours so zh (红涨绿跌) flips the dot/verdict tint automatically */
+  function col(v){
+    var cs = getComputedStyle(document.documentElement);
+    var name = v==='Risk-on' ? '--up' : (v==='Risk-off' ? '--down' : '--warn');
+    return (cs.getPropertyValue(name)||'').trim() || '#f59e0b';
+  }
+  function isZh(){
+    var el=document.documentElement;
+    return (el.getAttribute('data-lang')||'').slice(0,2)==='zh';
+  }
+  function nearest(clientX){
+    var r = svg.getBoundingClientRect();
+    var vx = (clientX - r.left) / r.width * VBW;
+    var best=0, bd=Infinity;
+    for(var i=0;i<pts.length;i++){ var d=Math.abs(pts[i].x - vx); if(d<bd){ bd=d; best=i; } }
+    return best;
+  }
+  function show(i){
+    var p = pts[i]; if(!p) return;
+    var r = svg.getBoundingClientRect();
+    var pr = plot.getBoundingClientRect();
+    var sx = (p.x / VBW) * r.width  + (r.left - pr.left);
+    var sy = (p.y / VBH) * r.height + (r.top  - pr.top);
+    var c = col(p.v);
+    cross.style.left = sx + 'px';   cross.style.opacity = '1';
+    dot.style.left = sx + 'px';     dot.style.top = sy + 'px';
+    dot.style.background = c;
+    dot.style.opacity = '1';
+    tDate.textContent = isZh() ? (p.mz || p.d) : (p.md || p.d);
+    tScore.textContent = p.s;
+    tVerd.textContent = isZh() ? (p.vz||p.v) : p.v;
+    tVerd.style.color = c;
+    var half = tip.offsetWidth/2 || 60;
+    var clx = Math.max(half+2, Math.min(pr.width-half-2, sx));
+    tip.style.left = clx + 'px';
+    tip.style.top  = sy + 'px';
+    tip.classList.add('show');
+  }
+  function hide(){ cross.style.opacity='0'; dot.style.opacity='0'; tip.classList.remove('show'); }
+  var raf=0, lastX=0;
+  function onMove(clientX){ lastX=clientX; if(raf) return; raf=requestAnimationFrame(function(){ raf=0; show(nearest(lastX)); }); }
+  svg.addEventListener('mousemove', function(e){ onMove(e.clientX); });
+  svg.addEventListener('mouseleave', hide);
+  svg.addEventListener('touchstart', function(e){ if(e.touches && e.touches[0]) show(nearest(e.touches[0].clientX)); }, {passive:true});
+  svg.addEventListener('touchmove', function(e){ if(e.touches && e.touches[0]) show(nearest(e.touches[0].clientX)); }, {passive:true});
+  svg.addEventListener('touchend', function(){ setTimeout(hide, 1400); }, {passive:true});
+  document.addEventListener('langchange', function(){ if(tip.classList.contains('show')) show(nearest(lastX)); });
+})();
+</script>
 <script>
 /* MX5 Canada — dialog / popover / heatmap helpers (macro mode only) */
 (function(){
