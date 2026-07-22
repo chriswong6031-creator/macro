@@ -2153,8 +2153,34 @@ function nwIndependenceCard(indep) {
   </div>`;
 }
 
+/* Plain-word explanation of a degraded cortex run (health.json cortex.run_status /
+   orchestrator d.cortex). Returns "" when the cortex ran clean — the AI review lobe
+   silently falling back to a weaker model for days is exactly the blindness this fixes. */
+const CORTEX_DEGRADE_REASON = {
+  model_unavailable: "the preferred AI model was unavailable",
+  rate_limited: "the AI key was rate-limited",
+  timeout: "the AI call timed out",
+  error: "the AI call errored",
+  no_key: "no AI key was configured",
+};
+function cortexShortModel(m) {
+  const s = String(m || "");
+  if (/opus/i.test(s)) return "Opus";
+  if (/sonnet/i.test(s)) return "Sonnet";
+  if (/haiku/i.test(s)) return "Haiku";
+  if (/deepseek/i.test(s)) return "DeepSeek";
+  return s || "a fallback model";
+}
+function cortexDegradeLine(rs) {
+  rs = rs || {};
+  if (String(rs.status || "").toLowerCase() !== "degraded") return "";
+  const why = CORTEX_DEGRADE_REASON[rs.degradation_reason] || rs.degradation_reason || "of an unknown fault";
+  return `AI review ran degraded — fell back to ${cortexShortModel(rs.model_used)} because ${why}`;
+}
+
 function nwHero(d) {
   const st = d.overall_status || "unknown";
+  const cortexDeg = cortexDegradeLine(d.cortex || {});
   const sc = d.summary_counts || {};
   const dh = d.desc_health || {};
   const chip = (label, n, cls) => `<span class="pill"><span class="led ${cls}"></span>${n != null ? n : "—"} ${label}</span>`;
@@ -2178,7 +2204,9 @@ function nwHero(d) {
       ${(sc.degraded || 0) > 0 ? chip("degraded", sc.degraded, "bad") : ""}
       ${(sc.fresh_partial || 0) > 0 ? chip("partial", sc.fresh_partial, "warn") : ""}
       ${(sc.unknown || 0) > 0 ? chip("unknown", sc.unknown, "") : ""}
+      ${cortexDeg ? `<span class="pill"><span class="led bad"></span>cortex degraded</span>` : ""}
     </div>
+    ${cortexDeg ? `<div class="sub" style="margin-top:4px;color:var(--warn)">⚠︎ ${esc(cortexDeg)}</div>` : ""}
     ${descLine}
     <div class="nw-hero-note">${note}</div>
   </div>
@@ -2702,6 +2730,7 @@ RENDER.orchestrator = async () => {
       <span class="statpill s-mut">${hero.directives_n || 0} directive${hero.directives_n === 1 ? "" : "s"}</span>
       <span class="statpill s-mut">feedback ${esc(hero.feedback_state || "absent")}</span>
     </div>
+    ${cortexDegradeLine(cx) ? `<div class="sub" style="margin-top:6px;color:var(--warn)">⚠︎ ${esc(cortexDegradeLine(cx))}</div>` : ""}
     <div class="note muted" style="margin-top:8px">${esc(hero.next_run_note || "")} · ${hero.n_entries || 0} run${hero.n_entries === 1 ? "" : "s"} logged${hero.last_review_at ? ` · last review ${esc(String(hero.last_review_at).slice(0, 16).replace("T", " "))}` : ""}${prob.tier ? ` · cortex probation ${esc(prob.tier)}${prob.granted ? "" : " (not granted)"}` : ""}</div>
   </div>`;
 

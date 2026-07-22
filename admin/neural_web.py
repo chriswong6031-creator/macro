@@ -1298,6 +1298,9 @@ def lobes_panel() -> dict:
         # separate follow-up. The heavier nw_health.lobes block (~64KB) IS dropped above.
         "lobes": lobes_flat,
         "independence": independence,
+        # Cortex (AI review lobe) run status, so the Observatory hero can flag a degraded
+        # run (e.g. fell back to a weaker model) that would otherwise be invisible here.
+        "cortex": ((nw_health or {}).get("cortex") or {}).get("run_status"),
         # W-AI: Master Brain pin (additive — groups/lobes contract unchanged)
         "orchestrator_hero": _orchestrator_hero(),
     }
