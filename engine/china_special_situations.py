@@ -91,6 +91,89 @@ def _today() -> str:
     return date.today().isoformat()
 
 
+def _days_to(date_str: str | None) -> int | None:
+    """Whole days from today to a forward date (negative if past). None on parse fail.
+
+    Context-only countdown helper — a factual "how soon", never a directional call.
+    """
+    if not date_str:
+        return None
+    try:
+        d = date.fromisoformat(str(date_str)[:10])
+        return (d - date.today()).days
+    except Exception:  # noqa: BLE001
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# Plain-word "so what" characterizations (DESIGN_DOCTRINE Tier-1 glance copy).
+#
+# These are FACTUAL context labels, NOT stances/scores/calls. They describe the
+# magnitude of a disclosed event in plain words ("a real supply event", "still an
+# open question") so a reader gets the "so what" without decoding ratios/codes.
+# The engine stays is_context_only — no buy/sell/direction language originates
+# here (see module docstring + register_claims direction=0). Every label ships as
+# an {en, zh} twin so the template dual-emits without dropping raw EN into ZH.
+# --------------------------------------------------------------------------- #
+
+def _unlock_note(float_pct: float | None, dtd: int | None) -> dict:
+    """Plain-word 'so what' for one unlock event. Factual supply characterization."""
+    when = ""
+    when_zh = ""
+    if dtd is not None:
+        if dtd <= 0:
+            when, when_zh = "unlocking now", "正在解禁"
+        elif dtd == 1:
+            when, when_zh = "unlocks tomorrow", "明日解禁"
+        else:
+            when, when_zh = f"unlocks in {dtd}d", f"{dtd}天后解禁"
+    if float_pct is None:
+        return {"en": (when or "unlock scheduled"),
+                "zh": (when_zh or "解禁在即"), "level": "active"}
+    # ratio can exceed 100% for recently-listed small caps (the unlocking tranche is
+    # larger than the CURRENT free float). Printing "211% of float" reads absurd — the
+    # honest plain reading is "more shares than currently trade freely".
+    if float_pct >= 100.0:
+        return {"en": "more shares unlock than currently trade freely — a very large supply event"
+                       + (f", {when}" if when else ""),
+                "zh": "解禁数量超过当前自由流通量——供给量非常大" + (f"，{when_zh}" if when_zh else ""),
+                "level": "elevated"}
+    if float_pct >= 10.0:
+        head = f"{float_pct:.0f}% of float"
+        return {"en": f"{head} — a large supply event" + (f", {when}" if when else ""),
+                "zh": f"占流通{float_pct:.0f}% — 供给量大" + (f"，{when_zh}" if when_zh else ""),
+                "level": "elevated"}
+    if float_pct >= 5.0:
+        head = f"{float_pct:.0f}% of float"
+        return {"en": f"{head} — a real supply event" + (f", {when}" if when else ""),
+                "zh": f"占流通{float_pct:.0f}% — 供给可观" + (f"，{when_zh}" if when_zh else ""),
+                "level": "elevated"}
+    return {"en": f"{float_pct:.0f}% of float — small" + (f", {when}" if when else ""),
+            "zh": f"占流通{float_pct:.0f}% — 较小" + (f"，{when_zh}" if when_zh else ""),
+            "level": "active"}
+
+
+def _inquiry_note(has_reply: bool) -> dict:
+    """Plain-word 'so what' for one exchange inquiry letter."""
+    if has_reply:
+        return {"en": "the company has replied", "zh": "公司已回复", "level": "active"}
+    return {"en": "an open question — no reply yet", "zh": "尚无回复的公开问询", "level": "elevated"}
+
+
+def _inquiry_glance(n_letters: int, n_unreplied: int) -> dict:
+    """Plane glance for exchange inquiry letters. Elevated on any unreplied letter."""
+    if n_unreplied:
+        return {"level": "elevated",
+                "en": (f"{n_unreplied} letter{'s' if n_unreplied > 1 else ''} still "
+                       f"unanswered (last 14d)."),
+                "zh": f"过去14天有{n_unreplied}封问询函尚未回复。"}
+    if n_letters:
+        return {"level": "active",
+                "en": f"{n_letters} letter{'s' if n_letters > 1 else ''}, all replied.",
+                "zh": f"{n_letters}封问询函，均已回复。"}
+    return {"level": "quiet", "en": "No inquiry letters.", "zh": "无问询函。"}
+
+
 _REGIME_HISTORY_CACHE: dict = {}  # {path_str: DataFrame}
 
 
@@ -211,6 +294,7 @@ def _unlock_block() -> dict | None:
         for _, row in fwd.head(_MAX_ROWS).iterrows():
             float_pct = _safe_float(row.get("_float_pct")) if "_float_pct" in row.index else None
             unlock_date = row[date_col].strftime("%Y-%m-%d") if pd.notna(row[date_col]) else None
+            _dtd = _days_to(unlock_date)
             ev: dict = {
                 "ticker":      str(row.get("ticker") or row.get(code_col) or ""),
                 "name":        str(row.get(name_col) or ""),
@@ -222,6 +306,9 @@ def _unlock_block() -> dict | None:
                 "float_ratio": float_pct,
                 "large_flag":  float_pct is not None and float_pct >= 5.0,
                 "mktcap_yi":   _safe_float(row.get(mktcap_col)) if mktcap_col else None,
+                # days_to: whole-day forward countdown (context-only); note: plain-word twin
+                "days_to":     _dtd,
+                "note":        _unlock_note(float_pct, _dtd),
             }
             # Cycle-context chip (W5): stamp regime quad/liquidity/cycle at unlock date.
             # Muted/descriptive only — no directional language.
@@ -258,12 +345,37 @@ def _unlock_block() -> dict | None:
         except Exception as e:  # noqa: BLE001
             log.debug("china_special_sits: weekly strip failed (%s)", e)
 
+        # Plane glance: elevated when any ≥5%-float ("large") supply event is queued.
+        # Soonest large event drives the one-line plain summary.
+        soonest_large = None
+        for e in events:
+            if e["large_flag"] and e.get("days_to") is not None:
+                if soonest_large is None or e["days_to"] < soonest_large.get("days_to", 1e9):
+                    soonest_large = e
+        if n_large and soonest_large:
+            _d = soonest_large["days_to"]
+            _when = "this week" if _d is not None and _d <= 7 else "ahead"
+            _when_zh = "本周" if _d is not None and _d <= 7 else "未来"
+            glance = {
+                "level": "elevated",
+                "en": (f"{n_large} large unlock{'s' if n_large > 1 else ''} {_when} "
+                       f"(≥5% of float)."),
+                "zh": f"{_when_zh}有{n_large}笔大额解禁（占流通≥5%）。",
+            }
+        elif len(fwd):
+            glance = {"level": "active",
+                      "en": f"{len(fwd)} unlocks in 30d, none large.",
+                      "zh": f"未来30天{len(fwd)}笔解禁，均不大额。"}
+        else:
+            glance = {"level": "quiet", "en": "No unlocks ahead.", "zh": "近期无解禁。"}
+
         return {
             "asof": asof, "status": status,
             "events": events,
             "weekly_strip": weekly_strip,
             "n_events_30d": len(fwd),
             "n_large": n_large,
+            "glance": glance,
         }
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: unlock block failed (%s)", e)
@@ -352,14 +464,16 @@ def _inquiry_block() -> dict | None:
                 letter_date = str(r.get("_date_str") or "")
                 # secCode for claim-key: filings uses sec_code
                 sec_code_val = str(r.get("sec_code") or "")
+                _has_reply = sec_code_val in replies
                 letter: dict = {
                     "secCode":   sec_code_val,
                     "secName":   str(r.get("sec_name") or ""),
                     "title":     str(r.get("title") or ""),
                     "date":      letter_date,
                     "pdf_url":   str(r.get("adjunct_url") or ""),
-                    "has_reply": sec_code_val in replies,
+                    "has_reply": _has_reply,
                     "type_name": str(r.get("announcement_type_raw") or ""),
+                    "note":      _inquiry_note(_has_reply),
                     # Note: no 'kind' key — list is letters-only; register_claims must not filter on kind
                 }
                 if letter_date:
@@ -369,11 +483,15 @@ def _inquiry_block() -> dict | None:
                 rows.append(letter)
 
             n_replies = int(len(df_filt[df_filt["kind"] == "reply"]))
+            _n_letters = int(len(letters))
+            _n_unreplied = sum(1 for x in rows if not x["has_reply"])
             return {
                 "asof": asof, "status": status,
                 "letters": rows,
-                "n_letters": int(len(letters)),
+                "n_letters": _n_letters,
                 "n_replies": n_replies,
+                "n_unreplied": _n_unreplied,
+                "glance": _inquiry_glance(_n_letters, _n_unreplied),
             }
 
         else:
@@ -396,14 +514,16 @@ def _inquiry_block() -> dict | None:
             rows = []
             for _, r in letters.head(_MAX_ROWS).iterrows():
                 letter_date = str(r.get("announcementTime") or "")
+                _has_reply = str(r.get("secCode") or "") in replies
                 letter: dict = {
                     "secCode":   str(r.get("secCode") or ""),
                     "secName":   str(r.get("secName") or ""),
                     "title":     str(r.get("announcementTitle") or ""),
                     "date":      letter_date,
                     "pdf_url":   str(r.get("adjunctUrl") or ""),
-                    "has_reply": str(r.get("secCode") or "") in replies,
+                    "has_reply": _has_reply,
                     "type_name": str(r.get("announcementTypeName") or ""),
+                    "note":      _inquiry_note(_has_reply),
                     # Note: no 'kind' key — list is letters-only
                 }
                 if letter_date:
@@ -412,11 +532,15 @@ def _inquiry_block() -> dict | None:
                         letter["regime_chip"] = chip
                 rows.append(letter)
 
+            _n_letters = len(letters)
+            _n_unreplied = sum(1 for x in rows if not x["has_reply"])
             return {
                 "asof": asof, "status": status,
                 "letters": rows,
-                "n_letters": len(letters),
+                "n_letters": _n_letters,
                 "n_replies": len(df_filt[df_filt["kind"] == "reply"]),
+                "n_unreplied": _n_unreplied,
+                "glance": _inquiry_glance(_n_letters, _n_unreplied),
             }
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: inquiry block failed (source=%s, %s)", source, e)
@@ -462,11 +586,18 @@ def _preannounce_block() -> dict | None:
                     "quarter":    str(row.get("quarter") or ""),
                 })
 
+        _n = len(df)
+        glance = ({"level": "active",
+                   "en": f"{_n} pre-announcements this season.",
+                   "zh": f"本季度{_n}份业绩预告。"} if _n else
+                  {"level": "quiet", "en": "No pre-announcements yet.",
+                   "zh": "暂无业绩预告。"})
         return {
             "asof": asof, "status": status,
             "by_type": by_type,
             "top_movers": top_movers,
-            "n_total": len(df),
+            "n_total": _n,
+            "glance": glance,
         }
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: preannounce block failed (%s)", e)
@@ -500,7 +631,13 @@ def _buyback_block() -> dict | None:
                 "done_amt_yi":  _safe_float(r.get("done_amt_yi")),
                 "progress":     str(r.get("progress") or ""),
             })
-        return {"asof": asof, "status": status, "top": top, "n_active": len(active)}
+        _na = len(active)
+        glance = ({"level": "active",
+                   "en": f"{_na} active buyback program{'s' if _na > 1 else ''}.",
+                   "zh": f"{_na}项进行中的回购计划。"} if _na else
+                  {"level": "quiet", "en": "No active buybacks.", "zh": "无进行中的回购。"})
+        return {"asof": asof, "status": status, "top": top, "n_active": _na,
+                "glance": glance}
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: buyback block failed (%s)", e)
         return None
@@ -533,8 +670,13 @@ def _pledge_block() -> dict | None:
                 "pledge_mktcap_yi": _safe_float(r.get("pledge_mktcap_yi")),
                 "quarter":         str(r.get("quarter") or ""),
             })
+        glance = ({"level": "elevated",
+                   "en": f"{n_high} name{'s' if n_high > 1 else ''} with heavy pledging (≥50%).",
+                   "zh": f"{n_high}只个股质押较重（≥50%）。"} if n_high else
+                  {"level": "quiet", "en": "No heavy-pledge names.", "zh": "无重度质押个股。"})
         return {"asof": asof, "status": status, "top": top, "n_high": n_high,
-                "quarter": str(df["quarter"].max()) if "quarter" in df.columns else None}
+                "quarter": str(df["quarter"].max()) if "quarter" in df.columns else None,
+                "glance": glance}
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: pledge block failed (%s)", e)
         return None
@@ -590,6 +732,17 @@ def _st_block() -> dict | None:
                     "pct_chg": _safe_float(r.get("pct_chg")),
                 })
 
+        _nadd = len(additions)
+        if _nadd:
+            glance = {"level": "elevated",
+                      "en": f"{_nadd} new name{'s' if _nadd > 1 else ''} flagged for risk.",
+                      "zh": f"新增{_nadd}只风险警示个股。"}
+        elif count:
+            glance = {"level": "active",
+                      "en": f"{count} names on the risk-warning board.",
+                      "zh": f"风险警示板共{count}只个股。"}
+        else:
+            glance = {"level": "quiet", "en": "No risk-warning names.", "zh": "无风险警示个股。"}
         return {
             "asof": asof, "status": status,
             "count": count,
@@ -597,6 +750,7 @@ def _st_block() -> dict | None:
             "additions": additions,
             "removals": removals,
             "history_note": history_note,
+            "glance": glance,
         }
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: ST block failed (%s)", e)
@@ -636,9 +790,14 @@ def _block_trade_block() -> dict | None:
         top_premium  = [_row(r) for _, r in df_prem.head(_MAX_ROWS).iterrows()]
         top_discount = [_row(r) for _, r in df_disc.head(_MAX_ROWS).iterrows()]
 
+        _n_anom = len(top_premium) + len(top_discount)
+        glance = ({"level": "active",
+                   "en": f"{_n_anom} block-trade price gap{'s' if _n_anom > 1 else ''}.",
+                   "zh": f"{_n_anom}笔大宗交易价差异常。"} if _n_anom else
+                  {"level": "quiet", "en": "No block-trade anomalies.", "zh": "无大宗交易异常。"})
         return {"asof": asof, "status": status,
                 "top_premium": top_premium, "top_discount": top_discount,
-                "n_names": len(df)}
+                "n_names": len(df), "glance": glance}
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: block trade block failed (%s)", e)
         return None
@@ -715,6 +874,177 @@ def _by_ticker_rollup(blocks: dict) -> dict:
 # public: fuse + emit
 # --------------------------------------------------------------------------- #
 
+# Plane display order + icon/label metadata for the hero overhang meter.
+# label twins are plain-word plane names (no internal/machine vocabulary).
+_PLANE_META = [
+    ("unlocks",      "🔓", {"en": "Unlock supply",   "zh": "解禁供给"}),
+    ("inquiry",      "📬", {"en": "Open questions",   "zh": "监管问询"}),
+    ("preannounce",  "📋", {"en": "Earnings previews","zh": "业绩预告"}),
+    ("buyback",      "🔄", {"en": "Buybacks",         "zh": "股份回购"}),
+    ("pledge",       "⛓️", {"en": "Pledge stress",    "zh": "质押压力"}),
+    ("st",           "🚨", {"en": "Risk warnings",    "zh": "风险警示"}),
+    ("block_trades", "📦", {"en": "Block trades",     "zh": "大宗交易"}),
+]
+
+
+def _build_hero(blocks: dict) -> dict:
+    """Aggregate 'overhang glance' hero — context-only, no score/direction.
+
+    Emits: a per-plane segment list (level quiet/active/elevated + plain label),
+    the count of elevated planes, a single 'most notable' item, and a plain-word
+    stance sentence. All strings are {en, zh} twins. The stance NEVER implies a
+    trade — the honest resting state is "watch — don't chase".
+    """
+    segments = []
+    n_elevated = 0
+    n_active = 0
+    for key, icon, label in _PLANE_META:
+        blk = blocks.get(key) or {}
+        g = blk.get("glance") if isinstance(blk, dict) else None
+        # A missing/unreadable plane reads 'quiet' visually but is NOT counted as hot.
+        level = (g or {}).get("level", "quiet")
+        readable = isinstance(blk, dict) and blk.get("status") not in (None, "missing")
+        if not readable:
+            level = "quiet"
+        if level == "elevated":
+            n_elevated += 1
+        elif level == "active":
+            n_active += 1
+        segments.append({
+            "key": key, "icon": icon, "label": label, "level": level,
+            "line": g if g else {"en": "nothing flagged", "zh": "无标记"},
+        })
+
+    # Most notable = soonest large unlock, else an unreplied letter, else new ST,
+    # else heavy pledge — the single item a watcher would look at first.
+    notable = None
+    u = blocks.get("unlocks") or {}
+    large = [e for e in (u.get("events") or []) if e.get("large_flag")]
+    if large:
+        large.sort(key=lambda e: (e.get("days_to") if e.get("days_to") is not None else 1e9))
+        e = large[0]
+        notable = {
+            "icon": "🔓", "ticker": e.get("ticker", ""), "name": e.get("name", ""),
+            "en": (e.get("note") or {}).get("en", ""),
+            "zh": (e.get("note") or {}).get("zh", ""),
+            "days_to": e.get("days_to"),
+        }
+    if notable is None:
+        inq = blocks.get("inquiry") or {}
+        unreplied = [l for l in (inq.get("letters") or []) if not l.get("has_reply")]
+        if unreplied:
+            l = unreplied[0]
+            notable = {"icon": "📬", "ticker": l.get("secCode", ""), "name": l.get("secName", ""),
+                       "en": "an exchange inquiry letter, still unanswered",
+                       "zh": "一封尚未回复的交易所问询函", "days_to": None}
+    if notable is None:
+        st = blocks.get("st") or {}
+        adds = st.get("additions") or []
+        if adds:
+            a = adds[0]
+            notable = {"icon": "🚨", "ticker": a.get("ticker", ""), "name": a.get("name", ""),
+                       "en": "newly flagged for risk-warning", "zh": "新增风险警示",
+                       "days_to": None}
+    if notable is None:
+        pl = blocks.get("pledge") or {}
+        tops = pl.get("top") or []
+        if tops and (pl.get("n_high") or 0):
+            t = tops[0]
+            notable = {"icon": "⛓️", "ticker": t.get("ticker", ""), "name": t.get("name", ""),
+                       "en": "carrying heavy pledged shares", "zh": "质押比例较重",
+                       "days_to": None}
+
+    # Aggregate state + plain stance sentence. Resting stance is always "watch".
+    if n_elevated >= 2:
+        state = "elevated"
+        stance = {
+            "en": "Several event fronts are active — elevated overhang. Watch the names below, don't chase.",
+            "zh": "多条事件线活跃——事件压力偏高。留意下列个股，不追。",
+        }
+    elif n_elevated == 1:
+        state = "elevated"
+        stance = {
+            "en": "One event front stands out this week. Worth a look — but this is context, not a trade.",
+            "zh": "本周有一条事件线较为突出。值得关注——仅为背景，非交易信号。",
+        }
+    elif n_active:
+        state = "active"
+        stance = {
+            "en": "Some routine activity, nothing outsized. Nothing to act on — just keeping watch.",
+            "zh": "有一些常规动态，无异常规模。无需操作——保持观察。",
+        }
+    else:
+        state = "quiet"
+        stance = {
+            "en": "A quiet board — no notable event overhang today. Nothing to do.",
+            "zh": "整体平静——今日无明显事件压力。无需操作。",
+        }
+
+    return {
+        "state": state,           # quiet | active | elevated  (drives aurora + accent)
+        "n_elevated": n_elevated,
+        "n_active": n_active,
+        "n_planes": len(_PLANE_META),
+        "segments": segments,
+        "notable": notable,
+        "stance": stance,
+    }
+
+
+def _track_summary() -> dict | None:
+    """Honest track-of-record receipt for the cn_special_sits claim family.
+
+    Reads site/qledger/track_record.json (written by the nightly qledger runner).
+    These are SALIENCE-ONLY claims (direction=0): there is no directional hit to
+    rate, so we NEVER surface a hit_rate or an excess-return figure — at this n it
+    would be noise dressed as a result and would violate 'numbers carry meaning'.
+    We surface only: how long we've been watching (n flags, n distinct days) and
+    the plain-word maturity state ('still learning' while ACCRUING). Omits (returns
+    None) on any read failure so the page degrades gracefully — never fabricates.
+    """
+    try:
+        p = _site_dir() / "qledger" / "track_record.json"
+        if not p.exists():
+            return None
+        doc = json.loads(p.read_text())
+        fam = (doc.get("by_family") or {}).get("cn_special_sits")
+        if not isinstance(fam, dict) or not fam:
+            return None
+        # pick the shortest available horizon row (earliest to mature)
+        horizon = sorted(fam.keys(), key=lambda k: int(k))[0]
+        row = fam.get(horizon) or {}
+        n_obs = int(row.get("n_obs") or 0)
+        n_dates = int(row.get("n_dates") or 0)
+        if n_obs <= 0:
+            return None
+        state = str(row.get("state") or "ACCRUING")
+        maturing = state != "GRADED"
+        return {
+            "n_obs": n_obs,
+            "n_dates": n_dates,
+            "state": state,
+            "maturing": maturing,
+            "en": (
+                f"We've tracked {n_obs} flagged event{'s' if n_obs != 1 else ''} "
+                f"across {n_dates} day{'s' if n_dates != 1 else ''} so far. "
+                "Too few, too soon to say whether flagged names behave differently — "
+                "this is a watch list, not a scorecard."
+                if maturing else
+                f"Tracking {n_obs} flagged events across {n_dates} days."
+            ),
+            "zh": (
+                f"目前已跟踪{n_obs}个标记事件，覆盖{n_dates}个交易日。"
+                "样本仍少、时间尚短，还无法判断被标记个股是否表现不同——"
+                "这是观察清单，不是成绩单。"
+                if maturing else
+                f"已跟踪{n_obs}个标记事件，覆盖{n_dates}个交易日。"
+            ),
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_special_sits: track summary read failed (%s)", e)
+        return None
+
+
 def scan() -> dict:
     """Assemble the special-situations context snapshot. Never raises."""
     blocks: dict[str, Any] = {}
@@ -745,6 +1075,8 @@ def scan() -> dict:
     data_asof = min(block_asofs) if block_asofs else _today()
 
     by_ticker = _by_ticker_rollup(blocks)
+    hero = _build_hero(blocks)
+    track = _track_summary()
 
     return {
         "schema": SCHEMA,
@@ -753,6 +1085,8 @@ def scan() -> dict:
         "asof": _today(),
         "data_asof": data_asof,
         **blocks,
+        "hero": hero,
+        "track": track,
         "by_ticker": by_ticker,
         "disclaimer": (
             "Context only — not a signal, score or trade. "

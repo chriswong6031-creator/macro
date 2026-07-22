@@ -148,12 +148,21 @@ def snapshot(asof: date | str | None = None) -> dict | None:
         # Audit fix: annotate the intel substrate with live date status so the template can
         # surface the intel age and warn when the hand-authored intel.json is stale (>14d).
         intel_dates = policy_dates.annotate(intel)
+        # National Team Radar — display-tier state-intervention footprint gauge. Additive and
+        # degrade-safe: a failure degrades to None (the template guards on it).
+        try:
+            from engine import china_national_team
+            national_team = china_national_team.snapshot(asof)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china_policy_watch: national_team snapshot failed (%s)", e)
+            national_team = None
         return {
             "schema": SCHEMA, "is_context_only": True,
             "asof": (str(asof) if asof else (pboc or {}).get("asof") or str(date.today())),
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "pboc": pboc, "nbs_prints": prints, "policy_feed": feed, "intel": intel,
             "intel_dates": intel_dates,
+            "national_team": national_team,
             "latest": _compact(pboc, intel),
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
