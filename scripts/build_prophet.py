@@ -630,6 +630,9 @@ def main() -> None:
             "what_to_do_now": what_to_do_now,
             "profit_plan": profit_plan,
             "thesis": plan.get("thesis") or "",  # originated by prophet_bridge.py
+            # PSQ-TILT W1 provenance (whitelisted so the Terminal can consume it).
+            "horizon_days": plan.get("horizon_days"),
+            "stage_tilt": plan.get("stage_tilt"),
         })
 
     # ── 3b. Advance ledger (nightly-only — idempotent close-event writer) ────────
