@@ -25,9 +25,9 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=a1aa8c55">
+<link rel="stylesheet" href="theme.css?v=520e2139">
 <link rel="stylesheet" href="illus.css?v=a2237d45">
-<link rel="stylesheet" href="assets/css/d2b8a6ca.css?v=d2b8a6ca">
+<link rel="stylesheet" href="assets/css/c208fae4.css?v=c208fae4">
 </head>
 <body class="page-canada">
 
@@ -272,7 +272,7 @@
     <h1>🇨🇦 <span class="l-en">Canada — S&P/TSX Regime</span><span class="l-zh">加拿大 — 标普/TSX 周期</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-21 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-22 09:37 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-21 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-22 11:36 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Commodity-and-bank-cycle market — the TSX is ~70% Financials, Energy & Materials. The growth/inflation quad sets the slow backdrop; the commodity / CAD / BoC-vs-Fed overlay below is the high-frequency driver.</span><span class="l-zh">大宗商品与银行周期市场 — TSX 约 70% 为金融、能源与材料。增长／通胀象限给出慢速背景；下方的大宗商品／加元／央行-美联储叠加为高频驱动。</span>
@@ -324,22 +324,56 @@
     <div class="cax-gauge-row">
       
       
-      <svg class="cax-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
-        <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
-        <path class="cax-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="var(--up)" stroke-width="9" stroke-linecap="round" stroke-dasharray="100.48 200"/>
-        <g class="cax-gauge-needle" transform="rotate(25.2 60 68)">
-          <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
-          <circle class="cax-needle-hub" cx="60" cy="68" r="5"/>
-          <circle class="cax-needle-core" cx="60" cy="68" r="1.8"/>
-          <circle class="cax-needle-tip" cx="60" cy="30" r="2.6"/>
+      
+      
+      
+      
+      <svg class="cax-gauge-svg" viewBox="0 -4 140 101" fill="none" aria-hidden="true">
+        <defs>
+          <filter id="caxNeedleGlow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="caxArcGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        
+        <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round" fill="none"/>
+        
+        <path class="cax-gauge-fill" d="M 14 75 A 56 56 0 0 1 126 75" stroke="var(--up)" stroke-width="10" stroke-linecap="round" fill="none"
+              stroke-dasharray="112.58 103.32" filter="url(#caxArcGlow)"/>
+        
+        <g stroke="rgba(255,255,255,.22)" stroke-width="1.2">
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-90 70 75)"/>
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(-45 70 75)"/>
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(0 70 75)"/>
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(45 70 75)"/>
+          <line x1="70" y1="19" x2="70" y2="26" transform="rotate(90 70 75)"/>
         </g>
+        
+        <text x="14"  y="95" fill="rgba(255,255,255,.30)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">0</text>
+        <text x="70"  y="10" fill="rgba(255,255,255,.30)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
+        <text x="126" y="95" fill="rgba(255,255,255,.30)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
+        
+        <g class="cax-gauge-needle" transform="rotate(25.2 70 75)" filter="url(#caxNeedleGlow)">
+          <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
+          <polygon points="69,75 71,75 70.5,24 69.5,24" fill="white" opacity=".94"/>
+          <circle cx="70" cy="75" r="7" fill="rgba(255,255,255,.10)"/>
+          <circle class="cax-needle-hub" cx="70" cy="75" r="4.5"/>
+          <circle class="cax-needle-core" cx="70" cy="75" r="2"/>
+          <circle class="cax-needle-tip" cx="70" cy="25.5" r="2.5"/>
+        </g>
+        
+        <text class="cax-gauge-num" x="70" y="62" font-size="24" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">64</text>
+        <text x="70" y="73" fill="rgba(255,255,255,.32)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">/ 100</text>
       </svg>
       <div>
         <div class="cax-score-line"><span id="ms-score" class="cax-big-score">64</span><span id="ms-word" class="cax-verdict"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span> <span class="arr">▶</span></span></div>
         <div class="cax-sub-line">
-          <span class="cax-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">绿 — 支持趋势跟随</span></span>
-          <span class="cax-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">黄 — 谨慎交易</span></span>
-          <span class="cax-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">红 — 优先保住本金</span></span>
+          
+          <span class="cax-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">偏多 — 支持趋势跟随</span></span>
+          <span class="cax-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">中性 — 谨慎交易</span></span>
+          <span class="cax-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">避险 — 优先保住本金</span></span>
         </div>
       </div>
     </div>
@@ -348,10 +382,11 @@
     <div class="cax-hero-btns">
       
       
-      <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-signals',event)">⌁
+      <button class="cax-hbtn gbtn gbtn-pill gbtn-sm" onclick="caxTogglePop('cax-pop-signals',event)">⌁
         <span class="l-en">0 of 6 signals aligned</span><span class="l-zh">6 项中 0 项一致</span>
         <span class="n">▾</span></button>
-      <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
+      
+      <button class="cax-hbtn gbtn gbtn-pill gbtn-sm" onclick="caxTogglePop('cax-pop-risk',event)">⚠
         <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--down)">82</span> ▾</button>
 
       <!-- popover: factor breakdown -->
@@ -436,111 +471,296 @@
       </div>
     </div>
   </div>
-  <div class="cax-hero-right">
-    <div class="cax-path-h"><span><span class="l-en">11-session path</span><span class="l-zh">11交易日走势</span></span></div>
+  
+  <div class="cax-hero-right mx5-sc-right">
+    
+    
+    <div class="mx5-path-header">
+      <span class="mx5-path-title">
+        <span class="l-en">4-session path</span>
+        <span class="l-zh">近 4 交易日走势</span>
+      </span>
+      <span class="mx5-path-meta"><span class="l-en">Score vs time</span><span class="l-zh">综合评分 · 时序</span></span>
+    </div>
     
     
     
-    <svg class="cax-path-svg" viewBox="0 0 560 232" aria-hidden="true">
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
       
-      <rect x="20" y="22" width="520" height="56" style="fill:color-mix(in srgb,var(--up) 6%,transparent)"/>
-      <rect x="20" y="134" width="520" height="56" style="fill:color-mix(in srgb,var(--down) 6%,transparent)"/>
-      <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
-      <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></text>
-      <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end"><span class="l-en">Mixed</span><span class="l-zh">混合</span></text>
-      <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end"><span class="l-en">Risk-off</span><span class="l-zh">避险</span></text>
-      <text x="14" y="26" font-size="9" fill="var(--muted)" text-anchor="end">100</text>
-      <text x="14" y="109" font-size="9" fill="var(--muted)" text-anchor="end">50</text>
-      <text x="14" y="192" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
       
       
       
-      <path d="M20.0 90.9 L193.3 95.9 L366.7 84.2 L540.0 82.5"
-            fill="none" stroke="var(--up)" stroke-width="2.2" stroke-linejoin="round"/>
-      <text x="30" y="222" font-size="9" fill="var(--muted)">2026-07-15</text>
-      <text x="536" y="222" font-size="9" fill="var(--muted)" text-anchor="end">2026-07-21</text>
+      
+      
+      
+    
+      
+      
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+      
+      
+    
+      
+      
+      
+      
+      
+      
+      
+    
+    
+    
+    
+      
+    
+    <div class="mx5-path-plot">
+    <svg class="mx5-path-svg" viewBox="0 0 1000 224" preserveAspectRatio="none"
+         data-points='[{"d": "2026-07-15", "md": "Jul 15", "mz": "7\u670815", "s": 59, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 44.0, "y": 85.44}, {"d": "2026-07-17", "md": "Jul 17", "mz": "7\u670817", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 358.67, "y": 90.96}, {"d": "2026-07-20", "md": "Jul 20", "mz": "7\u670820", "s": 63, "v": "Risk-on", "vz": "\u504f\u591a", "x": 673.33, "y": 78.08}, {"d": "2026-07-21", "md": "Jul 21", "mz": "7\u670821", "s": 64, "v": "Risk-on", "vz": "\u504f\u591a", "x": 988.0, "y": 76.24}]'
+         data-px0="44" data-pxw="944" data-py0="10" data-pyb="194"
+         data-vbw="1000" data-vbh="224"
+         role="img" aria-label="4-session macro score path, 59 to 64">
+      <defs>
+        <linearGradient id="caxPathAreaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="var(--up)" stop-opacity=".40"/>
+          <stop offset="62%"  stop-color="var(--up)" stop-opacity=".07"/>
+          <stop offset="100%" stop-color="var(--up)" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      
+      <rect class="cax-pz-on"  x="0" y="10" width="1000" height="73.6"/>
+      <rect class="cax-pz-mid" x="0" y="83.6"  width="1000" height="33.12"/>
+      <rect class="cax-pz-off" x="0" y="116.72"  width="1000" height="77.28"/>
+      <line class="cax-pz-hl-on"  x1="0" y1="83.6" x2="1000" y2="83.6" stroke-width="1" stroke-dasharray="2,5"/>
+      <line class="cax-pz-hl-off" x1="0" y1="116.72" x2="1000" y2="116.72" stroke-width="1" stroke-dasharray="2,5"/>
+      <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+        <line x1="44" y1="10" x2="988" y2="10"/>
+        <line x1="44" y1="56.0"  x2="988" y2="56.0"/>
+        <line x1="44" y1="102.0"  x2="988" y2="102.0" stroke-dasharray="4,5"/>
+        <line x1="44" y1="148.0"  x2="988" y2="148.0"/>
+      </g>
+      <path d="M44.0,85.44 L358.67,90.96 L673.33,78.08 L988.0,76.24 L988,194 L44,194 Z" fill="url(#caxPathAreaGrad)" stroke="none"/>
+      <polyline points="44.0,85.44 358.67,90.96 673.33,78.08 988.0,76.24" fill="none" stroke="var(--up)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
+      <line x1="44" y1="194" x2="988" y2="194" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+      <g font-size="11" font-family="Inter,-apple-system,sans-serif">
+      
+        
+        <line x1="44.0" y1="194" x2="44.0" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+      
+        
+        <line x1="358.67" y1="194" x2="358.67" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+      
+        
+        <line x1="673.33" y1="194" x2="673.33" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+      
+        
+        <line x1="988.0" y1="194" x2="988.0" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+      
+      </g>
+      
+      
     </svg>
+    
+    <div class="mx5-path-labels" aria-hidden="true">
+      <span class="mx5-pl-y" style="top:4.46%">100</span>
+      <span class="mx5-pl-y" style="top:25.0%">75</span>
+      <span class="mx5-pl-y" style="top:45.54%">50</span>
+      <span class="mx5-pl-y" style="top:66.07%">25</span>
+      <span class="mx5-pl-y" style="top:86.61%">0</span>
+      <span class="mx5-pl-zone on"  style="top:10.27%"><span class="l-en">Risk-on</span><span class="l-zh">偏多</span></span>
+      <span class="mx5-pl-zone mid" style="top:44.71%"><span class="l-en">Mixed</span><span class="l-zh">中性</span></span>
+      <span class="mx5-pl-zone off" style="top:83.48%"><span class="l-en">Risk-off</span><span class="l-zh">偏空</span></span>
+      
+        
+        
+        
+        
+        <span class="mx5-pl-x" style="left:4.4%;transform:translate(0,-50%)"><span class="l-en">Jul 15</span><span class="l-zh">7月15</span></span>
+        
+      
+        
+        
+        
+        
+        <span class="mx5-pl-x" style="left:35.867%;transform:translate(-50%,-50%)"><span class="l-en">Jul 17</span><span class="l-zh">7月17</span></span>
+        
+      
+        
+        
+        
+        
+        <span class="mx5-pl-x" style="left:67.333%;transform:translate(-50%,-50%)"><span class="l-en">Jul 20</span><span class="l-zh">7月20</span></span>
+        
+      
+        
+        
+        
+        
+        <span class="mx5-pl-x" style="left:98.8%;transform:translate(-100%,-50%)"><span class="l-en">Jul 21</span><span class="l-zh">7月21</span></span>
+        
+      
+      <span class="mx5-pl-today" style="left:98.8%;top:34.036%;color:var(--up)"></span>
+    </div>
+    
+    <div class="mx5-path-cross" aria-hidden="true"></div>
+    <div class="mx5-path-dot" aria-hidden="true"></div>
+    <div class="mx5-path-tip" role="status" aria-live="off">
+      <span class="mx5-path-tip-date"></span>
+      <span class="mx5-path-tip-row"><b class="mx5-path-tip-score"></b><span class="mx5-path-tip-verdict"></span></span>
+    </div>
+    </div>
     
   </div>
 </div>
 
 
-<!-- =============== 4 MARKET TILES =============== -->
+<!-- =============== MARKETS FACE + SENTIMENT ODOMETER =============== -->
 <div class="cax-secbar"><b><span class="l-en">CANADA DASHBOARD</span><span class="l-zh">加拿大看板</span></b><span>2026-07-21</span></div>
-<div class="cax-tiles">
+
+
+
   
   
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-markets')">
-    <div class="sym">^GSPTSE</div><div class="nm"><span class="l-en">TSX COMPOSITE</span><span class="l-zh">TSX 综合</span></div>
-    <div class="px">35,369</div>
-    <div class="chg up">+1.17%</div>
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+
+
+
+
+
+
+<div class="cax-mktrow">
+  
+  <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Markets" onclick="caxOpenDlg('cax-dlg-markets')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();caxOpenDlg('cax-dlg-markets');}">
+    <div class="mx5-mkt-grid">
+      
+      <div class="mx5-mkt-tile up" data-sym="^GSPTSE" data-mkt="ca">
+        <div class="mx5-mkt-ticker">^GSPTSE</div>
+        <div class="mx5-mkt-sub"><span class="l-en">TSX Composite</span><span class="l-zh">TSX 综合</span></div>
+        
+        <div class="mx5-mkt-price nb-px" data-sym="^GSPTSE" data-mkt="ca" data-bare>35,369</div>
+        <div class="mx5-mkt-delta up nb-chg" data-sym="^GSPTSE" data-mkt="ca">+1.17%</div>
+        
+      </div>
+      
+      <div class="mx5-mkt-tile">
+        <div class="mx5-mkt-ticker">SPY</div>
+        <div class="mx5-mkt-sub"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></div>
+        
+        <div class="mx5-mkt-price " style="font-size:16px"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)" data-tip-en="+0.14σ vs 1y range" data-tip-zh="较1年区间 +0.14σ"><span class="l-en">US backdrop</span><span class="l-zh">美股背景</span></div>
+        
+      </div>
+      
+      <div class="mx5-mkt-tile">
+        <div class="mx5-mkt-ticker">USD/CAD</div>
+        <div class="mx5-mkt-sub"><span class="l-en">Loonie</span><span class="l-zh">加元</span></div>
+        
+        <div class="mx5-mkt-price nb-px" data-sym="CAD=X" data-mkt="fx" data-bare>1.4071</div>
+        <div class="mx5-mkt-delta up">CAD <span class="l-en">firm</span><span class="l-zh">走强</span> <span style="color:var(--muted);font-weight:400">-0.6%</span></div>
+        
+      </div>
+      
+      <div class="mx5-mkt-tile">
+        <div class="mx5-mkt-ticker">XEG / WTI</div>
+        <div class="mx5-mkt-sub"><span class="l-en">Crude / Energy</span><span class="l-zh">原油/能源</span></div>
+        
+        <div class="mx5-mkt-price up" style="font-size:16px"><span class="l-en">Supportive</span><span class="l-zh">利多</span></div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)" data-tip-en="+1.10σ vs 1y range" data-tip-zh="较1年区间 +1.10σ"><span class="l-en">Commodity context</span><span class="l-zh">商品背景</span></div>
+        
+      </div>
+    </div>
   </div>
+
   
   
   
   
+  <div class="sx-v5-static fg-greed" id="cax-sentiment">
     
     
     
-    
-  
-    
-    
-    
-    
-  
-    
-    
-    
-    
-  
-    
-    
-    
-    
-  
-    
-    
-    
-    
-  
-    
-    
-    
-    
-  
-    
-    
-    
-    
-  
-  
-  
-  
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
-    <div class="sym">SPY</div><div class="nm"><span class="l-en">S&P 500</span><span class="l-zh">标普500</span></div>
-    
-    <div class="px "><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
-    <div class="chg" style="color:var(--muted)" data-tip-en="+0.14σ vs 1y range" data-tip-zh="较1年区间 +0.14σ"><span class="l-en">US backdrop</span><span class="l-zh">美股背景</span></div>
-    
-  </div>
-  
-  
-  
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
-    <div class="sym">USD/CAD</div><div class="nm"><span class="l-en">LOONIE</span><span class="l-zh">加元</span></div>
-    
-    <div class="px">1.4071</div>
-    <div class="chg up">CAD <span class="l-en">firm</span><span class="l-zh">走强</span> <span class="cax-sub">-0.6%</span></div>
-    
-  </div>
-  
-  
-  <div class="cax-card cax-tile" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-commod')">
-    <div class="sym">XEG / WTI</div><div class="nm"><span class="l-en">CRUDE / ENERGY</span><span class="l-zh">原油/能源</span></div>
-    
-    <div class="px up"><span class="l-en">Supportive</span><span class="l-zh">利多</span></div>
-    <div class="chg" style="color:var(--muted)" data-tip-en="+1.10σ vs 1y range" data-tip-zh="较1年区间 +1.10σ"><span class="l-en">Commodity context</span><span class="l-zh">商品背景</span></div>
+    <div class="mx5-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="caxOpenDlg('cax-dlg-sentiment')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();caxOpenDlg('cax-dlg-sentiment');}">
+      <div class="mx5-card-title"><span class="l-en">Market Participation</span><span class="l-zh">市场参与度</span></div>
+      <div class="mx5-sentiment-dial-wrap">
+        <svg viewBox="0 0 380 212" style="width:100%;max-width:340px;height:180px;display:inline-block;overflow:visible">
+          <defs>
+            <linearGradient id="caxSentGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="var(--down)"/><stop offset="35%" stop-color="var(--warn)"/><stop offset="65%" stop-color="var(--up)"/><stop offset="100%" stop-color="var(--up)"/>
+            </linearGradient>
+            <filter id="caxDialGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="18" stroke-linecap="round"/>
+          <path d="M 35 185 A 155 155 0 0 1 345 185" fill="none" stroke="url(#caxSentGrad)" stroke-width="18" stroke-linecap="round" opacity=".55"/>
+          <g filter="url(#caxDialGlow)">
+            <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30" stroke-width="4" stroke-linecap="round" transform="rotate(19.8, 190, 185)"/>
+            <circle class="fg-mark-s" cx="190" cy="185" r="9" fill="rgba(8,12,18,.8)" stroke-width="2.5"/>
+            <circle class="fg-mark-f" cx="190" cy="185" r="4"/>
+          </g>
+          <text class="l-en fg-lab-panic" x="26" y="208" font-size="12.5" font-family="Inter,-apple-system,sans-serif" font-weight="700" text-anchor="start">THIN</text>
+          <text class="l-zh fg-lab-panic" x="26" y="208" font-size="12.5" font-family="Inter,-apple-system,sans-serif" font-weight="700" text-anchor="start">稀薄</text>
+          <text class="l-en fg-lab-euph" x="354" y="208" font-size="12.5" font-family="Inter,-apple-system,sans-serif" text-anchor="end" font-weight="700">BROAD</text>
+          <text class="l-zh fg-lab-euph" x="354" y="208" font-size="12.5" font-family="Inter,-apple-system,sans-serif" text-anchor="end" font-weight="700">广泛</text>
+        </svg>
+      </div>
+      <div class="mx5-sentiment-zone-text"><span class="l-en">Broad participation</span><span class="l-zh">参与广泛</span></div>
+      <div class="mx5-sentiment-label">
+        <span class="l-en">56% of TSX names above their 50-day line</span>
+        <span class="l-zh">56% 的 TSX 成分股站上 50 日均线</span>
+      </div>
+      <div class="plf-open"><span class="l-en">How it's measured</span><span class="l-zh">如何测算</span> &rarr;</div>
+    </div>
     
   </div>
 </div>
@@ -1395,6 +1615,35 @@
   </div>
 </div>
 
+<!-- Market Participation dialog (Tier-2 receipt for the sentiment odometer) -->
+<div class="cax-dlg" id="cax-dlg-sentiment">
+  <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
+  <div class="cax-dlg-panel">
+    <div class="cax-dlg-head">
+      <span class="cax-dlg-title"><span class="l-en">Market Participation</span><span class="l-zh">市场参与度</span></span>
+      <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
+    </div>
+    <div class="cax-dlg-body">
+      
+      
+      
+      <div class="cax-pop-big"><span class="n" style="color:var(--up)">61</span><span class="t" style="color:var(--up)"><span class="l-en">Broad participation</span><span class="l-zh">参与广泛</span></span></div>
+      <p class="cax-thesis" style="max-width:52ch;margin:2px 0 12px"><span class="l-en">How much of the TSX is actually moving together. This is a computed breadth read — not a fear/greed index — rolled into one 0–100 number so a glance tells you whether strength is broad or just a few names.</span><span class="l-zh">衡量有多少 TSX 成分股在同向运行。这是一项基于市场宽度的计算读数 — 并非恐慌／贪婪指数 — 汇总为 0–100 的单一数字，让你一眼看出走强是广泛的还是仅由少数股票带动。</span></p>
+      
+      <div class="cax-lbl"><span class="l-en">So what do I do</span><span class="l-zh">该怎么做</span></div>
+      <p style="font-size:12.5px;color:var(--text);margin:0 0 14px"><span class="l-en">Broad participation — the move has support under it. Trend-following is on firmer ground; still size to the regime gauge above.</span><span class="l-zh">参与广泛 — 上涨有基础支撑。顺势交易的立足点更稳；仍需按上方周期表盘控制仓位。</span></p>
+      
+      <div class="cax-lbl"><span class="l-en">How it’s measured</span><span class="l-zh">如何测算</span></div>
+      <div class="cax-kv"><span class="k"><span class="l-en">Names above 50-day line</span><span class="l-zh">站上50日线的成分股</span> <span style="color:var(--muted)">· 45%</span></span><span class="v">56.0%</span></div>
+      <div class="cax-kv"><span class="k"><span class="l-en">Names above 200-day line</span><span class="l-zh">站上200日线的成分股</span> <span style="color:var(--muted)">· 30%</span></span><span class="v">62.4%</span></div>
+      <div class="cax-kv"><span class="k"><span class="l-en">Advancers share today</span><span class="l-zh">当日上涨占比</span> <span style="color:var(--muted)">· 15%</span></span><span class="v">68.2%</span></div>
+      <div class="cax-kv"><span class="k"><span class="l-en">20-day change in participation</span><span class="l-zh">参与度20日变化</span> <span style="color:var(--muted)">· 10%</span></span><span class="v">+8.7 pts</span></div>
+      <div class="cax-foot"><span class="l-en">Display-only composite of S&P/TSX Composite breadth (~220 names). Bands: broad ≥60 · mixed 40–59 · thin <40. Not scored, not a trading signal.</span><span class="l-zh">标普/TSX 综合指数市场宽度（约220只）的仅展示合成指标。区间：广泛 ≥60 · 中性 40–59 · 稀薄 <40。不计分，非交易信号。</span> · <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-21</div>
+      
+    </div>
+  </div>
+</div>
+
 <!-- =============== NAV LINKS + DATA HEALTH =============== -->
 <div class="cax-links">
   <a href="canada_stocks.html"><span class="l-en">TSX Stocks →</span><span class="l-zh">TSX 个股 →</span></a>
@@ -1417,7 +1666,7 @@
 </div>
 
 
-<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-22 09:37 UTC</p>
+<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-22 11:36 UTC</p>
 
 </div>
 
@@ -1426,7 +1675,7 @@
 
 
 <script src="mtf.js?v=b62aea2f" defer></script>
-<script src="theme.js?v=195f6d56" defer></script>
+<script src="theme.js?v=62a16bd4" defer></script>
 <script defer src="illus.js?v=8e0a3779"></script>
 <script src="chart_i18n.js?v=23272c48" defer></script>
 <script src="charts.js?v=5372d2a2" defer></script>
@@ -1481,6 +1730,77 @@
     var wrap = e.target.closest && e.target.closest('.nb-cau');
     if (wrap) placePop(wrap);
   }, true);
+})();
+</script>
+<script>
+/* Path-chart hover enhancement (ported from US mx5 path JS). Pure progressive layer:
+   reads data-points (viewBox x/y baked in) + the SVG's live rect, maps viewBox→screen
+   so the crosshair/dot/tooltip stay crisp under the SVG's non-uniform stretch. The verdict
+   colours are read from the page's --up/--down/--warn CSS vars (NOT hard-coded hex) so they
+   flip correctly in zh (红涨绿跌); chart is fully legible without this layer. */
+(function(){
+  var svg = document.querySelector('.cax-hero-right .mx5-path-svg[data-points]');
+  if(!svg) return;
+  var plot = svg.closest('.mx5-path-plot'); if(!plot) return;
+  var cross = plot.querySelector('.mx5-path-cross');
+  var dot   = plot.querySelector('.mx5-path-dot');
+  var tip   = plot.querySelector('.mx5-path-tip');
+  if(!cross || !dot || !tip) return;
+  var tDate = tip.querySelector('.mx5-path-tip-date');
+  var tScore= tip.querySelector('.mx5-path-tip-score');
+  var tVerd = tip.querySelector('.mx5-path-tip-verdict');
+  var pts;
+  try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch(e){ return; }
+  if(!pts.length) return;
+  var VBW = +(svg.getAttribute('data-vbw')||1000);
+  var VBH = +(svg.getAttribute('data-vbh')||224);
+  /* read live theme colours so zh (红涨绿跌) flips the dot/verdict tint automatically */
+  function col(v){
+    var cs = getComputedStyle(document.documentElement);
+    var name = v==='Risk-on' ? '--up' : (v==='Risk-off' ? '--down' : '--warn');
+    return (cs.getPropertyValue(name)||'').trim() || '#f59e0b';
+  }
+  function isZh(){
+    var el=document.documentElement;
+    return (el.getAttribute('data-lang')||'').slice(0,2)==='zh';
+  }
+  function nearest(clientX){
+    var r = svg.getBoundingClientRect();
+    var vx = (clientX - r.left) / r.width * VBW;
+    var best=0, bd=Infinity;
+    for(var i=0;i<pts.length;i++){ var d=Math.abs(pts[i].x - vx); if(d<bd){ bd=d; best=i; } }
+    return best;
+  }
+  function show(i){
+    var p = pts[i]; if(!p) return;
+    var r = svg.getBoundingClientRect();
+    var pr = plot.getBoundingClientRect();
+    var sx = (p.x / VBW) * r.width  + (r.left - pr.left);
+    var sy = (p.y / VBH) * r.height + (r.top  - pr.top);
+    var c = col(p.v);
+    cross.style.left = sx + 'px';   cross.style.opacity = '1';
+    dot.style.left = sx + 'px';     dot.style.top = sy + 'px';
+    dot.style.background = c;
+    dot.style.opacity = '1';
+    tDate.textContent = isZh() ? (p.mz || p.d) : (p.md || p.d);
+    tScore.textContent = p.s;
+    tVerd.textContent = isZh() ? (p.vz||p.v) : p.v;
+    tVerd.style.color = c;
+    var half = tip.offsetWidth/2 || 60;
+    var clx = Math.max(half+2, Math.min(pr.width-half-2, sx));
+    tip.style.left = clx + 'px';
+    tip.style.top  = sy + 'px';
+    tip.classList.add('show');
+  }
+  function hide(){ cross.style.opacity='0'; dot.style.opacity='0'; tip.classList.remove('show'); }
+  var raf=0, lastX=0;
+  function onMove(clientX){ lastX=clientX; if(raf) return; raf=requestAnimationFrame(function(){ raf=0; show(nearest(lastX)); }); }
+  svg.addEventListener('mousemove', function(e){ onMove(e.clientX); });
+  svg.addEventListener('mouseleave', hide);
+  svg.addEventListener('touchstart', function(e){ if(e.touches && e.touches[0]) show(nearest(e.touches[0].clientX)); }, {passive:true});
+  svg.addEventListener('touchmove', function(e){ if(e.touches && e.touches[0]) show(nearest(e.touches[0].clientX)); }, {passive:true});
+  svg.addEventListener('touchend', function(){ setTimeout(hide, 1400); }, {passive:true});
+  document.addEventListener('langchange', function(){ if(tip.classList.contains('show')) show(nearest(lastX)); });
 })();
 </script>
 <script>
@@ -1555,7 +1875,7 @@
   window.addEventListener('hashchange',caxResolveHash);
 })();
 </script>
-<script src="heatmap.js?v=c640f58d" defer></script>
+<script src="heatmap.js?v=8f006585" defer></script>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>

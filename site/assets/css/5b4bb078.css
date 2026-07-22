@@ -1219,6 +1219,98 @@ body.page-macro .igd-footer{
 .mx5-dlg-sector-rk{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
 [data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.38);}
 
+/* ── Sector Temperature — rotation ladder (dlg-sector rebuild) ─────────────────
+   Each sector is a rung; the little trace is its 5-day rank move (an honest 2-point
+   trajectory — up = climbed, down = slipped), coloured green/red via --up/--down so
+   ZH flips. Lane = current standing (leading / lagging); trace + delta = the move. */
+.sct-lane{margin:0 0 20px;}
+.sct-lane:last-of-type{margin-bottom:6px;}
+.sct-lane-head{display:flex;align-items:center;gap:8px;margin:0 0 11px;
+  font:700 11px/1 var(--font-ui,inherit);letter-spacing:.09em;text-transform:uppercase;}
+.sct-lane-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 9px currentColor;}
+.sct-lane.lead .sct-lane-head{color:color-mix(in srgb,var(--up,#22d97a) 78%,var(--text));}
+.sct-lane.lag  .sct-lane-head{color:color-mix(in srgb,var(--down,#ef4444) 78%,var(--text));}
+.sct-lane.lead .sct-lane-dot{color:var(--up,#22d97a);background:currentColor;}
+.sct-lane.lag  .sct-lane-dot{color:var(--down,#ef4444);background:currentColor;}
+.sct-lane-n{margin-left:auto;font:600 10.5px/1 var(--font-ui,inherit);letter-spacing:.01em;text-transform:none;color:var(--ink-3,rgba(255,255,255,.42));}
+.sct-rung{display:grid;grid-template-columns:32px 1fr 132px 54px;align-items:center;gap:12px;
+  padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);transition:border-color .2s,background .2s,transform .16s;}
+.sct-rung + .sct-rung{margin-top:8px;}
+[data-theme="light"] .sct-rung{background:rgba(0,0,0,.018);border-color:rgba(0,0,0,.06);}
+.sct-rung:hover{transform:translateY(-1px);background:rgba(255,255,255,.05);
+  border-color:color-mix(in srgb,var(--sct-c,var(--up,#22d97a)) 36%,var(--line,rgba(255,255,255,.1)));}
+[data-theme="light"] .sct-rung:hover{background:rgba(0,0,0,.035);}
+.sct-badge{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+  color:var(--sct-c,var(--up,#22d97a));background:color-mix(in srgb,var(--sct-c,var(--up,#22d97a)) 14%,transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--sct-c,var(--up,#22d97a)) 28%,transparent);}
+.sct-badge svg{width:15px;height:15px;display:block;}
+.sct-body{min-width:0;}
+.sct-name{font:700 13px/1.25 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.92));
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sct-sub{margin-top:2px;font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.44));display:flex;align-items:center;gap:7px;}
+.sct-sub .sct-rk{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));}
+.sct-sub .sct-stance{text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sct-trace{width:132px;height:30px;display:block;overflow:visible;}
+.sct-trace .sct-base{stroke:color-mix(in srgb,var(--ink-3,#8b93a1) 45%,transparent);stroke-width:1;stroke-dasharray:2 3;}
+.sct-trace .sct-ln{fill:none;stroke:var(--sct-c,var(--up,#22d97a));stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.sct-trace .sct-dot-old{fill:none;stroke:color-mix(in srgb,var(--sct-c,var(--up,#22d97a)) 55%,transparent);stroke-width:1.6;}
+.sct-trace .sct-dot-now{fill:var(--sct-c,var(--up,#22d97a));}
+.sct-delta{display:flex;flex-direction:column;align-items:flex-end;}
+.sct-delta-v{font:800 16px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;color:var(--sct-c,var(--up,#22d97a));letter-spacing:-.01em;}
+.sct-delta-k{margin-top:3px;font-size:9px;color:var(--ink-3,rgba(255,255,255,.4));letter-spacing:.02em;white-space:nowrap;}
+@media(max-width:430px){
+  .sct-rung{grid-template-columns:28px 1fr 82px 44px;gap:9px;padding:10px;}
+  .sct-trace{width:82px;}
+  .sct-delta-v{font-size:15px;}
+}
+@media(prefers-reduced-motion:no-preference){
+  #dlg-sector .sct-rung{opacity:0;transform:translateY(8px);
+    transition:opacity .44s ease,transform .44s cubic-bezier(.22,.9,.26,1.02),border-color .2s,background .2s;}
+  #dlg-sector.mx5-dlg-in .sct-rung{opacity:1;transform:translateY(0);}
+  #dlg-sector.mx5-dlg-in .sct-rung:nth-child(2){transition-delay:.05s}
+  #dlg-sector.mx5-dlg-in .sct-rung:nth-child(3){transition-delay:.11s}
+  #dlg-sector.mx5-dlg-in .sct-rung:nth-child(4){transition-delay:.17s}
+  #dlg-sector.mx5-dlg-in .sct-rung:nth-child(5){transition-delay:.23s}
+  #dlg-sector .sct-trace .sct-ln{stroke-dasharray:150;stroke-dashoffset:150;}
+  #dlg-sector.mx5-dlg-in .sct-trace .sct-ln{transition:stroke-dashoffset .72s cubic-bezier(.22,.9,.26,1.02) .22s;stroke-dashoffset:0;}
+  #dlg-sector .sct-trace .sct-dot-now{opacity:0;}
+  #dlg-sector.mx5-dlg-in .sct-trace .sct-dot-now{transition:opacity .3s ease .6s;opacity:1;}
+}
+
+/* ── News modal — Market Intelligence headline list (nbx-*): each headline is a
+     tappable card with a theme tag, the outlet + date, and a summary snippet — replaces
+     the bare title-only accordion (the "no context / no dates" complaint). ── */
+.nbx-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.nbx-item{display:block;text-decoration:none;color:inherit;padding:11px 13px;border-radius:11px;
+  background:rgba(255,255,255,.028);border:1px solid rgba(255,255,255,.06);
+  transition:border-color .2s,background .2s,transform .16s;}
+[data-theme="light"] .nbx-item{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06);}
+.nbx-item:hover{transform:translateY(-1px);background:rgba(255,255,255,.05);
+  border-color:color-mix(in srgb,var(--link,#22d97a) 34%,var(--line,rgba(255,255,255,.1)));}
+[data-theme="light"] .nbx-item:hover{background:rgba(0,0,0,.035);}
+.nbx-top{display:flex;align-items:baseline;gap:9px;min-width:0;}
+.nbx-theme{flex:0 0 auto;font:700 9px/1 var(--font-ui,inherit);letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 7px;border-radius:5px;color:var(--ink-2,rgba(255,255,255,.6));
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);white-space:nowrap;margin-top:1px;}
+[data-theme="light"] .nbx-theme{background:rgba(0,0,0,.045);border-color:rgba(0,0,0,.09);}
+.nbx-title{flex:1;min-width:0;font:600 13px/1.4 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.92));}
+.nbx-meta{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.42));}
+.nbx-src{font-weight:700;color:var(--ink-2,rgba(255,255,255,.6));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+.nbx-dot{opacity:.5;}
+.nbx-date{font-variant-numeric:tabular-nums;white-space:nowrap;}
+.nbx-arrow{margin-left:auto;font-weight:700;color:var(--link,#22d97a);white-space:nowrap;}
+.nbx-sum{margin-top:6px;font-size:11.5px;line-height:1.5;color:var(--ink-3,rgba(255,255,255,.5));
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+@media(prefers-reduced-motion:no-preference){
+  #dlg-news .nbx-item{opacity:0;transform:translateY(6px);transition:opacity .4s ease,transform .4s cubic-bezier(.22,.9,.26,1.02),border-color .2s,background .2s;}
+  #dlg-news.mx5-dlg-in .nbx-item{opacity:1;transform:translateY(0);}
+  #dlg-news.mx5-dlg-in .nbx-item:nth-child(2){transition-delay:.04s}
+  #dlg-news.mx5-dlg-in .nbx-item:nth-child(3){transition-delay:.08s}
+  #dlg-news.mx5-dlg-in .nbx-item:nth-child(4){transition-delay:.12s}
+  #dlg-news.mx5-dlg-in .nbx-item:nth-child(n+5){transition-delay:.15s}
+}
+
 /* Asset tiles (MARKETS dialog) */
 .mx5-dlg-asset-row{
   display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;
@@ -1910,15 +2002,19 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .fbm-beam-head.ease{color:var(--up,#22d97a);}
 .fbm-beam-head .fbm-wt{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;}
 /* The physical scale: fulcrum + rotating beam + two chip pans */
-.fbm-beam-stage{position:relative;height:132px;}
+.fbm-beam-stage{position:relative;height:160px;}
 .fbm-beam-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
 /* beam bar rotates around the centre fulcrum by --tilt degrees */
 .fbm-beam-bar{position:absolute;left:8%;right:8%;top:26px;height:4px;border-radius:3px;
   background:linear-gradient(90deg,var(--down,#ef4444),color-mix(in srgb,var(--down,#ef4444) 40%,var(--up,#22d97a)) 50%,var(--up,#22d97a));
   transform-origin:50% 50%;transform:rotate(var(--tilt,0deg));
   box-shadow:0 1px 6px -1px color-mix(in srgb,var(--isle-policy,#a070e8) 40%,transparent);}
-.fbm-beam-pans{position:absolute;inset:0;transform-origin:50% 50%;transform:rotate(var(--tilt,0deg));}
-.fbm-beam-pan{position:absolute;top:30px;width:42%;display:flex;flex-direction:column;align-items:center;gap:5px;
+/* Pans pivot about the BEAM's centreline (y≈28px), NOT the stage centre — otherwise the
+   raised chip pan sweeps up THROUGH the beam line on the heavy side (the "Equity risk-off"
+   clip). Matching the pivot keeps a constant gap between beam and chips across all tilts;
+   pan top then just sets that gap (must clear the ±9° sweep of the top chip row). */
+.fbm-beam-pans{position:absolute;inset:0;transform-origin:50% 28px;transform:rotate(var(--tilt,0deg));}
+.fbm-beam-pan{position:absolute;top:54px;width:42%;display:flex;flex-direction:column;align-items:center;gap:5px;
   transform:rotate(calc(-1 * var(--tilt,0deg)));/* keep chips level while the beam tilts */}
 .fbm-beam-pan.hawk{left:0;}
 .fbm-beam-pan.ease{right:0;}
@@ -2033,8 +2129,8 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 
 /* — 390px bottom-sheet: keep the beam legible, stack benchmark odds tighter — */
 @media(max-width:430px){
-  .fbm-beam-stage{height:150px;}
-  .fbm-beam-pan{top:34px;width:44%;}
+  .fbm-beam-stage{height:156px;}
+  .fbm-beam-pan{top:48px;width:44%;}
   .fbm-leg{font-size:10px;padding:3px 7px;}
   .fbm-bench-odds{font-size:22px;min-width:44px;}
   .fbm-row-state{min-width:82px;font-size:11.5px;}
@@ -2128,11 +2224,14 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   background:color-mix(in srgb,var(--lens-text,#d7dce3) 4%,transparent);
   border:1px solid color-mix(in srgb,var(--lens-text,#d7dce3) 9%,transparent);}
 .rlx-viz-cap{font:600 10px/1.4 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);margin-top:8px;}
-/* comparison bars — two labelled horizontal bars (deeper vs shallower, cohort vs cohort) */
-.rlx-bars{display:flex;flex-direction:column;gap:8px;}
-.rlx-bar-row{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:9px;min-width:0;}
-.rlx-bar-lbl{font:600 9.5px/1.2 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);
-  overflow-wrap:anywhere;}
+/* comparison bars — a label ABOVE each full-width bar. (Was a 64px label column, which
+   crushed descriptive leg names like "Cyclicals fading vs defensives" into 4-line,
+   mid-word-broken wraps — the "bad layout". Stacking gives the name full width and the
+   bars share one left edge so length still compares cleanly.) */
+.rlx-bars{display:flex;flex-direction:column;gap:12px;}
+.rlx-bar-row{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.rlx-bar-lbl{font:600 11px/1.3 var(--font-ui,Inter,sans-serif);
+  color:color-mix(in srgb,var(--lens-text,#d7dce3) 84%,var(--lens-mut,#8b93a1));overflow-wrap:break-word;}
 .rlx-bar-track{position:relative;height:9px;border-radius:5px;
   background:color-mix(in srgb,var(--lens-mut,#8b93a1) 20%,transparent);overflow:hidden;}
 .rlx-bar-fill{position:absolute;inset:0 auto 0 0;border-radius:5px;
@@ -2155,8 +2254,8 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rlx-chips{margin:0 16px 12px;display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center;}
 .rlx-chips-lbl{font:700 8.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.1em;text-transform:uppercase;
   color:color-mix(in srgb,var(--lens-mut,#8b93a1) 80%,transparent);margin-right:1px;}
-.rlx-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-mono,ui-monospace,Menlo,monospace);
-  letter-spacing:.02em;padding:3px 7px;border-radius:6px;white-space:nowrap;}
+.rlx-chip{display:inline-flex;align-items:center;font:700 10.5px/1 var(--font-ui,Inter,sans-serif);
+  letter-spacing:.02em;padding:3px 8px;border-radius:6px;white-space:nowrap;}
 .rlx-chip.up{color:var(--ok,var(--up,#3da564));background:color-mix(in srgb,var(--ok,var(--up,#3da564)) 14%,transparent);
   border:1px solid color-mix(in srgb,var(--ok,var(--up,#3da564)) 30%,transparent);}
 .rlx-chip.dn{color:var(--down,#ef4444);background:color-mix(in srgb,var(--down,#ef4444) 13%,transparent);
@@ -2170,11 +2269,11 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 /* — 3. US Leaders chart block (mono tickers, animated gradient bars, count chip) — */
 .rkc-ldr-head{display:flex;align-items:center;gap:9px;margin:2px 0 10px;}
 .rkc-ldr-state{flex:1;min-width:0;font:600 13px/1.4 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
-.rkc-ldr-count{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:4px;font:800 12px/1 var(--font-ui,inherit);
-  font-variant-numeric:tabular-nums;padding:5px 9px;border-radius:999px;color:var(--down,#ef4444);
+.rkc-ldr-count{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:6px;font:800 14px/1 var(--font-ui,inherit);
+  font-variant-numeric:tabular-nums;padding:5px 10px;border-radius:999px;color:var(--down,#ef4444);
   background:color-mix(in srgb,var(--down,#ef4444) 12%,transparent);
   border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
-.rkc-ldr-count small{font-size:9px;font-weight:600;color:var(--ink-3,rgba(255,255,255,.42));letter-spacing:.03em;}
+.rkc-ldr-count small{font-size:9.5px;font-weight:600;color:color-mix(in srgb,var(--down,#ef4444) 78%,var(--ink-2));letter-spacing:.02em;}
 .rkc-ldr-bars{display:flex;flex-direction:column;gap:6px;position:relative;}
 .rkc-ldr-row{display:grid;grid-template-columns:52px 1fr 46px;align-items:center;gap:9px;}
 .rkc-ldr-tkr{font:700 11px/1 var(--font-mono,ui-monospace,'SF Mono',monospace);

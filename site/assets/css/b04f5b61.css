@@ -628,6 +628,15 @@ body.page-macro .isle-heatmap-chrome-head{font-size:11px;font-weight:700;text-tr
   body.page-macro #heatmap-scorecard [style*="font-size:6."],
   body.page-macro #heatmap-scorecard [style*="font-size:7."]{color:transparent!important}
 }
+/* PERMA-FIX — recurring black-label regression (operator: the institutional board is
+   ALWAYS white text). This guard lives in the freshly-rendered page CSS, so it overrides
+   a STALE cached heatmap.js (script tag carries no ?v=) that still computes a dark
+   contrast colour for some tiles — heatmap.js sets the label colour as an inline style,
+   which a stylesheet !important beats. Kept at low specificity (no #id) so the MOB-05
+   sublabel-hide above still wins on mobile and silences tiny sub-labels. */
+body.page-macro .hm-tile,
+body.page-macro .hm-tile .sym,
+body.page-macro .hm-tile .pc{color:#fff!important}
 body.page-macro .mx2-tray-stamp{font-size:10px;color:var(--muted);padding:8px 0 4px;text-align:right;font-variant-numeric:tabular-nums}
 
 /* Section eyebrow label */

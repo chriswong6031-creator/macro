@@ -198,6 +198,8 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 .trd-search{ min-width:130px; } .trd-search::placeholder{ color:var(--trd-muted); }
 .trd-search:focus-visible,.trd-sel:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:1px; }
 .trd-rail-grow{ flex:1;min-width:6px; }
+/* Tier-2 marking-basis caption above the ledger table (muted, one line). */
+.trd-mark-note{ margin:0 0 8px;font-size:10.5px;line-height:1.4;color:var(--trd-muted); }
 
 .trd-tbl-wrap{ overflow-x:auto;border-radius:10px;border:1px solid var(--trd-line); }
 .trd-tbl{ width:100%;border-collapse:collapse;font-size:12px; }

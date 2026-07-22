@@ -761,8 +761,12 @@
   body.page-canada .ms-yellow .cax-regime-pill{background:rgba(224,160,48,.10)}
   body.page-canada .ms-yellow .cax-regime-pill .dot{background:var(--warn)}
   body.page-canada .cax-gauge-row{display:flex;gap:20px;align-items:center;margin-bottom:16px;margin-top:10px}
-  body.page-canada .cax-gauge-svg{flex:0 0 192px;width:192px;height:120px;overflow:visible;display:block}
-  @media(max-width:560px){body.page-canada .cax-gauge-svg{flex:0 0 90px;width:90px;height:58px}}
+  /* Hero gauge — US mx5-gauge semicircle geometry (viewBox 0 -4 140 101, r=56, ticks + 0/50/100 scale) */
+  body.page-canada .cax-gauge-svg{flex:0 0 196px;width:196px;height:142px;overflow:visible;display:block}
+  @media(max-width:560px){body.page-canada .cax-gauge-svg{flex:0 0 108px;width:108px;height:80px}}
+  body.page-canada .cax-gauge-num{fill:var(--warn);font-weight:800}
+  body.page-canada .ms-green .cax-gauge-num{fill:var(--up)}
+  body.page-canada .ms-red .cax-gauge-num{fill:var(--down)}
   body.page-canada .ms-green .cax-gauge-fill{stroke:var(--up)}
   body.page-canada .ms-yellow .cax-gauge-fill{stroke:var(--warn)}
   body.page-canada .ms-red .cax-gauge-fill{stroke:var(--down)}
@@ -803,9 +807,86 @@
   body.page-canada .cax-hero-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative}
   body.page-canada .cax-hbtn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);color:var(--text);border-radius:999px;padding:5px 12px;font-size:11.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
   body.page-canada .cax-hbtn:hover{background:rgba(255,255,255,.09)}
+  /* when a hero button also carries .gbtn, let the shared glass-button recipe own the surface */
+  body.page-canada .cax-hbtn.gbtn{background:var(--gbtn-bg);border:1px solid var(--gbtn-brd);gap:6px}
+  body.page-canada .cax-hbtn.gbtn:hover{background:var(--gbtn-bg-hover)}
   body.page-canada .cax-hbtn .n{font-weight:700}
   body.page-canada .cax-path-h{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
   body.page-canada .cax-path-svg{width:100%;height:auto;display:block}
+  /* ── 60-session path — ported from US mx5-sc-right (re-scoped to page-canada) ── */
+  body.page-canada .mx5-sc-right{padding:18px 24px 14px;display:flex;flex-direction:column}
+  body.page-canada .mx5-path-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  body.page-canada .mx5-path-title{font-size:11px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--muted)}
+  body.page-canada .mx5-path-meta{font-size:11px;color:var(--muted)}
+  body.page-canada .mx5-path-plot{position:relative;flex:1;min-height:190px;display:flex}
+  body.page-canada .mx5-path-svg{display:block;width:100%;flex:1;min-height:190px;overflow:visible;touch-action:pan-y}
+  /* verdict-band washes + boundary hairlines — paint via --up/--down/--warn so zh flips */
+  body.page-canada .cax-pz-on{fill:color-mix(in srgb,var(--up) 6%,transparent)}
+  body.page-canada .cax-pz-mid{fill:color-mix(in srgb,var(--warn) 6%,transparent)}
+  body.page-canada .cax-pz-off{fill:color-mix(in srgb,var(--down) 6%,transparent)}
+  body.page-canada .cax-pz-hl-on{stroke:color-mix(in srgb,var(--up) 24%,transparent)}
+  body.page-canada .cax-pz-hl-off{stroke:color-mix(in srgb,var(--down) 22%,transparent)}
+  body.page-canada .mx5-path-labels{position:absolute;inset:0;pointer-events:none;font-family:Inter,-apple-system,sans-serif;font-size:11px;line-height:1}
+  body.page-canada .mx5-path-labels > span{position:absolute;white-space:nowrap}
+  body.page-canada .mx5-pl-y{left:6px;transform:translateY(-50%);color:var(--muted);font-variant-numeric:tabular-nums}
+  body.page-canada .mx5-pl-zone{right:14px;transform:translateY(-50%);font-weight:600}
+  body.page-canada .mx5-pl-zone.on{color:color-mix(in srgb,var(--up) 66%,transparent)}
+  body.page-canada .mx5-pl-zone.mid{color:color-mix(in srgb,var(--warn) 70%,transparent)}
+  body.page-canada .mx5-pl-zone.off{color:color-mix(in srgb,var(--down) 64%,transparent)}
+  body.page-canada .mx5-pl-x{top:96.4%;color:var(--muted)}
+  body.page-canada .mx5-pl-today{width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);background:currentColor;box-shadow:0 0 6px currentColor}
+  /* hover enhancement layer — hidden until JS shows */
+  body.page-canada .mx5-path-cross{position:absolute;top:0;width:1px;height:100%;background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.06));opacity:0;transform:translateX(-1px);pointer-events:none;transition:opacity .12s ease-out;will-change:left,opacity}
+  body.page-canada .mx5-path-dot{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--up);border:2px solid rgba(13,18,26,.9);box-shadow:0 0 10px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.25);opacity:0;pointer-events:none;transform:translate(-50%,-50%);transition:opacity .12s ease-out;will-change:left,top,opacity}
+  body.page-canada .mx5-path-tip{position:absolute;z-index:6;pointer-events:none;display:flex;flex-direction:column;gap:2px;padding:8px 11px;border-radius:10px;background:rgba(15,19,26,.72);border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 30px rgba(0,0,0,.5);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);opacity:0;transform:translate(-50%,calc(-100% - 14px)) translateY(4px);transition:opacity .13s ease-out,transform .13s ease-out;white-space:nowrap}
+  [data-theme="light"] body.page-canada .mx5-path-tip{background:rgba(255,255,255,.82);border-color:rgba(0,0,0,.10);box-shadow:0 8px 30px rgba(0,0,0,.16)}
+  body.page-canada .mx5-path-tip.show{opacity:1;transform:translate(-50%,calc(-100% - 14px))}
+  body.page-canada .mx5-path-tip-date{font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--muted);text-transform:uppercase}
+  body.page-canada .mx5-path-tip-row{display:flex;align-items:baseline;gap:7px}
+  body.page-canada .mx5-path-tip-score{font-size:16px;font-weight:800;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+  body.page-canada .mx5-path-tip-verdict{font-size:12px;font-weight:600}
+  @media(prefers-reduced-motion:reduce){body.page-canada .mx5-path-cross,body.page-canada .mx5-path-dot,body.page-canada .mx5-path-tip{transition:none}}
+  @media(max-width:1000px){body.page-canada .mx5-sc-right{display:none}}
+  /* ── Markets face + Sentiment odometer row (ported from US mx5) ── */
+  body.page-canada .cax-mktrow{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;margin:0 0 16px;align-items:stretch}
+  @media(max-width:900px){body.page-canada .cax-mktrow{grid-template-columns:1fr}}
+  /* combined markets face — glass card wrapping the tile grid */
+  body.page-canada .sxg-face.mx5-card-face{position:relative;display:flex;flex-direction:column;background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.10));border-radius:18px;backdrop-filter:blur(20px) saturate(1.3);box-shadow:0 4px 22px rgba(0,0,0,.28),0 1px 0 rgba(255,255,255,.04) inset;padding:18px 20px 14px;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}
+  body.page-canada .sxg-face.mx5-card-face::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);pointer-events:none}
+  body.page-canada .sxg-face.mx5-card-face:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);box-shadow:0 6px 28px rgba(0,0,0,.35);transform:translateY(-1px)}
+  body.page-canada .sxg-face.mx5-card-face:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  body.page-canada .mx5-mkt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:1100px){body.page-canada .mx5-mkt-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){body.page-canada .mx5-mkt-grid{grid-template-columns:1fr 1fr}}
+  body.page-canada .mx5-mkt-tile{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 15px 11px;position:relative;overflow:hidden;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}
+  [data-theme="light"] body.page-canada .mx5-mkt-tile{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07)}
+  body.page-canada .mx5-mkt-ticker{font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:3px}
+  body.page-canada .mx5-mkt-sub{font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+  body.page-canada .mx5-mkt-price{font-size:19px;font-weight:700;line-height:1.05;color:var(--text);margin-bottom:4px;font-variant-numeric:tabular-nums}
+  body.page-canada .mx5-mkt-price.up{color:var(--up)}body.page-canada .mx5-mkt-price.dn{color:var(--down)}
+  body.page-canada .mx5-mkt-delta{font-size:12.5px;font-weight:600}
+  body.page-canada .mx5-mkt-delta.up{color:var(--up)}body.page-canada .mx5-mkt-delta.dn{color:var(--down)}
+  /* sentiment odometer card */
+  body.page-canada #cax-sentiment{display:flex}
+  body.page-canada #cax-sentiment .mx5-card{position:relative;overflow:hidden;display:flex;flex-direction:column;width:100%;background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.10));border-radius:18px;backdrop-filter:blur(20px) saturate(1.3);box-shadow:0 4px 22px rgba(0,0,0,.28),0 1px 0 rgba(255,255,255,.04) inset;padding:16px 18px 14px;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}
+  body.page-canada #cax-sentiment .mx5-card::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);pointer-events:none}
+  body.page-canada #cax-sentiment .mx5-card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);box-shadow:0 6px 28px rgba(0,0,0,.35);transform:translateY(-1px)}
+  body.page-canada #cax-sentiment .mx5-card:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  body.page-canada .mx5-card-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  body.page-canada .mx5-sentiment-dial-wrap{text-align:center;margin-bottom:2px}
+  body.page-canada .mx5-sentiment-zone-text{font-size:15px;font-weight:700;text-align:center;margin-bottom:3px;color:var(--fg-col,var(--warn))}
+  body.page-canada .mx5-sentiment-label{font-size:11px;color:var(--muted);text-align:center;margin-top:2px;line-height:1.35}
+  body.page-canada .plf-open{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:11px;font-weight:650;color:var(--link);opacity:.72;align-self:flex-end;margin-left:auto;transition:opacity .18s,transform .18s}
+  body.page-canada #cax-sentiment .mx5-card:hover .plf-open,body.page-canada #cax-sentiment .mx5-card:focus-within .plf-open{opacity:1;transform:translateX(2px)}
+  /* zh 红涨绿跌 for the participation dial: broad=constructive→red, thin→green, mixed→amber.
+     --fg-col routes through --up/--warn/--down so the SVG marks + zone word flip in zh. */
+  body.page-canada .fg-greed{--fg-col:var(--up)}
+  body.page-canada .fg-fear{--fg-col:var(--down)}
+  body.page-canada .fg-neutral{--fg-col:var(--warn)}
+  body.page-canada #cax-sentiment .fg-mark-s{stroke:var(--fg-col)}
+  body.page-canada #cax-sentiment .fg-mark-f{fill:var(--fg-col)}
+  body.page-canada #cax-sentiment .fg-lab-panic{fill:var(--down)}
+  body.page-canada #cax-sentiment .fg-lab-euph{fill:var(--up)}
   /* popovers */
   body.page-canada .cax-pop{position:absolute;top:calc(100% + 10px);left:0;width:300px;background:rgba(13,18,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.6);padding:16px 18px;z-index:40;display:none}
   body.page-canada .cax-pop.open{display:block}
