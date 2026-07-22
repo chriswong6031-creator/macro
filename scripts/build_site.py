@@ -3085,6 +3085,18 @@ def _fund_flows_by_ticker(rows: list[dict]) -> dict[str, list[dict]]:
     return by
 
 
+def _load_etf_pulse(site: Path) -> dict:
+    """Load the style / risk / sector rotation context (etf_pulse.json). Best
+    effort — the rotation backdrop is additive, so a missing file just hides it."""
+    try:
+        p = site / "basketdata" / "etf_pulse.json"
+        if p.exists():
+            return json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("etf_pulse load failed: %s", e)
+    return {}
+
+
 def build_etf_page(env: Environment, site: Path, generated: str,
                    rows: list[dict] | None = None) -> None:
     """Render etfs.html — the "real fund moves" board: conviction-ranked,
@@ -3092,27 +3104,39 @@ def build_etf_page(env: Environment, site: Path, generated: str,
     universe. Also writes site/stockdata/fund_flows.json so each stock page can
     show which funds bought/sold it. See engine/holdings_signals."""
     from engine.holdings_signals import all_etf_signals, split_by_conviction
+    from engine.etf_board import drop_cash, board_context, clean_name
     if rows is None:
         try:
             rows = all_etf_signals()
         except Exception as e:  # noqa: BLE001
             log.error("etf signals failed: %s", e)
             rows = []
+    # drop money-market / cash-sweep lines everywhere (board, per-fund, per-stock feed)
+    rows = drop_cash(rows)
     split = split_by_conviction(rows)
+    favored, coverage = [], []
     try:
         from engine.etf_consensus import consensus_favored, fund_coverage, attach_trajectories
-        attach_trajectories(split["accumulation"],
-                            cap=config.load()["etf_holdings"].get("sparkline_cap", 60))
-        attach_trajectories(split["trims"],
-                            cap=config.load()["etf_holdings"].get("sparkline_cap", 60))
+        cap = config.load()["etf_holdings"].get("sparkline_cap", 60)
+        attach_trajectories(split["accumulation"], cap=cap)
+        attach_trajectories(split["trims"], cap=cap)
         favored = consensus_favored(rows)
         coverage = fund_coverage()
     except Exception as e:  # noqa: BLE001 — consensus/coverage are additive, never fatal
         log.error("etf consensus/coverage failed: %s", e)
-        favored, coverage = [], []
+    # rotation backdrop + Tier-1 synthesis (verdict, stance, fresh conviction)
+    pulse = _load_etf_pulse(site)
+    board = None
+    try:
+        board = board_context(rows, split["accumulation"], split["trims"],
+                              favored, coverage, pulse)
+    except Exception as e:  # noqa: BLE001 — synthesis is additive, never fatal
+        log.error("etf board synthesis failed: %s", e)
+    env.globals["clean_name"] = clean_name
     html = env.get_template("etfs.html.j2").render(
         accumulation=split["accumulation"], trims=split["trims"],
-        favored=favored, coverage=coverage, generated_utc=generated)
+        favored=favored, coverage=coverage, pulse=pulse, board=board,
+        generated_utc=generated)
     write_page(site / "etfs.html", html)
     # per-stock feed (built before the stock library so it can be attached there)
     outdir = site / "stockdata"
