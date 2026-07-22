@@ -355,10 +355,10 @@ def test_render_smoke_bilingual():
     html = _render_card(_FF_MIN)
     assert 'id="sentiment-regime"' in html
     assert 'id="froth-fragility"' in html                            # gauge keeps its own anchor
-    assert "Froth & Fragility" in html and "狂热与脆弱" in html       # title both langs
+    assert "Froth × Fragility" in html and "狂热 × 脆弱" in html       # title both langs (v2 restyled & → ×; lens-title)
     assert "narrowing-top risk" in html and "顶部收窄风险" in html     # quadrant both langs
     assert "Euphoria" in html and "欣喜" in html                      # face-A read both langs
-    assert "Fragility / distribution" in html and "脆弱／派发" in html # face-B read both langs
+    assert "Hidden selling" in html and "暗中派发" in html            # face-B read both langs (v2: was "Fragility / distribution")
     assert "Watch" in html and "关注" in html                         # headline band both langs
     assert "provisional" in html and "暂定" in html                   # accrual badge both langs
     assert "accruing" in html and "积累中" in html                    # forward-record line both langs
