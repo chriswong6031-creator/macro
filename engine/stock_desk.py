@@ -217,10 +217,18 @@ _SYSTEM = (
     "- Reason ONLY over the provided JSON per name + well-known market structure. NEVER "
     "fabricate a level, score, catalyst or event. If a name's state doesn't support a "
     "view, say so and lean \"neutral\".\n"
-    "- HONOUR THE DETERMINISTIC VERDICT. If the profile's verdict says the name is "
-    "Extended / 'don't chase' / 'wait for a base' / Avoid, or its `cycle_blocked` flag is "
-    "true (a downtrend or topping cycle the engine already forbids buying), you may NOT be "
-    "\"constructive\" — at most \"cautious\", or \"avoid\". The engine owns the risk call; "
+    "- HONOUR THE DETERMINISTIC VERDICT, BUT DON'T SHORT A LEADER ON EXTENSION ALONE. A "
+    "\"cautious\"/\"avoid\" lean is a GRADED DIRECTIONAL SHORT vs the S&P 500 — it scores a "
+    "MISS when the name OUT-performs. On this desk, cautious leans placed on strong-leader "
+    "names that were merely extended have been directionally correct only ~17% of the time "
+    "(momentum persists over this horizon); cautious leans on genuinely weak/lagging names "
+    "were ~86% correct. So: if the verdict is a strong leader / high-conviction / high-"
+    "confluence / 'good entry' / 'building a base' and the caution is ONLY that it is "
+    "extended / priced-in / 'don't chase' (momentum still intact), you may NOT be "
+    "\"constructive\" (no chasing) but you must lean \"neutral\" — watch, don't chase, DON'T "
+    "short it. Reserve \"cautious\"/\"avoid\" for a name with an ACTUAL bearish signal: "
+    "cycle_blocked / downtrend / topping / rolling over / 'wait for a base' / 'timing "
+    "against' / weak or lagging / deteriorating fundamentals. The engine owns the risk call; "
     "you explain and pressure-test it, you do not overrule it.\n"
     "- NEVER give a position size, weight, dollar amount or fire a trade. Direction + "
     "what would invalidate it only.\n"
@@ -278,12 +286,54 @@ def _is_risk_blocked(pick: dict) -> bool:
     return any(w in blob for w in _BLOCK_VERDICT_WORDS)
 
 
+# A name can be risk-blocked for two very different reasons, and they INVERT the right lean:
+#   (1) STRONG LEADER, merely EXTENDED — momentum intact, just priced-in / 'don't chase'. A
+#       "cautious" lean here is a directional SHORT vs SPY that FIGHTS live momentum; on this
+#       desk those have been ~17% directionally correct (n=52). The honest lean is NEUTRAL
+#       (watch, don't chase, don't short) — never constructive (no chasing), never cautious.
+#   (2) BEARISH TAPE — cycle_blocked / downtrend / topping / rolling over / weak / lagging /
+#       deteriorating. Here caution is warranted (those cautious leans were ~86% correct) — keep it.
+# Discriminator: a leader-class verdict with NO bearish-tape cause is case (1). (Measured on the
+# desk's own theses.jsonl — see research/INTEL_HUB_V3_LOOP_CLOSING.md §Phase 3.)
+_LEADER_VERDICT_WORDS = ("leader", "high-conviction", "high conviction", "high-confluence",
+                         "high confluence", "constructive", "good entry", "building a base")
+_BEARISH_CAUSE_WORDS = ("wait for a base", "timing against", "hold off", "downtrend", "down trend",
+                        "topping", "rolling over", "rolling-over", "distribution", "breakdown",
+                        "lagging", "weak", "relative weakness", "deteriorat", "exit", "reduce")
+
+
+def _is_strong_leader_extension(pick: dict) -> bool:
+    """True when a name is de-escalation-worthy ONLY because a strong leader is extended
+    (momentum intact) — NOT because the tape is bearish. This is the case where a 'cautious'
+    short fights momentum and loses ~5:1, so the honest lean is 'neutral'."""
+    conv = pick.get("conviction") or {}
+    board = pick.get("board") or {}
+    blob = (" ".join(str(conv.get(k) or "") for k in ("verdict", "band")) + " "
+            + " ".join(str(c) for c in (conv.get("cautions") or []))).lower()
+    leader = any(w in blob for w in _LEADER_VERDICT_WORDS)
+    bearish = (bool(conv.get("cycle_blocked"))                 # cycle gate = downtrend/topping/parabolic
+               or any(w in blob for w in _BEARISH_CAUSE_WORDS)
+               or "down" in str(board.get("dir") or "").lower())
+    return leader and not bearish
+
+
 def _reconcile(lean: str, pick: dict) -> tuple[str, str | None]:
-    """Clamp an LLM lean DOWN to honour the deterministic risk reshape. The AI can
-    de-escalate a name but never escalate a risk-blocked one to constructive."""
+    """Reconcile an LLM lean with the deterministic risk reshape — DE-ESCALATION ONLY (the AI
+    can soften a name but never escalate a risk-blocked one to constructive), AND never let a
+    lean SHORT a strong leader on extension alone (that lean fights momentum and is ~17% right)."""
     lean = lean if lean in _LEANS else "neutral"
+    leader_ext = _is_strong_leader_extension(pick)
+    # (1) anti-chase: never constructive on a risk-blocked name. A strong-but-extended leader
+    #     de-escalates to NEUTRAL (don't chase, don't short); a bearish-tape name to CAUTIOUS.
     if lean == "constructive" and _is_risk_blocked(pick):
+        if leader_ext:
+            return "neutral", "clamped: strong leader but extended — don't chase, don't short (neutral)"
         return "cautious", "clamped: engine flags this name extended/avoid/blocked"
+    # (2) don't SHORT a leader on extension alone: soften an LLM-native cautious/avoid on a
+    #     momentum-intact leader down to neutral (cautious-on-leader ≈ 17% directionally correct).
+    if lean in ("cautious", "avoid") and leader_ext:
+        return "neutral", ("softened: strong leader, momentum intact — extension is not a short "
+                           "(cautious-on-leader historically ~17% right); watch, don't chase")
     return lean, None
 
 
