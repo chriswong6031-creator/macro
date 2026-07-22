@@ -9,7 +9,26 @@ Spec law: office_cmo director_model="fable"; all others "opus".
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import Any
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Review-clock helper
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _next_review(cadence: str, ref: date | None = None) -> str:
+    """Next review date (ISO ``YYYY-MM-DD``) computed from ``ref`` + one cadence period.
+
+    Rule (simplest defensible): the next review is one cadence-period out from the
+    reference date — ``daily`` → ref + 1 day, ``weekly`` (or anything else) → ref + 7
+    days. A fixed one-week horizon (not "next Monday") keeps the value deterministic
+    and free of weekday drift. ``ref`` defaults to ``date.today()``; these charters are
+    built on the nightly render path, so today() is the run date (deterministic per run).
+    """
+    r = ref or date.today()
+    days = 1 if cadence == "daily" else 7
+    return (r + timedelta(days=days)).isoformat()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -113,7 +132,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "fable", "workers": "opus"},
-        clock={"cadence": "weekly", "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": "weekly", "last_review": None, "next_review": _next_review("weekly")},
         retirement_test=(
             "Retire if a simpler governance mechanism achieves equivalent "
             "attribution accuracy with lower inference cost over 90 days."
@@ -162,7 +181,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="building",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "opus", "workers": "haiku"},
-        clock={"cadence": "daily", "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": "daily", "last_review": None, "next_review": _next_review("daily")},
         retirement_test=(
             "Retire if a managed external execution platform provides equivalent "
             "reliability, auditability, and cost transparency."
@@ -214,7 +233,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "opus", "workers": "sonnet", "extraction": "haiku"},
-        clock={"cadence": "weekly", "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": "weekly", "last_review": None, "next_review": _next_review("weekly")},
         retirement_test=(
             "Retire if opportunity detection recall falls below 60% on "
             "major events for two consecutive quarters."
@@ -267,7 +286,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "opus", "workers": "sonnet", "formatting": "haiku"},
-        clock={"cadence": "weekly", "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": "weekly", "last_review": None, "next_review": _next_review("weekly")},
         retirement_test=(
             "Retire a specific product when it generates fewer than 10 "
             "qualified acquisition events per month for 60 days."
@@ -321,7 +340,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "opus", "writers": "sonnet", "formatters": "haiku"},
-        clock={"cadence": "weekly", "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": "weekly", "last_review": None, "next_review": _next_review("weekly")},
         retirement_test=(
             "Retire if creative output fails distinctness checks or "
             "produces zero qualified-reach events for 30 consecutive days."
@@ -381,7 +400,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
             "policy_classifiers": "haiku",
             "scheduling": "deterministic",
         },
-        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": _next_review(_REVIEW_CADENCE)},
         retirement_test=(
             "Retire a channel adapter if it produces warnings, policy flags, "
             "or zero qualified-reach events for 60 days."
@@ -434,7 +453,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "opus", "workers": "sonnet", "tagging": "haiku"},
-        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": _next_review(_REVIEW_CADENCE)},
         retirement_test=(
             "Redesign if day-30 retained-contribution forecast is negative "
             "for two consecutive cohort reviews."
@@ -487,7 +506,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "opus", "workers": "sonnet"},
-        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": _next_review(_REVIEW_CADENCE)},
         retirement_test=(
             "Retire a partner if they produce zero incremental retained "
             "contributions after two payout cycles."
@@ -542,7 +561,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "opus", "analysts": "sonnet", "scoring": "deterministic"},
-        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": _next_review(_REVIEW_CADENCE)},
         retirement_test=(
             "Redesign if attribution methodology fails holdout validation "
             "on two consecutive quarter reviews."
@@ -595,7 +614,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"auditor": "opus", "linting": "haiku", "red_team": "opus"},
-        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": _next_review(_REVIEW_CADENCE)},
         retirement_test=(
             "The auditor is never retired; it may be redesigned "
             "if it generates more than 5% false-positive quarantines per month."
@@ -652,7 +671,7 @@ DEPARTMENT_CHARTERS: list[Department] = [
         lifecycle_state="chartered",
         budget=dict(_DEFAULT_BUDGET),
         model_mix={"director": "opus", "workers": "sonnet", "extraction": "haiku"},
-        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": "2026-07-25"},
+        clock={"cadence": _REVIEW_CADENCE, "last_review": None, "next_review": _next_review(_REVIEW_CADENCE)},
         retirement_test=(
             "Retire if indexed dossier pages produce fewer than 10 qualified organic "
             "acquisition events per month for 60 consecutive days."

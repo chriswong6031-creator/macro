@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from engine.marketing.departments import _next_review
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Self-deception checks (docket §16.4 / strategy §7.5)
@@ -173,14 +175,18 @@ def improvement_loop_state(
     loop_state: str = "observing",
     open_hypotheses: list[dict] | None = None,
     last_review: str | None = None,
-    next_review: str = "2026-07-25",
+    next_review: str | None = None,
 ) -> dict[str, Any]:
-    """Return the CMO self-improvement loop state dict."""
+    """Return the CMO self-improvement loop state dict.
+
+    ``next_review`` defaults to one weekly period out from today (the CMO
+    improvement loop runs on a weekly cadence) so the date never goes stale.
+    """
     return {
         "loop_state": loop_state,
         "open_hypotheses": open_hypotheses or [],
         "last_review": last_review,
-        "next_review": next_review,
+        "next_review": next_review or _next_review("weekly"),
     }
 
 
