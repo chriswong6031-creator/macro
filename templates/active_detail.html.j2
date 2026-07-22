@@ -142,20 +142,8 @@ html[data-theme="dark"] .factchip{background:var(--grid)}
 .factchip b{color:var(--ink)}
 </style></head>
 <body>
+{% include "_site_nav.html.j2" %}
 <div class="wrap">
-  <div class="topbar">
-      {% include "_navlinks.html.j2" %}
-    <div class="nav-ctrls">
-      <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-      <div class="lang-toggle" role="group" aria-label="Language">
-        <span class="pill"></span>
-        <span class="opt en-opt" data-l="en">EN</span>
-        <span class="opt zh-opt" data-l="zh">中文</span>
-      </div>
-    </div>
-  </div>
 
   <div class="section-title"><a href="{{ back_href }}" style="color:inherit;text-decoration:none">← {{ t(back_label_en, back_label_zh) }}</a> · {{ s.icon }} {{ t('Active strategy','主动策略') }}</div>
   <div class="h1">{{ t(s.name_en, s.name_zh) }}</div>

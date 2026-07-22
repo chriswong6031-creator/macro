@@ -275,21 +275,21 @@ tr.flash>td{animation:rowflash 1.5s ease both}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="topbar">
-      {% include "_navlinks.html.j2" %}
-    <div class="nav-ctrls">
-      <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-      <a class="ai-brief-link" href="china.html">🇨🇳 {{ t('China','中国') }}</a>
-      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-      <div class="lang-toggle" role="group" aria-label="Language">
-        <span class="pill"></span>
-        <span class="opt en-opt" data-l="en">EN</span>
-        <span class="opt zh-opt" data-l="zh">中文</span>
-      </div>
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
+    <a class="ai-brief-link" href="china.html">🇨🇳 {{ t('China','中国') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
     </div>
   </div>
+</nav>
+<div class="wrap">
 
   <div class="h1">🌊 {{ t('Capital Flow Velocity','资金流速') }}</div>
   <div class="intro">{{ t('Where China’s big money is rotating — sectors ranked by how fast large-order money moves, drilled to the names driving each, with one question per name: <b>does the institution agree?</b>','中国大资金在向哪里轮动——按主力资金流速排序板块，下钻至驱动个股，每只个股追问：<b>机构是否认同？</b>') }}</div>

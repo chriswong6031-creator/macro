@@ -147,21 +147,21 @@ html[data-lang="zh"] .poskey .pk-lo{background:color-mix(in srgb,var(--green) 70
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="topbar">
-      {% include "_navlinks.html.j2" %}
-    <div class="nav-ctrls">
-      <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-      <a class="ai-brief-link" href="china.html">🇨🇳 {{ t('China Regime','中国体制') }}</a>
-      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-      <div class="lang-toggle" role="group" aria-label="Language">
-        <span class="pill"></span>
-        <span class="opt en-opt" data-l="en">EN</span>
-        <span class="opt zh-opt" data-l="zh">中文</span>
-      </div>
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
+    <a class="ai-brief-link" href="china.html">🇨🇳 {{ t('China Regime','中国体制') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
     </div>
   </div>
+</nav>
+<div class="wrap">
 
   <div class="h1">🇨🇳 {{ t('China Sector Desk','中国行业桌面') }}</div>
   <div class="intro">{{ t('Live tracking of China’s equity sectors as clean indices — the open-data analogue of the Bloomberg GS China sector baskets (GSXACHBA Banks · GSXACCON Consumption · GSXACNRE Real Estate · GSXACNAU Auto). Headline series are the authoritative Shenwan (申万) L1 industry indices (deep history to 1999/2014); the intraday tape rides the sector ETFs. The Pathway Desk adds an evidence-gated, conditional forward read for the four GS sectors.','以干净指数实时跟踪中国股票行业——彭博 GS 中国行业篮子（GSXACHBA 银行 · GSXACCON 消费 · GSXACNRE 地产 · GSXACNAU 汽车）的开源数据对应版。主线为权威的申万一级行业指数（历史可追溯至 1999/2014 年）；日内行情跟随行业 ETF。路径桌面为四大 GS 行业提供经证据门槛的条件化前瞻。') }}</div>
