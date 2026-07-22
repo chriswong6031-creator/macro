@@ -271,7 +271,7 @@
     background:color-mix(in srgb,#e0a030 12%,color-mix(in srgb,var(--mmb-panel) 55%,transparent));border:1px solid color-mix(in srgb,#e0a030 34%,transparent)}
   .mmb-upgrade a{color:var(--mmb-info);font-weight:700;text-decoration:underline}
   /* composer */
-  .mmb-comp{flex:none;padding:14px clamp(18px,6%,64px) 14px}
+  .mmb-comp{position:relative;flex:none;padding:14px clamp(18px,6%,64px) 14px}
   #mmb-panel.max .mmb-comp{padding:14px clamp(24px,10%,120px) 16px}
   .mmb-box{border-radius:18px;border:1px solid var(--mmb-line);background:color-mix(in srgb,var(--mmb-panel2) 60%,transparent);
     -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 14px 40px -18px rgba(0,0,0,.6);overflow:hidden}
@@ -841,6 +841,7 @@
     else if (searchIn) { searchIn.value = ''; paintThreads(); }
   }
   function openThread(id) {
+    abortStream();   /* switching threads mid-stream must tear the old stream down first */
     threadId = id;
     root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.toggle('on', el.dataset.id === id); });
     withAuth().then(function (h) { return fetch(API + '/api/brain/threads/' + id, { headers: h, credentials: 'include' }); })
@@ -946,7 +947,8 @@
       var lbl = el('span', 'mmb-l'); lbl.setAttribute('data-en', 'Latest'); lbl.setAttribute('data-zh', '最新'); lbl.textContent = L('Latest', '最新'); jumpPill.appendChild(lbl);
       jumpPill.setAttribute('aria-label', L('Jump to latest', '跳到最新'));
       jumpPill.addEventListener('click', toBottom);
-      root.querySelector('.mmb-main').appendChild(jumpPill);
+      /* anchored to the composer wrapper so it sits just above the input, not off the top */
+      root.querySelector('.mmb-comp').appendChild(jumpPill);
     }
     jumpPill.classList.add('on');
   }
@@ -1008,7 +1010,7 @@
     var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx };
     lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode };
     pendingImages = []; renderThumbs();
-    ta.value = ''; autosize(); clearDraft(); syncSend();
+    ta.value = ''; autosize(); clearDraft(); syncSend(); updateCounter(); closeSlash();
     pinned = true; hideJump();
     runStream(payload, true);
   }
@@ -1222,7 +1224,16 @@
     restoreDraft();
     setTimeout(function () { ta.focus(); }, 260);
   }
-  function close() { if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; streaming = false; } if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
+  /* Tear down any in-flight stream: abort the fetch reader, drop the caret, and reset the
+     streaming flags + send button. Called by close/newChat/openThread so switching context
+     mid-stream never leaves the composer wedged (streaming stuck true → send disabled). */
+  function abortStream() {
+    if (!streaming && !streamAbort) return;
+    if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; }
+    if (activeStream && activeStream.stream) { try { activeStream.stream.cancel(); } catch (e) {} }
+    activeStream = null; streaming = false; setBusy(false);
+  }
+  function close() { abortStream(); if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
   function toggle() { panel.classList.contains('open') ? close() : open(); }
   /* ── FLIP morph: animate the compact↔max resize with a transform ONLY (GPU compositor,
      60fps, zero reflow). Measure First rect → apply the class (panel snaps to Last geometry)
@@ -1262,7 +1273,7 @@
     });
   }
   function toggleSide() { panel.classList.toggle('show-side'); }
-  function newChat() { threadId = null; pendingImages = []; renderThumbs(); root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); ta.value = ''; autosize(); syncSend(); updateCounter(); closeSlash(); restoreDraft(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
+  function newChat() { abortStream(); threadId = null; pendingImages = []; renderThumbs(); root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.remove('on'); }); clearMsgs(); ta.value = ''; autosize(); syncSend(); updateCounter(); closeSlash(); restoreDraft(); if (!panel.classList.contains('max')) panel.classList.remove('show-side'); }
 
   /* ── auth wiring ── */
   function onAuth(user) {
