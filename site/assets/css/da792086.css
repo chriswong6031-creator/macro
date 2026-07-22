@@ -501,7 +501,7 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 .nav.vc .card-top{margin:0;flex:1;min-width:0}
 .nav.vc .ico{width:26px;height:26px;font-size:13px;border-radius:7px}
 .nav.vc .card-h{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nav.vc .chips,.nav.vc .bar{display:none}
+.nav.vc .chips,.nav.vc .bar,.nav.vc .ipo-line{display:none}
 .nav.vc .go{margin:0;flex:none;font-size:12px}
 .nav.vc .go .go-tx{display:none}
 }
@@ -520,3 +520,4 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 
 /* ===== report teaser badge on reports card ===== */
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
+.ipo-line{font-size:11px;opacity:.82;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:2px}
