@@ -87,7 +87,7 @@ FLAGS: list[dict] = [
      "category": "Data sources", "requires": [],
      "note": "Shows which big institutions hold a stock, from free SEC filings."},
     {"path": "fundamentals.enabled", "label": "Extra fundamentals (Finnhub)",
-     "category": "Data sources", "requires": ["FINNHUB_KEY"],
+     "category": "Data sources", "requires": [],
      "note": "Extra fundamentals data. Low quality; the engine runs fine without it."},
     {"path": "prediction_markets.enabled", "label": "Betting-market odds (Polymarket)",
      "category": "Data sources", "requires": [],

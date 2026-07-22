@@ -1786,7 +1786,7 @@ RENDER.content = async () => {
   };
   $("#lkBtn").onclick = async () => {
     $("#lkBox").innerHTML = "<span class='muted'>scanning…</span>"; const l = await api("/api/content/links");
-    $("#lkBox").innerHTML = `<div class="big" style="font-size:18px;color:${l.count ? "var(--warn)" : "var(--ok)"}">${l.count} broken</div><div class="sub">${l.checked_pages} pages scanned</div>`;
+    $("#lkBox").innerHTML = `<div class="big" style="font-size:18px;color:${l.count ? "var(--warn)" : "var(--ok)"}">${l.count} broken</div><div class="sub">scanned ${l.checked_pages} of ${l.total_pages != null ? l.total_pages : l.checked_pages} pages${l.truncated ? " · TRUNCATED" : ""}${l.ci_built_count ? ` · ${l.ci_built_count} built by CI (not broken)` : ""}</div>`;
     if (l.count) { const sec = h(`<div></div>`); sec.innerHTML = `<div class="section">Broken internal links <span class="cnt">${l.count}</span></div>
       <table><thead><tr><th>Page</th><th>Link</th></tr></thead><tbody>${l.broken.map(b => `<tr><td class="mono">${esc(b.page)}</td><td class="mono" style="color:var(--bad)">${esc(b.link)}</td></tr>`).join("")}</tbody></table>`; $("#view").appendChild(sec); }
   };
@@ -3632,6 +3632,7 @@ RENDER.marketing_lobes = async () => {
       ${card("Growth events", `
         <div class="kv"><span>Instrumented</span><b>${geNames.length}</b></div>
         <div class="kv"><span>Observed</span><b>${Number(ge.observed || 0)}</b></div>
+        ${ge.seeded ? `<div class="note muted">${esc(ge.seed_note || `${ge.seeded} seeded, awaiting real events`)}</div>` : ""}
         <div class="note muted">Taxonomy: ${esc(geNames.slice(0, 4).join(", "))}${geNames.length > 4 ? ` + ${geNames.length - 4} more` : ""}</div>`)}
     </div>`;
 
@@ -5994,14 +5995,22 @@ function seoCensusBlock(census) {
   const rows = fams.map(fam => {
     const f = byFam[fam] || {};
     const pages = Number(f.pages || 0);
+    // coverage % is a share of what was actually scanned. Big families (e.g. stocks,
+    // 1630 pages) are crawled on a sample, so the signal counts are out of `sampled`,
+    // not `pages` — dividing by pages showed a false ~2% "red" when the sample was ~100%.
+    const sampled = f.sampled != null ? Number(f.sampled) : null;
+    const denom = sampled != null ? sampled : pages;
     const cells = SEO_COV_COLS.map(([key]) => {
-      const pct = seoPct(Number(f[key] || 0), pages);
+      const pct = seoPct(Number(f[key] || 0), denom);
       const cls = seoCovCls(pct);
       return `<td class="r"><span class="mkt-seo-cov band-${cls}">${pct == null ? "—" : pct + "%"}</span></td>`;
     }).join("");
+    const pagesCell = sampled != null
+      ? `<td class="r sub" title="coverage measured on a ${sampled}-page sample of ${pages}">${sampled}<span class="muted">/${pages}</span></td>`
+      : `<td class="r sub">${pages}</td>`;
     return `<tr>
-      <td><span class="mkt-seo-fam">${esc(fam)}</span></td>
-      <td class="r sub">${pages}</td>
+      <td><span class="mkt-seo-fam">${esc(fam)}</span>${sampled != null ? ` <span class="statpill s-mut" style="font-size:9px">sample</span>` : ""}</td>
+      ${pagesCell}
       ${cells}
     </tr>`;
   }).join("");
@@ -7768,7 +7777,16 @@ RENDER.codex = async () => {
     ? `<div class="sub muted">No loop journal entries yet.</div>`
     : loop.map(row => {
         const ts = esc((row.ts || "").slice(0, 16).replace("T", " "));
-        return `<div class="kv"><span class="sub mono">${ts}</span><span>${esc(row.action || row.event || JSON.stringify(row))}</span></div>`;
+        // rows are {ts, lane, iteration, results:{<lane>:{ok,action,detail,n_admitted}}, stop_reason};
+        // the old code read row.action/row.event (neither exists) and always dumped raw JSON.
+        const results = (row.results && typeof row.results === "object") ? row.results : {};
+        const outcomes = Object.entries(results).map(([ln, r]) => {
+          const act = (r && (r.action || (r.ok ? "ok" : "—"))) || "—";
+          const adm = (r && r.n_admitted) ? ` +${r.n_admitted}` : "";
+          return `${esc(ln)}: ${esc(String(act))}${adm}`;
+        }).join(" · ") || "—";
+        const stop = row.stop_reason ? ` · <span class="sub muted">stop: ${esc(String(row.stop_reason))}</span>` : "";
+        return `<div class="kv"><span class="sub mono">${ts}</span><span>lane <b>${esc(row.lane || "?")}</b> iter ${row.iteration != null ? esc(String(row.iteration)) : "?"} · ${outcomes}${stop}</span></div>`;
       }).join("");
 
   // --- Workflow runs ---

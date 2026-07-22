@@ -297,9 +297,10 @@ def build_state(root: Path | str | None = None, cfg: dict | None = None) -> dict
             pass
 
         # --- Self-improvement loop ---
+        # next_review is left to improvement_loop_state's default, which computes it from
+        # the weekly cadence at build time (do NOT hardcode a date — it goes stale).
         improvement = improvement_loop_state(
             loop_state="observing",
-            next_review="2026-07-25",
         )
 
         # --- Opportunity queue depth ---

@@ -25,6 +25,7 @@ _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
 
 _STATE_REL    = Path("data/neuralweb/marketing_state.json")
+_GROWTH_EVENTS_REL = Path("data/marketing/growth_events.jsonl")
 _CONTENT_REL  = Path("data/marketing/content_plan.json")
 _LAB_REL      = Path("data/marketing/lab_rollup.json")
 _SENTINEL_REL = Path("data/marketing/sentinel_report.json")
@@ -304,11 +305,33 @@ def lobes(root=None) -> dict:
             for d in depts
         ]
         pipeline = s.get("pipeline") or {}
+        growth_events = pipeline.get("growth_events")
+        # BUG-FIX: the state file's baked-in `observed` count includes shadow
+        # seed rows (event_id "seed-…", mode "shadow"), overstating real
+        # observations. Recompute from the raw spine so a seeded-but-live-empty
+        # page reads honestly, and surface the seed count separately.
+        if isinstance(growth_events, dict):
+            rows = _read_jsonl(repo / _GROWTH_EVENTS_REL)
+            observed = len([
+                r for r in rows
+                if r.get("mode") != "shadow"
+                and not str(r.get("event_id", "")).startswith("seed-")
+            ])
+            seeded = len(rows) - observed
+            growth_events = {
+                **growth_events,
+                "observed": observed,
+                "seeded": seeded,
+                "seed_note": (
+                    "Seeded, awaiting real events." if observed == 0 and seeded > 0
+                    else None
+                ),
+            }
         return {
             "ok": True,
             "engines_by_department": engines_by_dept,
             "provenance": s.get("provenance"),
-            "growth_events": pipeline.get("growth_events"),
+            "growth_events": growth_events,
             "as_of": s.get("as_of"),
         }
     except Exception as exc:  # noqa: BLE001
@@ -559,6 +582,9 @@ def allies_kit(root=None, target_id=None) -> dict:
         return {"ok": True, "target_id": tid, "markdown": p.read_text(encoding="utf-8")}
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.allies_kit failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
 def _opportunity_pipeline(root: Path) -> dict | None:
     """Pull the scored opportunity-queue block out of marketing state.
 
