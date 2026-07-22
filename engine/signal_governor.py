@@ -35,9 +35,22 @@ from lib import config
 log = logging.getLogger(__name__)
 
 SCHEMA = "signal_governor.v1"
-_OUT = ("data", "hub", "signal_governor.json")
-_RADAR_IC = ("data", "radar", "radar_ic.json")
-_HUB_TRACK = ("data", "hub", "track_record.json")
+
+# Per-region track-record paths (the governor engine + gate are shared; only the paths differ).
+# A region with no matured track record ⇒ all trust 1.0 (dormant, degrade-safe). CN mirrors the
+# US structure — its radar_ic accrues once china_radar_ledger matures; until then CN is dormant.
+_REGIONS = {
+    "us": {"radar": ("data", "radar", "radar_ic.json"),
+           "hub":   ("data", "hub", "track_record.json"),
+           "out":   ("data", "hub", "signal_governor.json")},
+    "cn": {"radar": ("data", "china_hub", "radar_ic.json"),
+           "hub":   ("data", "china_hub", "track_record.json"),
+           "out":   ("data", "china_hub", "signal_governor.json")},
+}
+# Back-compat module-level aliases (US) — some tests/consumers reference these directly.
+_OUT = _REGIONS["us"]["out"]
+_RADAR_IC = _REGIONS["us"]["radar"]
+_HUB_TRACK = _REGIONS["us"]["hub"]
 
 # ── PRE-REGISTERED GATE (committed constants = the pre-registration) ───────────────────────
 MIN_N = 150            # matured observations a signal needs before it can be demoted at all
@@ -132,13 +145,13 @@ def _coverage(by_horizon: dict, ic_block_key: str) -> dict | None:
     return best
 
 
-def _radar_reading(root: Path) -> dict:
-    bh = (_read_json(root, _RADAR_IC) or {}).get("by_horizon") or {}
+def _radar_reading(root: Path, region: str = "us") -> dict:
+    bh = (_read_json(root, _REGIONS[region]["radar"]) or {}).get("by_horizon") or {}
     return {"reading": _pick_reading(bh, "ic_daily_hac"), "coverage": _coverage(bh, "ic_daily_hac")}
 
 
-def _hub_reading(root: Path) -> dict:
-    bh = (_read_json(root, _HUB_TRACK) or {}).get("horizons") or {}
+def _hub_reading(root: Path, region: str = "us") -> dict:
+    bh = (_read_json(root, _REGIONS[region]["hub"]) or {}).get("horizons") or {}
     return {"reading": _pick_reading(bh, "opportunity_ic_daily"),
             "coverage": _coverage(bh, "opportunity_ic_daily")}
 
@@ -176,15 +189,19 @@ def _gate(signal: str, reading: dict | None, coverage: dict | None = None) -> di
 
 
 def compute(root: Path | None = None, today: date | str | None = None,
-            persist: bool = True) -> dict:
+            persist: bool = True, region: str = "us") -> dict:
     """Read every governable signal's matured track record, apply the pre-registered
-    de-escalation gate, and emit the per-signal trust map + audit. Never raises."""
+    de-escalation gate, and emit the per-signal trust map + audit. Never raises.
+    ``region`` ∈ _REGIONS ('us' | 'cn') selects the track-record + output paths — one shared
+    gate engine, per-region wiring."""
     try:
         root = Path(root) if root else config.ROOT
+        if region not in _REGIONS:
+            region = "us"
         today_str = today.isoformat() if hasattr(today, "isoformat") else str(today or date.today())
         signals = {}
         for name in _SIGNALS:
-            rd = _READERS[name](root)
+            rd = _READERS[name](root, region)
             signals[name] = _gate(name, rd.get("reading"), rd.get("coverage"))
         trust = {k: v["trust"] for k, v in signals.items()}
         n_demoted = sum(1 for v in signals.values() if v["demoted"])
@@ -193,7 +210,7 @@ def compute(root: Path | None = None, today: date | str | None = None,
                 if n_demoted else
                 "No signal has cleared the de-escalation gate yet — all trust 1.0 (shadow/measuring).")
         out = {
-            "schema": SCHEMA, "as_of": today_str, "generated_at": _now_iso(),
+            "schema": SCHEMA, "as_of": today_str, "generated_at": _now_iso(), "region": region,
             "gate": {"min_n": MIN_N, "t_sig": T_SIG, "ic_dead": IC_DEAD, "trust_floor": TRUST_FLOOR,
                      "method": "rigorous daily-HAC signed IC (Newey-West lag=horizon), never pooled Spearman"},
             "trust": trust, "signals": signals, "n_demoted": n_demoted, "note": note,
@@ -202,7 +219,7 @@ def compute(root: Path | None = None, today: date | str | None = None,
                            "exceeds 1.0 and never sizes a position. Absent ⇒ hub is ungoverned."),
         }
         if persist:
-            p = root.joinpath(*_OUT)
+            p = root.joinpath(*_REGIONS[region]["out"])
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(json.dumps(out, indent=2, default=str))
         return out
@@ -214,13 +231,14 @@ def compute(root: Path | None = None, today: date | str | None = None,
                 "note": f"error ({e}) — identity (all trust 1.0), degrade-safe."}
 
 
-def load_trust(root: Path | None = None) -> dict:
-    """Read the persisted per-signal trust map for the hub to apply. SAFETY: every value is
+def load_trust(root: Path | None = None, region: str = "us") -> dict:
+    """Read the persisted per-signal trust map for a region's hub to apply. SAFETY: every value is
     re-clamped to [TRUST_FLOOR, 1.0] on read, so the governor can NEVER hand the ranker a boost
     (>1.0), even if the file is hand-edited or corrupted. Absent/corrupt ⇒ {} (identity)."""
     try:
         root = Path(root) if root else config.ROOT
-        d = json.loads(root.joinpath(*_OUT).read_text())
+        out = _REGIONS.get(region, _REGIONS["us"])["out"]
+        d = json.loads(root.joinpath(*out).read_text())
         raw = d.get("trust") or {}
         return {str(k): _clamp(float(v), TRUST_FLOOR, 1.0)
                 for k, v in raw.items() if v is not None}
@@ -232,12 +250,13 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true", help="print the full governor payload")
+    ap.add_argument("--region", default="us", choices=sorted(_REGIONS), help="region to govern")
     args = ap.parse_args()
-    out = compute(persist=True)
+    out = compute(persist=True, region=args.region)
     if args.json:
         print(json.dumps(out, indent=2))
     else:
-        print(f"as_of {out['as_of']} · {out['n_demoted']} demoted · {out['note']}")
+        print(f"[{args.region}] as_of {out['as_of']} · {out['n_demoted']} demoted · {out['note']}")
         for name, s in out.get("signals", {}).items():
             print(f"  {name:8s} trust={s['trust']:<5} | {s['reason']}")
     return 0

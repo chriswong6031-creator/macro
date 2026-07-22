@@ -192,3 +192,41 @@ def test_dossier_governor_skips_bearish_and_non_radar():
     d = H._dossier("TEST", v, H.build_policy_index(None), {}, gov={"radar": 0.4})
     assert d["governed_by"] is None
     assert d["governor_mult"] == 1.0
+
+
+# --------------------------------------------------------------------------- #
+# region parity (CN) — same gate + downward invariant, CN paths, dormant until CN evidence
+# --------------------------------------------------------------------------- #
+def test_region_cn_uses_cn_paths_and_is_dormant(tmp_path):
+    out = G.compute(root=tmp_path, persist=True, region="cn")
+    assert out["region"] == "cn" and out["n_demoted"] == 0
+    assert (tmp_path / "data" / "china_hub" / "signal_governor.json").exists()
+    assert not (tmp_path / "data" / "hub" / "signal_governor.json").exists()   # never touched US
+
+
+def test_region_cn_demotes_on_cn_radar_ic(tmp_path):
+    # the SAME gate, via CN paths: a valid, significant, wrong-sign CN radar HAC ⇒ demote
+    _write(tmp_path, G._REGIONS["cn"]["radar"], _radar_ic({"21": _hz(1977, -0.267, -8.29, 25)}))
+    r = G.compute(root=tmp_path, persist=False, region="cn")["signals"]["radar"]
+    assert r["demoted"] is True and r["trust"] == pytest.approx(0.60, abs=0.005)
+
+
+def test_load_trust_region_isolation(tmp_path):
+    _write(tmp_path, G._REGIONS["cn"]["out"], {"trust": {"radar": 0.5}})
+    assert G.load_trust(tmp_path, region="cn") == {"radar": 0.5}
+    assert G.load_trust(tmp_path, region="us") == {}          # US path untouched
+
+
+def test_cn_dossier_governor_is_downward_only():
+    from engine import china_intel_hub as C
+    kw = dict(altdata_row={"side": "accumulate", "convergence": 0.7, "conviction100": 70},
+              radar_row={"sign": "positive", "strength": 0.6},
+              news_items=None, board_row={"label": "BUY"},
+              special_flags=None, traj=None, board_member=False)
+    d0 = C._dossier("600000.SS", **kw, gov=None)
+    d_dem = C._dossier("600000.SS", **kw, gov={"radar": 0.5})
+    assert d_dem["opportunity_score"] <= d0["opportunity_score"]           # never raises opportunity
+    assert d0["lean"] > 0 and d0["opportunity_score"] > 0                  # bundle is bullish + radar-driven
+    assert d_dem["governed_by"] == ["radar"]
+    assert d_dem["opportunity_score"] == pytest.approx(round(d0["opportunity_score"] * 0.5, 1), abs=0.11)
+    assert d0["governed_by"] is None                                       # gov=None ⇒ untouched

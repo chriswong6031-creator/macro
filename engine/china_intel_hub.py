@@ -564,7 +564,7 @@ def _read_for(stage: str, lean: int, dirs: dict, edge_score: int, gap: int,
 def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
              news_items: list | None, board_row: dict | None,
              special_flags: dict | None, traj: dict | None,
-             board_member: bool) -> dict:
+             board_member: bool, gov: dict | None = None) -> dict:
     """Build the per-ticker command dossier."""
     dirs = _dirs(altdata_row, radar_row, news_items, board_row)
     gap_rec = _leading_gap(dirs)
@@ -598,6 +598,18 @@ def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
     # gap multiplier: ±15% per net leading desk, clamped ±2
     gap_mult = 1.0 + 0.15 * max(-2, min(2, gap_rec["gap"]))
     opportunity = round(min(100.0, 100.0 * signal_core * fals_pen * edge_rec["score"] * gap_mult), 1)
+    # ── SIGNAL GOVERNOR (de-escalation only) — CN mirror of the US loop ──────────────────────
+    # A radar feeder PROVEN mis-firing by its matured, overlap-robust track record scales DOWN the
+    # opportunity of the names it is bullishly driving. trust ∈ [floor,1] ⇒ opportunity only falls.
+    # No governor / healthy / CN radar unproven ⇒ no-op (CN is dormant until china_radar_ic matures).
+    gov_mult, governed_by = 1.0, []
+    if gov and lean > 0 and dirs.get("radar") == 1:
+        rt = gov.get("radar", 1.0)
+        if rt < 1.0:
+            gov_mult *= rt
+            governed_by.append("radar")
+    if gov_mult < 1.0:
+        opportunity = round(opportunity * gov_mult, 1)
 
     read = _read_for(stage, lean, dirs, edge_rec["score"], gap_rec["gap"], altdata_row)
 
@@ -633,6 +645,8 @@ def _dossier(ticker: str, altdata_row: dict | None, radar_row: dict | None,
         "stage": stage,
         "opportunity_score": opportunity,
         "edge_remaining": edge_rec["score"],
+        "governor_mult": round(gov_mult, 3),
+        "governed_by": governed_by or None,
         "edge_drivers": edge_rec["drivers"],
         "edge_components": edge_rec["n_components"],
         "leading_gap": gap_rec["gap"],
@@ -1002,6 +1016,82 @@ def _append_snapshot_ledger(command: list, today: date, guard_env: bool = True) 
         log.debug("china_intel_hub: snapshot ledger write failed (%s)", e)
 
 
+# ── Falsifiable track-record (CN) — the measurement half of the governor loop ─── #
+
+def _mk_cn_fwd_rel(closes, bench):
+    """A CSI300-relative forward-return fn for the shared hub_track_record grader, on the CN
+    price layer: fn(ticker, start, horizon_d) → rel-return | None. None ⇒ the horizon is not
+    price-covered (unmatured) — folds coverage in so the grader only scores real matured windows."""
+    import pandas as pd
+    cache: dict = {}
+
+    def _series(t):
+        if t in cache:
+            return cache[t]
+        s = None
+        if closes is not None and t in getattr(closes, "columns", []):
+            s = closes[t].dropna()
+            if not isinstance(s.index, pd.DatetimeIndex):
+                s.index = pd.to_datetime(s.index, errors="coerce")
+                s = s[s.index.notna()].sort_index()
+        if s is None or len(s) < 1:
+            s = _load_per_stock_close(t)
+        cache[t] = s
+        return s
+
+    def _asof(s, d):
+        if s is None or len(s) == 0:
+            return None
+        ss = s[s.index <= pd.Timestamp(d)]
+        return float(ss.iloc[-1]) if len(ss) else None
+
+    def fwd(ticker, start, horizon_d):
+        if bench is None:
+            return None
+        end = pd.Timestamp(start) + pd.Timedelta(days=horizon_d)
+        ts = _series(ticker)
+        if ts is None or len(ts) == 0 or ts.index.max() < end or bench.index.max() < end:
+            return None                                    # not covered through horizon ⇒ unmatured
+        e0, e1 = _asof(ts, start), _asof(ts, end)
+        b0, b1 = _asof(bench, start), _asof(bench, end)
+        if None in (e0, e1, b0, b1) or not e0 or not b0:
+            return None
+        return float((e1 / e0 - 1.0) - (b1 / b0 - 1.0))
+
+    return fwd
+
+
+def compute_track_record(root=None, today=None) -> dict:
+    """Grade the CN hub's OWN claims (opportunity / stage), CSI300-relative, by reusing the shared
+    engine.hub_track_record stats engine — the CN analog of the US hub track-record, and the
+    measurement half the CN signal governor reads. Loads data/china_hub/signal_snapshots.jsonl,
+    normalizes to the shared {t,opp,edge,stage,lean} shape, matures against the CN price layer.
+    CONTEXT-ONLY · degrade-never-raise (no price data / no snapshots ⇒ a valid 'accruing' dict)."""
+    try:
+        from engine import hub_track_record as HT
+        r = _root() if root is None else root
+        snap = r / "data" / "china_hub" / "signal_snapshots.jsonl"
+        rows = []
+        if snap.exists():
+            for line in snap.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    d = json.loads(line)
+                    rows.append({"date": d.get("date"), "t": (d.get("ticker") or "").upper(),
+                                 "opp": d.get("opportunity"), "edge": d.get("edge"),
+                                 "stage": d.get("stage"), "lean": d.get("lean")})
+                except Exception:  # noqa: BLE001
+                    continue
+        closes, bench = _load_closes_and_benchmark()
+        return HT.compute(today=today, root=r, rows=rows,
+                          fwd_rel_fn=_mk_cn_fwd_rel(closes, bench), bench="CSI300")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china_intel_hub: track-record compute failed (%s)", e)
+        return {"schema": "intel_hub.track_record.v1", "n_snapshots": 0, "horizons": {},
+                "any_matured": False, "note": f"error ({e}) — accruing, degrade-safe."}
+
+
 # ── Analogs block ─────────────────────────────────────────────────────────── #
 
 def _analogs_block() -> dict | None:
@@ -1112,6 +1202,13 @@ def _build_inner(today: date, top: int) -> dict:
     closes, bench = _load_closes_and_benchmark()
 
     # ── 4. Per-ticker dossiers ──────────────────────────────────────────── #
+    # SIGNAL GOVERNOR (CN) — per-feeder trust map (de-escalation only). Absent/corrupt ⇒ {}
+    # (identity), so CN ranks byte-identically until its track records mature. Never raises.
+    try:
+        from engine import signal_governor
+        gov = signal_governor.load_trust(_root(), region="cn")
+    except Exception:  # noqa: BLE001 — governor is additive, never fatal to the build
+        gov = {}
     dossiers = []
     for ticker in universe:
         altdata_row = altdata_bt.get(ticker)
@@ -1122,7 +1219,7 @@ def _build_inner(today: date, top: int) -> dict:
         special_flags = special_bt.get(ticker)
         traj = _price_trajectory(ticker, closes, bench)
         d = _dossier(ticker, altdata_row, radar_row, news_items, board_row,
-                     special_flags, traj, board_member)
+                     special_flags, traj, board_member, gov=gov)
 
         # ── BLOCKER 3b: price-plane missing → veto_blind, honest opportunity ── #
         veto_blind = traj is None  # No price data from either source

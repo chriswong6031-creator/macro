@@ -52,8 +52,8 @@ From the graded V2 BUILD list, cheapest real edge first: **insider opportunistic
 ### Phase 3 — Recalibrate the accountable-lean layer (follow-on PR)
 Fix the "cautious dir 0.353" problem: the `_reconcile` clamp forces caution on high-momentum Extended names that keep running at 21d. Options: momentum-aware horizon; allow "neutral" (not forced "cautious") on strong-momentum-but-extended; lengthen horizon where mean-reversion dominates. Recalibrate conviction to the (now loop-fed) track record.
 
-### Phase 1b — CN/HK parity (follow-on, delegate to sonnet `builder`)
-`engine/china_intel_hub.py` mirrors the US edge-remaining structure and has its own `data/china_hub/signal_snapshots.jsonl`. Mirror the governor read (region-parameterized) once the US pattern is proven.
+### Phase 1b — CN/HK parity — SHIPPED (PR #2)
+Region-parameterized the governor (`_REGIONS` config; `region` on `compute`/`load_trust`) + `hub_track_record.compute` (injectable `rows`/`fwd_rel_fn`/`bench`) — US behavior byte-identical (defaults). Built the **CN measurement half that did not exist**: `china_intel_hub.compute_track_record()` grades the CN hub's own claims **CSI300-relative** via the shared stats engine (verified on real data: 1,281 snapshots, 97 matured @5d — accruing, not yet HAC-significant). Wired the governor into `china_intel_hub._dossier` (downward-only, radar) + `build_china_intel_hub` (grade → persist → govern). **CN is honestly dormant** today: CN radar has 0 resolved outcomes (no `china_radar_ic` yet), and the hub composite needs ≥6 dated cross-sections (has 5). It arms as CN evidence accrues. Deferred: a `china_radar_ic` grader (needs `china_radar_ledger` to mature) is what lights up the CN radar lever.
 
 ---
 
