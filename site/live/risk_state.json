@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-22 18:56:03 UTC",
+  "built": "2026-07-22 20:07:34 UTC",
   "session": {
     "region": "us",
-    "open": true,
-    "local_time": "2026-07-22 14:56 EDT"
+    "open": false,
+    "local_time": "2026-07-22 16:07 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -13,16 +13,20 @@
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-21",
-  "polygon_status": "ok",
+  "polygon_status": "unused",
   "n_live_symbols": 12,
   "movers": [
     {
+      "sym": "SPY",
+      "chg_pct": -0.11
+    },
+    {
       "sym": "QQQ",
-      "chg_pct": -0.3
+      "chg_pct": -0.51
     },
     {
       "sym": "VIX",
-      "chg_pct": -0.47
+      "chg_pct": -1.41
     }
   ],
   "display": {
@@ -46,7 +50,7 @@
     "radar": {
       "state": "watch",
       "state_ungated": "watch",
-      "top_score": 55,
+      "top_score": 56,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": {
