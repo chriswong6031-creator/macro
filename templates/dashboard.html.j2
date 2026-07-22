@@ -7479,15 +7479,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   {% set _mos2 = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
   <div class="panel span12 mx5-rack-panel">
 
-  {# v2 topbar: brand + as-of date (Grid/Ledger toggle and Expand-all removed — grid is permanent) #}
-  <div class="mx2-topbar">
-    <span class="mx2-topbar-brand"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观总览</span></span>
-    <div class="mx2-topbar-right">
-      {% if MS2 %}<span class="mx2-topbar-date"><span class="l-en">as of {{ MS2.asof }}</span><span class="l-zh">{{ MS2.asof }}</span></span>{% endif %}
-    </div>
-  </div>
-
-  {# MX4-RACK — grid-view card rack; 8 .sx sections below; topbar + footer outside #}
+  {# MX4-RACK — grid-view card rack; 8 .sx sections below; footer outside #}
   <div class="mx4-rack">
 
   {# 1. EVIDENCE row + tray #}
