@@ -25,6 +25,9 @@
   /* ── i18n mini-helper (mirrors the site l-en/l-zh idiom) ── */
   function zh() { return DOC.documentElement.getAttribute('data-lang') === 'zh'; }
   function L(en, cn) { return zh() ? cn : en; }
+  /* re-localizable label — carries BOTH languages so a live switch can re-tint it
+     in place (see relabel()); use for chrome text that persists across renders. */
+  function LB(en, cn) { return '<span class="mmb-l" data-en="' + en + '" data-zh="' + cn + '">' + L(en, cn) + '</span>'; }
 
   /* ── CSS ─────────────────────────────────────────────────────────────── */
   var CSS = `
@@ -264,8 +267,8 @@
 
   var launchHtml = ANCHOR === 'br' ? (
     '<div id="mmb-launch"><div class="mmb-orb">' + ORB + '</div>' +
-    '<div class="lt"><span class="ll">' + L('Ask Mastermind', '问操盘大脑') + '</span>' +
-    '<span class="lk">' + L('Brain · your desk copilot', '大脑 · 你的桌面副驾') + '</span></div></div>') : '';
+    '<div class="lt"><span class="ll">' + LB('Ask Mastermind', '问操盘大脑') + '</span>' +
+    '<span class="lk">' + LB('Brain · your desk copilot', '大脑 · 你的桌面副驾') + '</span></div></div>') : '';
 
   root.insertAdjacentHTML('beforeend', launchHtml +
     '<div id="mmb-scrim"></div>' +
@@ -276,17 +279,17 @@
         '<button class="mmb-icon" data-act="home" title="Dashboard">' + ic('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>') + '</button>' +
         '<div class="sp"></div>' +
       '</div>' +
-      '<div class="mmb-threads"><div class="mmb-th-h"><span>' + L('Chats', '对话') + '</span></div>' +
+      '<div class="mmb-threads"><div class="mmb-th-h"><span>' + LB('Chats', '对话') + '</span></div>' +
         '<div class="mmb-search" id="mmb-search">' + ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>') +
-          '<input id="mmb-search-in" type="text" autocomplete="off" placeholder="' + L('Search chats', '搜索对话') + '">' +
+          '<input id="mmb-search-in" type="text" autocomplete="off" data-ph-en="Search chats" data-ph-zh="搜索对话" placeholder="' + L('Search chats', '搜索对话') + '">' +
           '<button class="x" data-act="search-clear" title="Clear">' + ic('<path d="M6 6l12 12M18 6L6 18"/>') + '</button></div>' +
         '<div id="mmb-tlist"><div class="mmb-th-empty">' + L('Your conversations appear here.', '你的对话会显示在这里。') + '</div></div>' +
       '</div>' +
       '<div class="mmb-main"><div class="mmb-sidescrim" data-act="side"></div>' +
         '<div class="mmb-head">' +
           '<button class="mmb-icon mmb-menu" data-act="side" title="Chats">' + ic('<path d="M4 6h16M4 12h16M4 18h16"/>') + '</button>' +
-          '<span class="ttl"><span class="dot"></span>' + L('Mastermind Brain', '操盘大脑') + '</span>' +
-          '<button class="mmb-rpill mmb-off" data-act="research">' + ic('<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/>') + L('Deep Research', '深度研究') + '</button>' +
+          '<span class="ttl"><span class="dot"></span>' + LB('Mastermind Brain', '操盘大脑') + '</span>' +
+          '<button class="mmb-rpill mmb-off" data-act="research">' + ic('<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/>') + LB('Deep Research', '深度研究') + '</button>' +
           '<div class="sp"></div>' +
           '<button class="mmb-icon" data-act="max" title="Expand">' + ic('<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/>') + '</button>' +
           '<button class="mmb-icon" data-act="new" title="New chat">' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
@@ -296,10 +299,10 @@
         '<div class="mmb-comp"><div class="mmb-upgrade" id="mmb-upgrade"></div>' +
           '<div class="mmb-box"><div class="mmb-ctx" id="mmb-ctx"></div>' +
             '<div class="mmb-thumbs" id="mmb-thumbs"></div>' +
-            '<textarea class="mmb-ta" id="mmb-ta" rows="1" maxlength="2000" placeholder="' + L('Ask about any dashboard, signal, or ticker…', '询问任意看板、信号或标的…') + '"></textarea>' +
+            '<textarea class="mmb-ta" id="mmb-ta" rows="1" maxlength="2000" data-ph-en="Ask about any dashboard, signal, or ticker…" data-ph-zh="询问任意看板、信号或标的…" placeholder="' + L('Ask about any dashboard, signal, or ticker…', '询问任意看板、信号或标的…') + '"></textarea>' +
             '<input type="file" id="mmb-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>' +
             '<div class="mmb-tools">' +
-              '<div class="mmb-seg" id="mmb-lane"><button data-lane="fast" class="on">⚡ ' + L('Fast', '快速') + '</button><button data-lane="pro">◈ Pro</button></div>' +
+              '<div class="mmb-seg" id="mmb-lane"><button data-lane="fast" class="on">⚡ ' + LB('Fast', '快速') + '</button><button data-lane="pro">◈ Pro</button></div>' +
               '<div class="sp"></div>' +
               '<span class="mmb-q" id="mmb-q"></span>' +
               '<button class="mmb-tbtn" data-act="attach" title="Attach image">' + ic('<path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7l8.5-8.5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3l8-8"/>') + '</button>' +
@@ -443,11 +446,13 @@
   function bubTxt(b) { return b.querySelector('.mmb-txt') || b; }
   function stick() { if (scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 90) scroll.scrollTop = scroll.scrollHeight; }
 
+  /* [icon-paths, EN, ZH] — kept dual-language so the chips re-localize on a live
+     language switch (the array is built once at load; text is picked at render). */
   var PROMPTS = [
-    ['M3 3v18h18|M7 14l4-4 3 3 5-6', L('What regime are we in and what’s driving it?', '现在是什么市场周期？由什么驱动？')],
-    ['M4 20V10M10 20V4M16 20v-7M22 20H2', L('Which themes have the strongest momentum?', '哪些主题动量最强？')],
-    ['M12 3a9 9 0 1 0 9 9|M12 7v5l3 2', L('What should I be watching this week?', '这周该关注什么？')],
-    ['M4 5h16M4 12h16M4 19h10', L('How is my watchlist doing?', '我的自选股表现如何？')]
+    ['M3 3v18h18|M7 14l4-4 3 3 5-6', 'What regime are we in and what’s driving it?', '现在是什么市场周期？由什么驱动？'],
+    ['M4 20V10M10 20V4M16 20v-7M22 20H2', 'Which themes have the strongest momentum?', '哪些主题动量最强？'],
+    ['M12 3a9 9 0 1 0 9 9|M12 7v5l3 2', 'What should I be watching this week?', '这周该关注什么？'],
+    ['M4 5h16M4 12h16M4 19h10', 'How is my watchlist doing?', '我的自选股表现如何？']
   ];
   function renderEmpty() {
     var name = '';
@@ -455,7 +460,8 @@
     name = name ? (name.charAt(0).toUpperCase() + name.slice(1)) : '';
     var cards = PROMPTS.map(function (p) {
       var paths = p[0].split('|').map(function (d) { return '<path d="' + d + '"/>'; }).join('');
-      return '<button class="mmb-cardp" data-p="' + esc(p[1]) + '"><div class="ci"><svg viewBox="0 0 24 24">' + paths + '</svg></div><span class="cp">' + esc(p[1]) + '</span></button>';
+      var txt = L(p[1], p[2]);
+      return '<button class="mmb-cardp" data-p="' + esc(txt) + '"><div class="ci"><svg viewBox="0 0 24 24">' + paths + '</svg></div><span class="cp">' + esc(txt) + '</span></button>';
     }).join('');
     var hero = '<div class="mmb-empty" id="mmb-emptystate"><div class="mmb-hero"><h1>' +
       (name ? '<span class="g1">' + L('Hi there, ', '你好，') + '</span><span class="nm">' + esc(name) + '</span><br>' : '') +
@@ -463,6 +469,18 @@
       '<p>' + L('Your desk copilot — it reads the live signals, regimes and flow on this dashboard and the Terminal, and explains what they mean.', '你的桌面副驾 — 读取本看板与终端的实时信号、周期与资金流，并解释其含义。') + '</p></div>' +
       '<div class="mmb-cards">' + cards + '</div></div>';
     scroll.innerHTML = hero;
+  }
+
+  /* re-localize the chrome in place when the host switches language. Both hosts
+     set <html data-lang> (so zh() is already correct); we just repaint: dual-lang
+     LB() spans + data-ph placeholders flip, and the state-dependent renderers that
+     bake strings via L() are re-run (empty-state hero/chips, thread list). Already-
+     sent messages keep their original language — they're content, not chrome. */
+  function relabel() {
+    root.querySelectorAll('.mmb-l[data-en]').forEach(function (el) { el.textContent = zh() ? el.getAttribute('data-zh') : el.getAttribute('data-en'); });
+    root.querySelectorAll('[data-ph-en]').forEach(function (el) { el.placeholder = zh() ? el.getAttribute('data-ph-zh') : el.getAttribute('data-ph-en'); });
+    if ($('#mmb-emptystate')) renderEmpty();
+    paintThreads();
   }
 
   /* ── send (SSE) ── */
@@ -558,13 +576,13 @@
   function showUpgrade(d) {
     upgradeEl.style.display = 'block';
     var plansHref = (ANCHOR === 'top' ? 'https://www.mastermind-x.com/' : '') + 'plans.html';
-    var link = '<a href="' + plansHref + '" target="_blank">' + L('See plans', '查看套餐') + '</a>';
+    var link = '<a href="' + plansHref + '" target="_blank">' + LB('See plans', '查看套餐') + '</a>';
     if (d && d.feature === 'vision') {
-      upgradeEl.innerHTML = '<strong>' + L('Image analysis is a Pro feature', '图像分析为 Pro 功能') + '</strong> — ' +
-        L('upgrade to attach charts and screenshots. ', '升级即可上传图表与截图。') + link;
+      upgradeEl.innerHTML = '<strong>' + LB('Image analysis is a Pro feature', '图像分析为 Pro 功能') + '</strong> — ' +
+        LB('upgrade to attach charts and screenshots. ', '升级即可上传图表与截图。') + link;
     } else {
-      upgradeEl.innerHTML = '<strong>' + L('Quota reached', '配额已用尽') + '</strong> — ' +
-        L('upgrade to keep chatting. ', '升级以继续对话。') + link;
+      upgradeEl.innerHTML = '<strong>' + LB('Quota reached', '配额已用尽') + '</strong> — ' +
+        LB('upgrade to keep chatting. ', '升级以继续对话。') + link;
     }
   }
 
@@ -645,9 +663,9 @@
     var gate = $('#mmb-gate');
     if (!on && !gate) {
       var g = DOC.createElement('div'); g.id = 'mmb-gate'; g.className = 'mmb-gate';
-      g.innerHTML = '<div class="mmb-orb">' + ORB + '</div><h2>' + L('Ask the Mastermind', '问操盘大脑') + '</h2>' +
-        '<p>' + L('One brain across every dashboard and the Terminal. Sign in to begin.', '贯通所有看板与终端的同一个大脑。登录即可开始。') + '</p>' +
-        '<button class="mmb-signin" data-act="signin">' + L('Sign in', '登录') + '</button>';
+      g.innerHTML = '<div class="mmb-orb">' + ORB + '</div><h2>' + LB('Ask the Mastermind', '问操盘大脑') + '</h2>' +
+        '<p>' + LB('One brain across every dashboard and the Terminal. Sign in to begin.', '贯通所有看板与终端的同一个大脑。登录即可开始。') + '</p>' +
+        '<button class="mmb-signin" data-act="signin">' + LB('Sign in', '登录') + '</button>';
       root.querySelector('.mmb-main').insertBefore(g, root.querySelector('.mmb-comp'));
     } else if (on && gate) gate.remove();
   }
@@ -674,6 +692,10 @@
     searchIn.addEventListener('input', paintThreads);
     searchIn.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); toggleSearch(false); } });
   }
+  /* follow the host's language switch live — dashboard fires 'langchange' on the
+     document (theme.js setLang), the Terminal fires 'mm:lang' on window (i18n.tsx). */
+  DOC.addEventListener('langchange', relabel);
+  window.addEventListener('mm:lang', relabel);
   if (launch) launch.addEventListener('click', open);
   scrim.addEventListener('click', close);
   sendBtn.addEventListener('click', function () { send(); });
