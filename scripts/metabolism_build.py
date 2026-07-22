@@ -14,8 +14,8 @@ for each granted proposal:
   (c) Creates a git worktree on metabolism/build-<lobe>-<cycle> off FRESH
       origin/main.
 
-  (d) Dispatches a headless Sonnet build session via _dispatch_build_session()
-      (R-V4-2: real dispatch, Sonnet-pinned, draft-only, IMMUTABLE-fenced).
+  (d) Dispatches a headless Opus build session via _dispatch_build_session()
+      (R-V4-2: real dispatch, Opus-pinned, draft-only, IMMUTABLE-fenced).
       The session is armed-gated (AUTONOMY_PAUSED re-checked at dispatch),
       capability-broker-keyed, and runs in its own worktree.
 
@@ -456,12 +456,13 @@ def _gc_worktree(branch: str, *, root: Path | None = None) -> None:
 
 # ── Build session — model pin + immutable check ───────────────────────────────
 
-# The build session is always Sonnet-pinned (R-V4-2: never inherits caller model).
-_BUILD_SESSION_MODEL = "claude-sonnet-4-6"
+# The build session is always Opus-pinned (R-V4-2, amended by operator order
+# 2026-07-21 "no more sonnet building code": never inherits caller model).
+_BUILD_SESSION_MODEL = "claude-opus-4-8"
 
-# Sonnet alias accepted by the claude CLI (falls back to full model id on older
+# Opus alias accepted by the claude CLI (falls back to full model id on older
 # CLI versions; the full id is the authoritative pin).
-_BUILD_SESSION_MODEL_ALIAS = "sonnet"
+_BUILD_SESSION_MODEL_ALIAS = "opus"
 
 # Journal stage key for dispatch records (one per proposal per cycle).
 _DISPATCH_STAGE_PREFIX = "build_dispatch_"

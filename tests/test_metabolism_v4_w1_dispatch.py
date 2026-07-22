@@ -8,7 +8,7 @@ COVERAGE (R-V4-2 requirements):
   5. idempotent_rerun           — same cycle_id+proposal_id re-run → idempotent_skip; no second dispatch.
   6. key_ref_never_logged       — _dispatch_build_session never logs/persists the env var VALUE.
   7. never_raise_corrupt_proposal — corrupt/None proposal input returns safe fallback dict.
-  8. sonnet_model_pinned        — _BUILD_SESSION_MODEL is the correct sonnet model id.
+  8. opus_model_pinned          — _BUILD_SESSION_MODEL is the correct opus model id.
   9. subprocess_wrapper_mockable — _launch_build_subprocess is a standalone function (monkeypatchable).
   10. no_cap_id_not_dispatched  — cap_id=None → dispatched=False, no subprocess.
   11. successful_dispatch_path  — green path: session succeeds, files within target → dispatched=True.
@@ -622,15 +622,15 @@ class TestNeverRaiseCorruptProposal:
         assert result.get("dispatched") is False
 
 
-# ── 8. Sonnet model pinned ────────────────────────────────────────────────────
+# ── 8. Opus model pinned ──────────────────────────────────────────────────────
 
-class TestSonnetModelPinned:
-    """_BUILD_SESSION_MODEL must be the correct sonnet model id."""
+class TestOpusModelPinned:
+    """_BUILD_SESSION_MODEL must be the correct opus model id (operator 2026-07-21)."""
 
-    def test_build_session_model_is_sonnet(self):
+    def test_build_session_model_is_opus(self):
         mb = _import_mb()
-        assert mb._BUILD_SESSION_MODEL == "claude-sonnet-4-6", (
-            f"Expected 'claude-sonnet-4-6', got '{mb._BUILD_SESSION_MODEL}'"
+        assert mb._BUILD_SESSION_MODEL == "claude-opus-4-8", (
+            f"Expected 'claude-opus-4-8', got '{mb._BUILD_SESSION_MODEL}'"
         )
 
     def test_model_in_subprocess_cmd(self):

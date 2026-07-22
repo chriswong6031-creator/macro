@@ -15,7 +15,9 @@ import sys
 
 RULE = (
     "CLAUDE.md §Model routing: spawns must set an explicit model — "
-    "sonnet (build/census/mechanical), opus (review/judge), haiku (trivial sweeps). "
+    "opus (build/review/judge/design), sonnet (census/exploration/mechanical "
+    "non-code), haiku (trivial sweeps). Code-building routes to Opus, not Sonnet "
+    "(operator 2026-07-21). "
     "Fable spawns run ONLY as subagent_type 'orchestrator' with explicit model "
     "'fable' AND a \"FABLE-WHY: <orchestration|brainstorm|creative>: <specific "
     "reason>\" line in the prompt."
