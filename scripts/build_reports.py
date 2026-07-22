@@ -234,11 +234,29 @@ def _enrich(r: dict) -> dict:
 
 
 def _all_tags(reports: list[dict]) -> list[dict]:
+    """Distinct tags with a coverage count, most-covered first (drives the tag bar
+    and the Desk coverage panel)."""
     seen: dict[str, dict] = {}
     for r in reports:
         for tg in r["tags"]:
-            seen.setdefault(tg["key"], tg)
-    return list(seen.values())
+            e = seen.get(tg["key"])
+            if e is None:
+                e = {**tg, "count": 0}
+                seen[tg["key"]] = e
+            e["count"] += 1
+    return sorted(seen.values(), key=lambda t: (-t["count"], t["en"]))
+
+
+def _stats(reports: list[dict], all_tags: list[dict]) -> dict:
+    """At-a-glance desk totals for the index masthead. Dates neutral (badge parts)
+    so the strip reads in either language without a localized long-date."""
+    return {
+        "n_reports": len(reports),
+        "n_topics": len(all_tags),
+        "total_min": sum(int(r.get("read_min", 0) or 0) for r in reports),
+        "latest": reports[0] if reports else None,   # newest (reports sorted desc)
+        "oldest": reports[-1] if reports else None,
+    }
 
 
 def main() -> int:
@@ -250,10 +268,12 @@ def main() -> int:
     # newest first for the index + prev/next chaining
     reports.sort(key=lambda r: r["date"], reverse=True)
     all_tags = _all_tags(reports)
+    stats = _stats(reports, all_tags)
 
     # ---- index ----
     idx = env.get_template("reports.html.j2").render(
-        reports=reports, all_tags=all_tags, active_section="research", active_page="reports",
+        reports=reports, all_tags=all_tags, stats=stats,
+        active_section="research", active_page="reports",
     )
     write_page(site / "reports.html", idx)
     log.info("wrote %s/reports.html (%d reports, %d KB)", site, len(reports), len(idx) // 1024)
