@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-22",
-  "generated_utc": "2026-07-22T02:07:49.365676+00:00",
-  "n_tickers": 5118,
+  "generated_utc": "2026-07-22T05:14:35.293913+00:00",
+  "n_tickers": 5121,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {

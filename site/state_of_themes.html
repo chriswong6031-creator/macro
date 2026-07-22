@@ -23,175 +23,8 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
-<style>
-* { box-sizing:border-box; }
-body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 0 40px; }
-a { text-decoration:none; color:var(--link); }
-
-/* ── Nav ── */
-.site-nav { display:flex; align-items:center; gap:10px; padding:10px 18px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-.site-nav .nav-logo { font-weight:800; font-size:15px; color:var(--text); text-decoration:none; }
-.site-nav .nav-links { display:flex; gap:8px; flex-wrap:wrap; flex:1; }
-.site-nav .nav-links a { font-size:13px; color:var(--muted); padding:4px 8px; border-radius:7px; }
-.site-nav .nav-links a:hover { color:var(--text); background:var(--panel); }
-.nav-ctrls { display:flex; align-items:center; gap:8px; margin-left:auto; }
-.theme-switch { background:none; border:1px solid var(--line); border-radius:20px; padding:4px 8px; cursor:pointer; font-size:14px; color:var(--text); display:flex; align-items:center; gap:4px; }
-.theme-switch .sun,.theme-switch .moon { display:none; }
-[data-theme="dark"] .theme-switch .sun { display:inline; }
-[data-theme="light"] .theme-switch .moon { display:inline; }
-:not([data-theme]) .theme-switch .moon { display:inline; }
-.theme-switch .knob { display:none; }
-.lang-toggle { display:flex; gap:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; font-size:12px; font-weight:700; }
-.lang-toggle .opt { padding:3px 9px; cursor:pointer; color:var(--muted); }
-.lang-toggle .opt.active,.lang-toggle .opt:hover { background:var(--link); color:#fff; }
-
-/* ── Wrap ── */
-.wrap { padding:18px 20px; max-width:1360px; margin:0 auto; }
-@media (min-width:1100px) { .wrap { padding:20px max(28px,calc((100vw - 1360px)/2)); } }
-
-/* ── Header ── */
-.sot-head { display:flex; flex-wrap:wrap; align-items:flex-start; gap:12px 20px; margin-bottom:14px; }
-.sot-title { margin:0; font-size:22px; font-weight:800; letter-spacing:-.02em; }
-.sot-asof { font-size:12px; color:var(--muted); margin-top:3px; }
-.sot-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-left:auto; }
-
-/* header summary chips */
-.hchip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; border:1px solid var(--line); background:var(--panel); font-size:12px; font-weight:600; }
-.hchip-val { font-weight:800; font-size:14px; }
-.hchip.alert { border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
-.hchip.alert .hchip-val { color:var(--down); }
-
-/* ── Filter chips ── */
-.filter-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.fchip { padding:6px 14px; border-radius:20px; border:1.5px solid var(--line); background:var(--panel); font-size:13px; font-weight:600; cursor:pointer; color:var(--muted); transition:all .15s; user-select:none; }
-.fchip:hover { border-color:var(--link); color:var(--text); }
-.fchip.on { border-color:var(--link); background:color-mix(in srgb,var(--link) 12%,var(--panel)); color:var(--link); }
-.fchip.disabled { opacity:.45; cursor:default; pointer-events:none; }
-.fchip .fc-n { font-weight:400; color:var(--muted); font-size:12px; margin-left:3px; }
-.fchip.on .fc-n { color:var(--link); }
-
-/* ── Legend ── */
-.legend-row { display:flex; flex-wrap:wrap; gap:12px 20px; margin-bottom:14px; font-size:11.5px; color:var(--muted); align-items:center; }
-.leg-item { display:flex; align-items:center; gap:5px; }
-.dot { display:inline-block; width:11px; height:11px; border-radius:50%; flex:none; }
-/* Valence-based dot classes (polarity-correct per leg) */
-.dot.fav  { background:color-mix(in srgb,var(--up) 60%,transparent); border:1px solid color-mix(in srgb,var(--up) 80%,transparent); }
-.dot.mid  { background:color-mix(in srgb,var(--warn) 70%,transparent); border:1px solid color-mix(in srgb,var(--warn) 80%,transparent); }
-.dot.caut { background:color-mix(in srgb,var(--down) 70%,transparent); border:1px solid color-mix(in srgb,var(--down) 80%,transparent); }
-.dot.neut { background:color-mix(in srgb,var(--muted) 35%,transparent); border:1px solid color-mix(in srgb,var(--muted) 50%,transparent); }
-.dot.null { background:transparent; border:1.5px dashed var(--muted); opacity:.55; }
-.stage-pill { display:inline-block; padding:1px 7px; border-radius:8px; font-size:10.5px; font-weight:700; letter-spacing:.03em; }
-
-/* ── Matrix table ── */
-.matrix-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--line); background:var(--panel); }
-.matrix { width:100%; border-collapse:collapse; font-size:13px; }
-.matrix th { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; cursor:pointer; user-select:none; }
-.matrix th:hover { color:var(--text); }
-.matrix th.sorted-asc::after { content:" ▲"; font-size:9px; }
-.matrix th.sorted-desc::after { content:" ▼"; font-size:9px; }
-.matrix td { padding:9px 10px; border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent); vertical-align:middle; }
-.matrix tr:last-child td { border-bottom:none; }
-.matrix tr.hidden { display:none; }
-.matrix tbody tr { cursor:pointer; transition:background .1s; }
-.matrix tbody tr:hover td { background:color-mix(in srgb,var(--link) 5%,transparent); }
-.matrix tbody tr.expanded td { background:color-mix(in srgb,var(--link) 7%,transparent); }
-
-/* theme name cell */
-.theme-name { font-weight:700; font-size:13.5px; }
-.theme-zh { font-size:11px; color:var(--muted); display:block; margin-top:1px; }
-.l-zh .theme-zh { display:block; }
-.l-en .theme-zh { display:none; }
-
-/* stage chips */
-.stage-WATCH { background:color-mix(in srgb,var(--muted) 20%,var(--panel2)); color:var(--muted); }
-.stage-BROADENING { background:color-mix(in srgb,var(--up) 18%,var(--panel2)); color:color-mix(in srgb,var(--up) 90%,var(--text)); }
-.stage-RE-RATING { background:color-mix(in srgb,var(--link) 18%,var(--panel2)); color:var(--link); }
-.stage-PRECIPICE { background:color-mix(in srgb,var(--warn) 20%,var(--panel2)); color:var(--warn); }
-.stage-ACCELERATING { background:color-mix(in srgb,var(--up) 25%,var(--panel2)); color:var(--up); }
-.stage-CORRECTING { background:color-mix(in srgb,var(--down) 18%,var(--panel2)); color:var(--down); }
-
-/* leg dots row */
-.legs-row { display:flex; gap:5px; align-items:center; }
-
-/* falsifier badge */
-.falsbadge { font-size:11.5px; font-weight:700; padding:2px 7px; border-radius:7px; white-space:nowrap; }
-.falsbadge.fired { background:color-mix(in srgb,var(--down) 18%,var(--panel2)); color:var(--down); }
-.falsbadge.clean { background:color-mix(in srgb,var(--up) 12%,var(--panel2)); color:color-mix(in srgb,var(--up) 90%,var(--text)); }
-.falsbadge.null { color:var(--muted); background:var(--panel2); }
-
-/* divergence label */
-.divlabel { font-size:11.5px; color:var(--muted); white-space:nowrap; }
-.divlabel.opp { color:var(--up); font-weight:600; }
-.divlabel.crowd { color:var(--warn); font-weight:600; }
-
-/* ── Drawer ── */
-.drawer-row td { padding:0; }
-.drawer { padding:14px 16px 18px; border-top:1px solid var(--line); background:color-mix(in srgb,var(--panel2) 60%,var(--panel)); }
-.drawer-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 20px; }
-@media (max-width:720px) { .drawer-grid { grid-template-columns:1fr; } }
-.drawer-sec h4 { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 5px; font-weight:700; }
-.drawer-sec p { margin:0; font-size:13px; line-height:1.6; color:var(--text); }
-.drawer-sec.full { grid-column:1/-1; }
-
-/* pathway flow */
-.pathway-flow { display:flex; flex-wrap:wrap; align-items:center; gap:5px; font-size:12.5px; }
-.pnode { padding:3px 9px; border-radius:8px; border:1px solid var(--line); background:var(--panel); font-weight:600; white-space:nowrap; }
-.pnode.driver { border-color:color-mix(in srgb,var(--link) 40%,var(--line)); color:var(--link); }
-.pnode.bottleneck { border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); color:var(--warn); }
-.pnode.winner { border-color:color-mix(in srgb,var(--up) 40%,var(--line)); color:color-mix(in srgb,var(--up) 90%,var(--text)); }
-.pnode.avoid { border-color:color-mix(in srgb,var(--down) 40%,var(--line)); color:var(--down); }
-.parrow { color:var(--muted); font-size:15px; }
-
-/* falsifier table */
-.fals-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
-.fals-table th { text-align:left; color:var(--muted); font-weight:600; font-size:10.5px; text-transform:uppercase; padding:4px 6px; border-bottom:1px solid var(--line); }
-.fals-table td { padding:5px 6px; border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent); vertical-align:top; line-height:1.45; }
-.fals-table tr:last-child td { border-bottom:none; }
-.fals-state { font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:5px; white-space:nowrap; }
-.fals-state.FIRED { background:color-mix(in srgb,var(--down) 20%,var(--panel2)); color:var(--down); }
-.fals-state.ARMED { background:color-mix(in srgb,var(--warn) 20%,var(--panel2)); color:var(--warn); }
-.fals-state.qualitative { background:var(--panel); color:var(--muted); }
-.fals-state.data_missing { background:var(--panel); color:var(--muted); }
-
-/* evidence refs */
-.evid-list { font-size:12px; color:var(--muted); margin:4px 0 0; padding:0; list-style:none; }
-.evid-list li::before { content:"· "; }
-
-/* ── Weekly delta strip ── */
-.delta-strip { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:16px; }
-.delta-strip h3 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; font-weight:700; }
-.delta-items { display:flex; flex-wrap:wrap; gap:8px; }
-.delta-item { font-size:12.5px; padding:4px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); }
-.delta-item.transition { border-color:color-mix(in srgb,var(--link) 35%,var(--line)); }
-.delta-item.fired { border-color:color-mix(in srgb,var(--down) 35%,var(--line)); color:var(--down); }
-.delta-none { font-size:12.5px; color:var(--muted); font-style:italic; }
-
-/* ── Collision footnote ── */
-.collision-note { font-size:11.5px; color:var(--muted); margin-top:14px; padding-top:10px; border-top:1px solid var(--line); line-height:1.6; }
-
-/* ── Context drawer sections ── */
-.ctx-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:3px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 30%,transparent); font-size:12.5px; line-height:1.5; }
-.ctx-row:last-child { border-bottom:none; }
-.ctx-row-label { color:var(--muted); flex:0 0 auto; max-width:55%; }
-.ctx-row-value { font-weight:600; text-align:right; }
-.ctx-stance { font-size:12.5px; color:var(--text); margin:0 0 6px; padding:4px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent); font-weight:600; }
-.ctx-plain { font-size:12.5px; color:var(--text); margin:0; line-height:1.6; }
-.ctx-page-note { font-size:11.5px; color:var(--muted); margin-top:10px; padding-top:10px; border-top:1px solid var(--line); line-height:1.6; font-style:italic; }
-.ctx-h4-wrap { display:flex; align-items:center; gap:6px; margin:0 0 5px; }
-.ctx-h4-wrap h4 { margin:0; }
-.ctx-tip-icon { font-size:11px; color:var(--muted); cursor:default; border:1px solid var(--line); border-radius:50%; width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; flex:none; }
-
-/* ── Bilingual toggle ── */
-[data-lang="zh"] .l-en { display:none; }
-[data-lang="zh"] .l-zh { display:inline; }
-.l-zh { display:none; }
-.l-en { display:inline; }
-
-/* ── Empty state ── */
-.empty-state { text-align:center; padding:48px 20px; color:var(--muted); }
-.empty-state h2 { font-size:17px; margin:0 0 8px; }
-</style>
+<link rel="stylesheet" href="theme.css?v=a1aa8c55">
+<link rel="stylesheet" href="assets/css/6b119279.css?v=6b119279">
 </head>
 <body>
 
@@ -347,71 +180,7 @@ a { text-decoration:none; color:var(--link); }
       </div>
     </div>
     
-    <style>
-    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
-       clip off the left edge. Instead anchor the mega to the full-width .nav-links
-       row (its right edge = the nav rail right): make .nav-links the positioning
-       context and the Research .nav-dd static >700px, so right:0 right-aligns the
-       panel to the rail and it stays fully on-screen. The ::before bridges the
-       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
-    @media (min-width:701px){
-      /* nav-links is the positioning context for the rail-anchored mega; desktop
-         only, so it never overrides theme.js's position:absolute hamburger flyout
-         (≤700px), which shares this specificity. */
-      .site-nav .nav-links,.topbar .nav-links{position:relative}
-      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
-      /* the base .nav-dd::after bridge would become a full-width strip once the
-         trigger is static — disable it; the mega's own ::before bridges the gap. */
-      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
-        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
-      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
-    }
-    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      padding-bottom:13px;margin-bottom:13px;
-      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
-    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-      white-space:normal;text-decoration:none;
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
-      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
-      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
-    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
-      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
-      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
-    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
-    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
-    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
-    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
-    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
-    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
-    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
-    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
-      white-space:normal;text-decoration:none;transition:background .15s ease}
-    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
-    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
-    .nav-mega .nm-tx{min-width:0}
-    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
-    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
-      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
-    @media (max-width:1080px) and (min-width:701px){
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
-      .nav-mega-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:700px){
-      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
-      .nav-mega-grid{grid-template-columns:1fr;gap:0}
-      .nav-mega-h{padding-top:9px}
-      /* the hamburger accordion caps each open dropdown at max-height:600px
-         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
-         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
-         Same specificity trick overrides theme.js's generic accordion-panel
-         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
-         submenus) with symmetric sides + top breathing room, so the feature
-         cards read centered under the trigger instead of crooked. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
-    </style>
+    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -470,8 +239,8 @@ a { text-decoration:none; color:var(--link); }
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-ctrls">
@@ -486,7 +255,7 @@ a { text-decoration:none; color:var(--link); }
 <div class="sot-head">
   <div>
     <h1 class="sot-title"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></h1>
-    <div class="sot-asof" id="sot-asof"><span class="l-en">as of</span><span class="l-zh">数据截止</span> 2026-07-21</div>
+    <div class="sot-asof" id="sot-asof"><span class="l-en">as of</span><span class="l-zh">数据截止</span> 2026-07-22</div>
   </div>
   <div class="sot-chips">
     <div class="hchip">
@@ -498,7 +267,7 @@ a { text-decoration:none; color:var(--link); }
       <span><span class="l-en">falsifiers fired</span><span class="l-zh">已触发假证伪</span></span>
     </div>
     <div class="hchip">
-      <span class="hchip-val">4</span>
+      <span class="hchip-val">5</span>
       <span><span class="l-en">stale legs</span><span class="l-zh">过期数据腿</span></span>
     </div>
   </div>
@@ -607,32 +376,32 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot neut"
-                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=TIGHT (text), accel=0.84 → tightness=0.34"
-                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.84，综合紧张度=0.34"></span>
+                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=TIGHT (text), accel=0.85 → tightness=0.34"
+                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.85，综合紧张度=0.34"></span>
           
           <span class="dot mid"
                 data-tip-en="Stale consensus gap (med): activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.913); gap narrowing. no_dispersi"
                 data-tip-zh="共识差距 (med): 活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.913）；差距收窄。no_dispersion_data"></span>
           
           <span class="dot mid"
-                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=20.6%, avg_rs_pctile=0.83, avg_accel_z=-3.15 → dislocation=0.41"
-                data-tip-zh="周期错位 (med): 最大回撤=20.6%，平均RS百分位=0.83，平均加速z值=-3.15 → 错位=0.41"></span>
+                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=15.5%, avg_rs_pctile=0.86, avg_accel_z=-2.76 → dislocation=0.35"
+                data-tip-zh="周期错位 (med): 最大回撤=15.5%，平均RS百分位=0.86，平均加速z值=-2.76 → 错位=0.35"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.25, avg_overbought=0.41, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.25，平均超买=0.41，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.25, avg_overbought=0.45, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.25，平均超买=0.45，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00"></span>
           
           <span class="dot fav"
-                data-tip-en="Crowding hazard (low): avg_crowding=0.22, div_log=quadrant=hidden-opportunity → crowding_hazard=0.22. HAZARD framing only; not a directional re"
-                data-tip-zh="拥挤风险 (low): 平均拥挤=0.22，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.22。仅为风险识别，非方向性判断。"></span>
+                data-tip-en="Crowding hazard (low): avg_crowding=0.30, div_log=quadrant=hidden-opportunity → crowding_hazard=0.30. HAZARD framing only; not a directional re"
+                data-tip-zh="拥挤风险 (low): 平均拥挤=0.30，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.30。仅为风险识别，非方向性判断。"></span>
           
           <span class="dot caut"
-                data-tip-en="Falsifier clarity (low): n_falsifiers=40, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
-                data-tip-zh="假证伪清晰度 (low): 假证伪器总数=40，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+                data-tip-en="Falsifier clarity (low): n_falsifiers=44, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
+                data-tip-zh="假证伪清晰度 (low): 假证伪器总数=44，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav"
-                data-tip-en="Orthogonality vs market (high): avg_60d_rel=6.8%, universe_avg_corr=0.07 → orthogonality=0.71. Per-basket-to-megacap corr not in spine; 60d relative ret"
-                data-tip-zh="市场正交性 (high): 平均60日相对收益=6.8%，全局平均相关性=0.07 → 正交性=0.71。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (high): avg_60d_rel=13.4%, universe_avg_corr=0.07 → orthogonality=0.82. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (high): 平均60日相对收益=13.4%，全局平均相关性=0.07 → 正交性=0.82。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -771,8 +540,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=TIGHT (text), accel=0.84 → tightness=0.34"
-                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.84，综合紧张度=0.34">
+                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=TIGHT (text), accel=0.85 → tightness=0.34"
+                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.85，综合紧张度=0.34">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -799,8 +568,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=20.6%, avg_rs_pctile=0.83, avg_accel_z=-3.15 → dislocation=0.41"
-                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=20.6%，平均RS百分位=0.83，平均加速z值=-3.15 → 错位=0.41">
+                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=15.5%, avg_rs_pctile=0.86, avg_accel_z=-2.76 → dislocation=0.35"
+                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=15.5%，平均RS百分位=0.86，平均加速z值=-2.76 → 错位=0.35">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -813,8 +582,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.25, avg_overbought=0.41, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.25，平均超买=0.41，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.25, avg_overbought=0.45, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.25，平均超买=0.45，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -827,8 +596,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Crowding hazard — not crowded (low level): avg_crowding=0.22, div_log=quadrant=hidden-opportunity → crowding_hazard=0.22. HAZARD framing only; not a directional re"
-                   data-tip-zh="拥挤风险 — 不拥挤（low级别）：平均拥挤=0.22，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.22。仅为风险识别，非方向性判断。">
+                   data-tip-en="Crowding hazard — not crowded (low level): avg_crowding=0.30, div_log=quadrant=hidden-opportunity → crowding_hazard=0.30. HAZARD framing only; not a directional re"
+                   data-tip-zh="拥挤风险 — 不拥挤（low级别）：平均拥挤=0.30，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.30。仅为风险识别，非方向性判断。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot fav"></span>
                   <span class="l-en">Crowding hazard</span>
@@ -841,8 +610,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=40, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
-                   data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=40，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+                   data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=44, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
+                   data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=44，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Falsifier clarity</span>
@@ -855,8 +624,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=6.8%, universe_avg_corr=0.07 → orthogonality=0.71. Per-basket-to-megacap corr not in spine; 60d relative ret"
-                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=6.8%，全局平均相关性=0.07 → 正交性=0.71。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=13.4%, universe_avg_corr=0.07 → orthogonality=0.82. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=13.4%，全局平均相关性=0.07 → 正交性=0.82。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot fav"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -882,43 +651,43 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <p class="ctx-stance">
-                <span class="l-en">Some concentration building — monitor before adding.</span>
-                <span class="l-zh">集中度上升——加仓前保持观察。</span>
+                <span class="l-en">Not enough option coverage to read crowding.</span>
+                <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 26/26 covered members. HHI=0.036 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="26/26 个成员覆盖的看涨OI HHI中位数。HHI=0.036 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 26/26 members. Strike concentration (median): 0.036 (z -0.81). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：26/26 个成员。行权价集中度（中位数）：0.036（z -0.81）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">normal — no crowding sign</span>
-                  <span class="l-zh">正常——无拥挤迹象</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 26/26 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal."
-                   data-tip-zh="26/26 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal.">
+                   data-tip-en="Coverage: 26/26 members. Put/call open-interest ratio: 0.92 (z -0.01). Hedges coming off into strength: no. Positioning: put/call balance in its normal range."
+                   data-tip-zh="覆盖：26/26 个成员。看跌/看涨持仓比：0.92（z -0.01）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">hedging normal</span>
-                  <span class="l-zh">对冲正常</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 26/26 covered members. Rising IV premium vs realized."
-                   data-tip-zh="26/26 个成员的IV溢价中位数（IV/RV20-1）。IV溢价相对实现波动率上升。">
+                   data-tip-en="Coverage: 26/26 members. Options priced vs recent actual swings (median): +13.1% (z +0.37). Options priced near their usual level."
+                   data-tip-zh="覆盖：26/26 个成员。期权定价相对近期实际波动（中位数）：+13.1%（z +0.37）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">options getting pricier — be alert</span>
-                  <span class="l-zh">期权趋贵——保持警惕</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               
@@ -960,32 +729,32 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot neut"
-                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=NEUTRAL, accel=0.70 → tightness=0.19"
-                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=NEUTRAL，活动加速=accel=0.70，综合紧张度=0.19"></span>
+                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=NEUTRAL, accel=0.67 → tightness=0.18"
+                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=NEUTRAL，活动加速=accel=0.67，综合紧张度=0.18"></span>
           
           <span class="dot mid"
                 data-tip-en="Stale consensus gap (med): activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.964); gap narrowing. no_dispersi"
                 data-tip-zh="共识差距 (med): 活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.964）；差距收窄。no_dispersion_data"></span>
           
           <span class="dot mid"
-                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=31.4%, avg_rs_pctile=0.86, avg_accel_z=-3.42 → dislocation=0.51"
-                data-tip-zh="周期错位 (med): 最大回撤=31.4%，平均RS百分位=0.86，平均加速z值=-3.42 → 错位=0.51"></span>
+                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=22.8%, avg_rs_pctile=0.89, avg_accel_z=-2.92 → dislocation=0.43"
+                data-tip-zh="周期错位 (med): 最大回撤=22.8%，平均RS百分位=0.89，平均加速z值=-2.92 → 错位=0.43"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.25, avg_overbought=0.45, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.25，平均超买=0.45，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.40, avg_overbought=0.48, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.02"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.40，平均超买=0.48，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.02"></span>
           
           <span class="dot fav"
-                data-tip-en="Crowding hazard (low): avg_crowding=0.14, div_log=money_pct=0.88 (elevated) → crowding_hazard=0.24. HAZARD framing only; not a directional read"
-                data-tip-zh="拥挤风险 (low): 平均拥挤=0.14，背离日志=money_pct=0.88 (elevated) → 拥挤风险=0.24。仅为风险识别，非方向性判断。"></span>
+                data-tip-en="Crowding hazard (low): avg_crowding=0.21, div_log=money_pct=0.88 (elevated) → crowding_hazard=0.31. HAZARD framing only; not a directional read"
+                data-tip-zh="拥挤风险 (low): 平均拥挤=0.21，背离日志=money_pct=0.88 (elevated) → 拥挤风险=0.31。仅为风险识别，非方向性判断。"></span>
           
           <span class="dot caut"
                 data-tip-en="Falsifier clarity (low): n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav"
-                data-tip-en="Orthogonality vs market (high): avg_60d_rel=35.2%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (high): 平均60日相对收益=35.2%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (high): avg_60d_rel=52.5%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (high): 平均60日相对收益=52.5%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -1108,8 +877,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=NEUTRAL, accel=0.70 → tightness=0.19"
-                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=NEUTRAL，活动加速=accel=0.70，综合紧张度=0.19">
+                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=NEUTRAL, accel=0.67 → tightness=0.18"
+                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=NEUTRAL，活动加速=accel=0.67，综合紧张度=0.18">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -1136,8 +905,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=31.4%, avg_rs_pctile=0.86, avg_accel_z=-3.42 → dislocation=0.51"
-                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=31.4%，平均RS百分位=0.86，平均加速z值=-3.42 → 错位=0.51">
+                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=22.8%, avg_rs_pctile=0.89, avg_accel_z=-2.92 → dislocation=0.43"
+                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=22.8%，平均RS百分位=0.89，平均加速z值=-2.92 → 错位=0.43">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -1150,8 +919,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.25, avg_overbought=0.45, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.25，平均超买=0.45，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.40, avg_overbought=0.48, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.02"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.40，平均超买=0.48，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.02">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -1164,8 +933,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Crowding hazard — not crowded (low level): avg_crowding=0.14, div_log=money_pct=0.88 (elevated) → crowding_hazard=0.24. HAZARD framing only; not a directional read"
-                   data-tip-zh="拥挤风险 — 不拥挤（low级别）：平均拥挤=0.14，背离日志=money_pct=0.88 (elevated) → 拥挤风险=0.24。仅为风险识别，非方向性判断。">
+                   data-tip-en="Crowding hazard — not crowded (low level): avg_crowding=0.21, div_log=money_pct=0.88 (elevated) → crowding_hazard=0.31. HAZARD framing only; not a directional read"
+                   data-tip-zh="拥挤风险 — 不拥挤（low级别）：平均拥挤=0.21，背离日志=money_pct=0.88 (elevated) → 拥挤风险=0.31。仅为风险识别，非方向性判断。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot fav"></span>
                   <span class="l-en">Crowding hazard</span>
@@ -1192,8 +961,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=35.2%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=35.2%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=52.5%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=52.5%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot fav"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -1219,43 +988,43 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <p class="ctx-stance">
-                <span class="l-en">No crowding signs in the options tape.</span>
-                <span class="l-zh">期权盘面无拥挤迹象。</span>
+                <span class="l-en">Not enough option coverage to read crowding.</span>
+                <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 4/4 covered members. HHI=0.010 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="4/4 个成员覆盖的看涨OI HHI中位数。HHI=0.010 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 4/4 members. Strike concentration (median): 0.011 (z -1.07). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：4/4 个成员。行权价集中度（中位数）：0.011（z -1.07）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">normal — no crowding sign</span>
-                  <span class="l-zh">正常——无拥挤迹象</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 4/4 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal."
-                   data-tip-zh="4/4 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal.">
+                   data-tip-en="Coverage: 4/4 members. Put/call open-interest ratio: 1.29 (z +1.10). Hedges coming off into strength: no. Positioning: put/call balance in its normal range."
+                   data-tip-zh="覆盖：4/4 个成员。看跌/看涨持仓比：1.29（z +1.10）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">hedging normal</span>
-                  <span class="l-zh">对冲正常</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 4/4 covered members. IV premium near historical norm."
-                   data-tip-zh="4/4 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 4/4 members. Options priced vs recent actual swings (median): -8.6% (z -0.87). Options priced near their usual level."
+                   data-tip-zh="覆盖：4/4 个成员。期权定价相对近期实际波动（中位数）：-8.6%（z -0.87）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">normal — no crowding sign</span>
-                  <span class="l-zh">正常——无拥挤迹象</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               
@@ -1305,24 +1074,24 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="共识差距 (med): 活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.854）；差距收窄。no_dispersion_data"></span>
           
           <span class="dot mid"
-                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=27.2%, avg_rs_pctile=0.80, avg_accel_z=-3.37 → dislocation=0.47"
-                data-tip-zh="周期错位 (med): 最大回撤=27.2%，平均RS百分位=0.80，平均加速z值=-3.37 → 错位=0.47"></span>
+                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=21.4%, avg_rs_pctile=0.93, avg_accel_z=-3.20 → dislocation=0.41"
+                data-tip-zh="周期错位 (med): 最大回撤=21.4%，平均RS百分位=0.93，平均加速z值=-3.20 → 错位=0.41"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.25, avg_overbought=0.38, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.25，平均超买=0.38，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.25, avg_overbought=0.53, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.25，平均超买=0.53，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00"></span>
           
-          <span class="dot fav"
-                data-tip-en="Crowding hazard (low): avg_crowding=0.30, div_log=quadrant=hidden-opportunity → crowding_hazard=0.30. HAZARD framing only; not a directional re"
-                data-tip-zh="拥挤风险 (low): 平均拥挤=0.30，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.30。仅为风险识别，非方向性判断。"></span>
+          <span class="dot mid"
+                data-tip-en="Crowding hazard (med): avg_crowding=0.61, div_log=quadrant=hidden-opportunity → crowding_hazard=0.61. HAZARD framing only; not a directional re"
+                data-tip-zh="拥挤风险 (med): 平均拥挤=0.61，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.61。仅为风险识别，非方向性判断。"></span>
           
           <span class="dot caut"
                 data-tip-en="Falsifier clarity (low): n_falsifiers=18, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=18，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
-          <span class="dot mid"
-                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-1.4%, universe_avg_corr=0.07 → orthogonality=0.57. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (med): 平均60日相对收益=-1.4%，全局平均相关性=0.07 → 正交性=0.57。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+          <span class="dot fav"
+                data-tip-en="Orthogonality vs market (high): avg_60d_rel=4.7%, universe_avg_corr=0.07 → orthogonality=0.67. Per-basket-to-megacap corr not in spine; 60d relative ret"
+                data-tip-zh="市场正交性 (high): 平均60日相对收益=4.7%，全局平均相关性=0.07 → 正交性=0.67。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -1473,8 +1242,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=27.2%, avg_rs_pctile=0.80, avg_accel_z=-3.37 → dislocation=0.47"
-                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=27.2%，平均RS百分位=0.80，平均加速z值=-3.37 → 错位=0.47">
+                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=21.4%, avg_rs_pctile=0.93, avg_accel_z=-3.20 → dislocation=0.41"
+                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=21.4%，平均RS百分位=0.93，平均加速z值=-3.20 → 错位=0.41">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -1487,8 +1256,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.25, avg_overbought=0.38, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.25，平均超买=0.38，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.25, avg_overbought=0.53, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.00"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.25，平均超买=0.53，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.00">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -1501,16 +1270,16 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Crowding hazard — not crowded (low level): avg_crowding=0.30, div_log=quadrant=hidden-opportunity → crowding_hazard=0.30. HAZARD framing only; not a directional re"
-                   data-tip-zh="拥挤风险 — 不拥挤（low级别）：平均拥挤=0.30，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.30。仅为风险识别，非方向性判断。">
+                   data-tip-en="Crowding hazard — getting crowded (med level): avg_crowding=0.61, div_log=quadrant=hidden-opportunity → crowding_hazard=0.61. HAZARD framing only; not a directional re"
+                   data-tip-zh="拥挤风险 — 趋于拥挤（med级别）：平均拥挤=0.61，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.61。仅为风险识别，非方向性判断。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
-                  <span class="dot fav"></span>
+                  <span class="dot mid"></span>
                   <span class="l-en">Crowding hazard</span>
                   <span class="l-zh">拥挤风险</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">not crowded</span>
-                  <span class="l-zh">不拥挤</span>
+                  <span class="l-en">getting crowded</span>
+                  <span class="l-zh">趋于拥挤</span>
                 </span>
               </div>
               
@@ -1529,16 +1298,16 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-1.4%, universe_avg_corr=0.07 → orthogonality=0.57. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-1.4%，全局平均相关性=0.07 → 正交性=0.57。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=4.7%, universe_avg_corr=0.07 → orthogonality=0.67. Per-basket-to-megacap corr not in spine; 60d relative ret"
+                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=4.7%，全局平均相关性=0.07 → 正交性=0.67。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
-                  <span class="dot mid"></span>
+                  <span class="dot fav"></span>
                   <span class="l-en">Orthogonality vs market</span>
                   <span class="l-zh">市场正交性</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">partly market-driven</span>
-                  <span class="l-zh">部分随大盘</span>
+                  <span class="l-en">moves on its own story</span>
+                  <span class="l-zh">走自身逻辑</span>
                 </span>
               </div>
               
@@ -1560,8 +1329,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 16/16 covered members. HHI=0.075 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="16/16 个成员覆盖的看涨OI HHI中位数。HHI=0.075 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 16/16 members. Strike concentration (median): 0.075 (z -2.40). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：16/16 个成员。行权价集中度（中位数）：0.075（z -2.40）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -1572,8 +1341,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 16/16 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal."
-                   data-tip-zh="16/16 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal.">
+                   data-tip-en="Coverage: 16/16 members. Put/call open-interest ratio: 1.06 (z +0.37). Hedges coming off into strength: no. Positioning: put/call balance in its normal range."
+                   data-tip-zh="覆盖：16/16 个成员。看跌/看涨持仓比：1.06（z +0.37）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -1584,8 +1353,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 16/16 covered members. IV premium compressed vs own history."
-                   data-tip-zh="16/16 个成员的IV溢价中位数（IV/RV20-1）。相对自身历史，IV溢价受压。">
+                   data-tip-en="Coverage: 16/16 members. Options priced vs recent actual swings (median): -21.1% (z -1.67). Options priced low versus their own history."
+                   data-tip-zh="覆盖：16/16 个成员。期权定价相对近期实际波动（中位数）：-21.1%（z -1.67）。期权定价低于自身历史水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -1634,20 +1403,20 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot mid"
-                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=0.79 → tightness=0.62"
-                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.79，综合紧张度=0.62"></span>
+                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=0.80 → tightness=0.62"
+                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.80，综合紧张度=0.62"></span>
           
           <span class="dot mid"
                 data-tip-en="Stale consensus gap (med): activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.792); gap narrowing. no_dispersi"
                 data-tip-zh="共识差距 (med): 活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.792）；差距收窄。no_dispersion_data"></span>
           
           <span class="dot mid"
-                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=30.5%, avg_rs_pctile=0.66, avg_accel_z=-2.00 → dislocation=0.50"
-                data-tip-zh="周期错位 (med): 最大回撤=30.5%，平均RS百分位=0.66，平均加速z值=-2.00 → 错位=0.50"></span>
+                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=24.3%, avg_rs_pctile=0.73, avg_accel_z=-1.90 → dislocation=0.44"
+                data-tip-zh="周期错位 (med): 最大回撤=24.3%，平均RS百分位=0.73，平均加速z值=-1.90 → 错位=0.44"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.45, avg_overbought=0.20, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.15"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.45，平均超买=0.20，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.15"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.45, avg_overbought=0.29, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.12"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.45，平均超买=0.29，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.12"></span>
           
           <span class="dot fav"
                 data-tip-en="Crowding hazard (low): avg_crowding=0.15, div_log=no_div_log_entry → crowding_hazard=0.15. HAZARD framing only; not a directional read."
@@ -1658,8 +1427,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid"
-                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-8.1%, universe_avg_corr=0.07 → orthogonality=0.46. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (med): 平均60日相对收益=-8.1%，全局平均相关性=0.07 → 正交性=0.46。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-4.9%, universe_avg_corr=0.07 → orthogonality=0.51. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (med): 平均60日相对收益=-4.9%，全局平均相关性=0.07 → 正交性=0.51。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -1788,8 +1557,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=0.79 → tightness=0.62"
-                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.79，综合紧张度=0.62">
+                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=0.80 → tightness=0.62"
+                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.80，综合紧张度=0.62">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -1816,8 +1585,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=30.5%, avg_rs_pctile=0.66, avg_accel_z=-2.00 → dislocation=0.50"
-                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=30.5%，平均RS百分位=0.66，平均加速z值=-2.00 → 错位=0.50">
+                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=24.3%, avg_rs_pctile=0.73, avg_accel_z=-1.90 → dislocation=0.44"
+                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=24.3%，平均RS百分位=0.73，平均加速z值=-1.90 → 错位=0.44">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -1830,8 +1599,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.45, avg_overbought=0.20, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.15"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.45，平均超买=0.20，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.15">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.45, avg_overbought=0.29, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.12"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.45，平均超买=0.29，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.12">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -1872,8 +1641,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-8.1%, universe_avg_corr=0.07 → orthogonality=0.46. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-8.1%，全局平均相关性=0.07 → 正交性=0.46。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-4.9%, universe_avg_corr=0.07 → orthogonality=0.51. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-4.9%，全局平均相关性=0.07 → 正交性=0.51。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -1903,8 +1672,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 18/18 covered members. HHI=0.068 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="18/18 个成员覆盖的看涨OI HHI中位数。HHI=0.068 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 18/18 members. Strike concentration (median): 0.068 (z -0.24). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：18/18 个成员。行权价集中度（中位数）：0.068（z -0.24）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -1915,8 +1684,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 18/18 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal."
-                   data-tip-zh="18/18 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal.">
+                   data-tip-en="Coverage: 18/18 members. Put/call open-interest ratio: 0.63 (z +1.14). Hedges coming off into strength: no. Positioning: put/call balance in its normal range."
+                   data-tip-zh="覆盖：18/18 个成员。看跌/看涨持仓比：0.63（z +1.14）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -1927,8 +1696,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 18/18 covered members. IV premium near historical norm."
-                   data-tip-zh="18/18 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 18/18 members. Options priced vs recent actual swings (median): +18.8% (z +0.48). Options priced near their usual level."
+                   data-tip-zh="覆盖：18/18 个成员。期权定价相对近期实际波动（中位数）：+18.8%（z +0.48）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -1977,16 +1746,16 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot mid"
-                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=1.07 → tightness=0.62"
-                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=1.07，综合紧张度=0.62"></span>
+                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=1.16 → tightness=0.64"
+                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=1.16，综合紧张度=0.64"></span>
           
           <span class="dot fav"
                 data-tip-en="Stale consensus gap (high): activity accelerating (ACCELERATING) but revisions lagging (level=NEGATIVE, breadth=-0.156); member dispersion: no_dispe"
                 data-tip-zh="共识差距 (high): 活动加速（ACCELERATING）但分析师修正滞后（水平=NEGATIVE，广度=-0.156）；成员分散：no_dispersion_data"></span>
           
           <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=46.9%, avg_rs_pctile=0.01, avg_accel_z=-1.35 → dislocation=0.29"
-                data-tip-zh="周期错位 (low): 最大回撤=46.9%，平均RS百分位=0.01，平均加速z值=-1.35 → 错位=0.29"></span>
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=43.8%, avg_rs_pctile=0.02, avg_accel_z=-0.91 → dislocation=0.28"
+                data-tip-zh="周期错位 (low): 最大回撤=43.8%，平均RS百分位=0.02，平均加速z值=-0.91 → 错位=0.28"></span>
           
           <span class="dot caut"
                 data-tip-en="Entry cleanliness (low): avg_clean_quality=0.35, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.11"
@@ -2001,8 +1770,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot caut"
-                data-tip-en="Orthogonality vs market (low): avg_60d_rel=-30.4%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r"
-                data-tip-zh="市场正交性 (low): 平均60日相对收益=-30.4%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (low): avg_60d_rel=-27.5%, universe_avg_corr=0.07 → orthogonality=0.13. Per-basket-to-megacap corr not in spine; 60d relative r"
+                data-tip-zh="市场正交性 (low): 平均60日相对收益=-27.5%，全局平均相关性=0.07 → 正交性=0.13。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -2131,8 +1900,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=1.07 → tightness=0.62"
-                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=1.07，综合紧张度=0.62">
+                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=1.16 → tightness=0.64"
+                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=1.16，综合紧张度=0.64">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -2159,8 +1928,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=46.9%, avg_rs_pctile=0.01, avg_accel_z=-1.35 → dislocation=0.29"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=46.9%，平均RS百分位=0.01，平均加速z值=-1.35 → 错位=0.29">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=43.8%, avg_rs_pctile=0.02, avg_accel_z=-0.91 → dislocation=0.28"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=43.8%，平均RS百分位=0.02，平均加速z值=-0.91 → 错位=0.28">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -2215,8 +1984,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — mostly moves with the market (low level): avg_60d_rel=-30.4%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r"
-                   data-tip-zh="市场正交性 — 基本随大盘波动（low级别）：平均60日相对收益=-30.4%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — mostly moves with the market (low level): avg_60d_rel=-27.5%, universe_avg_corr=0.07 → orthogonality=0.13. Per-basket-to-megacap corr not in spine; 60d relative r"
+                   data-tip-zh="市场正交性 — 基本随大盘波动（low级别）：平均60日相对收益=-27.5%，全局平均相关性=0.07 → 正交性=0.13。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -2246,8 +2015,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 18/19 covered members. HHI=0.076 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="18/19 个成员覆盖的看涨OI HHI中位数。HHI=0.076 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 18/19 members. Strike concentration (median): 0.076 (z +0.14). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：18/19 个成员。行权价集中度（中位数）：0.076（z +0.14）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -2258,8 +2027,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 18/19 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal."
-                   data-tip-zh="18/19 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal.">
+                   data-tip-en="Coverage: 18/19 members. Put/call open-interest ratio: 0.60 (z +0.70). Hedges coming off into strength: no. Positioning: put/call balance in its normal range."
+                   data-tip-zh="覆盖：18/19 个成员。看跌/看涨持仓比：0.60（z +0.70）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -2270,8 +2039,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 18/19 covered members. IV premium near historical norm."
-                   data-tip-zh="18/19 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 18/19 members. Options priced vs recent actual swings (median): +2.9% (z -0.66). Options priced near their usual level."
+                   data-tip-zh="覆盖：18/19 个成员。期权定价相对近期实际波动（中位数）：+2.9%（z -0.66）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -2320,20 +2089,20 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot mid"
-                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=0.58 → tightness=0.53"
-                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.58，综合紧张度=0.53"></span>
+                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=0.69 → tightness=0.56"
+                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.69，综合紧张度=0.56"></span>
           
           <span class="dot mid"
                 data-tip-en="Stale consensus gap (med): activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.5); gap narrowing. no_dispersion"
                 data-tip-zh="共识差距 (med): 活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.5）；差距收窄。no_dispersion_data"></span>
           
           <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=12.8%, avg_rs_pctile=0.31, avg_accel_z=-1.47 → dislocation=0.15"
-                data-tip-zh="周期错位 (low): 最大回撤=12.8%，平均RS百分位=0.31，平均加速z值=-1.47 → 错位=0.15"></span>
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=10.9%, avg_rs_pctile=0.37, avg_accel_z=-1.55 → dislocation=0.14"
+                data-tip-zh="周期错位 (low): 最大回撤=10.9%，平均RS百分位=0.37，平均加速z值=-1.55 → 错位=0.14"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.45, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.21"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.45，平均超买=0.00，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.21"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.55, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.31"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.55，平均超买=0.00，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.31"></span>
           
           <span class="dot fav"
                 data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=no_div_log_entry → crowding_hazard=0.00. HAZARD framing only; not a directional read."
@@ -2344,8 +2113,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=9，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid"
-                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-10.6%, universe_avg_corr=0.07 → orthogonality=0.42. Per-basket-to-megacap corr not in spine; 60d relative r"
-                data-tip-zh="市场正交性 (med): 平均60日相对收益=-10.6%，全局平均相关性=0.07 → 正交性=0.42。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-11.9%, universe_avg_corr=0.07 → orthogonality=0.39. Per-basket-to-megacap corr not in spine; 60d relative r"
+                data-tip-zh="市场正交性 (med): 平均60日相对收益=-11.9%，全局平均相关性=0.07 → 正交性=0.39。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -2472,8 +2241,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=0.58 → tightness=0.53"
-                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.58，综合紧张度=0.53">
+                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=0.69 → tightness=0.56"
+                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.69，综合紧张度=0.56">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -2500,8 +2269,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=12.8%, avg_rs_pctile=0.31, avg_accel_z=-1.47 → dislocation=0.15"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=12.8%，平均RS百分位=0.31，平均加速z值=-1.47 → 错位=0.15">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=10.9%, avg_rs_pctile=0.37, avg_accel_z=-1.55 → dislocation=0.14"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=10.9%，平均RS百分位=0.37，平均加速z值=-1.55 → 错位=0.14">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -2514,8 +2283,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.45, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.21"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.45，平均超买=0.00，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.21">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.55, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.31"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.55，平均超买=0.00，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.31">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -2556,8 +2325,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-10.6%, universe_avg_corr=0.07 → orthogonality=0.42. Per-basket-to-megacap corr not in spine; 60d relative r"
-                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-10.6%，全局平均相关性=0.07 → 正交性=0.42。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-11.9%, universe_avg_corr=0.07 → orthogonality=0.39. Per-basket-to-megacap corr not in spine; 60d relative r"
+                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-11.9%，全局平均相关性=0.07 → 正交性=0.39。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -2587,8 +2356,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 24/24 covered members. HHI=0.071 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="24/24 个成员覆盖的看涨OI HHI中位数。HHI=0.071 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 24/24 members. Strike concentration (median): 0.071 (z -0.31). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：24/24 个成员。行权价集中度（中位数）：0.071（z -0.31）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -2599,8 +2368,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 24/24 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining."
-                   data-tip-zh="24/24 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining.">
+                   data-tip-en="Coverage: 24/24 members. Put/call open-interest ratio: 0.56 (z -1.11). Hedges coming off into strength: no. Positioning: put protection coming down."
+                   data-tip-zh="覆盖：24/24 个成员。看跌/看涨持仓比：0.56（z -1.11）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -2611,8 +2380,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 24/24 covered members. IV premium near historical norm."
-                   data-tip-zh="24/24 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 24/24 members. Options priced vs recent actual swings (median): +7.6% (z -0.29). Options priced near their usual level."
+                   data-tip-zh="覆盖：24/24 个成员。期权定价相对近期实际波动（中位数）：+7.6%（z -0.29）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -2661,32 +2430,32 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot mid"
-                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=NEUTRAL, accel=1.48 → tightness=0.46"
-                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=NEUTRAL，活动加速=accel=1.48，综合紧张度=0.46"></span>
+                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=NEUTRAL, accel=1.57 → tightness=0.48"
+                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=NEUTRAL，活动加速=accel=1.57，综合紧张度=0.48"></span>
           
           <span class="dot mid"
                 data-tip-en="Stale consensus gap (med): activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.55); gap narrowing. no_dispersion_data"
                 data-tip-zh="共识差距 (med): 活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.55）；差距收窄。no_dispersion_data"></span>
           
           <span class="dot mid"
-                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=5.0%, avg_rs_pctile=0.98, avg_accel_z=1.98 → dislocation=0.46"
-                data-tip-zh="周期错位 (med): 最大回撤=5.0%，平均RS百分位=0.98，平均加速z值=1.98 → 错位=0.46"></span>
+                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=8.4%, avg_rs_pctile=0.95, avg_accel_z=1.60 → dislocation=0.50"
+                data-tip-zh="周期错位 (med): 最大回撤=8.4%，平均RS百分位=0.95，平均加速z值=1.60 → 错位=0.50"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.80, avg_overbought=0.79, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.32"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.80，平均超买=0.79，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.32"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.70, avg_overbought=0.65, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.27"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.70，平均超买=0.65，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.27"></span>
           
           <span class="dot caut"
-                data-tip-en="Crowding hazard (high): avg_crowding=0.76, div_log=money_pct=1.00 (elevated) → crowding_hazard=0.86. HAZARD framing only; not a directional read"
-                data-tip-zh="拥挤风险 (high): 平均拥挤=0.76，背离日志=money_pct=1.00 (elevated) → 拥挤风险=0.86。仅为风险识别，非方向性判断。"></span>
+                data-tip-en="Crowding hazard (high): avg_crowding=0.68, div_log=money_pct=1.00 (elevated) → crowding_hazard=0.78. HAZARD framing only; not a directional read"
+                data-tip-zh="拥挤风险 (high): 平均拥挤=0.68，背离日志=money_pct=1.00 (elevated) → 拥挤风险=0.78。仅为风险识别，非方向性判断。"></span>
           
           <span class="dot caut"
                 data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav"
-                data-tip-en="Orthogonality vs market (high): avg_60d_rel=46.8%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (high): 平均60日相对收益=46.8%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (high): avg_60d_rel=47.0%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (high): 平均60日相对收益=47.0%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -2799,8 +2568,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=NEUTRAL, accel=1.48 → tightness=0.46"
-                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=NEUTRAL，活动加速=accel=1.48，综合紧张度=0.46">
+                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=NEUTRAL, accel=1.57 → tightness=0.48"
+                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=NEUTRAL，活动加速=accel=1.57，综合紧张度=0.48">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -2827,8 +2596,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=5.0%, avg_rs_pctile=0.98, avg_accel_z=1.98 → dislocation=0.46"
-                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=5.0%，平均RS百分位=0.98，平均加速z值=1.98 → 错位=0.46">
+                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=8.4%, avg_rs_pctile=0.95, avg_accel_z=1.60 → dislocation=0.50"
+                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=8.4%，平均RS百分位=0.95，平均加速z值=1.60 → 错位=0.50">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -2841,8 +2610,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.80, avg_overbought=0.79, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.32"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.80，平均超买=0.79，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.32">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.70, avg_overbought=0.65, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.27"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.70，平均超买=0.65，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.27">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -2855,8 +2624,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Crowding hazard — crowded — caution (high level): avg_crowding=0.76, div_log=money_pct=1.00 (elevated) → crowding_hazard=0.86. HAZARD framing only; not a directional read"
-                   data-tip-zh="拥挤风险 — 拥挤——需谨慎（high级别）：平均拥挤=0.76，背离日志=money_pct=1.00 (elevated) → 拥挤风险=0.86。仅为风险识别，非方向性判断。">
+                   data-tip-en="Crowding hazard — crowded — caution (high level): avg_crowding=0.68, div_log=money_pct=1.00 (elevated) → crowding_hazard=0.78. HAZARD framing only; not a directional read"
+                   data-tip-zh="拥挤风险 — 拥挤——需谨慎（high级别）：平均拥挤=0.68，背离日志=money_pct=1.00 (elevated) → 拥挤风险=0.78。仅为风险识别，非方向性判断。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Crowding hazard</span>
@@ -2883,8 +2652,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=46.8%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=46.8%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=47.0%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=47.0%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot fav"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -2914,8 +2683,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 10/10 covered members. HHI=0.056 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="10/10 个成员覆盖的看涨OI HHI中位数。HHI=0.056 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 10/10 members. Strike concentration (median): 0.056 (z -0.90). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：10/10 个成员。行权价集中度（中位数）：0.056（z -0.90）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -2926,8 +2695,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 10/10 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining."
-                   data-tip-zh="10/10 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining.">
+                   data-tip-en="Coverage: 10/10 members. Put/call open-interest ratio: 0.75 (z -0.59). Hedges coming off into strength: no. Positioning: put protection coming down."
+                   data-tip-zh="覆盖：10/10 个成员。看跌/看涨持仓比：0.75（z -0.59）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -2938,8 +2707,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 10/10 covered members. IV premium near historical norm."
-                   data-tip-zh="10/10 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 10/10 members. Options priced vs recent actual swings (median): +24.6% (z +0.28). Options priced near their usual level."
+                   data-tip-zh="覆盖：10/10 个成员。期权定价相对近期实际波动（中位数）：+24.6%（z +0.28）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -2988,16 +2757,16 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot neut"
-                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=NEUTRAL, accel=0.90 → tightness=0.11"
-                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=NEUTRAL，活动加速=accel=0.90，综合紧张度=0.11"></span>
+                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=NEUTRAL, accel=0.90 → tightness=0.12"
+                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=NEUTRAL，活动加速=accel=0.90，综合紧张度=0.12"></span>
           
           <span class="dot neut"
                 data-tip-en="Stale consensus gap (low): activity not accelerating (MIXED) and revisions lagging — aligned weakness. no_dispersion_data"
                 data-tip-zh="共识差距 (low): 活动未加速（MIXED）且修正滞后——一致疲软。no_dispersion_data"></span>
           
           <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=17.5%, avg_rs_pctile=0.01, avg_accel_z=-0.55 → dislocation=0.17"
-                data-tip-zh="周期错位 (low): 最大回撤=17.5%，平均RS百分位=0.01，平均加速z值=-0.55 → 错位=0.17"></span>
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=16.4%, avg_rs_pctile=0.02, avg_accel_z=-0.08 → dislocation=0.17"
+                data-tip-zh="周期错位 (low): 最大回撤=16.4%，平均RS百分位=0.02，平均加速z值=-0.08 → 错位=0.17"></span>
           
           <span class="dot caut"
                 data-tip-en="Entry cleanliness (low): avg_clean_quality=0.35, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.11"
@@ -3012,8 +2781,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=30，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid"
-                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-9.3%, universe_avg_corr=0.07 → orthogonality=0.44. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (med): 平均60日相对收益=-9.3%，全局平均相关性=0.07 → 正交性=0.44。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-7.9%, universe_avg_corr=0.07 → orthogonality=0.46. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (med): 平均60日相对收益=-7.9%，全局平均相关性=0.07 → 正交性=0.46。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -3140,8 +2909,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=NEUTRAL, accel=0.90 → tightness=0.11"
-                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=NEUTRAL，活动加速=accel=0.90，综合紧张度=0.11">
+                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=NEUTRAL, accel=0.90 → tightness=0.12"
+                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=NEUTRAL，活动加速=accel=0.90，综合紧张度=0.12">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -3168,8 +2937,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=17.5%, avg_rs_pctile=0.01, avg_accel_z=-0.55 → dislocation=0.17"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=17.5%，平均RS百分位=0.01，平均加速z值=-0.55 → 错位=0.17">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=16.4%, avg_rs_pctile=0.02, avg_accel_z=-0.08 → dislocation=0.17"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=16.4%，平均RS百分位=0.02，平均加速z值=-0.08 → 错位=0.17">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -3224,8 +2993,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-9.3%, universe_avg_corr=0.07 → orthogonality=0.44. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-9.3%，全局平均相关性=0.07 → 正交性=0.44。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-7.9%, universe_avg_corr=0.07 → orthogonality=0.46. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-7.9%，全局平均相关性=0.07 → 正交性=0.46。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -3255,8 +3024,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 21/21 covered members. HHI=0.098 — call OI moderately concentrated."
-                   data-tip-zh="21/21 个成员覆盖的看涨OI HHI中位数。HHI=0.098 — 看涨OI集中度中等。">
+                   data-tip-en="Coverage: 21/21 members. Strike concentration (median): 0.098 (z +0.66). Call bets tilting toward fewer strikes."
+                   data-tip-zh="覆盖：21/21 个成员。行权价集中度（中位数）：0.098（z +0.66）。看涨押注趋向集中于较少行权价。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -3267,8 +3036,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 21/21 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining."
-                   data-tip-zh="21/21 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining.">
+                   data-tip-en="Coverage: 21/21 members. Put/call open-interest ratio: 0.64 (z -1.43). Hedges coming off into strength: no. Positioning: put protection coming down."
+                   data-tip-zh="覆盖：21/21 个成员。看跌/看涨持仓比：0.64（z -1.43）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -3279,8 +3048,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 21/21 covered members. IV premium compressed vs own history."
-                   data-tip-zh="21/21 个成员的IV溢价中位数（IV/RV20-1）。相对自身历史，IV溢价受压。">
+                   data-tip-en="Coverage: 21/21 members. Options priced vs recent actual swings (median): -8.1% (z -1.13). Options priced low versus their own history."
+                   data-tip-zh="覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：-8.1%（z -1.13）。期权定价低于自身历史水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -3337,8 +3106,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="共识差距 (low): 活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.627）；无差距。no_dispersion_data"></span>
           
           <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=9.6%, avg_rs_pctile=0.14, avg_accel_z=-0.27 → dislocation=0.14"
-                data-tip-zh="周期错位 (low): 最大回撤=9.6%，平均RS百分位=0.14，平均加速z值=-0.27 → 错位=0.14"></span>
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=8.3%, avg_rs_pctile=0.21, avg_accel_z=-0.40 → dislocation=0.13"
+                data-tip-zh="周期错位 (low): 最大回撤=8.3%，平均RS百分位=0.21，平均加速z值=-0.40 → 错位=0.13"></span>
           
           <span class="dot caut"
                 data-tip-en="Entry cleanliness (low): avg_clean_quality=0.55, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.31"
@@ -3349,12 +3118,12 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="拥挤风险 (low): 平均拥挤=0.00，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.00。仅为风险识别，非方向性判断。"></span>
           
           <span class="dot caut"
-                data-tip-en="Falsifier clarity (low): n_falsifiers=30, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
-                data-tip-zh="假证伪清晰度 (low): 假证伪器总数=30，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
+                data-tip-en="Falsifier clarity (low): n_falsifiers=33, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
+                data-tip-zh="假证伪清晰度 (low): 假证伪器总数=33，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid"
-                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-8.8%, universe_avg_corr=0.07 → orthogonality=0.45. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (med): 平均60日相对收益=-8.8%，全局平均相关性=0.07 → 正交性=0.45。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-8.6%, universe_avg_corr=0.07 → orthogonality=0.45. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (med): 平均60日相对收益=-8.6%，全局平均相关性=0.07 → 正交性=0.45。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -3511,8 +3280,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=9.6%, avg_rs_pctile=0.14, avg_accel_z=-0.27 → dislocation=0.14"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=9.6%，平均RS百分位=0.14，平均加速z值=-0.27 → 错位=0.14">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=8.3%, avg_rs_pctile=0.21, avg_accel_z=-0.40 → dislocation=0.13"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=8.3%，平均RS百分位=0.21，平均加速z值=-0.40 → 错位=0.13">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -3553,8 +3322,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=30, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
-                   data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=30，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
+                   data-tip-en="Falsifier clarity — hard to test — few clear tripwires (low level): n_falsifiers=33, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
+                   data-tip-zh="假证伪清晰度 — 难以检验——缺乏清晰触发线（low级别）：假证伪器总数=33，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Falsifier clarity</span>
@@ -3567,8 +3336,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-8.8%, universe_avg_corr=0.07 → orthogonality=0.45. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-8.8%，全局平均相关性=0.07 → 正交性=0.45。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-8.6%, universe_avg_corr=0.07 → orthogonality=0.45. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-8.6%，全局平均相关性=0.07 → 正交性=0.45。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -3598,8 +3367,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 12/12 covered members. HHI=0.110 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="12/12 个成员覆盖的看涨OI HHI中位数。HHI=0.110 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 12/12 members. Strike concentration (median): 0.110 (z -1.45). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：12/12 个成员。行权价集中度（中位数）：0.110（z -1.45）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -3610,8 +3379,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 12/12 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining."
-                   data-tip-zh="12/12 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining.">
+                   data-tip-en="Coverage: 12/12 members. Put/call open-interest ratio: 0.62 (z -1.13). Hedges coming off into strength: no. Positioning: put protection coming down."
+                   data-tip-zh="覆盖：12/12 个成员。看跌/看涨持仓比：0.62（z -1.13）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -3622,8 +3391,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 12/12 covered members. IV premium near historical norm."
-                   data-tip-zh="12/12 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 12/12 members. Options priced vs recent actual swings (median): +18.2% (z +0.18). Options priced near their usual level."
+                   data-tip-zh="覆盖：12/12 个成员。期权定价相对近期实际波动（中位数）：+18.2%（z +0.18）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -3679,25 +3448,25 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-en="Stale consensus gap (low): activity not accelerating (ROLLING), revisions positive (level=POSITIVE, breadth=0.202); no gap. no_dispersion_data"
                 data-tip-zh="共识差距 (low): 活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.202）；无差距。no_dispersion_data"></span>
           
-          <span class="dot mid"
-                data-tip-en="Cyclical dislocation (med): max_drawdown_from_peak=5.6%, avg_rs_pctile=0.85, avg_accel_z=0.16 → dislocation=0.47"
-                data-tip-zh="周期错位 (med): 最大回撤=5.6%，平均RS百分位=0.85，平均加速z值=0.16 → 错位=0.47"></span>
+          <span class="dot neut"
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=4.3%, avg_rs_pctile=0.89, avg_accel_z=-0.03 → dislocation=0.24"
+                data-tip-zh="周期错位 (low): 最大回撤=4.3%，平均RS百分位=0.89，平均加速z值=-0.03 → 错位=0.24"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.50, avg_overbought=0.45, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.13"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.50，平均超买=0.45，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.13"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.50, avg_overbought=0.57, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.09"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.50，平均超买=0.57，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.09"></span>
           
           <span class="dot mid"
-                data-tip-en="Crowding hazard (med): avg_crowding=0.43, div_log=quadrant=hidden-opportunity → crowding_hazard=0.43. HAZARD framing only; not a directional re"
-                data-tip-zh="拥挤风险 (med): 平均拥挤=0.43，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.43。仅为风险识别，非方向性判断。"></span>
+                data-tip-en="Crowding hazard (med): avg_crowding=0.53, div_log=quadrant=hidden-opportunity → crowding_hazard=0.53. HAZARD framing only; not a directional re"
+                data-tip-zh="拥挤风险 (med): 平均拥挤=0.53，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.53。仅为风险识别，非方向性判断。"></span>
           
           <span class="dot caut"
                 data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav"
-                data-tip-en="Orthogonality vs market (high): avg_60d_rel=6.7%, universe_avg_corr=0.07 → orthogonality=0.70. Per-basket-to-megacap corr not in spine; 60d relative ret"
-                data-tip-zh="市场正交性 (high): 平均60日相对收益=6.7%，全局平均相关性=0.07 → 正交性=0.70。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (high): avg_60d_rel=7.8%, universe_avg_corr=0.07 → orthogonality=0.72. Per-basket-to-megacap corr not in spine; 60d relative ret"
+                data-tip-zh="市场正交性 (high): 平均60日相对收益=7.8%，全局平均相关性=0.07 → 正交性=0.72。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -3852,22 +3621,22 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — somewhat dislocated (med level): max_drawdown_from_peak=5.6%, avg_rs_pctile=0.85, avg_accel_z=0.16 → dislocation=0.47"
-                   data-tip-zh="周期错位 — 有所错位（med级别）：最大回撤=5.6%，平均RS百分位=0.85，平均加速z值=0.16 → 错位=0.47">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=4.3%, avg_rs_pctile=0.89, avg_accel_z=-0.03 → dislocation=0.24"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=4.3%，平均RS百分位=0.89，平均加速z值=-0.03 → 错位=0.24">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
-                  <span class="dot mid"></span>
+                  <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
                   <span class="l-zh">周期错位</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">somewhat dislocated</span>
-                  <span class="l-zh">有所错位</span>
+                  <span class="l-en">prices near cycle norm</span>
+                  <span class="l-zh">价格接近周期常态</span>
                 </span>
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.50, avg_overbought=0.45, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.13"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.50，平均超买=0.45，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.13">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.50, avg_overbought=0.57, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.09"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.50，平均超买=0.57，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.09">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -3880,8 +3649,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Crowding hazard — getting crowded (med level): avg_crowding=0.43, div_log=quadrant=hidden-opportunity → crowding_hazard=0.43. HAZARD framing only; not a directional re"
-                   data-tip-zh="拥挤风险 — 趋于拥挤（med级别）：平均拥挤=0.43，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.43。仅为风险识别，非方向性判断。">
+                   data-tip-en="Crowding hazard — getting crowded (med level): avg_crowding=0.53, div_log=quadrant=hidden-opportunity → crowding_hazard=0.53. HAZARD framing only; not a directional re"
+                   data-tip-zh="拥挤风险 — 趋于拥挤（med级别）：平均拥挤=0.53，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.53。仅为风险识别，非方向性判断。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Crowding hazard</span>
@@ -3908,8 +3677,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=6.7%, universe_avg_corr=0.07 → orthogonality=0.70. Per-basket-to-megacap corr not in spine; 60d relative ret"
-                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=6.7%，全局平均相关性=0.07 → 正交性=0.70。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=7.8%, universe_avg_corr=0.07 → orthogonality=0.72. Per-basket-to-megacap corr not in spine; 60d relative ret"
+                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=7.8%，全局平均相关性=0.07 → 正交性=0.72。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot fav"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -3939,8 +3708,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 13/14 covered members. HHI=0.119 — call OI moderately concentrated."
-                   data-tip-zh="13/14 个成员覆盖的看涨OI HHI中位数。HHI=0.119 — 看涨OI集中度中等。">
+                   data-tip-en="Coverage: 13/14 members. Strike concentration (median): 0.119 (z +0.95). Call bets tilting toward fewer strikes."
+                   data-tip-zh="覆盖：13/14 个成员。行权价集中度（中位数）：0.119（z +0.95）。看涨押注趋向集中于较少行权价。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -3951,8 +3720,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 13/14 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: declining."
-                   data-tip-zh="13/14 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: declining.">
+                   data-tip-en="Coverage: 13/14 members. Put/call open-interest ratio: 0.72 (z -0.76). Hedges coming off into strength: no. Positioning: put protection coming down."
+                   data-tip-zh="覆盖：13/14 个成员。看跌/看涨持仓比：0.72（z -0.76）。对冲盘在强势中撤离：否。仓位状态：看跌保护正在减少。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -3963,8 +3732,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 13/14 covered members. IV premium near historical norm."
-                   data-tip-zh="13/14 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 13/14 members. Options priced vs recent actual swings (median): +0.1% (z -0.69). Options priced near their usual level."
+                   data-tip-zh="覆盖：13/14 个成员。期权定价相对近期实际波动（中位数）：+0.1%（z -0.69）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -3984,8 +3753,8 @@ a { text-decoration:none; color:var(--link); }
               <div class="ctx-h4-wrap">
                 <h4><span class="l-en">Clinical pipeline</span><span class="l-zh">临床管线</span></h4>
                 <span class="ctx-tip-icon"
-                      data-tip-en="Context only — shows where research money is committing, not a buy signal. Source: ClinicalTrials.gov v2 (keyless, INDUSTRY-sponsored only). as_of: 2026-07-21. 2/2 modalities have data; 526 total INDUSTRY-sponsored studies; most recent: 2026-07"
-                      data-tip-zh="仅供参考——显示研究资金投向，非买入信号。来源：ClinicalTrials.gov v2（无需密钥，仅行业赞助）。截止日期：2026-07-21。2个模态中2个有数据；共526个行业赞助研究；最新月份：2026-07">?</span>
+                      data-tip-en="Context only — shows where research money is committing, not a buy signal. Source: ClinicalTrials.gov v2 (keyless, INDUSTRY-sponsored only). as_of: 2026-07-22. 2/2 modalities have data; 526 total INDUSTRY-sponsored studies; most recent: 2026-07"
+                      data-tip-zh="仅供参考——显示研究资金投向，非买入信号。来源：ClinicalTrials.gov v2（无需密钥，仅行业赞助）。截止日期：2026-07-22。2个模态中2个有数据；共526个行业赞助研究；最新月份：2026-07">?</span>
               </div>
               <p class="ctx-stance">
                 <span class="l-en">Background evidence — informs the thesis, not a buy trigger.</span>
@@ -4030,20 +3799,20 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot neut"
-                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=NEUTRAL, accel=0.83 → tightness=0.21"
-                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=NEUTRAL，活动加速=accel=0.83，综合紧张度=0.21"></span>
+                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=NEUTRAL, accel=0.89 → tightness=0.22"
+                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=NEUTRAL，活动加速=accel=0.89，综合紧张度=0.22"></span>
           
           <span class="dot neut"
                 data-tip-en="Stale consensus gap (low): activity not accelerating (ROLLING), revisions positive (level=POSITIVE, breadth=0.323); no gap. no_dispersion_data"
                 data-tip-zh="共识差距 (low): 活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.323）；无差距。no_dispersion_data"></span>
           
           <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=13.5%, avg_rs_pctile=0.36, avg_accel_z=1.08 → dislocation=0.15"
-                data-tip-zh="周期错位 (low): 最大回撤=13.5%，平均RS百分位=0.36，平均加速z值=1.08 → 错位=0.15"></span>
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=13.7%, avg_rs_pctile=0.30, avg_accel_z=1.25 → dislocation=0.15"
+                data-tip-zh="周期错位 (low): 最大回撤=13.7%，平均RS百分位=0.30，平均加速z值=1.25 → 错位=0.15"></span>
           
           <span class="dot fav"
-                data-tip-en="Entry cleanliness (high): avg_clean_quality=1.00, avg_overbought=0.17, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.71"
-                data-tip-zh="入场质量 (high): 平均入场质量=1.00，平均超买=0.17，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.71"></span>
+                data-tip-en="Entry cleanliness (high): avg_clean_quality=1.00, avg_overbought=0.16, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.71"
+                data-tip-zh="入场质量 (high): 平均入场质量=1.00，平均超买=0.16，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.71"></span>
           
           <span class="dot fav"
                 data-tip-en="Crowding hazard (low): avg_crowding=0.00, div_log=quadrant=hidden-opportunity → crowding_hazard=0.00. HAZARD framing only; not a directional re"
@@ -4054,8 +3823,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid"
-                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-3.3%, universe_avg_corr=0.07 → orthogonality=0.54. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (med): 平均60日相对收益=-3.3%，全局平均相关性=0.07 → 正交性=0.54。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-0.5%, universe_avg_corr=0.07 → orthogonality=0.58. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (med): 平均60日相对收益=-0.5%，全局平均相关性=0.07 → 正交性=0.58。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -4168,8 +3937,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=NEUTRAL, accel=0.83 → tightness=0.21"
-                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=NEUTRAL，活动加速=accel=0.83，综合紧张度=0.21">
+                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=NEUTRAL, accel=0.89 → tightness=0.22"
+                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=NEUTRAL，活动加速=accel=0.89，综合紧张度=0.22">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -4196,8 +3965,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=13.5%, avg_rs_pctile=0.36, avg_accel_z=1.08 → dislocation=0.15"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=13.5%，平均RS百分位=0.36，平均加速z值=1.08 → 错位=0.15">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=13.7%, avg_rs_pctile=0.30, avg_accel_z=1.25 → dislocation=0.15"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=13.7%，平均RS百分位=0.30，平均加速z值=1.25 → 错位=0.15">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -4210,8 +3979,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — clean entry (high level): avg_clean_quality=1.00, avg_overbought=0.17, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.71"
-                   data-tip-zh="入场质量 — 入场条件良好（high级别）：平均入场质量=1.00，平均超买=0.17，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.71">
+                   data-tip-en="Entry cleanliness — clean entry (high level): avg_clean_quality=1.00, avg_overbought=0.16, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.71"
+                   data-tip-zh="入场质量 — 入场条件良好（high级别）：平均入场质量=1.00，平均超买=0.16，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.71">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot fav"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -4252,8 +4021,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-3.3%, universe_avg_corr=0.07 → orthogonality=0.54. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-3.3%，全局平均相关性=0.07 → 正交性=0.54。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-0.5%, universe_avg_corr=0.07 → orthogonality=0.58. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-0.5%，全局平均相关性=0.07 → 正交性=0.58。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -4279,43 +4048,43 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <p class="ctx-stance">
-                <span class="l-en">Crowding signs building — be choosy, don&#39;t chase.</span>
-                <span class="l-zh">拥挤迹象增加——精选入场，勿追高。</span>
+                <span class="l-en">Not enough option coverage to read crowding.</span>
+                <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 21/21 covered members. HHI=0.084 — call OI moderately concentrated."
-                   data-tip-zh="21/21 个成员覆盖的看涨OI HHI中位数。HHI=0.084 — 看涨OI集中度中等。">
+                   data-tip-en="Coverage: 21/21 members. Strike concentration (median): 0.080 (z +0.52). Call bets tilting toward fewer strikes."
+                   data-tip-zh="覆盖：21/21 个成员。行权价集中度（中位数）：0.080（z +0.52）。看涨押注趋向集中于较少行权价。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">concentration building — be alert</span>
-                  <span class="l-zh">集中度上升——保持警惕</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 21/21 covered members; collapse_into_strength=True (EXIT-CROWD-L3 accrual). Band: complacency."
-                   data-tip-zh="21/21 个成员的篮子PCR比率; 下降进入强势=True (EXIT-CROWD-L3积累). 状态: complacency.">
+                   data-tip-en="Coverage: 21/21 members. Put/call open-interest ratio: 0.47 (z -2.71). Hedges coming off into strength: yes. Positioning: put protection unusually low — complacency hazard."
+                   data-tip-zh="覆盖：21/21 个成员。看跌/看涨持仓比：0.47（z -2.71）。对冲盘在强势中撤离：是。仓位状态：看跌保护异常偏低——自满风险。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">crowding sign — don&#39;t chase</span>
-                  <span class="l-zh">有拥挤迹象——勿追高</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 21/21 covered members. Elevated IV premium = options buyers crowded in (event-premium hazard)."
-                   data-tip-zh="21/21 个成员的IV溢价中位数（IV/RV20-1）。IV溢价偏高 = 期权买入者大量涌入（事件溢价风险）。">
+                   data-tip-en="Coverage: 21/21 members. Options priced vs recent actual swings (median): +61.5% (z +1.82). Options priced far above recent actual swings — event-premium hazard."
+                   data-tip-zh="覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：+61.5%（z +1.82）。期权定价远高于近期实际波动——事件溢价风险。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">crowding sign — don&#39;t chase</span>
-                  <span class="l-zh">有拥挤迹象——勿追高</span>
+                  <span class="l-en">no read yet (accruing)</span>
+                  <span class="l-zh">暂无读数（累积中）</span>
                 </span>
               </div>
               
@@ -4357,20 +4126,20 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot mid"
-                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=1.00 → tightness=0.60"
-                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=1.00，综合紧张度=0.60"></span>
+                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=0.99 → tightness=0.60"
+                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.99，综合紧张度=0.60"></span>
           
           <span class="dot mid"
                 data-tip-en="Stale consensus gap (med): activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.407); gap narrowing. no_dispersion_dat"
                 data-tip-zh="共识差距 (med): 活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.407）；差距收窄。no_dispersion_data"></span>
           
-          <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=49.0%, avg_rs_pctile=0.46, avg_accel_z=-0.14 → dislocation=0.30"
-                data-tip-zh="周期错位 (low): 最大回撤=49.0%，平均RS百分位=0.46，平均加速z值=-0.14 → 错位=0.30"></span>
+          <span class="dot fav"
+                data-tip-en="Cyclical dislocation (high): max_drawdown_from_peak=45.9%, avg_rs_pctile=0.52, avg_accel_z=0.23 → dislocation=0.95"
+                data-tip-zh="周期错位 (high): 最大回撤=45.9%，平均RS百分位=0.52，平均加速z值=0.23 → 错位=0.95"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.35, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.11"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.35，平均超买=0.00，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.11"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.35, avg_overbought=0.03, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.10"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.35，平均超买=0.03，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.10"></span>
           
           <span class="dot fav"
                 data-tip-en="Crowding hazard (low): avg_crowding=0.30, div_log=no_div_log_entry → crowding_hazard=0.30. HAZARD framing only; not a directional read."
@@ -4381,8 +4150,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot caut"
-                data-tip-en="Orthogonality vs market (low): avg_60d_rel=-33.5%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r"
-                data-tip-zh="市场正交性 (low): 平均60日相对收益=-33.5%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (low): avg_60d_rel=-25.9%, universe_avg_corr=0.07 → orthogonality=0.16. Per-basket-to-megacap corr not in spine; 60d relative r"
+                data-tip-zh="市场正交性 (low): 平均60日相对收益=-25.9%，全局平均相关性=0.07 → 正交性=0.16。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -4501,8 +4270,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=1.00 → tightness=0.60"
-                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=1.00，综合紧张度=0.60">
+                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=0.99 → tightness=0.60"
+                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.99，综合紧张度=0.60">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -4529,22 +4298,22 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=49.0%, avg_rs_pctile=0.46, avg_accel_z=-0.14 → dislocation=0.30"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=49.0%，平均RS百分位=0.46，平均加速z值=-0.14 → 错位=0.30">
+                   data-tip-en="Cyclical dislocation — deeply dislocated — long-term story at marked-down prices (high level): max_drawdown_from_peak=45.9%, avg_rs_pctile=0.52, avg_accel_z=0.23 → dislocation=0.95"
+                   data-tip-zh="周期错位 — 深度错位——长期故事处于折价（high级别）：最大回撤=45.9%，平均RS百分位=0.52，平均加速z值=0.23 → 错位=0.95">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
-                  <span class="dot neut"></span>
+                  <span class="dot fav"></span>
                   <span class="l-en">Cyclical dislocation</span>
                   <span class="l-zh">周期错位</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">prices near cycle norm</span>
-                  <span class="l-zh">价格接近周期常态</span>
+                  <span class="l-en">deeply dislocated — long-term story at marked-down prices</span>
+                  <span class="l-zh">深度错位——长期故事处于折价</span>
                 </span>
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.35, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.11"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.35，平均超买=0.00，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.11">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.35, avg_overbought=0.03, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.10"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.35，平均超买=0.03，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.10">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -4585,8 +4354,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — mostly moves with the market (low level): avg_60d_rel=-33.5%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r"
-                   data-tip-zh="市场正交性 — 基本随大盘波动（low级别）：平均60日相对收益=-33.5%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — mostly moves with the market (low level): avg_60d_rel=-25.9%, universe_avg_corr=0.07 → orthogonality=0.16. Per-basket-to-megacap corr not in spine; 60d relative r"
+                   data-tip-zh="市场正交性 — 基本随大盘波动（low级别）：平均60日相对收益=-25.9%，全局平均相关性=0.07 → 正交性=0.16。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -4662,8 +4431,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="共识差距 (low): 活动未加速（MIXED）且修正滞后——一致疲软。no_dispersion_data"></span>
           
           <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=45.2%, avg_rs_pctile=0.21, avg_accel_z=-0.62 → dislocation=0.28"
-                data-tip-zh="周期错位 (low): 最大回撤=45.2%，平均RS百分位=0.21，平均加速z值=-0.62 → 错位=0.28"></span>
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=42.6%, avg_rs_pctile=0.24, avg_accel_z=-0.42 → dislocation=0.27"
+                data-tip-zh="周期错位 (low): 最大回撤=42.6%，平均RS百分位=0.24，平均加速z值=-0.42 → 错位=0.27"></span>
           
           <span class="dot caut"
                 data-tip-en="Entry cleanliness (low): avg_clean_quality=0.35, avg_overbought=0.00, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.11"
@@ -4678,8 +4447,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot caut"
-                data-tip-en="Orthogonality vs market (low): avg_60d_rel=-45.6%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r"
-                data-tip-zh="市场正交性 (low): 平均60日相对收益=-45.6%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (low): avg_60d_rel=-40.1%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r"
+                data-tip-zh="市场正交性 (low): 平均60日相对收益=-40.1%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -4820,8 +4589,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=45.2%, avg_rs_pctile=0.21, avg_accel_z=-0.62 → dislocation=0.28"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=45.2%，平均RS百分位=0.21，平均加速z值=-0.62 → 错位=0.28">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=42.6%, avg_rs_pctile=0.24, avg_accel_z=-0.42 → dislocation=0.27"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=42.6%，平均RS百分位=0.24，平均加速z值=-0.42 → 错位=0.27">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -4876,8 +4645,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — mostly moves with the market (low level): avg_60d_rel=-45.6%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r"
-                   data-tip-zh="市场正交性 — 基本随大盘波动（low级别）：平均60日相对收益=-45.6%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — mostly moves with the market (low level): avg_60d_rel=-40.1%, universe_avg_corr=0.07 → orthogonality=0.09. Per-basket-to-megacap corr not in spine; 60d relative r"
+                   data-tip-zh="市场正交性 — 基本随大盘波动（low级别）：平均60日相对收益=-40.1%，全局平均相关性=0.07 → 正交性=0.09。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -4907,8 +4676,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 7/11 covered members. HHI=0.088 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="7/11 个成员覆盖的看涨OI HHI中位数。HHI=0.088 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 7/11 members. Strike concentration (median): 0.088 (z -0.22). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：7/11 个成员。行权价集中度（中位数）：0.088（z -0.22）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -4919,8 +4688,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 7/11 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal."
-                   data-tip-zh="7/11 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal.">
+                   data-tip-en="Coverage: 7/11 members. Put/call open-interest ratio: 0.50 (z -0.47). Hedges coming off into strength: no. Positioning: put/call balance in its normal range."
+                   data-tip-zh="覆盖：7/11 个成员。看跌/看涨持仓比：0.50（z -0.47）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -4931,8 +4700,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 7/11 covered members. IV premium near historical norm."
-                   data-tip-zh="7/11 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 7/11 members. Options priced vs recent actual swings (median): +4.9% (z +0.15). Options priced near their usual level."
+                   data-tip-zh="覆盖：7/11 个成员。期权定价相对近期实际波动（中位数）：+4.9%（z +0.15）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -4981,20 +4750,20 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot mid"
-                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=0.75 → tightness=0.46"
-                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.75，综合紧张度=0.46"></span>
+                data-tip-en="Supply bottleneck tightness (med): bottleneck_band=band=TIGHT (text), accel=0.73 → tightness=0.45"
+                data-tip-zh="供应瓶颈紧张度 (med): 瓶颈波段=band=TIGHT (text)，活动加速=accel=0.73，综合紧张度=0.45"></span>
           
           <span class="dot neut"
                 data-tip-en="Stale consensus gap (low): activity not accelerating (ROLLING), revisions positive (level=POSITIVE, breadth=0.636); no gap. no_dispersion_data"
                 data-tip-zh="共识差距 (low): 活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.636）；无差距。no_dispersion_data"></span>
           
           <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=7.9%, avg_rs_pctile=0.61, avg_accel_z=-1.91 → dislocation=0.28"
-                data-tip-zh="周期错位 (low): 最大回撤=7.9%，平均RS百分位=0.61，平均加速z值=-1.91 → 错位=0.28"></span>
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=6.9%, avg_rs_pctile=0.61, avg_accel_z=-2.46 → dislocation=0.27"
+                data-tip-zh="周期错位 (low): 最大回撤=6.9%，平均RS百分位=0.61，平均加速z值=-2.46 → 错位=0.27"></span>
           
-          <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.55, avg_overbought=0.14, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.27"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.55，平均超买=0.14，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.27"></span>
+          <span class="dot mid"
+                data-tip-en="Entry cleanliness (med): avg_clean_quality=0.70, avg_overbought=0.14, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.42"
+                data-tip-zh="入场质量 (med): 平均入场质量=0.70，平均超买=0.14，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.42"></span>
           
           <span class="dot fav"
                 data-tip-en="Crowding hazard (low): avg_crowding=0.30, div_log=no_div_log_entry → crowding_hazard=0.30. HAZARD framing only; not a directional read."
@@ -5005,8 +4774,8 @@ a { text-decoration:none; color:var(--link); }
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot mid"
-                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-0.7%, universe_avg_corr=0.07 → orthogonality=0.58. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (med): 平均60日相对收益=-0.7%，全局平均相关性=0.07 → 正交性=0.58。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (med): avg_60d_rel=-4.1%, universe_avg_corr=0.07 → orthogonality=0.52. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (med): 平均60日相对收益=-4.1%，全局平均相关性=0.07 → 正交性=0.52。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -5119,8 +4888,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=0.75 → tightness=0.46"
-                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.75，综合紧张度=0.46">
+                   data-tip-en="Supply bottleneck tightness — some tightness (med level): bottleneck_band=band=TIGHT (text), accel=0.73 → tightness=0.45"
+                   data-tip-zh="供应瓶颈紧张度 — 略有紧张（med级别）：瓶颈波段=band=TIGHT (text)，活动加速=accel=0.73，综合紧张度=0.45">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -5147,8 +4916,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=7.9%, avg_rs_pctile=0.61, avg_accel_z=-1.91 → dislocation=0.28"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=7.9%，平均RS百分位=0.61，平均加速z值=-1.91 → 错位=0.28">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=6.9%, avg_rs_pctile=0.61, avg_accel_z=-2.46 → dislocation=0.27"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=6.9%，平均RS百分位=0.61，平均加速z值=-2.46 → 错位=0.27">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -5161,16 +4930,16 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.55, avg_overbought=0.14, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.27"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.55，平均超买=0.14，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.27">
+                   data-tip-en="Entry cleanliness — so-so entry (med level): avg_clean_quality=0.70, avg_overbought=0.14, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.42"
+                   data-tip-zh="入场质量 — 入场条件一般（med级别）：平均入场质量=0.70，平均超买=0.14，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.42">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
-                  <span class="dot caut"></span>
+                  <span class="dot mid"></span>
                   <span class="l-en">Entry cleanliness</span>
                   <span class="l-zh">入场质量</span>
                 </span>
                 <span class="ctx-row-value">
-                  <span class="l-en">messy entry — stretched or overheated</span>
-                  <span class="l-zh">入场条件较差——超买或过热</span>
+                  <span class="l-en">so-so entry</span>
+                  <span class="l-zh">入场条件一般</span>
                 </span>
               </div>
               
@@ -5203,8 +4972,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-0.7%, universe_avg_corr=0.07 → orthogonality=0.58. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-0.7%，全局平均相关性=0.07 → 正交性=0.58。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — partly market-driven (med level): avg_60d_rel=-4.1%, universe_avg_corr=0.07 → orthogonality=0.52. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 部分随大盘（med级别）：平均60日相对收益=-4.1%，全局平均相关性=0.07 → 正交性=0.52。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot mid"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -5234,8 +5003,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 16/16 covered members. HHI=0.108 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="16/16 个成员覆盖的看涨OI HHI中位数。HHI=0.108 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 16/16 members. Strike concentration (median): 0.108 (z -0.87). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：16/16 个成员。行权价集中度（中位数）：0.108（z -0.87）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -5246,8 +5015,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 16/16 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal."
-                   data-tip-zh="16/16 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal.">
+                   data-tip-en="Coverage: 16/16 members. Put/call open-interest ratio: 0.82 (z +0.57). Hedges coming off into strength: no. Positioning: put/call balance in its normal range."
+                   data-tip-zh="覆盖：16/16 个成员。看跌/看涨持仓比：0.82（z +0.57）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -5258,8 +5027,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 16/16 covered members. IV premium compressed vs own history."
-                   data-tip-zh="16/16 个成员的IV溢价中位数（IV/RV20-1）。相对自身历史，IV溢价受压。">
+                   data-tip-en="Coverage: 16/16 members. Options priced vs recent actual swings (median): -21.4% (z -1.43). Options priced low versus their own history."
+                   data-tip-zh="覆盖：16/16 个成员。期权定价相对近期实际波动（中位数）：-21.4%（z -1.43）。期权定价低于自身历史水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -5605,32 +5374,32 @@ a { text-decoration:none; color:var(--link); }
         <div class="legs-row">
           
           <span class="dot neut"
-                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=TIGHTENING (fingerprint), accel=0.60 → tightness=0.33"
-                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.60，综合紧张度=0.33"></span>
+                data-tip-en="Supply bottleneck tightness (low): bottleneck_band=band=TIGHTENING (fingerprint), accel=0.60 → tightness=0.34"
+                data-tip-zh="供应瓶颈紧张度 (low): 瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.60，综合紧张度=0.34"></span>
           
           <span class="dot neut"
                 data-tip-en="Stale consensus gap (low): activity not accelerating (FLAT_LOW) and revisions lagging — aligned weakness. no_dispersion_data"
                 data-tip-zh="共识差距 (low): 活动未加速（FLAT_LOW）且修正滞后——一致疲软。no_dispersion_data"></span>
           
           <span class="dot neut"
-                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=3.6%, avg_rs_pctile=0.96, avg_accel_z=-0.27 → dislocation=0.24"
-                data-tip-zh="周期错位 (low): 最大回撤=3.6%，平均RS百分位=0.96，平均加速z值=-0.27 → 错位=0.24"></span>
+                data-tip-en="Cyclical dislocation (low): max_drawdown_from_peak=1.5%, avg_rs_pctile=0.98, avg_accel_z=-0.49 → dislocation=0.21"
+                data-tip-zh="周期错位 (low): 最大回撤=1.5%，平均RS百分位=0.98，平均加速z值=-0.49 → 错位=0.21"></span>
           
           <span class="dot caut"
-                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.50, avg_overbought=0.67, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.06"
-                data-tip-zh="入场质量 (low): 平均入场质量=0.50，平均超买=0.67，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.06"></span>
+                data-tip-en="Entry cleanliness (low): avg_clean_quality=0.50, avg_overbought=0.77, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.03"
+                data-tip-zh="入场质量 (low): 平均入场质量=0.50，平均超买=0.77，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.03"></span>
           
           <span class="dot caut"
-                data-tip-en="Crowding hazard (high): avg_crowding=0.71, div_log=no_div_log_entry → crowding_hazard=0.71. HAZARD framing only; not a directional read."
-                data-tip-zh="拥挤风险 (high): 平均拥挤=0.71，背离日志=no_div_log_entry → 拥挤风险=0.71。仅为风险识别，非方向性判断。"></span>
+                data-tip-en="Crowding hazard (high): avg_crowding=0.74, div_log=no_div_log_entry → crowding_hazard=0.74. HAZARD framing only; not a directional read."
+                data-tip-zh="拥挤风险 (high): 平均拥挤=0.74，背离日志=no_div_log_entry → 拥挤风险=0.74。仅为风险识别，非方向性判断。"></span>
           
           <span class="dot caut"
                 data-tip-en="Falsifier clarity (low): n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00"
                 data-tip-zh="假证伪清晰度 (low): 假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"></span>
           
           <span class="dot fav"
-                data-tip-en="Orthogonality vs market (high): avg_60d_rel=35.5%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
-                data-tip-zh="市场正交性 (high): 平均60日相对收益=35.5%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
+                data-tip-en="Orthogonality vs market (high): avg_60d_rel=32.8%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
+                data-tip-zh="市场正交性 (high): 平均60日相对收益=32.8%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"></span>
           
         </div>
       </td>
@@ -5743,8 +5512,8 @@ a { text-decoration:none; color:var(--link); }
               <h4><span class="l-en">Setup legs</span><span class="l-zh">结构腿</span></h4>
               
               <div class="ctx-row"
-                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=TIGHTENING (fingerprint), accel=0.60 → tightness=0.33"
-                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.60，综合紧张度=0.33">
+                   data-tip-en="Supply bottleneck tightness — not tight — no support from supply (low level): bottleneck_band=band=TIGHTENING (fingerprint), accel=0.60 → tightness=0.34"
+                   data-tip-zh="供应瓶颈紧张度 — 不紧张——供应端无支持（low级别）：瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.60，综合紧张度=0.34">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Supply bottleneck tightness</span>
@@ -5771,8 +5540,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=3.6%, avg_rs_pctile=0.96, avg_accel_z=-0.27 → dislocation=0.24"
-                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=3.6%，平均RS百分位=0.96，平均加速z值=-0.27 → 错位=0.24">
+                   data-tip-en="Cyclical dislocation — prices near cycle norm (low level): max_drawdown_from_peak=1.5%, avg_rs_pctile=0.98, avg_accel_z=-0.49 → dislocation=0.21"
+                   data-tip-zh="周期错位 — 价格接近周期常态（low级别）：最大回撤=1.5%，平均RS百分位=0.98，平均加速z值=-0.49 → 错位=0.21">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot neut"></span>
                   <span class="l-en">Cyclical dislocation</span>
@@ -5785,8 +5554,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.50, avg_overbought=0.67, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.06"
-                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.50，平均超买=0.67，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.06">
+                   data-tip-en="Entry cleanliness — messy entry — stretched or overheated (low level): avg_clean_quality=0.50, avg_overbought=0.77, ext_abs=0.00, hype_stretched=0.80 → cleanliness=0.03"
+                   data-tip-zh="入场质量 — 入场条件较差——超买或过热（low级别）：平均入场质量=0.50，平均超买=0.77，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.03">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Entry cleanliness</span>
@@ -5799,8 +5568,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Crowding hazard — crowded — caution (high level): avg_crowding=0.71, div_log=no_div_log_entry → crowding_hazard=0.71. HAZARD framing only; not a directional read."
-                   data-tip-zh="拥挤风险 — 拥挤——需谨慎（high级别）：平均拥挤=0.71，背离日志=no_div_log_entry → 拥挤风险=0.71。仅为风险识别，非方向性判断。">
+                   data-tip-en="Crowding hazard — crowded — caution (high level): avg_crowding=0.74, div_log=no_div_log_entry → crowding_hazard=0.74. HAZARD framing only; not a directional read."
+                   data-tip-zh="拥挤风险 — 拥挤——需谨慎（high级别）：平均拥挤=0.74，背离日志=no_div_log_entry → 拥挤风险=0.74。仅为风险识别，非方向性判断。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot caut"></span>
                   <span class="l-en">Crowding hazard</span>
@@ -5827,8 +5596,8 @@ a { text-decoration:none; color:var(--link); }
               </div>
               
               <div class="ctx-row"
-                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=35.5%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
-                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=35.5%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
+                   data-tip-en="Orthogonality vs market — moves on its own story (high level): avg_60d_rel=32.8%, universe_avg_corr=0.07 → orthogonality=1.00. Per-basket-to-megacap corr not in spine; 60d relative re"
+                   data-tip-zh="市场正交性 — 走自身逻辑（high级别）：平均60日相对收益=32.8%，全局平均相关性=0.07 → 正交性=1.00。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。">
                 <span class="ctx-row-label" style="display:flex;align-items:center;gap:5px;">
                   <span class="dot fav"></span>
                   <span class="l-en">Orthogonality vs market</span>
@@ -5858,8 +5627,8 @@ a { text-decoration:none; color:var(--link); }
                 <span class="l-zh">期权覆盖不足，无法读取拥挤度。</span>
               </p>
               <div class="ctx-row"
-                   data-tip-en="Median call-OI HHI across 9/9 covered members. HHI=0.062 — call OI distributed across strikes (no concentration hazard)."
-                   data-tip-zh="9/9 个成员覆盖的看涨OI HHI中位数。HHI=0.062 — 看涨OI分布于多个行权价（无集中风险）。">
+                   data-tip-en="Coverage: 9/9 members. Strike concentration (median): 0.062 (z -0.96). Call bets spread across many strikes — no crowding sign."
+                   data-tip-zh="覆盖：9/9 个成员。行权价集中度（中位数）：0.062（z -0.96）。看涨押注分散于多个行权价——无拥挤迹象。">
                 <span class="ctx-row-label">
                   <span class="l-en">Bets concentrated in few names?</span>
                   <span class="l-zh">押注是否集中于少数标的？</span>
@@ -5870,8 +5639,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Basket PCR across 9/9 covered members; collapse_into_strength=False (EXIT-CROWD-L3 accrual). Band: normal."
-                   data-tip-zh="9/9 个成员的篮子PCR比率; 下降进入强势=False (EXIT-CROWD-L3积累). 状态: normal.">
+                   data-tip-en="Coverage: 9/9 members. Put/call open-interest ratio: 0.60 (z +1.22). Hedges coming off into strength: no. Positioning: put/call balance in its normal range."
+                   data-tip-zh="覆盖：9/9 个成员。看跌/看涨持仓比：0.60（z +1.22）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。">
                 <span class="ctx-row-label">
                   <span class="l-en">Hedging vs chasing</span>
                   <span class="l-zh">对冲还是追涨</span>
@@ -5882,8 +5651,8 @@ a { text-decoration:none; color:var(--link); }
                 </span>
               </div>
               <div class="ctx-row"
-                   data-tip-en="Median IV-premium (IV/RV20-1) across 9/9 covered members. IV premium near historical norm."
-                   data-tip-zh="9/9 个成员的IV溢价中位数（IV/RV20-1）。IV溢价接近历史正常水平。">
+                   data-tip-en="Coverage: 9/9 members. Options priced vs recent actual swings (median): +8.9% (z -0.17). Options priced near their usual level."
+                   data-tip-zh="覆盖：9/9 个成员。期权定价相对近期实际波动（中位数）：+8.9%（z -0.17）。期权定价接近正常水平。">
                 <span class="ctx-row-label">
                   <span class="l-en">Options priced rich?</span>
                   <span class="l-zh">期权定价是否偏贵？</span>
@@ -5903,8 +5672,8 @@ a { text-decoration:none; color:var(--link); }
               <div class="ctx-h4-wrap">
                 <h4><span class="l-en">Clinical pipeline</span><span class="l-zh">临床管线</span></h4>
                 <span class="ctx-tip-icon"
-                      data-tip-en="Context only — shows where research money is committing, not a buy signal. Source: ClinicalTrials.gov v2 (keyless, INDUSTRY-sponsored only). as_of: 2026-07-21. 1/1 modalities have data; 120 total INDUSTRY-sponsored studies; most recent: 2026-07"
-                      data-tip-zh="仅供参考——显示研究资金投向，非买入信号。来源：ClinicalTrials.gov v2（无需密钥，仅行业赞助）。截止日期：2026-07-21。1个模态中1个有数据；共120个行业赞助研究；最新月份：2026-07">?</span>
+                      data-tip-en="Context only — shows where research money is committing, not a buy signal. Source: ClinicalTrials.gov v2 (keyless, INDUSTRY-sponsored only). as_of: 2026-07-22. 1/1 modalities have data; 120 total INDUSTRY-sponsored studies; most recent: 2026-07"
+                      data-tip-zh="仅供参考——显示研究资金投向，非买入信号。来源：ClinicalTrials.gov v2（无需密钥，仅行业赞助）。截止日期：2026-07-22。1个模态中1个有数据；共120个行业赞助研究；最新月份：2026-07">?</span>
               </div>
               <p class="ctx-stance">
                 <span class="l-en">Background evidence — informs the thesis, not a buy trigger.</span>
@@ -6211,8 +5980,8 @@ a { text-decoration:none; color:var(--link); }
               <div class="ctx-h4-wrap">
                 <h4><span class="l-en">Clinical pipeline</span><span class="l-zh">临床管线</span></h4>
                 <span class="ctx-tip-icon"
-                      data-tip-en="Context only — shows where research money is committing, not a buy signal. Source: ClinicalTrials.gov v2 (keyless, INDUSTRY-sponsored only). as_of: 2026-07-21. 6/6 modalities have data; 1817 total INDUSTRY-sponsored studies; most recent: 2026-07"
-                      data-tip-zh="仅供参考——显示研究资金投向，非买入信号。来源：ClinicalTrials.gov v2（无需密钥，仅行业赞助）。截止日期：2026-07-21。6个模态中6个有数据；共1817个行业赞助研究；最新月份：2026-07">?</span>
+                      data-tip-en="Context only — shows where research money is committing, not a buy signal. Source: ClinicalTrials.gov v2 (keyless, INDUSTRY-sponsored only). as_of: 2026-07-22. 6/6 modalities have data; 1817 total INDUSTRY-sponsored studies; most recent: 2026-07"
+                      data-tip-zh="仅供参考——显示研究资金投向，非买入信号。来源：ClinicalTrials.gov v2（无需密钥，仅行业赞助）。截止日期：2026-07-22。6个模态中6个有数据；共1817个行业赞助研究；最新月份：2026-07">?</span>
               </div>
               <p class="ctx-stance">
                 <span class="l-en">Background evidence — informs the thesis, not a buy trigger.</span>
@@ -6555,7 +6324,7 @@ a { text-decoration:none; color:var(--link); }
 
 </div>
 
-<script src="theme.js"></script>
+<script src="theme.js?v=195f6d56" defer></script>
 <script>
 (function() {
   "use strict";

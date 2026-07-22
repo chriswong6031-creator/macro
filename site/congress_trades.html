@@ -7,126 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Congressional Trades — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
-<style>
-  /* ---------- shared Research-Reports chrome ---------- */
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
-  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
-  a { color:var(--link); text-decoration:none; }
-  .wrap { max-width:1060px; margin:0 auto; }
-  /* unambiguous move colours (NOT tied to the zh red=up swap) */
-  .r-neg { color:#d23f3f; font-weight:600; }
-  .r-pos { color:#1f9a55; font-weight:600; }
-  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
-  html[data-theme="dark"] .r-pos { color:#3fc07e; }
-  .mut { color:var(--muted); }
-  /* tags / chips */
-  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
-          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
-  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
-  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
-  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
-  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
-  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
-  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
-  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
-  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
-  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
-  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
-  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
-  
-  .cg-hero { margin:26px auto 10px; max-width:1060px; }
-  .cg-hero h1 { font-size:26px; margin:6px 0 4px; }
-  .cg-sub { color:var(--muted); font-size:13px; max-width:820px; }
-  .cg-meta { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px; }
-  .cg-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; max-width:1060px; margin:16px auto 4px; }
-  @media (max-width:680px){ .cg-stats { grid-template-columns:repeat(2,1fr); } }
-  .cg-stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
-  .cg-stat .k { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
-  .cg-stat .v { font-size:24px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:6px; }
-  .cg-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:16px auto; max-width:1060px; }
-  .cg-card h2 { font-size:15px; margin:0 0 4px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
-  .cg-card .h-note { font-size:12px; color:var(--muted); font-weight:400; }
-  table.ad { width:100%; border-collapse:collapse; font-size:12.5px; }
-  table.ad th { text-align:left; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); padding:6px 8px; white-space:nowrap; }
-  table.ad td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-  table.ad tr:last-child td { border-bottom:none; }
-  .tk { font-weight:700; font-variant-numeric:tabular-nums; }
-  .tk a { color:inherit; text-decoration:none; }
-  .tk a:hover { text-decoration:underline; }
-  .num, td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .mut2 { color:var(--muted); }
-  .cg-score { display:inline-flex; align-items:center; gap:7px; min-width:96px; }
-  .cg-bar { position:relative; flex:1; min-width:54px; height:7px; border-radius:4px; background:var(--panel2); overflow:hidden; }
-  .cg-bar i { position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:var(--link); }
-  .cg-bar.hi i { background:#1f9a55; } .cg-bar.mid i { background:#5b8def; } .cg-bar.lo i { background:var(--muted); }
-  html[data-theme="dark"] .cg-bar.hi i { background:#3fc07e; }
-  .cg-num { font-variant-numeric:tabular-nums; font-weight:700; }
-  .cg-flag { display:inline-block; padding:1px 7px; border-radius:5px; font-size:10px; font-weight:700; letter-spacing:.02em; white-space:nowrap; }
-  .cg-flag.act  { background:#1f9a5522; color:#1f9a55; } html[data-theme="dark"] .cg-flag.act { color:#3fc07e; }
-  .cg-flag.wait { background:#e0973a22; color:#c77a1f; } html[data-theme="dark"] .cg-flag.wait { color:#e0973a; }
-  .cg-flag.imp  { background:#5b8def22; color:#5b8def; }
-  .cg-flag.bip  { background:var(--panel2); color:var(--text); border:1px solid var(--line); }
-  .cg-flag.etf  { background:#a56eff22; color:#8b5cf6; border:1px solid #8b5cf644; }
-  .cg-flag.stale{ background:var(--panel2); color:var(--muted); border:1px solid var(--line); font-size:9.5px; }
-  .cg-flag.late { background:#e0393922; color:#c82828; font-size:9.5px; }
-  .cg-flag.gate-t1 { background:#f59e0b22; color:#d97706; font-weight:800; font-size:10px; }
-  .cg-flag.gate-t2 { background:#3b82f622; color:#2563eb; font-weight:800; font-size:10px; }
-  .cg-flag.gate-t3 { background:#10b98122; color:#059669; font-weight:700; font-size:10px; }
-  html[data-theme="dark"] .cg-flag.gate-t1 { color:#fbbf24; }
-  html[data-theme="dark"] .cg-flag.gate-t2 { color:#60a5fa; }
-  html[data-theme="dark"] .cg-flag.gate-t3 { color:#34d399; }
-  .cg-flag.t0 { background:#0ea5e922; color:#0284c7; font-weight:800; } html[data-theme="dark"] .cg-flag.t0 { color:#38bdf8; }
-  /* entry chips */
-  .cg-flag.wash  { background:#0891b222; color:#0369a1; } html[data-theme="dark"] .cg-flag.wash { color:#38bdf8; }
-  .cg-flag.wash-dual { background:#7c3aed22; color:#6d28d9; font-weight:800; } html[data-theme="dark"] .cg-flag.wash-dual { color:#a78bfa; }
-  .cg-flag.wmacd { background:#10b98122; color:#059669; } html[data-theme="dark"] .cg-flag.wmacd { color:#34d399; }
-  .cg-flag.wstoch { background:#6366f122; color:#4338ca; } html[data-theme="dark"] .cg-flag.wstoch { color:#818cf8; }
-  /* member chips */
-  .cg-mem { display:inline-block; font-size:10.5px; color:var(--muted); padding:0 5px; border:1px solid var(--line); border-radius:5px; margin:1px 2px 1px 0; white-space:nowrap; }
-  .cg-mem.D { border-color:#5b8def88; } .cg-mem.R { border-color:#d23f3f88; }
-  /* skill-tier member chip classes (replace inline member-chip span) */
-  .cg-mem.sk-proven { border-color:#1f9a5566; color:#1f9a55; }
-  .cg-mem.sk-watch  { border-color:#e0973a66; color:#c77a1f; }
-  .cg-mem.sk-lim    { color:var(--muted); }
-  html[data-theme="dark"] .cg-mem.sk-proven { color:#3fc07e; }
-  html[data-theme="dark"] .cg-mem.sk-watch  { color:#e0973a; }
-  .side-chip { display:inline-block; padding:1px 7px; border-radius:5px; font-size:10.5px; font-weight:700; }
-  .side-chip.buy  { background:#1f9a5522; color:#1f9a55; } html[data-theme="dark"] .side-chip.buy { color:#3fc07e; }
-  .side-chip.sell { background:#d23f3f22; color:#d23f3f; } html[data-theme="dark"] .side-chip.sell { color:#ef6a6a; }
-  .arrow-buy  { color:#1f9a55; } html[data-theme="dark"] .arrow-buy  { color:#3fc07e; }
-  .arrow-sell { color:#d23f3f; } html[data-theme="dark"] .arrow-sell { color:#ef6a6a; }
-  .feedlink { font-size:11.5px; }
-  .mb-tier-proven { color:#1f9a55; font-weight:700; } html[data-theme="dark"] .mb-tier-proven { color:#3fc07e; }
-  .mb-tier-watch  { color:#5b8def; font-weight:600; }
-  .mb-tier-limited{ color:var(--muted); }
-  /* front-line row accent */
-  tr.fl { border-left:3px solid #f59e0b; background:rgba(245,158,11,0.04); }
-  html[data-theme="dark"] tr.fl { background:rgba(245,158,11,0.07); }
-  tr.fl td:first-child { padding-left:5px; }
-  /* filter bar */
-  .cg-filter-bar { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:10px 0 8px; }
-  .cg-fchip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); font-size:11px; font-weight:600; cursor:pointer; transition:background .15s,color .15s,border-color .15s,box-shadow .15s; white-space:nowrap; }
-  .cg-fchip:hover { border-color:var(--link); color:var(--text); }
-  .cg-fchip[aria-pressed="true"] { color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.08); }
-  .cg-fchip.fp-prime[aria-pressed="true"]  { background:#d97706; border-color:#d97706; }
-  .cg-fchip.fp-setup[aria-pressed="true"]  { background:#2563eb; border-color:#2563eb; }
-  .cg-fchip.fp-w2w[aria-pressed="true"]    { background:#0369a1; border-color:#0369a1; }
-  .cg-fchip.fp-w1m[aria-pressed="true"]    { background:#0369a1; border-color:#0369a1; }
-  .cg-fchip.fp-dual[aria-pressed="true"]   { background:#6d28d9; border-color:#6d28d9; }
-  .cg-fchip.fp-wmacd[aria-pressed="true"]  { background:#059669; border-color:#059669; }
-  .cg-fchip.fp-wstoch[aria-pressed="true"] { background:#4338ca; border-color:#4338ca; }
-  .cg-fchip.fp-fresh[aria-pressed="true"]  { background:#475569; border-color:#475569; }
-  .cg-fchip .fc-cnt { font-size:9.5px; opacity:.75; }
-  .cg-recency { display:inline-flex; border:1px solid var(--line); border-radius:20px; overflow:hidden; }
-  .cg-recency button { padding:3px 10px; font-size:11px; font-weight:600; background:var(--panel2); color:var(--muted); border:none; cursor:pointer; transition:background .15s,color .15s; }
-  .cg-recency button.active { background:var(--link); color:#fff; }
-  .cg-filter-count { font-size:11px; color:var(--muted); margin-left:4px; }
-  .cg-filter-reset { font-size:11px; color:var(--link); cursor:pointer; text-decoration:underline; display:none; }
-  .cg-hide { display:none !important; }
-
-</style>
+<link rel="stylesheet" href="theme.css?v=a1aa8c55">
+<link rel="stylesheet" href="assets/css/1ced1c16.css?v=1ced1c16">
 
 
 
@@ -301,71 +183,7 @@
       </div>
     </div>
     
-    <style>
-    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
-       clip off the left edge. Instead anchor the mega to the full-width .nav-links
-       row (its right edge = the nav rail right): make .nav-links the positioning
-       context and the Research .nav-dd static >700px, so right:0 right-aligns the
-       panel to the rail and it stays fully on-screen. The ::before bridges the
-       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
-    @media (min-width:701px){
-      /* nav-links is the positioning context for the rail-anchored mega; desktop
-         only, so it never overrides theme.js's position:absolute hamburger flyout
-         (≤700px), which shares this specificity. */
-      .site-nav .nav-links,.topbar .nav-links{position:relative}
-      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
-      /* the base .nav-dd::after bridge would become a full-width strip once the
-         trigger is static — disable it; the mega's own ::before bridges the gap. */
-      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
-        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
-      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
-    }
-    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      padding-bottom:13px;margin-bottom:13px;
-      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
-    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-      white-space:normal;text-decoration:none;
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
-      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
-      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
-    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
-      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
-      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
-    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
-    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
-    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
-    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
-    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
-    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
-    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
-    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
-      white-space:normal;text-decoration:none;transition:background .15s ease}
-    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
-    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
-    .nav-mega .nm-tx{min-width:0}
-    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
-    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
-      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
-    @media (max-width:1080px) and (min-width:701px){
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
-      .nav-mega-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:700px){
-      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
-      .nav-mega-grid{grid-template-columns:1fr;gap:0}
-      .nav-mega-h{padding-top:9px}
-      /* the hamburger accordion caps each open dropdown at max-height:600px
-         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
-         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
-         Same specificity trick overrides theme.js's generic accordion-panel
-         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
-         submenus) with symmetric sides + top breathing room, so the feature
-         cards read centered under the trigger instead of crooked. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
-    </style>
+    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -424,8 +242,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -467,7 +285,7 @@
   <div class="cg-stat"><div class="k"><span class="l-en">Watchlist</span><span class="l-zh">观察标的</span></div><div class="v">881</div></div>
   <div class="cg-stat"><div class="k"><span class="l-en">Important</span><span class="l-zh">重点</span></div><div class="v">316</div></div>
   <div class="cg-stat"><div class="k"><span class="l-en">Bipartisan</span><span class="l-zh">两党</span></div><div class="v">116</div></div>
-  <div class="cg-stat"><div class="k"><span class="l-en">Act-now</span><span class="l-zh">现在可买</span></div><div class="v">64</div></div>
+  <div class="cg-stat"><div class="k"><span class="l-en">Act-now</span><span class="l-zh">现在可买</span></div><div class="v">68</div></div>
   <div class="cg-stat"><div class="k"><span class="l-en">Entry setups</span><span class="l-zh">入场信号</span></div><div class="v">136</div></div>
 </div>
 
@@ -1120,6 +938,56 @@
     </tr>
   
     <tr class="fl"
+      data-prime="1"
+      data-setup=""
+      data-w2w="1"
+      data-w1m=""
+      data-dual=""
+      data-fresh="1"
+      data-fl="1"
+      data-wmacd=""
+      data-wstoch="crossed"
+      data-txage="44">
+      <td class="mut2">13</td>
+      <td>
+        <span class="tk"><a href="stock.html#PFE">PFE</a></span>
+        <span class="cg-flag gate-t1" data-tip-en="⚡ Prime entry — signal gate T1" data-tip-zh="⚡ 优质入场 — 信号门 T1">⚡ T1</span>
+        
+        <span class="cg-flag wash"
+              data-tip-en="🌊 2-week StochRSI washed out — K=7 (under 20 = deeply oversold); washed out now."
+              data-tip-zh="🌊 两周随机RSI超跌 — K=7（低于20=深度超卖）；当前处于超跌区。">🌊2W</span><span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=26.9 D=13.4, D at cross=4.6, 1 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=26.9 D=13.4，穿越时D=4.6，1根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">Pfizer Inc</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:53.2%"></i></span><span class="cg-num">53</span></span></td>
+      <td class="num"><span class="cg-num">43</span></td>
+      <td class="num"><span class="cg-num">42</span></td>
+      <td class="num"><span class="cg-num">66</span></td>
+      <td class="num"><span class="cg-num">66</span></td>
+      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">3S</span></td>
+      <td>
+        <b class="cg-num">3</b>
+        <span class="cg-mem sk-watch" data-tip-en="Senate · Republican · 1 disclosure(s) · hit 33% (n=1049, shrunk) · watch · last: sold" data-tip-zh="参议院 · 共和党 · 披露 1 笔 · 胜率 33%（n=1049，收缩后）· 观察中 · 最近：卖出">Tommy Tuberville <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 3 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 3 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：卖出">Gilbert Cisneros <span class="arrow-sell">▼</span></span>
+        
+        
+      </td>
+      <td>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">constructive pullback</span><span class="l-zh">健康回调</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 44d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 27d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class="fl"
       data-prime=""
       data-setup=""
       data-w2w=""
@@ -1130,7 +998,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="36">
-      <td class="mut2">13</td>
+      <td class="mut2">14</td>
       <td>
         <span class="tk"><a href="stock.html#META">META</a></span>
         
@@ -1180,7 +1048,7 @@
       data-wmacd="crossed"
       data-wstoch="crossed"
       data-txage="56">
-      <td class="mut2">14</td>
+      <td class="mut2">15</td>
       <td>
         <span class="tk"><a href="stock.html#NDAQ">NDAQ</a></span>
         
@@ -1215,56 +1083,6 @@
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">mixed / unconfirmed</span><span class="l-zh">信号混杂 / 未确认</span>
         <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 19d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class="fl"
-      data-prime="1"
-      data-setup=""
-      data-w2w="1"
-      data-w1m=""
-      data-dual=""
-      data-fresh="1"
-      data-fl="1"
-      data-wmacd=""
-      data-wstoch="crossed"
-      data-txage="44">
-      <td class="mut2">15</td>
-      <td>
-        <span class="tk"><a href="stock.html#PFE">PFE</a></span>
-        <span class="cg-flag gate-t1" data-tip-en="⚡ Prime entry — signal gate T1" data-tip-zh="⚡ 优质入场 — 信号门 T1">⚡ T1</span>
-        
-        <span class="cg-flag wash"
-              data-tip-en="🌊 2-week StochRSI washed out — K=7 (under 20 = deeply oversold); washed out now."
-              data-tip-zh="🌊 两周随机RSI超跌 — K=7（低于20=深度超卖）；当前处于超跌区。">🌊2W</span><span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=26.9 D=13.4, D at cross=4.6, 1 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=26.9 D=13.4，穿越时D=4.6，1根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">Pfizer Inc</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:51.4%"></i></span><span class="cg-num">51</span></span></td>
-      <td class="num"><span class="cg-num">43</span></td>
-      <td class="num"><span class="cg-num">42</span></td>
-      <td class="num"><span class="cg-num">54</span></td>
-      <td class="num"><span class="cg-num">66</span></td>
-      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">3S</span></td>
-      <td>
-        <b class="cg-num">3</b>
-        <span class="cg-mem sk-watch" data-tip-en="Senate · Republican · 1 disclosure(s) · hit 33% (n=1049, shrunk) · watch · last: sold" data-tip-zh="参议院 · 共和党 · 披露 1 笔 · 胜率 33%（n=1049，收缩后）· 观察中 · 最近：卖出">Tommy Tuberville <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 3 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 3 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：卖出">Gilbert Cisneros <span class="arrow-sell">▼</span></span>
-        
-        
-      </td>
-      <td>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">constructive pullback</span><span class="l-zh">健康回调</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 44d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 27d
         </div>
       </td>
     </tr>
@@ -1629,10 +1447,10 @@
             data-tip-en="💎 Deep washout: 2-week StochRSI (K=8, washed out now) AND monthly StochRSI (K=12, washed out now) — both timeframes deeply oversold; rare, strongest reset."
             data-tip-zh="💎 双重超跌：两周随机RSI（K=8，当前处于超跌区）且月线（K=12，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (RSI-MACD), 0 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（RSI-MACD），0周前。周线动量已转向——早期方向性信号。">📈W✚</span><span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=32.0 D=14.5, D at cross=14.5, 0 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=32.0 D=14.5，穿越时D=14.5，0根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">TE Connectivity</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:47.9%"></i></span><span class="cg-num">48</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.9%"></i></span><span class="cg-num">49</span></span></td>
       <td class="num"><span class="cg-num">40</span></td>
       <td class="num"><span class="cg-num">47</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
+      <td class="num"><span class="cg-num">52</span></td>
       <td class="num"><span class="cg-num">100</span></td>
       <td class="num"><span class="r-pos">3B</span></td>
       <td>
@@ -2151,57 +1969,6 @@
     </tr>
   
     <tr class="fl"
-      data-prime="1"
-      data-setup="1"
-      data-w2w="1"
-      data-w1m="1"
-      data-dual="1"
-      data-fresh="1"
-      data-fl="1"
-      data-wmacd="approaching"
-      data-wstoch="crossed"
-      data-txage="47">
-      <td class="mut2">34</td>
-      <td>
-        <span class="tk"><a href="stock.html#KR">KR</a></span>
-        <span class="cg-flag gate-t1" data-tip-en="⚡ Prime entry — signal gate T1" data-tip-zh="⚡ 优质入场 — 信号门 T1">⚡ T1</span>
-        
-        <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=8, washed out now) AND monthly StochRSI (K=3, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=8，当前处于超跌区）且月线（K=3，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD approaching cross (RSI-MACD), ETA ~2.8 week(s). Cross projected — not fired yet." data-tip-zh="📈 周线MACD即将上穿（RSI-MACD），预计约2.8周内。尚未触发，为预估。">📈W≈</span><span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=38.6 D=32.7, D at cross=14.6, 2 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=38.6 D=32.7，穿越时D=14.6，2根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">Kroger Co</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:41.3%"></i></span><span class="cg-num">41</span></span></td>
-      <td class="num"><span class="cg-num">53</span></td>
-      <td class="num"><span class="cg-num">26</span></td>
-      <td class="num"><span class="cg-num">7</span></td>
-      <td class="num"><span class="cg-num">91</span></td>
-      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">4S</span></td>
-      <td>
-        <b class="cg-num">3</b>
-        <span class="cg-mem sk-proven" data-tip-en="House · Republican · 3 disclosure(s) · hit 43% (n=166, shrunk) · proven · last: bought" data-tip-zh="众议院 · 共和党 · 披露 3 笔 · 胜率 43%（n=166，收缩后）· 往绩较佳 · 最近：买入">David J. Taylor <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 3 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 3 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="Senate · Republican · 1 disclosure(s) · hit 32% (n=347, shrunk) · watch · last: bought" data-tip-zh="参议院 · 共和党 · 披露 1 笔 · 胜率 32%（n=347，收缩后）· 观察中 · 最近：买入">John Boozman <span class="arrow-buy">▲</span></span>
-        
-        
-      </td>
-      <td>
-        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 47d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 9d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class="fl"
       data-prime=""
       data-setup=""
       data-w2w=""
@@ -2212,7 +1979,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="97">
-      <td class="mut2">35</td>
+      <td class="mut2">34</td>
       <td>
         <span class="tk"><a href="stock.html#GS">GS</a></span>
         
@@ -2260,7 +2027,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="36">
-      <td class="mut2">36</td>
+      <td class="mut2">35</td>
       <td>
         <span class="tk"><a href="stock.html#MSFT">MSFT</a></span>
         <span class="cg-flag gate-t1" data-tip-en="⚡ Prime entry — signal gate T1" data-tip-zh="⚡ 优质入场 — 信号门 T1">⚡ T1</span>
@@ -2294,6 +2061,57 @@
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
         <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 36d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 19d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class="fl"
+      data-prime="1"
+      data-setup="1"
+      data-w2w="1"
+      data-w1m="1"
+      data-dual="1"
+      data-fresh="1"
+      data-fl="1"
+      data-wmacd="approaching"
+      data-wstoch="crossed"
+      data-txage="47">
+      <td class="mut2">36</td>
+      <td>
+        <span class="tk"><a href="stock.html#KR">KR</a></span>
+        <span class="cg-flag gate-t1" data-tip-en="⚡ Prime entry — signal gate T1" data-tip-zh="⚡ 优质入场 — 信号门 T1">⚡ T1</span>
+        
+        <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=8, washed out now) AND monthly StochRSI (K=3, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=8，当前处于超跌区）且月线（K=3，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD approaching cross (RSI-MACD), ETA ~2.8 week(s). Cross projected — not fired yet." data-tip-zh="📈 周线MACD即将上穿（RSI-MACD），预计约2.8周内。尚未触发，为预估。">📈W≈</span><span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=38.6 D=32.7, D at cross=14.6, 2 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=38.6 D=32.7，穿越时D=14.6，2根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">Kroger Co</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:40.7%"></i></span><span class="cg-num">41</span></span></td>
+      <td class="num"><span class="cg-num">53</span></td>
+      <td class="num"><span class="cg-num">26</span></td>
+      <td class="num"><span class="cg-num">0</span></td>
+      <td class="num"><span class="cg-num">91</span></td>
+      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">4S</span></td>
+      <td>
+        <b class="cg-num">3</b>
+        <span class="cg-mem sk-proven" data-tip-en="House · Republican · 3 disclosure(s) · hit 43% (n=166, shrunk) · proven · last: bought" data-tip-zh="众议院 · 共和党 · 披露 3 笔 · 胜率 43%（n=166，收缩后）· 往绩较佳 · 最近：买入">David J. Taylor <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 3 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 3 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="Senate · Republican · 1 disclosure(s) · hit 32% (n=347, shrunk) · watch · last: bought" data-tip-zh="参议院 · 共和党 · 披露 1 笔 · 胜率 32%（n=347，收缩后）· 观察中 · 最近：买入">John Boozman <span class="arrow-buy">▲</span></span>
+        
+        
+      </td>
+      <td>
+        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 47d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 9d
         </div>
       </td>
     </tr>
@@ -2365,7 +2183,7 @@
         <span class="tk"><a href="stock.html#PCVX">PCVX</a></span>
         
         
-        <span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (both MACD variants), 1 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（两种MACD口径），1周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">Vaxcyte Inc</div>
+        <span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (both MACD variants), 1 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（两种MACD口径），1周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">PCVX</div>
       </td>
       <td><span class="cg-score"><span class="cg-bar mid"><i style="width:40.4%"></i></span><span class="cg-num">40</span></span></td>
       <td class="num"><span class="cg-num">38</span></td>
@@ -2740,60 +2558,9 @@
       data-fresh="1"
       data-fl="1"
       data-wmacd="crossed"
-      data-wstoch=""
-      data-txage="12">
-      <td class="mut2">46</td>
-      <td>
-        <span class="tk"><a href="stock.html#ADBE">ADBE</a></span>
-        
-        
-        <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=47, washout lifted within ~10 days) AND monthly StochRSI (K=18, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=47，约10天内刚脱离超跌区）且月线（K=18，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (price MACD), 2 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（价格MACD），2周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">Adobe Inc.</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:35.1%"></i></span><span class="cg-num">35</span></span></td>
-      <td class="num"><span class="cg-num">76</span></td>
-      <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="r-pos">7B</span> / <span class="r-neg">6S</span></td>
-      <td>
-        <b class="cg-num">5</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 8 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 8 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-proven" data-tip-en="Senate · Republican · 1 disclosure(s) · hit 45% (n=348, shrunk) · proven · last: bought" data-tip-zh="参议院 · 共和党 · 披露 1 笔 · 胜率 45%（n=348，收缩后）· 往绩较佳 · 最近：买入">Markwayne Mullin <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：卖出">Gilbert Cisneros <span class="arrow-sell">▼</span></span>
-        
-        <span class="mut2" style="font-size:10.5px">+2</span>
-      </td>
-      <td>
-        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 12d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 17d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class="fl"
-      data-prime=""
-      data-setup=""
-      data-w2w="1"
-      data-w1m="1"
-      data-dual="1"
-      data-fresh="1"
-      data-fl="1"
-      data-wmacd="crossed"
       data-wstoch="crossed"
       data-txage="56">
-      <td class="mut2">47</td>
+      <td class="mut2">46</td>
       <td>
         <span class="tk"><a href="stock.html#CTSH">CTSH</a></span>
         
@@ -2844,7 +2611,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="68">
-      <td class="mut2">48</td>
+      <td class="mut2">47</td>
       <td>
         <span class="tk"><a href="stock.html#SBUX">SBUX</a></span>
         
@@ -2883,37 +2650,37 @@
   
     <tr class="fl"
       data-prime=""
-      data-setup="1"
+      data-setup=""
       data-w2w="1"
       data-w1m="1"
       data-dual="1"
       data-fresh="1"
       data-fl="1"
-      data-wmacd="approaching"
+      data-wmacd="crossed"
       data-wstoch=""
-      data-txage="56">
-      <td class="mut2">49</td>
+      data-txage="12">
+      <td class="mut2">48</td>
       <td>
-        <span class="tk"><a href="stock.html#PLTR">PLTR</a></span>
+        <span class="tk"><a href="stock.html#ADBE">ADBE</a></span>
         
         
         <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=21, washout lifted within ~10 days) AND monthly StochRSI (K=7, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=21，约10天内刚脱离超跌区）且月线（K=7，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD approaching cross (price MACD), ETA ~0.5 week(s). Cross projected — not fired yet." data-tip-zh="📈 周线MACD即将上穿（价格MACD），预计约0.5周内。尚未触发，为预估。">📈W≈</span><div class="mut2" style="font-size:10.5px">Palantir Technologies Inc </div>
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=47, washout lifted within ~10 days) AND monthly StochRSI (K=18, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=47，约10天内刚脱离超跌区）且月线（K=18，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (price MACD), 2 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（价格MACD），2周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">Adobe Inc.</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:34.3%"></i></span><span class="cg-num">34</span></span></td>
-      <td class="num"><span class="cg-num">62</span></td>
-      <td class="num"><span class="cg-num">51</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="r-pos">7B</span> / <span class="r-neg">7S</span></td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:34.0%"></i></span><span class="cg-num">34</span></span></td>
+      <td class="num"><span class="cg-num">76</span></td>
+      <td class="num"><span class="cg-num">29</span></td>
+      <td class="num"><span class="cg-num">28</span></td>
+      <td class="num"><span class="cg-num">45</span></td>
+      <td class="num"><span class="r-pos">7B</span> / <span class="r-neg">6S</span></td>
       <td>
-        <b class="cg-num">4</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 6 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 6 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 6 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 6 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：卖出">Gilbert Cisneros <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 36% (n=627, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 36%（n=627，收缩后）· 观察中 · 最近：卖出">Thomas Suozzi <span class="arrow-sell">▼</span></span>
+        <b class="cg-num">5</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 8 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 8 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-proven" data-tip-en="Senate · Republican · 1 disclosure(s) · hit 45% (n=348, shrunk) · proven · last: bought" data-tip-zh="参议院 · 共和党 · 披露 1 笔 · 胜率 45%（n=348，收缩后）· 往绩较佳 · 最近：买入">Markwayne Mullin <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：卖出">Gilbert Cisneros <span class="arrow-sell">▼</span></span>
         
-        <span class="mut2" style="font-size:10.5px">+1</span>
+        <span class="mut2" style="font-size:10.5px">+2</span>
       </td>
       <td>
         <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
@@ -2927,7 +2694,7 @@
       </td>
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 25d
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 12d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 17d
         </div>
       </td>
     </tr>
@@ -2943,7 +2710,7 @@
       data-wmacd="approaching"
       data-wstoch="crossed"
       data-txage="36">
-      <td class="mut2">50</td>
+      <td class="mut2">49</td>
       <td>
         <span class="tk"><a href="stock.html#ZTS">ZTS</a></span>
         
@@ -2994,7 +2761,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="27">
-      <td class="mut2">51</td>
+      <td class="mut2">50</td>
       <td>
         <span class="tk"><a href="stock.html#COHR">COHR</a></span>
         
@@ -3035,57 +2802,6 @@
     </tr>
   
     <tr class="fl"
-      data-prime=""
-      data-setup=""
-      data-w2w="1"
-      data-w1m="1"
-      data-dual="1"
-      data-fresh="1"
-      data-fl="1"
-      data-wmacd="crossed"
-      data-wstoch=""
-      data-txage="12">
-      <td class="mut2">52</td>
-      <td>
-        <span class="tk"><a href="stock.html#INTU">INTU</a></span>
-        
-        
-        <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=13, washed out now) AND monthly StochRSI (K=3, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=13，当前处于超跌区）且月线（K=3，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (both MACD variants), 1 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（两种MACD口径），1周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">Intuit</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:33.8%"></i></span><span class="cg-num">34</span></span></td>
-      <td class="num"><span class="cg-num">69</span></td>
-      <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="r-pos">9B</span> / <span class="r-neg">18S</span></td>
-      <td>
-        <b class="cg-num">9</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 7 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 7 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 9 disclosure(s) · hit 30% (n=13341, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 9 笔 · 胜率 30%（n=13341，收缩后）· 观察中 · 最近：卖出">Michael T. McCaul <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 4 disclosure(s) · hit 18% (n=193, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 4 笔 · 胜率 18%（n=193，收缩后）· 观察中 · 最近：卖出">Richard W. Allen <span class="arrow-sell">▼</span></span>
-        
-        <span class="mut2" style="font-size:10.5px">+6</span>
-      </td>
-      <td>
-        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-        
-        
-        
-        <span class="cg-flag late" data-tip-en="At least one filing exceeded the 45-day STOCK Act deadline" data-tip-zh="至少一笔申报超过 STOCK 法案 45 天截止日">late ⚠️</span>
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 12d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 20d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class="fl"
       data-prime="1"
       data-setup=""
       data-w2w=""
@@ -3096,7 +2812,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="153">
-      <td class="mut2">53</td>
+      <td class="mut2">51</td>
       <td>
         <span class="tk"><a href="stock.html#KMI">KMI</a></span>
         <span class="cg-flag gate-t1" data-tip-en="⚡ Prime entry — signal gate T1" data-tip-zh="⚡ 优质入场 — 信号门 T1">⚡ T1</span>
@@ -3136,6 +2852,57 @@
     <tr class="fl"
       data-prime=""
       data-setup="1"
+      data-w2w="1"
+      data-w1m="1"
+      data-dual="1"
+      data-fresh="1"
+      data-fl="1"
+      data-wmacd="approaching"
+      data-wstoch=""
+      data-txage="56">
+      <td class="mut2">52</td>
+      <td>
+        <span class="tk"><a href="stock.html#PLTR">PLTR</a></span>
+        
+        
+        <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=21, washout lifted within ~10 days) AND monthly StochRSI (K=7, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=21，约10天内刚脱离超跌区）且月线（K=7，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD approaching cross (price MACD), ETA ~0.5 week(s). Cross projected — not fired yet." data-tip-zh="📈 周线MACD即将上穿（价格MACD），预计约0.5周内。尚未触发，为预估。">📈W≈</span><div class="mut2" style="font-size:10.5px">Palantir Technologies Inc </div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:33.3%"></i></span><span class="cg-num">33</span></span></td>
+      <td class="num"><span class="cg-num">62</span></td>
+      <td class="num"><span class="cg-num">51</span></td>
+      <td class="num"><span class="cg-num">28</span></td>
+      <td class="num"><span class="cg-num">40</span></td>
+      <td class="num"><span class="r-pos">7B</span> / <span class="r-neg">7S</span></td>
+      <td>
+        <b class="cg-num">4</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 6 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 6 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 6 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 6 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：卖出">Gilbert Cisneros <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 36% (n=627, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 36%（n=627，收缩后）· 观察中 · 最近：卖出">Thomas Suozzi <span class="arrow-sell">▼</span></span>
+        
+        <span class="mut2" style="font-size:10.5px">+1</span>
+      </td>
+      <td>
+        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 25d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class="fl"
+      data-prime=""
+      data-setup="1"
       data-w2w=""
       data-w1m=""
       data-dual=""
@@ -3144,7 +2911,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="86">
-      <td class="mut2">54</td>
+      <td class="mut2">53</td>
       <td>
         <span class="tk"><a href="stock.html#AVGO">AVGO</a></span>
         
@@ -3193,7 +2960,7 @@
       data-wmacd=""
       data-wstoch=""
       data-txage="56">
-      <td class="mut2">55</td>
+      <td class="mut2">54</td>
       <td>
         <span class="tk"><a href="stock.html#IT">IT</a></span>
         <span class="cg-flag gate-t2" data-tip-en="⚡ Prime entry — signal gate T2" data-tip-zh="⚡ 优质入场 — 信号门 T2">⚡ T2</span>
@@ -3243,7 +3010,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="56">
-      <td class="mut2">56</td>
+      <td class="mut2">55</td>
       <td>
         <span class="tk"><a href="stock.html#F">F</a></span>
         
@@ -3287,31 +3054,31 @@
       data-dual="1"
       data-fresh="1"
       data-fl="1"
-      data-wmacd=""
+      data-wmacd="crossed"
       data-wstoch=""
-      data-txage="50">
-      <td class="mut2">57</td>
+      data-txage="12">
+      <td class="mut2">56</td>
       <td>
-        <span class="tk"><a href="stock.html#CRM">CRM</a></span>
+        <span class="tk"><a href="stock.html#INTU">INTU</a></span>
         
         
         <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=22, washout lifted within ~10 days) AND monthly StochRSI (K=14, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=22，约10天内刚脱离超跌区）且月线（K=14，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><div class="mut2" style="font-size:10.5px">Salesforce</div>
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=13, washed out now) AND monthly StochRSI (K=3, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=13，当前处于超跌区）且月线（K=3，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (both MACD variants), 1 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（两种MACD口径），1周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">Intuit</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:32.4%"></i></span><span class="cg-num">32</span></span></td>
-      <td class="num"><span class="cg-num">86</span></td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:32.7%"></i></span><span class="cg-num">33</span></span></td>
+      <td class="num"><span class="cg-num">69</span></td>
       <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">30</span></td>
-      <td class="num"><span class="r-pos">9B</span> / <span class="r-neg">12S</span></td>
+      <td class="num"><span class="cg-num">28</span></td>
+      <td class="num"><span class="cg-num">45</span></td>
+      <td class="num"><span class="r-pos">9B</span> / <span class="r-neg">18S</span></td>
       <td>
-        <b class="cg-num">5</b>
-        <span class="cg-mem sk-proven" data-tip-en="House · Republican · 1 disclosure(s) · hit 41% (n=24, shrunk) · proven · last: bought" data-tip-zh="众议院 · 共和党 · 披露 1 笔 · 胜率 41%（n=24，收缩后）· 往绩较佳 · 最近：买入">Tony Wied <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 13 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 13 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 36% (n=74, shrunk) · watch · last: bought" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 36%（n=74，收缩后）· 观察中 · 最近：买入">Maria Elvira Salazar <span class="arrow-buy">▲</span></span>
+        <b class="cg-num">9</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 7 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 7 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 9 disclosure(s) · hit 30% (n=13341, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 9 笔 · 胜率 30%（n=13341，收缩后）· 观察中 · 最近：卖出">Michael T. McCaul <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 4 disclosure(s) · hit 18% (n=193, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 4 笔 · 胜率 18%（n=193，收缩后）· 观察中 · 最近：卖出">Richard W. Allen <span class="arrow-sell">▼</span></span>
         
-        <span class="mut2" style="font-size:10.5px">+2</span>
+        <span class="mut2" style="font-size:10.5px">+6</span>
       </td>
       <td>
         <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
@@ -3321,11 +3088,11 @@
         
         
         
-        
+        <span class="cg-flag late" data-tip-en="At least one filing exceeded the 45-day STOCK Act deadline" data-tip-zh="至少一笔申报超过 STOCK 法案 45 天截止日">late ⚠️</span>
       </td>
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 50d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 15d
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 12d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 20d
         </div>
       </td>
     </tr>
@@ -3341,7 +3108,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="56">
-      <td class="mut2">58</td>
+      <td class="mut2">57</td>
       <td>
         <span class="tk"><a href="stock.html#ADSK">ADSK</a></span>
         
@@ -3392,7 +3159,7 @@
       data-wmacd="crossed"
       data-wstoch="crossed"
       data-txage="68">
-      <td class="mut2">59</td>
+      <td class="mut2">58</td>
       <td>
         <span class="tk"><a href="stock.html#CEG">CEG</a></span>
         
@@ -3443,7 +3210,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="82">
-      <td class="mut2">60</td>
+      <td class="mut2">59</td>
       <td>
         <span class="tk"><a href="stock.html#STLD">STLD</a></span>
         
@@ -3474,6 +3241,57 @@
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">constructive pullback</span><span class="l-zh">健康回调</span>
         <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 82d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 39d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class="fl"
+      data-prime=""
+      data-setup=""
+      data-w2w="1"
+      data-w1m="1"
+      data-dual="1"
+      data-fresh="1"
+      data-fl="1"
+      data-wmacd=""
+      data-wstoch=""
+      data-txage="50">
+      <td class="mut2">60</td>
+      <td>
+        <span class="tk"><a href="stock.html#CRM">CRM</a></span>
+        
+        
+        <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=22, washout lifted within ~10 days) AND monthly StochRSI (K=14, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=22，约10天内刚脱离超跌区）且月线（K=14，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><div class="mut2" style="font-size:10.5px">Salesforce</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:31.3%"></i></span><span class="cg-num">31</span></span></td>
+      <td class="num"><span class="cg-num">86</span></td>
+      <td class="num"><span class="cg-num">29</span></td>
+      <td class="num"><span class="cg-num">28</span></td>
+      <td class="num"><span class="cg-num">30</span></td>
+      <td class="num"><span class="r-pos">9B</span> / <span class="r-neg">12S</span></td>
+      <td>
+        <b class="cg-num">5</b>
+        <span class="cg-mem sk-proven" data-tip-en="House · Republican · 1 disclosure(s) · hit 41% (n=24, shrunk) · proven · last: bought" data-tip-zh="众议院 · 共和党 · 披露 1 笔 · 胜率 41%（n=24，收缩后）· 往绩较佳 · 最近：买入">Tony Wied <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 13 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 13 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 36% (n=74, shrunk) · watch · last: bought" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 36%（n=74，收缩后）· 观察中 · 最近：买入">Maria Elvira Salazar <span class="arrow-buy">▲</span></span>
+        
+        <span class="mut2" style="font-size:10.5px">+2</span>
+      </td>
+      <td>
+        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 50d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 15d
         </div>
       </td>
     </tr>
@@ -3530,6 +3348,57 @@
     </tr>
   
     <tr class="fl"
+      data-prime=""
+      data-setup=""
+      data-w2w="1"
+      data-w1m="1"
+      data-dual="1"
+      data-fresh="1"
+      data-fl="1"
+      data-wmacd="crossed"
+      data-wstoch=""
+      data-txage="56">
+      <td class="mut2">62</td>
+      <td>
+        <span class="tk"><a href="stock.html#PTC">PTC</a></span>
+        
+        
+        <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=33, washout lifted within ~10 days) AND monthly StochRSI (K=5, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=33，约10天内刚脱离超跌区）且月线（K=5，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (price MACD), 0 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（价格MACD），0周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">PTC Inc.</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:29.8%"></i></span><span class="cg-num">30</span></span></td>
+      <td class="num"><span class="cg-num">49</span></td>
+      <td class="num"><span class="cg-num">26</span></td>
+      <td class="num"><span class="cg-num">40</span></td>
+      <td class="num"><span class="cg-num">45</span></td>
+      <td class="num"><span class="r-pos">4B</span> / <span class="r-neg">7S</span></td>
+      <td>
+        <b class="cg-num">4</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 6 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 6 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 30% (n=13341, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 30%（n=13341，收缩后）· 观察中 · 最近：卖出">Michael T. McCaul <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 33% (n=328, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 33%（n=328，收缩后）· 观察中 · 最近：卖出">April Mcclain Delaney <span class="arrow-sell">▼</span></span>
+        
+        <span class="mut2" style="font-size:10.5px">+1</span>
+      </td>
+      <td>
+        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 13d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class="fl"
       data-prime="1"
       data-setup=""
       data-w2w="1"
@@ -3540,7 +3409,7 @@
       data-wmacd=""
       data-wstoch=""
       data-txage="78">
-      <td class="mut2">62</td>
+      <td class="mut2">63</td>
       <td>
         <span class="tk"><a href="stock.html#RRC">RRC</a></span>
         <span class="cg-flag gate-t1" data-tip-en="⚡ Prime entry — signal gate T1" data-tip-zh="⚡ 优质入场 — 信号门 T1">⚡ T1</span>
@@ -3589,7 +3458,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="48">
-      <td class="mut2">63</td>
+      <td class="mut2">64</td>
       <td>
         <span class="tk"><a href="stock.html#WPM">WPM</a></span>
         
@@ -3633,35 +3502,34 @@
       data-prime=""
       data-setup=""
       data-w2w="1"
-      data-w1m="1"
-      data-dual="1"
+      data-w1m=""
+      data-dual=""
       data-fresh="1"
       data-fl="1"
-      data-wmacd="crossed"
-      data-wstoch=""
-      data-txage="56">
-      <td class="mut2">64</td>
+      data-wmacd=""
+      data-wstoch="crossed"
+      data-txage="79">
+      <td class="mut2">65</td>
       <td>
-        <span class="tk"><a href="stock.html#PTC">PTC</a></span>
+        <span class="tk"><a href="stock.html#FN">FN</a></span>
         
         
-        <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=33, washout lifted within ~10 days) AND monthly StochRSI (K=5, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=33，约10天内刚脱离超跌区）且月线（K=5，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (price MACD), 0 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（价格MACD），0周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">PTC Inc.</div>
+        <span class="cg-flag wash"
+              data-tip-en="🌊 2-week StochRSI washed out — K=0 (under 20 = deeply oversold); washed out now."
+              data-tip-zh="🌊 两周随机RSI超跌 — K=0（低于20=深度超卖）；当前处于超跌区。">🌊2W</span><span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=0.0 D=0.0, D at cross=0.0, 1 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=0.0 D=0.0，穿越时D=0.0，1根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">Fabrinet</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:28.7%"></i></span><span class="cg-num">29</span></span></td>
-      <td class="num"><span class="cg-num">49</span></td>
-      <td class="num"><span class="cg-num">26</span></td>
-      <td class="num"><span class="cg-num">28</span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="r-pos">4B</span> / <span class="r-neg">7S</span></td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:28.8%"></i></span><span class="cg-num">29</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
+      <td class="num"><span class="cg-num">52</span></td>
+      <td class="num"><span class="cg-num">40</span></td>
+      <td class="num"><span class="cg-num">30</span></td>
+      <td class="num"><span class="r-pos">4B</span></td>
       <td>
-        <b class="cg-num">4</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 6 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 6 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 30% (n=13341, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 30%（n=13341，收缩后）· 观察中 · 最近：卖出">Michael T. McCaul <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 33% (n=328, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 33%（n=328，收缩后）· 观察中 · 最近：卖出">April Mcclain Delaney <span class="arrow-sell">▼</span></span>
+        <b class="cg-num">2</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：买入">Gilbert Cisneros <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 32% (n=3298, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 32%（n=3298，收缩后）· 观察中 · 最近：买入">Josh Gottheimer <span class="arrow-buy">▲</span></span>
         
-        <span class="mut2" style="font-size:10.5px">+1</span>
+        
       </td>
       <td>
         <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
@@ -3675,7 +3543,7 @@
       </td>
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 13d
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 79d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 33d
         </div>
       </td>
     </tr>
@@ -3691,7 +3559,7 @@
       data-wmacd=""
       data-wstoch=""
       data-txage="51">
-      <td class="mut2">65</td>
+      <td class="mut2">66</td>
       <td>
         <span class="tk"><a href="stock.html#EQT">EQT</a></span>
         
@@ -3742,7 +3610,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="68">
-      <td class="mut2">66</td>
+      <td class="mut2">67</td>
       <td>
         <span class="tk"><a href="stock.html#LYB">LYB</a></span>
         <span class="cg-flag gate-t1" data-tip-en="⚡ Prime entry — signal gate T1" data-tip-zh="⚡ 优质入场 — 信号门 T1">⚡ T1</span>
@@ -3789,7 +3657,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="12">
-      <td class="mut2">67</td>
+      <td class="mut2">68</td>
       <td>
         <span class="tk"><a href="stock.html#COST">COST</a></span>
         
@@ -3840,7 +3708,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="40">
-      <td class="mut2">68</td>
+      <td class="mut2">69</td>
       <td>
         <span class="tk"><a href="stock.html#ICE">ICE</a></span>
         
@@ -3891,7 +3759,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="56">
-      <td class="mut2">69</td>
+      <td class="mut2">70</td>
       <td>
         <span class="tk"><a href="stock.html#ULTA">ULTA</a></span>
         
@@ -3934,32 +3802,33 @@
       data-prime=""
       data-setup=""
       data-w2w="1"
-      data-w1m=""
-      data-dual=""
+      data-w1m="1"
+      data-dual="1"
       data-fresh="1"
       data-fl="1"
-      data-wmacd=""
-      data-wstoch="crossed"
-      data-txage="79">
-      <td class="mut2">70</td>
+      data-wmacd="crossed"
+      data-wstoch=""
+      data-txage="68">
+      <td class="mut2">71</td>
       <td>
-        <span class="tk"><a href="stock.html#FN">FN</a></span>
+        <span class="tk"><a href="stock.html#TRMB">TRMB</a></span>
         
         
-        <span class="cg-flag wash"
-              data-tip-en="🌊 2-week StochRSI washed out — K=0 (under 20 = deeply oversold); washed out now."
-              data-tip-zh="🌊 两周随机RSI超跌 — K=0（低于20=深度超卖）；当前处于超跌区。">🌊2W</span><span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=0.0 D=0.0, D at cross=0.0, 1 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=0.0 D=0.0，穿越时D=0.0，1根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">Fabrinet</div>
+        <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=11, washed out now) AND monthly StochRSI (K=1, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=11，当前处于超跌区）且月线（K=1，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (RSI-MACD), 2 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（RSI-MACD），2周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">Trimble Inc.</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:27.9%"></i></span><span class="cg-num">28</span></span></td>
-      <td class="num"><span class="cg-num">46</span></td>
-      <td class="num"><span class="cg-num">46</span></td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:28.1%"></i></span><span class="cg-num">28</span></span></td>
+      <td class="num"><span class="cg-num">37</span></td>
+      <td class="num"><span class="cg-num">29</span></td>
       <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">30</span></td>
-      <td class="num"><span class="r-pos">4B</span></td>
+      <td class="num"><span class="cg-num">45</span></td>
+      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">6S</span></td>
       <td>
-        <b class="cg-num">2</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：买入">Gilbert Cisneros <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 32% (n=3298, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 32%（n=3298，收缩后）· 观察中 · 最近：买入">Josh Gottheimer <span class="arrow-buy">▲</span></span>
+        <b class="cg-num">3</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 5 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 5 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：卖出">Gilbert Cisneros <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 33% (n=328, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 33%（n=328，收缩后）· 观察中 · 最近：卖出">April Mcclain Delaney <span class="arrow-sell">▼</span></span>
         
         
       </td>
@@ -3975,58 +3844,7 @@
       </td>
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 79d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 33d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class="fl"
-      data-prime=""
-      data-setup=""
-      data-w2w="1"
-      data-w1m="1"
-      data-dual="1"
-      data-fresh="1"
-      data-fl="1"
-      data-wmacd=""
-      data-wstoch=""
-      data-txage="56">
-      <td class="mut2">71</td>
-      <td>
-        <span class="tk"><a href="stock.html#ORCL">ORCL</a></span>
-        
-        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 1) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
-        <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=16, washed out now) AND monthly StochRSI (K=16, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=16，当前处于超跌区）且月线（K=16，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><div class="mut2" style="font-size:10.5px">Oracle Corp</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:27.7%"></i></span><span class="cg-num">28</span></span></td>
-      <td class="num"><span class="cg-num">71</span></td>
-      <td class="num"><span class="cg-num">15</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">30</span></td>
-      <td class="num"><span class="r-pos">10B</span> / <span class="r-neg">8S</span></td>
-      <td>
-        <b class="cg-num">5</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 11 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 11 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 32% (n=297, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 32%（n=297，收缩后）· 观察中 · 最近：卖出">Jared Moskowitz <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="Senate · Democrat · 1 disclosure(s) · hit 30% (n=658, shrunk) · watch · last: sold" data-tip-zh="参议院 · 民主党 · 披露 1 笔 · 胜率 30%（n=658，收缩后）· 观察中 · 最近：卖出">Sheldon Whitehouse <span class="arrow-sell">▼</span></span>
-        
-        <span class="mut2" style="font-size:10.5px">+2</span>
-      </td>
-      <td>
-        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">engine-blocked — wait</span><span class="l-zh">引擎否决 — 等待</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 20d
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 68d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 15d
         </div>
       </td>
     </tr>
@@ -4235,57 +4053,6 @@
   
     <tr class="fl"
       data-prime=""
-      data-setup=""
-      data-w2w="1"
-      data-w1m="1"
-      data-dual="1"
-      data-fresh="1"
-      data-fl="1"
-      data-wmacd="crossed"
-      data-wstoch=""
-      data-txage="68">
-      <td class="mut2">76</td>
-      <td>
-        <span class="tk"><a href="stock.html#TRMB">TRMB</a></span>
-        
-        
-        <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=11, washed out now) AND monthly StochRSI (K=1, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=11，当前处于超跌区）且月线（K=1，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><span class="cg-flag wmacd" data-tip-en="📈 Weekly MACD crossed up (RSI-MACD), 2 week(s) ago. Momentum turned on the weekly frame — early but directional." data-tip-zh="📈 周线MACD已上穿（RSI-MACD），2周前。周线动量已转向——早期方向性信号。">📈W✚</span><div class="mut2" style="font-size:10.5px">Trimble Inc.</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:27.0%"></i></span><span class="cg-num">27</span></span></td>
-      <td class="num"><span class="cg-num">37</span></td>
-      <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="cg-num">28</span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">6S</span></td>
-      <td>
-        <b class="cg-num">3</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 5 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 5 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：卖出">Gilbert Cisneros <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 33% (n=328, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 33%（n=328，收缩后）· 观察中 · 最近：卖出">April Mcclain Delaney <span class="arrow-sell">▼</span></span>
-        
-        
-      </td>
-      <td>
-        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 68d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 15d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class="fl"
-      data-prime=""
       data-setup="1"
       data-w2w="1"
       data-w1m="1"
@@ -4295,7 +4062,7 @@
       data-wmacd="approaching"
       data-wstoch=""
       data-txage="61">
-      <td class="mut2">77</td>
+      <td class="mut2">76</td>
       <td>
         <span class="tk"><a href="stock.html#EXE">EXE</a></span>
         
@@ -4346,7 +4113,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="68">
-      <td class="mut2">78</td>
+      <td class="mut2">77</td>
       <td>
         <span class="tk"><a href="stock.html#REGN">REGN</a></span>
         
@@ -4394,10 +4161,110 @@
       data-dual="1"
       data-fresh="1"
       data-fl="1"
+      data-wmacd=""
+      data-wstoch=""
+      data-txage="56">
+      <td class="mut2">78</td>
+      <td>
+        <span class="tk"><a href="stock.html#ORCL">ORCL</a></span>
+        
+        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 1) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
+        <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=16, washed out now) AND monthly StochRSI (K=16, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=16，当前处于超跌区）且月线（K=16，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><div class="mut2" style="font-size:10.5px">Oracle Corp</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:26.6%"></i></span><span class="cg-num">27</span></span></td>
+      <td class="num"><span class="cg-num">71</span></td>
+      <td class="num"><span class="cg-num">15</span></td>
+      <td class="num"><span class="cg-num">28</span></td>
+      <td class="num"><span class="cg-num">30</span></td>
+      <td class="num"><span class="r-pos">10B</span> / <span class="r-neg">8S</span></td>
+      <td>
+        <b class="cg-num">5</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 11 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 11 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 32% (n=297, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 32%（n=297，收缩后）· 观察中 · 最近：卖出">Jared Moskowitz <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="Senate · Democrat · 1 disclosure(s) · hit 30% (n=658, shrunk) · watch · last: sold" data-tip-zh="参议院 · 民主党 · 披露 1 笔 · 胜率 30%（n=658，收缩后）· 观察中 · 最近：卖出">Sheldon Whitehouse <span class="arrow-sell">▼</span></span>
+        
+        <span class="mut2" style="font-size:10.5px">+2</span>
+      </td>
+      <td>
+        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">engine-blocked — wait</span><span class="l-zh">引擎否决 — 等待</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 20d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class="fl"
+      data-prime=""
+      data-setup="1"
+      data-w2w=""
+      data-w1m=""
+      data-dual=""
+      data-fresh="1"
+      data-fl="1"
+      data-wmacd=""
+      data-wstoch="crossed"
+      data-txage="22">
+      <td class="mut2">79</td>
+      <td>
+        <span class="tk"><a href="stock.html#ADI">ADI</a></span>
+        
+        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 6) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
+        <span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=7.5 D=6.1, D at cross=6.1, 0 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=7.5 D=6.1，穿越时D=6.1，0根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">Analog Devices Inc</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:26.6%"></i></span><span class="cg-num">27</span></span></td>
+      <td class="num"><span class="cg-num">57</span></td>
+      <td class="num"><span class="cg-num">15</span></td>
+      <td class="num"><span class="cg-num">86</span></td>
+      <td class="num"><span class="cg-num">21</span></td>
+      <td class="num"><span class="r-pos">4B</span> / <span class="r-neg">7S</span></td>
+      <td>
+        <b class="cg-num">5</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 5 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 5 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 29% (n=142, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 29%（n=142，收缩后）· 观察中 · 最近：卖出">Thomas H. Kean Jr <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 32% (n=75, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 32%（n=75，收缩后）· 观察中 · 最近：卖出">Richard Dean Dr Mccormick <span class="arrow-sell">▼</span></span>
+        
+        <span class="mut2" style="font-size:10.5px">+2</span>
+      </td>
+      <td>
+        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">engine-blocked — wait</span><span class="l-zh">引擎否决 — 等待</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 22d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 22d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class="fl"
+      data-prime=""
+      data-setup=""
+      data-w2w="1"
+      data-w1m="1"
+      data-dual="1"
+      data-fresh="1"
+      data-fl="1"
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="37">
-      <td class="mut2">79</td>
+      <td class="mut2">80</td>
       <td>
         <span class="tk"><a href="stock.html#IBP">IBP</a></span>
         
@@ -4446,7 +4313,7 @@
       data-wmacd=""
       data-wstoch=""
       data-txage="12">
-      <td class="mut2">80</td>
+      <td class="mut2">81</td>
       <td>
         <span class="tk"><a href="stock.html#FIS">FIS</a></span>
         
@@ -4497,7 +4364,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="56">
-      <td class="mut2">81</td>
+      <td class="mut2">82</td>
       <td>
         <span class="tk"><a href="stock.html#MSCI">MSCI</a></span>
         
@@ -4543,7 +4410,7 @@
       data-wmacd=""
       data-wstoch=""
       data-txage="79">
-      <td class="mut2">82</td>
+      <td class="mut2">83</td>
       <td>
         <span class="tk"><a href="stock.html#HLI">HLI</a></span>
         <span class="cg-flag gate-t2" data-tip-en="⚡ Prime entry — signal gate T2" data-tip-zh="⚡ 优质入场 — 信号门 T2">⚡ T2</span>
@@ -4591,7 +4458,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="56">
-      <td class="mut2">83</td>
+      <td class="mut2">84</td>
       <td>
         <span class="tk"><a href="stock.html#CHTR">CHTR</a></span>
         
@@ -4642,7 +4509,7 @@
       data-wmacd="approaching"
       data-wstoch="crossed"
       data-txage="47">
-      <td class="mut2">84</td>
+      <td class="mut2">85</td>
       <td>
         <span class="tk"><a href="stock.html#MSTR">MSTR</a></span>
         
@@ -4691,7 +4558,7 @@
       data-wmacd="crossed"
       data-wstoch=""
       data-txage="56">
-      <td class="mut2">85</td>
+      <td class="mut2">86</td>
       <td>
         <span class="tk"><a href="stock.html#OTIS">OTIS</a></span>
         
@@ -4725,55 +4592,6 @@
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
         <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 17d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class="fl"
-      data-prime=""
-      data-setup="1"
-      data-w2w=""
-      data-w1m=""
-      data-dual=""
-      data-fresh="1"
-      data-fl="1"
-      data-wmacd=""
-      data-wstoch="crossed"
-      data-txage="22">
-      <td class="mut2">86</td>
-      <td>
-        <span class="tk"><a href="stock.html#ADI">ADI</a></span>
-        
-        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 6) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
-        <span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=7.5 D=6.1, D at cross=6.1, 0 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=7.5 D=6.1，穿越时D=6.1，0根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">Analog Devices Inc</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:25.5%"></i></span><span class="cg-num">26</span></span></td>
-      <td class="num"><span class="cg-num">57</span></td>
-      <td class="num"><span class="cg-num">15</span></td>
-      <td class="num"><span class="cg-num">74</span></td>
-      <td class="num"><span class="cg-num">21</span></td>
-      <td class="num"><span class="r-pos">4B</span> / <span class="r-neg">7S</span></td>
-      <td>
-        <b class="cg-num">5</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 5 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 5 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 29% (n=142, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 29%（n=142，收缩后）· 观察中 · 最近：卖出">Thomas H. Kean Jr <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 32% (n=75, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 32%（n=75，收缩后）· 观察中 · 最近：卖出">Richard Dean Dr Mccormick <span class="arrow-sell">▼</span></span>
-        
-        <span class="mut2" style="font-size:10.5px">+2</span>
-      </td>
-      <td>
-        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">engine-blocked — wait</span><span class="l-zh">引擎否决 — 等待</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 22d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 22d
         </div>
       </td>
     </tr>
@@ -5728,11 +5546,11 @@
     </tr>
   
     <tr class="fl"
-      data-prime="1"
+      data-prime=""
       data-setup=""
-      data-w2w=""
-      data-w1m=""
-      data-dual=""
+      data-w2w="1"
+      data-w1m="1"
+      data-dual="1"
       data-fresh="1"
       data-fl="1"
       data-wmacd=""
@@ -5740,37 +5558,38 @@
       data-txage="54">
       <td class="mut2">106</td>
       <td>
-        <span class="tk"><a href="stock.html#PTON">PTON</a></span>
-        <span class="cg-flag gate-t2" data-tip-en="⚡ Prime entry — signal gate T2" data-tip-zh="⚡ 优质入场 — 信号门 T2">⚡ T2</span>
+        <span class="tk"><a href="stock.html#PWP">PWP</a></span>
         
-        <div class="mut2" style="font-size:10.5px">Peloton Interactive, Inc.</div>
+        
+        <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=8, washed out now) AND monthly StochRSI (K=0, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=8，当前处于超跌区）且月线（K=0，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><div class="mut2" style="font-size:10.5px">PWP</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:21.8%"></i></span><span class="cg-num">22</span></span></td>
-      <td class="num"><span class="cg-num">28</span></td>
-      <td class="num"><span class="cg-num">15</span></td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:22.1%"></i></span><span class="cg-num">22</span></span></td>
+      <td class="num"><span class="cg-num">39</span></td>
       <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="r-pos">1B</span> / <span class="r-neg">1S</span></td>
+      <td class="num"><span class="cg-num">20</span></td>
+      <td class="num"><span class="cg-num">30</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
       <td>
-        <b class="cg-num">2</b>
-        <span class="cg-mem sk-watch" data-tip-en="Senate · Republican · 1 disclosure(s) · hit 8% (n=43, shrunk) · watch · last: sold" data-tip-zh="参议院 · 共和党 · 披露 1 笔 · 胜率 8%（n=43，收缩后）· 观察中 · 最近：卖出">James E. Banks <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 1 disclosure(s) · hit 36% (n=74, shrunk) · watch · last: bought" data-tip-zh="众议院 · 共和党 · 披露 1 笔 · 胜率 36%（n=74，收缩后）· 观察中 · 最近：买入">Maria Elvira Salazar <span class="arrow-buy">▲</span></span>
+        <b class="cg-num">1</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：买入">Gilbert Cisneros <span class="arrow-buy">▲</span></span>
         
         
       </td>
       <td>
         <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
         
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
         
         
         
+        <span class="cg-flag stale" data-tip-en="Single member only — lower cluster signal" data-tip-zh="仅1位议员 — 集群信号较弱">1 member</span>
         
         
       </td>
       <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">engine-blocked — wait</span><span class="l-zh">引擎否决 — 等待</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 47d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 33d
+        <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 54d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 10d
         </div>
       </td>
     </tr>
@@ -6223,31 +6042,31 @@
   
     <tr class="fl"
       data-prime=""
-      data-setup="1"
+      data-setup=""
       data-w2w=""
       data-w1m=""
       data-dual=""
-      data-fresh=""
+      data-fresh="1"
       data-fl="1"
       data-wmacd=""
-      data-wstoch="approaching"
-      data-txage="70">
+      data-wstoch="crossed"
+      data-txage="82">
       <td class="mut2">116</td>
       <td>
-        <span class="tk"><a href="stock.html#AESI">AESI</a></span>
+        <span class="tk"><a href="stock.html#ON">ON</a></span>
         
-        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 11) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
-        <span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic approaching cross, K=1.6 D=7.0. Cross projected within days." data-tip-zh="〰️ 周线随机指标即将上穿，K=1.6 D=7.0。预计数日内上穿。">〰️W≈</span><div class="mut2" style="font-size:10.5px">Atlas Energy Solutions, In</div>
+        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 2) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
+        <span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=5.4 D=4.7, D at cross=4.7, 0 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=5.4 D=4.7，穿越时D=4.7，0根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">ON Semiconductor</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:20.2%"></i></span><span class="cg-num">20</span></span></td>
-      <td class="num"><span class="cg-num">42</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">10</span></td>
-      <td class="num"><span class="r-pos">1B</span> / <span class="r-neg">1S</span></td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:20.3%"></i></span><span class="cg-num">20</span></span></td>
+      <td class="num"><span class="cg-num">33</span></td>
+      <td class="num"><span class="cg-num">34</span></td>
+      <td class="num"><span class="cg-num">52</span></td>
+      <td class="num"><span class="cg-num">15</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">1S</span></td>
       <td>
         <b class="cg-num">1</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 29% (n=10, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 29%（n=10，收缩后）· 观察中 · 最近：卖出">Chip Roy <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 3 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 3 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
         
         
       </td>
@@ -6263,7 +6082,57 @@
       </td>
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 70d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 28d
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 82d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 28d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class="fl"
+      data-prime=""
+      data-setup=""
+      data-w2w="1"
+      data-w1m="1"
+      data-dual="1"
+      data-fresh="1"
+      data-fl="1"
+      data-wmacd=""
+      data-wstoch=""
+      data-txage="56">
+      <td class="mut2">117</td>
+      <td>
+        <span class="tk"><a href="stock.html#ISRG">ISRG</a></span>
+        
+        
+        <span class="cg-flag wash-dual"
+            data-tip-en="💎 Deep washout: 2-week StochRSI (K=1, washed out now) AND monthly StochRSI (K=0, washed out now) — both timeframes deeply oversold; rare, strongest reset."
+            data-tip-zh="💎 双重超跌：两周随机RSI（K=1，当前处于超跌区）且月线（K=0，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><div class="mut2" style="font-size:10.5px">Intuitive Surgical Inc</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:19.7%"></i></span><span class="cg-num">20</span></span></td>
+      <td class="num"><span class="cg-num">37</span></td>
+      <td class="num"><span class="cg-num">15</span></td>
+      <td class="num"><span class="cg-num">20</span></td>
+      <td class="num"><span class="cg-num">30</span></td>
+      <td class="num"><span class="r-pos">7B</span> / <span class="r-neg">7S</span></td>
+      <td>
+        <b class="cg-num">2</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 13 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 13 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：买入">Gilbert Cisneros <span class="arrow-buy">▲</span></span>
+        
+        
+      </td>
+      <td>
+        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">engine-blocked — wait</span><span class="l-zh">引擎否决 — 等待</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 19d
         </div>
       </td>
     </tr>
@@ -6279,7 +6148,7 @@
       data-wmacd=""
       data-wstoch="approaching"
       data-txage="22">
-      <td class="mut2">117</td>
+      <td class="mut2">118</td>
       <td>
         <span class="tk"><a href="stock.html#AGX">AGX</a></span>
         
@@ -6324,24 +6193,24 @@
       data-fresh=""
       data-fl="1"
       data-wmacd=""
-      data-wstoch="crossed"
-      data-txage="82">
-      <td class="mut2">118</td>
+      data-wstoch="approaching"
+      data-txage="70">
+      <td class="mut2">119</td>
       <td>
-        <span class="tk"><a href="stock.html#ON">ON</a></span>
+        <span class="tk"><a href="stock.html#AESI">AESI</a></span>
         
-        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 2) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
-        <span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic crossed up, K=5.4 D=4.7, D at cross=4.7, 0 bar(s) ago; came from washout — stronger reset." data-tip-zh="〰️ 周线随机指标已上穿，K=5.4 D=4.7，穿越时D=4.7，0根K线前；来自超跌区间——更强重置。">〰️W✚</span><div class="mut2" style="font-size:10.5px">ON Semiconductor</div>
+        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 11) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
+        <span class="cg-flag wstoch" data-tip-en="〰️ Weekly Stochastic approaching cross, K=1.6 D=7.0. Cross projected within days." data-tip-zh="〰️ 周线随机指标即将上穿，K=1.6 D=7.0。预计数日内上穿。">〰️W≈</span><div class="mut2" style="font-size:10.5px">Atlas Energy Solutions, In</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:19.2%"></i></span><span class="cg-num">19</span></span></td>
-      <td class="num"><span class="cg-num">33</span></td>
+      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:19.3%"></i></span><span class="cg-num">19</span></span></td>
+      <td class="num"><span class="cg-num">42</span></td>
       <td class="num"><span class="cg-num">34</span></td>
       <td class="num"><span class="cg-num">40</span></td>
-      <td class="num"><span class="cg-num">15</span></td>
-      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">1S</span></td>
+      <td class="num"><span class="cg-num">10</span></td>
+      <td class="num"><span class="r-pos">1B</span> / <span class="r-neg">1S</span></td>
       <td>
         <b class="cg-num">1</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 3 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 3 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 29% (n=10, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 29%（n=10，收缩后）· 观察中 · 最近：卖出">Chip Roy <span class="arrow-sell">▼</span></span>
         
         
       </td>
@@ -6357,7 +6226,7 @@
       </td>
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">downtrend — avoid the catch</span><span class="l-zh">下行趋势 — 勿接飞刀</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 82d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 28d
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 70d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 28d
         </div>
       </td>
     </tr>
@@ -6373,7 +6242,7 @@
       data-wmacd=""
       data-wstoch="crossed"
       data-txage="55">
-      <td class="mut2">119</td>
+      <td class="mut2">120</td>
       <td>
         <span class="tk"><a href="stock.html#EME">EME</a></span>
         
@@ -6423,7 +6292,7 @@
       data-wmacd=""
       data-wstoch=""
       data-txage="56">
-      <td class="mut2">120</td>
+      <td class="mut2">121</td>
       <td>
         <span class="tk"><a href="stock.html#DIS">DIS</a></span>
         
@@ -6473,7 +6342,7 @@
       data-wmacd=""
       data-wstoch="approaching"
       data-txage="56">
-      <td class="mut2">121</td>
+      <td class="mut2">122</td>
       <td>
         <span class="tk"><a href="stock.html#SNDK">SNDK</a></span>
         
@@ -6507,56 +6376,6 @@
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">engine-blocked — wait</span><span class="l-zh">引擎否决 — 等待</span>
         <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 15d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class="fl"
-      data-prime=""
-      data-setup=""
-      data-w2w="1"
-      data-w1m="1"
-      data-dual="1"
-      data-fresh="1"
-      data-fl="1"
-      data-wmacd=""
-      data-wstoch=""
-      data-txage="56">
-      <td class="mut2">122</td>
-      <td>
-        <span class="tk"><a href="stock.html#ISRG">ISRG</a></span>
-        
-        
-        <span class="cg-flag wash-dual"
-            data-tip-en="💎 Deep washout: 2-week StochRSI (K=1, washed out now) AND monthly StochRSI (K=0, washed out now) — both timeframes deeply oversold; rare, strongest reset."
-            data-tip-zh="💎 双重超跌：两周随机RSI（K=1，当前处于超跌区）且月线（K=0，当前处于超跌区）—— 双重深度超卖，罕见最强重置信号。">💎2W+1M</span><div class="mut2" style="font-size:10.5px">Intuitive Surgical Inc</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar lo"><i style="width:18.6%"></i></span><span class="cg-num">19</span></span></td>
-      <td class="num"><span class="cg-num">37</span></td>
-      <td class="num"><span class="cg-num">15</span></td>
-      <td class="num"><span class="cg-num">8</span></td>
-      <td class="num"><span class="cg-num">30</span></td>
-      <td class="num"><span class="r-pos">7B</span> / <span class="r-neg">7S</span></td>
-      <td>
-        <b class="cg-num">2</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 13 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 13 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：卖出">Ro Khanna <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：买入">Gilbert Cisneros <span class="arrow-buy">▲</span></span>
-        
-        
-      </td>
-      <td>
-        <span class="cg-flag wait"><span class="l-en">wait</span><span class="l-zh">等待</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">engine-blocked — wait</span><span class="l-zh">引擎否决 — 等待</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 19d
         </div>
       </td>
     </tr>
@@ -7163,10 +6982,10 @@
         
         <div class="mut2" style="font-size:10.5px">Eli Lilly + Co</div>
       </td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:46.4%"></i></span><span class="cg-num">46</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.2%"></i></span><span class="cg-num">48</span></span></td>
       <td class="num"><span class="cg-num">73</span></td>
       <td class="num"><span class="cg-num">66</span></td>
-      <td class="num"><span class="cg-num">54</span></td>
+      <td class="num"><span class="cg-num">66</span></td>
       <td class="num"><span class="mut2">—</span></td>
       <td class="num"><span class="r-pos">5B</span> / <span class="r-neg">7S</span></td>
       <td>
@@ -7178,6 +6997,7 @@
         <span class="mut2" style="font-size:10.5px">+4</span>
       </td>
       <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
         <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
         <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
@@ -7197,55 +7017,6 @@
       data-prime=""
       data-setup=""
       data-w2w=""
-      data-w1m=""
-      data-dual=""
-      data-fresh=""
-      data-fl=""
-      data-wmacd=""
-      data-wstoch=""
-      data-txage="62">
-      <td class="mut2">136</td>
-      <td>
-        <span class="tk"><a href="stock.html#NET">NET</a></span>
-        
-        
-        <div class="mut2" style="font-size:10.5px">Cloudflare</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:45.2%"></i></span><span class="cg-num">45</span></span></td>
-      <td class="num"><span class="cg-num">44</span></td>
-      <td class="num"><span class="cg-num">75</span></td>
-      <td class="num"><span class="cg-num">88</span></td>
-      <td class="num"><span class="mut2">—</span></td>
-      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">2S</span></td>
-      <td>
-        <b class="cg-num">3</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 32% (n=3298, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 32%（n=3298，收缩后）· 观察中 · 最近：卖出">Josh Gottheimer <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：买入">Gilbert Cisneros <span class="arrow-buy">▲</span></span>
-        
-        
-      </td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">uptrend confirmed, sector leading</span><span class="l-zh">上升趋势确认，板块领先</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 62d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 26d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class=""
-      data-prime=""
-      data-setup=""
-      data-w2w=""
       data-w1m="1"
       data-dual=""
       data-fresh="1"
@@ -7253,7 +7024,7 @@
       data-wmacd=""
       data-wstoch=""
       data-txage="14">
-      <td class="mut2">137</td>
+      <td class="mut2">136</td>
       <td>
         <span class="tk"><a href="stock.html#SPGI">SPGI</a></span>
         
@@ -7302,8 +7073,155 @@
       data-fl=""
       data-wmacd=""
       data-wstoch=""
-      data-txage="12">
+      data-txage="40">
+      <td class="mut2">137</td>
+      <td>
+        <span class="tk"><a href="stock.html#CSCO">CSCO</a></span>
+        
+        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 3) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
+        <div class="mut2" style="font-size:10.5px">Cisco Systems Inc</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:44.3%"></i></span><span class="cg-num">44</span></span></td>
+      <td class="num"><span class="cg-num">67</span></td>
+      <td class="num"><span class="cg-num">45</span></td>
+      <td class="num"><span class="cg-num">86</span></td>
+      <td class="num"><span class="mut2">—</span></td>
+      <td class="num"><span class="r-pos">7B</span> / <span class="r-neg">4S</span></td>
+      <td>
+        <b class="cg-num">4</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 7 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 7 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 36% (n=74, shrunk) · watch · last: bought" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 36%（n=74，收缩后）· 观察中 · 最近：买入">Maria Elvira Salazar <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 1 disclosure(s) · hit 32% (n=75, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 1 笔 · 胜率 32%（n=75，收缩后）· 观察中 · 最近：卖出">Richard Dean Dr Mccormick <span class="arrow-sell">▼</span></span>
+        
+        <span class="mut2" style="font-size:10.5px">+1</span>
+      </td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">constructive pullback</span><span class="l-zh">健康回调</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 40d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 27d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class=""
+      data-prime=""
+      data-setup=""
+      data-w2w=""
+      data-w1m=""
+      data-dual=""
+      data-fresh=""
+      data-fl=""
+      data-wmacd=""
+      data-wstoch=""
+      data-txage="56">
       <td class="mut2">138</td>
+      <td>
+        <span class="tk"><a href="stock.html#DXCM">DXCM</a></span>
+        
+        
+        <div class="mut2" style="font-size:10.5px">Dexcom</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:44.1%"></i></span><span class="cg-num">44</span></span></td>
+      <td class="num"><span class="cg-num">56</span></td>
+      <td class="num"><span class="cg-num">70</span></td>
+      <td class="num"><span class="cg-num">66</span></td>
+      <td class="num"><span class="mut2">—</span></td>
+      <td class="num"><span class="r-pos">6B</span> / <span class="r-neg">9S</span></td>
+      <td>
+        <b class="cg-num">4</b>
+        <span class="cg-mem sk-watch" data-tip-en="Senate · Democrat · 2 disclosure(s) · hit 20% (n=37, shrunk) · watch · last: sold" data-tip-zh="参议院 · 民主党 · 披露 2 笔 · 胜率 20%（n=37，收缩后）· 观察中 · 最近：卖出">Tina Smith <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 10 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 10 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 30% (n=13341, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 30%（n=13341，收缩后）· 观察中 · 最近：卖出">Michael T. McCaul <span class="arrow-sell">▼</span></span>
+        
+        <span class="mut2" style="font-size:10.5px">+1</span>
+      </td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">constructive pullback</span><span class="l-zh">健康回调</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 20d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class=""
+      data-prime=""
+      data-setup=""
+      data-w2w=""
+      data-w1m=""
+      data-dual=""
+      data-fresh=""
+      data-fl=""
+      data-wmacd=""
+      data-wstoch=""
+      data-txage="62">
+      <td class="mut2">139</td>
+      <td>
+        <span class="tk"><a href="stock.html#NET">NET</a></span>
+        
+        
+        <div class="mut2" style="font-size:10.5px">Cloudflare</div>
+      </td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:43.4%"></i></span><span class="cg-num">43</span></span></td>
+      <td class="num"><span class="cg-num">44</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">76</span></td>
+      <td class="num"><span class="mut2">—</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">2S</span></td>
+      <td>
+        <b class="cg-num">3</b>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 2 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 2 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 32% (n=3298, shrunk) · watch · last: sold" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 32%（n=3298，收缩后）· 观察中 · 最近：卖出">Josh Gottheimer <span class="arrow-sell">▼</span></span>
+        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 1 disclosure(s) · hit 34% (n=2482, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 1 笔 · 胜率 34%（n=2482，收缩后）· 观察中 · 最近：买入">Gilbert Cisneros <span class="arrow-buy">▲</span></span>
+        
+        
+      </td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+        
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">
+        <span class="l-en">uptrend confirmed, sector leading</span><span class="l-zh">上升趋势确认，板块领先</span>
+        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 62d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 26d
+        </div>
+      </td>
+    </tr>
+  
+    <tr class=""
+      data-prime=""
+      data-setup=""
+      data-w2w=""
+      data-w1m=""
+      data-dual=""
+      data-fresh=""
+      data-fl=""
+      data-wmacd=""
+      data-wstoch=""
+      data-txage="12">
+      <td class="mut2">140</td>
       <td>
         <span class="tk"><a href="stock.html#UPS">UPS</a></span>
         
@@ -7351,57 +7269,8 @@
       data-fl=""
       data-wmacd=""
       data-wstoch=""
-      data-txage="40">
-      <td class="mut2">139</td>
-      <td>
-        <span class="tk"><a href="stock.html#CSCO">CSCO</a></span>
-        
-        <span class="cg-flag t0" title="T0 beta — washed out on the 3-day frame (slow StochRSI 3) and the daily StochRSI just crossed up. Early, unproven; not a buy signal.">T0</span>
-        <div class="mut2" style="font-size:10.5px">Cisco Systems Inc</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:42.5%"></i></span><span class="cg-num">42</span></span></td>
-      <td class="num"><span class="cg-num">67</span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="cg-num">74</span></td>
-      <td class="num"><span class="mut2">—</span></td>
-      <td class="num"><span class="r-pos">7B</span> / <span class="r-neg">4S</span></td>
-      <td>
-        <b class="cg-num">4</b>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 7 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 7 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 36% (n=74, shrunk) · watch · last: bought" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 36%（n=74，收缩后）· 观察中 · 最近：买入">Maria Elvira Salazar <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 1 disclosure(s) · hit 32% (n=75, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 1 笔 · 胜率 32%（n=75，收缩后）· 观察中 · 最近：卖出">Richard Dean Dr Mccormick <span class="arrow-sell">▼</span></span>
-        
-        <span class="mut2" style="font-size:10.5px">+1</span>
-      </td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">constructive pullback</span><span class="l-zh">健康回调</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 40d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 27d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class=""
-      data-prime=""
-      data-setup=""
-      data-w2w=""
-      data-w1m=""
-      data-dual=""
-      data-fresh=""
-      data-fl=""
-      data-wmacd=""
-      data-wstoch=""
       data-txage="12">
-      <td class="mut2">140</td>
+      <td class="mut2">141</td>
       <td>
         <span class="tk"><a href="stock.html#MS">MS</a></span>
         
@@ -7433,54 +7302,6 @@
       <td class="mut2" style="font-size:11.5px">
         <span class="l-en">constructive pullback</span><span class="l-zh">健康回调</span>
         <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 12d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 14d
-        </div>
-      </td>
-    </tr>
-  
-    <tr class=""
-      data-prime=""
-      data-setup=""
-      data-w2w=""
-      data-w1m=""
-      data-dual=""
-      data-fresh=""
-      data-fl=""
-      data-wmacd=""
-      data-wstoch=""
-      data-txage="56">
-      <td class="mut2">141</td>
-      <td>
-        <span class="tk"><a href="stock.html#DXCM">DXCM</a></span>
-        
-        
-        <div class="mut2" style="font-size:10.5px">Dexcom</div>
-      </td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:42.3%"></i></span><span class="cg-num">42</span></span></td>
-      <td class="num"><span class="cg-num">56</span></td>
-      <td class="num"><span class="cg-num">70</span></td>
-      <td class="num"><span class="cg-num">54</span></td>
-      <td class="num"><span class="mut2">—</span></td>
-      <td class="num"><span class="r-pos">6B</span> / <span class="r-neg">9S</span></td>
-      <td>
-        <b class="cg-num">4</b>
-        <span class="cg-mem sk-watch" data-tip-en="Senate · Democrat · 2 disclosure(s) · hit 20% (n=37, shrunk) · watch · last: sold" data-tip-zh="参议院 · 民主党 · 披露 2 笔 · 胜率 20%（n=37，收缩后）· 观察中 · 最近：卖出">Tina Smith <span class="arrow-sell">▼</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Democrat · 10 disclosure(s) · hit 31% (n=25352, shrunk) · watch · last: bought" data-tip-zh="众议院 · 民主党 · 披露 10 笔 · 胜率 31%（n=25352，收缩后）· 观察中 · 最近：买入">Ro Khanna <span class="arrow-buy">▲</span></span>
-        <span class="cg-mem sk-watch" data-tip-en="House · Republican · 2 disclosure(s) · hit 30% (n=13341, shrunk) · watch · last: sold" data-tip-zh="众议院 · 共和党 · 披露 2 笔 · 胜率 30%（n=13341，收缩后）· 观察中 · 最近：卖出">Michael T. McCaul <span class="arrow-sell">▼</span></span>
-        
-        <span class="mut2" style="font-size:10.5px">+1</span>
-      </td>
-      <td>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-        
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">
-        <span class="l-en">constructive pullback</span><span class="l-zh">健康回调</span>
-        <div style="font-size:10px;color:var(--muted)"><span class="l-en">Tx age:</span><span class="l-zh">交易年龄:</span> 56d · <span class="l-en">lag:</span><span class="l-zh">滞后:</span> 20d
         </div>
       </td>
     </tr>
@@ -8307,38 +8128,7 @@
 
 
 
-<style>
-  .dg-wrap{border:1px solid rgba(128,128,128,.18);border-radius:14px;padding:16px 18px;background:color-mix(in srgb,var(--panel,#161a22) 60%,transparent)}
-  .dg-h2{font-size:16px;margin:0 0 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
-  .dg-note{font-size:11.5px;font-weight:400;opacity:.6}
-  .dg-lead{font-size:13px;line-height:1.55;padding:10px 12px;border-radius:9px;background:color-mix(in srgb,var(--info,#4a9eff) 9%,transparent);margin-bottom:12px}
-  .dg-lead-alarm{background:color-mix(in srgb,var(--down,#e5484d) 14%,transparent)}
-  .dg-counts{display:block;margin-top:4px;font-size:11px;opacity:.6}
-  .dg-tblwrap{overflow-x:auto}
-  .dg-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
-  .dg-tbl th,.dg-tbl td{padding:6px 9px;text-align:left;border-bottom:1px solid rgba(128,128,128,.12)}
-  .dg-tbl th.num,.dg-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
-  .dg-tbl thead th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;opacity:.7;font-weight:600}
-  .dg-row-alarm{background:color-mix(in srgb,var(--down,#e5484d) 10%,transparent)}
-  .dg-pos{color:var(--up,#30a46c)}.dg-neg{color:var(--down,#e5484d)}
-  .mut2{opacity:.55}
-  .dg-badge{font-size:10.5px;padding:2px 7px;border-radius:20px;white-space:nowrap}
-  .dg-proven{background:color-mix(in srgb,var(--up,#30a46c) 20%,transparent);color:var(--up,#30a46c)}
-  .dg-measuring{background:color-mix(in srgb,var(--muted,#8b95a5) 20%,transparent);color:var(--muted,#8b95a5)}
-  .dg-alarm{background:color-mix(in srgb,var(--down,#e5484d) 22%,transparent);color:var(--down,#e5484d);font-weight:700}
-  .dg-fine,.dg-disc{font-size:11px;opacity:.55;line-height:1.5;margin:8px 0 0}
-  .dg-sub{margin-top:14px}
-  .dg-sub h3{font-size:13px;margin:0 0 7px}.dg-sub h3 small{font-weight:400;opacity:.6}
-  .dg-ev{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;margin:3px 0}
-  .dg-ev-h{font-weight:700;min-width:34px}.dg-ev-tag{padding:2px 8px;border-radius:7px;background:rgba(128,128,128,.1)}
-  .dg-findings,.dg-notes{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
-  .dg-find{font-size:12.5px;line-height:1.5;display:flex;gap:7px;padding:6px 9px;border-radius:8px;background:rgba(128,128,128,.07)}
-  .dg-find.dg-alarm{background:color-mix(in srgb,var(--down,#e5484d) 11%,transparent)}
-  .dg-find.dg-warn{background:color-mix(in srgb,var(--warn,#f5a623) 11%,transparent)}
-  .dg-sev{flex:0 0 auto}
-  .dg-notes li{font-size:12px;line-height:1.5;padding:5px 0;border-top:1px solid rgba(128,128,128,.1)}
-  .dg-nd{display:inline-block;min-width:78px;opacity:.5;font-variant-numeric:tabular-nums;font-size:11px}
-</style>
+<link rel="stylesheet" href="assets/css/a3b983d2.css?v=a3b983d2">
 
 <section class="dg-wrap" style="margin-top:22px">
   <h2 class="dg-h2">📊
@@ -8355,8 +8145,8 @@
       <span class="l-zh">水平信息系数在 5 日周期达峰。仅作参考。</span>
     
     <span class="dg-counts">
-      <span class="l-en">1,861 live snapshots · 492 departures tracked</span>
-      <span class="l-zh">1,861 条在册快照 · 已追踪 492 次离场</span></span>
+      <span class="l-en">1,864 live snapshots · 489 departures tracked</span>
+      <span class="l-zh">1,864 条在册快照 · 已追踪 489 次离场</span></span>
   </div>
 
   
@@ -9601,6 +9391,6 @@
 })();
 </script>
 
-<script src="theme.js"></script>
+<script src="theme.js?v=195f6d56" defer></script>
 </body>
 </html>

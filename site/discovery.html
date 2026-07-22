@@ -37,100 +37,8 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
-<style>
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
-  a { text-decoration:none; color:inherit; }
-  h1 { font-size:20px; margin:0; }
-  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
-  h3 { font-size:13px; margin:0 0 6px; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
-  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
-  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:10.5px; color:var(--muted); }
-  table { border-collapse:collapse; width:100%; font-size:13px; }
-  th,td { text-align:left; padding:5px 7px; border-bottom:1px solid var(--line); vertical-align:middle; }
-  th { color:var(--muted); font-weight:500; } td.r, th.r { text-align:right; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
-  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
-  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
-  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
-  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
-  .help:hover .tip { display:block; }
-  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px; }
-  .tabbtn { padding:7px 14px; font:inherit; font-size:13px; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px; cursor:pointer; }
-  .tabbtn.on { background:var(--panel2); color:var(--text); border-color:var(--muted); }
-  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:10px; }
-  .segbtn { padding:5px 16px; font:inherit; font-size:12px; background:var(--panel); color:var(--muted); border:none; cursor:pointer; }
-  .segbtn.on { background:var(--panel2); color:var(--text); }
-  .rk { color:var(--muted); font-size:12px; width:26px; }
-  .scorecell { display:flex; align-items:center; gap:8px; min-width:150px; }
-  .abar { position:relative; flex:1; height:12px; border-radius:6px; background:var(--panel2); overflow:hidden; min-width:74px; }
-  .abar > i { position:absolute; top:0; bottom:0; } .abar > i.mid { left:50%; width:1px; background:var(--muted); opacity:.5; }
-  .znum { font-variant-numeric:tabular-nums; width:42px; text-align:right; }
-  .band-strong .znum, .band-leader .znum { color:var(--up); font-weight:600; }
-  .band-lag .znum, .band-deeplag .znum { color:var(--down); font-weight:600; }
-  /* entry badges (axis 2 — trend-position CONTEXT, not a buy call) */
-  .echip { font-size:10.5px; padding:1px 8px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; font-weight:600; }
-  .tp-pullback { color:var(--text); border-color:color-mix(in srgb, var(--up) 30%, var(--line)); font-weight:500; }
-  .tp-extended { color:var(--down); border-color:var(--down); }
-  .tp-steady, .tp-laggard, .tp-neutral { color:var(--muted); font-weight:400; }
-  /* actionable BUY signal — the MACD-2D x StochRSI-3D confluence gate (the hard buy filter) */
-  .sgchip { font-size:10.5px; padding:1px 8px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; font-weight:600; }
-  .sgchip .xs { font-weight:400; opacity:.85; }
-  .sg-confirmed { color:var(--up); border-color:var(--up); background:color-mix(in srgb, var(--up) 15%, transparent); }
-  .sg-early-confirmed { color:var(--up); border-color:color-mix(in srgb, var(--up) 80%, var(--line)); background:color-mix(in srgb, var(--up) 10%, transparent); }
-  .sg-imminent { color:var(--up); border-color:color-mix(in srgb, var(--up) 55%, var(--line)); background:color-mix(in srgb, var(--up) 6%, transparent); }
-  .sg-none { color:var(--muted); opacity:.45; font-weight:400; }
-  /* conviction driver chips */
-  .convcell { max-width:260px; }
-  .cchips { display:flex; flex-wrap:wrap; gap:4px; }
-  .cchip { font-size:10px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; color:var(--muted); }
-  .cchip.up { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, var(--line)); }
-  .cchip.down { color:var(--down); border-color:color-mix(in srgb, var(--down) 45%, var(--line)); }
-  .cchip.ins { color:var(--text); border-color:var(--muted); }
-  .cchip.attn { color:var(--muted); border-style:dashed; border-color:var(--muted); }  /* display-only caution */
-  /* buy-zone sweet-spot strip */
-  .bz-strip { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; }
-  .bz-card { border:1px solid var(--up); border-radius:9px; padding:9px 11px; background:color-mix(in srgb, var(--up) 7%, var(--panel)); }
-  .bz-card .tk { font-weight:700; font-size:14px; } .bz-card .tk a:hover { text-decoration:underline; }
-  .bz-head { display:flex; justify-content:space-between; align-items:baseline; gap:6px; }
-  .bz-score { font-variant-numeric:tabular-nums; font-weight:600; color:var(--up); }
-  .secsel { font:inherit; font-size:13px; -webkit-appearance:none; appearance:none;
-            padding:7px 30px 7px 11px; border:1px solid var(--line); border-radius:10px;
-            background-color:var(--panel); background-image:var(--caret-svg); background-repeat:no-repeat;
-            background-position:right 10px center; background-size:11px; color:var(--text);
-            margin-bottom:12px; cursor:pointer; outline:none;
-            transition:border-color .2s ease, box-shadow .2s ease; }
-  .secsel:hover { border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
-  .secsel:focus { border-color:color-mix(in srgb,var(--link) 70%,var(--line));
-            box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 18%,transparent); }
-  .note { margin:8px 0 0; line-height:1.5; }
-  .twocol { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media (max-width:760px){ .twocol{ grid-template-columns:1fr; } }
-  /* extension / exhaustion grade chips (axis: own-history extension — NEVER in the score) */
-  .gchip { font-size:10.5px; padding:1px 7px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; font-weight:600; }
-  .gchip .xs { font-weight:400; opacity:.8; }
-  .ex-intrend { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, var(--line)); }
-  .ex-steady { color:var(--muted); font-weight:400; }
-  .ex-stretched { color:var(--warn-fg); border-color:color-mix(in srgb, var(--warn-fg) 50%, var(--line)); background:color-mix(in srgb, var(--warn-fg) 8%, transparent); }
-  .ex-parabolic { color:var(--down); border-color:var(--down); background:color-mix(in srgb, var(--down) 13%, transparent); }
-  .ex-na { color:var(--muted); opacity:.45; font-weight:400; }
-  /* valuation-vs-own-history chip (display-only tail flag) */
-  .vchip { font-size:10px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
-  .val-cheap { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, var(--line)); }
-  .val-rich, .val-richest { color:var(--down); border-color:color-mix(in srgb, var(--down) 45%, var(--line)); }
-  .val-richest { background:color-mix(in srgb, var(--down) 10%, transparent); font-weight:600; }
-  /* cohort-stretch fragility banner (board-level, display-only sizing context) */
-  .cohort { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 14px; border-radius:10px; margin-bottom:14px; border:1px solid var(--line); font-size:13px; }
-  .cohort .dot { width:10px; height:10px; border-radius:50%; flex:none; }
-  .cohort.normal { background:color-mix(in srgb, var(--up) 6%, var(--panel)); border-color:color-mix(in srgb, var(--up) 30%, var(--line)); } .cohort.normal .dot { background:var(--up); }
-  .cohort.elevated { background:color-mix(in srgb, var(--warn-fg) 9%, var(--panel)); border-color:color-mix(in srgb, var(--warn-fg) 35%, var(--line)); } .cohort.elevated .dot { background:var(--warn-fg); }
-  .cohort.stretched { background:color-mix(in srgb, var(--down) 9%, var(--panel)); border-color:color-mix(in srgb, var(--down) 38%, var(--line)); } .cohort.stretched .dot { background:var(--down); }
-  .filt { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer; margin-left:12px; }
-  .filt input { accent-color:var(--link); cursor:pointer; }
-  :root { --warn-fg:#b8770a; } :root[data-theme="dark"] { --warn-fg:#e0a93a; }
-</style>
+<link rel="stylesheet" href="theme.css?v=a1aa8c55">
+<link rel="stylesheet" href="assets/css/cf96c295.css?v=cf96c295">
 </head>
 <body>
 
@@ -286,71 +194,7 @@
       </div>
     </div>
     
-    <style>
-    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
-       clip off the left edge. Instead anchor the mega to the full-width .nav-links
-       row (its right edge = the nav rail right): make .nav-links the positioning
-       context and the Research .nav-dd static >700px, so right:0 right-aligns the
-       panel to the rail and it stays fully on-screen. The ::before bridges the
-       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
-    @media (min-width:701px){
-      /* nav-links is the positioning context for the rail-anchored mega; desktop
-         only, so it never overrides theme.js's position:absolute hamburger flyout
-         (≤700px), which shares this specificity. */
-      .site-nav .nav-links,.topbar .nav-links{position:relative}
-      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
-      /* the base .nav-dd::after bridge would become a full-width strip once the
-         trigger is static — disable it; the mega's own ::before bridges the gap. */
-      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
-        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
-      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
-    }
-    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      padding-bottom:13px;margin-bottom:13px;
-      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
-    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-      white-space:normal;text-decoration:none;
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
-      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
-      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
-    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
-      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
-      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
-    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
-    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
-    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
-    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
-    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
-    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
-    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
-    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
-      white-space:normal;text-decoration:none;transition:background .15s ease}
-    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
-    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
-    .nav-mega .nm-tx{min-width:0}
-    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
-    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
-      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
-    @media (max-width:1080px) and (min-width:701px){
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
-      .nav-mega-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:700px){
-      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
-      .nav-mega-grid{grid-template-columns:1fr;gap:0}
-      .nav-mega-h{padding-top:9px}
-      /* the hamburger accordion caps each open dropdown at max-height:600px
-         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
-         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
-         Same specificity trick overrides theme.js's generic accordion-panel
-         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
-         submenus) with symmetric sides + top breathing room, so the feature
-         cards read centered under the trigger instead of crooked. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
-    </style>
+    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -409,8 +253,8 @@
     </div>
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=2758e158" defer></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -615,7 +459,7 @@
   <td class="rk">2</td>
   <td><a href="stock.html#SNDK"><b>SNDK</b></a> <span class="muted sm">Sandisk</span><br><span class="muted xs"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:26.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.58</span></div></td>
+<span class="abar"><i style="left:50%;width:26.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.57</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.1σ (distance above its 200-day average, z-scored over a year), 68.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.1σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -756,17 +600,6 @@
   <td class="r muted sm">$32.53</td>
 </tr><tr data-grade="intrend">
   <td class="rk">15</td>
-  <td><a href="stock.html#UNFI"><b>UNFI</b></a> <span class="muted sm">United Natural Foo</span><br><span class="muted xs"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span></td>
-  <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:20.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.22</span></div></td>
-  <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
-  <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z -0.3σ (distance above its 200-day average, z-scored over a year), 90.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">-0.3σ</span></span></td>
-  <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
-  <td class="convcell"><span class="cchips"><span class="cchip up" title="value z +2.1"><span class="l-en">Value</span><span class="l-zh">价值</span> +2.1</span><span class="cchip up" title="profitability z +1.4"><span class="l-en">Profit</span><span class="l-zh">盈利</span> +1.4</span><span class="cchip down" title="low_vol z -1.1"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.1</span><span class="vchip val-rich" data-tip-en="Earnings yield at the 31th percentile of this name's OWN ~3-year history — near the richest multiple it has carried in 3 years (stretched-valuation caution — the kind price extension alone can miss). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 31 百分位；仅作展示，不计入评分。"><span class="l-en">Rich vs own</span><span class="l-zh">相对自身偏高</span></span></span></td>
-  <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">+1.69 <span class="xs">#2/74</span></td>
-  <td class="r muted sm">$49.92</td>
-</tr><tr data-grade="intrend">
-  <td class="rk">16</td>
   <td><a href="stock.html#ARWR"><b>ARWR</b></a> <span class="muted sm">Arrowhead Pharmace</span><br><span class="muted xs"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span></td>
   <td><div class="scorecell">
 <span class="abar"><i style="left:50%;width:20.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.22</span></div></td>
@@ -776,6 +609,17 @@
   <td class="convcell"><span class="cchips"><span class="cchip down" title="value z -0.9"><span class="l-en">Value</span><span class="l-zh">价值</span> -0.9</span><span class="cchip up" title="quality z +1.3"><span class="l-en">Quality</span><span class="l-zh">质量</span> +1.3</span><span class="cchip down" title="low_vol z -1.7"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.7</span><span class="vchip val-cheap" data-tip-en="Earnings yield at the 95th percentile of this name's OWN ~3-year history — cheaper than its own norm (re-rating headroom). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 95 百分位；仅作展示，不计入评分。"><span class="l-en">Cheap vs own</span><span class="l-zh">相对自身偏低</span></span></span></td>
   <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">+2.21 <span class="xs">#2/165</span></td>
   <td class="r muted sm">$74.52</td>
+</tr><tr data-grade="intrend">
+  <td class="rk">16</td>
+  <td><a href="stock.html#UNFI"><b>UNFI</b></a> <span class="muted sm">United Natural Foo</span><br><span class="muted xs"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span></td>
+  <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:20.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.22</span></div></td>
+  <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
+  <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z -0.3σ (distance above its 200-day average, z-scored over a year), 90.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">-0.3σ</span></span></td>
+  <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
+  <td class="convcell"><span class="cchips"><span class="cchip up" title="value z +2.1"><span class="l-en">Value</span><span class="l-zh">价值</span> +2.1</span><span class="cchip up" title="profitability z +1.4"><span class="l-en">Profit</span><span class="l-zh">盈利</span> +1.4</span><span class="cchip down" title="low_vol z -1.1"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.1</span><span class="vchip val-rich" data-tip-en="Earnings yield at the 31th percentile of this name's OWN ~3-year history — near the richest multiple it has carried in 3 years (stretched-valuation caution — the kind price extension alone can miss). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 31 百分位；仅作展示，不计入评分。"><span class="l-en">Rich vs own</span><span class="l-zh">相对自身偏高</span></span></span></td>
+  <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">+1.69 <span class="xs">#2/74</span></td>
+  <td class="r muted sm">$49.92</td>
 </tr><tr data-grade="parabolic">
   <td class="rk">17</td>
   <td><a href="stock.html#STT"><b>STT</b></a> <span class="muted sm">State Street Corpo</span><br><span class="muted xs"><span class="l-en">Financials</span><span class="l-zh">金融</span></span></td>
@@ -855,17 +699,6 @@
   <td class="r muted sm">$139.11</td>
 </tr><tr data-grade="steady">
   <td class="rk">24</td>
-  <td><a href="stock.html#SNX"><b>SNX</b></a> <span class="muted sm">TD Synnex</span><br><span class="muted xs"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></span></td>
-  <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:19.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.14</span></div></td>
-  <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
-  <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z +0.7σ (distance above its 200-day average, z-scored over a year), 86.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">+0.7σ</span></span></td>
-  <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
-  <td class="convcell"><span class="cchips"><span class="cchip up" title="value z +1.8"><span class="l-en">Value</span><span class="l-zh">价值</span> +1.8</span><span class="cchip down" title="quality z -1.0"><span class="l-en">Quality</span><span class="l-zh">质量</span> -1.0</span><span class="cchip down" title="profitability z -1.2"><span class="l-en">Profit</span><span class="l-zh">盈利</span> -1.2</span><span class="cchip up" title="low_vol z +1.8"><span class="l-en">LowVol</span><span class="l-zh">低波</span> +1.8</span><span class="vchip val-richest" data-tip-en="Earnings yield at the 4th percentile of this name's OWN ~3-year history — near the richest multiple it has carried in 3 years (stretched-valuation caution — the kind price extension alone can miss). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 4 百分位；仅作展示，不计入评分。"><span class="l-en">Richest in 3y</span><span class="l-zh">近3年最贵</span></span></span></td>
-  <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">+1.70 <span class="xs">#21/184</span></td>
-  <td class="r muted sm">$249.30</td>
-</tr><tr data-grade="steady">
-  <td class="rk">25</td>
   <td><a href="stock.html#PSMT"><b>PSMT</b></a> <span class="muted sm">PriceSmart</span><br><span class="muted xs"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span></td>
   <td><div class="scorecell">
 <span class="abar"><i style="left:50%;width:19.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.14</span></div></td>
@@ -875,6 +708,17 @@
   <td class="convcell"><span class="cchips"><span class="cchip up" title="quality z +0.7"><span class="l-en">Quality</span><span class="l-zh">质量</span> +0.7</span><span class="vchip val-richest" data-tip-en="Earnings yield at the 2th percentile of this name's OWN ~3-year history — near the richest multiple it has carried in 3 years (stretched-valuation caution — the kind price extension alone can miss). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 2 百分位；仅作展示，不计入评分。"><span class="l-en">Richest in 3y</span><span class="l-zh">近3年最贵</span></span></span></td>
   <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">+1.80 <span class="xs">#1/74</span></td>
   <td class="r muted sm">$186.49</td>
+</tr><tr data-grade="steady">
+  <td class="rk">25</td>
+  <td><a href="stock.html#SNX"><b>SNX</b></a> <span class="muted sm">TD Synnex</span><br><span class="muted xs"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></span></td>
+  <td><div class="scorecell">
+<span class="abar"><i style="left:50%;width:19.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.14</span></div></td>
+  <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
+  <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z +0.7σ (distance above its 200-day average, z-scored over a year), 86.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">+0.7σ</span></span></td>
+  <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
+  <td class="convcell"><span class="cchips"><span class="cchip up" title="value z +1.8"><span class="l-en">Value</span><span class="l-zh">价值</span> +1.8</span><span class="cchip down" title="quality z -1.0"><span class="l-en">Quality</span><span class="l-zh">质量</span> -1.0</span><span class="cchip down" title="profitability z -1.2"><span class="l-en">Profit</span><span class="l-zh">盈利</span> -1.2</span><span class="cchip up" title="low_vol z +1.8"><span class="l-en">LowVol</span><span class="l-zh">低波</span> +1.8</span><span class="vchip val-richest" data-tip-en="Earnings yield at the 4th percentile of this name's OWN ~3-year history — near the richest multiple it has carried in 3 years (stretched-valuation caution — the kind price extension alone can miss). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 4 百分位；仅作展示，不计入评分。"><span class="l-en">Richest in 3y</span><span class="l-zh">近3年最贵</span></span></span></td>
+  <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">+1.70 <span class="xs">#21/184</span></td>
+  <td class="r muted sm">$249.30</td>
 </tr><tr data-grade="steady">
   <td class="rk">26</td>
   <td><a href="stock.html#LRCX"><b>LRCX</b></a> <span class="muted sm">Lam Research</span><br><span class="muted xs"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></span></td>
@@ -901,7 +745,7 @@
   <td class="rk">28</td>
   <td><a href="stock.html#NUE"><b>NUE</b></a> <span class="muted sm">Nucor</span><br><span class="muted xs"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:18.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.12</span></div></td>
+<span class="abar"><i style="left:50%;width:18.6%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.12</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z +0.2σ (distance above its 200-day average, z-scored over a year), 88.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">+0.2σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -971,7 +815,7 @@
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -0.8σ (distance above its 200-day average, z-scored over a year), 76.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-0.8σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
-  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -0.9"><span class="l-en">Quality</span><span class="l-zh">质量</span> -0.9</span><span class="cchip down" title="low_vol z -1.8"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.8</span><span class="cchip down" title="insider z -0.7"><span class="l-en">Insider</span><span class="l-zh">内部</span> -0.7</span></span></td>
+  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -0.9"><span class="l-en">Quality</span><span class="l-zh">质量</span> -0.9</span><span class="cchip down" title="low_vol z -1.8"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.8</span><span class="cchip down" title="insider z -0.6"><span class="l-en">Insider</span><span class="l-zh">内部</span> -0.6</span></span></td>
   <td class="r muted sm" title="sector-neutral residual-momentum z (selection leg)">+2.27 <span class="xs">#2/250</span></td>
   <td class="r muted sm">$244.39</td>
 </tr><tr data-grade="stretched">
@@ -1187,7 +1031,7 @@
   <td class="rk">13</td>
   <td><a href="stock.html#MORN"><b>MORN</b></a> <span class="muted sm">Morningstar, Inc.</span><br><span class="muted xs"><span class="l-en">Financials</span><span class="l-zh">金融</span></span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:22.9%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.38</span></div></td>
+<span class="abar"><i style="right:50%;width:23.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.38</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-stretched" data-tip-en="Extension vs the name's OWN history: ext_z +1.1σ (distance above its 200-day average, z-scored over a year), 58.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Stretched</span><span class="l-zh">拉伸</span> <span class="xs">+1.1σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -1308,7 +1152,7 @@
   <td class="rk">24</td>
   <td><a href="stock.html#INTU"><b>INTU</b></a> <span class="muted sm">Intuit</span><br><span class="muted xs"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:21.6%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.30</span></div></td>
+<span class="abar"><i style="right:50%;width:21.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.30</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.0σ (distance above its 200-day average, z-scored over a year), 36.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.0σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -1319,7 +1163,7 @@
   <td class="rk">25</td>
   <td><a href="stock.html#COIN"><b>COIN</b></a> <span class="muted sm">Coinbase</span><br><span class="muted xs"><span class="l-en">Financials</span><span class="l-zh">金融</span></span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:21.6%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.29</span></div></td>
+<span class="abar"><i style="right:50%;width:21.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.29</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -0.3σ (distance above its 200-day average, z-scored over a year), 42.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-0.3σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -1681,7 +1525,7 @@
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -0.8σ (distance above its 200-day average, z-scored over a year), 76.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-0.8σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
-  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -0.9"><span class="l-en">Quality</span><span class="l-zh">质量</span> -0.9</span><span class="cchip down" title="low_vol z -1.8"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.8</span><span class="cchip down" title="insider z -0.7"><span class="l-en">Insider</span><span class="l-zh">内部</span> -0.7</span></span></td>
+  <td class="convcell"><span class="cchips"><span class="cchip down" title="quality z -0.9"><span class="l-en">Quality</span><span class="l-zh">质量</span> -0.9</span><span class="cchip down" title="low_vol z -1.8"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.8</span><span class="cchip down" title="insider z -0.6"><span class="l-en">Insider</span><span class="l-zh">内部</span> -0.6</span></span></td>
   <td class="r muted sm">+2.27</td>
 </tr><tr data-grade="steady">
   <td><a href="stock.html#MYRG"><b>MYRG</b></a> <span class="muted sm">MYR Group, Inc.</span></td>
@@ -1695,7 +1539,7 @@
 </tr><tr data-grade="intrend">
   <td><a href="stock.html#FIX"><b>FIX</b></a> <span class="muted sm">Comfort Systems US</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:16.6%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.99</span></div></td>
+<span class="abar"><i style="left:50%;width:16.6%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+1.00</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z -2.0σ (distance above its 200-day average, z-scored over a year), 86.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">-2.0σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -1713,7 +1557,7 @@
 </tr><tr data-grade="intrend">
   <td><a href="stock.html#MLI"><b>MLI</b></a> <span class="muted sm">Mueller Industries</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:16.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.98</span></div></td>
+<span class="abar"><i style="left:50%;width:16.4%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.98</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z -1.5σ (distance above its 200-day average, z-scored over a year), 89.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">-1.5σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -1931,7 +1775,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#UNIT"><b>UNIT</b></a> <span class="muted sm">Uniti Group</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:8.4%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.50</span></div></td>
+<span class="abar"><i style="left:50%;width:8.4%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.51</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z +0.7σ (distance above its 200-day average, z-scored over a year), 87.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">+0.7σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -2055,7 +1899,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#CCOI"><b>CCOI</b></a> <span class="muted sm">Cogent Communicati</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:18.6%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.12</span></div></td>
+<span class="abar"><i style="right:50%;width:18.6%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.11</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -0.5σ (distance above its 200-day average, z-scored over a year), 26.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-0.5σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -2064,7 +1908,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#NFLX"><b>NFLX</b></a> <span class="muted sm">Netflix</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:16.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.00</span></div></td>
+<span class="abar"><i style="right:50%;width:16.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-1.00</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.4σ (distance above its 200-day average, z-scored over a year), 54.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.4σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -2104,7 +1948,7 @@
 </tr><tr data-grade="intrend">
   <td><a href="stock.html#NUE"><b>NUE</b></a> <span class="muted sm">Nucor</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:18.7%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.12</span></div></td>
+<span class="abar"><i style="left:50%;width:18.6%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.12</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z +0.2σ (distance above its 200-day average, z-scored over a year), 88.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">+0.2σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -2207,7 +2051,7 @@
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.8σ (distance above its 200-day average, z-scored over a year), 57.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.8σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
-  <td class="convcell"><span class="cchips"><span class="cchip down" title="low_vol z -1.5"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.5</span><span class="cchip up" title="insider z +0.8"><span class="l-en">Insider</span><span class="l-zh">内部</span> +0.8</span><span class="cchip ins">👤2</span><span class="vchip val-richest" data-tip-en="Earnings yield at the 0th percentile of this name's OWN ~3-year history — near the richest multiple it has carried in 3 years (stretched-valuation caution — the kind price extension alone can miss). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 0 百分位；仅作展示，不计入评分。"><span class="l-en">Richest in 3y</span><span class="l-zh">近3年最贵</span></span></span></td>
+  <td class="convcell"><span class="cchips"><span class="cchip down" title="low_vol z -1.5"><span class="l-en">LowVol</span><span class="l-zh">低波</span> -1.5</span><span class="cchip up" title="insider z +0.9"><span class="l-en">Insider</span><span class="l-zh">内部</span> +0.9</span><span class="cchip ins">👤2</span><span class="vchip val-richest" data-tip-en="Earnings yield at the 0th percentile of this name's OWN ~3-year history — near the richest multiple it has carried in 3 years (stretched-valuation caution — the kind price extension alone can miss). Coarse (annual earnings), display-only, never scored." data-tip-zh="市盈收益率处于该股近3年自身历史的第 0 百分位；仅作展示，不计入评分。"><span class="l-en">Richest in 3y</span><span class="l-zh">近3年最贵</span></span></span></td>
   <td class="r muted sm">+0.64</td>
 </tr><tr data-grade="intrend">
   <td><a href="stock.html#NGVT"><b>NGVT</b></a> <span class="muted sm">Ingevity, Corp.</span></td>
@@ -2536,7 +2380,7 @@
 </tr><tr data-grade="stretched">
   <td><a href="stock.html#MORN"><b>MORN</b></a> <span class="muted sm">Morningstar, Inc.</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:22.9%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.38</span></div></td>
+<span class="abar"><i style="right:50%;width:23.0%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.38</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-stretched" data-tip-en="Extension vs the name's OWN history: ext_z +1.1σ (distance above its 200-day average, z-scored over a year), 58.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Stretched</span><span class="l-zh">拉伸</span> <span class="xs">+1.1σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -2711,7 +2555,7 @@
 </tr><tr data-grade="intrend">
   <td><a href="stock.html#ROIV"><b>ROIV</b></a> <span class="muted sm">Roivant Sciences</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:13.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.79</span></div></td>
+<span class="abar"><i style="left:50%;width:13.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.80</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z -0.3σ (distance above its 200-day average, z-scored over a year), 95.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">-0.3σ</span></span></td>
   <td><span class="echip tp-extended"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
@@ -2893,7 +2737,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#HAL"><b>HAL</b></a> <span class="muted sm">Halliburton</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:6.0%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.36</span></div></td>
+<span class="abar"><i style="left:50%;width:5.9%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.36</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.6σ (distance above its 200-day average, z-scored over a year), 78.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.6σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -2938,7 +2782,7 @@
 </tr><tr data-grade="stretched">
   <td><a href="stock.html#OII"><b>OII</b></a> <span class="muted sm">Oceaneering Intern</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:5.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.31</span></div></td>
+<span class="abar"><i style="left:50%;width:5.1%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.31</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-stretched" data-tip-en="Extension vs the name's OWN history: ext_z +1.2σ (distance above its 200-day average, z-scored over a year), 100.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Stretched</span><span class="l-zh">拉伸</span> <span class="xs">+1.2σ</span></span></td>
   <td><span class="echip tp-extended"><span class="l-en">Extended</span><span class="l-zh">过热</span></span></td>
@@ -2981,7 +2825,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#CRK"><b>CRK</b></a> <span class="muted sm">Comstock Resources</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:15.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.94</span></div></td>
+<span class="abar"><i style="right:50%;width:15.8%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.94</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.4σ (distance above its 200-day average, z-scored over a year), 48.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.4σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -3120,7 +2964,7 @@
 </tr><tr data-grade="intrend">
   <td><a href="stock.html#NWN"><b>NWN</b></a> <span class="muted sm">NW Natural</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:7.6%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.45</span></div></td>
+<span class="abar"><i style="left:50%;width:7.6%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.46</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z -0.9σ (distance above its 200-day average, z-scored over a year), 92.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">-0.9σ</span></span></td>
   <td><span class="echip tp-steady"><span class="l-en">In trend</span><span class="l-zh">趋势内</span></span></td>
@@ -3235,7 +3079,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#VST"><b>VST</b></a> <span class="muted sm">Vistra Corp.</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:10.1%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.61</span></div></td>
+<span class="abar"><i style="right:50%;width:10.1%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.60</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -0.1σ (distance above its 200-day average, z-scored over a year), 75.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-0.1σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -3284,7 +3128,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#SNDK"><b>SNDK</b></a> <span class="muted sm">Sandisk</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:26.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.58</span></div></td>
+<span class="abar"><i style="left:50%;width:26.2%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-strong">+1.57</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.1σ (distance above its 200-day average, z-scored over a year), 68.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.1σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -3428,7 +3272,7 @@
 </tr><tr data-grade="stretched">
   <td><a href="stock.html#FTNT"><b>FTNT</b></a> <span class="muted sm">Fortinet</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:15.5%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.93</span></div></td>
+<span class="abar"><i style="left:50%;width:15.4%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.93</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-stretched" data-tip-en="Extension vs the name's OWN history: ext_z +1.9σ (distance above its 200-day average, z-scored over a year), 95.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Stretched</span><span class="l-zh">拉伸</span> <span class="xs">+1.9σ</span></span></td>
   <td><span class="echip tp-steady"><span class="l-en">In trend</span><span class="l-zh">趋势内</span></span></td>
@@ -3471,7 +3315,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#INTU"><b>INTU</b></a> <span class="muted sm">Intuit</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:21.6%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.30</span></div></td>
+<span class="abar"><i style="right:50%;width:21.7%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-deeplag">-1.30</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -1.0σ (distance above its 200-day average, z-scored over a year), 36.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-1.0σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -3725,7 +3569,7 @@
 </tr><tr data-grade="steady">
   <td><a href="stock.html#JBGS"><b>JBGS</b></a> <span class="muted sm">JBG Smith</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="right:50%;width:13.4%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.81</span></div></td>
+<span class="abar"><i style="right:50%;width:13.5%;background:var(--down)"></i><i class="mid"></i></span><span class="znum band-lag">-0.81</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-steady" data-tip-en="Extension vs the name's OWN history: ext_z -0.6σ (distance above its 200-day average, z-scored over a year), 62.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">Steady</span><span class="l-zh">平稳</span> <span class="xs">-0.6σ</span></span></td>
   <td><span class="echip tp-laggard"><span class="l-en">Laggard</span><span class="l-zh">落后</span></span></td>
@@ -3900,7 +3744,7 @@
 </tr><tr data-grade="intrend">
   <td><a href="stock.html#LAUR"><b>LAUR</b></a> <span class="muted sm">Laureate Education</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:11.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.70</span></div></td>
+<span class="abar"><i style="left:50%;width:11.8%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.71</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z -1.2σ (distance above its 200-day average, z-scored over a year), 89.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">-1.2σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -4091,7 +3935,7 @@
 </tr><tr data-grade="intrend">
   <td><a href="stock.html#COCO"><b>COCO</b></a> <span class="muted sm">The Vita Coco Comp</span></td>
   <td><div class="scorecell">
-<span class="abar"><i style="left:50%;width:9.3%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.56</span></div></td>
+<span class="abar"><i style="left:50%;width:9.4%;background:var(--up)"></i><i class="mid"></i></span><span class="znum band-leader">+0.56</span></div></td>
   <td><span class="sgchip sg-none" data-tip-en="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D)." data-tip-zh="无新的共振交叉 — 今日非买入。">—</span></td>
   <td><span class="gchip ex-intrend" data-tip-en="Extension vs the name's OWN history: ext_z +0.4σ (distance above its 200-day average, z-scored over a year), 90.0% of its 52-week high. In-trend = leader, not stretched; Stretched = ≥1σ extended (sizing caution). A risk-placement read, never a rank input." data-tip-zh="相对自身历史的拉伸程度，仅作风险定位，不计入排名。"><span class="l-en">In-trend</span><span class="l-zh">趋势内</span> <span class="xs">+0.4σ</span></span></td>
   <td><span class="echip tp-pullback"><span class="l-en">Pullback</span><span class="l-zh">回调</span></span></td>
@@ -4215,7 +4059,7 @@
 
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: engine/top_picks.py — an alpha-led conviction blend (engine/residual_alpha.py + engine/equity_factors.py + Form-4 insider) over the S&amp;P 1500, validated point-in-time in reports/top-picks-phase0.md. The stretch / exhaustion axis, valuation-vs-own-history chip and cohort banner (engine/extension.py) are DISPLAY-ONLY risk reads — never in the rank: a point-in-time downside test (reports/top-picks-freshness-phase0.md) found no extension screen reduces drawdown, but the parabolic (&gt;2σ own-history) tail is a genuine bubble-pullback hazard, so it is flagged per-name. Ranks recompute daily with prices/filings. A modest, decayed, crowded edge — a research lens with risk context, not a buy list. See LIMITATIONS.md.</span><span class="l-zh">来源：engine/top_picks.py — 覆盖标普 1500 的以阿尔法为主的信念混合（engine/residual_alpha.py + engine/equity_factors.py + Form-4 内部人），已在 reports/top-picks-phase0.md 做点对点验证。拉伸/过热维度、相对自身估值标签与群体横幅（engine/extension.py）均为仅展示的风险读数，不计入排名：点对点下行测试（reports/top-picks-freshness-phase0.md）发现任何拉伸筛选都无法降低回撤，但抛物（相对自身历史&gt;2σ）尾部确为真实的泡沫回撤风险，故逐股标注。排名随价格/申报每日重算。温和、已衰减、拥挤的边际信号 — 带风险背景的研究视角，而非买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-22 02:59 UTC</p>
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-22 05:49 UTC</p>
 </div>
 
 <script>
@@ -4238,6 +4082,6 @@
    }); });
 })();
 </script>
-<script src="theme.js"></script>
+<script src="theme.js?v=195f6d56" defer></script>
 </body>
 </html>
