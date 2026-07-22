@@ -59,8 +59,8 @@
   @media(prefers-reduced-motion:reduce){.mmb-orb,.mmb-orb::after,.mmb-tool::before,
     #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{animation:none}
     #mmb-panel{transition:opacity .18s ease!important}}
-  #mmb-launch .ll{font:650 13.5px/1 var(--mmb-font);color:var(--mmb-text)}
-  #mmb-launch .lk{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px}
+  #mmb-launch .ll{font:650 13.5px/1 var(--mmb-font);color:var(--mmb-text);white-space:nowrap}
+  #mmb-launch .lk{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;white-space:nowrap}
   #mmb-launch .lt{display:flex;flex-direction:column}
   /* scrim + panel */
   /* Backdrop deepens as you enter focus mode: a light veil behind the compact chatbox,
@@ -134,14 +134,17 @@
   .mmb-th-empty{color:var(--mmb-muted);font:400 12.5px/1.5 var(--mmb-font);padding:14px 16px}
   .mmb-main{flex:1;display:flex;flex-direction:column;min-width:0}
   .mmb-head{display:flex;align-items:center;gap:8px;padding:14px 14px;flex:none;border-bottom:1px solid color-mix(in srgb,var(--mmb-line) 45%,transparent)}
-  .mmb-head .ttl{font:650 14px/1 var(--mmb-font);display:flex;align-items:center;gap:8px}
-  .mmb-head .dot{width:7px;height:7px;border-radius:50%;background:#3da564;box-shadow:0 0 8px #3da564;transition:background .2s}
+  /* tight-width discipline: pills/buttons never wrap or shrink — the TITLE gives way (ellipsis) */
+  .mmb-head .ttl{font:650 14px/1 var(--mmb-font);display:flex;align-items:center;gap:8px;min-width:0}
+  .mmb-head .ttl .mmb-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mmb-head .mmb-icon{flex:none}
+  .mmb-head .dot{flex:none;width:7px;height:7px;border-radius:50%;background:#3da564;box-shadow:0 0 8px #3da564;transition:background .2s}
   /* streaming: violet + soft opacity pulse (opacity-only, house perf law) */
   .mmb-head .dot.busy{background:var(--mmb-violet);box-shadow:0 0 8px var(--mmb-violet);animation:mmb-dotpulse 1s ease-in-out infinite}
   @keyframes mmb-dotpulse{0%,100%{opacity:1}50%{opacity:.45}}
   @media(prefers-reduced-motion:reduce){.mmb-head .dot.busy{animation:none}}
   .mmb-head .sp{flex:1}
-  .mmb-rpill{display:inline-flex;align-items:center;gap:6px;font:600 11.5px/1 var(--mmb-font);cursor:pointer;
+  .mmb-rpill{display:inline-flex;align-items:center;gap:6px;font:600 11.5px/1 var(--mmb-font);cursor:pointer;white-space:nowrap;flex:none;
     color:color-mix(in srgb,var(--mmb-violet) 84%,#fff);background:color-mix(in srgb,var(--mmb-violet) 12%,transparent);
     border:1px solid color-mix(in srgb,var(--mmb-violet) 30%,transparent);border-radius:999px;padding:6px 11px}
   .mmb-rpill.on{background:linear-gradient(180deg,color-mix(in srgb,#a78bfa 90%,#fff),var(--mmb-violet));color:#fff;border-color:transparent}
@@ -296,10 +299,10 @@
   .mmb-ta::placeholder{color:color-mix(in srgb,var(--mmb-muted) 92%,transparent)}
   .mmb-tools{display:flex;align-items:center;gap:8px;padding:6px 10px 10px}
   .mmb-tools .sp{flex:1}
-  .mmb-seg{display:flex;gap:2px;padding:2px;border-radius:999px;background:color-mix(in srgb,#fff 5%,transparent);border:1px solid var(--mmb-line)}
-  .mmb-seg button{border:none;background:transparent;color:var(--mmb-muted);font:600 11.5px/1 var(--mmb-font);padding:5px 11px;border-radius:999px;cursor:pointer}
+  .mmb-seg{display:flex;flex:none;gap:2px;padding:2px;border-radius:999px;background:color-mix(in srgb,#fff 5%,transparent);border:1px solid var(--mmb-line)}
+  .mmb-seg button{border:none;background:transparent;color:var(--mmb-muted);font:600 11.5px/1 var(--mmb-font);padding:5px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
   .mmb-seg button.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));color:#fff;box-shadow:0 2px 10px -3px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
-  .mmb-q{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);padding:0 2px}
+  .mmb-q{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);padding:0 2px;white-space:nowrap}
   .mmb-q.warn{color:#e0a030}.mmb-q.empty{color:#e05555}
   .mmb-tbtn{width:34px;height:34px;border:none;background:transparent;border-radius:10px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center}
   .mmb-tbtn:hover{background:color-mix(in srgb,#fff 7%,transparent);color:var(--mmb-text)}
