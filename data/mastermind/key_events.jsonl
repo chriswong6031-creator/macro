@@ -109,3 +109,17 @@
 {"schema":"metabolism.key_ledger.v1","ts":"2026-07-21T09:05:28+00:00","key_id":"claude_code_oauth_3","cycle_id":"","stage":"scout","est_tokens":3128,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-07-21T09:06:45+00:00","key_id":"claude_code_oauth_4","cycle_id":"","stage":"scout","est_tokens":8709,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-07-21T09:07:48+00:00","key_id":"claude_code_oauth_5","cycle_id":"","stage":"scout","est_tokens":6422,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-21T23:12:37+00:00","key_id":"claude_code_oauth_3","cycle_id":"2026-07-21T23-10-00-252Z00-00","stage":"deep","est_tokens":21881,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-21T23:17:11+00:00","key_id":"claude_code_oauth_4","cycle_id":"2026-07-21T23-15-00-232Z00-00","stage":"deep","est_tokens":19779,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-21T23:26:56+00:00","key_id":"claude_code_oauth_5","cycle_id":"2026-07-21T23-25-00-205Z00-00","stage":"deep","est_tokens":19502,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T08:02:33+00:00","key_id":"claude_code_oauth_3","cycle_id":"2026-07-22T08-00-09-107Z00-00","stage":"deep","est_tokens":19975,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T08:05:56+00:00","key_id":"claude_code_oauth_4","cycle_id":"","stage":"scout","est_tokens":20483,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T08:07:39+00:00","key_id":"claude_code_oauth_5","cycle_id":"","stage":"scout","est_tokens":10388,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T08:08:51+00:00","key_id":"claude_code_oauth_6","cycle_id":"","stage":"scout","est_tokens":7085,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T08:10:18+00:00","key_id":"claude_code_oauth_7","cycle_id":"","stage":"scout","est_tokens":9529,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T08:11:22+00:00","key_id":"claude_code_oauth_3","cycle_id":"","stage":"scout","est_tokens":6859,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T09:02:27+00:00","key_id":"claude_code_oauth_4","cycle_id":"2026-07-22T09-00-01-454Z00-00","stage":"deep","est_tokens":20407,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T09:03:53+00:00","key_id":"claude_code_oauth_5","cycle_id":"","stage":"scout","est_tokens":7807,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T09:05:52+00:00","key_id":"claude_code_oauth_6","cycle_id":"","stage":"scout","est_tokens":13379,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T09:06:34+00:00","key_id":"claude_code_oauth_7","cycle_id":"","stage":"scout","est_tokens":4081,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-07-22T09:07:46+00:00","key_id":"claude_code_oauth_3","cycle_id":"","stage":"scout","est_tokens":6674,"outcome":"ok"}

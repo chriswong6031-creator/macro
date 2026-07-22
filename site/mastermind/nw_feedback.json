@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_nw_feedback.v3",
-  "generated_at": "2026-07-21T22:25:00Z",
+  "generated_at": "2026-07-22T12:25:00Z",
   "window_days": 14,
   "thesis_counts": {
     "open": 27,
@@ -13,8 +13,33 @@
       "error": 0,
       "other": 0
     },
+    "portfolio_risk_compose": {
+      "ok": 145,
+      "error": 0,
+      "other": 0
+    },
     "macro_refresh": {
       "ok": 109,
+      "error": 0,
+      "other": 0
+    },
+    "derisk_us_intraday": {
+      "ok": 127,
+      "error": 0,
+      "other": 0
+    },
+    "watch_asia_overnight": {
+      "ok": 28,
+      "error": 0,
+      "other": 0
+    },
+    "settle_pending": {
+      "ok": 10,
+      "error": 0,
+      "other": 0
+    },
+    "portfolio_risk_daily": {
+      "ok": 10,
       "error": 0,
       "other": 0
     },
@@ -48,10 +73,10 @@
       "error": 0,
       "other": 0
     },
-    "watch_asia_overnight": {
-      "ok": 28,
+    "daily_loop": {
+      "ok": 5,
       "error": 0,
-      "other": 0
+      "other": 4
     },
     "settle_brain_asia": {
       "ok": 10,
@@ -63,37 +88,12 @@
       "error": 0,
       "other": 0
     },
-    "daily_loop": {
-      "ok": 6,
-      "error": 0,
-      "other": 3
-    },
     "china_daily": {
       "ok": 10,
       "error": 0,
       "other": 0
     },
     "hk_daily": {
-      "ok": 10,
-      "error": 0,
-      "other": 0
-    },
-    "portfolio_risk_compose": {
-      "ok": 145,
-      "error": 0,
-      "other": 0
-    },
-    "derisk_us_intraday": {
-      "ok": 127,
-      "error": 0,
-      "other": 0
-    },
-    "settle_pending": {
-      "ok": 10,
-      "error": 0,
-      "other": 0
-    },
-    "portfolio_risk_daily": {
       "ok": 10,
       "error": 0,
       "other": 0
@@ -109,12 +109,12 @@
       "other": 0
     },
     "vps_state_sync": {
-      "ok": 841,
+      "ok": 897,
       "error": 13,
       "other": 0
     },
     "prewarm_marks": {
-      "ok": 3492,
+      "ok": 3762,
       "error": 0,
       "other": 0
     }
@@ -133,49 +133,53 @@
         "total": 5
       },
       "rejected_decision_count": 158,
-      "lock_conflict_count": 9,
+      "lock_conflict_count": 11,
       "stale_freeze_count": 5
     },
     {
       "book_id": "heavyweight",
       "gate_failures": {
-        "by_severity": {},
-        "by_guard": {},
-        "total": 0
+        "by_severity": {
+          "FREEZE": 1
+        },
+        "by_guard": {
+          "peer_expectation": 1
+        },
+        "total": 1
       },
       "rejected_decision_count": 0,
       "lock_conflict_count": 0,
-      "stale_freeze_count": 0
+      "stale_freeze_count": 1
     },
     {
       "book_id": "autonomous",
       "gate_failures": {
         "by_severity": {
-          "FREEZE": 1
+          "FREEZE": 2
         },
         "by_guard": {
-          "peer_expectation": 1
+          "peer_expectation": 2
         },
-        "total": 1
+        "total": 2
       },
       "rejected_decision_count": 0,
       "lock_conflict_count": 0,
-      "stale_freeze_count": 1
+      "stale_freeze_count": 2
     },
     {
       "book_id": "etf",
       "gate_failures": {
         "by_severity": {
-          "FREEZE": 1
+          "FREEZE": 2
         },
         "by_guard": {
-          "peer_expectation": 1
+          "peer_expectation": 2
         },
-        "total": 1
+        "total": 2
       },
       "rejected_decision_count": 0,
       "lock_conflict_count": 0,
-      "stale_freeze_count": 1
+      "stale_freeze_count": 2
     },
     {
       "book_id": "china",
@@ -216,22 +220,22 @@
       {
         "book_id": "autonomous",
         "packet_accepted": 0,
-        "packet_rejected": 15
+        "packet_rejected": 12
       },
       {
         "book_id": "china",
         "packet_accepted": 0,
-        "packet_rejected": 14
+        "packet_rejected": 13
       },
       {
         "book_id": "etf",
         "packet_accepted": 0,
-        "packet_rejected": 15
+        "packet_rejected": 12
       },
       {
         "book_id": "flagship_judgment",
         "packet_accepted": 0,
-        "packet_rejected": 13
+        "packet_rejected": 9
       },
       {
         "book_id": "heavyweight",
@@ -241,12 +245,12 @@
       {
         "book_id": "hk",
         "packet_accepted": 0,
-        "packet_rejected": 14
+        "packet_rejected": 13
       }
     ],
     "rejection_error_classes": {
-      "expected_failure_mode": 77,
-      "falsifiers": 77
+      "expected_failure_mode": 65,
+      "falsifiers": 65
     }
   },
   "outcome_mix": {
@@ -256,10 +260,10 @@
   },
   "context_audit": {
     "state": "ok",
-    "n_present": 24,
+    "n_present": 20,
     "n_stale": 0,
     "n_absent": 0,
-    "n_runs_total": 24,
+    "n_runs_total": 20,
     "context_seen_rate": 1.0
   },
   "metric_families": {
@@ -283,7 +287,7 @@
   },
   "reflection": {
     "state": "ok",
-    "asof": "2026-07-20",
+    "asof": "2026-07-21",
     "contract_drift": [
       {
         "code": "graph_conflicts_sparse",
@@ -309,8 +313,8 @@
     "coverage": {
       "open_theses_n": 27,
       "resolved_recent_n": 0,
-      "with_context_row_n": 4,
-      "coverage_rate": 0.148
+      "with_context_row_n": 3,
+      "coverage_rate": 0.111
     },
     "context_quality": {
       "window_runs": 26,
@@ -331,9 +335,9 @@
       "code": "bottom_state_vocabulary_drift",
       "kind": "contract_drift",
       "severity": "high",
-      "detail": "policy states never observed: BOTTOMING/CONFIRMED (observed vocabulary has 5 values over 250 rows) — candidacy priors above WATCH can never fire",
+      "detail": "policy states never observed: BOTTOMING/CONFIRMED (observed vocabulary has 6 values over 250 rows) — candidacy priors above WATCH can never fire",
       "first_seen": "2026-07-14",
-      "builds_seen": 4
+      "builds_seen": 5
     },
     {
       "code": "fdr_cleared_absent",
@@ -341,15 +345,15 @@
       "severity": "high",
       "detail": "0/250 candidate rows are fdr_cleared — every leg of the typed decision ladder is per-name inert regardless of other fields",
       "first_seen": "2026-07-14",
-      "builds_seen": 4
+      "builds_seen": 5
     },
     {
       "code": "coverage_below_half",
       "kind": "coverage_gap",
       "severity": "medium",
-      "detail": "only 4 of our decided subjects have a candidate_context row (rate 0.148; fires <0.5, clears at >=0.55)",
+      "detail": "only 3 of our decided subjects have a candidate_context row (rate 0.111; fires <0.5, clears at >=0.55)",
       "first_seen": "2026-07-14",
-      "builds_seen": 4
+      "builds_seen": 5
     },
     {
       "code": "graph_conflicts_sparse",
@@ -357,7 +361,7 @@
       "severity": "medium",
       "detail": "2/250 candidate rows carry graph_conflicts",
       "first_seen": "2026-07-14",
-      "builds_seen": 4
+      "builds_seen": 5
     },
     {
       "code": "liquidity_plumbing_absent",
@@ -365,7 +369,7 @@
       "severity": "medium",
       "detail": "liquidity plumbing block absent from the market lobe",
       "first_seen": "2026-07-14",
-      "builds_seen": 4
+      "builds_seen": 5
     }
   ],
   "operator_directives": [
