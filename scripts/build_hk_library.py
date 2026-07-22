@@ -541,9 +541,13 @@ def compute_hk_scoreboard(betas: dict | None = None) -> dict | None:
 
 
 def _spark_svg(vals: list[float], color: str = "var(--link)",
-               w: int = 240, h: int = 42) -> str:
+               w: int = 240, h: int = 42,
+               zone_lo: float | None = None, zone_hi: float | None = None,
+               zone_state: str | None = None) -> str:
     """Tiny theme-aware inline sparkline (area + line + last-point dot) — same shape
-    as the US/China standout cards, replicated locally to avoid a heavy import."""
+    as the US/China standout cards, replicated locally to avoid a heavy import.
+    zone_lo/zone_hi/zone_state (all optional): the prophet-card buy-zone band —
+    args absent -> output byte-identical to the band-less render."""
     vals = [float(v) for v in vals if v is not None and v == v]
     if len(vals) < 2:
         return ""
@@ -556,12 +560,62 @@ def _spark_svg(vals: list[float], color: str = "var(--link)",
 
     pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (xy(i, v) for i, v in enumerate(vals)))
     lx, ly = xy(n - 1, vals[-1])
+    band = ""
+    if zone_hi is not None or zone_lo is not None:
+        # Buy-zone band (prophet-card E1): a horizontal price band over the right
+        # 40% of the plot on the SAME lo/hi/pad scale as the polyline — filled
+        # low-opacity rect when the zone is ACTIVE, dashed edge lines only when
+        # PENDING. Price-clamped into the plotted window; a zone wholly outside it
+        # draws nothing. The edge lines carry no fill attribute and the rect keeps
+        # fill-opacity, so the prophet-card hue override (stroke on *, fill on
+        # [fill]:not([fill="none"])) recolors both without flattening the band.
+        try:
+            zh = float(zone_hi if zone_hi is not None else zone_lo)
+            zl = float(zone_lo if zone_lo is not None else zone_hi)
+            zl, zh = min(zl, zh), max(zl, zh)
+            if zh > 0 and zh >= lo and zl <= hi:
+                yt = (h - pad) - ((min(zh, hi) - lo) / rng) * (h - 2 * pad) + pad
+                yb = (h - pad) - ((max(zl, lo) - lo) / rng) * (h - 2 * pad) + pad
+                x0 = w * 0.60
+                if zone_state == "active":
+                    band = (f'<rect x="{x0:.1f}" y="{yt:.1f}" width="{w - x0:.1f}" '
+                            f'height="{max(yb - yt, 0.0):.1f}" fill="{color}" '
+                            f'fill-opacity="0.09" stroke="none"/>')
+                band += (f'<line x1="{x0:.1f}" y1="{yt:.1f}" x2="{w}" y2="{yt:.1f}" '
+                         f'stroke="{color}" stroke-width="1" stroke-dasharray="4 3" '
+                         f'stroke-opacity="0.65"/>'
+                         f'<line x1="{x0:.1f}" y1="{yb:.1f}" x2="{w}" y2="{yb:.1f}" '
+                         f'stroke="{color}" stroke-width="1" stroke-dasharray="4 3" '
+                         f'stroke-opacity="0.65"/>')
+        except (TypeError, ValueError):
+            band = ""  # malformed zone — never a broken spark
     return (f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" '
-            f'width="100%" height="{h}">'
+            f'width="100%" height="{h}">{band}'
             f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" opacity="0.12" stroke="none"/>'
             f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.7" '
             f'stroke-linejoin="round" stroke-linecap="round"/>'
             f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
+
+
+# entry statuses whose card verb is buy/near — the boards render their priced zone
+# as the ACTIVE (filled) spark band; any other status with a zone is PENDING (hollow).
+_ZONE_ACTIVE_STATUSES = {"buy_now", "partial", "buy_soon", "await_confluence"}
+
+
+def _spark_zone(es) -> dict:
+    """Optional buy-zone band kwargs for _spark_svg, from the row's entry-timing
+    gauge (engine.entry_signal.assess). Mirrors the prophet-card zone-footer gate:
+    a band needs a priced zone (buy_zone.high), drawn filled while the entry window
+    is open or imminent (buy/near verbs) and hollow-dashed otherwise (the zone
+    exists but is not the live entry plan). Missing/odd gauge -> {}."""
+    if not isinstance(es, dict):
+        return {}
+    bz = es.get("buy_zone")
+    if not isinstance(bz, dict) or bz.get("high") is None:
+        return {}
+    return {"zone_lo": bz.get("low"), "zone_hi": bz.get("high"),
+            "zone_state": "active" if es.get("status") in _ZONE_ACTIVE_STATUSES
+            else "pending"}
 
 
 # Hard freshness gate (masterplan §2 principle 6 / §5.2 / audit HKCA-3): the basket
@@ -1409,7 +1463,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     for e in buys + watch:
         col = ("var(--up)" if e["dir"] == "up" else
                "var(--down)" if e["dir"] == "down" else "var(--muted)")
-        e["spark_svg"] = _spark_svg(e["_chart"][-64:], color=col)
+        e["spark_svg"] = _spark_svg(e["_chart"][-64:], color=col,
+                                    **_spark_zone(e.get("entry_signal")))
     # board-level fragility gauge over the top conviction cohort (display-only sizing context)
     cohort = ext_eng.cohort_stretch([ext_map[e["ticker"]] for e in ranked[:24]
                                      if e["ticker"] in ext_map])
