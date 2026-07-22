@@ -408,6 +408,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Cross-sectional commodity momentum (xsec-mom) — 12-1m rank, long-top/short-bottom-tercile EW, vol-target 10%, 19-asset deep universe'
+    verdict: 'KILLED phase-0 (construction-scoped) — 6 of 7 gates FAIL (sole PASS = same-sign split-half, and both halves are NEGATIVE). Headline 12-1m L/S net Sharpe −0.23 (CAGR −3.01%, MaxDD −65%, 2002–2026) LOSES to the dumb baselines EW-long commodity B&H (+0.64) and each-name 200dma (+0.18); headline fwd rank-IC −0.018 (t_HAC −1.01) fails BH-FDR (q=0.31); DSR 0.0025 (grid n=12) and adversarial best-of-30 DSR 0.0013 both fail the <0.90 haircut; leave-one-crisis-out WEAK on all 4 crises; purged 5-fold CV fails (3 of 5 folds NEGATIVE). Signal is sign-NEGATIVE (short-momentum/reversal) at every lookback and in BOTH the 2002–11 supercycle (Sharpe −0.46) and post-2012 (−0.08) eras — never real-but-decayed. Thin 19-asset cross-section (terciles ~6 long / ~6 short), honest-N ~6–10 regimes → small-N ceiling on commodity factors; adversarial refute confirms no lookahead and no survivorship gap. Closes the cross-sectional-momentum construction ONLY — long-only EW commodity exposure is the surviving baseline, not this signal; revival needs a materially different construction + fresh prereg'
+    source: 'Phase-0 + adversarial refute (2026-07-22): reports/commodity-xsec-mom-phase0.md; reports/commodity-xsec-mom-refute.md'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
