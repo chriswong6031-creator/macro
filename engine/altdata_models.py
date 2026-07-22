@@ -113,9 +113,13 @@ CHANNEL_WEIGHTS: dict[str, float] = {
     "insider_buy":        0.60,   # single open-market insider buy
     "insider_mspr":       0.55,   # Finnhub insider sentiment (MSPR) strongly positive — cross-check
     "material_8k":        0.55,   # cluster of material 8-K filings (filing-time corporate activity)
-    "activist_13d":       0.55,   # Special-Situations handshake (P3.3): a high-conf 13D activist campaign
+    "activist_13d":       0.20,   # 13D activist campaign. GAUNTLET-CAPPED to context tier (was 0.55):
+                                  # activist_ownership.gate.v1 = NEGATIVE post-filing drift (5d abn -0.96%,
+                                  # 10d -1.04%, hit 0.42, HAC-t -1.56, p 0.12 -> scored:false, weight 0.0).
+                                  # Null/neg-edge signal: display-only confluence confirmer, not a handshake vote.
     "darkpool_accum":     0.55,   # off-exchange accumulation (z-scored)
-    "special_situation":  0.40,   # Special-Situations handshake (P3.3): a high-conf live deal/event on the name
+    "special_situation":  0.40,   # live deal/event handshake (P3.3). No gauntlet yet: UNTESTED authority
+                                  # weight (NOT evidence-contradicted like activist_13d); candidate for its own gate.
     "lobbying_spike":     0.50,   # lobbying spend spiking off a real base
     "trump":              0.50,   # Donald-Trump trade / branded affiliation
     "affiliation":        0.50,   # influence-graph edge (actor -> this name)
