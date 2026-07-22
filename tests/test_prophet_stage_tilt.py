@@ -160,6 +160,15 @@ def test_bear_gate_reads_risk_off_state(tmp_path):
     assert pb._bear_from_regime(tmp_path) is True
 
 
+def test_bear_gate_none_sentinel_is_bear(tmp_path):
+    """A present-but-None spy_below_200dma (SPY data gap) fails safe to bear."""
+    (tmp_path / "regime").mkdir()
+    (tmp_path / "regime" / "latest.json").write_text(json.dumps({
+        "risk_radar": {"context_gate": {"spy_below_200dma": None}, "state": "watch"}
+    }))
+    assert pb._bear_from_regime(tmp_path) is True
+
+
 def test_bear_gate_non_bear_when_healthy(tmp_path):
     (tmp_path / "regime").mkdir()
     (tmp_path / "regime" / "latest.json").write_text(json.dumps({

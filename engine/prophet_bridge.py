@@ -933,9 +933,12 @@ def _bear_from_regime(data_root: "Path | None" = None) -> bool:
     """§2 bear-gate — deterministic, artifact-based.
 
     Reads data/regime/latest.json (committed nightly by engine/run.py):
-        bear = risk_radar.context_gate.spy_below_200dma == True
+        bear = risk_radar.context_gate.spy_below_200dma is not False
                OR risk_radar.state == "risk-off"
     Missing file / missing keys / unparseable → bear = True (fail-safe: tilt off).
+    Strict tape leg (review #3203 hardening): only a definite False (SPY confirmed
+    above its 200dma) clears it — a present-but-None sentinel (upstream SPY data
+    gap) counts as bear.
     Does NOT activate the macro_stance management socket (whole-book confidence
     shift — out of scope). The bear boolean lives in the driver/bridge only.
     """
@@ -946,9 +949,9 @@ def _bear_from_regime(data_root: "Path | None" = None) -> bool:
         with p.open(encoding="utf-8") as f:
             regime = json.load(f)
         rr = regime["risk_radar"]
-        spy_below = rr["context_gate"]["spy_below_200dma"] is True
+        spy_below = rr["context_gate"]["spy_below_200dma"]
         risk_off = rr.get("state") == "risk-off"
-        return bool(spy_below or risk_off)
+        return bool(spy_below is not False or risk_off)
     except Exception as e:  # noqa: BLE001
         log.warning(
             "::warning:: prophet_bridge: regime bear-gate unreadable (%s) — "
