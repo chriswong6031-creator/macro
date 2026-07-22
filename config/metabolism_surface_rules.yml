@@ -1,0 +1,39 @@
+# config/metabolism_surface_rules.yml — V12 Surface Curator thresholds (R-V12-3).
+#
+# OPERATOR-RATIFIED POLICY — IMMUTABLE.
+# Loop-authored PRs may NOT modify this file (joins check_self_mod_fence.py,
+# same standing as ux_simplicity_rules.yml).  Changes require a T2 operator tap.
+#
+# A page is SATURATED when EITHER threshold is met (or a page_override says so).
+# On a SATURATED page the loop may not land net-positive panel deltas:
+# ui_mode=add / panel_delta>0 is denied at PROPOSE and ADJUDICATE (R-V12-3),
+# and AUDIT rejects realized marker/byte growth beyond the allowance (R-V12-4).
+# Improve / consolidate / remove stay open everywhere — and are preferred.
+#
+# Calibration (census 2026-07-21, 226 pages): markers p50=9 p75=13 p90=25;
+# bytes p50=156KB p75=252KB p90=442KB.  24 markers / 240KB marks the crammed
+# third (78 pages) including every flagship board (macro 98 markers/568KB,
+# us_stocks 828KB, baskets 1.4MB, china 51, hk 53, canada 30, index 31).
+#
+# Schema: metabolism_surface_rules.v1
+schema: metabolism_surface_rules.v1
+generated_at: "2026-07-21"
+owner_program: metabolism-v12
+
+# Saturation thresholds — either one trips the verdict.
+saturated_markers: 24        # structural markers (headings/sections/title-classed)
+saturated_bytes: 240000      # rendered page size in bytes
+
+# AUDIT allowance on SATURATED pages: net byte growth beyond this is rejected
+# even when the marker delta is <= 0 (copy polish fits; a smuggled scoreboard
+# does not).
+max_new_bytes_saturated: 2048
+
+# Census shape
+outline_max: 20              # outline entries stored per page
+prompt_pages_max: 12         # pages listed in the PROPOSE surface block
+
+# Per-page overrides: force a saturation verdict regardless of thresholds.
+#   page_overrides:
+#     markets.html: { saturated: true }
+page_overrides: {}

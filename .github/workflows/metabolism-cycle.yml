@@ -143,6 +143,15 @@ jobs:
               _ALL_DONE="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('all_done','false'))" "$_VERDICT_FILE" 2>/dev/null || echo false)"
               _ELIGIBLE="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(len(d.get('eligible_keys',[])))" "$_VERDICT_FILE" 2>/dev/null || echo 1)"
               _REASON="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('reason',''))" "$_VERDICT_FILE" 2>/dev/null || echo '')"
+              # V12 blind-burn guard (R-V12-9): burn modes require at least one
+              # known usage reading (header, estimate, or 429-derived). With
+              # zero readings the gate cannot know when to stop — running
+              # anyway is exactly the burn-to-the-wall failure of 2026-07-20/21.
+              _KNOWN="$(python -c "import json,sys; d=json.load(open(sys.argv[1])); print(int(d.get('known_readings',0) or 0))" "$_VERDICT_FILE" 2>/dev/null || echo 0)"
+              if [ "${_KNOWN:-0}" -eq 0 ]; then
+                echo "::warning::METAB_RUN_UNTIL=$_RUN_UNTIL armed but zero usage readings are known — refusing to chain blind (R-V12-9). Waiting for a reading (header capture, estimate config, or a 429-derived cap)."
+                exit 0
+              fi
               if [ "$_ALL_DONE" = "True" ] || [ "$_ALL_DONE" = "true" ]; then
                 echo "::notice::Budget target reached ($_RUN_UNTIL) — auto-run disarmed."
                 gh variable set METAB_RUN_UNTIL --body "off" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true

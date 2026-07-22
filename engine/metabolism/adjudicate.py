@@ -356,6 +356,40 @@ def _ux_simplicity_screen(
         }
 
 
+# ── Surface Curator screen (5th deterministic screen, V12 R-V12-1..3) ────────
+
+def _surface_screen(proposal: dict[str, Any], root: Path | None = None) -> dict[str, Any]:
+    """Deterministic Surface Law screen for ui / front-page proposals.
+
+    Deny-only, mirrors the propose-side validator so an adjudicate-time census
+    (fresher than propose-time) re-binds the same rules:
+      - kind=ui with missing/invalid R-V12-1 fields → DENY (fail-closed —
+        field presence never depends on external state);
+      - non-ui proposal declaring front-page changed_files → DENY;
+      - panel_delta > 0 on a SATURATED target_page → DENY (R-V12-3);
+      - ui_mode=add duplicating an existing panel (census outline token
+        quorum, same page then sitewide) → DENY (R-V12-2).
+    Census-dependent checks fail open when the census is absent.
+    Returns {allow: bool, reason: str}.  NEVER raises.
+    """
+    try:
+        from engine.metabolism.propose import _validate_surface_fields  # noqa: PLC0415
+        try:
+            from engine.metabolism.surface_map import load_surface_map  # noqa: PLC0415
+            census = load_surface_map(root)
+        except Exception:  # noqa: BLE001
+            census = {}
+        err = _validate_surface_fields(proposal, surface=census)
+        if err:
+            return {"allow": False, "reason": f"surface law (R-V12): {err}"}
+        return {"allow": True, "reason": "surface law: no violation"}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("adjudicate._surface_screen: %s", exc)
+        # Fail-open on screen ERROR only (the propose-side validator and the
+        # audit realized-delta check are the other two binds of the same law).
+        return {"allow": True, "reason": f"surface screen error (fail-open): {exc}"}
+
+
 # ── Genesis deterministic screen (R-V6-3 — deny-only, kind=="charter") ──────
 
 # CHF-family token patterns (case-insensitive substring match on any single
@@ -719,6 +753,13 @@ _ORCH_SYSTEM = (
     "only when it clearly targets a real TIL fitness sensor, carries a falsifiable "
     "fitness contract, is correctly tiered (T0 or T1), and does not duplicate a "
     "DO_NOT_REBUILD kill or an ACTIVE_BUILD_MAP open lane. Otherwise DENY.\n"
+    "SURFACE RUBRIC (R-V12-1, for kind=ui proposals): grant ONLY when the "
+    "user_question is a real question a site user would ask AND no existing panel "
+    "in the SITE SURFACE MAP already answers it AND the page-as-a-whole improves. "
+    "The site is a product, not a log: a display-only panel that changes no user "
+    "decision is a DENY even when its fitness contract is valid. Prefer "
+    "ui_mode=improve/consolidate/remove over add; a good consolidation outranks "
+    "a good addition.\n"
     "You may only DENY or GRANT — you may NOT raise a proposal's tier or invent "
     "authority beyond what it declared (R-AUT-1). Reply with ONLY a JSON array: "
     '[{"proposal_id": str, "grant": bool, "tier": "T0"|"T1", "rationale": str}]'
@@ -730,7 +771,14 @@ _ADV_SYSTEM = (
     "with existing work, or smuggle in a scored-path/authority change. You have skin "
     "in the game: your predictions are scored later (R-AUT-9), so be specific, not a "
     "rubber stamp. Default to veto=true when genuinely uncertain a proposal will earn "
-    "its contract. For each proposal also emit tripwire_predictions: concrete, "
+    "its contract.\n"
+    "SURFACE ADVERSARY (R-V12-1, for kind=ui proposals): veto scoreboard-stacking. "
+    "If the user_question is vague ('shows X at a glance' is not a question), if "
+    "the SITE SURFACE MAP shows a panel that already answers it on ANY page, if "
+    "the 'so what do I do' is missing, or if the addition ignores the page as a "
+    "whole (no displacement on a crowded page), veto with the specific existing "
+    "panel or missing answer named in findings.\n"
+    "For each proposal also emit tripwire_predictions: concrete, "
     "observable failures you predict if it ships. Reply with ONLY a JSON array: "
     '[{"proposal_id": str, "veto": bool, "findings": [str], '
     '"tripwire_predictions": [str], "rationale": str}]'
@@ -747,6 +795,13 @@ def _build_role_user(role: str, docket: dict[str, Any], case_law: dict[str, str]
             "targets_sensor": p.get("targets_sensor"),
             "rationale": p.get("rationale"),
             "fitness_contract": p.get("fitness_contract"),
+            # V12 surface fields (present on ui kinds only — R-V12-1)
+            **{
+                k: p.get(k)
+                for k in ("target_page", "ui_mode", "panel_delta",
+                          "user_question", "displacement")
+                if p.get(k) is not None
+            },
         }
         for p in (docket.get("proposals") or [])
     ]
@@ -764,6 +819,25 @@ def _build_role_user(role: str, docket: dict[str, Any], case_law: dict[str, str]
         "",
         "Rule on every proposal by its proposal_id. Reply as a JSON array only.",
     ]
+    # V12 (R-V12-2): when any ui proposal is present, both roles see what is
+    # already ON the relevant pages (mirror of the charter case-law pattern).
+    try:
+        has_ui = any(
+            str(p.get("kind") or "").lower() == "ui"
+            for p in (docket.get("proposals") or [])
+        )
+        if has_ui:
+            from engine.metabolism.surface_map import render_block  # noqa: PLC0415
+            parts.insert(
+                -1,
+                "SITE SURFACE MAP (what already exists on the pages — a ui "
+                "addition duplicating any entry, or stacking onto a SATURATED "
+                "page, is a deny/veto):\n"
+                + render_block(lobe=str(docket.get("lobe") or ""))[:1600]
+                + "\n",
+            )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("adjudicate._build_role_user surface block: %s", exc)
     # R-V6-3e: when the docket contains charter-kind proposals, append the
     # "is it actually a lobe?" case-law block (NARR-NWC + NEXT3-U5).
     # Applies to both roles: the orchestrator needs it to grant responsibly;
@@ -1061,6 +1135,8 @@ def adjudicate_role(
             screen = _deterministic_screen(prop, case_law)
             # Screen 3: UX-simplicity gate (fires only on front-page asset diffs)
             ux_screen = _ux_simplicity_screen(prop, root)
+            # Screen 5: Surface Curator (V12 — ui fields, saturation, duplicates)
+            surface_screen = _surface_screen(prop, root)
             # Screen 4: Genesis screen (deny-only, fires only for kind=="charter", R-V6-3)
             prop_kind = str(prop.get("kind") or "").strip().lower()
             if prop_kind == "charter":
@@ -1073,12 +1149,14 @@ def adjudicate_role(
             else:
                 genesis_screen = {"allow": True, "reason": "not a charter proposal"}
             # Combined screen: all must allow for the proposal to proceed
-            combined_allow = screen["allow"] and ux_screen["allow"] and genesis_screen["allow"]
+            combined_allow = (screen["allow"] and ux_screen["allow"]
+                              and surface_screen["allow"] and genesis_screen["allow"])
             combined_reason = (
                 screen["reason"] if not screen["allow"]
                 else (ux_screen["reason"] if not ux_screen["allow"]
-                      else (genesis_screen["reason"] if not genesis_screen["allow"]
-                            else screen["reason"]))
+                      else (surface_screen["reason"] if not surface_screen["allow"]
+                            else (genesis_screen["reason"] if not genesis_screen["allow"]
+                                  else screen["reason"])))
             )
             j = (judgments or {}).get(pid, {})
             has_opinion = (judgments is not None) and (pid in judgments)
@@ -1134,6 +1212,7 @@ def adjudicate_role(
                     "case_law_allow": screen["allow"],
                     "ux_allow": ux_screen["allow"],
                     "ux_surface_tier": ux_screen.get("surface_tier", "unknown"),
+                    "surface_allow": surface_screen["allow"],
                     "genesis_allow": genesis_screen["allow"],
                     "kind": prop_kind,
                     "llm_opinion": has_opinion,
@@ -1159,16 +1238,19 @@ def adjudicate_role(
                     findings = (
                         ([screen["reason"]] if not screen["allow"]
                          else ([ux_screen["reason"]] if not ux_screen["allow"]
-                               else ([genesis_screen["reason"]] if not genesis_screen["allow"]
-                                     else ["adversary produced no opinion — fail-closed veto"])))
+                               else ([surface_screen["reason"]] if not surface_screen["allow"]
+                                     else ([genesis_screen["reason"]] if not genesis_screen["allow"]
+                                           else ["adversary produced no opinion — fail-closed veto"]))))
                     )
                     tripwires: list[str] = []
                     rationale = (
                         "deterministic case-law collision" if not screen["allow"]
                         else ("UX-simplicity gate denial" if not ux_screen["allow"]
-                              else (f"genesis screen denial: {genesis_screen['reason']}"
-                                    if not genesis_screen["allow"]
-                                    else f"adversary unavailable ({degraded})"))
+                              else (f"surface curator denial: {surface_screen['reason']}"
+                                    if not surface_screen["allow"]
+                                    else (f"genesis screen denial: {genesis_screen['reason']}"
+                                          if not genesis_screen["allow"]
+                                          else f"adversary unavailable ({degraded})")))
                     )
                 else:
                     veto = bool(j.get("veto", False))

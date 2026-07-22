@@ -196,6 +196,21 @@ def content_hash(title: str, sensor: str = "", kind: str = "") -> str:
 
 # ── Prompt context assembly ───────────────────────────────────────────────────
 
+# V12 (R-V12-1/R-V12-6): distilled from docs/DESIGN_DOCTRINE.md — the byte-capped
+# form the proposer can actually hold.  The doctrine file remains the law.
+_DESIGN_LAWS_DIGEST = (
+    "The site is a product for real users, not an operator log. Glance tier = "
+    "state + a plain-word stance under hard word budgets; every panel must "
+    "answer 'so what do I do' (even when the honest answer is 'watch - don't "
+    "chase'). Technicals, stats, and internal names are demoted to hover/"
+    "Tier-2 receipts - never headline. Bilingual EN/ZH pairing is mandatory. "
+    "A page is a composed whole: INTEGRATE into existing panels; never stack "
+    "another scoreboard because adding is easier than editing. Deleting or "
+    "consolidating a weak panel is a SUCCESS, not a loss. Full law: "
+    "docs/DESIGN_DOCTRINE.md."
+)
+
+
 def _masterplan_phase_a(root: Path) -> str:
     """Return the Phase A section of the masterplan (bounded)."""
     txt = _read_text(root / "research" / "AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md")
@@ -263,6 +278,15 @@ def build_prompt_context(root: Path | None = None, lobe: str = LOBE) -> dict[str
             "before proposing; do NOT re-propose a killed or in-flight topic)."
         ),
     }
+
+    # V12 Surface Curator (R-V12-2): what is already ON the pages + design law.
+    try:
+        from engine.metabolism import surface_map as _smap  # noqa: PLC0415
+        ctx["site_surface"] = _smap.render_block(lobe=lobe, root=r)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose: site_surface block failed: %s", exc)
+        ctx["site_surface"] = "(census unavailable)"
+    ctx["design_laws"] = _DESIGN_LAWS_DIGEST
 
     # (a) Relevance-ranked recall (R-V4-3a) — lobe-scoped, FAIL-floor preserved
     try:
@@ -450,13 +474,28 @@ _SYSTEM_PROMPT_TEMPLATE = (
     "5. Prefer T0 (docs/tests/display-tier context organs/bug-fixes/coverage) work. "
     "T1 (new engines/collectors/UI/algorithm changes) is allowed but must be small "
     "and testable. Never propose T2 (scored-path promotion, guard/CI/secret/spend "
-    "changes) — those are operator-only.\n\n"
+    "changes) — those are operator-only.\n"
+    "6. SURFACE LAW (R-V12-1): the site is a product with a scarce surface "
+    "budget, not an append-only log. A kind=\"ui\" proposal MUST additionally "
+    "declare target_page (a page in the SITE SURFACE MAP), ui_mode "
+    "(\"add\"|\"improve\"|\"consolidate\"|\"remove\"), panel_delta (net panels "
+    "added minus removed, int), user_question (the plain-words user question "
+    "the change answers), and displacement (what existing content it removes/"
+    "merges; required text when panel_delta > 0). Check the SITE SURFACE MAP "
+    "first: if a panel with this meaning exists on ANY page, propose "
+    "ui_mode=improve/consolidate on it — never a duplicate. On a SATURATED "
+    "page panel_delta must be <= 0 (replace or consolidate, never stack). "
+    "Improve/consolidate/remove proposals are PREFERRED over add everywhere; "
+    "a display-only panel that changes no user decision is not worth a slot.\n\n"
     "Reply with ONLY a JSON array (no prose, no code fence) of at most {{max_n}} "
     "proposals. Each element:\n"
     '{{"title": str, "tier": "T0"|"T1", "kind": "test"|"doc"|"context_organ"|'
     '"engine"|"collector"|"ui"|"charter", "targets_sensor": str, "rationale": str, '
     '"fitness_contract": {{"sensor": str, "expected_sign": "+"|"-", "band": str, '
-    '"check_by": "YYYY-MM-DD", "placebo_to_beat": str}}}}\n\n'
+    '"check_by": "YYYY-MM-DD", "placebo_to_beat": str}}}}\n'
+    'ui kinds add: {{"target_page": str, "ui_mode": "add"|"improve"|"consolidate"|'
+    '"remove", "panel_delta": int, "user_question": str, "displacement": str, '
+    '"changed_files": [str]}}\n\n'
     'Kind guidance: charter = new-lobe genesis; only ever injected from scout '
     'evidence, never invent one.'
 )
@@ -552,6 +591,14 @@ def _build_user_prompt(context: dict[str, Any], max_n: int) -> str:
         context.get("active_build_map", "")[:6000],
         "",
         context.get("ruling_graph_note", ""),
+        "",
+        # ── V12 Surface Curator blocks (R-V12-1/R-V12-2) ───────────────────
+        "SITE SURFACE MAP — what is already ON the pages (ui proposals must "
+        "cite this; SATURATED pages accept panel_delta <= 0 only):",
+        context.get("site_surface", "(census unavailable)")[:1600],
+        "",
+        "DESIGN LAWS (binding on any user-facing change):",
+        context.get("design_laws", "(see docs/DESIGN_DOCTRINE.md)")[:900],
         "",
         # ── W5 steering-memory blocks (R-V4-3) ─────────────────────────────
         "RECENT LESSONS (relevance-ranked, FAIL-floor preserved — stop repeating dead constructions):",
@@ -765,9 +812,94 @@ def _mint_contract(prop: dict[str, Any], proposal_id: str, today: str, lobe: str
     }
 
 
+_UI_MODES = frozenset({"add", "improve", "consolidate", "remove"})
+
+
+def _validate_surface_fields(
+    prop: dict[str, Any],
+    surface: dict[str, Any] | None = None,
+) -> str | None:
+    """V12 Surface Law (R-V12-1/R-V12-3) — structural validation of ui proposals.
+
+    Field presence is fail-CLOSED (the V2-D omission loophole is gone).
+    Census-dependent checks (saturation, duplicates) fail open when the census
+    is absent — deterministic screens in ADJUDICATE and AUDIT re-check them.
+    Returns an error string or None.  NEVER raises.
+    """
+    try:
+        kind = str(prop.get("kind") or "").strip().lower()
+        changed = [str(f) for f in (prop.get("changed_files") or [])]
+
+        # A non-ui proposal may not quietly touch front-page surfaces.
+        if kind != "ui" and changed:
+            try:
+                from engine.metabolism.surface_map import is_front_page_path  # noqa: PLC0415
+                fronts = [f for f in changed if is_front_page_path(f)]
+                if fronts:
+                    return (
+                        f"kind={kind!r} declares front-page files {fronts[:3]} — "
+                        "user-facing surface changes require kind=ui with the "
+                        "R-V12-1 surface fields"
+                    )
+            except Exception:  # noqa: BLE001
+                pass
+
+        if kind != "ui":
+            return None
+
+        target_page = str(prop.get("target_page") or "").strip()
+        if not target_page:
+            return "ui proposal missing target_page (R-V12-1)"
+        ui_mode = str(prop.get("ui_mode") or "").strip().lower()
+        if ui_mode not in _UI_MODES:
+            return f"ui proposal has invalid ui_mode {prop.get('ui_mode')!r} (R-V12-1)"
+        raw_delta = prop.get("panel_delta")
+        try:
+            panel_delta = int(raw_delta)
+        except (TypeError, ValueError):
+            return f"ui proposal has non-integer panel_delta {raw_delta!r} (R-V12-1)"
+        if not str(prop.get("user_question") or "").strip():
+            return "ui proposal missing user_question (R-V12-1)"
+        if ui_mode == "add" and panel_delta < 1:
+            return "ui_mode=add requires panel_delta >= 1 (declare what you add)"
+        if ui_mode in ("consolidate", "remove", "improve") and panel_delta > 0:
+            return f"ui_mode={ui_mode} with panel_delta > 0 is an addition — declare ui_mode=add"
+        if panel_delta > 0 and not str(prop.get("displacement") or "").strip():
+            return "panel_delta > 0 requires a displacement statement (R-V12-1)"
+
+        # Census-grounded checks (fail-open when census absent).
+        try:
+            from engine.metabolism import surface_map as _sm  # noqa: PLC0415
+            smap = surface if surface is not None else _sm.load_surface_map()
+            if smap.get("pages"):
+                if _sm.page_entry(target_page, smap) is None:
+                    return (
+                        f"target_page {target_page!r} is not in the site surface "
+                        "census — ui proposals target existing pages (new pages "
+                        "are an operator-scale decision, not a loop move)"
+                    )
+                if panel_delta > 0 and _sm.is_saturated(target_page, smap):
+                    return (
+                        f"{target_page} is SATURATED — panel_delta must be <= 0 "
+                        "(replace/consolidate, never stack; R-V12-3)"
+                    )
+                dup = _sm.panel_dup_reason(
+                    str(prop.get("title") or ""), target_page, smap
+                )
+                if dup and ui_mode == "add":
+                    return dup
+        except Exception:  # noqa: BLE001
+            pass
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("propose._validate_surface_fields: %s", exc)
+        return None
+
+
 def _validate_proposal(
     prop: dict[str, Any],
     accruing_maturity: dict[str, str] | None = None,
+    surface: dict[str, Any] | None = None,
 ) -> str | None:
     """Return an error string if the proposal is structurally invalid, else None.
 
@@ -777,6 +909,9 @@ def _validate_proposal(
         Optional map of {sensor_id: maturity_date} for sensors still accruing.
         When provided, the accrual-honesty gate rejects proposals whose check_by
         is earlier than the sensor's maturity_date (R-V4-10).
+    surface : dict | None
+        Optional pre-loaded site surface census (R-V12-1..3); None → loaded on
+        demand inside the surface validator.
     """
     if not isinstance(prop, dict):
         return "not an object"
@@ -794,6 +929,11 @@ def _validate_proposal(
     sensor = str(fc.get("sensor") or prop.get("targets_sensor") or "").strip()
     if not sensor:
         return "fitness_contract has no sensor"
+
+    # V12 Surface Law (R-V12-1/R-V12-3)
+    surf_err = _validate_surface_fields(prop, surface=surface)
+    if surf_err:
+        return surf_err
 
     # Accrual-honesty gate (R-V4-10): check_by must be >= maturity_date for accruing sensors.
     # F4b fix: parse both dates before comparing (handles non-zero-padded YYYY-M-D check_by).
@@ -854,13 +994,22 @@ def build_docket(
     # Load accruing sensor maturity dates for this lobe (fail-open: {} = no gate)
     accruing_maturity = _load_accruing_sensor_maturity(r, lobe)
 
+    # V12: load the surface census once for the whole docket (fail-open: {}).
+    try:
+        from engine.metabolism.surface_map import load_surface_map as _lsm  # noqa: PLC0415
+        surface_census = _lsm(r)
+    except Exception:  # noqa: BLE001
+        surface_census = {}
+
     proposals: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
 
     for prop in (raw_proposals or []):
         try:
             title = str((prop or {}).get("title") or "").strip()
-            err = _validate_proposal(prop, accruing_maturity=accruing_maturity)
+            err = _validate_proposal(
+                prop, accruing_maturity=accruing_maturity, surface=surface_census
+            )
             if err:
                 rejected.append({"title": title or "(untitled)", "reason": err})
                 continue
@@ -892,6 +1041,11 @@ def build_docket(
             _CHARTER_PASS_THROUGH_KEYS = (
                 "proposed_tier", "proposed_lifecycle_state",
                 "domain_id", "evidence_refs", "uncovered_for_cycles", "roster_budget",
+                # V12 (R-V12-1): surface fields + changed_files must SURVIVE into
+                # the docket — the V2-D UX gate was dead code because this
+                # whitelist dropped changed_files (2026-07-21 audit finding).
+                "target_page", "ui_mode", "panel_delta", "user_question",
+                "displacement", "changed_files", "target_files",
             )
             charter_extras = {
                 k: prop[k] for k in _CHARTER_PASS_THROUGH_KEYS if k in prop

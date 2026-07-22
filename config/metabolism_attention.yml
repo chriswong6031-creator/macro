@@ -48,3 +48,21 @@ propose_cadence:
   FOCUS: 1        # every loop
   STANDARD: 2     # on average every 2nd loop (deterministic per-cycle sampling, not strict alternation)
   MAINTENANCE: 4  # on average every 4th loop
+
+# operator_pins — V12 (R-V12-8), operator-set 2026-07-21 ("target only the most
+# important lobes; others weekly").  Pins OUTRANK LLM attention discretion:
+#   core   → proposes every eligible cycle (never cadence-sampled, never DORMANT)
+#   weekly → proposes on ONE deterministic hash-spread day per week
+#   paused → zero improvement spend (G3 urgent-fix supremacy still overrides)
+# Unlisted lobes keep V9 band/cadence behaviour.  Promote a lobe by moving its
+# id between lists — one-line change, T2 operator tap (this file is fenced).
+operator_pins:
+  core:
+    - til
+  weekly:
+    - site-us-standouts
+    - site-china-standouts
+    - prophet
+    - event-windows-forward-log
+    - opex-windows-forward-log
+  paused: []

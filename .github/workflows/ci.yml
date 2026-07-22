@@ -608,6 +608,12 @@ on:
       - "tests/test_admin_metabolism_ux.py"
       - ".github/workflows/metabolism-cycle.yml"
       - ".github/workflows/key-pool-probe.yml"
+      # V12 Surface Curator + Metered Loop: site-surface census, surface law
+      # screens, operator pins, daily pace rung, 429-derived budget readings.
+      - "engine/metabolism/surface_map.py"
+      - "scripts/build_surface_map.py"
+      - "config/metabolism_surface_rules.yml"
+      - "tests/test_metabolism_v12_surface.py"
       # achievements observability: per-cycle rollup from journals + verify + PR list.
       - "tests/test_metabolism_achievements.py"
       - ".github/workflows/metabolism-dream.yml"
@@ -1751,6 +1757,8 @@ jobs:
         run: python -m pytest tests/test_metabolism_throttle.py -q
       - name: metabolism V11 budget gate suite (auto-run gate verdicts + header parsing)
         run: python -m pytest tests/test_metabolism_budget_gate.py -q
+      - name: metabolism V12 surface curator + metered loop suite (census + surface law + pins + daily pace + 429-derived gate)
+        run: python -m pytest tests/test_metabolism_v12_surface.py -q
       - name: metabolism achievements observability suite (per-cycle rollup from journals + verify)
         run: python -m pytest tests/test_metabolism_achievements.py -q
       - name: metabolism V10 key pool economy suite (enabled-set + header capture + usage snapshot)

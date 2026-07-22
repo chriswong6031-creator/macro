@@ -1199,6 +1199,29 @@ def _build_session_task_prompt(
             log.warning("BUILD: _build_session_task_prompt remediation block failed: %s", exc)
             remediation_block = ""
 
+    # V12 (R-V12-6): ui builds carry the design floor — the doctrine is the law,
+    # this block is the binding pointer + the non-negotiables.
+    design_block = ""
+    if str(proposal.get("kind") or "").strip().lower() == "ui":
+        ui_bits = []
+        for k in ("target_page", "ui_mode", "panel_delta", "user_question", "displacement"):
+            v = proposal.get(k)
+            if v is not None and str(v).strip() != "":
+                ui_bits.append(f"  {k}: {v}")
+        ui_decl = "\n".join(ui_bits) or "  (surface fields absent — treat as improve-in-place)"
+        design_block = (
+            f"DESIGN LAWS (R-V12-6 — binding on this user-facing change):\n"
+            f"  - READ docs/DESIGN_DOCTRINE.md BEFORE touching any surface; it wins on conflict.\n"
+            f"  - Glance tier = state + plain-word stance; every panel answers 'so what do I do'.\n"
+            f"  - Technicals/stats/internal names go to hover or Tier-2 receipts, never headline.\n"
+            f"  - Bilingual EN/ZH pairing on every visible string (no translated title= attrs).\n"
+            f"  - INTEGRATE, don't stack: edit the page as a composed whole; match its existing\n"
+            f"    visual system; removing/merging a weak panel is success, appending is last resort.\n"
+            f"  - Stay within the declared surface change:\n{ui_decl}\n"
+            f"    The audit re-counts panels on your actual diff (R-V12-4) — exceeding the\n"
+            f"    declared panel_delta is an automatic reject.\n\n"
+        )
+
     return (
         f"{remediation_block}"
         f"You are a BUILD session for the Macro Dashboard Metabolism loop (R-V4-2).\n\n"
@@ -1208,6 +1231,7 @@ def _build_session_task_prompt(
         f"TIER:     {tier}\n"
         f"SENSOR:   {targets_sensor}\n\n"
         f"RATIONALE:\n{rationale}\n\n"
+        f"{design_block}"
         f"TARGET FILES (you may ONLY change these + data/metabolism/*):\n"
         f"{target_files_list}\n\n"
         f"FITNESS CONTRACT:\n{json.dumps(fitness_contract, indent=2)}\n\n"
