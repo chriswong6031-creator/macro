@@ -28,7 +28,7 @@
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=a1aa8c55">
 <link rel="stylesheet" href="illus.css?v=a2237d45">
-<link rel="stylesheet" href="assets/css/fff6078d.css?v=fff6078d">
+<link rel="stylesheet" href="assets/css/f985f398.css?v=f985f398">
 </head>
 <body class="page-china mx4-grid"><div class="aurora au-red" aria-hidden="true"><div class="au-a3"></div></div>
 
@@ -244,7 +244,7 @@
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live.js?v=e1a3ca0d" defer></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -308,7 +308,7 @@
         
         <svg class="cnx-gauge-svg" viewBox="0 0 120 78" aria-hidden="true">
           <path d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="9" stroke-linecap="round"/>
-          <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="var(--act)" stroke-width="9" stroke-linecap="round" stroke-dasharray="48.67 200"/>
+          <path class="cnx-gauge-fill" d="M12 68 A50 50 0 0 1 108 68" fill="none" stroke="var(--down)" stroke-width="9" stroke-linecap="round" stroke-dasharray="48.67 200"/>
           
           <g class="cnx-gauge-needle" transform="rotate(-34.2 60 68)">
             <line x1="60" y1="68" x2="60" y2="31" stroke="var(--text)" stroke-width="2" stroke-linecap="round" opacity=".45"/>
@@ -321,9 +321,10 @@
           <div class="cnx-score-line"><span id="ms-score" class="cnx-big-score">31</span><span id="ms-word" class="cnx-verdict"><span class="l-en">Risk-off</span><span class="l-zh">避险</span> <span class="arr">▶</span></span></div>
           
           <div class="cnx-sub-line">
-            <span class="cnx-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">绿 — 支持趋势跟随</span></span>
+            
+            <span class="cnx-sub-g"><span class="l-en">GREEN — TREND-FOLLOWING SUPPORTED</span><span class="l-zh">红 — 支持趋势跟随</span></span>
             <span class="cnx-sub-y"><span class="l-en">YELLOW — TRADE WITH CAUTION</span><span class="l-zh">黄 — 谨慎交易</span></span>
-            <span class="cnx-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">红 — 优先保住本金</span></span>
+            <span class="cnx-sub-r"><span class="l-en">RED — DEFEND CAPITAL</span><span class="l-zh">绿 — 优先保住本金</span></span>
           </div>
         </div>
       </div>
@@ -344,8 +345,8 @@
         
         
         
-        <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:rgba(224,100,100,.5)">⚠
-          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--act)">93</span> ▾</button>
+        <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
+          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--down)">93</span> ▾</button>
 
         <!-- popover: factor breakdown -->
         <div class="cnx-pop" id="cnx-pop-signals">
@@ -411,17 +412,17 @@
           
           <div class="cnx-pop-row">
             <div class="pr-t"><span><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span><b>94</b></div>
-            <div class="cnx-pop-bar"><i style="width:94%;background:var(--act)"></i></div>
+            <div class="cnx-pop-bar"><i style="width:94%;background:var(--down)"></i></div>
           </div>
           
           <div class="cnx-pop-row">
             <div class="pr-t"><span><span class="l-en">Capital outflow / FX</span><span class="l-zh">资本外流／汇率</span></span><b>66</b></div>
-            <div class="cnx-pop-bar"><i style="width:66%;background:var(--act)"></i></div>
+            <div class="cnx-pop-bar"><i style="width:66%;background:var(--down)"></i></div>
           </div>
           
           <div class="cnx-pop-row">
             <div class="pr-t"><span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span><b>63</b></div>
-            <div class="cnx-pop-bar"><i style="width:63%;background:var(--act)"></i></div>
+            <div class="cnx-pop-bar"><i style="width:63%;background:var(--down)"></i></div>
           </div>
           
           
@@ -436,15 +437,15 @@
       
       
       <svg class="cnx-path-svg" viewBox="0 0 560 232" aria-hidden="true">
-        <rect x="20" y="22" width="520" height="56" fill="rgba(69,184,115,.06)"/>
-        <rect x="20" y="134" width="520" height="56" fill="rgba(224,100,100,.06)"/>
+        <rect x="20" y="22" width="520" height="56" fill="color-mix(in srgb,var(--up) 6%,transparent)"/>
+        <rect x="20" y="134" width="520" height="56" fill="color-mix(in srgb,var(--down) 6%,transparent)"/>
         <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
-        <text x="540" y="34" font-size="9" fill="var(--ok)" text-anchor="end" class="l-en">Risk-on</text>
-        <text x="540" y="34" font-size="9" fill="var(--ok)" text-anchor="end" class="l-zh">风险偏好</text>
+        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-en">Risk-on</text>
+        <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end" class="l-zh">风险偏好</text>
         <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-en">Mixed</text>
         <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end" class="l-zh">混合</text>
-        <text x="540" y="186" font-size="9" fill="var(--act)" text-anchor="end" class="l-en">Risk-off</text>
-        <text x="540" y="186" font-size="9" fill="var(--act)" text-anchor="end" class="l-zh">避险</text>
+        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-en">Risk-off</text>
+        <text x="540" y="186" font-size="9" fill="var(--down)" text-anchor="end" class="l-zh">避险</text>
         <text x="14" y="26" font-size="9" fill="var(--muted)" text-anchor="end">100</text>
         <text x="14" y="109" font-size="9" fill="var(--muted)" text-anchor="end">50</text>
         <text x="14" y="192" font-size="9" fill="var(--muted)" text-anchor="end">0</text>
@@ -453,7 +454,7 @@
         
         
         <path d="M20.0 106.0 L72.0 109.4 L124.0 117.8 L176.0 116.1 L228.0 121.1 L280.0 122.8 L332.0 116.1 L384.0 129.5 L436.0 134.6 L488.0 143.0 L540.0 137.9"
-              fill="none" stroke="var(--act)" stroke-width="2.2" stroke-linejoin="round"/>
+              fill="none" stroke="var(--down)" stroke-width="2.2" stroke-linejoin="round"/>
         <text x="30" y="222" font-size="9" fill="var(--muted)">2026-07-02</text>
         <text x="536" y="222" font-size="9" fill="var(--muted)" text-anchor="end">2026-07-21</text>
       </svg>
@@ -558,11 +559,11 @@
     
     
     
-    <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-risk')" style="border-color:rgba(224,100,100,.35)">
-      <div class="cnx-ctitle"><span class="l-en">Pullback Risk</span><span class="l-zh">回撤风险</span> <span class="cnx-alert-pill" style="background:rgba(224,100,100,.16);color:var(--act)"><span class="l-en">HIGH</span><span class="l-zh">高</span></span></div>
+    <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-risk')" style="border-color:color-mix(in srgb,var(--down) 35%,transparent)">
+      <div class="cnx-ctitle"><span class="l-en">Pullback Risk</span><span class="l-zh">回撤风险</span> <span class="cnx-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)"><span class="l-en">HIGH</span><span class="l-zh">高</span></span></div>
       
-      <div class="cnx-bignum" style="color:var(--act)">93<span style="font-size:14px;color:var(--muted)"> /100</span></div>
-      <div class="cnx-bigsub" style="color:var(--act)"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
+      <div class="cnx-bignum" style="color:var(--down)">93<span style="font-size:14px;color:var(--muted)"> /100</span></div>
+      <div class="cnx-bigsub" style="color:var(--down)"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
       
       <div class="cnx-kv"><span class="k"><span class="l-en">≥5% dip odds</span><span class="l-zh">≥5%回撤概率</span></span><span class="v">50%</span></div>
       <div class="cnx-kv"><span class="k"><span class="l-en">Deep-drawdown gauge</span><span class="l-zh">深跌仪表</span></span>
@@ -725,18 +726,18 @@
       
         
         <div class="cnx-row">
-          <span class="ic">🏦</span>
-          <div class="tx"><b>提醒：日内请重点关注（以下均为北京时间）</b>
-            <span class="sub">PBoC · 华尔街见闻</span></div>
+          <span class="ic">📰</span>
+          <div class="tx"><b>中国证监会：稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度</b>
+            <span class="sub">Markets · 华尔街见闻</span></div>
         </div>
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>早间要闻汇总</b>
-            <span class="sub">Fiscal/Trade · 华尔街见闻</span></div>
+          <div class="tx"><b>金十数据整理：每日债券市场要闻速递（2026-07-22）</b>
+            <span class="sub">Credit · 金十数据</span></div>
         </div>
         
-        <div class="cnx-view-all">24 <span class="l-en">of</span><span class="l-zh">/</span> 744 <span class="l-en">stories kept · full feed →</span><span class="l-zh">条新闻保留 · 完整新闻流 →</span></div>
+        <div class="cnx-view-all">24 <span class="l-en">of</span><span class="l-zh">/</span> 731 <span class="l-en">stories kept · full feed →</span><span class="l-zh">条新闻保留 · 完整新闻流 →</span></div>
       
     </div>
   </div>
@@ -980,27 +981,27 @@
             <div class="cnx-eyebrow"><span class="l-en">Risk radar</span><span class="l-zh">风险雷达</span> · 93/100</div>
             
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 8px">
-              <span class="cnx-bignum" style="color:var(--act)">93</span>
-              <span class="cnx-alert-pill" style="background:rgba(224,100,100,.16);color:var(--act);margin:0"><span class="l-en">BREADTH BREAKDOWN (ALL-BOATS)</span><span class="l-zh">广度普跌（普跌）</span></span>
+              <span class="cnx-bignum" style="color:var(--down)">93</span>
+              <span class="cnx-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down);margin:0"><span class="l-en">BREADTH BREAKDOWN (ALL-BOATS)</span><span class="l-zh">广度普跌（普跌）</span></span>
             </div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:10px"><span class="l-en">~50% chance of a ≥5% pullback within a month · 1.6× the usual odds</span><span class="l-zh">未来一个月内出现≥5%回撤的概率约50% · 约为平时的1.6倍</span></div>
             
             <div class="cnx-frow" style="grid-template-columns:170px 1fr 40px">
               <span><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span>
-              <span><div class="cnx-fbar"><i style="width:94%;background:var(--act)"></i></div></span>
-              <span class="cnx-fscore" style="color:var(--act)">94</span>
+              <span><div class="cnx-fbar"><i style="width:94%;background:var(--down)"></i></div></span>
+              <span class="cnx-fscore" style="color:var(--down)">94</span>
             </div>
             
             <div class="cnx-frow" style="grid-template-columns:170px 1fr 40px">
               <span><span class="l-en">Capital outflow / FX</span><span class="l-zh">资本外流／汇率</span></span>
-              <span><div class="cnx-fbar"><i style="width:66%;background:var(--act)"></i></div></span>
-              <span class="cnx-fscore" style="color:var(--act)">66</span>
+              <span><div class="cnx-fbar"><i style="width:66%;background:var(--down)"></i></div></span>
+              <span class="cnx-fscore" style="color:var(--down)">66</span>
             </div>
             
             <div class="cnx-frow" style="grid-template-columns:170px 1fr 40px">
               <span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span>
-              <span><div class="cnx-fbar"><i style="width:63%;background:var(--act)"></i></div></span>
-              <span class="cnx-fscore" style="color:var(--act)">63</span>
+              <span><div class="cnx-fbar"><i style="width:63%;background:var(--down)"></i></div></span>
+              <span class="cnx-fscore" style="color:var(--down)">63</span>
             </div>
             
             
@@ -1639,20 +1640,55 @@ Hong Kong shares the same stagflation label, but it dances to the dollar's tune.
         <div class="cnx-sep"></div>
         
         
-        <div class="cnx-eyebrow"><span class="l-en">Today's feed</span><span class="l-zh">今日新闻</span> · 24 <span class="l-en">of</span><span class="l-zh">/</span> 744 <span class="l-en">stories kept</span><span class="l-zh">条保留</span></div>
+        <div class="cnx-eyebrow"><span class="l-en">Today's feed</span><span class="l-zh">今日新闻</span> · 24 <span class="l-en">of</span><span class="l-zh">/</span> 731 <span class="l-en">stories kept</span><span class="l-zh">条保留</span></div>
         
         
         <div class="cnx-row">
-          <span class="ic">🏦</span>
-          <div class="tx"><b>提醒：日内请重点关注（以下均为北京时间）</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 90/100</span></div>
+          <span class="ic">📰</span>
+          <div class="tx"><b>中国证监会：稳步扩大高水平制度型开放，持续提升外资参与资本市场的便利度</b>
+            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 华尔街见闻 · 96/100</span></div>
         </div>
         
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>早间要闻汇总</b>
-            <span class="sub"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span> · 华尔街见闻 · 68/100</span></div>
+          <div class="tx"><b>金十数据整理：每日债券市场要闻速递（2026-07-22）</b>
+            <span class="sub"><span class="l-en">Credit</span><span class="l-zh">信用</span> · 金十数据 · 90/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>上半年新增专项债券发行2.07万亿元 发行进度约47%</b>
+            <span class="sub"><span class="l-en">Credit</span><span class="l-zh">信用</span> · 华尔街见闻 · 82/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>北京国管：截至目前，已统筹自有资金累计投入近百亿元布局股票市场</b>
+            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 华尔街见闻 · 76/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>证监会：坚决维护资本市场平稳健康运行，欢迎国际机构投资者扩大对华投资</b>
+            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 证券时报 · 82/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>吴清：坚决维护资本市场平稳健康运行 持续提升外资参与资本市场的便利度</b>
+            <span class="sub"><span class="l-en">Policy</span><span class="l-zh">政策</span> · Eastmoney · 71/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>量化私募因诺资产宣布1亿元自购旗下基金产品</b>
+            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 华尔街见闻 · 68/100</span></div>
         </div>
         
         
@@ -1672,43 +1708,8 @@ Hong Kong shares the same stagflation label, but it dances to the dollar's tune.
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>晨曦基金宣布不低于5000万元自购旗下私募基金产品</b>
-            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 华尔街见闻 · 68/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>中国上半年消费税8673亿元，同比下降3.4%</b>
-            <span class="sub"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span> · 格隆汇 · 66/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
           <div class="tx"><b>A股收盘：创业板指低开低走跌超3%，贵金属、电力股逆势大涨</b>
             <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 华尔街见闻 · 62/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>英国通胀率降至15个月低点 消费者暂获喘息之机</b>
-            <span class="sub"><span class="l-en">Inflation</span><span class="l-zh">物价</span> · 华尔街见闻 · 68/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>中国财政部发行91天期债券，规模350亿元，发行利率0.9341%，边际利率1.0536%，预期0.8900%，投标倍数2.65倍，边际倍数2.07倍</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 68/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>中国财政部发行182天期债券，规模600亿元，发行利率1.0425%，边际利率1.1598%，预期0.9200%，投标倍数2.02倍，边际倍数1.33倍</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 68/100</span></div>
         </div>
         
         
@@ -1865,7 +1866,7 @@ Hong Kong shares the same stagflation label, but it dances to the dollar's tune.
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-22 07:23 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-22 08:54 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 

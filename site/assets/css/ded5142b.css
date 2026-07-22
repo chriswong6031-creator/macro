@@ -19,6 +19,10 @@
   .chip { border-radius:999px; padding:3px 10px; font:600 12px/1 inherit; border:1px solid var(--line); }
   .chip.ow { background:rgba(34,160,90,.14); color:#1f9d57; border-color:rgba(34,160,90,.4); }
   .chip.uw, .chip.avoid { background:rgba(210,70,70,.14); color:#cf4b4b; border-color:rgba(210,70,70,.4); }
+  /* zh 红涨绿跌 (operator ruling 2026-07-21): overweight=bullish → red in zh;
+     underweight/avoid=bearish → green in zh. swap both bg AND color literals. */
+  html[data-lang="zh"] .chip.ow { background:rgba(210,70,70,.14); color:#cf4b4b; border-color:rgba(210,70,70,.4); }
+  html[data-lang="zh"] .chip.uw, html[data-lang="zh"] .chip.avoid { background:rgba(34,160,90,.14); color:#1f9d57; border-color:rgba(34,160,90,.4); }
   .chip.fade { background:rgba(70,120,210,.14); color:#3f72d6; border-color:rgba(70,120,210,.4); }
   .chip.conv { background:var(--grid); color:var(--muted); }
   .thesis .body { margin:6px 0; }
@@ -39,6 +43,8 @@
   .stance .role { font-weight:700; text-transform:capitalize; }
   .stance .risk { color:var(--muted); font-size:12px; margin-top:4px; }
   .out-hit { color:#1f9d57; font-weight:700; } .out-miss { color:#cf4b4b; font-weight:700; }
+  /* zh: strategy win=red, loss=green */
+  html[data-lang="zh"] .out-hit { color:#cf4b4b; } html[data-lang="zh"] .out-miss { color:#1f9d57; }
   .out-open { color:var(--muted); }
   table.rec { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; }
   table.rec th, table.rec td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }

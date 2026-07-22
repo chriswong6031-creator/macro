@@ -171,6 +171,10 @@
   #ai-lean .aj-chip.neutral { background:var(--muted); }
   #ai-lean .aj-chip.cautious { background:#d97706; }
   #ai-lean .aj-chip.avoid { background:#dc2626; }
+  /* zh 红涨绿跌 (operator ruling 2026-07-21): AI lean is a direction verdict —
+     constructive=bullish → red in zh; avoid=bearish → green in zh */
+  html[data-lang="zh"] #ai-lean .aj-chip.constructive { background:#dc2626; }
+  html[data-lang="zh"] #ai-lean .aj-chip.avoid { background:#16a34a; }
   #ai-lean .aj-meta { color:var(--muted); font-size:12.5px; }
   #ai-lean .aj-sec { margin:7px 0; font-size:14px; line-height:1.5; }
   #ai-lean .aj-sec .aj-h { font-weight:600; color:#8b5cf6; }

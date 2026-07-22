@@ -206,12 +206,13 @@ body.page-macro .mxqm-foot{margin-top:8px;padding-top:8px;border-top:1px solid v
 body.page-macro .mxqm-wrap{margin:0 0 8px}
 body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
-/* Quad fill classes — fixed hex (SVG presentation fills don't read var()); match
-   theme.css dark defaults. Active tile lifts brighter. */
-body.page-macro .mxqm-q1-fill{fill:#2e9e4f;opacity:.14}
-body.page-macro .mxqm-q2-fill{fill:#d4a017;opacity:.14}
-body.page-macro .mxqm-q3-fill{fill:#d04545;opacity:.14}
-body.page-macro .mxqm-q4-fill{fill:#3f78d8;opacity:.14}
+/* Quad fill classes — CSS rules (not presentation attrs) so var() resolves fine;
+   --q1/--q3 swap under zh (theme.css 红涨绿跌) and all four re-shade per theme,
+   which also retires the old per-theme literal overrides. Active tile lifts brighter. */
+body.page-macro .mxqm-q1-fill{fill:var(--q1,#2e9e4f);opacity:.14}
+body.page-macro .mxqm-q2-fill{fill:var(--q2,#d4a017);opacity:.14}
+body.page-macro .mxqm-q3-fill{fill:var(--q3,#d04545);opacity:.14}
+body.page-macro .mxqm-q4-fill{fill:var(--q4,#3f78d8);opacity:.14}
 body.page-macro .mxqm-q1-fill.active{opacity:.42}
 body.page-macro .mxqm-q2-fill.active{opacity:.42}
 body.page-macro .mxqm-q3-fill.active{opacity:.42}
@@ -231,10 +232,6 @@ body.page-macro .mxqm-arrowhead{fill:var(--warn,#f59e0b)}
   body.page-macro .mxqm-pulse{animation:none;opacity:.28}
   body.page-macro .mxqm-arrow{animation:none;stroke-dashoffset:0}
 }
-[data-theme="light"] body.page-macro .mxqm-q1-fill{fill:#1f8b41}
-[data-theme="light"] body.page-macro .mxqm-q2-fill{fill:#b07d05}
-[data-theme="light"] body.page-macro .mxqm-q3-fill{fill:#c12f2f}
-[data-theme="light"] body.page-macro .mxqm-q4-fill{fill:#2f63c4}
 [data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.4)}
 [data-theme="light"] body.page-macro .mxqm-quad-label{fill:rgba(0,0,0,.62)}
 [data-theme="light"] body.page-macro .mxqm-odds{fill:rgba(0,0,0,.6)}

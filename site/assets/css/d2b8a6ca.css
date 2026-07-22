@@ -754,7 +754,9 @@
   body.page-canada .cax-hero-right{padding:18px 24px 14px}
   body.page-canada .cax-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11.5px;background:rgba(208,69,69,.10)}
   body.page-canada .cax-regime-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--q3)}
-  body.page-canada .ms-green .cax-regime-pill{background:rgba(69,184,115,.10)}
+  /* zh 红涨绿跌: color-mix over var(--up)/var(--down) so pills flip automatically in zh */
+  body.page-canada .ms-green .cax-regime-pill{background:color-mix(in srgb,var(--up) 10%,transparent)}
+  body.page-canada .ms-red .cax-regime-pill{background:color-mix(in srgb,var(--down) 10%,transparent)}
   body.page-canada .ms-green .cax-regime-pill .dot{background:var(--up)}
   body.page-canada .ms-yellow .cax-regime-pill{background:rgba(224,160,48,.10)}
   body.page-canada .ms-yellow .cax-regime-pill .dot{background:var(--warn)}
@@ -778,6 +780,9 @@
   body.page-canada .cax-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
   body.page-canada .ms-green .cax-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
   body.page-canada .ms-red .cax-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  /* zh glow literal mirrors */
+  html[data-lang="zh"] body.page-canada .ms-green .cax-big-score{text-shadow:0 0 36px rgba(239,68,68,.3)}
+  html[data-lang="zh"] body.page-canada .ms-red .cax-big-score{text-shadow:0 0 36px rgba(34,217,122,.3)}
   @media(max-width:560px){body.page-canada .cax-big-score{font-size:34px;text-shadow:none}}
   body.page-canada .cax-verdict{font-size:19px;font-weight:700;white-space:nowrap}
   @media(max-width:560px){body.page-canada .cax-verdict{font-size:13px}}
@@ -812,8 +817,9 @@
   body.page-canada .cax-pop-bar i{display:block;height:100%;border-radius:3px}
   body.page-canada .cax-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--link);margin-top:12px;cursor:pointer}
   body.page-canada .cax-pop-big{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
-  body.page-canada .cax-pop-big .n{font-size:30px;font-weight:750;color:var(--act)}
-  body.page-canada .cax-pop-big .t{font-size:12.5px;font-weight:700;color:var(--act)}
+  /* family-coherence per #3174 pattern: pullback risk score is a direction read → var(--down) */
+  body.page-canada .cax-pop-big .n{font-size:30px;font-weight:750;color:var(--down)}
+  body.page-canada .cax-pop-big .t{font-size:12.5px;font-weight:700;color:var(--down)}
   body.page-canada .cax-pop-sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
   /* tiles */
   body.page-canada .cax-secbar{display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
@@ -932,6 +938,10 @@
   body.page-canada .cax-ihcard .p{font-size:17px;font-weight:700;margin:4px 0 6px}
   body.page-canada .cax-okchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(69,184,115,.13);color:#8fd7ae}
   body.page-canada .cax-badchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(224,100,100,.13);color:#eda8a8}
+  /* zh 红涨绿跌 (operator ruling 2026-07-21): ok/bad chips are direction reads →
+     swap tint pairs in zh (mirrors the china.html.j2 #3174 okchip/badchip pattern) */
+  html[data-lang="zh"] body.page-canada .cax-okchip{background:rgba(224,100,100,.13);color:#eda8a8}
+  html[data-lang="zh"] body.page-canada .cax-badchip{background:rgba(69,184,115,.13);color:#8fd7ae}
   body.page-canada .cax-nchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(255,255,255,.06);color:var(--muted)}
   body.page-canada .cax-ledd{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-canada .cax-ledd .rk{color:var(--muted);font-size:10.5px}

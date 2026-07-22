@@ -8,7 +8,7 @@
 <title>Congressional Trades — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=a1aa8c55">
-<link rel="stylesheet" href="assets/css/1ced1c16.css?v=1ced1c16">
+<link rel="stylesheet" href="assets/css/e3dc0e73.css?v=e3dc0e73">
 
 
 
@@ -243,7 +243,7 @@
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live.js?v=e1a3ca0d" defer></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -7751,7 +7751,7 @@
 <div class="cg-card">
   <h2>🏅 <span class="l-en">Member Track Record — reliability leaderboard</span><span class="l-zh">议员历史记录 — 可靠性排行榜</span>
       <span class="h-note">— <span class="l-en">empirical-Bayes shrunk hit rate (ER>0 vs SPY); n = trades with ≥30-day horizon</span><span class="l-zh">经验贝叶斯收缩胜率（ER>0 vs 标普）；n = 持有≥30天的交易</span></span></h2>
-  <table class="ad"><thead><tr>
+  <table class="ad" id="cgMemberTable"><thead><tr>
     <th><span class="l-en">Member</span><span class="l-zh">议员</span></th>
     <th><span class="l-en">Chamber</span><span class="l-zh">议院</span></th>
     <th class="num"><span class="l-en">Tier</span><span class="l-zh">层级</span></th>
@@ -8289,7 +8289,7 @@
   <p class="mut2" style="font-size:12.5px;margin:0 0 8px"><span class="l-en">Watchlist names washed out and just ticking up. Watch — don't chase.</span><span class="l-zh">观察名单中超跌后刚现回升迹象的股票。观察为主，勿追高。</span></p>
   
     
-    <table class="ad"><thead><tr>
+    <table class="ad" id="cgTurnTable"><thead><tr>
       <th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th>
       <th><span class="l-en">Read</span><span class="l-zh">解读</span></th>
       <th class="num"><span class="l-en">Close</span><span class="l-zh">收盘</span></th>
@@ -8487,7 +8487,7 @@
   <h2>🗳️ <span class="l-en">Recent disclosures</span><span class="l-zh">最新披露</span>
       <span class="h-note">— <span class="l-en">newest filings first; ExcessReturn = cumulative excess vs SPY since trade date (horizon-inconsistent — older trades have more time to compound)</span><span class="l-zh">最新申报在前；超额收益 = 自交易日起累计超越标普（时间不一致——老交易有更多时间复利）</span></span></h2>
   
-  <table class="ad"><thead><tr>
+  <table class="ad" id="cgFeedTable"><thead><tr>
     <th><span class="l-en">Disclosed</span><span class="l-zh">披露日</span></th>
     <th><span class="l-en">Member</span><span class="l-zh">议员</span></th>
     <th><span class="l-en">Chamber</span><span class="l-zh">议院</span></th>
@@ -9262,6 +9262,46 @@
 <script>
 (function(){
   'use strict';
+
+  // ---- shared "show more" collapse for long tables ----
+  function setMoreBtn(btn, expanded, hiddenN) {
+    btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    btn.innerHTML = expanded
+      ? '<span class="l-en">Show less</span><span class="l-zh">收起</span>'
+        + '<span class="chev" aria-hidden="true">▾</span>'
+      : '<span class="l-en">Show ' + hiddenN + ' more</span>'
+        + '<span class="l-zh">展开其余 ' + hiddenN + ' 项</span>'
+        + '<span class="chev" aria-hidden="true">▾</span>';
+  }
+  function makeMoreBtn(afterEl) {
+    var wrap = document.createElement('div');
+    wrap.className = 'cg-more-wrap';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cg-more-btn';
+    wrap.appendChild(btn);
+    afterEl.insertAdjacentElement('afterend', wrap);
+    return { wrap: wrap, btn: btn };
+  }
+  // static collapse for a plain (unfiltered) table
+  function makeCollapsible(tbl, limit) {
+    if (!tbl || !tbl.tBodies[0]) return;
+    var trs = Array.prototype.slice.call(tbl.tBodies[0].rows);
+    if (trs.length <= limit) return;
+    var expanded = false;
+    var ui = makeMoreBtn(tbl);
+    function render() {
+      for (var i = limit; i < trs.length; i++) trs[i].classList.toggle('cg-more', !expanded);
+      setMoreBtn(ui.btn, expanded, trs.length - limit);
+    }
+    ui.btn.addEventListener('click', function(){ expanded = !expanded; render(); });
+    render();
+  }
+  makeCollapsible(document.getElementById('cgMemberTable'), 8);
+  makeCollapsible(document.getElementById('cgTurnTable'), 8);
+  makeCollapsible(document.getElementById('cgFeedTable'), 12);
+
+  // ---- watchlist (filter bar + collapse) ----
   var table   = document.getElementById('cgWatchTable');
   var bar     = document.getElementById('cgFilterBar');
   var countEl = document.getElementById('cgFilterCount');
@@ -9271,6 +9311,12 @@
 
   var rows = Array.from(table.querySelectorAll('tbody tr'));
   var total = rows.length;
+
+  // fold the ranked list to a scannable head; the toggle reveals the rest
+  var WATCH_LIMIT = 25;
+  var watchExpanded = false;
+  var watchMore = makeMoreBtn(table);
+  watchMore.btn.addEventListener('click', function(){ watchExpanded = !watchExpanded; applyFilters(); });
 
   // chip state: multi-select for indicator chips, single for recency
   var activeChips = new Set();
@@ -9322,16 +9368,24 @@
   }
 
   function applyFilters() {
-    var visible = 0;
+    var matched = [];
     rows.forEach(function(tr) {
       var show = rowMatches(tr, activeChips, activeDays);
       tr.classList.toggle('cg-hide', !show);
-      if (show) visible++;
+      if (show) matched.push(tr);
     });
+    // fold matched rows past the limit unless expanded
+    matched.forEach(function(tr, i) {
+      tr.classList.toggle('cg-more', !watchExpanded && i >= WATCH_LIMIT);
+    });
+    var foldable = matched.length > WATCH_LIMIT;
+    watchMore.wrap.style.display = foldable ? '' : 'none';
+    if (foldable) setMoreBtn(watchMore.btn, watchExpanded, matched.length - WATCH_LIMIT);
+
     var hasFilter = activeChips.size > 0 || activeDays > 0;
     if (countEl) {
       countEl.textContent = hasFilter
-        ? ('showing ' + visible + ' of ' + total)
+        ? ('showing ' + matched.length + ' of ' + total)
         : '';
     }
     if (resetEl) {
@@ -9386,8 +9440,8 @@
     });
   }
 
-  // initial counts
-  updateCounts();
+  // initial render: apply fold + counts
+  applyFilters();
 })();
 </script>
 

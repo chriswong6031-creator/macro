@@ -224,3 +224,8 @@ html[data-lang="zh"] .cnh-basis.s-outflow_stress{background:rgba(26,127,67,.10)}
 html[data-lang="zh"] .cnh-basis.s-inflow{background:rgba(211,11,11,.10)}
 html[data-lang="zh"] .sp-up{color:var(--red)}
 html[data-lang="zh"] .sp-dn{color:var(--green)}
+/* tone-usd_up/dn = USD directional hero badge — direction read, flip in zh */
+html[data-lang="zh"] .hero-state.tone-usd_up{color:var(--red);text-shadow:0 0 32px rgba(211,11,11,.22),0 0 8px rgba(211,11,11,.13)}
+html[data-lang="zh"] .hero-state.tone-usd_dn{color:#285FFF;text-shadow:0 0 32px rgba(40,95,255,.22),0 0 8px rgba(40,95,255,.13)}
+html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_up{color:var(--red);text-shadow:0 0 32px rgba(224,100,100,.34),0 0 8px rgba(224,100,100,.2)}
+html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_dn{text-shadow:0 0 32px rgba(40,95,255,.38),0 0 8px rgba(40,95,255,.22)}

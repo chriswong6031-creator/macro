@@ -458,3 +458,5 @@
   html[data-lang="zh"] .ftr-strip-chip.dn { border-color:rgba(69,184,115,.32); }
   html[data-lang="zh"] #theme-context-hero.tc-steady   { --tc-blob-a:rgba(224,85,85,.08); }
   html[data-lang="zh"] #theme-context-hero.tc-rotating { --tc-blob-a:rgba(69,184,115,.07); }
+  /* zh 红涨绿跌 (operator ruling 2026-07-21): heat-pill.heating = bullish momentum → red bg in zh */
+  html[data-lang="zh"] .heat-pill.heating { background:rgba(211,11,11,.09); }

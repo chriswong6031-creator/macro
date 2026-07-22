@@ -1268,12 +1268,14 @@
   body.page-hk .hkx-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11.5px}
   body.page-hk .hkx-regime-pill .dot{width:8px;height:8px;border-radius:50%}
   /* Mechanic #4 color classes */
-  body.page-hk .ms-green .hkx-regime-pill{background:rgba(69,184,115,.10)}
+  /* zh 红涨绿跌: use color-mix over var(--up)/var(--down) so zh swap flows through
+     automatically (rgba hex literals would stay green/red regardless of lang). */
+  body.page-hk .ms-green .hkx-regime-pill{background:color-mix(in srgb,var(--up) 10%,transparent)}
   body.page-hk .ms-green .hkx-regime-pill .dot{background:var(--up)}
   body.page-hk .ms-yellow .hkx-regime-pill{background:rgba(224,160,48,.10)}
   body.page-hk .ms-yellow .hkx-regime-pill .dot{background:var(--warn)}
-  body.page-hk .ms-red .hkx-regime-pill{background:rgba(208,69,69,.10)}
-  body.page-hk .ms-red .hkx-regime-pill .dot{background:var(--q3)}
+  body.page-hk .ms-red .hkx-regime-pill{background:color-mix(in srgb,var(--down) 10%,transparent)}
+  body.page-hk .ms-red .hkx-regime-pill .dot{background:var(--down)}
   body.page-hk .hkx-live-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:999px;margin-left:8px;opacity:.45}
   body.page-hk .hkx-live-pill .d{width:6px;height:6px;border-radius:50%;background:var(--muted)}
   body.page-hk .hkx-gauge-row{display:flex;gap:20px;align-items:center;margin-top:10px;margin-bottom:16px}
@@ -1300,6 +1302,9 @@
   body.page-hk .hkx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
   body.page-hk .ms-green .hkx-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
   body.page-hk .ms-red .hkx-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  /* zh glow literal mirrors (color text flips via --up/--down; rgba glow needs explicit mirror) */
+  html[data-lang="zh"] body.page-hk .ms-green .hkx-big-score{text-shadow:0 0 36px rgba(239,68,68,.3)}
+  html[data-lang="zh"] body.page-hk .ms-red .hkx-big-score{text-shadow:0 0 36px rgba(34,217,122,.3)}
   @media(max-width:560px){body.page-hk .hkx-big-score{font-size:34px}}
   body.page-hk .hkx-verdict{font-size:19px;font-weight:700;white-space:nowrap}
   @media(max-width:560px){body.page-hk .hkx-verdict{font-size:13px}}
@@ -1319,7 +1324,7 @@
   body.page-hk .ms-red .hkx-sub-line .hkx-sub-y{display:none}
   body.page-hk .hkx-thesis{font-size:13px;font-weight:450;line-height:1.55;color:var(--text);max-width:52ch;margin:12px 0 10px}
   body.page-hk .hkx-flip{font-size:11.5px;color:var(--muted);background:rgba(224,160,48,.08);border:1px solid rgba(224,160,48,.25);border-radius:10px;padding:7px 10px;max-width:46ch}
-  body.page-hk .ms-green .hkx-flip{background:rgba(69,184,115,.08);border-color:rgba(69,184,115,.25)}
+  body.page-hk .ms-green .hkx-flip{background:color-mix(in srgb,var(--up) 8%,transparent);border-color:color-mix(in srgb,var(--up) 25%,transparent)}
   body.page-hk .hkx-hero-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative}
   body.page-hk .hkx-hbtn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);color:var(--text);border-radius:999px;padding:5px 12px;font-size:11.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
   body.page-hk .hkx-hbtn:hover{background:rgba(255,255,255,.09)}
@@ -1339,8 +1344,10 @@
   body.page-hk .hkx-pop-flag{font-size:9.5px;font-weight:700;letter-spacing:.8px;margin:10px 0 2px}
   body.page-hk .hkx-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--link);margin-top:12px;cursor:pointer}
   body.page-hk .hkx-pop-big{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
-  body.page-hk .hkx-pop-big .n{font-size:30px;font-weight:750;color:var(--act)}
-  body.page-hk .hkx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--act)}
+  /* family-coherence per #3174 pattern: .hkx-pop-big shows the pullback risk number
+     which is a direction read (risk-off) → var(--down) flips correctly in zh */
+  body.page-hk .hkx-pop-big .n{font-size:30px;font-weight:750;color:var(--down)}
+  body.page-hk .hkx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--down)}
   body.page-hk .hkx-pop-sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
   body.page-hk .hkx-hero-vitals{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   body.page-hk .hkx-vchip{font-size:10.5px;border-radius:8px;padding:4px 9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--muted)}
@@ -1383,7 +1390,11 @@
   body.page-hk .hkx-stword.ok{color:var(--up)}
   body.page-hk .hkx-stword.warn{color:var(--warn)}
   body.page-hk .hkx-stword.bad{color:var(--down)}
-  body.page-hk .hkx-stword.act{color:var(--act)}
+  /* .hkx-stword.act uses var(--act) which is a non-flipping legacy alias → remap to var(--down)
+     so it participates in the zh swap (market-direction reads: "act" = a bad stance).
+     NO zh overrides for .ok/.bad here: they paint from --up/--down, which the theme.css
+     zh swap already flips — a zh-scoped re-swap would double-flip them back to Western. */
+  body.page-hk .hkx-stword.act{color:var(--down)}
   body.page-hk .hkx-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
   body.page-hk .hkx-chip{font-size:11px;border-radius:999px;padding:3px 10px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.04)}
   body.page-hk .hkx-chip.hot{background:rgba(224,100,100,.13);border-color:rgba(224,100,100,.4);color:#eda8a8}
@@ -1418,6 +1429,9 @@
   body.page-hk .hkx-bignum{font-size:28px;font-weight:750;line-height:1.05}
   body.page-hk .hkx-bigsub{font-size:12px;font-weight:650;margin-top:3px}
   body.page-hk .hkx-alert-pill{margin-left:auto;font-size:10px;font-weight:700;background:rgba(224,160,48,.16);color:var(--warn);border-radius:999px;padding:2px 9px;letter-spacing:.5px}
+  /* direction-wash helpers for inline pills: use color-mix so zh swap applies automatically */
+  body.page-hk .hkx-alert-pill.pill-buy{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
+  body.page-hk .hkx-alert-pill.pill-sell{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down)}
   body.page-hk .hkx-heat{display:flex;gap:4px;margin-top:6px}
   body.page-hk .hkx-heat i{flex:1;height:12px;border-radius:3px}
   /* h=hot (green), h2=warm, h3=mild, c=cold (red), c2=cool, n=neutral */

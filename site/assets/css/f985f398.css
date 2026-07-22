@@ -1176,6 +1176,22 @@
   [data-theme="light"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%)}
   /* Reduced-motion: no animations */
   @media(prefers-reduced-motion:reduce){body.page-china .aurora,body.page-china .aurora::before,body.page-china .aurora::after,body.page-china .aurora .au-a3{animation:none}}
+  /* zh direction-convention mirrors (operator ruling 2026-07-21): the aurora state wash
+     and the big-score glow are literal rgba (not token-driven), so they can't flip via
+     the --up/--down remap — mirror them here. green wash #22d97a ↔ red wash #ef4444
+     (light mode: 34,217,122 ↔ 220,38,38); yellow is direction-neutral and stays. */
+  html[data-lang="zh"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(239,68,68,.12) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(239,68,68,.07) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(245,158,11,.10) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(34,217,122,.10) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.06) 0%,transparent 70%)}
+  html[data-theme="light"][data-lang="zh"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
+  html[data-theme="light"][data-lang="zh"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.03) 0%,transparent 70%)}
+  html[data-theme="light"][data-lang="zh"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(34,217,122,.05) 0%,transparent 70%)}
+  html[data-theme="light"][data-lang="zh"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.035) 0%,transparent 70%)}
+  html[data-lang="zh"] body.page-china .ms-green .cnx-big-score{text-shadow:0 0 36px rgba(239,68,68,.3)}
+  html[data-lang="zh"] body.page-china .ms-red .cnx-big-score{text-shadow:0 0 36px rgba(34,217,122,.3)}
   /* The redesigned macro page lays out with its own .cnx-tiles/.rack grids, so the
      theme's 12-column .grid must be a plain block here — otherwise .cnx-wrap is placed
      into a single content-sized grid column and the page renders at ~half width. */
@@ -1200,12 +1216,12 @@
   body.page-china .cnx-hero-right{padding:18px 24px 14px}
   body.page-china .cnx-regime-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 12px;font-size:11.5px;background:rgba(208,69,69,.10)}
   body.page-china .cnx-regime-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--q3)}
-  body.page-china .ms-green .cnx-regime-pill{background:rgba(69,184,115,.10)}
-  body.page-china .ms-green .cnx-regime-pill .dot{background:var(--ok)}
+  body.page-china .ms-green .cnx-regime-pill{background:color-mix(in srgb,var(--up) 10%,transparent)}
+  body.page-china .ms-green .cnx-regime-pill .dot{background:var(--up)}
   body.page-china .ms-yellow .cnx-regime-pill{background:rgba(224,160,48,.10)}
   body.page-china .ms-yellow .cnx-regime-pill .dot{background:var(--warn)}
-  body.page-china .ms-red .cnx-regime-pill{background:rgba(224,100,100,.10)}
-  body.page-china .ms-red .cnx-regime-pill .dot{background:var(--act)}
+  body.page-china .ms-red .cnx-regime-pill{background:color-mix(in srgb,var(--down) 10%,transparent)}
+  body.page-china .ms-red .cnx-regime-pill .dot{background:var(--down)}
   body.page-china .cnx-live-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.8px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:999px;margin-left:8px;opacity:.45}
   body.page-china .cnx-live-pill .d{width:6px;height:6px;border-radius:50%;background:var(--muted)}
   body.page-china .cnx-live-pill.on{opacity:1;color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,var(--line))}
@@ -1217,39 +1233,42 @@
   @media(max-width:560px){body.page-china .cnx-gauge-svg{width:90px;height:58px;flex:0 0 90px}}
   /* gauge fill colour follows the .ms-{color} class (which the live lane swaps) so it
      never shows a red arc next to a green/yellow live verdict. (Fill fraction is baked.)
-     COLOUR TOKENS: this is a DANGER/health gauge (green=supported, red=defend capital),
-     NOT a price-direction read — so it paints from the NON-flipping health pair
-     --ok/--warn/--act, matching the Pullback-Risk bars. Do NOT swap these to --up/--down:
-     in zh those flip (red=up), which would paint the "红/defend capital" tier GREEN. */
-  body.page-china .ms-green .cnx-gauge-fill{stroke:var(--ok)}
+     COLOUR TOKENS (operator ruling 2026-07-21, reverses #2947's no-flip): the market-state
+     gauge and the whole pullback-risk family are market-DIRECTION reads (risk-on vs
+     risk-off) — same family as theme.css's .rrx radar remap and the factor bars below —
+     so they paint from the zh-flipping pair --up/--down. Asia convention in zh: red=bullish
+     /trend-following, green=defend capital. The zh legend words in .cnx-sub-line swap 红/绿
+     to match the paint. --warn is direction-neutral and never flips. Genuine health/
+     staleness signals (not market reads) keep --ok/--act so red=bad stays in both langs. */
+  body.page-china .ms-green .cnx-gauge-fill{stroke:var(--up)}
   body.page-china .ms-yellow .cnx-gauge-fill{stroke:var(--warn)}
-  body.page-china .ms-red .cnx-gauge-fill{stroke:var(--act)}
+  body.page-china .ms-red .cnx-gauge-fill{stroke:var(--down)}
   /* needle accents follow the same .ms-* class as the arc (US idiom: hub ring +
      core + glowing tip dot in the verdict colour; stem is theme-text) */
   body.page-china .cnx-needle-hub{fill:var(--panel,rgba(8,12,18,.85));stroke:var(--warn);stroke-width:1.5}
   body.page-china .cnx-needle-core,body.page-china .cnx-needle-tip{fill:var(--warn)}
   body.page-china .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--warn))}
-  body.page-china .ms-green .cnx-needle-hub{stroke:var(--ok)}
-  body.page-china .ms-green .cnx-needle-core,body.page-china .ms-green .cnx-needle-tip{fill:var(--ok)}
-  body.page-china .ms-green .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--ok))}
-  body.page-china .ms-red .cnx-needle-hub{stroke:var(--act)}
-  body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--act)}
-  body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--act))}
+  body.page-china .ms-green .cnx-needle-hub{stroke:var(--up)}
+  body.page-china .ms-green .cnx-needle-core,body.page-china .ms-green .cnx-needle-tip{fill:var(--up)}
+  body.page-china .ms-green .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--up))}
+  body.page-china .ms-red .cnx-needle-hub{stroke:var(--down)}
+  body.page-china .ms-red .cnx-needle-core,body.page-china .ms-red .cnx-needle-tip{fill:var(--down)}
+  body.page-china .ms-red .cnx-needle-tip{filter:drop-shadow(0 0 3.5px var(--down))}
   body.page-china .cnx-score-line{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   /* Big score: US parity — 68px/800, tabular-nums, state-keyed glow */
   body.page-china .cnx-big-score{font-size:68px;font-weight:800;line-height:.95;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--warn);text-shadow:0 0 36px rgba(245,158,11,.3)}
-  body.page-china .ms-green .cnx-big-score{color:var(--ok);text-shadow:0 0 36px rgba(34,217,122,.3)}
-  body.page-china .ms-red .cnx-big-score{color:var(--act);text-shadow:0 0 36px rgba(239,68,68,.3)}
+  body.page-china .ms-green .cnx-big-score{color:var(--up);text-shadow:0 0 36px rgba(34,217,122,.3)}
+  body.page-china .ms-red .cnx-big-score{color:var(--down);text-shadow:0 0 36px rgba(239,68,68,.3)}
   @media(max-width:560px){body.page-china .cnx-big-score{font-size:34px}}
   /* Verdict word: 19px/700 to match US spec */
   body.page-china .cnx-verdict{font-size:19px;font-weight:700;white-space:nowrap}
   @media(max-width:560px){body.page-china .cnx-verdict{font-size:13px}}
   body.page-china .cnx-verdict .arr{color:var(--warn)}
-  body.page-china .ms-green .cnx-verdict .arr{color:var(--ok)}
-  body.page-china .ms-red .cnx-verdict .arr{color:var(--act)}
+  body.page-china .ms-green .cnx-verdict .arr{color:var(--up)}
+  body.page-china .ms-red .cnx-verdict .arr{color:var(--down)}
   body.page-china .cnx-sub-line{font-size:11.5px;font-weight:650;letter-spacing:.4px;color:var(--warn);margin-top:2px}
-  body.page-china .ms-green .cnx-sub-line{color:var(--ok)}
-  body.page-china .ms-red .cnx-sub-line{color:var(--act)}
+  body.page-china .ms-green .cnx-sub-line{color:var(--up)}
+  body.page-china .ms-red .cnx-sub-line{color:var(--down)}
   /* stance line follows the .ms-{color} class — default caution (yellow), green/red override */
   body.page-china .cnx-sub-line .cnx-sub-g,body.page-china .cnx-sub-line .cnx-sub-r{display:none}
   body.page-china .cnx-sub-line .cnx-sub-y{display:inline}
@@ -1278,8 +1297,8 @@
   body.page-china .cnx-pop-flag{font-size:9.5px;font-weight:700;letter-spacing:.8px;color:var(--warn);margin:10px 0 2px}
   body.page-china .cnx-pop-link{display:block;font-size:11.5px;font-weight:650;color:var(--link);margin-top:12px;cursor:pointer}
   body.page-china .cnx-pop-big{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
-  body.page-china .cnx-pop-big .n{font-size:30px;font-weight:750;color:var(--act)}
-  body.page-china .cnx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--act)}
+  body.page-china .cnx-pop-big .n{font-size:30px;font-weight:750;color:var(--down)}
+  body.page-china .cnx-pop-big .t{font-size:12.5px;font-weight:700;color:var(--down)}
   body.page-china .cnx-pop-sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
   /* tiles rack */
   body.page-china .cnx-secbar{display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
@@ -1421,6 +1440,11 @@
   body.page-china .cnx-ihcard .p{font-size:17px;font-weight:700;margin:4px 0 6px}
   body.page-china .cnx-okchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(69,184,115,.13);color:#8fd7ae}
   body.page-china .cnx-badchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(224,100,100,.13);color:#eda8a8}
+  /* zh mirror (2026-07-21 ruling): ok/bad chips carry direction reads (above/below MA,
+     flow supportive/strain) — swap tint pair in zh like the factor bars. hot/turn/stage
+     chips are labelled metaphor badges, not direction paint — they stay. */
+  html[data-lang="zh"] body.page-china .cnx-okchip{background:rgba(224,100,100,.13);color:#eda8a8}
+  html[data-lang="zh"] body.page-china .cnx-badchip{background:rgba(69,184,115,.13);color:#8fd7ae}
   body.page-china .cnx-nchip{display:inline-block;font-size:10px;font-weight:650;border-radius:6px;padding:2px 8px;margin:2px 4px 0 0;background:rgba(255,255,255,.06);color:var(--muted)}
   body.page-china .cnx-ledd{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
   body.page-china .cnx-ledd .rk{color:var(--muted);font-size:10.5px}

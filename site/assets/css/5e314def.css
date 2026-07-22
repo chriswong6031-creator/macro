@@ -38,6 +38,12 @@ body.page-macro.mx4-grid {
   --mx5-accent-ink:    #17753f;
   --mx5-warn-ink:      #9c6212;
 }
+/* zh 红涨绿跌 + light: the risk-on accent INK is a literal (deep green for contrast),
+   so it can't flip via the --up swap — mirror it to a deep red of equal contrast.
+   (Dark mode needs no mirror: accent-ink chains through --mx5-accent → --up there.) */
+html[data-theme="light"][data-lang="zh"] body.page-macro.mx4-grid {
+  --mx5-accent-ink:    #a82f2f;
+}
 /* ── v5.3 UNIFIED card hover (Order 5): ONE idiom for every grid card/face.
    No accent-colored tints anywhere — border brightens, surface lifts ~2%,
    translateY(-1px), soft ambient shadow. Same both directions, 200ms ease-out. */
@@ -373,6 +379,17 @@ body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(239,68,68,.60);}
 /* zh 红涨绿跌: Risk-on(偏多)=bullish→red, Risk-off(偏空)=bearish→green (mid amber stays) */
 html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.on{color:rgba(239,68,68,.60);}
 html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(34,217,122,.62);}
+/* path-chart verdict-band zone fills + boundary hairlines — the SVG rect/line elements
+   carry these classes so the zh mirror below can re-tint them (their fill/stroke
+   presentation attrs remain as no-CSS fallbacks; CSS wins over attrs). */
+body.page-macro.mx4-grid .mx5-ph-zone-on{fill:rgba(34,217,122,.045);}
+body.page-macro.mx4-grid .mx5-ph-zone-off{fill:rgba(239,68,68,.045);}
+body.page-macro.mx4-grid .mx5-ph-hair-on{stroke:rgba(34,217,122,.22);}
+body.page-macro.mx4-grid .mx5-ph-hair-off{stroke:rgba(239,68,68,.20);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-zone-on{fill:rgba(239,68,68,.045);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-zone-off{fill:rgba(34,217,122,.045);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-hair-on{stroke:rgba(239,68,68,.20);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-hair-off{stroke:rgba(34,217,122,.22);}
 body.page-macro.mx4-grid .mx5-pl-x{
   top:96.4%;color:var(--ink-3,rgba(255,255,255,.34));
 }
@@ -1519,6 +1536,9 @@ body.page-macro.mx4-grid .mx5-mkt-price{
 body.page-macro.mx4-grid .mx5-mkt-delta{font-size:13px;font-weight:600;}
 body.page-macro.mx4-grid .mx5-mkt-delta.up{color:var(--up,#22d97a);}
 body.page-macro.mx4-grid .mx5-mkt-delta.dn{color:var(--down,#ef4444);}
+/* live.js paintChg speaks up/down (not dn) — alias it into the same token path so a
+   live-patched delta paints identically to a baked one (and flips in zh with it) */
+body.page-macro.mx4-grid .mx5-mkt-delta.down{color:var(--down,#ef4444);}
 body.page-macro.mx4-grid .mx5-spark{margin-top:10px;}
 body.page-macro.mx4-grid .mx5-spark svg{width:100%;height:32px;display:block;}
 
@@ -1682,6 +1702,8 @@ body.page-macro.mx4-grid .mx5-action-icon{
 body.page-macro.mx4-grid .mx5-action-icon svg{width:16px;height:16px;}
 /* state-tinted glass icon containers (border tints to the state colour) */
 body.page-macro.mx4-grid .mx5-ai-green{background:rgba(34,217,122,.10);border-color:rgba(34,217,122,.24);color:var(--up,#22d97a);}
+/* zh 红涨绿跌: the icon TEXT flips via --up; the glass tint is literal — mirror it */
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ai-green{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.24);}
 body.page-macro.mx4-grid .mx5-ai-yellow{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.24);color:var(--warn,#f59e0b);}
 body.page-macro.mx4-grid .mx5-ai-blue{background:rgba(129,140,248,.10);border-color:rgba(129,140,248,.26);color:#818cf8;}
 body.page-macro.mx4-grid .mx5-ai-gray{background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.5));}
@@ -2456,6 +2478,19 @@ body.page-macro.mx4-grid .mx5-sector-chip.cold{
   background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);
   color:var(--down,#ef4444);
 }
+/* zh 红涨绿跌: hot(强势)=red family, cold(退潮)=green family — text already flips
+   via --up/--down; the literal glass tints mirror here */
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-sector-chip.hot{
+  background:rgba(239,68,68,.11);border-color:rgba(239,68,68,.28);
+}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-sector-chip.cold{
+  background:rgba(34,217,122,.08);border-color:rgba(34,217,122,.22);
+}
+/* sector heat bars — hue by class (rank decay rides the bar's inline opacity) */
+body.page-macro.mx4-grid .mx5-shb-hot{background:#22d97a;}
+body.page-macro.mx4-grid .mx5-shb-cool{background:#ef4444;}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-shb-hot{background:#ef4444;}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-shb-cool{background:#22d97a;}
 body.page-macro.mx4-grid .mx5-sector-heat-divider{
   margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);
 }
@@ -2705,6 +2740,13 @@ body.page-macro.mx4-grid .mx5-spark-up polyline{stroke:#22d97a;}
 body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-area{fill:rgba(239,68,68,.08);}
 body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-line,
 body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#ef4444;}
+/* zh 红涨绿跌 mirror — up-spark red, down-spark green (neon family preserved) */
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-area{fill:rgba(239,68,68,.10);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-up path.mx5-spark-line,
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-up polyline{stroke:#ef4444;}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-area{fill:rgba(34,217,122,.08);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-dn path.mx5-spark-line,
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-spark-dn polyline{stroke:#22d97a;}
 
 /* ── 1.2 heatmap scorecard title hidden (eyebrow already names it) ── */
 body.page-macro.mx4-grid #dlg-heatmap-scorecard .hm-sc-tit{display:none}

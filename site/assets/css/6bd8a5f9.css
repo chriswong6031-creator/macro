@@ -202,6 +202,12 @@
   html[data-lang="zh"] .tc-chip.was1 { background:rgba(69,184,115,.10); border-color:rgba(69,184,115,.35); }
   html[data-lang="zh"] #theme-context-hero.tc-steady   { --tc-blob-a:rgba(224,85,85,.08); }
   html[data-lang="zh"] #theme-context-hero.tc-rotating { --tc-blob-a:rgba(69,184,115,.07); }
+  /* zh 红涨绿跌 (operator ruling 2026-07-21): strong=bullish→red; confirmed=basing→turning→red */
+  html[data-lang="zh"] .score-badge.strong { color:#e06464; border-color:color-mix(in srgb,#e06464 40%,var(--line)); background:color-mix(in srgb,#e06464 8%,transparent); }
+  html[data-lang="zh"] .turn-chip.confirmed { color:#e06464; border-color:color-mix(in srgb,#e06464 40%,var(--line)); }
+  html[data-lang="zh"] .sig-fresh { color:#e06464; }
+  /* --red is not defined on this theme.css page (it's a vector-family token) — literal hex */
+  html[data-lang="zh"] .sig-chip { color:#e06464; border-color:color-mix(in srgb,#e06464 40%,var(--line)); }
   /* category filter chips for performance table */
   .cat-filter-bar { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 4px; }
   .cat-filter-bar button { border:1px solid var(--line); background:var(--panel); color:var(--muted);

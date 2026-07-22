@@ -35,7 +35,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
-<link rel="stylesheet" href="assets/css/310e865b.css?v=310e865b">
+<link rel="stylesheet" href="assets/css/b7a0b6e6.css?v=b7a0b6e6">
 
 <link rel="stylesheet" href="assets/css/4e16fcd2.css?v=4e16fcd2">
 </head>
@@ -254,7 +254,7 @@
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live.js?v=e1a3ca0d" defer></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -4671,11 +4671,11 @@
     </button>
   </div>
   
-  <div class="faint" style="margin-top:14px;font-size:12px"><span class="l-en">Alerts refresh from history; intraday price shocks are best-effort. Built</span><span class="l-zh">警报由历史重算；日内价格冲击为尽力更新。生成于</span> 2026-07-22 07:23 UTC.</div>
+  <div class="faint" style="margin-top:14px;font-size:12px"><span class="l-en">Alerts refresh from history; intraday price shocks are best-effort. Built</span><span class="l-zh">警报由历史重算；日内价格冲击为尽力更新。生成于</span> 2026-07-22 08:54 UTC.</div>
 </div>
 
 <div class="foot">
-  <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> · <span class="l-en">built</span><span class="l-zh">生成于</span> 2026-07-22 07:23 UTC · <span class="l-en">data as of</span><span class="l-zh">数据截至</span> Jul 21, 2026<br>
+  <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> · <span class="l-en">built</span><span class="l-zh">生成于</span> 2026-07-22 08:54 UTC · <span class="l-en">data as of</span><span class="l-zh">数据截至</span> Jul 21, 2026<br>
   <span style="font-size:11px">© 2026 Mastermind Inc</span>
 </div>
 </div>
@@ -4748,7 +4748,10 @@
     }
     var areaD = d + ' L' + pts[pts.length-1][0] + ',' + H + ' L' + pts[0][0] + ',' + H + ' Z';
     var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    var lineColor = isDark ? 'rgba(55,208,127,.85)' : 'rgba(26,127,67,.85)';
+    var _isZh = document.documentElement.getAttribute('data-lang') === 'zh';
+    /* zh 红涨绿跌: sparkline shows index price trajectory — direction read → red in zh */
+    var lineColor = _isZh ? (isDark ? 'rgba(224,100,100,.85)' : 'rgba(180,50,50,.85)')
+                          : (isDark ? 'rgba(55,208,127,.85)' : 'rgba(26,127,67,.85)');
     var gradId = 'sg' + Math.random().toString(36).slice(2,7);
     svg.innerHTML =
       '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1">' +

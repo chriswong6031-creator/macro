@@ -177,6 +177,30 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 .bd-reflation{border-left-color:var(--blue)} .bd-quiet{border-left-color:var(--faint)}
 .site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
 
+/* zh 红涨绿跌 (operator ruling 2026-07-21): DIRECTION classes only are swapped below.
+   Non-direction reads (severity, health, validation quality) are intentionally left:
+   - .ch-dots i.on (active concern dots) → severity → stay red
+   - .vg-measured, .flag.ok, .stile .sb.meas → signal-quality/health badges → stay
+   - .recg.flag-on .rgv, table.slopes td.inv → recession alarm / inverted → stay
+   SWAPPED: .mchip.up/.down (price direction), .favrow .fl.fav/.pres and .tkpill.fav/.pres
+   (favored/pressured asset families = direction read), .stile.tail/.head (tailwind/headwind
+   = bullish/bearish sector tilt), .bd-tag.bd-rise/.bd-fall and .bd b.up/.dn (bond yield dir).
+   --drag (bearish/headwind pressure) and --lift (bullish/tailwind lift) swap in zh. */
+html[data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
+html[data-theme="dark"][data-lang="zh"]{--lift:#e58a97;--drag:#54c39a}
+html[data-lang="zh"] .mchip.up{background:rgba(211,11,11,.09);color:var(--red)}
+html[data-lang="zh"] .mchip.down{background:rgba(26,127,67,.11);color:var(--green)}
+html[data-lang="zh"] .favrow .fl.fav{color:var(--red)}
+html[data-lang="zh"] .favrow .fl.pres{color:var(--green)}
+html[data-lang="zh"] .tkpill.fav{background:rgba(211,11,11,.10);color:var(--red)}
+html[data-lang="zh"] .tkpill.pres{background:rgba(26,127,67,.12);color:var(--green)}
+html[data-lang="zh"] .stile.tail{background:rgba(211,11,11,.06);border-color:rgba(211,11,11,.28)}
+html[data-lang="zh"] .stile.head{background:rgba(26,127,67,.07);border-color:rgba(26,127,67,.28)}
+html[data-lang="zh"] .bd-tag.bd-rise{background:rgba(211,11,11,.10);color:var(--red)}
+html[data-lang="zh"] .bd-tag.bd-fall{background:rgba(26,127,67,.12);color:var(--green)}
+html[data-lang="zh"] .bd b.up{color:var(--red)}
+html[data-lang="zh"] .bd b.dn{color:var(--green)}
+
 /* ============ REVAMP — soft palette + shared panel chrome (matches the channel rail) ============ */
 :root{--drag:#c65b6e;--lift:#2f9270}
 html[data-theme="dark"]{--drag:#e58a97;--lift:#54c39a}

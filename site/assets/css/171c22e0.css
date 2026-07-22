@@ -63,6 +63,9 @@ html[data-theme="dark"] .metrics>div{background:var(--grid)}
 .m-k{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.03em}
 .m-v{display:block;font-size:18px;font-weight:800;color:var(--ink);margin-top:3px}
 .m-v.win{color:var(--green)} .m-v.lose{color:var(--red)}
+/* zh 红涨绿跌 (operator ruling 2026-07-21): strategy win vs. buy-and-hold = direction read */
+html[data-lang="zh"] .m-v.win{color:var(--red)}
+html[data-lang="zh"] .m-v.lose{color:var(--green)}
 .m-sub{display:block;font-size:10.5px;color:var(--faint);margin-top:1px}
 .scard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:6px;gap:10px;flex-wrap:wrap}
 .stance{font-size:12.5px;font-weight:700;color:var(--text);background:var(--bg);border:1px solid var(--grid);border-radius:8px;padding:5px 10px}

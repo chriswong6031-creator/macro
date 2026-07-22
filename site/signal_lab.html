@@ -243,7 +243,7 @@
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live.js?v=e1a3ca0d" defer></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -685,10 +685,10 @@
   </div>
   
   <div class="sf-funnel">
-    <span class="sf-funnel-chip"><b>17</b> <span class="l-en">proposed</span><span class="l-zh">已提议</span></span>
+    <span class="sf-funnel-chip"><b>22</b> <span class="l-en">proposed</span><span class="l-zh">已提议</span></span>
     <span class="sf-funnel-chip"><b>3</b> <span class="l-en">screened out</span><span class="l-zh">已筛除</span></span>
-    <span class="sf-funnel-chip"><b>14</b> <span class="l-en">registered</span><span class="l-zh">已注册</span></span>
-    <span class="sf-funnel-chip"><b>14</b> <span class="l-en">tested</span><span class="l-zh">已测试</span></span>
+    <span class="sf-funnel-chip"><b>19</b> <span class="l-en">registered</span><span class="l-zh">已注册</span></span>
+    <span class="sf-funnel-chip"><b>19</b> <span class="l-en">tested</span><span class="l-zh">已测试</span></span>
     <span class="sf-funnel-chip"><b>0</b> <span class="l-en">pass-candidates</span><span class="l-zh">通过候选</span></span>
     <span class="sf-funnel-chip"><b>0</b> <span class="l-en">promoted</span><span class="l-zh">已晋级</span></span>
   </div>
@@ -936,6 +936,46 @@
     </tr>
     <tr>
       <td><button class="sf-row-btn" onclick="sfToggle('sf-row-7')" title="expand">▸</button></td>
+      <td><span class="mkt">SF-0018</span></td>
+      <td class="sig">
+        <span class="l-en">Equity-duration hedge instability</span><span class="l-zh">股债对冲不稳定性</span>
+        <div class="mkt">engine/signal_lab.py</div>
+      </td>
+      <td class="mkt">US macro</td>
+      <td><span class="mkt">tested</span></td>
+      <td><span class="sf-v sf-v-null"><span class="l-en">null</span><span class="l-zh">空结果</span></span>
+      </td>
+      <td class="r">0.3631</td>
+      <td class="r">2.40</td>
+      <td class="r">1.00</td>
+      <td class="r">281</td>
+      <td class="r">—</td>
+    </tr>
+    <tr class="sf-detail" id="sf-row-7">
+      <td colspan="11">
+        <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Rising volatility in daily SPY-to-TLT relative returns predicts higher near-term SPY volatility because an unstable equity-duration hedge induces broader risk-budget cuts.</span><span class="l-zh">Rising volatility in daily SPY-to-TLT relative returns predicts higher near-term SPY volatility because an unstable equity-duration hedge induces broader risk-budget cuts.</span></div>
+        <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/yahoo/SPY.parquet[close]</code>, <code>data/yahoo/TLT.parquet[close]</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pipeline:</span><span class="l-zh">流水线：</span></strong>
+          <code>ratio({})</code> →
+          <code>pct_change({&#39;n&#39;: 1})</code> →
+          <code>rolling_vol({&#39;window&#39;: 63})</code> →
+          <code>zscore({&#39;window&#39;: 504})</code> →
+          <code>lag({&#39;n&#39;: 1})</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Target:</span><span class="l-zh">目标：</span></strong>
+          forward_vol · 21d
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pre-registered gates:</span><span class="l-zh">预注册门槛：</span></strong>
+          t≥2.0 · FDR q≤0.1 · DSR≥0.9
+        </div>
+        <div class="meta-row"><span class="l-en">Registered:</span><span class="l-zh">注册于：</span> 2026-07-22
+        </div>
+        <div class="meta-row"><span class="l-en">Placebo pctile:</span><span class="l-zh">安慰剂百分位：</span> 99%</div>
+      </td>
+    </tr>
+    <tr>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-8')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0005</span></td>
       <td class="sig">
         <span class="l-en">COT UST10y spec positioning squeeze</span><span class="l-zh">COT UST10y spec positioning squeeze</span>
@@ -951,7 +991,7 @@
       <td class="r">286</td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-7">
+    <tr class="sf-detail" id="sf-row-8">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Crowded short/long spec positioning in 10y futures precedes squeeze reversals in duration</span><span class="l-zh">Crowded short/long spec positioning in 10y futures precedes squeeze reversals in duration</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/cot/cot_ust10y.parquet[net_spec]</code>
@@ -972,7 +1012,7 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-8')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-9')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0006</span></td>
       <td class="sig">
         <span class="l-en">NAAIM exposure extremes</span><span class="l-zh">NAAIM exposure extremes</span>
@@ -988,7 +1028,7 @@
       <td class="r">234</td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-8">
+    <tr class="sf-detail" id="sf-row-9">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Active-manager exposure extremes (very low = capitulation, very high = complacency) vs forward SPY</span><span class="l-zh">Active-manager exposure extremes (very low = capitulation, very high = complacency) vs forward SPY</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/sentiment/naaim.parquet[naaim_exposure]</code>
@@ -1009,7 +1049,7 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-9')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-10')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0008</span></td>
       <td class="sig">
         <span class="l-en">Quality-spread momentum (BAA-AAA)</span><span class="l-zh">Quality-spread momentum (BAA-AAA)</span>
@@ -1025,7 +1065,7 @@
       <td class="r">400</td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-9">
+    <tr class="sf-detail" id="sf-row-10">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Momentum in the BAA-AAA quality spread captures credit-quality risk repricing ahead of equities</span><span class="l-zh">Momentum in the BAA-AAA quality spread captures credit-quality risk repricing ahead of equities</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/fred/DBAA.parquet[baa_corp]</code>, <code>data/fred/DAAA.parquet[aaa_corp]</code>
@@ -1047,7 +1087,7 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-10')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-11')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0009</span></td>
       <td class="sig">
         <span class="l-en">BTC hashrate momentum</span><span class="l-zh">BTC hashrate momentum</span>
@@ -1063,7 +1103,7 @@
       <td class="r">191</td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-10">
+    <tr class="sf-detail" id="sf-row-11">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Hashrate contraction (miner capitulation) then recovery marks accumulation regimes; hashrate 63d momentum z vs forward BTC</span><span class="l-zh">Hashrate contraction (miner capitulation) then recovery marks accumulation regimes; hashrate 63d momentum z vs forward BTC</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/coinmetrics/hashrate.parquet[hashrate]</code>
@@ -1084,7 +1124,7 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-11')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-12')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0012</span></td>
       <td class="sig">
         <span class="l-en">BTC VDD-multiple percentile</span><span class="l-zh">BTC VDD-multiple percentile</span>
@@ -1100,7 +1140,7 @@
       <td class="r">166</td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-11">
+    <tr class="sf-detail" id="sf-row-12">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Value-days-destroyed multiple percentile flags old-coin distribution; rich percentile precedes deeper BTC drawdowns</span><span class="l-zh">Value-days-destroyed multiple percentile flags old-coin distribution; rich percentile precedes deeper BTC drawdowns</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/checkonchain/vdd_multiple.parquet[vdd_multiple]</code>
@@ -1120,7 +1160,7 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-12')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-13')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0015</span></td>
       <td class="sig">
         <span class="l-en">Breakeven curve twist shock</span><span class="l-zh">盈亏平衡通胀曲线扭转冲击</span>
@@ -1136,7 +1176,7 @@
       <td class="r">278</td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-12">
+    <tr class="sf-detail" id="sf-row-13">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">A rapid rise in five-year inflation compensation relative to ten-year compensation predicts equity drawdown onset by concentrating inflation risk in the nearer policy and earnings horizon.</span><span class="l-zh">A rapid rise in five-year inflation compensation relative to ten-year compensation predicts equity drawdown onset by concentrating inflation risk in the nearer policy and earnings horizon.</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/fred/T5YIE.parquet[breakeven_5y]</code>, <code>data/fred/T10YIE.parquet[breakeven_10y]</code>
@@ -1159,7 +1199,46 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-13')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-14')" title="expand">▸</button></td>
+      <td><span class="mkt">SF-0019</span></td>
+      <td class="sig">
+        <span class="l-en">Mortgage-Treasury transmission wedge</span><span class="l-zh">房贷国债传导楔子</span>
+        <div class="mkt">engine/signal_lab.py</div>
+      </td>
+      <td class="mkt">US macro</td>
+      <td><span class="mkt">tested</span></td>
+      <td><span class="sf-v sf-v-era"><span class="l-en">era_specific</span><span class="l-zh">时代特定</span></span>
+      </td>
+      <td class="r">0.0045</td>
+      <td class="r">3.09</td>
+      <td class="r">0.19</td>
+      <td class="r">400</td>
+      <td class="r">—</td>
+    </tr>
+    <tr class="sf-detail" id="sf-row-14">
+      <td colspan="11">
+        <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">A rapid widening of the thirty-year mortgage rate over the ten-year Treasury yield predicts SPY drawdown onset because housing credit is tightening beyond the move in the risk-free curve.</span><span class="l-zh">A rapid widening of the thirty-year mortgage rate over the ten-year Treasury yield predicts SPY drawdown onset because housing credit is tightening beyond the move in the risk-free curve.</span></div>
+        <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/fred/MORTGAGE30US.parquet[mortgage_30y]</code>, <code>data/fred/DGS10.parquet[us10y]</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pipeline:</span><span class="l-zh">流水线：</span></strong>
+          <code>spread({})</code> →
+          <code>diff({&#39;n&#39;: 4})</code> →
+          <code>zscore({&#39;window&#39;: 260})</code> →
+          <code>lag({&#39;n&#39;: 2})</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Target:</span><span class="l-zh">目标：</span></strong>
+          drawdown_onset · 63d
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pre-registered gates:</span><span class="l-zh">预注册门槛：</span></strong>
+          t≥2.0 · FDR q≤0.1 · DSR≥0.9
+        </div>
+        <div class="meta-row"><span class="l-en">Registered:</span><span class="l-zh">注册于：</span> 2026-07-22
+        </div>
+        <div class="meta-row"><span class="l-en">Placebo pctile:</span><span class="l-zh">安慰剂百分位：</span> 8%</div>
+      </td>
+    </tr>
+    <tr>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-15')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0013</span></td>
       <td class="sig">
         <span class="l-en">Manufacturing backlog liquidation pulse</span><span class="l-zh">制造业积压订单消退脉冲</span>
@@ -1175,7 +1254,7 @@
       <td class="r">251</td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-13">
+    <tr class="sf-detail" id="sf-row-15">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">A falling manufacturing backlog-to-shipments ratio predicts weaker forward equity returns because demand commitments are being worked down faster than they are replenished.</span><span class="l-zh">A falling manufacturing backlog-to-shipments ratio predicts weaker forward equity returns because demand commitments are being worked down faster than they are replenished.</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/fred/AMTMUO.parquet[unfilled_orders]</code>, <code>data/fred/AMTMVS.parquet[shipments_total]</code>
@@ -1198,7 +1277,7 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-14')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-16')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0014</span></td>
       <td class="sig">
         <span class="l-en">Real wage purchasing-power impulse</span><span class="l-zh">实际工资购买力脉冲</span>
@@ -1214,7 +1293,7 @@
       <td class="r">136</td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-14">
+    <tr class="sf-detail" id="sf-row-16">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Accelerating real hourly earnings predict stronger forward equity returns because household purchasing power supports consumption before corporate sales and profits fully adjust.</span><span class="l-zh">Accelerating real hourly earnings predict stronger forward equity returns because household purchasing power supports consumption before corporate sales and profits fully adjust.</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/fred/CES0500000003.parquet[avg_hourly_earnings]</code>, <code>data/fred/CPILFESL.parquet[core_cpi]</code>
@@ -1237,7 +1316,125 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-15')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-17')" title="expand">▸</button></td>
+      <td><span class="mkt">SF-0020</span></td>
+      <td class="sig">
+        <span class="l-en">Supplier-delivery bottleneck persistence</span><span class="l-zh">供应交付瓶颈持续性</span>
+        <div class="mkt">engine/signal_lab.py</div>
+      </td>
+      <td class="mkt">US macro</td>
+      <td><span class="mkt">tested</span></td>
+      <td><span class="sf-v sf-v-muted"><span class="l-en">insufficient_power</span><span class="l-zh">算力不足</span></span>
+      </td>
+      <td class="r">-0.0469</td>
+      <td class="r"><span class="muted">—</span></td>
+      <td class="r">0.19</td>
+      <td class="r">256</td>
+      <td class="r">—</td>
+    </tr>
+    <tr class="sf-detail" id="sf-row-17">
+      <td colspan="11">
+        <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Persistent acceleration in supplier delivery times predicts SPY drawdown onset because bottlenecks raise working-capital needs and inflation pressure before earnings fully absorb the margin damage.</span><span class="l-zh">Persistent acceleration in supplier delivery times predicts SPY drawdown onset because bottlenecks raise working-capital needs and inflation pressure before earnings fully absorb the margin damage.</span></div>
+        <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/fred/DTCISA156MSFRBPHI.parquet[deliv_time_philly]</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pipeline:</span><span class="l-zh">流水线：</span></strong>
+          <code>ema({&#39;span&#39;: 3})</code> →
+          <code>diff({&#39;n&#39;: 3})</code> →
+          <code>zscore({&#39;window&#39;: 120})</code> →
+          <code>lag({&#39;n&#39;: 2})</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Target:</span><span class="l-zh">目标：</span></strong>
+          drawdown_onset · 63d
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pre-registered gates:</span><span class="l-zh">预注册门槛：</span></strong>
+          t≥2.0 · FDR q≤0.1 · DSR≥0.9
+        </div>
+        <div class="meta-row"><span class="l-en">Registered:</span><span class="l-zh">注册于：</span> 2026-07-22
+        </div>
+        <div class="meta-row"><span class="l-en">Placebo pctile:</span><span class="l-zh">安慰剂百分位：</span> 44%</div>
+      </td>
+    </tr>
+    <tr>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-18')" title="expand">▸</button></td>
+      <td><span class="mkt">SF-0021</span></td>
+      <td class="sig">
+        <span class="l-en">Housing authorization replenishment gap</span><span class="l-zh">住房许可补充缺口</span>
+        <div class="mkt">engine/signal_lab.py</div>
+      </td>
+      <td class="mkt">US macro</td>
+      <td><span class="mkt">tested</span></td>
+      <td><span class="sf-v sf-v-muted"><span class="l-en">insufficient_power</span><span class="l-zh">算力不足</span></span>
+      </td>
+      <td class="r">0.0246</td>
+      <td class="r"><span class="muted">—</span></td>
+      <td class="r">0.59</td>
+      <td class="r">255</td>
+      <td class="r">—</td>
+    </tr>
+    <tr class="sf-detail" id="sf-row-18">
+      <td colspan="11">
+        <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">A falling permits-to-starts ratio predicts weaker medium-horizon SPY returns because new authorizations are no longer replenishing current residential construction activity.</span><span class="l-zh">A falling permits-to-starts ratio predicts weaker medium-horizon SPY returns because new authorizations are no longer replenishing current residential construction activity.</span></div>
+        <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/fred/PERMIT.parquet[building_permits]</code>, <code>data/fred/HOUST.parquet[housing_starts]</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pipeline:</span><span class="l-zh">流水线：</span></strong>
+          <code>ratio({})</code> →
+          <code>sma({&#39;window&#39;: 3})</code> →
+          <code>diff({&#39;n&#39;: 3})</code> →
+          <code>zscore({&#39;window&#39;: 120})</code> →
+          <code>lag({&#39;n&#39;: 2})</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Target:</span><span class="l-zh">目标：</span></strong>
+          absolute_return · 126d
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pre-registered gates:</span><span class="l-zh">预注册门槛：</span></strong>
+          t≥2.0 · FDR q≤0.1 · DSR≥0.9
+        </div>
+        <div class="meta-row"><span class="l-en">Registered:</span><span class="l-zh">注册于：</span> 2026-07-22
+        </div>
+        <div class="meta-row"><span class="l-en">Placebo pctile:</span><span class="l-zh">安慰剂百分位：</span> 22%</div>
+      </td>
+    </tr>
+    <tr>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-19')" title="expand">▸</button></td>
+      <td><span class="mkt">SF-0022</span></td>
+      <td class="sig">
+        <span class="l-en">Household-model inflation disagreement</span><span class="l-zh">家庭与模型通胀分歧</span>
+        <div class="mkt">engine/signal_lab.py</div>
+      </td>
+      <td class="mkt">US macro</td>
+      <td><span class="mkt">tested</span></td>
+      <td><span class="sf-v sf-v-muted"><span class="l-en">insufficient_power</span><span class="l-zh">算力不足</span></span>
+      </td>
+      <td class="r">0.0603</td>
+      <td class="r"><span class="muted">—</span></td>
+      <td class="r">0.02</td>
+      <td class="r">256</td>
+      <td class="r">—</td>
+    </tr>
+    <tr class="sf-detail" id="sf-row-19">
+      <td colspan="11">
+        <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Widening household one-year inflation expectations relative to model-based one-year expectations predicts higher forward SPY volatility because disagreement amplifies consumption, wage-setting, and policy uncertainty.</span><span class="l-zh">Widening household one-year inflation expectations relative to model-based one-year expectations predicts higher forward SPY volatility because disagreement amplifies consumption, wage-setting, and policy uncertainty.</span></div>
+        <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/fred/MICH.parquet[umich_infl_exp]</code>, <code>data/fred/EXPINF1YR.parquet[infl_exp_1y]</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pipeline:</span><span class="l-zh">流水线：</span></strong>
+          <code>spread({})</code> →
+          <code>sma({&#39;window&#39;: 3})</code> →
+          <code>zscore({&#39;window&#39;: 120})</code> →
+          <code>lag({&#39;n&#39;: 2})</code>
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Target:</span><span class="l-zh">目标：</span></strong>
+          forward_vol · 63d
+        </div>
+        <div class="meta-row"><strong><span class="l-en">Pre-registered gates:</span><span class="l-zh">预注册门槛：</span></strong>
+          t≥2.0 · FDR q≤0.1 · DSR≥0.9
+        </div>
+        <div class="meta-row"><span class="l-en">Registered:</span><span class="l-zh">注册于：</span> 2026-07-22
+        </div>
+        <div class="meta-row"><span class="l-en">Placebo pctile:</span><span class="l-zh">安慰剂百分位：</span> 20%</div>
+      </td>
+    </tr>
+    <tr>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-20')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0003</span></td>
       <td class="sig">
         <span class="l-en">VIX term-structure slope</span><span class="l-zh">VIX term-structure slope</span>
@@ -1253,7 +1450,7 @@
       <td class="r"><span class="muted">—</span></td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-15">
+    <tr class="sf-detail" id="sf-row-20">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Backwardation (front&gt;back) percentile as stress state vs contango carry-calm; slope z vs forward SPY excess return</span><span class="l-zh">Backwardation (front&gt;back) percentile as stress state vs contango carry-calm; slope z vs forward SPY excess return</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/cboe/vix_curve.parquet[m1_settle]</code>, <code>data/cboe/vix_curve.parquet[m2_settle]</code>
@@ -1273,7 +1470,7 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-16')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-21')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0010</span></td>
       <td class="sig">
         <span class="l-en">BTC network-activity impulse</span><span class="l-zh">BTC network-activity impulse</span>
@@ -1289,7 +1486,7 @@
       <td class="r"><span class="muted">—</span></td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-16">
+    <tr class="sf-detail" id="sf-row-21">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Active-address growth impulse leads price in adoption waves; distinct series from the confirmer MVRV/Reserve-Risk valuation gauge</span><span class="l-zh">Active-address growth impulse leads price in adoption waves; distinct series from the confirmer MVRV/Reserve-Risk valuation gauge</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/coinmetrics/active_addresses.parquet[active_addresses]</code>
@@ -1309,7 +1506,7 @@
       </td>
     </tr>
     <tr>
-      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-17')" title="expand">▸</button></td>
+      <td><button class="sf-row-btn" onclick="sfToggle('sf-row-22')" title="expand">▸</button></td>
       <td><span class="mkt">SF-0011</span></td>
       <td class="sig">
         <span class="l-en">Equity put/call ratio extreme</span><span class="l-zh">Equity put/call ratio extreme</span>
@@ -1325,7 +1522,7 @@
       <td class="r"><span class="muted">—</span></td>
       <td class="r">—</td>
     </tr>
-    <tr class="sf-detail" id="sf-row-17">
+    <tr class="sf-detail" id="sf-row-22">
       <td colspan="11">
         <div class="why-full"><strong><span class="l-en">Thesis:</span><span class="l-zh">论点：</span></strong> <span class="l-en">Extreme put/call readings mark sentiment washouts/complacency; contrarian vs forward SPY</span><span class="l-zh">Extreme put/call readings mark sentiment washouts/complacency; contrarian vs forward SPY</span></div>
         <div class="meta-row"><strong><span class="l-en">Data:</span><span class="l-zh">数据：</span></strong> <code>data/cboe/putcall.parquet[equity_pc_ratio]</code>
@@ -5711,8 +5908,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-22 06:50 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-22 06:50 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-22 08:20 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-22 08:20 UTC</p>
 </div>
 
 <script src="theme.js?v=195f6d56" defer></script>

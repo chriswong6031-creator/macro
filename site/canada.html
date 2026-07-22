@@ -27,7 +27,7 @@
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=a1aa8c55">
 <link rel="stylesheet" href="illus.css?v=a2237d45">
-<link rel="stylesheet" href="assets/css/854e3b2f.css?v=854e3b2f">
+<link rel="stylesheet" href="assets/css/d2b8a6ca.css?v=d2b8a6ca">
 </head>
 <body class="page-canada">
 
@@ -243,7 +243,7 @@
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live.js?v=e1a3ca0d" defer></script>
   
   <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
@@ -272,7 +272,7 @@
     <h1>🇨🇦 <span class="l-en">Canada — S&P/TSX Regime</span><span class="l-zh">加拿大 — 标普/TSX 周期</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-21 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-22 08:04 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-21 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-22 09:37 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Commodity-and-bank-cycle market — the TSX is ~70% Financials, Energy & Materials. The growth/inflation quad sets the slow backdrop; the commodity / CAD / BoC-vs-Fed overlay below is the high-frequency driver.</span><span class="l-zh">大宗商品与银行周期市场 — TSX 约 70% 为金融、能源与材料。增长／通胀象限给出慢速背景；下方的大宗商品／加元／央行-美联储叠加为高频驱动。</span>
@@ -351,8 +351,8 @@
       <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-signals',event)">⌁
         <span class="l-en">0 of 6 signals aligned</span><span class="l-zh">6 项中 0 项一致</span>
         <span class="n">▾</span></button>
-      <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-risk',event)" style="border-color:rgba(224,100,100,.5)">⚠
-        <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--act)">82</span> ▾</button>
+      <button class="cax-hbtn" onclick="caxTogglePop('cax-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
+        <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--down)">82</span> ▾</button>
 
       <!-- popover: factor breakdown -->
       <div class="cax-pop" id="cax-pop-signals">
@@ -442,8 +442,9 @@
     
     
     <svg class="cax-path-svg" viewBox="0 0 560 232" aria-hidden="true">
-      <rect x="20" y="22" width="520" height="56" fill="rgba(69,184,115,.06)"/>
-      <rect x="20" y="134" width="520" height="56" fill="rgba(224,100,100,.06)"/>
+      
+      <rect x="20" y="22" width="520" height="56" style="fill:color-mix(in srgb,var(--up) 6%,transparent)"/>
+      <rect x="20" y="134" width="520" height="56" style="fill:color-mix(in srgb,var(--down) 6%,transparent)"/>
       <line x1="20" y1="106" x2="540" y2="106" stroke="rgba(224,160,48,.35)" stroke-dasharray="4 4" stroke-width="1"/>
       <text x="540" y="34" font-size="9" fill="var(--up)" text-anchor="end"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></text>
       <text x="540" y="103" font-size="9" fill="var(--warn)" text-anchor="end"><span class="l-en">Mixed</span><span class="l-zh">混合</span></text>
@@ -581,11 +582,11 @@
   
   
   
-  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-risk')" style="border-color:rgba(224,100,100,.35)">
-    <div class="cax-ctitle"><span class="l-en">Pullback Risk</span><span class="l-zh">回撤风险</span> <span class="cax-alert-pill" style="background:rgba(224,100,100,.16);color:var(--act)"><span class="l-en">HIGH</span><span class="l-zh">高</span></span></div>
+  <div class="cax-card" role="button" tabindex="0" onclick="caxOpenDlg('cax-dlg-risk')" style="border-color:color-mix(in srgb,var(--down) 35%,transparent)">
+    <div class="cax-ctitle"><span class="l-en">Pullback Risk</span><span class="l-zh">回撤风险</span> <span class="cax-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)"><span class="l-en">HIGH</span><span class="l-zh">高</span></span></div>
     
-    <div class="cax-bignum" style="color:var(--act)">82<span style="font-size:14px;color:var(--muted)"> /100</span></div>
-    <div class="cax-bigsub" style="color:var(--act)"><span class="l-en">USD strength</span><span class="l-zh">美元走强</span></div>
+    <div class="cax-bignum" style="color:var(--down)">82<span style="font-size:14px;color:var(--muted)"> /100</span></div>
+    <div class="cax-bigsub" style="color:var(--down)"><span class="l-en">USD strength</span><span class="l-zh">美元走强</span></div>
     
     <div class="cax-kv"><span class="k"><span class="l-en">≥5% dip odds</span><span class="l-zh">≥5%回撤概率</span></span><span class="v">19%</span></div>
     <div class="cax-foot"><span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span></div>
@@ -1416,7 +1417,7 @@
 </div>
 
 
-<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-22 08:04 UTC</p>
+<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-22 09:37 UTC</p>
 
 </div>
 
