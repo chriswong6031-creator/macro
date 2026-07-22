@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-21",
+ "as_of": "2026-07-22",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -82,16 +82,16 @@
      "name": "Automatic Data Processing Inc"
     },
     {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
+    },
+    {
      "ticker": "DDOG",
      "name": "Datadog Inc"
     },
     {
      "ticker": "ADBE",
      "name": "Adobe Inc"
-    },
-    {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "INTU",
@@ -106,16 +106,16 @@
      "name": "Paychex Inc"
     },
     {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
+    },
+    {
      "ticker": "ROP",
      "name": "Roper Technologies Inc"
     },
     {
      "ticker": "WDAY",
      "name": "Workday Inc"
-    },
-    {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
     }
    ]
   },
@@ -214,11 +214,11 @@
    "sector": "Internet & Platforms",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
@@ -334,12 +334,12 @@
    "sector": "Software & Cloud",
    "members": [
     {
-     "ticker": "AXON",
-     "name": "Axon Enterprise Inc"
-    },
-    {
      "ticker": "RKLB",
      "name": "Rocket Lab Corp"
+    },
+    {
+     "ticker": "AXON",
+     "name": "Axon Enterprise Inc"
     },
     {
      "ticker": "KTOS",
@@ -524,16 +524,16 @@
      "name": "Automatic Data Processing Inc"
     },
     {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
+    },
+    {
      "ticker": "DDOG",
      "name": "Datadog Inc"
     },
     {
      "ticker": "ADBE",
      "name": "Adobe Inc"
-    },
-    {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "INTU",
@@ -548,16 +548,16 @@
      "name": "Paychex Inc"
     },
     {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
+    },
+    {
      "ticker": "ROP",
      "name": "Roper Technologies Inc"
     },
     {
      "ticker": "WDAY",
      "name": "Workday Inc"
-    },
-    {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
     },
     {
      "ticker": "CTAS",
@@ -572,12 +572,12 @@
      "name": "Copart Inc"
     },
     {
-     "ticker": "AXON",
-     "name": "Axon Enterprise Inc"
-    },
-    {
      "ticker": "RKLB",
      "name": "Rocket Lab Corp"
+    },
+    {
+     "ticker": "AXON",
+     "name": "Axon Enterprise Inc"
     },
     {
      "ticker": "KTOS",
@@ -610,11 +610,11 @@
    "name_zh": "互联网与平台",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {

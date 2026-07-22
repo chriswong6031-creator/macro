@@ -1,15 +1,15 @@
 {
   "status": "stale",
-  "checked_at": "2026-07-21T00:25:39.929971+00:00",
+  "checked_at": "2026-07-22T00:32:18.632385+00:00",
   "threshold_sessions": 3,
-  "store_max": "2026-07-20",
+  "store_max": "2026-07-21",
   "n_members": 683,
   "n_stale": 1,
   "n_behind_within_threshold": 0,
   "stale": {
     "BLD": {
       "last": "2026-07-02",
-      "sessions_behind": 11
+      "sessions_behind": 12
     }
   },
   "missing": [
