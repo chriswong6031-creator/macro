@@ -276,6 +276,31 @@
   .tb-rd-line { font-size:11px; color:var(--text); line-height:1.35; margin-top:5px; }
   .tb-rd-odds { font-size:10.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
   .tb-rd-foot { margin:10px 2px 0; line-height:1.5; }
+  /* turn-tile rich-lens popover: "stretch" gauge (cloned by theme.js into .lens-pop,
+     so it inherits the engine's --lens-* token chain — light mode + vector-safe) */
+  .tbl-gauge { margin:9px 16px 2px; }
+  .tbl-gauge-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    font:700 8.5px/1.3 var(--font-ui,Inter,sans-serif); letter-spacing:.1em; text-transform:uppercase;
+    color:color-mix(in srgb,var(--lens-mut,var(--muted,#8b93a1)) 82%,transparent); }
+  .tbl-gauge-top b { font:800 12.5px/1 var(--font-ui,Inter,sans-serif); letter-spacing:0;
+    color:var(--lens-text,var(--text,#e8ecf2)); font-variant-numeric:tabular-nums; }
+  .tbl-gauge-top b i { font-style:normal; font-size:8px; font-weight:700; margin-left:1px;
+    color:var(--lens-mut,var(--muted,#8b93a1)); }
+  .tbl-gauge-track { position:relative; height:8px; margin-top:5px; border-radius:5px; overflow:hidden;
+    background:color-mix(in srgb,var(--lens-mut,var(--muted,#8b93a1)) 22%,transparent); }
+  .tbl-gauge-track::after { content:""; position:absolute; top:0; bottom:0; left:90%; width:1px;
+    background:color-mix(in srgb,var(--lens-mut,var(--muted,#8b93a1)) 55%,transparent); }
+  .tbl-gauge-fill { position:absolute; inset:0 auto 0 0; width:var(--w,50%); border-radius:5px;
+    background:linear-gradient(90deg,color-mix(in srgb,var(--lens-accent,#d4a017) 42%,transparent),var(--lens-accent,#d4a017)); }
+  .tbl-gauge-cap { margin-top:6px; font:450 11px/1.45 var(--font-ui,Inter,sans-serif);
+    color:color-mix(in srgb,var(--lens-text,var(--text,#e8ecf2)) 76%,var(--lens-mut,var(--muted,#8b93a1))); }
+  .tbl-note { margin:1px 16px 0; font:450 10px/1.4 var(--font-ui,Inter,sans-serif); font-style:italic;
+    color:color-mix(in srgb,var(--lens-mut,var(--muted,#8b93a1)) 88%,transparent); }
+  @media (prefers-reduced-motion:no-preference) {
+    .lens-pop.open .tbl-gauge-fill { transform:scaleX(0); transform-origin:0 50%;
+      animation:tblGrow .62s cubic-bezier(.22,.9,.26,1.02) .12s both; }
+  }
+  @keyframes tblGrow { to { transform:scaleX(1); } }
 </style>
 </head>
 <body>
@@ -348,10 +373,54 @@
 {% set RD_STANCE_EN = {'watch': "watch, don't chase", 'caution': 'get ready to protect gains', 'elevated': 'protect gains', 'risk-off': 'protect gains, stand aside'} %}
 {% set RD_STANCE_ZH = {'watch': '观察，勿追高', 'caution': '准备保护收益', 'elevated': '保护收益', 'risk-off': '保护收益，观望'} %}
 {% set _rdns = namespace(present=false, lifted=false) %}
+{# ---- turn-tile rich-lens popover copy (plain-word reads + accent/glyph maps) ---- #}
+{% set TB_READ_EN = {
+  'crash':     'The selling is heavy and still running — a fast, deep drop, with no floor in sight yet.',
+  'breaking':  'It ran up, then cracked: price has snapped below its recent floor and momentum rolled over.',
+  'topping':   'Still up high, but the first cracks are showing — momentum is fading right near the top.',
+  'parabolic': 'Shooting almost straight up. Moves this steep rarely last, and the snap-back tends to be sharp.',
+  'extended':  'Stretched well above its own trend — not broken, but priced for a lot to keep going right.',
+  'downtrend': 'Grinding lower for weeks now. The path of least resistance is still downward.',
+  'recovery':  'Off the lows and healing, but it is early — the trend has not actually turned up yet.',
+  'basing':    'The fall has stalled and it is trying to carve out a floor. No turn up is confirmed yet.',
+  'uptrend':   'Climbing in good health — above its key averages with real momentum behind it.',
+  'calm':      'Quiet. Nothing stretched, nothing breaking — and nothing that needs a decision today.'
+} %}
+{% set TB_READ_ZH = {
+  'crash':     '抛售沉重、仍在继续——又快又深的下跌，目前仍看不到底。',
+  'breaking':  '先急涨、后破位：价格跌穿近期支撑，动能掉头向下。',
+  'topping':   '仍在高位，但已现初步裂痕——顶部附近动能正在减弱。',
+  'parabolic': '近乎垂直的拉升。如此陡峭的涨势难以持久，回落往往迅猛。',
+  'extended':  '已明显高于自身趋势——尚未破位，但已计入大量利好。',
+  'downtrend': '已连续数周走低。阻力最小的方向仍然向下。',
+  'recovery':  '已脱离低位、正在修复，但仍属早期——趋势尚未真正转上。',
+  'basing':    '跌势已止，正尝试筑底。尚未确认转上。',
+  'uptrend':   '健康上行——站上关键均线，且有实实在在的动能支撑。',
+  'calm':      '平静。既不极端，也未破位——今天没有需要做的决定。'
+} %}
+{# state → LENS accent kind (caution=warn · read=amber · record=green · define=blue · source=muted) #}
+{% set TB_KIND = {
+  'crash':'caution','breaking':'caution','downtrend':'caution',
+  'topping':'read','parabolic':'read','extended':'read',
+  'uptrend':'record','recovery':'record','basing':'define','calm':'source'
+} %}
+{# state → header glyph family #}
+{% set TB_GRP = {
+  'crash':'fall','breaking':'fall','downtrend':'fall',
+  'topping':'stretch','parabolic':'stretch','extended':'stretch',
+  'uptrend':'rise','recovery':'rise','basing':'flat','calm':'flat'
+} %}
+{% macro tb_glyph(grp) -%}
+{%- if grp == 'fall' -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6.5 7 4-3.2L21 18"/><path d="M15.5 18H21v-5.5"/></svg>
+{%- elif grp == 'stretch' -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c6 .5 9.6-4 10.9-15.3"/><path d="M11.2 6.4l3.8-1.7 1.5 3.8"/></svg>
+{%- elif grp == 'rise' -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l6.5-7 4 3.2L21 6"/><path d="M15.5 6H21v5.5"/></svg>
+{%- else -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/></svg>
+{%- endif -%}
+{%- endmacro %}
 <div class="panel accent">
   <div class="sec-h">
     <h2>{{ t('World markets — turns & rotation', '全球市场 — 拐点与轮动') }}
-      {{ help('State machine per market: crash/breaking/topping (memory-aware, not snapshot); extended/parabolic; uptrend/downtrend/recovery. Urgency-sorted — hottest markets first. Stance line = what to do. Pullback-risk chip: separate leading-risk radar per market (US rates, currency, price extension); odds measured from own-market history; display-only while its live forward log accrues. Display-only, not a forecast.', '每个市场的状态机：崩跌/破位/拐顶（有记忆，非快照）；偏高/抛物线；上行趋势/下行趋势/修复。按紧迫度排序——最热市场在前。立场行 = 操作建议。回撤风险标签：各市场独立的领先风险雷达（美债利率、汇率、价格伸展）；概率测自该市场自身历史；前向日志累积期间仅作展示。仅展示，非预测。') }}
+      {{ help('Each market\'s trend, read straight from its price action — climbing, stretched, topping out, breaking, or falling. The hottest markets sort to the top, and every card tells you what to do. The "pullback risk" tag is a separate heads-up that a drop may be brewing — from US rates, the currency, or a stretched price. It is context only, never a forecast, and never ranks the markets. Hover any card for the full read.', '每个市场的趋势，直接读自其价格走势——上行、伸展、见顶、破位或下跌。最紧迫的市场排在最前，每张卡都会告诉你该怎么做。「回撤风险」标签是另一重提示，表示可能正在酝酿一轮下跌——来自美债利率、汇率或价格过度伸展。它仅供参考，绝非预测，也不参与市场排名。将鼠标悬停在任意卡片上可查看完整解读。') }}
     </h2>
     <span style="flex:1"></span>
     <span class="muted small">{{ t('as of', '截至') }} {{ latest.date }}</span>
@@ -375,43 +444,57 @@
     {% if _rd %}{% set _rdns.present = true %}
       {% if _rd_lift is not none and _rd_lift != 1.0 %}{% set _rdns.lifted = true %}{% endif %}
     {% endif %}
-    {# build Tier-2 receipt text (internal names allowed here per doctrine) #}
-    {% set _t2_en = 'State: ' ~ (tile.state_en or tile.state) ~ ' (since ' ~ (tile.since or '—') ~ '). ' %}
-    {% set _t2_en = _t2_en ~ 'Extension: ' ~ ('%.0f'|format(tile.ext_pctile) ~ ' pctile' if tile.ext_pctile is not none else '—') ~ '. ' %}
-    {% set _t2_en = _t2_en ~ 'RSI divergence: ' ~ ('yes' if tile.rsi_divergence else 'no') ~ '. ' %}
-    {% set _t2_en = _t2_en ~ 'MACD: ' ~ (tile.macd_state or '—') ~ '. ' %}
-    {% set _t2_en = _t2_en ~ 'Peak date: ' ~ (tile.peak_date or '—') %}
-    {% set _t2_zh = '状态：' ~ (tile.state_zh or tile.state) ~ '（自' ~ (tile.since or '—') ~ '）。' %}
-    {% set _t2_zh = _t2_zh ~ '超涨分位：' ~ ('%.0f'|format(tile.ext_pctile) ~ '分位' if tile.ext_pctile is not none else '—') ~ '。' %}
-    {% set _t2_zh = _t2_zh ~ 'RSI背离：' ~ ('是' if tile.rsi_divergence else '否') ~ '。' %}
-    {% set _t2_zh = _t2_zh ~ 'MACD：' ~ (tile.macd_state or '—') ~ '。' %}
-    {% set _t2_zh = _t2_zh ~ '峰值日期：' ~ (tile.peak_date or '—') %}
-    {% if _rd %}
-    {# radar receipt merged into the tile tip (one hover per tile; enums + stats allowed on Tier 2) #}
-    {% set _t2_en = _t2_en ~ ' — Pullback radar (thru ' ~ (_rd.get('asof') or '—') ~ '): ' ~ _rd_state %}
-    {% if _rd.get('state_ungated') and _rd.get('state_ungated') != _rd_state %}{% set _t2_en = _t2_en ~ ' (ungated ' ~ _rd.get('state_ungated') ~ ')' %}{% endif %}
-    {% if _rd.get('top_score') is not none %}{% set _t2_en = _t2_en ~ ', score ' ~ _rd.get('top_score') ~ '/100' %}{% endif %}
-    {% set _t2_en = _t2_en ~ '. Driver: ' ~ (_rd.get('dominant_label_en') or '—') ~ '.' %}
-    {% if _rd_h21 is not none and _rd_b21 is not none %}
-    {% set _t2_en = _t2_en ~ ' ≥5% dip within 21 sessions: ' ~ ((_rd_h21*100)|round|int) ~ '% vs ' ~ ((_rd_b21*100)|round|int) ~ '% long-run' %}
-    {% if _rd_lift is not none %}{% set _t2_en = _t2_en ~ ' (lift ' ~ ('%.2f'|format(_rd_lift)) ~ '×)' %}{% endif %}
-    {% set _t2_en = _t2_en ~ '.' %}
-    {% endif %}
-    {% set _t2_en = _t2_en ~ ' Forward log n=' ~ ((_rd.get('forward_log') or {}).get('n_graded', 0)) ~ '; ported legs, own-history odds; display-only.' %}
-    {% if (_rd.get('context_gate') or {}).get('recent_parabolic') %}{% set _t2_en = _t2_en ~ ' Recently parabolic.' %}{% endif %}
-    {% set _t2_zh = _t2_zh ~ ' — 回撤雷达（截至' ~ (_rd.get('asof') or '—') ~ '）：' ~ RD_STATE_ZH.get(_rd_state, _rd_state) %}
-    {% if _rd.get('state_ungated') and _rd.get('state_ungated') != _rd_state %}{% set _t2_zh = _t2_zh ~ '（未加约束：' ~ RD_STATE_ZH.get(_rd.get('state_ungated'), _rd.get('state_ungated')) ~ '）' %}{% endif %}
-    {% if _rd.get('top_score') is not none %}{% set _t2_zh = _t2_zh ~ '，得分' ~ _rd.get('top_score') ~ '/100' %}{% endif %}
-    {% set _t2_zh = _t2_zh ~ '。驱动：' ~ (_rd.get('dominant_label_zh') or _rd.get('dominant_label_en') or '—') ~ '。' %}
-    {% if _rd_h21 is not none and _rd_b21 is not none %}
-    {% set _t2_zh = _t2_zh ~ '21个交易日内≥5%回撤：' ~ ((_rd_h21*100)|round|int) ~ '%（长期基准' ~ ((_rd_b21*100)|round|int) ~ '%' %}
-    {% if _rd_lift is not none %}{% set _t2_zh = _t2_zh ~ '，提升' ~ ('%.2f'|format(_rd_lift)) ~ '×' %}{% endif %}
-    {% set _t2_zh = _t2_zh ~ '）。' %}
-    {% endif %}
-    {% set _t2_zh = _t2_zh ~ '前向日志 n=' ~ ((_rd.get('forward_log') or {}).get('n_graded', 0)) ~ '；移植构建、赔率取自自身历史；仅作展示。' %}
-    {% if (_rd.get('context_gate') or {}).get('recent_parabolic') %}{% set _t2_zh = _t2_zh ~ '近期出现抛物线走势。' %}{% endif %}
-    {% endif %}
-    <div class="tb-tile {{ _tile_cls }}" data-tip-en="{{ _t2_en }}" data-tip-zh="{{ _t2_zh }}">
+    {# ---- per-tile popover helpers (dates trimmed to MM-DD; stretch pctile → int) ---- #}
+    {% set _since_s = tile.since[5:] if tile.since else none %}
+    {% set _peak_s = tile.peak_date[5:] if tile.peak_date else none %}
+    {% set _kind = TB_KIND.get(tile.state, 'source') %}
+    {% set _grp = TB_GRP.get(tile.state, 'flat') %}
+    {% set _ext_i = (tile.ext_pctile|round|int) if tile.ext_pctile is not none else none %}
+    {# compact plain fallback (trigger hook + JS-off / older-cache): state + stance, one line #}
+    {% set _fb_en = (tile.state_en or tile.state) ~ ': ' ~ tile.stance_en ~ '.' %}
+    {% set _fb_zh = (tile.state_zh or tile.state) ~ '：' ~ tile.stance_zh ~ '。' %}
+    <div class="tb-tile {{ _tile_cls }}" data-lens-kind="{{ _kind }}" data-tip-en="{{ _fb_en }}" data-tip-zh="{{ _fb_zh }}">
+      {# ---- rich LENS popover, cloned by theme.js on hover/focus/tap. The plain data-tip
+             above is the trigger hook + fallback; the human read lives in .lens-body and the
+             machine numbers are demoted to the mono receipt under the perforation. ---- #}
+      <span class="lens-src" data-lens-kind="{{ _kind }}" hidden>
+        <div class="lens-hd">
+          <span class="lens-ill">{{ tb_glyph(_grp) }}</span>
+          <span class="lens-hgroup">
+            <span class="lens-kick"><span class="l-en">{{ tile.name }}</span><span class="l-zh">{{ tile.name_zh }}</span></span>
+            <span class="lens-title"><span class="l-en">{{ tile.state_en }}</span><span class="l-zh">{{ tile.state_zh }}</span></span>
+          </span>
+        </div>
+        {% if _ext_i is not none %}
+        <div class="tbl-gauge">
+          <div class="tbl-gauge-top">
+            <span><span class="l-en">Stretch vs its 10-yr range</span><span class="l-zh">相对10年区间的伸展度</span></span>
+            <b>{{ _ext_i }}<i>/100</i></b>
+          </div>
+          <div class="tbl-gauge-track"><span class="tbl-gauge-fill" style="--w:{{ _ext_i }}%"></span></div>
+          <div class="tbl-gauge-cap"><span class="l-en">Higher = pricier than its own history; past the 90 mark is richly extended.</span><span class="l-zh">越高＝相对自身历史越贵；越过 90 即属明显偏高。</span></div>
+        </div>
+        {% endif %}
+        <div class="lens-body">
+          <span class="l-en">{{ TB_READ_EN.get(tile.state, '') }} <b>{{ tile.stance_en }}.</b></span>
+          <span class="l-zh">{{ TB_READ_ZH.get(tile.state, '') }} <b>{{ tile.stance_zh }}。</b></span>
+        </div>
+        {# receipt: precise machine numbers, demoted under the perforation. Built as a list
+           so a data-limited stub (all-null) drops the receipt entirely — no empty bar. #}
+        {% set _rc_en = [] %}{% set _rc_zh = [] %}
+        {% if _since_s %}{% set _ = _rc_en.append('<b>Since</b> ' ~ _since_s) %}{% set _ = _rc_zh.append('<b>进入状态</b> ' ~ _since_s) %}{% endif %}
+        {% if _peak_s %}{% set _ = _rc_en.append('<b>Peak</b> ' ~ _peak_s) %}{% set _ = _rc_zh.append('<b>见顶</b> ' ~ _peak_s) %}{% endif %}
+        {% if tile.mom20_pct is not none %}{% set _ = _rc_en.append('<b>20-day</b> ' ~ '%+.1f'|format(tile.mom20_pct) ~ '%') %}{% set _ = _rc_zh.append('<b>20日</b> ' ~ '%+.1f'|format(tile.mom20_pct) ~ '%') %}{% endif %}
+        {% if tile.dd_pct is not none %}{% set _ = _rc_en.append('<b>Off high</b> ' ~ '%.1f'|format(tile.dd_pct) ~ '%') %}{% set _ = _rc_zh.append('<b>距高</b> ' ~ '%.1f'|format(tile.dd_pct) ~ '%') %}{% endif %}
+        {% if tile.macd_state %}{% set _ = _rc_en.append('<b>Momentum</b> ' ~ ('improving' if tile.macd_state == 'bull' else 'fading')) %}{% set _ = _rc_zh.append('<b>动能</b> ' ~ ('转强' if tile.macd_state == 'bull' else '转弱')) %}{% endif %}
+        {% if _rc_en %}
+        <div class="lens-receipt">
+          <span class="l-en">{{ _rc_en|join(' · ')|safe }}</span>
+          <span class="l-zh">{{ _rc_zh|join(' · ')|safe }}</span>
+        </div>
+        {% endif %}
+        <div class="tbl-note"><span class="l-en">Read from price action only — not a forecast.</span><span class="l-zh">仅读自价格走势——并非预测。</span></div>
+      </span>{# end .lens-src #}
       <div class="tb-hd">
         <span class="flg">{{ tile.flag }}</span>
         <div class="tb-name">
