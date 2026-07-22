@@ -1273,13 +1273,23 @@ def main() -> int:
         except Exception:  # noqa: BLE001
             _days_out = None
         catalysts_resolved.append({**_cat, "type_en": _bi[0], "type_zh": _bi[1], "days_out": _days_out})
+    # Cross-asset read (display-tier CONTEXT, not a scored signal): oil trend-episode
+    # -> Canadian energy (XEG), using the frozen C1 episode definition. See
+    # research/COMMODITY_C1R2_OIL_XEG_PREREG.md and engine/trend_episode.py.
+    oil_episode = None
+    try:
+        from engine.trend_episode import current_episode
+        _cl = pd.read_parquet(config.ROOT / "data" / "yahoo" / "CL_F.parquet")
+        oil_episode = current_episode(_cl["close"] if "close" in _cl else _cl["close_price"])
+    except Exception as _oe:  # noqa: BLE001 — a context chip must never crash the build
+        log.warning("oil_episode read failed (%s); chip hidden", _oe)
     try:
         html = env.get_template("commodities.html.j2").render(
             C=C, as_of=as_of, built=built, cal_span=cal_span, complex=cx,
             assets=assets, order=ORDER, timeline=timeline,
             timeline_days=acfg["timeline_days"], n_alerts=len(recent_events),
             catalysts=catalysts_resolved, news_disclaimer=news_disclaimer,
-            vm=vm, idx_ew_spark=idx_ew_spark,
+            vm=vm, idx_ew_spark=idx_ew_spark, oil_episode=oil_episode,
             conviction_labels=CONVICTION_LABELS)
     except Exception as _re:  # noqa: BLE001 — never crash the whole site build
         log.error("commodities template render failed (%s); skipping page write", _re)
