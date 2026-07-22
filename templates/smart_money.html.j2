@@ -127,6 +127,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
             color:var(--muted); text-transform:capitalize; letter-spacing:.02em; }
 .act-pill.new,.act-pill.add { color:var(--up); border-color:rgba(69,184,115,.4); }
 .act-pill.trim,.act-pill.exit { color:var(--down); border-color:rgba(224,100,100,.4); }
+.act-pill.hold { color:var(--muted); border-color:transparent; background:color-mix(in srgb, var(--muted) 14%, transparent); }
 
 /* ---- tables ---- */
 table.sm-t { width:100%; border-collapse:collapse; font-size:12.3px; margin-top:6px; }
@@ -185,8 +186,9 @@ details.fund[open] > summary { border-bottom:1px solid var(--line); }
 .mini td { padding:4px 6px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
 .mini td.l { text-align:left; }
 .mini .tk { font-weight:700; font-size:12px; line-height:1; }
-.hold { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-.hold .h-pill { font-weight:500; font-size:11px; line-height:1; padding:4px 8px; border-radius:999px;
+.hold { display:flex; flex-wrap:wrap; align-items:flex-start; align-content:flex-start; gap:6px; margin-top:6px; }
+.hold .h-pill { display:inline-flex; align-items:center; gap:5px; font-weight:500; font-size:11px; line-height:1;
+               padding:3px 5px 3px 10px; border-radius:999px;
                border:1px solid var(--line); background:var(--panel2); }
 
 /* ---- S7 dossier ---- */
@@ -255,6 +257,8 @@ details.fullboard > summary:hover { color:var(--text); }
 .mchip { display:inline-block; font-weight:500; font-size:11px; line-height:1.4; padding:2px 6px; margin:1px 2px 1px 0;
          border-radius:5px; border:1px solid var(--line); color:var(--muted);
          background:var(--panel2); white-space:nowrap; }
+/* funds column: let the chips wrap instead of forcing horizontal scroll */
+table.sm-t td.mchips { white-space:normal; max-width:280px; }
 
 /* ---- v3: flow breadth mini-bar ---- */
 .bbar { display:inline-flex; width:56px; height:7px; border-radius:4px; overflow:hidden;
@@ -1125,7 +1129,7 @@ research/smart_money_grade_a_q1_2026.md
       {%- set _dc = r.get('decay') -%}
       {%- set _dc_h21 = (_dc.get('h21') if _dc else none) -%}
       {%- set _dc_h126 = (_dc.get('h126') if _dc else none) -%}
-      <td data-tip-en="decay: {{ exret(_dc_h21.med) if _dc_h21 else '—' }} (21d) → {{ exret(_dc_h126.med) if _dc_h126 else '—' }} (126d)" data-tip-zh="衰减：{{ exret(_dc_h21.med) if _dc_h21 else '—' }}（21天）→ {{ exret(_dc_h126.med) if _dc_h126 else '—' }}（126天）"><b>{{ exret(r.median_buy_excess) }}</b></td>
+      <td data-tip-en="decay: {{ exret_t(_dc_h21.med) if _dc_h21 else '—' }} (21d) → {{ exret_t(_dc_h126.med) if _dc_h126 else '—' }} (126d)" data-tip-zh="衰减：{{ exret_t(_dc_h21.med) if _dc_h21 else '—' }}（21天）→ {{ exret_t(_dc_h126.med) if _dc_h126 else '—' }}（126天）"><b>{{ exret(r.median_buy_excess) }}</b></td>
       <td>{{ exret(r.sell_skill) }}</td>
       <td class="num">{{ hit(r.buy_hit_rate) }}</td>
       <td>
@@ -1317,7 +1321,7 @@ research/smart_money_grade_a_q1_2026.md
         <span class="fsc-bar"><i style="width:{{ _score }}%"></i></span>
         <span class="num" style="margin-left:4px" data-tip-en="conviction {{ (_comp.get('conviction') or 0) | round(2) }} · quality {{ (_comp.get('quality') or 0) | round(2) }} · confluence {{ (_comp.get('confluence') or 0) | round(2) }} · freshness {{ (_comp.get('freshness') or 0) | round(2) }}" data-tip-zh="信念 {{ (_comp.get('conviction') or 0) | round(2) }} · 质量 {{ (_comp.get('quality') or 0) | round(2) }} · 共识 {{ (_comp.get('confluence') or 0) | round(2) }} · 新鲜度 {{ (_comp.get('freshness') or 0) | round(2) }}">{{ _score | round(1) }}</span>
       </td>
-      <td class="l">
+      <td class="l mchips">
         {%- for _fe in (_row.get('funds') or []) -%}
           {%- set _fft = _fe.get('follow_tier') or 'insufficient' -%}
           <span class="mchip ftier {{ _fft }}">{% if _fe.get('slug') %}<a class="fund-link" href="fund_{{ _fe.get('slug') }}.html">{{ _fe.get('name') or _fe.get('slug') }}</a>{% else %}{{ _fe.get('name') or '—' }}{% endif %} · <span class="act-pill {{ _fe.get('action') or '' }}">{{ _fe.get('action') or '' }}</span> {{ pctf(_fe.get('incr_pct') or 0, 1) }}</span>
@@ -1342,8 +1346,8 @@ research/smart_money_grade_a_q1_2026.md
 {# ---- Small/Mid asymmetric side card (6 rows) ---- #}
 {% if d_small_mid %}
 <div style="margin-top:10px">
-  <h3 style="font-size:13px;margin:0 0 4px">{{ t('Asymmetric small/mid','非对称小中型股') }}</h3>
-  <p class="board-note">{{ t('High-conviction small/mid + off-index names — incr pct ≥ 1.5 pp, at least one FOLLOW/55+ fund.','高信念小中型及指数外标的——增量占仓≥1.5pp，至少一只跟随/55+评分基金。') }}</p>
+  <h3 style="font-size:13px;margin:0 0 4px">{{ t('Small-cap conviction','小盘高信念股') }}</h3>
+  <p class="board-note">{{ t('Smaller companies that a proven fund has bought into meaningfully — higher risk, bigger potential upside.','业绩优良的基金明显加仓的中小盘个股——风险更高，潜在回报也更大。') }}</p>
 </div>
 <div class="sm-card">
 <table class="sm-t">
@@ -1352,7 +1356,7 @@ research/smart_money_grade_a_q1_2026.md
     <th class="l">{{ t('Ticker','代码') }}</th>
     <th class="l">{{ t('Cap','市值') }}</th>
     <th>{{ t('Desk score','台面分') }}</th>
-    <th class="l">{{ t('Why','原因') }}</th>
+    <th class="l">{{ t("Who's buying",'买入基金') }}</th>
     <th>{{ t('Since filing','申报后') }}</th>
   </tr></thead>
   <tbody>
@@ -1366,10 +1370,14 @@ research/smart_money_grade_a_q1_2026.md
       </td>
       <td>
         <span class="cap-chip {{ _cb }}" {{ 'data-tip-en="outside S&P 1500, typically small/micro cap" data-tip-zh="标普1500以外，通常为小/微市值"' if _cb == 'off_index' else '' }}>{{ _cb | capitalize | replace('_', ' ') }}</span>
-        {% if _row.get('off_index_note') %}<span class="cap-chip off_index" style="margin-left:3px">OFF-INDEX</span>{% endif %}
       </td>
       <td class="num">{{ (_row.get('desk_rank_score') or 0) | round(1) }}</td>
-      <td class="l sub" style="max-width:260px;white-space:normal">{{ _row.get('why') or '—' }}</td>
+      <td class="l mchips">
+        {%- for _fe in (_row.get('funds') or []) -%}
+          {%- set _fft = _fe.get('follow_tier') or 'insufficient' -%}
+          <span class="mchip ftier {{ _fft }}">{% if _fe.get('slug') %}<a class="fund-link" href="fund_{{ _fe.get('slug') }}.html">{{ _fe.get('name') or _fe.get('slug') }}</a>{% else %}{{ _fe.get('name') or '—' }}{% endif %} · <span class="act-pill {{ _fe.get('action') or '' }}">{{ _fe.get('action') or '' }}</span> {{ pctf(_fe.get('incr_pct') or 0, 1) }}</span>
+        {%- else -%}<span class="sub">&mdash;</span>{%- endfor -%}
+      </td>
       <td>{{ exret(_row.get('since_excess_med')) }}</td>
     </tr>
   {%- endfor -%}
