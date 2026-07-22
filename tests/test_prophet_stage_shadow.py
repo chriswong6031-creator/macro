@@ -286,6 +286,11 @@ def test_summary_schema_context_only(tmp_path, monkeypatch):
     assert "2026-12" in s["accrual_disclaimer"]
     # nulls printed: with nothing matured, win_rate must be None (not a fabricated 0.0).
     assert s["split"]["stage2"]["clean15_126"]["win_rate"] is None
+    # PSQ-TILT W1 §4: the median_tilt measurement block is emitted (nulls until mature).
+    mt = s["median_tilt"]
+    assert set(mt["n_matured_126"].keys()) == {"stage2_ec", "rest"}
+    assert mt["diff"] is None  # nothing matured yet -> diff null (printed, not fabricated)
+    assert mt["median_fwd_ret_126"]["stage2_ec"] is None
     # no forbidden 'validated' token, no trading verbs in the summary text blobs.
     blob = json.dumps(s).lower()
     assert "validated" not in blob
