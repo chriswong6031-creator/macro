@@ -2,28 +2,29 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-21",
-  "generated_utc": "2026-07-22T22:00:16Z",
+  "generated_utc": "2026-07-22T22:02:23Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 3,
-    "n_eff": 1.4,
+    "n": 4,
+    "n_eff": 1.41,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 3 candidates \u2248 1.4 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 4 candidates \u2248 1.41 independent bets."
   },
   "same_thesis_groups": [
     {
       "members": [
         "GNTX",
         "HWM",
+        "SFBS",
         "SKT"
       ],
-      "size": 3,
+      "size": 4,
       "basis": "factor-cosine",
       "label": "shared-membership"
     }
   ],
-  "earnings_coverage_frac": 1.0,
+  "earnings_coverage_frac": 0.75,
   "by_ticker": {
     "HWM": {
       "verdict": "duplicate",
@@ -35,6 +36,15 @@
           "combined": 0.9201,
           "membership_jaccard": 0.0,
           "factor_cosine": 0.9201,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "SFBS",
+          "combined": 0.7507,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7507,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
@@ -58,11 +68,62 @@
       "why_en": "Same bet as GNTX \u2014 shared factor profile (similarity 92%).",
       "why_zh": "\u4e0e GNTX \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 92%\uff09\u3002"
     },
-    "SKT": {
+    "SFBS": {
       "verdict": "duplicate",
-      "max_similarity": 0.6943,
+      "max_similarity": 0.8753,
       "basis": "membership+high-tier-factor",
       "nearest": [
+        {
+          "ticker": "SKT",
+          "combined": 0.8753,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8753,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "GNTX",
+          "combined": 0.7824,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7824,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "HWM",
+          "combined": 0.7507,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7507,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as SKT \u2014 shared factor profile (similarity 88%).",
+      "why_zh": "\u4e0e SKT \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 88%\uff09\u3002"
+    },
+    "SKT": {
+      "verdict": "duplicate",
+      "max_similarity": 0.8753,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "SFBS",
+          "combined": 0.8753,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8753,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
         {
           "ticker": "HWM",
           "combined": 0.6943,
@@ -88,8 +149,8 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as HWM \u2014 shared factor profile (similarity 69%).",
-      "why_zh": "\u4e0e HWM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 69%\uff09\u3002"
+      "why_en": "Same bet as SFBS \u2014 shared factor profile (similarity 88%).",
+      "why_zh": "\u4e0e SFBS \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 88%\uff09\u3002"
     },
     "GNTX": {
       "verdict": "duplicate",
@@ -101,6 +162,15 @@
           "combined": 0.9201,
           "membership_jaccard": 0.0,
           "factor_cosine": 0.9201,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "SFBS",
+          "combined": 0.7824,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7824,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
@@ -126,6 +196,13 @@
     }
   },
   "pair_basis": {
+    "HWM__SFBS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7507,
+      "combined": 0.7507,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "HWM__SKT": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.6943,
@@ -137,6 +214,20 @@
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9201,
       "combined": 0.9201,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "SFBS__SKT": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8753,
+      "combined": 0.8753,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "SFBS__GNTX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7824,
+      "combined": 0.7824,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
