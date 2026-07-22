@@ -179,11 +179,20 @@ def test_brain_derive_check():
 
 
 def test_brain_reconcile_clamps():
-    t1 = B._reconcile({"action": "ACCUMULATE", "extended": True, "lean": "overweight"})
-    assert t1["action"] == "WATCH" and "extended" in t1["clamped"]
-    t2 = B._reconcile({"action": "ACCUMULATE", "extended": False, "lean": "avoid"})
+    # _reconcile clamps the LLM to a deterministic ceiling derived from cluster
+    # evidence (weighted_score / extended / rs_vs_spy_60d) — the extended hard
+    # block is defense-in-depth behind that ceiling, so the audit witness cites
+    # the ceiling, not the flag (full clamp matrix: test_altdata_brain_reconcile.py).
+    # t1 vs t3 differ only in `extended`: the flag alone forfeits the buy.
+    t1 = B._reconcile({"action": "ACCUMULATE", "extended": True, "lean": "overweight",
+                       "weighted_score": 1.2, "rs_vs_spy_60d": 5.0})
+    assert t1["action"] == "WATCH" and "clamped" in t1
+    assert t1["det_baseline"]["action"] == "WATCH"
+    t2 = B._reconcile({"action": "ACCUMULATE", "extended": False, "lean": "avoid",
+                       "weighted_score": 1.2, "rs_vs_spy_60d": -10.0})
     assert t2["action"] == "AVOID"
-    t3 = B._reconcile({"action": "ACCUMULATE", "extended": False, "lean": "overweight"})
+    t3 = B._reconcile({"action": "ACCUMULATE", "extended": False, "lean": "overweight",
+                       "weighted_score": 1.2, "rs_vs_spy_60d": 5.0})
     assert t3["action"] == "ACCUMULATE" and "clamped" not in t3       # legitimate buy untouched
 
 
