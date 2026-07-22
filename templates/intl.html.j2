@@ -1,3 +1,4 @@
+{% import "_prophet_card.html.j2" as pv %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -1901,28 +1902,47 @@
   {# shared progressive "See more" — theme.js initShowMore inserts the .sm-bar
      (Show N more / Show all / Show fewer) after this grid, matching the US /
      China / HK / Canada standout boards. 3 rows shown initially, per width. #}
+  {{ pv.pv_css() }}
   <div class="cards" data-showmore-rows="3">
     {% for b in buys %}
-    <a class="card" href="intl_stock.html#{{ b.ticker }}">
-      <div class="hd"><span class="flg">{{ b.flag }}</span><span class="tk">{{ b.ticker }}</span>
-        <span style="flex:1"></span>
-        {% if b.dir %}<span class="lad {{ b.dir }}">{{ b.label or b.state }}</span>{% endif %}</div>
-      <div class="muted small" style="margin:3px 0">{{ b.name }}{% if b.sector %} · {{ b.sector }}{% endif %}</div>
-      {% if b.spark_svg %}{{ b.spark_svg|safe }}{% endif %}
-      <div class="row small" style="gap:10px;margin-top:5px">
-        {% if b.alpha is defined and b.alpha is not none %}<span>α <b>{{ '%+.2f'|format(b.alpha) }}</b></span>{% endif %}
-        {% if b.price is not none %}<span class="nb-px muted" data-sym="{{ b.ticker }}" data-mkt="intl">{{ b.price }}</span>{% endif %}
-        {% if b.off_high is not none %}<span class="muted">{{ '%.0f'|format(b.off_high) }}% {{ t('off high', '距高') }}</span>{% endif %}
-      </div>
-      {# volatility black hole (vol_squeeze) chip — single-stock vol black hole, close-only #}
-      {% set _vs = b.vol_squeeze %}
-      {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
-      <div class="nb-vf">
-        <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="{{ 'Volatility is compressed; a move may be setting up.' if _vs.state=='COILED' else 'Volatility has already expanded.' }}" data-tip-zh="{{ '波动压缩，可能在酝酿行情。' if _vs.state=='COILED' else '波动已扩张。' }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
-      </div>{% endif %}
-      {# forward-cone honesty note (favourable risk SHAPE the factor axes don't price) #}
-      {% if b.notes %}{% for nt in b.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
-    </a>
+    {# ═══ PROPHET CARD (flagship redesign 2026-07-21) — INTL momentum screen. No entry
+       gauge exists for INTL (residual momentum, unvalidated), so verbs stay honest: never
+       a solid BUY — near/hold/wait/avoid from the cycle label + direction. The Edge slot
+       carries the momentum-screen α reading under a "Mom" label (not a validated score);
+       vol-squeeze fired + forward-cone honesty notes fold into the ⚠N popover. #}
+    {% set _lbl = ((b.label or b.state or '')|upper) %}
+    {% set _verb = 'near' if ('BUY' in _lbl or 'TURN' in _lbl)
+             else ('hold' if ('RALLY' in _lbl or 'UPTREND' in _lbl)
+             else ('wait' if ('BOTTOM' in _lbl or 'BOUNCE' in _lbl)
+             else ('avoid' if ('TOP' in _lbl or 'ROLL' in _lbl or 'DECLINE' in _lbl or b.dir == 'down')
+             else ('near' if b.dir == 'up' else 'wait')))) %}
+    {% set _stage = 4 if ('RALLY' in _lbl or 'UPTREND' in _lbl)
+             else (3 if 'BUY' in _lbl
+             else (2 if 'TURN' in _lbl
+             else (1 if ('BOTTOM' in _lbl or 'BOUNCE' in _lbl) else 0))) %}
+    {% set _vs = b.vol_squeeze %}
+    {% set _fl = namespace(rows=[]) %}
+    {% if _vs and _vs.state in ('FIRED_UP','EXPANSION') %}{% set _fl.rows = _fl.rows + [('Already moving — quiet entry may be gone', '已在异动 — 安静入场点可能已过')] %}{% endif %}
+    {% if b.notes %}{% for nt in b.notes %}{% set _fl.rows = _fl.rows + [(nt.en, nt.zh or nt.en)] %}{% endfor %}{% endif %}
+    {% set _tip_en = ((b.label or b.state or '') ~ ' — stronger momentum than market peers; a screen, not a forecast') ~ (' · volatility coiled' if (_vs and _vs.state == 'COILED') else '') %}
+    {% set _tip_zh = ((b.label or b.state or '') ~ ' — 相对本市场动量更强；筛选，非预测') ~ (' · 波动压缩' if (_vs and _vs.state == 'COILED') else '') %}
+    {{ pv.pv_card({
+      'href': 'intl_stock.html#' ~ b.ticker, 'tk': b.ticker, 'mkt': 'intl', 'flag': b.flag,
+      'name': b.name, 'sec': b.sector,
+      'price_txt': (b.price ~ '') if b.price is not none else none,
+      'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+      'edge': none,
+      'edge_txt': ('%+.2f'|format(b.alpha)) if (b.alpha is defined and b.alpha is not none) else none,
+      'edge_label_en': 'Mom', 'edge_label_zh': '动量',
+      'edge_tip_en': 'Momentum screen reading (residual α vs its own market) — not a validated score.',
+      'edge_tip_zh': '动量筛选读数（相对自身市场的残差α）— 不是经验证评分。',
+      'stage': _stage, 'spark': b.get('spark_svg'),
+      'zone_kind': 'note',
+      'zone_note_en': 'Momentum screen — no entry zone',
+      'zone_note_zh': '动量筛选 — 无买入区',
+      'date': (setups.get('as_of') if setups else none),
+      'flags': _fl.rows
+    }) }}
     {% endfor %}
   </div>
   <p class="caveat" style="margin-top:10px">{{ t('Each card is ranked against its own market. Click for details.', '每张卡片都相对自身市场排序。点击查看详情。') }}</p>
