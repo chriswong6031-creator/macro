@@ -131,6 +131,79 @@ def test_too_few_names_returns_none() -> None:
     assert r is None                                  # below the 20-name floor → None, not a crash
 
 
+def _extras_env(monkeypatch, index):
+    """Fake config + yahoo store so _extras_closes / the live merge are exercised
+    without disk. Four extras probe every branch of the qualifying rule:
+      XSEC = sectored + long history  → ADMIT
+      XETF = no extra_names sector    → SKIP (ETF/macro proxy)
+      XSHORT = sectored but too few obs → SKIP (< _EXTRA_MIN_OBS)
+      XDUP = sectored + long, but already a broad column → SKIP (no overwrite)."""
+    n = len(index)
+    cfg = {"stock_search": {
+        "extra_tickers": ["XSEC", "XETF", "XSHORT", "XDUP"],
+        "extra_names": {
+            "XSEC":  {"name": "Extra Sectored Co", "sector": "Financials"},
+            "XSHORT": {"name": "Extra Short Co", "sector": "Financials"},
+            "XDUP":  {"name": "Dup Co", "sector": "B-fin"},
+            # XETF deliberately omitted → falls back to "—" sector → skipped
+        }}}
+    monkeypatch.setattr(ra.config, "load", lambda: cfg)
+    long_close = pd.Series(np.linspace(100.0, 130.0, n), index=index)
+    short_close = long_close.iloc[-50:]                     # < _EXTRA_MIN_OBS
+
+    def fake_read(group, name):
+        if group != "yahoo":
+            return None
+        if name in ("XSEC", "XDUP"):
+            return pd.DataFrame({"close": long_close.values}, index=index)
+        if name == "XSHORT":
+            return pd.DataFrame({"close": short_close.values}, index=short_close.index)
+        if name == "SPY":                                   # market series for the live path
+            return pd.DataFrame({"close": long_close.values}, index=index)
+        return None
+    monkeypatch.setattr(ra.store, "read", fake_read)
+
+
+def test_extras_closes_qualifying_rule(monkeypatch) -> None:
+    idx = pd.bdate_range("2022-01-03", periods=300)
+    _extras_env(monkeypatch, idx)
+    monkeypatch.setattr(ra, "_EXTRA_MIN_OBS", 200)
+    cols, meta = ra._extras_closes(idx)
+    assert set(cols) == {"XSEC", "XDUP"}                    # XETF (no sector) + XSHORT (obs) skipped
+    assert meta["XSEC"] == ("Extra Sectored Co", "Financials")
+    assert list(cols["XSEC"].index) == list(idx)           # reindexed onto the broad index
+    assert cols["XSEC"].notna().sum() == len(idx)
+
+
+def test_live_merge_admits_extra_and_scores_it(monkeypatch) -> None:
+    """End-to-end on the live path (closes loaded internally): a qualifying extra is
+    concatenated onto the broad matrix, keeps its real name+sector, and earns a
+    per-ticker alpha; an already-present column is NOT duplicated/overwritten."""
+    closes, market, tkr_sector = _synthetic()
+    idx = closes.index
+    _extras_env(monkeypatch, idx)
+    monkeypatch.setattr(ra, "_EXTRA_MIN_OBS", 100)          # synthetic panel is 200 bdays
+    # live path: _closes() returns our synthetic broad matrix; _names_sectors() its labels.
+    # XDUP shares B-fin sector AND (below) a column name already in the matrix.
+    dup = closes.rename(columns={"B1": "XDUP"})             # make XDUP an existing broad column
+    monkeypatch.setattr(ra, "_closes", lambda *a, **k: dup)
+    monkeypatch.setattr(ra, "_names_sectors",
+                        lambda *a, **k: {t: (t, tkr_sector.get(t if t != "XDUP" else "B1", "—"))
+                                         for t in dup.columns})
+    r = ra.compute_residual_alpha(win=WIN, form=FORM, skip=SKIP,
+                                  min_sector=MIN_SECTOR, min_names=MIN_NAMES)
+    assert r is not None
+    pt = r["per_ticker"]
+    assert "XSEC" in pt and pt["XSEC"]["alpha"] is not None  # admitted + scored
+    # XDUP was already a broad column → merge must not add a second one (no overwrite)
+    assert list(dup.columns).count("XDUP") == 1
+    # real display name flows through rec(): XSEC appears with its company name somewhere
+    named = {x["ticker"]: x["name"]
+             for sec in r["by_sector"].values() for x in sec["leaders"] + sec["laggards"]}
+    named.update({x["ticker"]: x["name"] for x in r["top"]})
+    assert named.get("XSEC") == "Extra Sectored Co"
+
+
 def test_compute_on_live_cache_if_present() -> None:
     cache = config.data_dir() / "breadth" / "_closes_cache.parquet"
     spy = config.data_dir() / "yahoo" / "SPY.parquet"
