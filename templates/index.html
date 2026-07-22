@@ -221,13 +221,13 @@ html.still{scroll-behavior:auto}
 .quad-note{margin:9px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
 
 /* economies */
-.s-econ{left:27.5%;top:0;width:min(190px,15%);z-index:18}
+.s-econ{left:26.5%;top:0;width:min(226px,18.5%);z-index:18}
 .s-econ .crd{--rot:1.8deg;padding:11px 13px}
 .s-econ .pin{left:-4px;top:42%;background:var(--violet)}
 .ec-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0 8px;align-items:center;padding:4.5px 0;border-bottom:1px solid var(--hair);font-size:11.5px}
 .ec-row:last-child{border-bottom:0}
 .ec-row .cn{font-weight:600;line-height:1.25;min-width:0}
-.ec-row .ix{display:block;color:var(--faint);font-size:9.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ec-row .ix{color:var(--faint);font-size:9.5px;font-weight:500;white-space:nowrap;margin-left:3px}
 .ec-row .pc{font-weight:700;font-size:11px;text-align:right}
 .ec-row .st{font-family:'Archivo',sans-serif;font-weight:700;font-size:8px;letter-spacing:.08em;border-radius:4px;padding:2px 6px}
 .st.mix{color:var(--q-gold);background:var(--gold-wash)}
@@ -278,23 +278,16 @@ html.still{scroll-behavior:auto}
 .pr-badge.phase{color:var(--q-gold);background:var(--gold-wash)}
 .pr-rr{margin-left:auto;font-family:ui-monospace,monospace;font-weight:600;font-size:9.5px;color:var(--muted);border:1px solid var(--hair-2);border-radius:99px;padding:2px 8px;white-space:nowrap}
 /* — horizontal geometry rail — */
-.pr-rail{position:relative;height:44px;margin:13px 0 2px}
-.pr-track{position:absolute;left:0;right:0;top:21px;height:5px;border-radius:99px;background:var(--hair)}
+.pr-rail{position:relative;height:19px;margin:12px 0 0}
+.pr-track{position:absolute;left:0;right:0;top:7px;height:5px;border-radius:99px;background:var(--hair)}
 .pr-fill{position:absolute;top:21px;height:5px;border-radius:99px;background:rgba(15,157,143,.6)}
-.pr-mk{position:absolute;top:11px;width:2px;height:24px;border-radius:2px;transform:translateX(-1px)}
+.pr-mk{position:absolute;top:1px;width:2px;height:17px;border-radius:2px;transform:translateX(-1px)}
 .pr-mk.stop{background:var(--q-red)} .pr-mk.entry{background:var(--ink)}
-.pr-mk.last{background:var(--teal)} .pr-mk.t1{background:var(--q-green)}
+.pr-mk.t1{background:var(--q-green)}
 .pr-mk.t2{background:rgba(31,139,65,.45)}
-.pr-dot{position:absolute;top:19px;width:9px;height:9px;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 1px 4px rgba(15,157,143,.45);transform:translateX(-4.5px)}
-.pr-lbl{position:absolute;font-family:ui-monospace,monospace;font-size:8.5px;line-height:1.1;white-space:nowrap;transform:translateX(-50%)}
-.pr-lbl .lk{display:block;font-weight:700;letter-spacing:.03em}
-.pr-lbl .pv{display:block;font-weight:500}
-.pr-lbl.up{top:-3px;text-align:center} .pr-lbl.dn{top:31px;text-align:center}
-.pr-lbl.stop .lk,.pr-lbl.stop .pv{color:var(--q-red)}
-.pr-lbl.entry .lk,.pr-lbl.entry .pv{color:var(--ink-soft)}
-.pr-lbl.last .lk,.pr-lbl.last .pv{color:var(--teal)}
-.pr-lbl.t1 .lk,.pr-lbl.t1 .pv{color:var(--q-green)}
-.pr-lbl.t2 .lk,.pr-lbl.t2 .pv{color:var(--q-green);opacity:.6}
+.pr-dot{position:absolute;top:5px;width:9px;height:9px;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 1px 4px rgba(15,157,143,.45);transform:translateX(-4.5px)}
+.pr-legend{display:flex;justify-content:space-between;gap:4px;margin:7px 0 0;font-family:ui-monospace,monospace;font-size:8px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.pr-legend b{font-weight:500}
 .pr-brief{margin:9px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5}
 .s-proph .crd .gr{margin-top:9px;border-top:1px solid var(--hair);padding-top:6px;font-size:9.5px;color:var(--faint)}
 
@@ -510,8 +503,8 @@ html.still{scroll-behavior:auto}
 .mini-term svg{width:100%;height:150px;display:block}
 /* composer */
 .composer{border-top:1px solid var(--hair);padding:12px 14px;display:flex;align-items:center;gap:10px}
-.composer .field{flex:1;background:var(--panel-2);border:1px solid var(--hair-2);border-radius:14px;padding:11px 14px;font-size:13.5px;color:var(--ink-soft);min-height:44px;display:flex;align-items:center}
-.composer .field.ph{color:var(--faint)}
+.composer .cfield{flex:1;background:var(--panel-2);border:1px solid var(--hair-2);border-radius:14px;padding:11px 14px;font-size:13.5px;color:var(--ink-soft);min-height:44px;display:flex;align-items:center}
+.composer .cfield.ph{color:var(--faint)}
 .composer .caret{display:inline-block;width:1.5px;height:16px;background:var(--blue);margin-left:1px;animation:caretBlink 1s step-end infinite;vertical-align:middle}
 @keyframes caretBlink{0%,100%{opacity:1}50%{opacity:0}}
 .composer .send{flex:none;width:44px;height:44px;border-radius:50%;background:linear-gradient(180deg,#3f74ff,var(--blue));display:grid;place-items:center;color:#fff;box-shadow:0 6px 18px -6px rgba(40,95,255,.65)}
@@ -801,16 +794,11 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
             <div class="pr-fill" style="left:18%;width:5.7%"></div>
             <div class="pr-mk stop" style="left:0"></div>
             <div class="pr-mk entry" style="left:18%"></div>
-            <div class="pr-mk last" style="left:23.7%"></div>
             <div class="pr-mk t1" style="left:62.6%"></div>
             <div class="pr-mk t2" style="left:100%"></div>
             <div class="pr-dot" style="left:23.7%"></div>
-            <span class="pr-lbl stop dn" style="left:0;transform:translateX(-4%)"><span class="lk" data-zh="止损">STOP</span><span class="pv tnum">85.9</span></span>
-            <span class="pr-lbl entry up" style="left:18%"><span class="lk" data-zh="入场">ENTRY</span><span class="pv tnum">88.4</span></span>
-            <span class="pr-lbl last dn" style="left:23.7%"><span class="lk" data-zh="现价">LAST</span><span class="pv tnum">89.2</span></span>
-            <span class="pr-lbl t1 up" style="left:62.6%"><span class="lk">T1</span><span class="pv tnum">94.6</span></span>
-            <span class="pr-lbl t2 dn" style="left:100%;transform:translateX(-96%)"><span class="lk">T2</span><span class="pv tnum">99.8</span></span>
           </div>
+          <p class="pr-legend"><span style="color:var(--q-red)" data-zh="止损 <b class='tnum'>85.9</b>">STOP <b class="tnum">85.9</b></span><span style="color:var(--ink)" data-zh="入场 <b class='tnum'>88.4</b>">ENTRY <b class="tnum">88.4</b></span><span style="color:var(--teal)" data-zh="现价 <b class='tnum'>89.2</b>">LAST <b class="tnum">89.2</b></span><span style="color:var(--q-green)">T1 <b class="tnum">94.6</b></span><span style="color:rgba(31,139,65,.65)">T2 <b class="tnum">99.8</b></span></p>
           <p class="pr-brief" data-zh="等待触发——90.1 确认前不建仓。">Wait for the trigger — no position until 90.1 confirms.</p>
           <p class="gr" data-zh="今日6条中的第1条 · 出手前锁定 · 免费">1 of 6 today · stamped before the move · free</p>
         </div>
@@ -1085,7 +1073,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
           </div>
           <div class="thread" id="chat-thread" aria-live="polite"></div>
           <div class="composer">
-            <div class="field ph" id="chat-field"><span id="chat-field-txt"></span></div>
+            <div class="cfield ph" id="chat-field"><span id="chat-field-txt"></span></div>
             <span class="send" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>
             </span>
@@ -1843,6 +1831,7 @@ const STILL = document.documentElement.classList.contains('still');
 
   function setPlaceholder(){ field.classList.add('ph'); fieldTxt.textContent = tx(SCRIPT.ph); }
   function clearField(){ fieldTxt.innerHTML = ''; }
+  setPlaceholder();   // never render an empty composer, even before the loop starts
 
   // build one assistant chart bubble; ~28 candles draw L→R, then 20-MA, then bands
   function drawMiniChart(host, animate){
