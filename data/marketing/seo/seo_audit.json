@@ -1,39 +1,39 @@
 {
   "schema": "seo_audit.v1",
-  "as_of": "2026-07-20T13:14:30Z",
-  "health_score": 56,
+  "as_of": "2026-07-22T08:13:13Z",
+  "health_score": 79,
   "census": {
-    "total_pages": 1691,
+    "total_pages": 1863,
     "by_family": {
       "core": {
-        "pages": 125,
-        "with_canonical": 19,
-        "with_desc": 30,
-        "with_og": 19,
-        "with_jsonld": 1,
-        "in_sitemap": 110
+        "pages": 126,
+        "with_canonical": 110,
+        "with_desc": 110,
+        "with_og": 110,
+        "with_jsonld": 2,
+        "in_sitemap": 111
       },
       "fund": {
         "pages": 52,
-        "with_canonical": 0,
-        "with_desc": 0,
-        "with_og": 0,
+        "with_canonical": 52,
+        "with_desc": 52,
+        "with_og": 52,
         "with_jsonld": 0,
         "in_sitemap": 52
       },
       "strategy": {
         "pages": 46,
-        "with_canonical": 0,
-        "with_desc": 0,
-        "with_og": 0,
+        "with_canonical": 37,
+        "with_desc": 37,
+        "with_og": 37,
         "with_jsonld": 0,
         "in_sitemap": 46
       },
       "report": {
         "pages": 6,
-        "with_canonical": 0,
-        "with_desc": 0,
-        "with_og": 0,
+        "with_canonical": 6,
+        "with_desc": 6,
+        "with_og": 6,
         "with_jsonld": 0,
         "in_sitemap": 6
       },
@@ -46,7 +46,7 @@
         "in_sitemap": 0
       },
       "stocks": {
-        "pages": 1459,
+        "pages": 1630,
         "sampled": 25,
         "with_canonical": 25,
         "with_title": 25,
@@ -58,9 +58,9 @@
     }
   },
   "sitemap": {
-    "total_urls": 1675,
-    "core": 215,
-    "stocks": 1460,
+    "total_urls": 1861,
+    "core": 240,
+    "stocks": 1621,
     "host_ok": true,
     "bad_host_count": 0,
     "apex_host_count": 0,
@@ -83,66 +83,22 @@
       "watchlist.html"
     ],
     "missing_from_sitemap_count": 15,
-    "duplicates": [
-      "https://www.mastermind-x.com/stocks/BTSG.html"
-    ]
+    "duplicates": []
   },
   "crawl_infra": {
     "robots_ok": true,
     "robots_sitemap_host_ok": true,
     "llms_txt_present": true,
     "brand_facts_present": true,
-    "brand_facts_age_days": 0
+    "brand_facts_age_days": 2
   },
   "issues": [
-    {
-      "id": "missing_description_advanced_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "advanced.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_advanced_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "advanced.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_advanced_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "advanced.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
     {
       "id": "broken_internal_link_advanced_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "advanced.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_ai_desk_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "ai_desk.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_ai_desk_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "ai_desk.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_ai_desk_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "ai_desk.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_ai_desk_html",
@@ -152,53 +108,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_aibrief_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "aibrief.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_aibrief_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "aibrief.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_aibrief_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "aibrief.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_aibrief_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "aibrief.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_alerts_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "alerts.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_alerts_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "alerts.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_alerts_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "alerts.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_alerts_html",
@@ -208,53 +122,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_allocation_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "allocation.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_allocation_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "allocation.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_allocation_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "allocation.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_allocation_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "allocation.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_allocation_canada_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "allocation_canada.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_allocation_canada_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "allocation_canada.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_allocation_canada_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "allocation_canada.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_allocation_canada_html",
@@ -264,53 +136,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_allocation_china_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "allocation_china.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_allocation_china_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "allocation_china.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_allocation_china_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "allocation_china.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_allocation_china_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "allocation_china.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_allocation_hk_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "allocation_hk.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_allocation_hk_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "allocation_hk.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_allocation_hk_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "allocation_hk.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_allocation_hk_html",
@@ -320,27 +150,6 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_alt_data_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "alt_data.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_alt_data_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "alt_data.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_alt_data_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "alt_data.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_alt_data_html",
       "severity": "high",
       "class": "broken_internal_link",
@@ -348,53 +157,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_anticipation_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "anticipation.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_anticipation_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "anticipation.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_anticipation_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "anticipation.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_anticipation_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "anticipation.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_baskets_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "baskets.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_baskets_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "baskets.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_baskets_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "baskets.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_baskets_html",
@@ -411,53 +178,11 @@
       "detail": "Broken internal link: basket/ai_capex.html (resolved: basket/ai_capex.html)"
     },
     {
-      "id": "missing_description_baskets_canada_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "baskets_canada.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_baskets_canada_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "baskets_canada.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_baskets_canada_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "baskets_canada.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_baskets_canada_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "baskets_canada.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_baskets_china_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "baskets_china.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_baskets_china_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "baskets_china.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_baskets_china_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "baskets_china.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_baskets_china_html",
@@ -467,25 +192,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_baskets_china_ths_html",
+      "id": "canonical_not_self_baskets_china_ths_html",
       "severity": "high",
-      "class": "missing_description",
+      "class": "canonical_not_self",
       "page": "baskets_china_ths.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_baskets_china_ths_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "baskets_china_ths.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_baskets_china_ths_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "baskets_china_ths.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
+      "detail": "Canonical points to different page: https://www.mastermind-x.com/baskets_china.html"
     },
     {
       "id": "page_weight_baskets_china_ths_html",
@@ -502,27 +213,6 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_baskets_hk_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "baskets_hk.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_baskets_hk_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "baskets_hk.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_baskets_hk_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "baskets_hk.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_baskets_hk_html",
       "severity": "high",
       "class": "broken_internal_link",
@@ -530,39 +220,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_baskets_intl_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "baskets_intl.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_baskets_intl_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "baskets_intl.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_baskets_intl_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "baskets_intl.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_baskets_intl_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "baskets_intl.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "canonical_non_www_bonds_html",
-      "severity": "high",
-      "class": "canonical_non_www",
-      "page": "bonds.html",
-      "detail": "Canonical uses non-www host (migration target = www): https://mastermind-x.com/bonds.html"
     },
     {
       "id": "broken_internal_link_bonds_html",
@@ -593,13 +255,6 @@
       "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
-      "id": "canonical_non_www_canada_html",
-      "severity": "high",
-      "class": "canonical_non_www",
-      "page": "canada.html",
-      "detail": "Canonical uses non-www host (migration target = www): https://mastermind-x.com/canada.html"
-    },
-    {
       "id": "broken_internal_link_canada_html",
       "severity": "high",
       "class": "broken_internal_link",
@@ -607,53 +262,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_canada_heatmap_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "canada_heatmap.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_canada_heatmap_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "canada_heatmap.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_canada_heatmap_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "canada_heatmap.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_canada_heatmap_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "canada_heatmap.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_canada_history_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "canada_history.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_canada_history_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "canada_history.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_canada_history_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "canada_history.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_canada_history_html",
@@ -691,18 +304,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "canonical_non_www_canada_stocks_html",
-      "severity": "high",
-      "class": "canonical_non_www",
-      "page": "canada_stocks.html",
-      "detail": "Canonical uses non-www host (migration target = www): https://mastermind-x.com/canada.html"
-    },
-    {
       "id": "canonical_not_self_canada_stocks_html",
       "severity": "high",
       "class": "canonical_not_self",
       "page": "canada_stocks.html",
-      "detail": "Canonical points to different page: https://mastermind-x.com/canada.html"
+      "detail": "Canonical points to different page: https://www.mastermind-x.com/canada.html"
     },
     {
       "id": "broken_internal_link_canada_stocks_html",
@@ -712,39 +318,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "canonical_non_www_china_html",
-      "severity": "high",
-      "class": "canonical_non_www",
-      "page": "china.html",
-      "detail": "Canonical uses non-www host (migration target = www): https://mastermind-x.com/china.html"
-    },
-    {
       "id": "broken_internal_link_china_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "china.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_china_allocation_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_allocation.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_allocation_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_allocation.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_allocation_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "china_allocation.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_china_allocation_html",
@@ -754,25 +332,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_china_altdata_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_altdata.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_altdata_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_altdata.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_altdata_html",
+      "id": "desc_length_china_altdata_html",
       "severity": "medium",
-      "class": "missing_og",
+      "class": "desc_length",
       "page": "china_altdata.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
+      "detail": "Description length 31 chars (expected 50-170)"
     },
     {
       "id": "broken_internal_link_china_altdata_html",
@@ -782,53 +346,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_china_heatmap_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_heatmap.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_heatmap_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_heatmap.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_heatmap_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "china_heatmap.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_china_heatmap_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "china_heatmap.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_china_history_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_history.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_history_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_history.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_history_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "china_history.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_china_history_html",
@@ -838,53 +360,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_china_intel_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_intel.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_intel_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_intel.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_intel_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "china_intel.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_china_intel_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "china_intel.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_china_lookup_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_lookup.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_lookup_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_lookup.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_lookup_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "china_lookup.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_china_lookup_html",
@@ -901,39 +381,11 @@
       "detail": "Description length 218 chars (expected 50-170)"
     },
     {
-      "id": "canonical_non_www_china_mechanics_html",
-      "severity": "high",
-      "class": "canonical_non_www",
-      "page": "china_mechanics.html",
-      "detail": "Canonical uses non-www host (migration target = www): https://mastermind-x.com/china_mechanics.html"
-    },
-    {
       "id": "broken_internal_link_china_mechanics_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "china_mechanics.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_china_news_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_news.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_news_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_news.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_news_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "china_news.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_china_news_html",
@@ -943,25 +395,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_china_policy_watch_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_policy_watch.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_policy_watch_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_policy_watch.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_policy_watch_html",
+      "id": "desc_length_china_policy_watch_html",
       "severity": "medium",
-      "class": "missing_og",
+      "class": "desc_length",
       "page": "china_policy_watch.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
+      "detail": "Description length 5 chars (expected 50-170)"
     },
     {
       "id": "broken_internal_link_china_policy_watch_html",
@@ -971,25 +409,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_china_radar_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_radar.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_radar_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_radar.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_radar_html",
+      "id": "desc_length_china_radar_html",
       "severity": "medium",
-      "class": "missing_og",
+      "class": "desc_length",
       "page": "china_radar.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
+      "detail": "Description length 35 chars (expected 50-170)"
     },
     {
       "id": "broken_internal_link_china_radar_html",
@@ -999,27 +423,6 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_china_sector_desk_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_sector_desk.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_sector_desk_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_sector_desk.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_sector_desk_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "china_sector_desk.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_china_sector_desk_html",
       "severity": "high",
       "class": "broken_internal_link",
@@ -1027,25 +430,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_china_special_situations_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "china_special_situations.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_special_situations_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_special_situations.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_special_situations_html",
+      "id": "desc_length_china_special_situations_html",
       "severity": "medium",
-      "class": "missing_og",
+      "class": "desc_length",
       "page": "china_special_situations.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
+      "detail": "Description length 28 chars (expected 50-170)"
     },
     {
       "id": "broken_internal_link_china_special_situations_html",
@@ -1053,13 +442,6 @@
       "class": "broken_internal_link",
       "page": "china_special_situations.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "canonical_non_www_china_stocks_html",
-      "severity": "high",
-      "class": "canonical_non_www",
-      "page": "china_stocks.html",
-      "detail": "Canonical uses non-www host (migration target = www): https://mastermind-x.com/china_stocks.html"
     },
     {
       "id": "broken_internal_link_china_stocks_html",
@@ -1090,25 +472,11 @@
       "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
-      "id": "missing_description_china_strategies_html",
+      "id": "broken_internal_link_china_stocks_lab_html",
       "severity": "high",
-      "class": "missing_description",
-      "page": "china_strategies.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_china_strategies_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "china_strategies.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_china_strategies_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "china_strategies.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
+      "class": "broken_internal_link",
+      "page": "china_stocks_lab.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
       "id": "broken_internal_link_china_strategies_html",
@@ -1123,27 +491,6 @@
       "class": "title_length",
       "page": "cn_reversal_sleeve.html",
       "detail": "Title length 79 chars (expected 15-70): CN Reversal Sleeve — monthly-rebalanced contrarian basket (portfolio, not tips)"
-    },
-    {
-      "id": "missing_description_cn_reversal_sleeve_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "cn_reversal_sleeve.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_cn_reversal_sleeve_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "cn_reversal_sleeve.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_cn_reversal_sleeve_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "cn_reversal_sleeve.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_cn_reversal_sleeve_html",
@@ -1174,32 +521,11 @@
       "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
-      "id": "missing_canonical_committee_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "committee.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_committee_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "committee.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_committee_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "committee.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "canonical_non_www_commodities_html",
-      "severity": "high",
-      "class": "canonical_non_www",
-      "page": "commodities.html",
-      "detail": "Canonical uses non-www host (migration target = www): https://mastermind-x.com/commodities.html"
     },
     {
       "id": "broken_internal_link_commodities_html",
@@ -1209,53 +535,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_commodity_strategies_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "commodity_strategies.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_commodity_strategies_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "commodity_strategies.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_commodity_strategies_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "commodity_strategies.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_commodity_strategies_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "commodity_strategies.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_congress_trades_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "congress_trades.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_congress_trades_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "congress_trades.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_congress_trades_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "congress_trades.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_congress_trades_html",
@@ -1265,53 +549,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "desc_length_country_cycles_html",
-      "severity": "medium",
-      "class": "desc_length",
-      "page": "country_cycles.html",
-      "detail": "Description length 353 chars (expected 50-170)"
-    },
-    {
-      "id": "missing_canonical_country_cycles_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "country_cycles.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_country_cycles_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "country_cycles.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_country_cycles_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "country_cycles.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_crossasset_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "crossasset.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_crossasset_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "crossasset.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_crossasset_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "crossasset.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_crossasset_html",
@@ -1321,32 +563,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "canonical_non_www_cycle_html",
-      "severity": "high",
-      "class": "canonical_non_www",
-      "page": "cycle.html",
-      "detail": "Canonical uses non-www host (migration target = www): https://mastermind-x.com/cycle.html"
-    },
-    {
       "id": "broken_internal_link_cycle_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "cycle.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_canonical_darkpool_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "darkpool.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_darkpool_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "darkpool.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_darkpool_html",
@@ -1356,53 +577,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_demand_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "demand.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_demand_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "demand.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_demand_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "demand.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_demand_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "demand.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_discovery_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "discovery.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_discovery_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "discovery.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_discovery_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "discovery.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_discovery_html",
@@ -1412,53 +591,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_etfs_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "etfs.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_etfs_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "etfs.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_etfs_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "etfs.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
-    },
-    {
       "id": "broken_internal_link_etfs_html",
       "severity": "high",
       "class": "broken_internal_link",
       "page": "etfs.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
-    },
-    {
-      "id": "missing_description_factors_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "factors.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_factors_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "factors.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_factors_html",
-      "severity": "medium",
-      "class": "missing_og",
-      "page": "factors.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
     },
     {
       "id": "broken_internal_link_factors_html",
@@ -1468,25 +605,11 @@
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     },
     {
-      "id": "missing_description_flow_desk_html",
-      "severity": "high",
-      "class": "missing_description",
-      "page": "flow_desk.html",
-      "detail": "No meta description"
-    },
-    {
-      "id": "missing_canonical_flow_desk_html",
-      "severity": "high",
-      "class": "missing_canonical",
-      "page": "flow_desk.html",
-      "detail": "No rel=canonical link"
-    },
-    {
-      "id": "missing_og_flow_desk_html",
+      "id": "desc_length_flow_desk_html",
       "severity": "medium",
-      "class": "missing_og",
+      "class": "desc_length",
       "page": "flow_desk.html",
-      "detail": "Missing OG tags: og_title, og_desc, og_image"
+      "detail": "Description length 35 chars (expected 50-170)"
     },
     {
       "id": "broken_internal_link_flow_desk_html",
@@ -1494,29 +617,902 @@
       "class": "broken_internal_link",
       "page": "flow_desk.html",
       "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_flow_leaders_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "flow_leaders.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_flow_velocity_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "flow_velocity.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_foresight_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "foresight.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_forex_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "forex.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_gex_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "gex.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_history_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "history.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_hk_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "hk.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_hk_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "hk.html",
+      "detail": "Broken internal link: heatmap.html (resolved: heatmap.html)"
+    },
+    {
+      "id": "broken_internal_link_hk_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "hk.html",
+      "detail": "Broken internal link: sectors.html (resolved: sectors.html)"
+    },
+    {
+      "id": "broken_internal_link_hk_heatmap_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "hk_heatmap.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_hk_history_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "hk_history.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "missing_description_hk_lookup_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "hk_lookup.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_hk_lookup_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "hk_lookup.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_hk_lookup_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "hk_lookup.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_hk_lookup_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "hk_lookup.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_hk_stocks_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "hk_stocks.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "missing_description_hk_stocks_lab_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "hk_stocks_lab.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_hk_stocks_lab_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "hk_stocks_lab.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_hk_stocks_lab_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "hk_stocks_lab.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_impulse_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "impulse.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "desc_length_index_html",
+      "severity": "medium",
+      "class": "desc_length",
+      "page": "index.html",
+      "detail": "Description length 210 chars (expected 50-170)"
+    },
+    {
+      "id": "broken_internal_link_intelligence_hub_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "intelligence_hub.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_intl_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "intl.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "missing_description_intl_stock_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "intl_stock.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_intl_stock_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "intl_stock.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_intl_stock_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "intl_stock.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_intl_stock_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "intl_stock.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_intl_stocks_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "intl_stocks.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "desc_length_intraday_flow_html",
+      "severity": "medium",
+      "class": "desc_length",
+      "page": "intraday_flow.html",
+      "detail": "Description length 38 chars (expected 50-170)"
+    },
+    {
+      "id": "broken_internal_link_intraday_flow_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "intraday_flow.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_ipo_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "ipo.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_leader_radar_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "leader_radar.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_macro_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "macro.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_macro_context_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "macro_context.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_macro_signals_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "macro_signals.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_market_structure_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "market_structure.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_markets_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "markets.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_mastermind_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "mastermind.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_masterminds_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "masterminds.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_measurement_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "measurement.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_methodology_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "methodology.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/NVTS.html (resolved: stocks/NVTS.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/MRAM.html (resolved: stocks/MRAM.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/SIMO.html (resolved: stocks/SIMO.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/OUST.html (resolved: stocks/OUST.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/RCAT.html (resolved: stocks/RCAT.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/INVZ.html (resolved: stocks/INVZ.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/AMBA.html (resolved: stocks/AMBA.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/CEVA.html (resolved: stocks/CEVA.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/NRGV.html (resolved: stocks/NRGV.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/BE.html (resolved: stocks/BE.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/FCEL.html (resolved: stocks/FCEL.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/SPWR.html (resolved: stocks/SPWR.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/SCCO.html (resolved: stocks/SCCO.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/FLNC.html (resolved: stocks/FLNC.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/BLDP.html (resolved: stocks/BLDP.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/VIAV.html (resolved: stocks/VIAV.html)"
+    },
+    {
+      "id": "broken_internal_link_movers_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "movers.html",
+      "detail": "Broken internal link: stocks/MOD.html (resolved: stocks/MOD.html)"
+    },
+    {
+      "id": "missing_description_narrative_radar_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "narrative_radar.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_narrative_radar_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "narrative_radar.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_narrative_radar_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "narrative_radar.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_news_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "news.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_odds_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "odds.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_options_screener_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "options_screener.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_policy_watch_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "policy_watch.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "missing_description_qa_bottom_sensors_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "qa_bottom_sensors.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_qa_bottom_sensors_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "qa_bottom_sensors.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_qa_bottom_sensors_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "qa_bottom_sensors.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_radar_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "radar.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_reports_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "reports.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "missing_description_seasonality_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "seasonality.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_seasonality_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "seasonality.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_seasonality_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "seasonality.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_seasonality_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "seasonality.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_sector_central_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "sector_central.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "desc_length_sector_central_china_html",
+      "severity": "medium",
+      "class": "desc_length",
+      "page": "sector_central_china.html",
+      "detail": "Description length 5 chars (expected 50-170)"
+    },
+    {
+      "id": "broken_internal_link_sector_central_china_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "sector_central_china.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_sector_cycles_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "sector_cycles.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_sector_cycles_china_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "sector_cycles_china.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_sector_heatmap_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "sector_heatmap.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_signal_lab_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "signal_lab.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_smart_money_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "smart_money.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "page_weight_special_situations_html",
+      "severity": "low",
+      "class": "page_weight",
+      "page": "special_situations.html",
+      "detail": "HTML size 6.3 MB exceeds 2.5 MB"
+    },
+    {
+      "id": "broken_internal_link_special_situations_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "special_situations.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_spr_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "spr.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_spvector_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "spvector.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "title_length_stage_analysis_html",
+      "severity": "medium",
+      "class": "title_length",
+      "page": "stage_analysis.html",
+      "detail": "Title length 14 chars (expected 15-70): Stage Analysis"
+    },
+    {
+      "id": "broken_internal_link_stage_analysis_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "stage_analysis.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_state_of_themes_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "state_of_themes.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "missing_description_status_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "status.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_status_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "status.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_status_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "status.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "missing_description_stock_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "stock.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_stock_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "stock.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_stock_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "stock.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_stock_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "stock.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_strategies_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "strategies.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_subsector_rotation_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "subsector_rotation.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_subsector_rotation_china_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "subsector_rotation_china.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_subsectors_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "subsectors.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_subsectors_china_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "subsectors_china.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "missing_description_tech_lab_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "tech_lab.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_tech_lab_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "tech_lab.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_tech_lab_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "tech_lab.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_tech_lab_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "tech_lab.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "desc_length_transmission_html",
+      "severity": "medium",
+      "class": "desc_length",
+      "page": "transmission.html",
+      "detail": "Description length 171 chars (expected 50-170)"
+    },
+    {
+      "id": "broken_internal_link_transmission_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "transmission.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_us_stocks_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "us_stocks.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_us_stocks_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "us_stocks.html",
+      "detail": "Broken internal link: basket/ai_capex.html (resolved: basket/ai_capex.html)"
+    },
+    {
+      "id": "missing_description_us_stocks_lab_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "us_stocks_lab.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_us_stocks_lab_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "us_stocks_lab.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_us_stocks_lab_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "us_stocks_lab.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_us_stocks_lab_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "us_stocks_lab.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "missing_description_us_stocks_v2_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "us_stocks_v2.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_us_stocks_v2_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "us_stocks_v2.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_us_stocks_v2_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "us_stocks_v2.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "missing_lang_validation_timeline_html",
+      "severity": "medium",
+      "class": "missing_lang",
+      "page": "validation_timeline.html",
+      "detail": "No <html lang> attribute"
+    },
+    {
+      "id": "missing_title_validation_timeline_html",
+      "severity": "high",
+      "class": "missing_title",
+      "page": "validation_timeline.html",
+      "detail": "No <title> element"
+    },
+    {
+      "id": "missing_description_validation_timeline_html",
+      "severity": "high",
+      "class": "missing_description",
+      "page": "validation_timeline.html",
+      "detail": "No meta description"
+    },
+    {
+      "id": "missing_canonical_validation_timeline_html",
+      "severity": "high",
+      "class": "missing_canonical",
+      "page": "validation_timeline.html",
+      "detail": "No rel=canonical link"
+    },
+    {
+      "id": "missing_og_validation_timeline_html",
+      "severity": "medium",
+      "class": "missing_og",
+      "page": "validation_timeline.html",
+      "detail": "Missing OG tags: og_title, og_desc, og_image"
+    },
+    {
+      "id": "broken_internal_link_vector_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "vector.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_vector_allocation_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "vector_allocation.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
+    },
+    {
+      "id": "broken_internal_link_watchlist_html",
+      "severity": "high",
+      "class": "broken_internal_link",
+      "page": "watchlist.html",
+      "detail": "Broken internal link: confluence_screener.html (resolved: confluence_screener.html)"
     }
   ],
   "issue_counts_by_class": {
-    "missing_description": 202,
-    "missing_canonical": 213,
-    "missing_og": 213,
-    "broken_internal_link": 241,
+    "broken_internal_link": 240,
+    "canonical_not_self": 2,
     "page_weight": 2,
-    "canonical_non_www": 18,
-    "canonical_not_self": 1,
-    "desc_length": 8,
+    "missing_description": 28,
+    "missing_canonical": 28,
+    "missing_og": 28,
+    "desc_length": 10,
     "title_length": 3,
     "missing_lang": 2,
     "missing_title": 1,
     "duplicate_title": 2,
-    "duplicate_description": 1,
-    "sitemap_duplicates": 1,
+    "duplicate_description": 3,
     "missing_from_sitemap": 15
   },
   "issue_counts_by_severity": {
     "critical": 0,
-    "high": 569,
-    "medium": 352,
+    "high": 286,
+    "medium": 76,
     "low": 2
   }
 }
