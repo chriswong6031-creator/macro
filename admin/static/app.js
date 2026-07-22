@@ -6571,6 +6571,30 @@ function wireDirectiveComposer(scope) {
 
 /* ---- ALERTS (operator capture) ------------------------------------------ */
 const SEV_CLS = { critical: "s-bad", major: "s-warn", minor: "" };
+/* Triage-calibration card — which alert rules earned predictive authority, and how
+   stale the calibration is. The Alerts tab had zero visibility into this lobe. */
+function alertsCalCard(cal) {
+  if (!cal) return "";
+  const stale = cal.age_days != null && cal.age_days > 14;
+  const ageTxt = cal.age_days != null ? `${Math.round(cal.age_days)}d ago` : "—";
+  const pct = (x) => x != null ? Math.round(x * 100) + "%" : "—";
+  const rows = (cal.rules || []).map(r => {
+    const up = r.hit_uplift;
+    const upTxt = up != null ? `${up >= 0 ? "+" : ""}${(up * 100).toFixed(1)}pp` : "—";
+    const upCls = up == null ? "s-mut" : up > 0.01 ? "s-ok" : up < -0.01 ? "s-warn" : "s-mut";
+    return `<tr>
+      <td><b>${esc(r.label)}</b>${r.thesis ? ` <span class="sub mono">${esc(r.thesis)}</span>` : ""}</td>
+      <td class="r mono">${r.horizon_d ? r.horizon_d + "d" : "—"}</td>
+      <td class="r mono">${pct(r.hit)}${r.base_hit != null ? ` <span class="sub">vs ${pct(r.base_hit)}</span>` : ""}</td>
+      <td class="r"><span class="statpill ${upCls}">${upTxt}</span></td>
+      <td class="r mono sub">${r.q_fdr != null ? r.q_fdr.toFixed(3) : "—"}</td>
+      <td>${r.survives ? '<span class="statpill s-ok">earned</span>' : '<span class="statpill s-mut">no edge</span>'}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="section" style="margin-top:14px">Triage calibration ${stale ? '<span class="statpill s-bad">stale</span>' : ""}</div>
+    <div class="sub muted" style="margin-bottom:6px">Which alert rules earned predictive authority (backtested hit-rate vs base rate). Calibration generated ${ageTxt}${stale ? " — overdue for a refresh" : ""}. <b>${cal.n_earned != null ? cal.n_earned : "?"} of ${cal.n_total}</b> rules earned an edge.</div>
+    <table><thead><tr><th>Rule</th><th class="r">Horizon</th><th class="r">Hit</th><th class="r">Uplift</th><th class="r">q-FDR</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
 RENDER.alerts = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="sub" style="margin-bottom:12px">Recent alerts from the live site feed. Log your action against any alert — Acted, Dismissed, Overrode, or Snoozed — to build the operator capture ledger (L4 instrumentation). All writes go through /api/actions behind auth.</div>
@@ -6581,9 +6605,10 @@ RENDER.alerts = async () => {
     return;
   }
   const alerts = d.alerts || [];
+  const calCard = alertsCalCard(d.triage_calibration);
   const genLine = d.generated_utc ? `<div class="sub muted" style="margin-bottom:8px">Feed generated: ${esc(d.generated_utc)} UTC${d.note ? " — " + esc(d.note) : ""}</div>` : (d.note ? `<div class="sub muted" style="margin-bottom:8px">${esc(d.note)}</div>` : "");
   if (!alerts.length) {
-    v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">0</span></div><div class="sub muted">No alerts in the feed.</div>`;
+    v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">0</span></div><div class="sub muted">No alerts in the feed.</div>${calCard}`;
     return;
   }
   v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">${alerts.length}</span></div>
@@ -6599,7 +6624,7 @@ RENDER.alerts = async () => {
         <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="overrode">Override</button>
         <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="snoozed">Snooze</button>
       </td></tr>`).join("")}
-    </tbody></table>`;
+    </tbody></table>${calCard}`;
   // Wire action buttons — POST {surface: alert_id, action, direction_note, alert_emit_ts}
   v.querySelectorAll(".alert-act-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
