@@ -2,6 +2,39 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-07-22",
+      "tickers": [
+        "ADBE",
+        "ARES",
+        "COIN",
+        "CRM",
+        "CUBI",
+        "CVI",
+        "ENOV",
+        "FBRT",
+        "FDS",
+        "GPI",
+        "IBM",
+        "INTU",
+        "KMT",
+        "LKFN",
+        "MOS",
+        "MSFT",
+        "PI",
+        "PLTR",
+        "PRGO",
+        "REZI",
+        "ROST",
+        "SNDK",
+        "SONO",
+        "STEP",
+        "VST",
+        "WDC",
+        "WMT",
+        "XEL"
+      ]
+    },
+    {
       "as_of": "2026-07-21",
       "tickers": [
         "ADBE",

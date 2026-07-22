@@ -1,7 +1,7 @@
 {
   "schema": "us_track_history/v1",
-  "as_of": "2026-07-20",
-  "generated": "2026-07-21T03:30:14.588703+00:00",
+  "as_of": "2026-07-21",
+  "generated": "2026-07-22T03:49:46.364304+00:00",
   "cohort_rollup": {
     "horizons": {
       "h5": {
@@ -58,11 +58,11 @@
       },
       "h10": {
         "accruing": true,
-        "raw_n": 397,
+        "raw_n": 452,
         "effective_n": 1,
-        "win_rate": 0.6146,
-        "avg_excess": 0.012,
-        "med_excess": 0.0205,
+        "win_rate": 0.6128,
+        "avg_excess": 0.0122,
+        "med_excess": 0.02,
         "wilson_lo": 0.2065,
         "wilson_hi": 1.0,
         "cohort_series": [
@@ -84,11 +84,11 @@
           },
           {
             "week": "2026-07-06/2026-07-12",
-            "raw_n": 60,
+            "raw_n": 115,
             "effective_n": 1,
-            "win_rate": 0.5833,
-            "avg_excess": 0.0079,
-            "med_excess": 0.0208
+            "win_rate": 0.5913,
+            "avg_excess": 0.0104,
+            "med_excess": 0.0189
           }
         ]
       },
@@ -164,6 +164,11 @@
       },
       {
         "as_of": "2026-07-20",
+        "total": 0,
+        "by_lane": {}
+      },
+      {
+        "as_of": "2026-07-21",
         "total": 0,
         "by_lane": {}
       }

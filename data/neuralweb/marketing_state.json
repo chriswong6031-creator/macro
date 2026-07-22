@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-07-21",
+  "as_of": "2026-07-22",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 36,
+    "opportunity_queue_depth": 48,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1494,30 +1494,30 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 36,
-      "scored": 36,
+      "open": 48,
+      "scored": 48,
       "newest": [
         {
-          "id": "radar-earnings-AAL-2026-07-21",
+          "id": "radar-earnings-AAL-2026-07-22",
           "problem_or_desire": "$AAL: earnings 2026-07-23",
           "expected_value": 0.5,
-          "score": 0.451774,
+          "score": 0.447577,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
         {
-          "id": "radar-earnings-ACI-2026-07-21",
-          "problem_or_desire": "$ACI: earnings 2026-07-21",
-          "expected_value": 0.5,
-          "score": 0.451774,
-          "half_life_class": "earnings_follow_up",
-          "status": "open"
-        },
-        {
-          "id": "radar-earnings-ADT-2026-07-21",
+          "id": "radar-earnings-ADT-2026-07-22",
           "problem_or_desire": "$ADT: earnings 2026-07-23",
           "expected_value": 0.5,
-          "score": 0.451774,
+          "score": 0.447577,
+          "half_life_class": "earnings_follow_up",
+          "status": "open"
+        },
+        {
+          "id": "radar-earnings-ALK-2026-07-22",
+          "problem_or_desire": "$ALK: earnings 2026-07-22",
+          "expected_value": 0.5,
+          "score": 0.447577,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1780,7 +1780,7 @@
     "charts": 8,
     "accounts": 6,
     "state": "present",
-    "as_of": "2026-07-21"
+    "as_of": "2026-07-22"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -1790,7 +1790,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-21T03:30:43Z",
-  "inputs_hash": "sha256:863a405bb369674e59a8c2ba202983eed0aaf9ebdd0db38bb5318acc80a9eabc",
+  "produced_at": "2026-07-22T03:50:06Z",
+  "inputs_hash": "sha256:84154ec6e5b154210cc591e8bb588a126fa246c6ba56ec73a67c945e6aa2e13d",
   "tier": "display"
 }
