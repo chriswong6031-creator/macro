@@ -137,6 +137,7 @@ jobs:
             echo "no dream artifact changes — nothing to commit."
             exit 0
           fi
+          git add data/ai_costs/usage.d 2>/dev/null || true
           git commit -m "metabolism: DREAM cycle $(date -u +%FT%H:%MZ) [Phase V2-D]" \
                      -m "Loop-Authored: dream run=${GITHUB_RUN_ID:-local}"
           # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can

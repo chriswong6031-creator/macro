@@ -49,6 +49,7 @@ jobs:
     env:
       # SAME env mapping as daily.yml's cortex job (provider ladder inputs).
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      AI_COSTS_SHARD: "${{ github.workflow }}-${{ github.run_id }}-${{ github.run_attempt }}"
       CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
       CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
       CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
@@ -144,7 +145,7 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # SAME file set as daily.yml 'commit cortex outputs' (STAGING LAW).
-          git add data/reflexes/cortex_attention/ 2>/dev/null || true
+          git add data/ai_costs/usage.d data/reflexes/cortex_attention/ 2>/dev/null || true
           git add data/reflexes/factor_attention/grades.jsonl 2>/dev/null || true
           git add data/reflexes/factor_attention/probation.json 2>/dev/null || true
           git add data/neuralweb/cortex/ 2>/dev/null || true
