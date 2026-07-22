@@ -41,6 +41,30 @@ def _s(v) -> str | None:
     return None if s.lower() in _MISSING else s
 
 
+# Tickers that survive string coercion but are NOT real symbols — placeholder junk
+# ("N/A" from a filing with no assigned ticker, etc.) that must never become a
+# convergence record on any channel. Paired with a shape check below.
+_TICKER_JUNK = {"NA", "N/A", "N.A.", "NAN", "NONE", "NULL", "TBD", "TBA", "NOTAV",
+                "UNKNOWN", "PRIVATE", "VARIOUS", "MULTIPLE", "-", "—", "?"}
+# US-equity ticker shape: starts with a letter, then alnum, with an optional
+# .-/-suffixed share class (BRK.B / BRK-B). Rejects "N/A" (slash), spaces, commas.
+_TICKER_RE = re.compile(r"^[A-Z][A-Z0-9]{0,8}([.\-][A-Z0-9]{1,3})?$")
+
+
+def _valid_ticker(v) -> str | None:
+    """A canonical, validated ticker, or None. Rejects placeholder junk ('N/A' and
+    friends) and shape-invalid strings so no garbage name reaches the convergence
+    board. This is the single hygiene gate the kernel routes every ticker through."""
+    s = _s(v)
+    if s is None:
+        return None
+    s = s.strip()
+    u = s.upper()
+    if u in _TICKER_JUNK or not _TICKER_RE.match(u):
+        return None
+    return s
+
+
 def _f(v) -> float:
     s = _s(v)
     if s is None:
@@ -107,9 +131,11 @@ CHANNEL_WEIGHTS: dict[str, float] = {
     "github_momentum":    0.30,   # GitHub star velocity (developer-mindshare proxy)
     "earnings_beat":      0.30,   # Finnhub earnings surprise — single beat is weak context
     "lobbying":           0.30,   # lobbying present (no spike)
+    "short_squeeze":      0.30,   # FINRA high days-to-cover — squeeze FUEL, confirms a buy channel
     "bill_catalyst":      0.30,   # pending legislation tied to the name's sector
     "cnbc_pick":          0.25,   # CNBC desk pick
     "news_sentiment":     0.20,   # Polygon editorial-news bullish lean — abundant but noisy
+    "stocktwits_bull":    0.15,   # StockTwits retail conviction — corroborates WSB, lowest weight
     "retail_buzz":        0.15,   # WSB / retail attention — context, lowest weight
 }
 
@@ -411,7 +437,7 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
     dpi_z = _dpi_z_lookup()
 
     def rec(tk):
-        tk = _s(tk)
+        tk = _valid_ticker(tk)   # hygiene gate: junk ("N/A") + shape-invalid never enter
         if not tk:
             return None
         return by.setdefault(tk, {"ticker": tk, "channels": {}, "metrics": {}})
@@ -596,11 +622,15 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
         if r.get("hot"):
             add(r["ticker"], "insider_mspr", f"MSPR {r.get('mspr')}", drops=("insider_buy",))
     for r in signals.get("earnings", []):
+        # imminent-earnings CONTEXT clock — a binary catalyst timer, NOT a bullish vote, so it
+        # lands as a metric only and adds NO weighted convergence channel (the earnings feed is
+        # universe-filtered to already-flagged names, so this never manufactures a board name).
         m = rec(r["ticker"])
         if m is not None:
-            m["metrics"]["earnings_surprise_pct"] = r.get("surprise_pct")
-        if r.get("hot"):
-            add(r["ticker"], "earnings_beat", f"+{r.get('surprise_pct')}% surprise")
+            m["metrics"]["days_to_earnings"] = r.get("days_to")
+            m["metrics"]["next_earnings"] = r.get("next_date")
+            if r.get("last_surprise_pct") is not None:
+                m["metrics"]["earnings_surprise_pct"] = r.get("last_surprise_pct")
     for r in signals.get("news_sentiment", []):
         m = rec(r["ticker"])
         if m is not None:
@@ -620,6 +650,28 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
             m["metrics"]["github_stars"] = r.get("stars")
         if r.get("hot"):
             add(r["ticker"], "github_momentum", f"+{r.get('wow_pct')}% stars")
+
+    # --- FINRA short interest: high days-to-cover = squeeze FUEL (confluence, not a buy) ---
+    # A crowded short is directionally ambiguous ALONE, so this only ever confirms another
+    # channel: low weight + count>=2 gate means a lone crowded-short never makes the board.
+    for r in signals.get("short_interest", []):
+        m = rec(r.get("ticker"))
+        if m is not None:
+            m["metrics"].update(days_to_cover=r.get("days_to_cover"), si_change_pct=r.get("si_change_pct"))
+        if r.get("hot"):
+            si = r.get("si_change_pct")
+            si_str = f", SI {si:+.0f}%" if isinstance(si, (int, float)) else ""
+            add(r.get("ticker"), "short_squeeze", f"{r.get('days_to_cover')}d to cover{si_str}")
+
+    # --- StockTwits retail conviction (corroborates WSB; selective bar keeps it off-flood) ---
+    for r in signals.get("stocktwits", []):
+        m = rec(r.get("ticker"))
+        if m is not None:
+            m["metrics"].update(stocktwits_bull_ratio=r.get("bull_ratio"), stocktwits_watchers=r.get("watchers"))
+        if r.get("hot"):
+            wl = r.get("watchers") or 0
+            add(r.get("ticker"), "stocktwits_bull",
+                f"{int((r.get('bull_ratio') or 0) * 100)}% bull · {wl:,} watching")
 
     # --- congressional position SIZE context (size, not a vote) ---
     for tk, slot in (signals.get("congress_holdings") or {}).items():
