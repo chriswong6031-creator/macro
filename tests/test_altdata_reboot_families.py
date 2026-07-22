@@ -89,7 +89,7 @@ class TestAssignClaimFamily:
         assert assign_claim_family([]) == "altdata_event"
 
     def test_highest_weight_wins_over_family_order(self):
-        # special_situation (0.40, event) + insider_cluster (1.00, mid)
+        # special_situation (0.20, event) + insider_cluster (1.00, mid)
         # insider_cluster is higher weight → mid
         assert assign_claim_family(["special_situation", "insider_cluster"]) == "altdata_mid"
 
@@ -112,7 +112,7 @@ class TestAssignClaimFamily:
         assert fam == "altdata_mid"
 
     def test_mixed_with_retail_buzz_and_higher_channel(self):
-        # special_situation (0.40) > retail_buzz (0.15) → event, not attention
+        # special_situation (0.20) > retail_buzz (0.15) → event, not attention
         fam = assign_claim_family(["special_situation", "retail_buzz"])
         assert fam == "altdata_event"
 

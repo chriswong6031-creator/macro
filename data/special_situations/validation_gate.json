@@ -1,0 +1,127 @@
+{
+  "schema": "special_situation.gate.v1",
+  "generated_at": "2026-07-22 13:57 UTC",
+  "channel": "special_situation",
+  "event_class": "non-activist actionable US deal-events (first per ticker)",
+  "categories": [
+    "Acquisitions",
+    "Deal Terminations",
+    "Delistings",
+    "Divestitures",
+    "Going-Private",
+    "Going-Private & Tender Offers",
+    "Insolvency",
+    "Issuer Tenders",
+    "Liquidations",
+    "M&A / Divestitures",
+    "Restructuring & Busted M&A",
+    "Spin-Offs",
+    "Strategic Reviews",
+    "Tender Offers"
+  ],
+  "panel_start": "2026-02-02",
+  "panel_end": "2026-07-21",
+  "n_events": 250,
+  "n_priceable": 219,
+  "method": "daily calendar-time portfolio \u00b7 SPY-relative \u00b7 leak-free entry (first close strictly after the EDGAR filing date) \u00b7 Newey-West HAC lag=horizon \u00b7 validity bar n_days>=max(6,horizon)",
+  "scored": false,
+  "lead_horizon": null,
+  "weight": 0.0,
+  "current_channel_weight": 0.4,
+  "channel_weight_recommendation": "DE-ESCALATE to 0.20 (context tier) \u2014 mirror activist_13d in #3216",
+  "event": {
+    "5": {
+      "n": 204,
+      "n_days": 81,
+      "mean_abn": -0.0037,
+      "median_abn": -0.0076,
+      "hit_rate": 0.436,
+      "valid_hac": true,
+      "daily_mean": -0.0047,
+      "hac_t": -0.92,
+      "p": 0.3583
+    },
+    "10": {
+      "n": 196,
+      "n_days": 77,
+      "mean_abn": -0.0053,
+      "median_abn": -0.0098,
+      "hit_rate": 0.469,
+      "valid_hac": true,
+      "daily_mean": -0.0088,
+      "hac_t": -1.2,
+      "p": 0.2286
+    },
+    "21": {
+      "n": 162,
+      "n_days": 66,
+      "mean_abn": -0.0146,
+      "median_abn": -0.0169,
+      "hit_rate": 0.407,
+      "valid_hac": true,
+      "daily_mean": -0.0207,
+      "hac_t": -2.37,
+      "p": 0.0178
+    },
+    "63": {
+      "n": 34,
+      "n_days": 26,
+      "mean_abn": -0.0802,
+      "median_abn": -0.1001,
+      "hit_rate": 0.176,
+      "valid_hac": false,
+      "daily_mean": -0.068,
+      "hac_t": -3.81,
+      "p": 0.0001
+    }
+  },
+  "placebo_pre_event": {
+    "5": {
+      "n": 219,
+      "n_days": 84,
+      "mean_abn": 0.0077,
+      "median_abn": 0.0065,
+      "hit_rate": 0.553,
+      "valid_hac": true,
+      "daily_mean": 0.0146,
+      "hac_t": 3.5,
+      "p": 0.0005
+    },
+    "10": {
+      "n": 219,
+      "n_days": 84,
+      "mean_abn": 0.0017,
+      "median_abn": 0.0043,
+      "hit_rate": 0.525,
+      "valid_hac": true,
+      "daily_mean": 0.0093,
+      "hac_t": 1.13,
+      "p": 0.2575
+    },
+    "21": {
+      "n": 219,
+      "n_days": 84,
+      "mean_abn": -0.0069,
+      "median_abn": -0.014,
+      "hit_rate": 0.461,
+      "valid_hac": true,
+      "daily_mean": -0.0006,
+      "hac_t": -0.03,
+      "p": 0.9728
+    },
+    "63": {
+      "n": 202,
+      "n_days": 77,
+      "mean_abn": -0.0279,
+      "median_abn": -0.0544,
+      "hit_rate": 0.376,
+      "valid_hac": true,
+      "daily_mean": -0.0105,
+      "hac_t": -0.53,
+      "p": 0.5979
+    }
+  },
+  "min_events": 40,
+  "t_bar": 2.0,
+  "note": "post-filing special-situation drift is NOT robustly positive/significant vs the pre-event placebo on the covered panel \u2192 context-tier confirmer ('measuring')"
+}
