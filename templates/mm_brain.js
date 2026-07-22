@@ -537,11 +537,21 @@
     lines.forEach(function (l, i) { if (i) p.appendChild(el('br')); mdInline(p, l); });
     return p;
   }
-  /* Split raw markdown into block strings on blank lines, respecting ``` fences.
-     A fenced block stays whole even across blanks. Returns array of block texts. */
+  /* line kind for block-boundary detection: list item, heading, quote, or 'text'.
+     A change of kind starts a new block even without a blank line — models routinely
+     omit the blank between a lead-in sentence and its bullet list. */
+  function lineKind(ln) {
+    if (/^\s*([-*•]|\d+\.)\s+/.test(ln)) return 'list';
+    if (/^\s*#{1,6}\s+/.test(ln)) return 'head';
+    if (/^\s*>\s?/.test(ln)) return 'quote';
+    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(ln)) return 'rule';
+    return 'text';
+  }
+  /* Split raw markdown into block strings on blank lines, respecting ``` fences and
+     kind transitions. A fenced block stays whole even across blanks. Returns block texts. */
   function mdSplit(text) {
-    var lines = String(text || '').split('\n'), blocks = [], cur = [], inFence = false;
-    function push() { if (cur.length) { blocks.push(cur.join('\n')); cur = []; } }
+    var lines = String(text || '').split('\n'), blocks = [], cur = [], inFence = false, curKind = null;
+    function push() { if (cur.length) { blocks.push(cur.join('\n')); cur = []; curKind = null; } }
     for (var i = 0; i < lines.length; i++) {
       var ln = lines[i];
       if (/^```/.test(ln)) {
@@ -550,8 +560,12 @@
         continue;
       }
       if (inFence) { cur.push(ln); continue; }
-      if (!ln.trim()) { push(); }
-      else cur.push(ln);
+      if (!ln.trim()) { push(); continue; }
+      var k = lineKind(ln);
+      /* break when kind changes (text→list, list→text, heading→anything, etc.); a heading
+         and a rule are always solo blocks so they never absorb a following line */
+      if (cur.length && (k !== curKind || curKind === 'head' || curKind === 'rule' || k === 'head' || k === 'rule')) push();
+      cur.push(ln); curKind = k;
     }
     push(); return blocks;
   }
@@ -658,14 +672,22 @@
       raw: function () { return raw; },
       // drain fast then run cb, then full re-render for correctness
       finalize: function (cb) {
+        var done = false;
         var finish = function () {
+          if (done) return; done = true;
+          if (safety) { clearTimeout(safety); safety = 0; }
+          if (raf) { cancelAnimationFrame(raf); raf = 0; }
           renderMdInto(container, raw);
-          revealed = raw; committedLen = raw.length; pending = ''; openText = null;
+          revealed = raw; committedLen = raw.length; pending = ''; openText = null; doneFlush = false;
           if (caret) { caret.parentNode && caret.parentNode.removeChild(caret); caret = null; }
           if (cb) cb();
         };
         if (reduced || !pending.length) { revealed += pending; pending = ''; finish(); return; }
         doneFlush = true; onDrained = finish; schedule();
+        /* rAF-independent safety net: if the smooth drain stalls (e.g. the tab is hidden
+           and requestAnimationFrame is throttled to zero), force the final render anyway
+           so a completed reply is never left blank. */
+        var safety = setTimeout(finish, 1400);
       },
       // stop: keep partial, drop caret, no re-render (partial stays as-is)
       stop: function () {
@@ -1014,7 +1036,7 @@
     var typing = el('div', 'mmb-msg assistant');
     typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span><span class="mmb-typing"><span></span><span></span><span></span></span></div>';
     scroll.appendChild(typing); stick();
-    var bub = null, stream = null, steps = null, suggestions = null, sawDelta = false;
+    var bub = null, stream = null, steps = null, suggestions = null, sawDelta = false, doneSeen = false;
     var apiText = payload.text || L('Please analyze the attached image.', '请分析所附图片。');
     var body = JSON.stringify({ message: apiText, lane: payload.lane, mode: payload.mode, thread_id: threadId || undefined, context: payload.ctx, images: (payload.imgs && payload.imgs.length) ? payload.imgs : undefined });
     if (streamAbort) { try { streamAbort.abort(); } catch (e) {} }
@@ -1054,6 +1076,7 @@
         });
       }
       function finalizeDone(j) {
+        if (doneSeen) return; doneSeen = true;
         ensureBub(); if (steps) { steps.remove(); steps = null; }
         stream.finalize(function () {
           if (j && j.citations && j.citations.length) addCites(bub, j.citations);
@@ -1063,8 +1086,12 @@
         if (j && j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); }
       }
       function finish() {
-        if (bub && stream) { stream.finalize(function () { bumpTime(bub); stickAfter(); }); }
-        else if (!bub) { if (typing.parentNode) typing.remove(); errorCard(payload, ''); }
+        /* stream ended. If a `done` event already finalized (with cites/suggs), don't
+           finalize again — a second finalize would clobber the first's pending callback. */
+        if (!doneSeen) {
+          if (bub && stream) { doneSeen = true; stream.finalize(function () { bumpTime(bub); stickAfter(); }); }
+          else if (!bub) { if (typing.parentNode) typing.remove(); errorCard(payload, ''); }
+        }
         endStream(); loadThreads(); announceDone();
       }
       return pump();
