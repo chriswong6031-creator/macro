@@ -1,12 +1,162 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-21T01:03:30.028148+00:00",
+  "generated_at": "2026-07-22T01:12:51.365155+00:00",
   "base": {
-    "sha": "eb2d2506b9ec1f45177b145baf706123fc030881"
+    "sha": "8f6296706bc3be3ac94754c012f2de195e026d44"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
+    {
+      "number": 3179,
+      "title": "chore(routing): Opus builds code, not Sonnet (operator 2026-07-21)",
+      "head_ref": "chore/opus-builds-code-routing",
+      "updated_at": "2026-07-22T01:06:35Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".claude/agents/builder.md",
+        ".claude/hooks/model_routing_guard.py",
+        "CLAUDE.md",
+        "config/ruling_graph.yml",
+        "docs/NEURAL_WEB_CASE_LAW.md",
+        "site/neuralwebdata/ruling_graph.json"
+      ],
+      "protected_paths_touched": [
+        "site/neuralwebdata/ruling_graph.json"
+      ]
+    },
+    {
+      "number": 3178,
+      "title": "Stripe billing spine \u2014 checkout/webhook/portal + entitlements (MNZ W2)",
+      "head_ref": "claude/stripe-billing-spine",
+      "updated_at": "2026-07-21T23:44:36Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 20,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "admin/server.py",
+        "admin/static/app.js",
+        "admin/users.py",
+        "app/billing.py",
+        "app/deploy/macro-api.service",
+        "app/main.py",
+        "app/requirements.txt",
+        "config/plans.yml",
+        "docs/ops/stripe-setup.md",
+        "engine/neuralweb/brain_gateway.py",
+        "scripts/build_site.py",
+        "scripts/deploy/0005_user_entitlements.sql",
+        "scripts/stripe_bootstrap.py",
+        "site/account.js",
+        "site/chat.html",
+        "site/plans.html",
+        "templates/_navlinks.html.j2",
+        "templates/account.js",
+        "templates/plans.html.j2",
+        "tests/test_billing_webhook.py"
+      ],
+      "protected_paths_touched": [
+        "engine/neuralweb/brain_gateway.py"
+      ]
+    },
+    {
+      "number": 3176,
+      "title": "feat(i18n): zh \u7ea2\u6da8\u7eff\u8dcc color sweep \u2014 remaining 18 dashboards",
+      "head_ref": "claude/zh-mode-board-sweep",
+      "updated_at": "2026-07-21T21:59:02Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 18,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "templates/ai_desk.html.j2",
+        "templates/baskets.html.j2",
+        "templates/baskets_china.html.j2",
+        "templates/canada.html.j2",
+        "templates/china_history.html.j2",
+        "templates/china_mechanics.html.j2",
+        "templates/china_strategies.html.j2",
+        "templates/commodities.html.j2",
+        "templates/congress_trades.html.j2",
+        "templates/forex.html.j2",
+        "templates/hk.html.j2",
+        "templates/intl.html.j2",
+        "templates/market_structure.html.j2",
+        "templates/special_situations.html.j2",
+        "templates/stock.html.j2",
+        "templates/strategies.html.j2",
+        "templates/transmission.html.j2",
+        "templates/vector_allocation.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 3175,
+      "title": "fix(macro): zh \u7ea2\u6da8\u7eff\u8dcc coherence \u2014 state JS, sparklines, chips, odometer, quad map, heat bars",
+      "head_ref": "claude/zh-mode-macro-board",
+      "updated_at": "2026-07-21T21:31:22Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/market_state.py",
+        "site/live.js",
+        "site/risk_state_live.js",
+        "templates/dashboard.html.j2",
+        "templates/live.js",
+        "templates/risk_state_live.js"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 3174,
+      "title": "fix(china): zh direction-convention flip on state gauge + pullback family (reverses #2947 no-flip)",
+      "head_ref": "claude/stoic-williams-d4f68a",
+      "updated_at": "2026-07-21T20:55:38Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "templates/china.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 3171,
+      "title": "design(landing): round 2 \u2014 three suite-architecture mockups (The Desk / One Frame / One Market Day)",
+      "head_ref": "claude/amazing-keller-51b345",
+      "updated_at": "2026-07-21T19:34:02Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "mockups/landing/assets/prophet_track.png",
+        "mockups/landing/index.html",
+        "mockups/landing/v6_the_desk.html",
+        "mockups/landing/v7_one_frame.html",
+        "mockups/landing/v8_market_day.html"
+      ],
+      "protected_paths_touched": []
+    },
     {
       "number": 3133,
       "title": "docs(marketing): define affiliate creator launch strategy",
@@ -88,6 +238,56 @@
     }
   ],
   "recent_merged": [
+    {
+      "number": 3177,
+      "title": "fix(cls): pre-collapse the mobile nav at parse \u2014 0.33 \u2192 0.03 CLS on phone loads",
+      "merged_at": "2026-07-21T22:47:28Z"
+    },
+    {
+      "number": 3173,
+      "title": "feat(brain-widget): wire the sidebar Search into a live chat filter",
+      "merged_at": "2026-07-21T20:23:55Z"
+    },
+    {
+      "number": 3172,
+      "title": "design(settings): full settings dashboard modal \u2014 Account / Preferences / Sync",
+      "merged_at": "2026-07-21T20:43:13Z"
+    },
+    {
+      "number": 3170,
+      "title": "design(brain-widget): drop redundant \"New\" pill from Chats header",
+      "merged_at": "2026-07-21T19:11:33Z"
+    },
+    {
+      "number": 3169,
+      "title": "fix(markets): defer/load-order heal \u2014 same class as the cycle.html blank",
+      "merged_at": "2026-07-21T18:48:38Z"
+    },
+    {
+      "number": 3168,
+      "title": "perf(mobile): breathing-animation sweep wave 2 \u2014 9 more page families off the main thread",
+      "merged_at": "2026-07-21T18:46:59Z"
+    },
+    {
+      "number": 3167,
+      "title": "feat(brain): reflect unlimited-operator grant in the widget UI (Pro/Research/attach unlock)",
+      "merged_at": "2026-07-21T18:42:17Z"
+    },
+    {
+      "number": 3166,
+      "title": "perf(mobile): compositor-only breathing glows \u2014 macro 15/100 Lighthouse fix, wave 1",
+      "merged_at": "2026-07-21T17:34:27Z"
+    },
+    {
+      "number": 3165,
+      "title": "fix(externalize_css): never lift <style> blocks inside inline <svg> \u2014 restores blank report figures",
+      "merged_at": "2026-07-21T16:58:55Z"
+    },
+    {
+      "number": 3164,
+      "title": "fix(levels): rebase board unconditionally \u2014 dividend basis, not just splits (follow-up to #3155)",
+      "merged_at": "2026-07-21T08:36:21Z"
+    },
     {
       "number": 3163,
       "title": "feat(seo): D12 W1 \u2014 free acquisition estate: Calculator Lab, Learning Center, Blog + trading-journal spreadsheet",
@@ -2537,56 +2737,6 @@
       "number": 2629,
       "title": "fix(china): tuple-key json.dumps crash \u2014 china_standouts.json stale since 07-10 (5x SLA)",
       "merged_at": "2026-07-16T20:53:50Z"
-    },
-    {
-      "number": 2628,
-      "title": "feat(hk-stocks): HK standout board INCLUDE gate \u2192 signal_gate T1-T4 cascade (operator-ratified)",
-      "merged_at": "2026-07-16T20:57:40Z"
-    },
-    {
-      "number": 2627,
-      "title": "fix(theme_placebo): sorted() peer pool \u2014 set-order selection broke documented determinism",
-      "merged_at": "2026-07-16T20:47:33Z"
-    },
-    {
-      "number": 2626,
-      "title": "fix(ci): ratify #2598 lane gates on theme_placebo + qledger_falsifier in grader manifest",
-      "merged_at": "2026-07-16T20:28:47Z"
-    },
-    {
-      "number": 2625,
-      "title": "docs(research): commit the Codex options-confluence handoff + adjudication note",
-      "merged_at": "2026-07-16T20:24:50Z"
-    },
-    {
-      "number": 2624,
-      "title": "research: Flow Origination Sandbox \u2014 operator-ratified paper origination experiment (FOS, 2026-07-16)",
-      "merged_at": "2026-07-16T20:22:23Z"
-    },
-    {
-      "number": 2623,
-      "title": "fix(hk-pick-lab): NaN-guard stale-cross cast \u2014 un-dead-wire the 1D Velocity Desk + 20 HK lab books",
-      "merged_at": "2026-07-16T20:28:29Z"
-    },
-    {
-      "number": 2622,
-      "title": "fix(health): treasury-watch SLA 30\u219248h + status-enum degraded self-report",
-      "merged_at": "2026-07-16T20:20:01Z"
-    },
-    {
-      "number": 2621,
-      "title": "fix(nw_health): unbreak run-history append \u2014 escalation detector was blind",
-      "merged_at": "2026-07-16T20:37:19Z"
-    },
-    {
-      "number": 2620,
-      "title": "fix(theta): Terminal v3 API key via env, never plaintext argv",
-      "merged_at": "2026-07-16T20:45:02Z"
-    },
-    {
-      "number": 2619,
-      "title": "feat(live_flow): local day_state retention sweep (5 trading days, config-driven)",
-      "merged_at": "2026-07-16T20:10:08Z"
     }
   ]
 }

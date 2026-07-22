@@ -2,12 +2,18 @@
 
 # Active Build Map
 
-Generated: 2026-07-21T01:03:30.028148+00:00  |  Open PRs: 4  |  Merged (window): 500  |  base: `eb2d2506b9ec1f45177b145baf706123fc030881`
+Generated: 2026-07-22T01:12:51.365155+00:00  |  Open PRs: 10  |  Merged (window): 500  |  base: `8f6296706bc3be3ac94754c012f2de195e026d44`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
+| #3179 | chore(routing): Opus builds code, not Sonnet (operator 2026-07-21) | `chore/opus-builds-code-routing` | 2026-07-22 | ⚠ protected:1 |
+| #3178 | Stripe billing spine — checkout/webhook/portal + entitlements (MNZ W2) | `claude/stripe-billing-spine` | 2026-07-21 | ⚠ protected:1 |
+| #3176 | feat(i18n): zh 红涨绿跌 color sweep — remaining 18 dashboards | `claude/zh-mode-board-sweep` | 2026-07-21 | — |
+| #3175 | fix(macro): zh 红涨绿跌 coherence — state JS, sparklines, chips, odometer, quad map, heat bars | `claude/zh-mode-macro-board` | 2026-07-21 | — |
+| #3174 | fix(china): zh direction-convention flip on state gauge + pullback family (reverses #2947 no-flip) | `claude/stoic-williams-d4f68a` | 2026-07-21 | — |
+| #3171 | design(landing): round 2 — three suite-architecture mockups (The Desk / One Frame / One Market Day) | `claude/amazing-keller-51b345` | 2026-07-21 | — |
 | #3133 | docs(marketing): define affiliate creator launch strategy | `codex/affiliate-creator-launch-strategy` | 2026-07-20 | — |
 | #3092 | docs(marketing): add first-1000 distribution strategy | `codex/marketing-1000-leads-warplan` | 2026-07-19 | — |
 | #3085 | feat(case): winner autopsy SQM 2008 | `codex/case-sqm-2008` | 2026-07-19 | — |
@@ -25,6 +31,16 @@ Generated: 2026-07-21T01:03:30.028148+00:00  |  Open PRs: 4  |  Merged (window):
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #3177 | fix(cls): pre-collapse the mobile nav at parse — 0.33 → 0.03 CLS on phone loads | 2026-07-21 |
+| #3173 | feat(brain-widget): wire the sidebar Search into a live chat filter | 2026-07-21 |
+| #3172 | design(settings): full settings dashboard modal — Account / Preferences / Sync | 2026-07-21 |
+| #3170 | design(brain-widget): drop redundant "New" pill from Chats header | 2026-07-21 |
+| #3169 | fix(markets): defer/load-order heal — same class as the cycle.html blank | 2026-07-21 |
+| #3168 | perf(mobile): breathing-animation sweep wave 2 — 9 more page families off the main thread | 2026-07-21 |
+| #3167 | feat(brain): reflect unlimited-operator grant in the widget UI (Pro/Research/attach unlock) | 2026-07-21 |
+| #3166 | perf(mobile): compositor-only breathing glows — macro 15/100 Lighthouse fix, wave 1 | 2026-07-21 |
+| #3165 | fix(externalize_css): never lift <style> blocks inside inline <svg> — restores blank report figures | 2026-07-21 |
+| #3164 | fix(levels): rebase board unconditionally — dividend basis, not just splits (follow-up to #3155) | 2026-07-21 |
 | #3163 | feat(seo): D12 W1 — free acquisition estate: Calculator Lab, Learning Center, Blog + trading-journal spreadsheet | 2026-07-21 |
 | #3162 | feat(psq): Prophet × Stage quality re-grade — PSQ prereg + pre-registered median/EA/stopped falsifiers, full run | 2026-07-21 |
 | #3161 | feat(wa): W3 census fingerprint study (Layer-3a) — W2 candidates vs full-census base rates | 2026-07-21 |
@@ -515,16 +531,6 @@ Generated: 2026-07-21T01:03:30.028148+00:00  |  Open PRs: 4  |  Merged (window):
 | #2631 | feat(hk-stocks): deep-history overlay for the beta panel — scoreboard universe 74 → ~160 | 2026-07-16 |
 | #2630 | fix(ci): validated-claims gate — recognize n't contractions as negation | 2026-07-16 |
 | #2629 | fix(china): tuple-key json.dumps crash — china_standouts.json stale since 07-10 (5x SLA) | 2026-07-16 |
-| #2628 | feat(hk-stocks): HK standout board INCLUDE gate → signal_gate T1-T4 cascade (operator-ratified) | 2026-07-16 |
-| #2627 | fix(theme_placebo): sorted() peer pool — set-order selection broke documented determinism | 2026-07-16 |
-| #2626 | fix(ci): ratify #2598 lane gates on theme_placebo + qledger_falsifier in grader manifest | 2026-07-16 |
-| #2625 | docs(research): commit the Codex options-confluence handoff + adjudication note | 2026-07-16 |
-| #2624 | research: Flow Origination Sandbox — operator-ratified paper origination experiment (FOS, 2026-07-16) | 2026-07-16 |
-| #2623 | fix(hk-pick-lab): NaN-guard stale-cross cast — un-dead-wire the 1D Velocity Desk + 20 HK lab books | 2026-07-16 |
-| #2622 | fix(health): treasury-watch SLA 30→48h + status-enum degraded self-report | 2026-07-16 |
-| #2621 | fix(nw_health): unbreak run-history append — escalation detector was blind | 2026-07-16 |
-| #2620 | fix(theta): Terminal v3 API key via env, never plaintext argv | 2026-07-16 |
-| #2619 | feat(live_flow): local day_state retention sweep (5 trading days, config-driven) | 2026-07-16 |
 
 ---
 
