@@ -62,6 +62,22 @@ def test_setup_score_none_without_residual():
     assert setup_score({"alpha": {}, "ladder": {}}, alpha_weight=0.7) is None
 
 
+def test_setup_score_admits_extra_shaped_rec_no_ladder():
+    """A curated non-index extra (e.g. CRCL) reaches build_stock_library's candidacy
+    gate carrying ONLY a residual-alpha dict — no `ladder` (it has no cycle entry),
+    no factor panels. setup_score must still return non-None so the name can enter the
+    board candidate set; the missing timing legs degrade to a 0.0 tilt, not a crash."""
+    rec = {"ticker": "CRCL", "name": "Circle Internet Group", "sector": "Financials",
+           "alpha": {"alpha": -0.07, "entry": "neutral", "sector_rank": 108,
+                     "sector_n": 197}}
+    sc = setup_score(rec, alpha_weight=US_ALPHA_WEIGHT)
+    assert sc is not None
+    score, row = sc
+    assert score == approx(0.7 * -0.07)          # alpha term only; timing_tilt(None,None,'neutral')==0
+    assert row["ticker"] == "CRCL" and row["alpha"] == -0.07
+    assert row["state"] is None and row["urgency"] is None   # no ladder → graceful Nones
+
+
 def test_setup_score_us_strong_leader_fresh_pullback():
     sc = setup_score(_rec(2.0, entry="pullback", urgency="now", eq_dir="up"),
                      alpha_weight=US_ALPHA_WEIGHT)

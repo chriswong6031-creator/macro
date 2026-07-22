@@ -1889,6 +1889,16 @@ stock_search:
     - NU     # Nu Holdings (Nubank)
     - GRAB   # Grab Holdings
     - SPOT   # Spotify
+    # Liquid foreign majors that already had an extra_names entry (name+GICS sector)
+    # but were never in extra_tickers → uncollected AND invisible to residual-alpha.
+    # Added so they collect nightly + earn a board-candidacy alpha score. Evidence =
+    # median daily $-volume in the local yahoo store (last 60 sessions, 2026-07-21).
+    - ASML   # ASML Holding (ADR) — ~$3.1B/day, IT
+    - VALE   # Vale (ADR) — ~$349M/day, Materials
+    - RIO    # Rio Tinto (ADR) — ~$251M/day, Materials
+    - BHP    # BHP Group (ADR) — ~$202M/day, Materials
+    - HSBC   # HSBC Holdings (ADR) — ~$135M/day, Financials
+    - SONY   # Sony Group (ADR) — ~$119M/day, Consumer Discretionary
     # More Chinese / Asia ADRs (US-listed)
     - FUTU   # Futu Holdings
     - TIGR   # UP Fintech (Tiger Brokers)

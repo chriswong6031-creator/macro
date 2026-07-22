@@ -102,6 +102,54 @@ def _f(x, nd: int = 2):
     return round(float(x), nd) if x is not None and np.isfinite(x) else None
 
 
+# Curated non-index single stocks (config stock_search extras — CRCL, ARM, HOOD…)
+# are searchable and get library pages, but were invisible to this residual-alpha
+# panel because the close matrix is drawn ONLY from the S&P-1500 breadth caches
+# (engine.equity_factors._closes('broad')). No alpha row ⇒ build_stock_library's
+# candidacy gate (alpha_pt.get(t) → setup_score) never fires ⇒ the name can never
+# reach the US standouts board or become a Prophet pick. This merges the qualifying
+# extras onto the broad matrix so they earn a per-ticker score alongside index names.
+#
+# MIN_OBS = 200: the score needs a non-NaN residual at the latest bar, which requires
+# ≥ max(form//2,10)=126 (residual-IR window) and ≥ max(win//2,15)=126 (rolling beta)
+# observations inside the trailing window. 200 sits comfortably above that 126 floor —
+# so an admitted extra is scored over a real, mostly-full window rather than a
+# barely-seeded one — while still admitting a ~13-month IPO like CRCL (282 obs).
+# A qualifying extra with too little usable history (residual window still NaN) simply
+# gets no per-ticker row; that is graceful (absent, never a crash).
+_EXTRA_MIN_OBS = 200
+
+
+def _extras_closes(index: pd.Index) -> tuple[dict[str, pd.Series], dict[str, tuple[str, str]]]:
+    """Qualifying config `stock_search` extras as {ticker: close-series reindexed onto
+    ``index``} plus {ticker: (name, sector)}. Qualifying = listed in
+    ``stock_search.extra_tickers`` AND carrying an ``extra_names`` entry with a real
+    (non-"—") GICS sector — this excludes ETFs / macro proxies, which have no company
+    sector — AND with a yahoo-store close series of at least ``_EXTRA_MIN_OBS`` rows.
+    Sorted for byte-stable output. Reads via the engine store (data/yahoo, the same
+    PIT path SPY uses in this module); the plain reindex adds no lookahead — the store
+    carries only real trading history, and absent dates stay NaN."""
+    ss = (config.load().get("stock_search") or {})
+    extra_tickers = {str(t) for t in (ss.get("extra_tickers") or [])}
+    extra_names = ss.get("extra_names") or {}
+    cols: dict[str, pd.Series] = {}
+    meta: dict[str, tuple[str, str]] = {}
+    for t in sorted(extra_tickers):
+        info = extra_names.get(t) or {}
+        sector = str(info.get("sector", "—"))
+        if sector in ("—", ""):
+            continue                                   # ETF / macro proxy — no company sector
+        df = store.read("yahoo", t)
+        if df is None or "close" not in df.columns:
+            continue
+        s = df["close"].dropna()
+        if len(s) < _EXTRA_MIN_OBS:
+            continue
+        cols[t] = s.reindex(index)
+        meta[t] = (str(info.get("name", t)), sector)
+    return cols, meta
+
+
 def compute_residual_alpha(closes: pd.DataFrame | None = None,
                            market: pd.Series | None = None,
                            tkr_sector: dict | None = None, *, asof=None,
@@ -121,6 +169,7 @@ def compute_residual_alpha(closes: pd.DataFrame | None = None,
     min_names = d_["min_names"] if min_names is None else min_names
     cap = d_["cap"]
 
+    injected = closes is not None
     if closes is None:
         closes = _closes()
     if closes is None or closes.empty:
@@ -128,6 +177,19 @@ def compute_residual_alpha(closes: pd.DataFrame | None = None,
         return None
     if asof is not None:
         closes = closes.loc[:pd.Timestamp(asof)]
+    # Admit curated non-index single stocks (config stock_search extras) onto the
+    # broad matrix so they earn a residual-alpha score → board candidacy. Only on the
+    # live path: an explicitly injected close matrix (tests) is left untouched.
+    extra_ns: dict[str, tuple[str, str]] = {}
+    if not injected:
+        _ex_cols, extra_ns = _extras_closes(closes.index)
+        _ex_cols = {t: s for t, s in _ex_cols.items() if t not in closes.columns}
+        extra_ns = {t: v for t, v in extra_ns.items() if t in _ex_cols}
+        if _ex_cols:
+            # single concat (not per-column insert) → no fragmentation, deterministic
+            closes = pd.concat([closes, pd.DataFrame(_ex_cols, index=closes.index)], axis=1)
+            log.info("residual_alpha: admitted %d curated extras (e.g. %s)",
+                     len(_ex_cols), ", ".join(sorted(_ex_cols)[:5]))
     if market is None:
         spy = store.read("yahoo", "SPY")
         if spy is None or "close" not in spy.columns:
@@ -138,6 +200,7 @@ def compute_residual_alpha(closes: pd.DataFrame | None = None,
             market = market.loc[:pd.Timestamp(asof)]
     if tkr_sector is None:
         ns = _names_sectors()
+        ns.update(extra_ns)                              # curated extras: real name + GICS sector
         tkr_sector = {t: ns.get(t, (t, "—"))[1] for t in closes.columns}
     else:
         ns = {t: (t, tkr_sector.get(t, "—")) for t in closes.columns}
