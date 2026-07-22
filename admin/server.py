@@ -600,6 +600,9 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/users/recent":
                 limit = _int_param(q, "limit", 30, 1, 1000)
                 return self._json(users.recent(limit=limit))
+            if path == "/api/users/subscribers":
+                limit = _int_param(q, "limit", 200, 1, 500)
+                return self._json(users.subscribers(limit=limit))
             # system / services
             if path == "/api/system":
                 return self._json(system.snapshot())

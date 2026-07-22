@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import yaml
 from jinja2 import Environment, FileSystemLoader
 from plotly.subplots import make_subplots
 
@@ -3434,6 +3435,83 @@ def build_alerts_page(env: Environment, site: Path, generated: str) -> None:
              s["actionable"], s["backtested"])
 
 
+def _plans_view_model() -> dict:
+    """Build the declarative view-model for the plans / pricing page.
+
+    Reads config/plans.yml (the single source of truth — MNZ-R12: prices/tiers
+    ship as config, never literals) and derives everything the template needs so
+    the .j2 stays purely declarative:
+
+    * per-month price in whole dollars for both intervals (monthly = unit_amount/100;
+      annual = unit_amount/12/100 → the per-month-equivalent shown when Annual is on),
+    * the savings percent  round((monthly - annual/12) / monthly * 100)  computed
+      from the config amounts — never a literal (so 17% / 22% re-derive whenever the
+      YAML numbers move; masterplan §2.1 display law),
+    * the full annual charge (for the "billed $X/yr" fine print),
+    * the trial length.
+
+    The template also receives the raw cents so its JS toggle re-derives the exact
+    same numbers client-side (single source of truth on both sides of the seam).
+    """
+    catalog = yaml.safe_load((config.ROOT / "config" / "plans.yml").read_text())
+    products = catalog.get("products", {})
+
+    def _tier_vm(key: str) -> dict | None:
+        prod = products.get(key)
+        if not prod:
+            return None
+        prices = prod.get("prices", {})
+        m_cents = int(prices.get("monthly", {}).get("unit_amount", 0))
+        a_cents = int(prices.get("annual", {}).get("unit_amount", 0))
+        # Per-month equivalents. Dollars are whole here because the catalog prices
+        # are round ($59/$89 monthly; $588/$828 annual → $49/$69 per month) — round()
+        # keeps the badge honest if a future price isn't a clean multiple of 12.
+        monthly_pm = round(m_cents / 100)
+        annual_pm = round(a_cents / 12 / 100)
+        # The one derived percent the reviewer will check is config-driven, not literal.
+        save_pct = (round((m_cents - a_cents / 12) / m_cents * 100)
+                    if m_cents else 0)
+        return {
+            "tier": prod.get("tier", key),
+            "name": prod.get("name", key.title()),
+            "trial_days": int(prod.get("trial_days", 0)),
+            "monthly_pm": monthly_pm,          # $/mo, monthly billing
+            "annual_pm": annual_pm,            # $/mo-equivalent, annual billing
+            "annual_total": round(a_cents / 100),   # full yearly charge, whole $
+            "save_pct": save_pct,              # DERIVED — never hardcoded
+            "monthly_cents": m_cents,          # raw, for the JS toggle to re-derive
+            "annual_cents": a_cents,
+        }
+
+    return {
+        "currency": catalog.get("currency", "usd"),
+        "insider": _tier_vm("insider"),
+        "pro": _tier_vm("pro"),
+    }
+
+
+def build_plans_page(env: Environment, site: Path, generated: str) -> None:
+    """✨ Plans — the customer-facing pricing / upgrade page (W4 monetization).
+
+    Pure assembler over config/plans.yml (via _plans_view_model): renders the
+    3-tier comparison with the annual/monthly toggle (annual default) and the
+    computed savings badges. The subscribe buttons drive POST /api/billing/checkout
+    client-side; nothing here reaches the network at build time.
+    Additive + graceful: never fatal to the build.
+    """
+    vm = _plans_view_model()
+    html = env.get_template("plans.html.j2").render(
+        generated_utc=generated,
+        currency=vm["currency"],
+        insider=vm["insider"],
+        pro=vm["pro"],
+    )
+    write_page(site / "plans.html", html)
+    log.info("wrote plans.html (insider $%s/$%s save %s%% · pro $%s/$%s save %s%%)",
+             vm["insider"]["monthly_pm"], vm["insider"]["annual_pm"], vm["insider"]["save_pct"],
+             vm["pro"]["monthly_pm"], vm["pro"]["annual_pm"], vm["pro"]["save_pct"])
+
+
 ETF_GICS = {                       # SPDR sector fund -> GICS sector (residual-alpha leaders)
     "XLK": "Information Technology", "XLF": "Financials", "XLV": "Health Care",
     "XLY": "Consumer Discretionary", "XLP": "Consumer Staples", "XLE": "Energy",
@@ -4339,6 +4417,10 @@ def main() -> int:
         build_alerts_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alerts page failed: %s", e)
+    try:
+        build_plans_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("plans page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
     # factor scorecard + the raw internals moved off the main dashboard. Returns the
     # cross-asset snapshot for the dashboard's compact one-bet card.

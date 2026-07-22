@@ -71,7 +71,14 @@
   var STR = {
     account: ['Account', '账户'], signed_in: ['Signed in', '已登录'],
     upgrade: ['Upgrade to Pro', '升级到 Pro'], soon: ['Coming soon', '即将推出'],
-    pro_blurb: ['Deeper research, live alerts & more.', '更深度研究、实时提醒等。'],
+    pro_blurb: ['The whole desk, the research hub & the Mastermind chat.',
+      '完整桌面、研究中心与操盘大脑对话。'],
+    see_plans: ['See plans', '查看方案'],
+    manage_plan: ['Manage plan', '管理方案'],
+    on_plan: ['You’re on ', '当前方案：'],
+    on_trial: ['Trial', '试用中'],
+    plan_perk: ['Your full desk is unlocked. Manage billing any time.',
+      '完整桌面已解锁。可随时管理订阅。'],
     email: ['Email', '邮箱'], no_email: ['No email on file', '尚未绑定邮箱'],
     add_email: ['Add email', '添加邮箱'], change: ['Change', '修改'],
     save: ['Save', '保存'], cancel: ['Cancel', '取消'], saving: ['Saving…', '保存中…'],
@@ -228,12 +235,30 @@
   }
 
   // -------------------------------------------------- section builders -------
-  function planCardHTML() {
+  function planCardHTML(a) {
+    a = a || {};
+    var plansUrl = a.plans_url || '/plans.html';
+    var tier = a.tier || 'free';
+    var paid = tier !== 'free';            // insider / pro / unlimited => already subscribed
+    var trialing = a.status === 'trialing';
+    if (paid) {
+      // Signed-in on a paid tier: reflect the current plan + a quiet "manage" link.
+      var label = a.plan_label || (tier.charAt(0).toUpperCase() + tier.slice(1));
+      var badge = trialing
+        ? '<span class="mmacc-plan-tag mmacc-plan-trial">' + esc(T('on_trial')) + '</span>'
+        : '<span class="mmacc-plan-tag">' + esc(label) + '</span>';
+      return '<div class="mmacc-pro-card mmacc-plan-live">' +
+          '<div class="mmacc-pro-top"><span class="mmacc-pro-name">✨ ' + esc(label) + '</span>' +
+            badge + '</div>' +
+          '<div class="mmacc-pro-blurb">' + esc(T('plan_perk')) + '</div>' +
+          '<a class="mmacc-btn mmacc-pro-btn" href="' + esc(plansUrl) + '">' + esc(T('manage_plan')) + '</a>' +
+        '</div>';
+    }
+    // Free tier: a live upgrade card that links to the plans page.
     return '<div class="mmacc-pro-card">' +
-        '<div class="mmacc-pro-top"><span class="mmacc-pro-name">✨ Pro</span>' +
-          '<span class="mmacc-soon">' + esc(T('soon')) + '</span></div>' +
+        '<div class="mmacc-pro-top"><span class="mmacc-pro-name">✨ Pro</span></div>' +
         '<div class="mmacc-pro-blurb">' + esc(T('pro_blurb')) + '</div>' +
-        '<button class="mmacc-btn mmacc-pro-btn" disabled>' + esc(T('upgrade')) + '</button>' +
+        '<a class="mmacc-btn mmacc-pro-btn" href="' + esc(plansUrl) + '">' + esc(T('upgrade')) + '</a>' +
       '</div>';
   }
   function emailGroupHTML(a) {
@@ -343,7 +368,7 @@
       '</div>';
   }
   function bodySignedIn(a) {
-    return planCardHTML() + emailGroupHTML(a) + pwGroupHTML() + notifGroupHTML() +
+    return planCardHTML(a) + emailGroupHTML(a) + pwGroupHTML() + notifGroupHTML() +
       securityGroupHTML(a) + dangerGroupHTML();
   }
   function bodySignedOut(a) {
@@ -693,8 +718,12 @@
   '.mmacc-pro-top{display:flex;align-items:center;justify-content:space-between;gap:8px}' +
   '.mmacc-pro-name{font-size:14px;font-weight:800;color:var(--text,var(--ink))}' +
   '.mmacc-pro-blurb{font-size:11.5px;color:var(--muted,var(--ink-3));margin:6px 0 10px}' +
-  '.mmacc-pro-btn{width:100%;background:linear-gradient(135deg,#3b82f6,#7c5cff);border:0;color:#fff}' +
+  '.mmacc-pro-btn{width:100%;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:linear-gradient(135deg,#3b82f6,#7c5cff);border:0;color:#fff}' +
+  '.mmacc-pro-btn:hover{filter:brightness(1.06);color:#fff}' +
   '.mmacc-pro-btn:disabled{opacity:.9;cursor:default;filter:saturate(.65) brightness(.94)}' +
+  '.mmacc-plan-live{background:linear-gradient(135deg,color-mix(in srgb,#7c5cff 9%,var(--panel2,var(--card))),color-mix(in srgb,#3b82f6 7%,var(--panel2,var(--card))))}' +
+  '.mmacc-plan-tag{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#fff;background:linear-gradient(135deg,#3b82f6,#7c5cff);border-radius:999px;padding:2px 8px}' +
+  '.mmacc-plan-trial{background:linear-gradient(135deg,var(--warn,#e0a030),#e0764a)}' +
   '.mmacc-hint{font-size:11px;color:var(--muted,var(--ink-3));line-height:1.5;margin-top:9px}' +
   '.mmacc-msg{font-size:11.5px;line-height:1.4;max-height:0;overflow:hidden;transition:max-height .2s ease;margin:0}' +
   '.mmacc-msg.show{max-height:60px;margin:0 0 8px}' +
