@@ -322,6 +322,10 @@ on:
       - "scripts/export_signal_contracts.py"
       - "site/factordata/contracts/artifact_manifest.json"
       - "tests/test_contract_drift.py"
+      # Portfolio-Aware Intelligence W0: portfolio_ctx.v1 bake + tests (see the
+      # portfolio-ctx job). Whitelisted so the bake's unit suite runs on any change.
+      - "scripts/build_portfolio_ctx.py"
+      - "tests/test_build_portfolio_ctx.py"
       # Research Factory W1 (RF-11): authority guard, ledger schemas, state machine.
       - "scripts/research_factory*.py"
       - "scripts/*research_factory*.py"
@@ -2506,3 +2510,22 @@ jobs:
         run: pip install pytest pyyaml
       - name: marketing engine unit tests
         run: python -m pytest tests/test_marketing_engine.py -q
+
+  portfolio-ctx:
+    # Portfolio-Aware Intelligence W0 (charter:
+    # research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §6). Unit suite for the
+    # portfolio_ctx.v1 bake — build_ctx joins/omission/verbatim-vocab/congress-window
+    # invariants run on synthetic dicts (parquet-free); one integration smoke test
+    # runs main() against the real committed sources (skips gracefully if absent, and
+    # reads data/quiver/congress.parquet → needs pandas+pyarrow). Whitelisted so this
+    # never rots red on main after nightly first advances the artifact (W1).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas pyarrow
+      - name: portfolio-ctx unit tests
+        run: python -m pytest tests/test_build_portfolio_ctx.py -q
