@@ -666,6 +666,14 @@ on:
       - "tests/test_marketing_outbox.py"
       # W1 wiring layer: auto-approve gate + writeless dry-run report + admin panel.
       - "tests/test_marketing_publisher_autoapprove.py"
+      # Marketing lobe engine unit suite (see the marketing-engine job). Whitelisted
+      # 2026-07-23 after it rotted red on main: opportunities.jsonl is a forward
+      # ledger the nightly radar fills with live radar-* rows, but the seed round-trip
+      # test asserted shadow-only. Triggers on the engine tree + the committed ledgers.
+      - "engine/marketing/**"
+      - "tests/test_marketing_engine.py"
+      - "data/marketing/opportunities.jsonl"
+      - "data/marketing/claims.jsonl"
   workflow_dispatch:
 
 permissions:
@@ -2449,3 +2457,22 @@ jobs:
         run: pip install pytest pyyaml
       - name: social publisher + outbox + wiring-layer unit tests
         run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py -q
+
+  marketing-engine:
+    # Marketing lobe engine unit suite (state, departments, authority ladder,
+    # opportunity scoring/bus, campaign compiler, economics, events, ledgers,
+    # provenance, claims + seed-ledger round-trips). Never whitelisted when it
+    # landed in #2984, so it rotted red on main once the nightly radar accrued
+    # live radar-* rows into opportunities.jsonl (a forward ledger, not a
+    # shadow-only seed). Deps: stdlib + pytest + pyyaml only — no pandas/numpy,
+    # verified against a minimal-import env.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml
+      - name: marketing engine unit tests
+        run: python -m pytest tests/test_marketing_engine.py -q
