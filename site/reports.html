@@ -609,11 +609,31 @@
     }).forEach(function(n){ list.appendChild(n); });
   }
 
-  function setTag(tag){ activeTag=tag||'all'; apply(); }
-  function reset(){ activeTag='all'; q=''; if(search) search.value=''; apply(); }
+  function setTag(tag){ activeTag=tag||'all'; apply(); writeURL(true); }
+  function reset(){ activeTag='all'; q=''; if(search) search.value=''; apply(); writeURL(true); }
 
-  if(search) search.addEventListener('input',function(){ q=this.value.trim().toLowerCase(); apply(); });
-  if(sortSel) sortSel.addEventListener('change',function(){ sortNodes(); apply(); });
+  // ── shareable state: reflect search/topic/sort in the URL, restore on load + back/fwd ──
+  function writeURL(push){
+    var p=[];
+    var qv=search?search.value.trim():'';
+    if(qv) p.push('q='+encodeURIComponent(qv));
+    if(activeTag&&activeTag!=='all') p.push('tag='+encodeURIComponent(activeTag));
+    if(sortSel&&sortSel.value==='old') p.push('sort=old');
+    var url=location.pathname+(p.length?('?'+p.join('&')):'')+location.hash;
+    try{ history[push?'pushState':'replaceState'](null,'',url); }catch(e){}
+  }
+  function readState(){
+    var p=new URLSearchParams(location.search||'');
+    var tg=(p.get('tag')||'all').replace(/[^a-z0-9_-]/gi,'')||'all';   // sanitize before selector use
+    if(tg!=='all'&&!tagBar.querySelector('.chip[data-tag="'+tg+'"]')) tg='all';
+    activeTag=tg;
+    if(search){ search.value=p.get('q')||''; q=search.value.trim().toLowerCase(); }
+    if(sortSel){ sortSel.value=(p.get('sort')==='old')?'old':'new'; }
+    sortNodes(); apply();
+  }
+
+  if(search) search.addEventListener('input',function(){ q=this.value.trim().toLowerCase(); apply(); writeURL(false); });
+  if(sortSel) sortSel.addEventListener('change',function(){ sortNodes(); apply(); writeURL(true); });
 
   tagBar.addEventListener('click',function(e){
     var c=e.target.closest('.chip'); if(!c) return;
@@ -630,9 +650,14 @@
     setTag(activeTag===tag?'all':tag); // second tap on the same topic clears it
   });
   clearBtns.forEach(function(b){ b.addEventListener('click',reset); });
+  window.addEventListener('popstate',readState);   // browser back/fwd restores the filtered view
 
-  // "/" focuses search (unless already typing in a field)
   document.addEventListener('keydown',function(e){
+    // Esc clears the search while it's focused (keeps focus for a fresh query)
+    if(e.key==='Escape'&&search&&document.activeElement===search&&search.value){
+      e.preventDefault(); search.value=''; q=''; apply(); writeURL(false); return;
+    }
+    // "/" focuses search (unless already typing in a field)
     if(e.key!=='/'||e.metaKey||e.ctrlKey||e.altKey) return;
     var el=document.activeElement, tag=el&&el.tagName;
     if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(el&&el.isContentEditable)) return;
@@ -642,10 +667,10 @@
   // re-sync non-span UI + count when the global language toggle flips
   document.addEventListener('click',function(e){ if(e.target.closest('.lang-toggle')) setTimeout(function(){ langSync(); apply(); },0); });
 
-  langSync(); apply();
+  langSync(); readState(); writeURL(false);   // restore any shared ?q=/?tag=/?sort= then canonicalize
 })();
 </script>
 
-<script src="theme.js?v=d4dfefdc" defer></script>
+<script src="theme.js?v=e573de07" defer></script>
 </body>
 </html>
