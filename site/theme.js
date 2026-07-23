@@ -692,6 +692,8 @@
        mask never show an unmasked disc over the arrow). */
     "@media (max-width:700px){",
       ".nav-totop-fab{display:flex;position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:960;opacity:0;transform:scale(.4) translateY(14px);pointer-events:none}",
+      /* when the Mastermind orb is present it owns the corner; sit centred just above it. */
+      "html.mmb-has-launch .nav-totop-fab{right:24px;bottom:calc(86px + env(safe-area-inset-bottom,0px))}",
       "@supports ((-webkit-mask:radial-gradient(#000,#000)) or (mask:radial-gradient(#000,#000))){",
         ".nav-totop-fab::after{content:'';position:absolute;inset:-3.5px;border-radius:50%;background:conic-gradient(rgba(255,255,255,.95) var(--sp,0%),rgba(148,163,184,.28) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 2.5px),#000 calc(100% - 2px));pointer-events:none}",
       "}",
@@ -3446,6 +3448,10 @@
             || (typeof window.ACTIVE_SYMBOL === 'string' && window.ACTIVE_SYMBOL) || '';
       }
     };
+    // Flag the bottom-right launcher's presence so the mobile back-to-top FAB stacks
+    // itself just above the orb rather than under it (see .mmb-has-launch in the FAB
+    // CSS). Skip when a host opted into its own launcher (anchor:'top') — no orb mounts.
+    if (window.MM_BRAIN_CFG.anchor !== 'top') document.documentElement.classList.add('mmb-has-launch');
     var s = document.createElement('script');
     s.src = 'mm_brain.js'; s.defer = true;
     (document.body || document.documentElement).appendChild(s);
