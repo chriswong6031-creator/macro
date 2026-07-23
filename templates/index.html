@@ -563,6 +563,7 @@ html.still{scroll-behavior:auto}
 .tier.hot{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-lift);position:relative;background:linear-gradient(150deg,rgba(15,157,143,.055),rgba(40,95,255,.06) 55%,rgba(120,98,224,.05)),#fff}
 .tiers .tier:last-child{background:linear-gradient(150deg,rgba(120,98,224,.07),rgba(193,47,120,.045) 55%,rgba(176,125,5,.065)),#fff}
 .tier.hot::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.14em;color:#fff;background:var(--blue);padding:4px 11px;border-radius:99px}
+html[data-lang="zh"] .tier.hot::before{content:"最受欢迎";letter-spacing:.08em}
 .tier h3{margin:0;font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:19px}
 .tier .who{color:var(--muted);font-size:13px;margin-top:4px;min-height:36px}
 .price{margin-top:12px;font-family:'Archivo Expanded',sans-serif;font-weight:900;font-size:40px;letter-spacing:-.02em}
@@ -1167,21 +1168,21 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <p class="gist" data-zh="每日研判、<b>全部宏观看板</b>、<b>每天 6 条信号</b>、完整 Terminal。无需绑卡。">The daily read, <b>every macro dashboard</b>, <b>6 signals a day</b>, full Terminal. No card.</p>
         <a class="btn" href="https://app.mastermind-x.com/terminal?signup=1" style="justify-content:center" data-zh="免费开始">Start free</a>
       </div>
-      <div class="tier hot rv" style="--d:.1s">
+      <div class="tier rv" style="--d:.1s">
         <h3>Insider</h3>
         <p class="who" data-zh="随叫随到的分析师，配上完整的工作台席。">The working desk, with the analyst on call.</p>
         <div class="price" data-annual="$49" data-monthly="$69"><span class="was">$69</span>$49 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 29% · $588/年">SAVE 29% · $588/YR</span>
         <p class="gist" data-zh="<b>无限量 Flash AI</b>、每月 20 次 Pro AI、<b>日内期权流</b>、内部人/国会与 13F 台席、电话会记录、每日简报。"><b>Unlimited Flash AI</b>, 20 Pro AI dives a month, <b>intraday options flow</b>, the Insider/Congress &amp; 13F desks, transcripts, daily briefs.</p>
-        <a class="btn primary" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=insider&amp;period=annual" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
+        <a class="btn" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=insider&amp;period=annual" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
       </div>
-      <div class="tier rv" style="--d:.16s">
+      <div class="tier hot rv" style="--d:.16s">
         <h3>Pro</h3>
         <p class="who" data-zh="为那些提出更难问题的人准备。">For the ones who ask harder questions.</p>
         <div class="price" data-annual="$69" data-monthly="$99"><span class="was">$99</span>$69 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 30% · $828/年">SAVE 30% · $828/YR</span>
         <p class="gist" data-zh="<b>每月 50 次 Pro AI</b>、Mastermind 与机构研究报告、机器人组合、MCP 即将上线。"><b>50 Pro AI dives a month</b>, Mastermind + institutional research reports, Bot Portfolios, MCP soon.</p>
-        <a class="btn" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=pro&amp;period=annual" style="justify-content:center" data-zh="免费试用 Pro 7天">Try Pro free for 7 days</a>
+        <a class="btn primary" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=pro&amp;period=annual" style="justify-content:center" data-zh="免费试用 Pro 7天">Try Pro free for 7 days</a>
       </div>
     </div>
 
