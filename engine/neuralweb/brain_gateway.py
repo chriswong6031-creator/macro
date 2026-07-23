@@ -2772,6 +2772,17 @@ def _build_system_prompt(mode: str = "chat", page: str = "", internals_allowed: 
     return prompt
 
 
+def _doctrine_block_for(page: str, message: str) -> str:
+    """CMX W4: technician doctrine, terminal chart sessions only. Never raises."""
+    if page != "terminal":
+        return ""
+    try:
+        from engine.neuralweb import doctrine as _doctrine_mod  # noqa: PLC0415
+        return _doctrine_mod.prompt_block(_doctrine_mod.route(message))
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _grounding_digest(root: Path) -> str:
     """A compact plain-text snapshot of the current calibrated dashboard state, prepended to
     the user's turn so the model always answers from REAL data — not memory — even when a
@@ -3698,6 +3709,7 @@ def _run_brain_loop(
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
+    system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
 
     # Build the user content with optional context hint
     user_content = message
@@ -3913,6 +3925,7 @@ def _run_brain_loop_stream(
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
+    system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
 
     user_content = message
     hints = []
@@ -4315,6 +4328,14 @@ _LEAK_SENTINELS = (
     "CONTRAST — never write the left",
     "End EVERY answer with a [NEXT] block",
 )
+
+# CMX W4: extend with the technician-doctrine sentinels so a leaked doctrine
+# block (terminal chart sessions) is caught by the same output guard.
+try:
+    from engine.neuralweb import doctrine as _doctrine  # noqa: PLC0415
+    _LEAK_SENTINELS = _LEAK_SENTINELS + _doctrine.LEAK_SENTINELS
+except Exception:  # noqa: BLE001
+    pass
 
 
 def _screen_client_history(items: list[dict]) -> list[dict]:
