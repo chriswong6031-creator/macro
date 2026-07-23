@@ -1,4 +1,13 @@
 {% extends "report_base.html.j2" %}
+{#- ===========================================================================
+   China Alternative-Data Desk — mx5 editorial revamp.
+   Design: macro.html "mx5" visual language (aurora glass, SSR arc gauge, glass
+   cards, verdict/stance bands) reimplemented as scoped `.cad` CSS over the shared
+   theme.css tokens (so dark-mode + the ZH red=up swap are inherited for free).
+   Doctrine: STUDY-tier page; the hero + every panel carry a PLAIN-WORD stance
+   (Law 1); receipts (raw legs, n=, z) demoted to LENS hovers (Tier-2); honesty
+   survives translation — this desk is context only, no validated edge claimed.
+=========================================================================== -#}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
@@ -8,169 +17,619 @@
 {% macro sc(v) -%}
 {% if v is none %}<span class="mut">·</span>{% else %}<span class="{{ 'r-pos' if v>0 else ('r-neg' if v<0 else 'mut') }}">{{ '%+.2f'|format(v) }}</span>{% endif %}
 {%- endmacro %}
+{#- one seal-strip cell. demote=true for the two sign-flipped legs (龙虎/大宗): a
+    POSITIVE raw score there is CAUTIONARY (hot-money fade / institutional unload),
+    so we invert the colour to read honestly as "constructive vs cautionary feed". -#}
+{% macro cell(v, demote=False) -%}
+{% if v is none %}<i class="sc-off"></i>{% else %}{% set e = (0-v) if demote else v %}<i class="{{ 'sc-pos' if e>0.05 else ('sc-neg' if e<-0.05 else 'sc-neu') }}"></i>{% endif %}
+{%- endmacro %}
 
-{% block title %}Alternative Data — Macro Dashboard{% endblock %}
+{% block title %}China Alternative Data — Mastermind{% endblock %}
 
 {%- block head_extra %}
 {% set seo_title = "China Alternative Data — Mastermind" %}
-{% set seo_desc = "Alternative-data reads on China's economy and market — activity, sentiment and flows beyond the official prints." %}
+{% set seo_desc = "China A-share alternative data: who controls the tape, where independent smart-money feeds agree, limit-up momentum, narrative rotation and event catalysts." %}
 {% set seo_path = "china_altdata.html" %}
 {%- include "_seo_head.html.j2" %}
 {%- endblock %}
 
 {% block base_css %}
-  .ad-hero { max-width:1060px; margin:18px auto 0; }
-  .ad-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
-  .ad-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
-  html[data-lang="zh"] .ad-hero h1 { letter-spacing:0; }
-  .ad-hero .lens { font-size:12px; color:var(--muted); }
-  .ad-wrap { max-width:1060px; margin:0 auto; }
-  h2.sec { font-size:19px; margin:28px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
-  .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
-  .callout.warn { border-left:4px solid var(--warn); }
-  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
-  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); position:sticky; top:0; }
-  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; }
-  table.data td.num { text-align:right; font-variant-numeric:tabular-nums; }
-  .conv { font-weight:700; font-variant-numeric:tabular-nums; }
-  .flag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); }
-  .cvband { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap; }
-  .cvband.cv-pos { color:#1f9a55; background:color-mix(in srgb,#1f9a55 12%,transparent); }
-  .cvband.cv-neg { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); }
-  html[data-lang="zh"] .cvband.cv-pos { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); }
-  html[data-lang="zh"] .cvband.cv-neg { color:#1f9a55; background:color-mix(in srgb,#1f9a55 12%,transparent); }
-  .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
-  .nchip { font-size:12px; padding:4px 10px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
-  /* signal-lab tiers */
-  .lab { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; margin:12px 0; }
-  .tier { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 15px; }
-  .tier h3 { margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.05em; display:flex; gap:8px; align-items:center; }
-  .tier .badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
-  .t-scored .badge{color:#1f9a55;background:color-mix(in srgb,#1f9a55 14%,transparent)}
-  .t-confirmer .badge{color:#5b8def;background:color-mix(in srgb,#5b8def 14%,transparent)}
-  .t-display .badge{color:var(--muted);background:var(--panel2)}
-  .t-pending .badge{color:#e0973a;background:color-mix(in srgb,#e0973a 14%,transparent)}
-  .t-killed .badge{color:#d23f3f;background:color-mix(in srgb,#d23f3f 13%,transparent)}
-  .lab .row { padding:7px 0; border-bottom:1px solid var(--line); }
-  .lab .row:last-child { border-bottom:0; }
-  .lab .nm { font-weight:600; font-size:13px; }
-  .lab .wired { font-size:10px; color:var(--link); font-family:ui-monospace,Menlo,monospace; }
-  .lab .nt { font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:2px; }
-  .disc { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.55; }
+  /* ---- China desk signature accents (brand, NOT direction — never ZH-swapped) ---- */
+  .cad { --cad-verm:#c8452e; --cad-gold:#d9a441; max-width:1080px; margin:0 auto; }
+  .cad :is(h1,h2,h3){ font-family:var(--font-ui,inherit); }
+
+  /* ---- editorial hero ---- */
+  .cad-hero{ position:relative; overflow:hidden; border-radius:20px; margin:14px 0 6px;
+    padding:22px 24px 20px; background:var(--glass-bg,var(--panel)); border:1px solid var(--glass-brd,var(--line));
+    backdrop-filter:var(--glass-blur); box-shadow:var(--glass-shadow,0 18px 48px -24px rgba(3,7,18,.6)); }
+  .cad-hero::before{ content:""; position:absolute; left:0; right:0; top:0; height:2px;
+    background:linear-gradient(90deg,var(--cad-verm),var(--cad-gold) 60%,transparent); opacity:.9; }
+  .cad-eyebrow{ font:600 11px/1 var(--font-ui); letter-spacing:.16em; text-transform:uppercase; color:var(--cad-gold); margin:0 0 9px; display:flex; align-items:center; gap:8px; }
+  .cad-eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--cad-verm); box-shadow:0 0 8px var(--cad-verm); }
+  .cad-h1{ font-size:30px; line-height:1.1; letter-spacing:-.015em; margin:0 0 8px; font-weight:800; }
+  html[data-lang="zh"] .cad-h1{ letter-spacing:0; }
+  .cad-dek{ font-size:13.5px; line-height:1.55; color:var(--muted); max-width:62ch; margin:0 0 4px; }
+
+  /* ---- tape gauge row ---- */
+  .cad-tape{ display:grid; grid-template-columns:auto 1fr; gap:22px; align-items:center; margin:16px 0 4px; }
+  .cad-gauge{ --g:var(--warn); width:200px; flex:none; }
+  .cad-gauge-green{ --g:var(--up); } .cad-gauge-yellow{ --g:var(--warn); } .cad-gauge-red{ --g:var(--down); }
+  .cad-gauge .g-arcwrap{ position:relative; }
+  .cad-gauge svg{ width:100%; height:auto; display:block; }
+  .cad-gauge .arc-track{ stroke:var(--line); }
+  .cad-gauge .arc-fill{ stroke:var(--g); transition:stroke .3s; }
+  .cad-gauge .g-needle{ stroke:var(--g); }
+  .cad-gauge .g-needle circle{ fill:var(--g); }
+  .cad-gauge .g-score{ position:absolute; left:0; right:0; bottom:0; text-align:center; font-size:27px;
+    font-weight:800; color:var(--g); font-variant-numeric:tabular-nums; letter-spacing:-.02em; line-height:1; }
+  .cad-gauge .g-anchors{ display:flex; justify-content:space-between; font-size:9px; letter-spacing:.03em;
+    color:var(--muted); margin-top:4px; padding:0 3px; text-transform:uppercase; }
+  .cad-tape-read .word{ font-size:26px; font-weight:800; letter-spacing:-.01em; margin:0; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .cad-tape-read .word .g-word{ color:var(--g,var(--text)); }
+  .cad-tape-read .stance-line{ font-size:14px; line-height:1.5; color:var(--text); margin:7px 0 10px; max-width:56ch; }
+  .cad-metrows{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+
+  /* ---- stance pill (Law 1 — every panel answers "so what do I do") ---- */
+  .cad-stance{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700;
+    padding:4px 11px; border-radius:999px; letter-spacing:.01em; white-space:nowrap;
+    background:color-mix(in srgb,var(--sc,var(--muted)) 14%,transparent);
+    color:color-mix(in srgb,var(--sc,var(--muted)) 90%,var(--text));
+    border:1px solid color-mix(in srgb,var(--sc,var(--muted)) 34%,transparent); }
+  .st-act{ --sc:var(--up); } .st-ready{ --sc:var(--info); } .st-watch{ --sc:var(--warn); }
+  .st-protect{ --sc:var(--orange,#e08b45); } .st-aside{ --sc:var(--down); } .st-context{ --sc:var(--muted); }
+
+  /* ---- small tinted chips ---- */
+  .cad-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 9px;
+    border-radius:100px; white-space:nowrap; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .cad-chip.c-up{ color:var(--up); border-color:color-mix(in srgb,var(--up) 30%,transparent); background:color-mix(in srgb,var(--up) 11%,transparent); }
+  .cad-chip.c-down{ color:var(--down); border-color:color-mix(in srgb,var(--down) 30%,transparent); background:color-mix(in srgb,var(--down) 11%,transparent); }
+  .cad-chip.c-warn{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 32%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
+  .cad-chip.c-gold{ color:var(--cad-gold); border-color:color-mix(in srgb,var(--cad-gold) 40%,transparent); background:color-mix(in srgb,var(--cad-gold) 12%,transparent); }
+  .cad-chip.c-info{ color:var(--info); border-color:color-mix(in srgb,var(--info) 30%,transparent); background:color-mix(in srgb,var(--info) 11%,transparent); }
+
+  /* ---- jump nav (homepage index) ---- */
+  .cad-jump{ display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 2px; }
+  .cad-jump a{ font-size:12px; font-weight:600; color:var(--muted); padding:6px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel2); transition:color .15s,border-color .15s; }
+  .cad-jump a:hover{ color:var(--text); border-color:color-mix(in srgb,var(--cad-gold) 45%,var(--line)); }
+
+  /* ---- section header ---- */
+  .cad-sec{ margin:34px 0 0; }
+  .cad-sec-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:20px; }
+  .cad-sec-n{ font:700 12px/1 var(--font-mono,monospace); color:var(--cad-gold); letter-spacing:.06em; }
+  .cad-sec h2{ font-size:21px; font-weight:800; letter-spacing:-.01em; margin:0; }
+  .cad-sec-count{ font-size:12px; color:var(--muted); font-weight:600; }
+  .cad-sec-intro{ font-size:13px; line-height:1.55; color:var(--muted); margin:8px 0 0; max-width:66ch; }
+  .cad-sec-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:10px 0 2px; }
+
+  /* ---- glass cards + grids ---- */
+  .cad-card{ position:relative; overflow:hidden; background:var(--glass-bg,var(--panel)); border:1px solid var(--glass-brd,var(--line));
+    border-radius:15px; backdrop-filter:var(--glass-blur); box-shadow:var(--glass-shadow,0 10px 30px -18px rgba(3,7,18,.5)); padding:16px 18px; }
+  .cad-card::before{ content:""; position:absolute; inset:0; border-radius:15px; pointer-events:none;
+    background:linear-gradient(135deg,rgba(255,255,255,.045),transparent 55%); }
+  .cad-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; margin:14px 0; }
+  .cad-card h3{ font-size:13px; margin:0 0 4px; font-weight:700; display:flex; align-items:center; gap:7px; }
+  .cad-card .sub{ font-size:11.5px; color:var(--muted); margin:0 0 10px; line-height:1.5; }
+
+  /* ---- data table ---- */
+  table.cad-tbl{ border-collapse:collapse; width:100%; font-size:12.5px; margin:12px 0 4px; }
+  table.cad-tbl th{ text-align:left; padding:8px 10px; color:var(--muted); font-weight:600; font-size:11px;
+    text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.cad-tbl td{ padding:8px 10px; border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); vertical-align:middle; }
+  table.cad-tbl tbody tr:hover{ background:color-mix(in srgb,var(--cad-gold) 6%,transparent); }
+  table.cad-tbl td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .cad-nm{ font-weight:600; }
+  .cad-tk{ font:11px/1 var(--font-mono,monospace); color:var(--muted); }
+  .conv{ font-weight:800; font-variant-numeric:tabular-nums; }
+  .cvband{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap;
+    background:color-mix(in srgb,var(--cb,var(--muted)) 13%,transparent); color:color-mix(in srgb,var(--cb,var(--muted)) 92%,var(--text)); }
+  .cvband.cv-pos{ --cb:var(--up); } .cvband.cv-neg{ --cb:var(--down); }
+  .flag{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:var(--warn);
+    background:color-mix(in srgb,var(--warn) 13%,transparent); white-space:nowrap; }
+
+  /* ---- the SEAL-STRIP signature (7 independent feeds, lit by contribution sign) ---- */
+  .cad-seal{ display:inline-flex; gap:3px; align-items:center; }
+  .cad-seal i{ width:8px; height:18px; border-radius:2px; display:block; }
+  .cad-seal .sc-pos{ background:var(--up); }
+  .cad-seal .sc-neg{ background:var(--down); }
+  .cad-seal .sc-neu{ background:var(--muted); opacity:.45; }
+  .cad-seal .sc-off{ background:var(--line); opacity:.7; }
+  .cad-seal-key{ display:inline-flex; gap:3px; vertical-align:middle; margin:0 2px; }
+  .cad-seal-key i{ width:7px; height:13px; border-radius:2px; display:inline-block; }
+
+  /* ---- shared-scale bar (breadth, magnitudes — no time-series, doctrine-safe) ---- */
+  .cad-breadth{ display:flex; height:12px; border-radius:7px; overflow:hidden; border:1px solid var(--line); background:var(--panel2); min-width:200px; flex:1; max-width:520px; }
+  .cad-breadth .b-acc{ background:var(--up); } .cad-breadth .b-neu{ background:var(--muted); opacity:.4; } .cad-breadth .b-dis{ background:var(--down); }
+  .cad-bar{ height:7px; border-radius:5px; background:color-mix(in srgb,var(--bc,var(--muted)) 80%,transparent); min-width:3px; }
+
+  /* ---- tier badges (signal lab) ---- */
+  .cad-tiers{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; margin:14px 0; }
+  .cad-tier{ background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:13px 15px; }
+  .cad-tier h3{ margin:0 0 9px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .cad-tier .tbadge{ font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .t-scored .tbadge{ color:var(--up); background:color-mix(in srgb,var(--up) 15%,transparent); }
+  .t-confirmer .tbadge{ color:var(--info); background:color-mix(in srgb,var(--info) 15%,transparent); }
+  .t-display .tbadge{ color:var(--muted); background:var(--panel2); }
+  .t-pending .tbadge{ color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,transparent); }
+  .t-killed .tbadge{ color:var(--down); background:color-mix(in srgb,var(--down) 14%,transparent); }
+  .cad-tier .row{ padding:7px 0; border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
+  .cad-tier .row:last-child{ border-bottom:0; }
+  .cad-tier .nm{ font-weight:600; font-size:12.5px; }
+  .cad-tier .wired{ font:10px/1 var(--font-mono,monospace); color:var(--link); }
+  .cad-tier .nt{ font-size:11px; color:var(--muted); line-height:1.5; margin-top:2px; }
+
+  .cad-callout{ border-radius:13px; padding:12px 15px; margin:14px 0; border:1px solid var(--line);
+    background:var(--panel2); font-size:12.5px; line-height:1.6; color:var(--muted); }
+  .cad-callout.warn{ border-left:4px solid var(--warn); }
+  .cad-disc{ font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
+  .cad-asof{ font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+
+  @media(max-width:640px){
+    .cad-tape{ grid-template-columns:1fr; }
+    .cad-gauge{ width:170px; margin:0 auto; }
+    .cad-h1{ font-size:24px; }
+  }
 {% endblock %}
 
 {% block content %}
-<section class="ad-hero">
-  <p class="eyebrow">🛰️ {{ t('Alternative Data', '另类数据') }}</p>
-  <h1>{{ t('China Alternative-Data Desk', '中国另类数据台') }}</h1>
-  <p class="lens">{{ t('Smart-money convergence (consensus × valuation × financing) + an honest signal scorecard · context only · as of', '主力共振（一致预期 × 估值 × 融资）＋诚实信号记分卡 · 仅供参考 · 截至') }} {{ ad.asof if ad else (lab.generated_utc[:10] if lab else '—') }}</p>
-</section>
+<div class="cad">
 
-<div class="ad-wrap">
+  {# ============================ HERO ============================ #}
+  <section class="cad-hero">
+    <p class="cad-eyebrow"><span class="dot"></span>{{ t('Alternative Data · China desk', '另类数据 · 中国台') }}</p>
+    <h1 class="cad-h1">{{ t('China Alternative-Data Desk', '中国另类数据台') }}</h1>
+    <p class="cad-dek">{{ t('An institutional read on A-shares from data beyond price — who controls the tape, where independent smart-money feeds agree, limit-up momentum, narrative rotation and event catalysts. Context only, no validated edge: a watchlist seed, never a size.', '用价格之外的数据审视A股——谁在主导盘面、独立主力数据源在何处一致、涨停动能、题材轮动与事件催化。仅供参考、不声称已验证优势：自选股种子，绝非仓位。') }}</p>
 
-  <div class="callout warn">{{ t('No validated edge is claimed. Convergence is a display JOIN of three independent free feeds — where they agree, not a backtest. A-share cross-sectional value Sharpe is negative and sell-side ratings are near-universally "buy"; treat this as a watchlist seed + a Phase-0 candidate, never a sizer.', '不声称任何已验证的优势。共振只是三个独立免费数据源的展示性合并——展示其一致之处，而非回测。A股横截面价值夏普为负、卖方评级近乎全为『买入』；请将其视为自选股种子与Phase-0候选，绝非仓位依据。') }}</div>
-
-  {% if ad and ad.triple %}
-  <h2 class="sec">🎯 {{ t('Multi-feed convergence', '多源共振') }} <span style="font-size:12px;color:var(--muted)">{{ t('≥3 of 7 independent feeds agree', '7源中≥3源一致') }} · {{ ad.n_triple }}</span></h2>
-  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Cross-sectional mid-rank percentile per feed (signed, −1 distribute … +1 accumulate): consensus · valuation · financing · 主力资金 flow · 千股千评 attention · 龙虎榜 hot-money · 大宗交易 block. No validated edge claimed.', '每个数据源的横截面中位排名分位（带符号，−1派发…+1吸筹）：一致预期·估值·融资·主力资金·千股千评·龙虎榜·大宗交易。不声称已验证优势。') }}</p>
-  <table class="data">
-    <thead><tr>
-      <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Name', '名称') }}</th>
-      <th class="num">{{ t('Convergence', '共振') }}</th><th>{{ t('Conviction', '置信') }}</th><th class="num">{{ t('%ile', '分位') }}</th>
-      <th class="num">{{ t('Consensus', '一致') }}</th><th class="num">{{ t('Value', '估值') }}</th><th class="num">{{ t('Financing', '融资') }}</th>
-      <th class="num">{{ t('Flow', '主力') }}</th><th class="num">{{ t('Comment', '千评') }}</th><th class="num">{{ t('LHB', '龙虎') }}</th><th class="num">{{ t('Block', '大宗') }}</th>
-      <th>{{ t('Flags', '标记') }}</th>
-    </tr></thead>
-    <tbody>
-    {% for r in ad.triple %}
-      <tr>
-        <td>{{ r.ticker }}</td><td>{{ r.name }}</td>
-        <td class="num conv {{ 'r-pos' if r.convergence>0 else ('r-neg' if r.convergence<0 else '') }}">{{ '%+.2f'|format(r.convergence) }}</td>
-        <td><span class="cvband {{ 'cv-pos' if r.convergence>0 else 'cv-neg' }}">{{ bl(r.conviction_band_en or 'None', r.conviction_band_zh or '无') }}</span></td>
-        <td class="num">{{ r.rank_pctile }}</td>
-        <td class="num">{{ sc(r.analyst) }}</td><td class="num">{{ sc(r.value) }}</td><td class="num">{{ sc(r.margin) }}</td>
-        <td class="num">{{ sc(r.flow) }}</td><td class="num">{{ sc(r.comment) }}</td><td class="num">{{ sc(r.lhb) }}</td><td class="num">{{ sc(r.block) }}</td>
-        <td>{% for fl in r.flags %}<span class="flag">{{ bl((crowd_labels.get(fl) or [fl,fl])[0], (crowd_labels.get(fl) or [fl,fl])[1]) }}</span> {% endfor %}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  <p style="font-size:11px;color:var(--muted)">{{ t('Flags = multi-leg crowding (contrarian fragility, latest snapshot, NOT scored): margin froth · pledge tail · limit-up froth · attention spike · rich valuation.', '标记＝多腿拥挤（逆向脆弱性，最新快照，不评分）：融资过热·质押风险·涨停过热·关注度飙升·估值偏高。') }}</p>
-  {% endif %}
-
-  {% if broker_gold %}
-  <h2 class="sec">🏅 {{ t('Broker gold-stock picks', '券商金股') }} <span style="font-size:12px;color:var(--muted)">{{ broker_gold[0].month }} · {{ t('Tushare premium', 'Tushare 付费') }}</span></h2>
-  <p style="font-size:12px;color:var(--muted)">{{ t('Names most-picked by sell-side desks this month, as a pick-count conviction tally — a discrete monthly list, not the ~97%-buy ratings. Display-only, never scored.', '当月被卖方研究所推荐最多的个股，按推荐家数计——离散月度名单，区别于近97%『买入』评级。仅展示，不评分。') }}</p>
-  <table class="data">
-    <thead><tr>
-      <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Name', '名称') }}</th>
-      <th class="num">{{ t('# brokers', '券商家数') }}</th><th>{{ t('Picked by', '推荐机构') }}</th>
-    </tr></thead>
-    <tbody>
-    {% for r in broker_gold %}
-      <tr>
-        <td>{{ r.ticker }}</td><td>{{ r.name }}</td>
-        <td class="num conv r-pos">{{ r.n_brokers }}</td>
-        <td style="font-size:11.5px;color:var(--muted)">{{ r.brokers[:6]|join(' · ') }}{% if r.brokers|length > 6 %} …{% endif %}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% endif %}
-
-  {% if guidance and (guidance.up or guidance.down) %}
-  <h2 class="sec">📣 {{ t('Earnings-guidance surprises', '业绩预告') }} <span style="font-size:12px;color:var(--muted)">{{ t('Tushare premium · validated as the guidance family', 'Tushare 付费 · 已作为 guidance 家族验证') }}</span></h2>
-  <p style="font-size:12px;color:var(--muted)">{{ t('Company 业绩预告 direction × guided net-profit change. The forward-IC harness finds a real ~3-month post-announcement drift (right sign), accruing toward proven — display + measured, never scored here.', '公司业绩预告方向×预告净利润变动。前瞻IC检验发现真实的约3个月公告后漂移（符号正确），正向已验证累积——展示与测量，此处不评分。') }}</p>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
-  {% for col, items, cls in [('▲ '+t('Positive', '正面'), guidance.up, 'r-pos'), ('▼ '+t('Negative', '负面'), guidance.down, 'r-neg')] %}
-    {% if items %}
-    <div>
-      <table class="data">
-        <thead><tr><th colspan="2" class="{{ cls }}">{{ col|safe }}</th><th class="num">{{ t('Guided Δ%', '预告变动%') }}</th><th class="num">{{ t('Score', '评分') }}</th></tr></thead>
-        <tbody>
-        {% for r in items %}
-          <tr>
-            <td>{{ r.ticker }}</td>
-            <td>{% set gl = guidance_labels.get(r.type) or [r.type, r.type] %}{{ bl(gl[0], gl[1]) }}</td>
-            <td class="num">{% if r.p_change_min is not none and r.p_change_max is not none %}{{ '%+.0f'|format(r.p_change_min) }}…{{ '%+.0f'|format(r.p_change_max) }}{% else %}·{% endif %}</td>
-            <td class="num conv {{ cls }}">{{ '%+.2f'|format(r.guidance_score) }}</td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+    {% if tape %}
+    {%- set arc = 175.9 -%}{%- set fill = tape.score/100.0*arc -%}{%- set ndeg = tape.score/100.0*180.0 - 90.0 -%}
+    <div class="cad-tape">
+      <div class="cad-gauge cad-gauge-{{ tape.tone }}" role="img"
+           data-tip-en="Positioning-cycle dial from the participation tape: 0 = capitulation / fire-sale, 50 = neutral, 100 = euphoria. The needle sits at the current regime. High is NOT good — both ends are cautionary."
+           data-tip-zh="来自参与度盘面的仓位周期表盘：0＝恐慌抛售，50＝中性，100＝狂热。指针停在当前状态。数值高≠好——两端都需谨慎。">
+        <div class="g-arcwrap">
+          <svg viewBox="0 8 140 74" fill="none" aria-hidden="true">
+            <path class="arc-track" d="M 14 75 A 56 56 0 0 1 126 75" stroke-width="10" stroke-linecap="round" fill="none" opacity=".55"/>
+            <path class="arc-fill" d="M 14 75 A 56 56 0 0 1 126 75" stroke-width="10" stroke-linecap="round" fill="none"
+                  stroke-dasharray="{{ '%.1f'|format(fill) }} {{ '%.1f'|format(arc-fill) }}"/>
+            <g class="g-needle" transform="rotate({{ '%.1f'|format(ndeg) }} 70 75)">
+              <line x1="70" y1="75" x2="70" y2="30" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="70" cy="75" r="5"/>
+            </g>
+          </svg>
+          <div class="g-score">{{ tape.score }}</div>
+        </div>
+        <div class="g-anchors"><span>{{ t('Fire-sale','抛售') }}</span><span>{{ t('Neutral','中性') }}</span><span>{{ t('Euphoria','狂热') }}</span></div>
+      </div>
+      <div class="cad-tape-read cad-gauge-{{ tape.tone }}">
+        <p class="word">{{ t('Who controls the tape','谁在主导盘面') }} <span class="g-word">{{ bl(tape.regime_en, tape.regime_zh) }}</span></p>
+        <p class="stance-line">{{ t(tape.stance_en, tape.stance_zh) }}</p>
+        <div class="cad-metrows">
+          <span class="cad-stance {{ 'st-aside' if tape.tone=='red' else ('st-ready' if tape.tone=='green' else 'st-watch') }}">
+            {% if tape.tone=='red' %}{{ t('Stand aside / protect','观望 / 保护') }}{% elif tape.tone=='green' %}{{ t('Get ready','做好准备') }}{% else %}{{ t("Watch — don't chase",'观望，别追') }}{% endif %}
+          </span>
+          <span class="cad-chip">{{ bl(tape.who_en, tape.who_zh) }}</span>
+          <span class="cad-chip c-{{ 'down' if tape.risk_tone=='red' else ('up' if tape.risk_tone=='green' else 'warn') }}">{{ t('Risk','风险') }} · {{ bl(tape.risk_en, tape.risk_zh) }}</span>
+          {% if tape.evidence %}
+          <span class="cad-chip c-info" data-tip-en="Tape evidence — {{ tape.evidence|join(' · ')|e }}"
+                data-tip-zh="盘面证据 — {{ tape.evidence|join(' · ')|e }}">{{ t('Why ›','依据 ›') }}</span>
+          {% endif %}
+          {% if tape.date %}<span class="cad-asof">· {{ t('tape','盘面') }} {{ tape.date }}</span>{% endif %}
+        </div>
+      </div>
     </div>
     {% endif %}
-  {% endfor %}
-  </div>
-  {% endif %}
 
-  {% if ad and ad.crowding_flags %}
-  <h2 class="sec">⚠️ {{ t('Leverage-crowding flags', '杠杆拥挤标记') }}</h2>
-  <p style="font-size:12px;color:var(--muted)">{{ t('Names whose 20-day financing balance jumped most — leverage building (cuts both ways).', '20日融资余额跳升最多的名单——杠杆在累积（双刃剑）。') }}</p>
-  <div class="chips">{% for tk in ad.crowding_flags %}<span class="nchip">{{ tk }}</span>{% endfor %}</div>
-  {% endif %}
-
-  <!-- ===== signal lab scorecard ===== -->
-  {% if lab %}
-  <h2 class="sec">🔬 {{ t('China Signal Lab', '中国信号实验室') }}</h2>
-  <p style="font-size:12px;color:var(--muted)">{{ t('Every China signal with an honest tier — scored (in the allocator) · confirmer · display · Phase-0 pending · killed.', '每个中国信号及其诚实分级——已评分（进入配置）· 确认器 · 展示 · Phase-0待验 · 已淘汰。') }}</p>
-  <div class="lab">
-    {% for tier, items in lab.tiers.items() %}
-    {% if items %}
-    <div class="tier t-{{ tier }}">
-      <h3><span class="badge">{{ t(tier|capitalize, ({'scored':'已评分','confirmer':'确认器','display':'展示','pending':'待验','killed':'已淘汰'}).get(tier, tier)) }}</span> <span style="color:var(--muted)">{{ items|length }}</span></h3>
-      {% for r in items %}
-      <div class="row">
-        <div class="nm">{{ bl(r.name_en, r.name_zh) }} {% if r.wired and r.wired != '—' %}<span class="wired">{{ r.wired }}</span>{% endif %}</div>
-        <div class="nt">{{ bl(r.note_en, r.note_zh) }}</div>
+    {% if ad and ad.breadth and ad.breadth.n %}
+    {%- set b = ad.breadth -%}
+    <div class="cad-sec-bar" style="margin-top:16px">
+      <strong style="font-size:12.5px">{{ t('Cross-section tilt','横截面倾向') }}</strong>
+      <div class="cad-breadth" title="" aria-hidden="true">
+        <span class="b-acc" style="width:{{ b.acc_pct }}%"></span>
+        <span class="b-neu" style="width:{{ (100 - b.acc_pct - b.dis_pct)|round(1) }}%"></span>
+        <span class="b-dis" style="width:{{ b.dis_pct }}%"></span>
       </div>
+      <span class="cad-chip c-up">{{ b.accumulate }} {{ t('accumulate','吸筹') }}</span>
+      <span class="cad-chip c-down">{{ b.distribute }} {{ t('distribute','派发') }}</span>
+      <span class="cad-chip" data-tip-en="Share of the {{ b.n }}-name alt-data universe whose feeds lean net-accumulate vs net-distribute right now. A breadth read, not a forecast."
+            data-tip-zh="在{{ b.n }}只另类数据样本中，当前数据源净偏吸筹与净偏派发的占比。广度读数，非预测。">{{ '%+.0f'|format(b.net_pct) }}{{ t(' net','净') }}</span>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ============================ JUMP NAV ============================ #}
+  <nav class="cad-jump" aria-label="Section navigation">
+    <a href="#convergence">{{ t('Convergence','共振') }}</a>
+    <a href="#limitup">{{ t('Limit-up pool','涨停池') }}</a>
+    <a href="#baskets">{{ t('Narrative baskets','题材板块') }}</a>
+    <a href="#catalysts">{{ t('Event catalysts','事件催化') }}</a>
+    <a href="#crowding">{{ t('Crowding','拥挤') }}</a>
+    {% if broker_gold or (guidance and (guidance.up or guidance.down)) %}<a href="#sellside">{{ t('Sell-side','卖方') }}</a>{% endif %}
+    <a href="#lab">{{ t('Signal Lab','信号实验室') }}</a>
+  </nav>
+
+  <div class="cad-callout warn">{{ t('No validated edge is claimed anywhere on this page. Every panel is a display JOIN of independent free feeds — where they agree, not a backtest. A-share cross-sectional value has a negative Sharpe and sell-side ratings are near-universally "buy". Treat everything here as a watchlist seed and a research candidate, never a sizer or a trade.', '本页任何部分均不声称已验证优势。每个面板都是独立免费数据源的展示性合并——展示其一致之处，而非回测。A股横截面价值的夏普为负、卖方评级近乎全为「买入」。请将此处一切视为自选股种子与研究候选，绝非仓位或交易。') }}</div>
+
+  {# ==================== 1 · CONVERGENCE (core signature) ==================== #}
+  <section class="cad-sec" id="convergence">
+    <div class="cad-sec-head">
+      <span class="cad-sec-n">01</span>
+      <h2>{{ t('Smart-money convergence','主力共振') }}</h2>
+      {% if ad %}<span class="cad-sec-count">{{ t('≥3 of 7 feeds agree','7源中≥3源一致') }} · {{ ad.n_triple }}</span>{% endif %}
+      <span class="cad-stance st-watch">{{ t("Watch — a watchlist seed",'观望 — 自选股种子') }}</span>
+    </div>
+    <p class="cad-sec-intro">{{ t('Seven independent A-share feeds, each rank-scored across the market, then read as one signed convergence: where consensus, valuation, financing, main-force flow, retail attention, hot-money and block trades line up. The seal-strip shows which feeds are constructive (green) or cautionary (red) per name.', '七个独立的A股数据源各自在全市场排名评分，再合并为一个带符号的共振：一致预期、估值、融资、主力资金、散户关注、龙虎榜与大宗交易在何处一致。印记条显示每只个股上各数据源是偏建设性（绿）还是偏谨慎（红）。') }}</p>
+
+    <div class="cad-sec-bar">
+      <span class="cad-chip"><span class="cad-seal-key"><i class="sc-pos"></i><i class="sc-neg"></i><i class="sc-neu"></i><i class="sc-off"></i></span>{{ t('constructive · cautionary · flat · no feed','建设性 · 谨慎 · 中性 · 无数据') }}</span>
+      <span class="cad-chip" data-tip-en="Feed order: Consensus · Valuation · Financing · Main-force flow · Attention · Hot-money (龙虎榜) · Block trades. Hot-money and block are sign-flipped: a hot pile-in reads as cautionary (it tends to fade)."
+            data-tip-zh="数据源顺序：一致预期 · 估值 · 融资 · 主力资金 · 关注度 · 龙虎榜 · 大宗交易。龙虎榜与大宗为反向：热钱涌入读作谨慎（往往消退）。">{{ t('7 feeds ›','7个数据源 ›') }}</span>
+    </div>
+
+    {% if ad and ad.triple %}
+    {%- set LEGN = {'analyst':('Consensus','一致预期'),'value':('Valuation','估值'),'margin':('Financing','融资'),'flow':('Main-force flow','主力资金'),'comment':('Attention','千股千评'),'lhb':('Hot-money','龙虎榜'),'block':('Block trades','大宗交易')} -%}
+    <table class="cad-tbl">
+      <thead><tr>
+        <th>{{ t('Name','名称') }}</th>
+        <th>{{ t('Convergence','共振印记') }}</th>
+        <th class="num">{{ t('Score','评分') }}</th>
+        <th>{{ t('Read','解读') }}</th>
+        <th>{{ t('Flags','标记') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in ad.triple[:16] %}
+        {%- set agree = [] -%}
+        {%- for k in r.reasons -%}{%- set _ = agree.append((LEGN.get(k) or [k,k])) -%}{%- endfor -%}
+        <tr>
+          <td><div class="cad-nm">{{ r.name }}</div>{% if r.name != r.ticker %}<div class="cad-tk">{{ r.ticker }}</div>{% endif %}</td>
+          <td>
+            <span class="cad-seal" role="img"
+              data-tip-en="Feeds agreeing with the {{ r.side }} read: {{ agree|map('first')|join(', ') if agree else 'mixed' }}. Cross-section rank {{ r.rank_pctile }}th pct · {{ r.n_signals }} of 7 feeds present."
+              data-tip-zh="与「{{ r.side }}」方向一致的数据源：{{ agree|map('last')|join('、') if agree else '不一' }}。横截面排名第{{ r.rank_pctile }}分位 · 7源中有{{ r.n_signals }}源。">
+              {{ cell(r.analyst) }}{{ cell(r.value) }}{{ cell(r.margin) }}{{ cell(r.flow) }}{{ cell(r.comment) }}{{ cell(r.lhb, True) }}{{ cell(r.block, True) }}
+            </span>
+          </td>
+          <td class="num conv {{ 'r-pos' if r.convergence>0 else ('r-neg' if r.convergence<0 else '') }}">{{ '%+.2f'|format(r.convergence) }}</td>
+          <td><span class="cvband {{ 'cv-pos' if r.convergence>0 else 'cv-neg' }}">{{ bl(r.conviction_band_en or 'None', r.conviction_band_zh or '无') }}</span></td>
+          <td>{% for fl in r.flags %}<span class="flag">{{ bl((crowd_labels.get(fl) or [fl,fl])[0], (crowd_labels.get(fl) or [fl,fl])[1]) }}</span> {% endfor %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    {% if ad.bottom %}
+    <div class="cad-sec-bar" style="margin-top:12px">
+      <strong style="font-size:12px;color:var(--muted)">{{ t('Other side — feeds leaning distribute','另一侧 — 数据源偏派发') }}</strong>
+    </div>
+    <table class="cad-tbl">
+      <tbody>
+      {% for r in ad.bottom[:6] %}
+        <tr>
+          <td style="width:40%"><span class="cad-nm">{{ r.name }}</span>{% if r.name != r.ticker %} <span class="cad-tk">{{ r.ticker }}</span>{% endif %}</td>
+          <td><span class="cad-seal">{{ cell(r.analyst) }}{{ cell(r.value) }}{{ cell(r.margin) }}{{ cell(r.flow) }}{{ cell(r.comment) }}{{ cell(r.lhb, True) }}{{ cell(r.block, True) }}</span></td>
+          <td class="num conv r-neg">{{ '%+.2f'|format(r.convergence) }}</td>
+          <td><span class="cvband cv-neg">{{ bl(r.conviction_band_en or 'None', r.conviction_band_zh or '无') }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% else %}
+    <div class="cad-callout">{{ t('Convergence is quiet — fewer than the minimum independent feeds are reporting today. Nothing to surface; check back after the next nightly.', '共振清淡——今日报告的独立数据源少于最低门槛。暂无内容；请在下次夜间更新后再看。') }}</div>
+    {% endif %}
+  </section>
+
+  {# ==================== 2 · LIMIT-UP POOL ==================== #}
+  <section class="cad-sec" id="limitup">
+    <div class="cad-sec-head">
+      <span class="cad-sec-n">02</span>
+      <h2>{{ t('Limit-up pool','涨停池') }} <span style="font-size:13px;color:var(--muted);font-weight:600">涨停</span></h2>
+      {% if zt %}<span class="cad-sec-count">{{ zt|length }} {{ t('names','只') }}</span>{% endif %}
+      <span class="cad-stance st-watch">{{ t("Momentum map — chase-veto on froth",'动能图 — 过热则否决追涨') }}</span>
+    </div>
+    <p class="cad-sec-intro">{{ t("China's most distinctive microstructure signal, with no US analogue: which names are sealing daily limit-ups, how many boards in a row, and how well the seal held. Consecutive boards and a heavy seal fund mean momentum; a froth flag means the move is late — don't chase.", '中国最具特色、且美股没有对应物的微观结构信号：哪些个股在封涨停、连了几个板、封单是否牢固。连板与大额封单代表动能；过热标记意味着行情已晚——别追。') }}</p>
+
+    <div class="cad-grid">
+      {% if zt %}
+      <div class="cad-card" style="grid-column:1 / -1">
+        <h3>{{ t('Sealing limit-ups','正在封涨停') }}</h3>
+        <table class="cad-tbl" style="margin-top:2px">
+          <thead><tr>
+            <th>{{ t('Name','名称') }}</th><th>{{ t('Sector','板块') }}</th>
+            <th class="num">{{ t('Boards','连板') }}</th><th class="num">{{ t('Seal ¥yi','封单亿') }}</th>
+            <th>{{ t('Read','解读') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in zt %}
+            <tr>
+              <td><span class="cad-nm">{{ r.name }}</span>{% if r.name != r.ticker %} <span class="cad-tk">{{ r.ticker }}</span>{% endif %}</td>
+              <td style="color:var(--muted)">{{ r.sector or '·' }}</td>
+              <td class="num conv">{{ r.consec_boards or 0 }}</td>
+              <td class="num">{% if r.seal_fund_yi is not none %}{{ '%.1f'|format(r.seal_fund_yi) }}{% else %}·{% endif %}</td>
+              <td>
+                {% if r.limitup_froth %}<span class="flag">{{ t('froth','过热') }}</span>
+                {% elif (r.consec_boards or 0) >= 3 %}<span class="cad-chip c-up">{{ t('leader','龙头') }}</span>
+                {% else %}<span class="cad-chip">{{ t('first boards','首板') }}</span>{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="cad-card" style="grid-column:1 / -1"><p class="sub" style="margin:0">{{ t('No names are sealing limit-ups in the latest snapshot.', '最新快照中没有个股封涨停。') }}</p></div>
+      {% endif %}
+
+      {% if zt_breadth %}
+      <div class="cad-card" style="grid-column:1 / -1">
+        <h3>{{ t('Where the heat is — limit-ups by sector','热度分布 — 分板块涨停') }}</h3>
+        <p class="sub">{{ t('A rotation thermometer: the sectors printing the most limit-ups right now. Concentration in one theme is the tell.', '轮动温度计：当前涨停最多的板块。热度集中于单一题材即是信号。') }}</p>
+        {%- set zmax = (zt_breadth|map(attribute='n_zt')|max) or 1 -%}
+        {% for s in zt_breadth %}
+        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
+          <span style="font-size:12px">{{ s.sector }}</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:{{ ((s.n_zt or 0)/zmax*100)|round(0,'floor') }}%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">{{ s.n_zt or 0 }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ==================== 3 · NARRATIVE BASKETS ==================== #}
+  <section class="cad-sec" id="baskets">
+    <div class="cad-sec-head">
+      <span class="cad-sec-n">03</span>
+      <h2>{{ t('Narrative rotation','题材轮动') }} <span style="font-size:13px;color:var(--muted);font-weight:600">概念板块</span></h2>
+      {% if narr %}<span class="cad-sec-count">{{ t('top by 3-month momentum','按3月动能排序') }}</span>{% endif %}
+      <span class="cad-stance st-watch">{{ t("Rotation heat — late-stage means don't chase",'轮动热度 — 尾声阶段勿追') }}</span>
+    </div>
+    <p class="cad-sec-intro">{{ t('Where the story money is going: THS concept baskets ranked by 3-month return, each tagged with a cycle position (from washout to overheated) and, where a global read confirms it, a cross-market momentum chip. Overheated + far above trend is a warning, not an invitation.', '故事资金的去向：同花顺概念板块按3个月收益排序，各自标注周期位置（从洗盘到过热），若有全球读数印证则附跨市场动能标记。过热且远高于趋势是警告，而非邀请。') }}</p>
+
+    {% if narr %}
+    <table class="cad-tbl">
+      <thead><tr>
+        <th>{{ t('Basket','板块') }}</th><th>{{ t('Category','分类') }}</th>
+        <th class="num">{{ t('3-mo','3月') }}</th><th>{{ t('Cycle','周期') }}</th>
+        <th>{{ t('Leaders','龙头') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for b in narr %}
+        {%- set st = b.state or {} -%}
+        <tr>
+          <td><span class="cad-nm">{{ bl(b.name, b.name_zh or b.name) }}</span></td>
+          <td style="color:var(--muted);font-size:11.5px">{{ bl(b.category or '', b.category_zh or b.category or '') }}</td>
+          <td class="num conv {{ 'r-pos' if (b.ret_63d or 0)>0 else 'r-neg' }}">{{ '%+.0f'|format(b.ret_63d or 0) }}%</td>
+          <td>
+            {%- set sscore = st.score or 0 -%}
+            <span class="cvband {{ 'cv-neg' if sscore>=75 else 'cv-pos' }}">{{ bl(st.label or '—', st.label_zh or st.label or '—') }}</span>
+            {% if b.above_200d %}<span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑{{ t('trend','趋势') }}</span>{% endif %}
+            {% if b.global_ai and b.global_ai.mom_4w_pct is not none %}<span class="cad-chip c-gold" style="margin-left:4px" data-tip-en="A global cross-market read confirms this theme's momentum (4-week {{ '%+.0f'|format(b.global_ai.mom_4w_pct) }}%)." data-tip-zh="全球跨市场读数印证该题材动能（4周 {{ '%+.0f'|format(b.global_ai.mom_4w_pct) }}%）。">{{ t('AI-confirmed','AI印证') }}</span>{% endif %}
+          </td>
+          <td style="font-size:11.5px;color:var(--muted)">{% for m in (b.top_members or [])[:3] %}{{ m.name_zh or m.ticker }}{% if not loop.last %} · {% endif %}{% endfor %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px">{{ t('Cycle position: washout → building → strong → overheated. Overheated (red) = crowded and extended.', '周期位置：洗盘 → 蓄势 → 强势 → 过热。过热（红）＝拥挤且乖离过大。') }}{% if narr_asof %} · {{ narr_asof }}{% endif %}</p>
+    {% else %}
+    <div class="cad-callout">{{ t('The narrative radar has no fresh basket read today.', '题材雷达今日无最新板块读数。') }}</div>
+    {% endif %}
+  </section>
+
+  {# ==================== 4 · EVENT CATALYSTS ==================== #}
+  <section class="cad-sec" id="catalysts">
+    <div class="cad-sec-head">
+      <span class="cad-sec-n">04</span>
+      <h2>{{ t('Event catalysts','事件催化') }} <span style="font-size:13px;color:var(--muted);font-weight:600">特殊事件</span></h2>
+      <span class="cad-stance st-context">{{ t('Calendar & filings — dates to watch',
+      '日历与公告 — 需留意的日期') }}</span>
+    </div>
+    <p class="cad-sec-intro">{{ t('Hard, disclosed events that move A-share names: share unlocks, exchange inquiry letters, corporate buybacks, pledge stress and ST-board changes. Ranked by disclosed size and exchange-published type — no directional score, just the calendar.', '推动A股个股的、已披露的硬性事件：限售解禁、交易所问询函、公司回购、质押压力与ST变动。按披露规模与交易所公布类型排序——不作方向性评分，只呈现日历。') }}</p>
+
+    {% if special %}
+    <div class="cad-grid">
+      {% if special.unlocks and special.unlocks.events %}
+      <div class="cad-card">
+        <h3>🔓 {{ t('Share unlocks','限售解禁') }} <span class="cad-chip">{{ special.unlocks.n_large or special.unlocks.n_events_30d or 0 }}</span></h3>
+        <p class="sub">{{ t('Insiders freed to sell in the next 30 days — supply overhang.', '未来30天内可减持——供给压力。') }}</p>
+        {% for e in special.unlocks.events[:5] %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
+          <span>{{ e.name or e.name_zh or e.ticker }}</span>
+          <span class="cad-asof">{{ e.date or e.unlock_date or '' }}{% if e.pct_float is defined and e.pct_float %} · {{ '%.0f'|format(e.pct_float) }}%{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if special.inquiry and special.inquiry.letters %}
+      <div class="cad-card">
+        <h3>📩 {{ t('Exchange inquiries','交易所问询') }} <span class="cad-chip c-warn">{{ special.inquiry.n_letters or 0 }}</span></h3>
+        <p class="sub">{{ t('Regulators asking hard questions — a risk flag, not a verdict.', '监管层发问——风险信号，非定论。') }}</p>
+        {% for e in special.inquiry.letters[:5] %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
+          <span>{{ e.name or e.name_zh or e.ticker }}</span>
+          <span class="cad-asof">{{ e.date or '' }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if special.buyback and special.buyback.top %}
+      <div class="cad-card">
+        <h3>♻️ {{ t('Active buybacks','进行中回购') }} <span class="cad-chip c-up">{{ special.buyback.n_active or 0 }}</span></h3>
+        <p class="sub">{{ t('Companies buying their own shares — an insider conviction floor.', '公司回购自家股份——内部人信心的底。') }}</p>
+        {% for e in special.buyback.top[:5] %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
+          <span>{{ e.name or e.name_zh or e.ticker }}</span>
+          <span class="cad-asof">{% if e.pct_shares is defined and e.pct_shares %}{{ '%.1f'|format(e.pct_shares) }}%{% elif e.done_amt_yi is defined and e.done_amt_yi %}¥{{ '%.1f'|format(e.done_amt_yi) }}yi{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if special.pledge and special.pledge.top %}
+      <div class="cad-card">
+        <h3>⚠️ {{ t('Pledge stress','质押压力') }} <span class="cad-chip c-warn">{{ special.pledge.n_high or 0 }}</span></h3>
+        <p class="sub">{{ t('Controlling shareholders heavily pledged — forced-sale tail risk.', '大股东高比例质押——被迫平仓的尾部风险。') }}</p>
+        {% for e in special.pledge.top[:5] %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
+          <span>{{ e.name or e.name_zh or e.ticker }}</span>
+          <span class="cad-asof">{% if e.pledge_ratio is defined and e.pledge_ratio %}{{ '%.0f'|format(e.pledge_ratio) }}%{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if special.st and (special.st.additions or special.st.top_current) %}
+      <div class="cad-card">
+        <h3>🚩 {{ t('ST board','ST板') }} <span class="cad-chip c-down">{{ special.st.count or 0 }}</span></h3>
+        <p class="sub">{{ t('Special-treatment names — delisting-risk watch. Avoid unless you know why.', 'ST（特别处理）个股——退市风险观察。除非明确原因，否则回避。') }}</p>
+        {% for e in (special.st.additions or special.st.top_current)[:5] %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
+          <span>{{ e.name or e.name_zh or e.ticker if e is mapping else e }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if special.preannounce and special.preannounce.top_movers %}
+      <div class="cad-card">
+        <h3>📣 {{ t('Earnings pre-announcements','业绩预告') }} <span class="cad-chip">{{ special.preannounce.n_total or 0 }}</span></h3>
+        <p class="sub">{{ t('Companies flagging results early — the biggest guided swings.', '提前预告业绩的公司——预告变动最大者。') }}</p>
+        {% for e in special.preannounce.top_movers[:5] %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
+          <span>{{ e.name or e.name_zh or e.ticker }}</span>
+          <span class="cad-asof">{% if e.p_change is defined and e.p_change is not none %}{{ '%+.0f'|format(e.p_change) }}%{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="cad-callout">{{ t('No special-situations feed is available for this build.', '本次构建无特殊事件数据。') }}</div>
+    {% endif %}
+  </section>
+
+  {# ==================== 5 · CROWDING & FRAGILITY ==================== #}
+  <section class="cad-sec" id="crowding">
+    <div class="cad-sec-head">
+      <span class="cad-sec-n">05</span>
+      <h2>{{ t('Crowding & fragility','拥挤与脆弱') }}</h2>
+      <span class="cad-stance st-protect">{{ t('Contrarian caution — crowded means fragile',
+      '逆向警示 — 拥挤即脆弱') }}</span>
+    </div>
+    <p class="cad-sec-intro">{{ t('The other side of momentum. Names where leverage, pledge risk, limit-up froth, an attention spike and a rich valuation stack up together are fragile — a small shock unwinds them fast. This is a caution list, not a short list.', '动能的另一面。当杠杆、质押风险、涨停过热、关注度飙升与高估值同时叠加，个股即脆弱——小冲击也会令其快速瓦解。这是警示名单，不是做空名单。') }}</p>
+
+    {% if ad and ad.crowding_flags %}
+    <div class="cad-card">
+      <h3>{{ t('Leverage building fastest','杠杆累积最快') }}</h3>
+      <p class="sub">{{ t('20-day financing balance jumped most here — the crowd is adding leverage. Cuts both ways: it fuels rallies and deepens unwinds.', '这些名单20日融资余额跳升最多——市场在加杠杆。双刃剑：既助涨，也加深回撤。') }}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px">
+        {% for tk in ad.crowding_flags %}<span class="cad-chip c-warn">{{ tk }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if ad and ad.triple %}
+    {%- set fragile = ad.triple|selectattr('flags')|list + ad.bottom|selectattr('flags')|list -%}
+    {% if fragile %}
+    <table class="cad-tbl">
+      <thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('Stacked flags','叠加标记') }}</th><th class="num">{{ t('Convergence','共振') }}</th></tr></thead>
+      <tbody>
+      {% for r in fragile[:10] %}
+        <tr>
+          <td><span class="cad-nm">{{ r.name }}</span>{% if r.name != r.ticker %} <span class="cad-tk">{{ r.ticker }}</span>{% endif %}</td>
+          <td>{% for fl in r.flags %}<span class="flag">{{ bl((crowd_labels.get(fl) or [fl,fl])[0], (crowd_labels.get(fl) or [fl,fl])[1]) }}</span> {% endfor %}</td>
+          <td class="num conv {{ 'r-pos' if r.convergence>0 else 'r-neg' }}">{{ '%+.2f'|format(r.convergence) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+  </section>
+
+  {# ==================== 6 · SELL-SIDE (broker gold + guidance) ==================== #}
+  {% if broker_gold or (guidance and (guidance.up or guidance.down)) %}
+  <section class="cad-sec" id="sellside">
+    <div class="cad-sec-head">
+      <span class="cad-sec-n">06</span>
+      <h2>{{ t('Sell-side tells','卖方信号') }}</h2>
+      <span class="cad-stance st-context">{{ t('Consensus context — a tally, not a rating',
+      '一致预期背景 — 计数而非评级') }}</span>
+    </div>
+    <p class="cad-sec-intro">{{ t('Chinese sell-side is near-universally "buy", so the rating is noise. Two things carry signal: which names the most desks put on their monthly gold-stock list, and which companies pre-announce the biggest earnings surprises.', '中国卖方近乎全为「买入」，评级本身是噪音。两处有信号：当月被最多研究所列入金股名单的个股，以及预告业绩变动最大的公司。') }}</p>
+
+    <div class="cad-grid">
+      {% if broker_gold %}
+      <div class="cad-card">
+        <h3>🏅 {{ t('Broker gold-stock picks','券商金股') }} <span class="cad-chip c-gold">{{ broker_gold[0].month }}</span></h3>
+        <p class="sub">{{ t('Most-picked names this month, as a pick-count tally — a discrete monthly list, distinct from the ~97%-buy ratings.', '当月被推荐最多的个股，按推荐家数计——离散月度名单，区别于近97%「买入」评级。') }}</p>
+        <table class="cad-tbl" style="margin-top:2px">
+          <tbody>
+          {% for r in broker_gold[:10] %}
+          <tr>
+            <td><span class="cad-nm">{{ r.name }}</span>{% if r.name != r.ticker %} <span class="cad-tk">{{ r.ticker }}</span>{% endif %}</td>
+            <td class="num conv c-gold" style="color:var(--cad-gold)">{{ r.n_brokers }}</td>
+            <td style="font-size:11px;color:var(--muted)">{{ r.brokers[:4]|join(' · ') }}{% if r.brokers|length > 4 %} …{% endif %}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if guidance and (guidance.up or guidance.down) %}
+      <div class="cad-card">
+        <h3>📣 {{ t('Earnings-guidance surprises','业绩预告') }}</h3>
+        <p class="sub">{{ t('Company-guided profit direction. A real ~3-month post-announcement drift has been measured (right sign) — tracked, never scored here.', '公司预告的利润方向。已测得真实的约3个月公告后漂移（符号正确）——此处跟踪，不评分。') }}</p>
+        {% for col, items, cls in [(t('▲ Positive','▲ 正面'), guidance.up, 'r-pos'), (t('▼ Negative','▼ 负面'), guidance.down, 'r-neg')] %}
+        {% if items %}
+        <div style="margin-top:6px"><span class="{{ cls }}" style="font-size:11px;font-weight:700">{{ col }}</span></div>
+        {% for r in items[:4] %}
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:12px">
+          <span>{{ r.ticker }} {% set gl = guidance_labels.get(r.type) or [r.type, r.type] %}<span style="color:var(--muted)">{{ bl(gl[0], gl[1]) }}</span></span>
+          <span class="num conv {{ cls }}">{% if r.p_change_min is not none %}{{ '%+.0f'|format(r.p_change_min) }}…{{ '%+.0f'|format(r.p_change_max) }}%{% endif %}</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ==================== 7 · SIGNAL LAB (transparency) ==================== #}
+  {% if lab %}
+  <section class="cad-sec" id="lab">
+    <div class="cad-sec-head">
+      <span class="cad-sec-n">07</span>
+      <h2>{{ t('China Signal Lab','中国信号实验室') }}</h2>
+      <span class="cad-stance st-context">{{ t('How we grade every signal — honestly',
+      '我们如何诚实地为每个信号分级') }}</span>
+    </div>
+    <p class="cad-sec-intro">{{ t('The ledger behind this desk. Every China signal is placed on an honest tier — scored (it earns weight in the allocator), confirmer, display-only, still on trial, or killed. Nothing gets promoted to sizing until it has earned it on forward returns.', '这张台面背后的账本。每个中国信号都被放到一个诚实的层级——已评分（在配置中获得权重）、确认器、仅展示、仍在试用、或已淘汰。任何信号在用前瞻收益证明自己之前，都不会被提升为仓位依据。') }}</p>
+
+    <div class="cad-tiers">
+      {% for tier, items in lab.tiers.items() %}
+      {% if items %}
+      <div class="cad-tier t-{{ tier }}">
+        <h3><span class="tbadge">{{ t(tier|capitalize, ({'scored':'已评分','confirmer':'确认器','display':'展示','pending':'待验','killed':'已淘汰'}).get(tier, tier)) }}</span> <span style="color:var(--muted);font-size:11px">{{ items|length }}</span></h3>
+        {% for r in items %}
+        <div class="row">
+          <div class="nm">{{ bl(r.name_en, r.name_zh) }} {% if r.wired and r.wired != '—' %}<span class="wired">{{ r.wired }}</span>{% endif %}</div>
+          <div class="nt">{{ bl(r.note_en, r.note_zh) }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
       {% endfor %}
     </div>
-    {% endif %}
-    {% endfor %}
-  </div>
+  </section>
   {% endif %}
 
-  <p class="disc">{{ t('Context only — not a signal, score or trade. Convergence reuses already-collected free feeds (china_analyst / china_valuation / china_margin_detail) and is a display join; it never feeds any allocation. The scored legs are those already validated inside china_masterminds.', '仅作背景，非信号、评分或交易。共振复用已采集的免费数据（卖方一致预期／自身估值／个股融资）且为展示性合并，绝不进入任何配置。已评分项为china_masterminds中已验证的部分。') }}</p>
+  <p class="cad-disc">{{ t('Context only — not a signal, score or trade. Convergence and every panel here reuse already-collected free feeds as a display join; none of it feeds any allocation. The scored legs are those already earned inside the China masterminds; the rest are display, confirmer, on-trial or killed as the Signal Lab shows. Point-in-time; may change nightly.', '仅作背景，非信号、评分或交易。共振与本页每个面板都复用已采集的免费数据作展示性合并；无一进入任何配置。已评分项为中国主脑中已获得权重者；其余为展示、确认器、试用或已淘汰，详见信号实验室。数据为特定时点，可能每夜变动。') }}</p>
 </div>
 {% endblock %}
