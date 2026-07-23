@@ -2,7 +2,7 @@
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 {% macro help(en, zh='') -%}
-<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+<span class="help" tabindex="0">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -15,274 +15,317 @@
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:24px max(40px,calc((100vw - 1360px)/2)); } }
-  a { text-decoration:none; color:inherit; }
-  h1 { font-size:20px; margin:0; }
-  h2 { font-size:14px; margin:0 0 10px; font-weight:600; letter-spacing:.2px; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
-  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
-  .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px; }
-  .note { margin:8px 0 0; line-height:1.5; }
-  .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
-  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
-  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
-  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
-  .help:hover .tip { display:block; }
-  .tabnum { font-variant-numeric:tabular-nums; }
+  /* ============================================================================
+     OPTIONS DESK — "The Gravity Map" design system.
+     Built on theme.css tokens (Inter + --up/--down/--info/--orange, dark/light,
+     zh red-green swap). The page's identity accent (--rg) is the dealer REGIME:
+     calm cools it green, jumpy warms it red, mixed stays neutral. Motion is
+     concentrated in the hero + the Levels Map signature; reduced-motion kills it.
+     ============================================================================ */
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-ui,Inter,-apple-system,"Segoe UI",Roboto,sans-serif);
+    font-size:15px;line-height:1.5;margin:0;-webkit-font-smoothing:antialiased}
+  a{text-decoration:none;color:inherit}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 20px 64px}
+  @media(min-width:1100px){.wrap{padding:0 max(20px,calc((100vw - 1240px)/2)) 64px}}
+  :focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:6px}
+  h1,h2,h3{margin:0}
+  .muted{color:var(--muted)} .sm{font-size:12.5px} .xs{font-size:11px}
+  .pos{color:var(--up)} .neg{color:var(--down)}
+  .tabnum{font-variant-numeric:tabular-nums}
+  [data-lang="en"] .l-zh,[data-lang="zh"] .l-en{display:none}
 
-  /* ---- symbol picker ---- */
-  .pickbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .gx-search { position:relative; flex:1 1 280px; max-width:520px; }
-  .gx-search input { width:100%; padding:11px 12px 11px 38px; border:1px solid var(--line); border-radius:11px; background:var(--panel2); color:var(--text); font:inherit; font-size:15px; }
-  .gx-search input:focus { outline:none; border-color:var(--info); box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%, transparent); }
-  .gx-search .mag { position:absolute; left:13px; top:50%; transform:translateY(-50%); opacity:.6; }
-  .gx-sugg { position:absolute; top:108%; left:0; right:0; background:var(--panel); border:1px solid var(--line); border-radius:9px; box-shadow:var(--popover-shadow); z-index:50; max-height:340px; overflow:auto; display:none; }
-  .gx-sugg.on { display:block; }
-  .gx-sugg .row { display:flex; justify-content:space-between; gap:8px; padding:8px 12px; cursor:pointer; }
-  .gx-sugg .row:hover, .gx-sugg .row.hl { background:var(--panel2); }
-  .gx-sugg .row b { font-weight:600; } .gx-sugg .row .g { color:var(--muted); font-size:11px; }
-  .chips { display:flex; flex-wrap:wrap; gap:6px; }
-  .chip { padding:5px 11px; font-size:12px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:20px; cursor:pointer; white-space:nowrap; }
-  .chip.on { color:var(--text); border-color:var(--muted); background:var(--panel); }
+  /* ---- shared card chrome (airy, 16px radius, optional top accent) ---- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;position:relative;overflow:hidden}
+  .card.accent::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--rg,var(--info))}
+  .anim{animation:gxUp .5s cubic-bezier(.2,.7,.3,1) both}
+  .d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}
 
-  /* ---- board ---- */
-  .board { width:100%; border-collapse:collapse; font-size:12.5px; }
-  .board th { text-align:right; color:var(--muted); font-weight:500; padding:6px 9px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
-  .board th:first-child, .board td:first-child { text-align:left; }
-  .board td { padding:6px 9px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
-  .board tr.sym { cursor:pointer; } .board tr.sym:hover td { background:var(--panel2); }
-  .board tr.sym.sel td { background:var(--panel2); }
-  .board tr.sym.thin td { opacity:.62; }
-  .board tr.ghead td { color:var(--muted); font-size:11px; letter-spacing:.4px; text-transform:uppercase; padding-top:14px; border-bottom:none; }
-  .board tr.ghead td .cov { text-transform:none; letter-spacing:0; color:var(--muted); font-weight:400; margin-left:8px; }
-  .reg { font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
-  .reg-long { color:var(--up); border-color:var(--up); } .reg-short { color:var(--down); border-color:var(--down); } .reg-na { color:var(--muted); }
-  .board .symk { font-weight:600; } .board .symn { color:var(--muted); font-size:11px; margin-left:5px; }
-  .board .thinmk { color:var(--orange); margin-left:5px; cursor:help; }
+  /* ---- eyebrow section labels ---- */
+  .eyebrow{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:800;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--muted);margin:30px 2px 12px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:2px;background:var(--rg,var(--muted));flex:none}
+  .eyebrow .hint{margin-left:auto;font-size:10.5px;font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--muted)}
 
-  /* ---- board collapse / expand (hidden on entry) ---- */
-  #gx-boardwrap { position:relative; margin:22px 0 14px; }
-  #gx-boardwrap.collapsed #gx-board-inner { display:none; }
-  #gx-boardwrap:not(.collapsed) #gx-board-expand { display:none; }
-  .gx-board-cta { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; max-width:560px; margin:6px auto; padding:20px 28px;
-    border:1px dashed var(--line); border-radius:16px; background:var(--panel2); color:var(--text); cursor:pointer; text-align:center; font:inherit;
-    transition:transform .16s ease, border-color .16s ease, box-shadow .2s ease, background .16s ease; }
-  .gx-board-cta:hover { transform:translateY(-2px); border-color:var(--info); border-style:solid; background:var(--panel);
-    box-shadow:0 14px 34px -16px color-mix(in srgb,var(--info) 60%, transparent); }
-  .gx-board-cta .big { font-size:17px; font-weight:700; letter-spacing:.2px; }
-  .gx-board-cta .sub { font-size:12px; color:var(--muted); }
-  #gx-board-inner { position:relative; border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:26px 16px 30px; animation:gxFade .22s ease; }
-  @keyframes gxFade { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
-  .board-collapse { position:absolute; left:50%; transform:translateX(-50%); z-index:4; padding:6px 18px; border-radius:999px;
-    border:1px solid var(--line); background:var(--panel); color:var(--muted); font:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;
-    box-shadow:var(--popover-shadow); transition:transform .15s ease, color .15s ease, border-color .15s ease; }
-  .board-collapse:hover { color:var(--text); border-color:var(--info); transform:translateX(-50%) translateY(-1px); }
-  .board-collapse.top { top:-15px; } .board-collapse.bottom { bottom:-15px; }
-  .board-head { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+  /* ---- help "?" — CSS-only bilingual popover (Tier-2 mechanics home) ---- */
+  .help{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+    border:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;flex:none}
+  .help:hover,.help:focus{color:var(--text);border-color:var(--muted);outline:none}
+  .help .tip{display:none;position:absolute;top:150%;right:-8px;z-index:60;width:270px;padding:11px 13px;border-radius:11px;
+    background:var(--panel);border:1px solid var(--line);box-shadow:var(--popover-shadow);
+    font-size:12px;font-weight:400;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0;cursor:auto}
+  .help:hover .tip,.help:focus .tip{display:block}
+  .help:hover::before{content:'';position:absolute;top:100%;left:-24px;right:-24px;height:12px}
 
-  /* ---- detail ---- */
-  #gx-detail { min-height:120px; }
+  /* ============================ TOP ZONE ============================ */
+  .desk-top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 24px;padding:26px 0 4px}
+  .desk-brand{font-weight:800;font-size:27px;letter-spacing:-.02em;color:var(--text);display:flex;align-items:center;gap:9px}
+  .desk-brand .gn{background:linear-gradient(94deg,var(--up),var(--info) 52%,var(--down));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .desk-sub{font-size:13.5px;color:var(--muted);margin-top:3px;max-width:560px}
+  .desk-search{position:relative;flex:1 1 320px;max-width:440px;margin-left:auto}
+  .desk-search .mag{position:absolute;left:15px;top:50%;transform:translateY(-50%);opacity:.55;font-size:15px}
+  .desk-search input{width:100%;padding:13px 14px 13px 42px;border:1px solid var(--line);border-radius:13px;
+    background:var(--panel);color:var(--text);font:inherit;font-size:15px;transition:border-color .15s,box-shadow .2s}
+  .desk-search input:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 16%,transparent)}
+  .gx-sugg{position:absolute;top:110%;left:0;right:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    box-shadow:var(--popover-shadow);z-index:50;max-height:360px;overflow:auto;display:none;padding:5px}
+  .gx-sugg.on{display:block}
+  .gx-sugg .row{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;cursor:pointer;border-radius:9px;align-items:center}
+  .gx-sugg .row:hover,.gx-sugg .row.hl{background:var(--panel2)}
+  .gx-sugg .row b{font-weight:700} .gx-sugg .row .g{color:var(--muted);font-size:11.5px}
 
-  /* command-center hero (3-zone grid) */
-  .hero3 { display:grid; grid-template-columns:1.5fr 1.05fr 1.05fr; gap:14px; align-items:stretch; }
-  @media (max-width:860px){ .hero3 { grid-template-columns:1fr; } }
-  .hz { background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
-  .hz-id .sym { font-size:26px; font-weight:800; letter-spacing:.3px; } .hz-id .nm { color:var(--muted); font-size:13px; margin-left:6px; }
-  .hz-id .spot { font-size:30px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .hz-id .spot .lbl { font-size:12px; color:var(--muted); font-weight:500; margin-right:6px; }
-  .regbanner { border-radius:9px; border:1px solid var(--line); padding:9px 12px; font-size:13px; font-weight:600; line-height:1.4; }
-  .regbanner.calm { background:color-mix(in srgb,var(--up) 13%, var(--panel)); border-color:var(--up); }
-  .regbanner.jumpy { background:color-mix(in srgb,var(--down) 13%, var(--panel)); border-color:var(--down); }
-  .regbanner.mixed { background:color-mix(in srgb,var(--g-mid) 30%, var(--panel)); }
-  .vitals { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .vital { background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:8px 10px; }
-  .vital .k { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
-  .vital .v { font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; line-height:1.2; }
-  .vital .v small { font-size:11px; font-weight:500; color:var(--muted); }
-  .hz-foot { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; }
+  /* ---- market weather strip (the one VALIDATED read) ---- */
+  .wx{margin-top:16px;border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;position:relative}
+  .wx::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--up)}
+  .wx-inner{padding:16px 20px}
+  .wx-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+  .wx-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .wx-scored{font-size:10.5px;font-weight:800;letter-spacing:.03em;color:var(--up);border:1px solid color-mix(in srgb,var(--up) 45%,var(--line));
+    border-radius:999px;padding:2px 10px;white-space:nowrap}
+  .wx-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:10px}
+  .wx-icon{font-size:26px;line-height:1}
+  .wx-verdict{font-size:19px;font-weight:800;letter-spacing:-.01em}
+  .wx-calm .wx-verdict,.wx-up .wx-verdict{color:var(--up)}
+  .wx-jumpy .wx-verdict{color:var(--down)} .wx-warn .wx-verdict{color:var(--orange)}
+  .wx-gauge{flex:1 1 170px;min-width:140px;max-width:300px}
+  .wx-gauge .track{position:relative;height:7px;border-radius:5px;background:linear-gradient(90deg,var(--down),var(--panel2) 50%,var(--up));border:1px solid var(--line)}
+  .wx-gauge .mk{position:absolute;top:-4px;width:3px;height:13px;background:var(--text);transform:translateX(-50%);border-radius:2px}
+  .wx-gauge .lbls{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:5px}
+  .wx-sub{font-size:13.5px;line-height:1.55;margin-top:11px}
+  .wx-bullets{margin:9px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+  .wx-bullets li{font-size:12.5px;line-height:1.5;padding-left:17px;position:relative}
+  .wx-bullets li::before{content:"▸";position:absolute;left:2px;color:var(--muted)}
+  .wx-stats{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .wx-stat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:12px}
+  .wx-stat .k{color:var(--muted);font-size:10px;display:block;text-transform:uppercase;letter-spacing:.04em}
+  .wx-stat .v{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+  .wx-foot{font-size:11px;color:var(--muted);margin-top:11px;line-height:1.5}
 
-  /* headline tilt strip (in hero) */
-  .tiltline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; }
-  .tiltline .arrow { font-size:16px; font-weight:800; }
-  .tiltline.up .arrow, .tiltline.up b { color:var(--up); } .tiltline.down .arrow, .tiltline.down b { color:var(--down); }
-  .tiltline.pin .arrow { color:var(--orange); } .tiltline.vol .arrow { color:var(--orange); }
+  /* ---- primer ---- */
+  .primer{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+  .primer summary{cursor:pointer;padding:14px 20px;font-weight:700;font-size:13.5px;list-style:none;display:flex;align-items:center;gap:10px}
+  .primer summary::-webkit-details-marker{display:none}
+  .primer summary .ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--panel2);flex:none}
+  .primer summary .caret{margin-left:auto;font-size:11px;color:var(--muted);transition:transform .25s}
+  .primer[open] summary .caret{transform:rotate(90deg)}
+  .primer .body{padding:2px 22px 20px;border-top:1px solid var(--line)}
+  .primer .body p{margin:14px 0 4px;font-weight:600;line-height:1.55}
+  .primer .body ul{margin:6px 0 0;padding-left:20px}
+  .primer .body li{margin:8px 0;font-size:13px;line-height:1.6}
+  .primer .body li b{color:var(--text)}
 
-  /* pills: strength + horizon */
-  .sbar { display:inline-flex; gap:2px; vertical-align:middle; }
-  .sbar i { width:7px; height:11px; border-radius:2px; background:var(--line); display:inline-block; }
-  .spill { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
-  .hpill { font-size:10.5px; font-weight:600; padding:2px 9px; border-radius:20px; border:1px solid var(--info); color:var(--info); white-space:nowrap; }
-  .tonepill { font-size:10.5px; font-weight:600; padding:1px 8px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
+  /* ============================ HERO ============================ */
+  .gx-calm{--rg:var(--up)} .gx-jumpy{--rg:var(--down)} .gx-mixed{--rg:var(--info)}
+  .hero{margin-top:20px;padding:22px 24px}
+  .hero-glow{position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background:radial-gradient(120% 80% at 88% -10%,color-mix(in srgb,var(--rg) 15%,transparent),transparent 60%)}
+  .hero-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px;position:relative}
+  .hero-id .sym{font-size:34px;font-weight:900;letter-spacing:-.02em;line-height:1}
+  .hero-id .nm{color:var(--muted);font-size:14px;margin-left:9px;font-weight:500}
+  .hero-id .grp{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;font-weight:700}
+  .hero-spot{text-align:right}
+  .hero-spot .v{font-size:31px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+  .hero-spot .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;display:block;margin-bottom:3px}
+  .hero-verdict{position:relative;margin:20px 0 0;display:flex;align-items:flex-start;gap:13px}
+  .hero-vicon{font-size:30px;line-height:1.05;flex:none}
+  .hero-vtext .state{font-size:clamp(21px,3vw,27px);font-weight:800;letter-spacing:-.02em;line-height:1.15;color:var(--rg)}
+  .hero-vtext .say{font-size:14px;line-height:1.55;color:var(--text);margin-top:6px;max-width:680px}
+  .hero-vtext .say b{font-weight:700}
+  .hero-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-top:18px;position:relative}
+  .stance{display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap;
+    background:color-mix(in srgb,var(--rg) 12%,var(--panel));color:var(--rg);border:1px solid color-mix(in srgb,var(--rg) 32%,var(--line))}
+  .stance .bd{width:7px;height:7px;border-radius:50%;background:currentColor;animation:gxBreathe 2.6s ease-in-out infinite;flex:none}
+  .range-chip{display:inline-flex;align-items:baseline;gap:8px;padding:7px 14px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);
+    font-size:13px;font-variant-numeric:tabular-nums}
+  .range-chip .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .range-chip b{font-weight:800}
+  .changed-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);
+    font-size:12px;font-weight:600}
+  .changed-chip .bd{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:gxBreathe 2.2s ease-in-out infinite;flex:none}
+  .hero-asof{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);margin-left:auto}
+  .hero-asof .bd{width:6px;height:6px;border-radius:50%;background:var(--up);animation:gxBreathe 2.8s ease-in-out infinite}
+  .single-warn{margin-top:14px;font-size:12px;line-height:1.5;color:var(--muted);border-left:3px solid var(--orange);
+    background:color-mix(in srgb,var(--orange) 7%,transparent);border-radius:0 9px 9px 0;padding:9px 13px;position:relative}
+  .single-warn b{color:var(--text)}
 
-  .grid2 { display:grid; grid-template-columns:1fr; gap:14px; } @media(min-width:900px){ .grid2 { grid-template-columns:1fr 1fr; } }
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
-  .gcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; }
-  .gcard .k { font-size:11.5px; color:var(--muted); } .gcard .v { font-size:17px; font-weight:600; margin-top:2px; }
+  /* ============================ LEVELS MAP (signature) ============================ */
+  .lmap-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
+  .lmap-title{font-size:13px;font-weight:800;letter-spacing:.01em}
+  .lmap{display:grid;grid-template-columns:190px 1fr;gap:22px;margin-top:16px}
+  @media(max-width:720px){.lmap{grid-template-columns:1fr;gap:16px}}
+  /* the vertical gravity rail */
+  .lmap-rail{position:relative;min-height:300px}
+  .lmap-rail svg{width:100%;height:100%;display:block;overflow:visible}
+  /* the level cards beside the rail */
+  .lmap-levels{display:flex;flex-direction:column;gap:9px;min-width:0}
+  .lvl{border:1px solid var(--line);border-left-width:3px;border-radius:0 11px 11px 0;padding:10px 13px;background:var(--panel2);
+    animation:gxUp .45s cubic-bezier(.2,.7,.3,1) both}
+  .lvl.cw{border-left-color:var(--up)} .lvl.pw{border-left-color:var(--down)}
+  .lvl.flip{border-left-color:var(--info)} .lvl.mp{border-left-color:var(--orange)} .lvl.spot{border-left-color:var(--text)}
+  .lvl-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .lvl-tag{font-size:12.5px;font-weight:700}
+  .lvl-val{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:auto}
+  .lvl-dist{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .lvl-str{display:inline-flex;gap:2px;vertical-align:middle;margin-left:2px}
+  .lvl-str i{width:6px;height:10px;border-radius:2px;background:var(--line);display:inline-block}
+  .lvl-say{font-size:12px;color:var(--muted);line-height:1.5;margin-top:5px}
+  .lvl-say b{color:var(--text);font-weight:600}
+  .lmap-foot{font-size:11px;color:var(--muted);line-height:1.5;margin-top:14px}
 
-  /* ---- "New to options?" primer ---- */
-  .primer { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:0 16px; margin-bottom:14px; }
-  .primer summary { cursor:pointer; padding:13px 0; font-weight:600; font-size:13.5px; list-style:none; }
-  .primer summary::-webkit-details-marker { display:none; }
-  .primer summary::before { content:"📘  "; }
-  .primer[open] summary { border-bottom:1px solid var(--line); }
-  .primer-intro { margin:13px 0 4px; font-weight:600; line-height:1.55; }
-  .primer ul { margin:6px 0 16px; padding-left:20px; }
-  .primer li { margin:8px 0; font-size:13px; line-height:1.6; }
+  /* ============================ THREE READS RAIL ============================ */
+  .reads{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:860px){.reads{grid-template-columns:1fr}}
+  .read{padding:18px}
+  .read-eyebrow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;font-weight:800;
+    letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .read-state{font-size:22px;font-weight:800;letter-spacing:-.015em;line-height:1.15;margin:9px 0 2px}
+  .read-state.up{color:var(--up)} .read-state.down{color:var(--down)} .read-state.warn{color:var(--orange)} .read-state.info{color:var(--info)}
+  .read-sub{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .read-metric{display:flex;align-items:baseline;gap:6px;margin-top:12px;font-variant-numeric:tabular-nums}
+  .read-metric .big{font-size:19px;font-weight:800} .read-metric .unit{font-size:11px;color:var(--muted)}
+  .read-spark{margin-top:10px;height:38px}
+  .read-legs{margin-top:12px;display:flex;flex-direction:column;gap:9px}
+  .leg{display:grid;grid-template-columns:22px 1fr;gap:4px 10px;align-items:start}
+  .leg-ar{font-size:15px;font-weight:800;text-align:center;line-height:1.4}
+  .leg-ar.up{color:var(--up)} .leg-ar.down{color:var(--down)} .leg-ar.pin{color:var(--orange)} .leg-ar.flat{color:var(--muted)}
+  .leg-sig{font-size:12.5px;font-weight:700}
+  .leg-why{font-size:11.5px;color:var(--muted);line-height:1.45;grid-column:2}
+  .leg-hz{font-size:10px;font-weight:700;color:var(--info);border:1px solid color-mix(in srgb,var(--info) 35%,var(--line));
+    border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap;vertical-align:middle}
+  .read-foot{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:12px}
+  .vh-band{position:relative;height:46px;margin:14px 4px 4px}
+  .vh-band .track{position:absolute;left:0;right:0;top:20px;height:7px;border-radius:5px;background:var(--panel2);border:1px solid var(--line)}
+  .vh-band .fill{position:absolute;top:0;bottom:0;border-radius:5px;opacity:.45;background:var(--info)}
+  .vh-band .mk{position:absolute;top:12px;width:2px;height:23px;transform:translateX(-50%)}
+  .vh-band .mk.lo{background:var(--down)} .vh-band .mk.hi{background:var(--up)}
+  .vh-band .mk.spot{background:var(--text);top:6px;height:35px}
+  .vh-band .cap{position:absolute;font-size:10px;color:var(--muted);top:30px;transform:translateX(-50%);white-space:nowrap;text-align:center}
+  .vh-band .cap.spot{top:-6px;color:var(--text);font-weight:700}
+  .vh-band .cap .v{display:block;font-weight:700;color:var(--text);font-size:10.5px}
 
-  /* ---- board-column "?" help + its wrapping floating popover ---- */
-  .bhelp { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:9px; font-weight:600; cursor:help; margin-left:5px; vertical-align:middle; }
-  .bhelp:hover, .bhelp:focus { color:var(--text); border-color:var(--text); outline:none; }
-  .help-pop { position:fixed; z-index:95; max-width:300px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:12px; line-height:1.5; color:var(--text); box-shadow:var(--popover-shadow); display:none; }
-  .help-pop b { font-weight:700; }
+  /* ============================ FLOW ============================ */
+  .fl-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+  .fl-tag{font-size:13px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .fl-verdict{font-size:13.5px;font-weight:600}
+  .fl.s-pos .fl-verdict{color:var(--up)} .fl.s-neg .fl-verdict{color:var(--down)}
+  .fl-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .fl-chip{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:12px}
+  .fl-chip .k{color:var(--muted);font-size:10px;display:block;text-transform:uppercase;letter-spacing:.04em}
+  .fl-chip .v{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+  .fl-chip.pos .v{color:var(--up)} .fl-chip.neg .v{color:var(--down)}
+  .fl-chip.soft{border-style:dashed;opacity:.8} .fl-chip.soft .v{color:var(--muted);font-weight:700}
+  .fl-sec{margin-top:14px;border-top:1px solid var(--line);padding-top:11px}
+  .fl-h{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .fl-sec ul{margin:7px 0 0;padding-left:18px} .fl-sec li{font-size:12px;line-height:1.55;margin:3px 0;font-variant-numeric:tabular-nums}
+  .fl-foot{font-size:10.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+  .fl-accruing{opacity:.85}
+  .fl-accruing-msg{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:8px}
+  .ivr-building{display:inline-block;font-size:10.5px;background:var(--panel2);border:1px dashed var(--orange);border-radius:6px;
+    padding:1px 7px;color:var(--orange);vertical-align:middle}
 
-  /* ---- the Game Plan card (beginner signal read) ---- */
-  .gx-gameplan { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:13px 16px; }
-  .gp-head { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
-  .gp-icon { font-size:20px; line-height:1; }
-  .gp-verdict { font-size:17px; font-weight:700; letter-spacing:.2px; }
-  .gp-calm .gp-verdict, .gp-up .gp-verdict { color:var(--up); }
-  .gp-jumpy .gp-verdict, .gp-down .gp-verdict { color:var(--down); }
-  .gp-warn .gp-verdict { color:var(--orange); }
-  .gp-sub { font-size:13.5px; line-height:1.55; margin-top:6px; }
-  .gp-levels { margin-top:12px; border-top:1px solid var(--line); padding-top:11px; display:flex; flex-direction:column; gap:11px; }
-  .gp-weak { font-size:12px; color:var(--muted); font-style:italic; }
-  .gp-lvl { display:grid; grid-template-columns:max-content 1fr; gap:3px 16px; align-items:baseline; }
-  @media (max-width:640px){ .gp-lvl { grid-template-columns:1fr; gap:3px; } }
-  .gp-lk { font-size:13px; white-space:nowrap; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .gp-li { margin-right:1px; }
-  .gp-ll { color:var(--muted); }
-  .gp-lv { font-size:14.5px; font-weight:700; }
-  .gp-lt { font-size:12.5px; color:var(--muted); line-height:1.5; }
-  .gp-range { margin-top:12px; border-top:1px solid var(--line); padding-top:11px; }
-  .gp-rk { font-size:12.5px; color:var(--muted); }
-  .gp-rv { font-size:15px; margin-top:2px; }
-  .gp-rc { margin-top:3px; }
-  .gp-chip { margin-top:12px; font-size:12px; line-height:1.5; border:1px solid var(--orange); border-radius:8px; padding:8px 11px; }
-  /* "what could change it" trigger checklist */
-  .gp-trig { margin-top:12px; border-top:1px solid var(--line); padding-top:11px; }
-  .gp-trig .h { font-size:12.5px; color:var(--muted); margin-bottom:6px; }
-  .gp-trig ul { margin:0; padding-left:2px; list-style:none; display:flex; flex-direction:column; gap:6px; }
-  .gp-trig li { font-size:12.5px; line-height:1.45; display:flex; gap:8px; }
-  .gp-trig li .ic { flex:none; }
+  /* ============================ STUDY SHELF ============================ */
+  .shelf details{border:1px solid var(--line);border-radius:14px;margin-bottom:11px;overflow:hidden;background:var(--panel)}
+  .shelf summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:700}
+  .shelf summary::-webkit-details-marker{display:none}
+  .shelf summary:hover{background:color-mix(in srgb,var(--info) 5%,var(--panel))}
+  .shelf summary .sh-ic{flex:none;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-size:14px;background:var(--panel2)}
+  .shelf summary .sh-hint{margin-left:auto;font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+  .shelf summary .sh-caret{flex:none;font-size:11px;color:var(--muted);transition:transform .25s}
+  .shelf details[open] summary .sh-caret{transform:rotate(90deg)}
+  .shelf .sh-body{padding:8px 20px 20px;border-top:1px solid var(--line)}
+  .sh-grid2{display:grid;grid-template-columns:1fr;gap:18px} @media(min-width:820px){.sh-grid2{grid-template-columns:1fr 1fr}}
+  .sh-sub{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 10px}
+  .chartbox{width:100%} .chartbox svg{width:100%;height:auto;display:block;overflow:visible}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:6px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+  .hm-tabs{display:flex;gap:6px;margin:10px 0 4px}
+  .hm-tab{font-size:12px;padding:5px 12px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:8px;cursor:pointer}
+  .hm-tab.on{color:var(--text);border-color:var(--muted);background:var(--panel)}
+  .hm-scroll{overflow-x:auto}
+  .heat{border-collapse:separate;border-spacing:2px;font-size:11.5px;width:100%;min-width:680px;table-layout:fixed}
+  .heat th{color:var(--muted);font-weight:500;padding:3px 4px;white-space:nowrap}
+  .heat thead th:first-child{width:56px} .heat th.col{font-size:10.5px}
+  .heat td.kk{width:56px;color:var(--muted);text-align:right;padding-right:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .heat td.cell{height:30px;text-align:center;border-radius:5px;color:var(--text);font-variant-numeric:tabular-nums}
+  .heat td.cell.spotrow{box-shadow:inset 0 0 0 1px var(--text)}
+  .heat td.cell:hover{outline:2px solid var(--text);outline-offset:-2px}
+  .hm-legend{display:flex;gap:14px;align-items:center;margin-top:8px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+  .hm-legend .sw{display:inline-block;width:34px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px}
+  .term{width:100%;border-collapse:collapse;font-size:12.5px}
+  .term th{color:var(--muted);font-weight:600;text-align:right;padding:6px 9px;border-bottom:1px solid var(--line);text-transform:uppercase;font-size:10px;letter-spacing:.03em}
+  .term th:first-child,.term td:first-child{text-align:left}
+  .term td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+  .term tr:last-child td{border-bottom:none}
+  .greeks{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:4px}
+  .greek{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+  .greek .k{font-size:11px;color:var(--muted)} .greek .v{font-size:15px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
 
-  /* ---- directional tilt panel (leans by horizon) ---- */
-  .dt-leg { display:grid; grid-template-columns:26px max-content 1fr; gap:4px 12px; align-items:start; padding:9px 0; border-top:1px solid var(--line); }
-  .dt-leg:first-of-type { border-top:none; }
-  .dt-arrow { font-size:17px; font-weight:800; text-align:center; line-height:1.3; }
-  .dt-arrow.up { color:var(--up); } .dt-arrow.down { color:var(--down); } .dt-arrow.pin { color:var(--orange); } .dt-arrow.flat { color:var(--muted); }
-  .dt-mid { display:flex; flex-direction:column; gap:4px; }
-  .dt-sig { font-size:13px; font-weight:600; }
-  .dt-why { font-size:12.5px; color:var(--muted); line-height:1.45; align-self:center; }
-  .dt-meta { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
+  /* ============================ BOARD ============================ */
+  .gx-board-cta{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;max-width:560px;margin:8px auto;padding:20px 28px;
+    border:1px dashed var(--line);border-radius:16px;background:var(--panel);color:var(--text);cursor:pointer;text-align:center;font:inherit;
+    transition:transform .16s,border-color .16s,box-shadow .2s,background .16s}
+  .gx-board-cta:hover{transform:translateY(-2px);border-color:var(--info);border-style:solid;
+    box-shadow:0 14px 34px -16px color-mix(in srgb,var(--info) 55%,transparent)}
+  .gx-board-cta .big{font-size:16px;font-weight:800}
+  .gx-board-cta .sub{font-size:12px;color:var(--muted)}
+  #gx-boardwrap{position:relative;margin:8px 0}
+  #gx-boardwrap.collapsed #gx-board-inner{display:none}
+  #gx-boardwrap:not(.collapsed) #gx-board-expand{display:none}
+  #gx-board-inner{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:22px 18px;animation:gxUp .3s ease}
+  .board-collapse{position:absolute;left:50%;transform:translateX(-50%);z-index:4;padding:6px 18px;border-radius:999px;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+    box-shadow:var(--popover-shadow);transition:color .15s,border-color .15s}
+  .board-collapse:hover{color:var(--text);border-color:var(--info)}
+  .board-collapse.top{top:-14px} .board-collapse.bottom{bottom:-14px}
+  .board-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{padding:5px 12px;font-size:12px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);border-radius:999px;cursor:pointer;white-space:nowrap}
+  .chip.on{color:var(--text);border-color:var(--muted);background:var(--panel)}
+  .board{width:100%;border-collapse:collapse;font-size:12.5px}
+  .board th{text-align:right;color:var(--muted);font-weight:600;padding:7px 9px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;
+    text-transform:uppercase;font-size:10px;letter-spacing:.03em}
+  .board th:first-child,.board td:first-child{text-align:left}
+  .board td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+  .board tr.sym{cursor:pointer} .board tr.sym:hover td{background:var(--panel2)}
+  .board tr.sym.sel td{background:color-mix(in srgb,var(--info) 8%,var(--panel2))}
+  .board tr.sym.thin td{opacity:.6}
+  .board tr.ghead td{color:var(--muted);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding-top:16px;border-bottom:none;font-weight:700}
+  .board tr.ghead td .cov{text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500;margin-left:8px}
+  .reg{font-size:11px;font-weight:700;padding:2px 9px;border-radius:7px;border:1px solid var(--line);white-space:nowrap}
+  .reg-long{color:var(--up);border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
+  .reg-short{color:var(--down);border-color:color-mix(in srgb,var(--down) 45%,var(--line))}
+  .reg-na{color:var(--muted)}
+  .board .symk{font-weight:700} .board .symn{color:var(--muted);font-size:11px;margin-left:5px}
+  .board .thinmk{color:var(--orange);margin-left:5px;cursor:help}
+  .vh-pill{font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
+  .vh-pill.up{color:var(--up)} .vh-pill.down{color:var(--down)} .vh-pill.neu{color:var(--info)}
+  .vh-pill.vol{color:var(--orange)} .vh-pill.na{color:var(--muted)}
+  .bhelp{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--muted);
+    color:var(--muted);font-size:9px;font-weight:700;cursor:help;margin-left:5px;vertical-align:middle}
+  .bhelp:hover,.bhelp:focus{color:var(--text);border-color:var(--text);outline:none}
 
-  /* ---- volatility hole ---- */
-  .vh-badge { font-size:12.5px; font-weight:600; padding:4px 12px; border-radius:8px; border:1px solid var(--line); white-space:nowrap; }
-  .vh-badge.up { color:var(--up); border-color:var(--up); } .vh-badge.down { color:var(--down); border-color:var(--down); }
-  .vh-badge.neu { color:var(--info); border-color:var(--info); } .vh-badge.vol { color:var(--orange); border-color:var(--orange); }
-  .vh-badge.na { color:var(--muted); }
-  .vh-armed { display:inline-block; margin-left:8px; font-size:11px; font-weight:700; color:var(--orange); border:1px solid var(--orange); border-radius:6px; padding:1px 7px; }
-  .vh-read { font-size:13.5px; line-height:1.62; margin-top:10px; } .vh-read b { font-weight:700; }
-  .vh-band { position:relative; height:52px; margin:16px 8px 8px; }
-  .vh-band .track { position:absolute; left:0; right:0; top:23px; height:8px; border-radius:5px; background:var(--panel2); border:1px solid var(--line); }
-  .vh-band .fill { position:absolute; top:0; bottom:0; border-radius:5px; opacity:.5; }
-  .vh-band .mk { position:absolute; top:14px; width:2px; height:26px; transform:translateX(-50%); }
-  .vh-band .mk.lo { background:var(--down); } .vh-band .mk.hi { background:var(--up); }
-  .vh-band .mk.spot { background:var(--text); top:8px; height:38px; width:2px; }
-  .vh-band .cap { position:absolute; font-size:10.5px; color:var(--muted); top:33px; transform:translateX(-50%); white-space:nowrap; text-align:center; }
-  .vh-band .cap.spot { top:-4px; color:var(--text); font-weight:600; }
-  .vh-band .cap .v { display:block; font-weight:600; color:var(--text); font-size:11px; }
-  .vh-stats { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:12px; color:var(--muted); margin-top:8px; }
-  .vh-stats b { color:var(--text); font-weight:600; }
-  .vh-pill { font-size:10.5px; font-weight:600; padding:1px 7px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
-  .vh-pill.up { color:var(--up); border-color:var(--up); } .vh-pill.down { color:var(--down); border-color:var(--down); }
-  .vh-pill.neu { color:var(--info); } .vh-pill.vol { color:var(--orange); border-color:var(--orange); } .vh-pill.na { color:var(--muted); }
+  /* ---- floating tips ---- */
+  .floaty-tip{position:fixed;pointer-events:none;z-index:90;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:7px 10px;font-size:11.5px;box-shadow:var(--popover-shadow);display:none;white-space:nowrap}
+  .help-pop{position:fixed;z-index:95;max-width:300px;background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px;font-size:12px;line-height:1.5;color:var(--text);box-shadow:var(--popover-shadow);display:none}
+  .help-pop b{font-weight:700}
+  .gx-loading{color:var(--muted);padding:48px 6px;text-align:center}
 
-  /* levels ruler — strength-encoded markers, two label lanes to avoid collisions */
-  .ruler { position:relative; height:96px; margin:16px 6px 6px; }
-  .ruler .axis { position:absolute; left:0; right:0; top:48px; height:2px; background:var(--line); }
-  .ruler .mk { position:absolute; top:0; bottom:0; width:0; transform:translateX(-50%); }
-  .ruler .mk i { position:absolute; top:42px; left:0; transform:translateX(-50%); width:3px; height:14px; border-radius:2px; background:var(--muted); }
-  .ruler .mk .lbl { position:absolute; left:0; transform:translateX(-50%); text-align:center; white-space:nowrap; }
-  .ruler .mk.lane0 .lbl { top:2px; } .ruler .mk.lane1 .lbl { bottom:2px; }
-  .ruler .mk .val { display:block; font-size:11.5px; font-weight:700; }
-  .ruler .mk .lab { display:block; font-size:9.5px; color:var(--muted); }
-  .ruler .mk.spot i { background:var(--text); height:20px; top:39px; width:2px; } .ruler .mk.spot .val { color:var(--text); }
-  .ruler .mk.cw i { background:var(--up); } .ruler .mk.pw i { background:var(--down); }
-  .ruler .mk.flip i { background:var(--info); } .ruler .mk.mp i { background:var(--orange); }
-
-  /* heatmap — fills the panel width on desktop, scrolls on mobile */
-  .hm-tabs { display:flex; gap:6px; margin-bottom:8px; }
-  .hm-tab { font-size:12px; padding:4px 11px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:7px; cursor:pointer; }
-  .hm-tab.on { color:var(--text); border-color:var(--muted); background:var(--panel); }
-  .hm-scroll { overflow-x:auto; }
-  .heat { border-collapse:separate; border-spacing:2px; font-size:11.5px; width:100%; min-width:680px; table-layout:fixed; }
-  .heat th { color:var(--muted); font-weight:500; padding:3px 4px; white-space:nowrap; }
-  .heat thead th:first-child { width:56px; }
-  .heat th.col { font-size:10.5px; }
-  .heat td.kk { width:56px; color:var(--muted); text-align:right; padding-right:8px; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .heat td.cell { height:30px; text-align:center; border-radius:5px; color:var(--text); font-variant-numeric:tabular-nums; }
-  .heat td.cell.spotrow { box-shadow:inset 0 0 0 1px var(--text); }
-  .heat td.cell:hover { outline:2px solid var(--text); outline-offset:-2px; }
-  .hm-legend { display:flex; gap:14px; align-items:center; margin-top:8px; font-size:11px; color:var(--muted); flex-wrap:wrap; }
-  .hm-legend .sw { display:inline-block; width:34px; height:11px; border-radius:3px; vertical-align:middle; margin-right:5px; }
-
-  /* svg charts */
-  .chartbox { width:100%; } .chartbox svg { width:100%; height:auto; display:block; overflow:visible; }
-  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:4px; }
-  .legend i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:5px; }
-
-  /* term table */
-  .term { width:100%; border-collapse:collapse; font-size:12px; }
-  .term th { color:var(--muted); font-weight:500; text-align:right; padding:5px 8px; border-bottom:1px solid var(--line); }
-  .term th:first-child, .term td:first-child { text-align:left; }
-  .term td { padding:5px 8px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
-
-  .floaty-tip { position:fixed; pointer-events:none; z-index:90; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:6px 9px; font-size:11.5px; box-shadow:var(--popover-shadow); display:none; white-space:nowrap; }
-  .gx-loading { color:var(--muted); padding:30px 6px; text-align:center; }
-  [data-lang="en"] .l-zh, [data-lang="zh"] .l-en { display:none; }
-
-  /* ---- Market Weather hero (validated index vol regime) ---- */
-  .wx-scored { font-size:11px; font-weight:700; color:var(--up); border:1px solid var(--up); border-radius:6px; padding:2px 8px; white-space:nowrap; }
-  .wx-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-top:6px; }
-  .wx-icon { font-size:30px; line-height:1; }
-  .wx-verdict { font-size:20px; font-weight:800; letter-spacing:.2px; }
-  .wx-calm .wx-verdict, .wx-up .wx-verdict { color:var(--up); }
-  .wx-jumpy .wx-verdict { color:var(--down); } .wx-warn .wx-verdict { color:var(--orange); }
-  .wx-gauge { flex:1 1 180px; min-width:150px; max-width:320px; }
-  .wx-gauge .track { position:relative; height:8px; border-radius:5px; background:linear-gradient(90deg,var(--down),var(--panel2) 50%,var(--up)); border:1px solid var(--line); }
-  .wx-gauge .mk { position:absolute; top:-4px; width:3px; height:14px; background:var(--text); transform:translateX(-50%); border-radius:2px; }
-  .wx-gauge .lbls { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:5px; }
-  .wx-sub { font-size:14px; line-height:1.55; margin-top:11px; }
-  .wx-bullets { margin:10px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; }
-  .wx-bullets li { font-size:12.5px; line-height:1.5; padding-left:18px; position:relative; }
-  .wx-bullets li::before { content:"▸"; position:absolute; left:2px; color:var(--muted); }
-  .wx-stats { display:flex; flex-wrap:wrap; gap:7px 9px; margin-top:12px; }
-  .wx-stat { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; }
-  .wx-stat .k { color:var(--muted); font-size:10.5px; display:block; } .wx-stat .v { font-weight:700; font-size:13px; }
-  .wx-foot { font-size:11px; color:var(--muted); margin-top:11px; font-style:italic; line-height:1.5; }
-
-  /* ---- measured options-flow card ---- */
-  .fl { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px 15px; }
-  .fl-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; }
-  .fl-tag { font-size:13px; font-weight:700; } .fl-verdict { font-size:13.5px; color:var(--text); }
-  .fl.s-pos .fl-verdict { color:var(--up); } .fl.s-neg .fl-verdict { color:var(--down); }
-  .fl-chips { display:flex; flex-wrap:wrap; gap:7px 8px; margin-top:11px; }
-  .fl-chip { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; }
-  .fl-chip .k { color:var(--muted); font-size:10.5px; display:block; } .fl-chip .v { font-weight:700; font-size:14px; }
-  .fl-chip.pos .v { color:var(--up); } .fl-chip.neg .v { color:var(--down); }
-  .fl-chip.soft { border-style:dashed; opacity:.78; } .fl-chip.soft .v { color:var(--muted); font-weight:600; }
-  .fl-sec { margin-top:12px; border-top:1px solid var(--line); padding-top:9px; }
-  .fl-h { font-size:12px; color:var(--muted); font-weight:600; }
-  .fl-sec ul { margin:6px 0 0; padding-left:18px; } .fl-sec li { font-size:12px; line-height:1.55; margin:3px 0; font-variant-numeric:tabular-nums; }
-  .fl-foot { font-size:11px; color:var(--muted); font-style:italic; margin-top:11px; line-height:1.5; }
-  /* W0.7: IVR low-confidence caveat chip — replaces rich/cheap label while history is building */
-  .ivr-building { display:inline-block; font-size:11px; background:var(--panel2); border:1px dashed var(--orange,#f97316); border-radius:6px; padding:1px 6px; color:var(--orange,#f97316); font-style:italic; cursor:default; vertical-align:middle; }
-  /* W0.7: flow-card accruing state — shown instead of blank when flow JSON is absent */
-  .fl-accruing { opacity:.75; }
-  .fl-accruing-msg { font-size:12px; color:var(--muted); font-style:italic; margin-top:8px; line-height:1.5; }
+  /* ============================ MOTION ============================ */
+  @keyframes gxUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes gxBreathe{0%,100%{opacity:.4;transform:scale(.82)}50%{opacity:1;transform:scale(1.12)}}
+  @keyframes gxGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes gxDraw{to{stroke-dashoffset:0}}
+  @keyframes gxFlow{to{stroke-dashoffset:0}}
+  @media (prefers-reduced-motion:reduce){
+    .anim,.lvl,#gx-board-inner{animation:none}
+    .stance .bd,.hero-asof .bd,.changed-chip .bd,.lmap-halo{animation:none!important}
+    .lmap-pulse{display:none!important}
+    .lmap-axis{stroke-dashoffset:0!important;animation:none!important}
+    *{transition:none!important}
+  }
 </style>
 </head>
 <body class="page-gex">
@@ -309,91 +352,94 @@
   </div>
 </nav>
 
-<div class="panel">
-  <div class="topline">
-    <h1>🧲 {{ t('Options Desk', '期权台') }}</h1>
-    <span class="muted sm">{{ t('dealer-gamma levels, the walls, the vol surface, scored signals & a timeframed read — look up any name', '做市商Gamma价位、墙、波动率曲面、评分信号与带时间窗的解读 — 可查询任意标的') }}</span>
-  </div>
-  <p class="muted sm note">{{ t(
-    "Daily, delayed Cboe chains — NOT live intraday flow. A VOL-REGIME + LEVELS MAP (where dealer hedging concentrates), not a buy list and not directional certainty: long gamma → dealers fade moves (price pins / mean-reverts, lower realized vol); short gamma → dealers chase (moves trend / amplify, higher vol). The dealer long-call/short-put SIGN is an unobservable assumption — robust for indices, FRAGILE for single names. Walls / flip / max-pain are levels to watch, never targets; every trigger is a daily CLOSE beyond a level.",
-    "每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也非方向定论：多头Gamma → 做市商抑制走势（价格磁吸/均值回归、已实现波动更低）；空头Gamma → 做市商追逐（走势趋势化/放大、波动更高）。做市商“多头看涨/空头看跌”符号是不可观测的假设 — 对指数稳健，对个股脆弱。墙/翻转/最大痛点仅供观察、绝非目标价；每个触发均为日线收盘越过某价位。") }}</p>
-</div>
+<div class="wrap">
 
-<!-- Market Weather: the VALIDATED index vol-regime read (engine/vol_regime; fetched client-side from vol/regime.json) -->
-<div class="panel weather" id="gx-weather" hidden>
-  <div class="topline" style="justify-content:space-between;align-items:flex-start">
-    <h2 style="margin:0">🌦️ {{ t('Market Weather — index vol regime', '市场天气 — 指数波动率体制') }}
-      {{ help('The one read on this page that is VALIDATED, not just displayed: a composite of the VIX/VIX3M term-structure slope + bond-vol (MOVE) + the vol-risk-premium, built from 1990+ history. On 33 years it predicts forward realized vol (HAC t ≈ −10) and, as a long/flat overlay, lifts Sharpe 0.65→0.84 and cuts drawdown (DSR 0.9998). No dealer-sign assumption. It drives a SUBTRACT-ONLY risk/sizing nudge — a regime read, never an intraday timer.', '本页唯一经过验证（而非仅展示）的读数：VIX/VIX3M期限结构斜率 + 债券波动率(MOVE) + 波动风险溢价的综合，基于1990年以来历史。33年中可预测前瞻已实现波动率(HAC t≈−10)，作为多/空仓叠加层将夏普从0.65提升至0.84并降低回撤(DSR 0.9998)。无做市商符号假设。它驱动仅做减法的风险/仓位微调 — 体制读数，绝非盘中择时。') }}</h2>
-    <span class="wx-scored" id="wx-scored" hidden>✓ {{ t('validated', '已验证') }}</span>
-  </div>
-  <div id="gx-weather-body"></div>
-</div>
-
-<details class="primer">
-  <summary>{{ t('New to options? Read this first.', '不熟悉期权？先读这里。') }}</summary>
-  <p class="primer-intro">{{ t("This page maps where big options dealers are likely to push or cushion the price. It's a map of levels, not a buy/sell signal and not a price target.", "本页标示大型期权做市商可能推动或缓冲价格之处。这是价位地图，并非买卖信号、也非目标价。") }}</p>
-  <ul>
-    <li>{{ t("Dealers are the banks that sell most options. To stay market-neutral, they constantly buy and sell the stock to offset what they've sold — and that hedging quietly pushes the price around.", "做市商是卖出大部分期权的银行。为保持市场中性，它们不断买卖股票以对冲卖出的部分 — 这种对冲会悄悄地推动价格。") }}</li>
-    <li>{{ t("Sometimes their hedging calms the market, sometimes it makes it jumpy. When dealers lean against moves (sell rallies, buy dips), price tends to stick in a range. When they pile into moves (buy higher, sell lower), trends and air-pockets run bigger. This is about how volatile, not which direction.", "它们的对冲有时让市场平静、有时让市场跳动。当做市商逆势（涨时卖、跌时买），价格倾向停在区间；当它们顺势（追高、杀低），趋势与急跌都会更大。这关乎波动多大，而非方向。") }}</li>
-    <li>{{ t("“Walls” are price levels where that hedging is heaviest — a call wall above tends to act like a ceiling, a put wall below like a floor. We score each one Strong → Faint so you can see which walls are firm and which are flimsy. They're where price tends to stall, not targets it aims for.", "“墙”是对冲最重的价位 — 上方看涨墙像天花板，下方看跌墙像地板。我们为每面墙评分（强 → 微弱），以便看清哪些墙坚固、哪些松散。价格倾向在此停滞，而非以其为目标。") }}</li>
-    <li>{{ t("“The flip” is the line between calm and jumpy. Above it the market is usually calmer; below it, jumpier. It's a regime boundary you watch like a thermostat — not a support or resistance level.", "“翻转”是平静与跳动的分界。其上市场通常更平静，其下更跳动。它是像恒温器一样观察的体制边界 — 而非支撑或阻力位。") }}</li>
-    <li>{{ t("The “directional tilt” is split BY TIME WINDOW, because different option forces act on different clocks (an intraday charm drift vs a days-to-weeks skew). Each lean is a tendency from delayed positioning — not a trade and not a target.", "“方向倾向”按时间窗拆分，因为不同期权力量作用于不同时间窗（日内的charm漂移 vs 数日至数周的偏斜）。每条均为延迟仓位的方向倾向 — 非交易、非目标。") }}</li>
-    <li>{{ t("How to use it: pick a ticker, read the one-line Game Plan, check the scored walls and the timeframed tilt, then watch the daily-close triggers. The dealer math is solid for big indices/ETFs but shaky for single stocks — treat single-name levels as loose context.", "用法：选一个代码，读一行“行动计划”，查看评分的墙与带时间窗的倾向，再关注日线收盘触发。做市商推算对大型指数/ETF稳健，对个股不稳 — 个股价位仅作宽松背景。") }}</li>
-  </ul>
-</details>
-
-<div class="panel">
-  <div class="pickbar">
-    <div class="gx-search">
+  <!-- ===================== TOP ZONE: title + search ===================== -->
+  <header class="desk-top">
+    <div>
+      <div class="desk-brand">🧲 <span class="gn">{{ t('Options Desk', '期权台') }}</span></div>
+      <p class="desk-sub">{{ t('Where option dealers pin the price and where moves accelerate — a map of the walls, the flip and the vol regime for any name.', '期权做市商在何处磁吸价格、又在何处放大走势 — 任意标的的墙、翻转与波动率体制地图。') }}
+        {{ help('Daily, delayed Cboe chains — NOT live intraday flow. A VOL-REGIME + LEVELS MAP (where dealer hedging concentrates), not a buy list and not directional certainty. Long gamma → dealers fade moves (price pins, lower vol); short gamma → dealers chase (moves amplify). The dealer long-call/short-put SIGN is an unobservable assumption — robust for indices, fragile for single names. Walls / flip / max-pain are levels to watch, never targets; every trigger is a daily CLOSE beyond a level.',
+        '每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也非方向定论。多头Gamma → 做市商抑制走势（磁吸、波动更低）；空头Gamma → 做市商追逐（放大）。做市商"多头看涨/空头看跌"符号为不可观测的假设 — 对指数稳健，对个股脆弱。墙/翻转/最大痛点仅供观察、绝非目标价；每个触发均为日线收盘越过某价位。') }}
+      </p>
+    </div>
+    <div class="desk-search">
       <span class="mag">🔎</span>
       <input id="gx-q" type="text" autocomplete="off" placeholder="Look up a ticker — SPY, NVDA, TSLA…" data-ph-zh="查询代码 — SPY、NVDA、TSLA…">
       <div class="gx-sugg" id="gx-sugg"></div>
     </div>
-    <span class="muted sm">{{ t('or open the full sortable board below', '或展开下方完整可排序看板') }} ↓</span>
+  </header>
+
+  <!-- Market Weather: the one VALIDATED read (engine/vol_regime; fetched from vol/regime.json) -->
+  <div class="wx" id="gx-weather" hidden>
+    <div class="wx-inner">
+      <div class="wx-top">
+        <span class="wx-eyebrow">🌦️ {{ t('Market Weather — index vol regime', '市场天气 — 指数波动率体制') }}</span>
+        {{ help('The one read on this page that is VALIDATED, not just displayed: a composite of the VIX/VIX3M term-structure slope + bond-vol (MOVE) + the vol-risk-premium, built from 1990+ history. On 33 years it predicts forward realized vol (HAC t ≈ −10) and, as a long/flat overlay, lifts Sharpe 0.65→0.84 and cuts drawdown. No dealer-sign assumption. It drives a SUBTRACT-ONLY risk/sizing nudge — a regime read, never an intraday timer.', '本页唯一经过验证（而非仅展示）的读数：VIX/VIX3M期限结构斜率 + 债券波动率(MOVE) + 波动风险溢价的综合，基于1990年以来历史。33年中可预测前瞻已实现波动率(HAC t≈−10)，作为多/空仓叠加层将夏普从0.65提升至0.84并降低回撤。无做市商符号假设。它驱动仅做减法的风险/仓位微调 — 体制读数，绝非盘中择时。') }}
+        <span class="wx-scored" id="wx-scored" hidden>✓ {{ t('validated', '已验证') }}</span>
+      </div>
+      <div id="gx-weather-body"></div>
+    </div>
   </div>
-</div>
 
-<div id="gx-detail"><div class="gx-loading">{{ t('Loading…', '加载中…') }}</div></div>
+  <details class="primer">
+    <summary><span class="ic">📘</span>{{ t('New to options? Read this first.', '不熟悉期权？先读这里。') }}<span class="caret">▸</span></summary>
+    <div class="body">
+      <p>{{ t("This page maps where big options dealers are likely to push or cushion the price. It's a map of levels, not a buy/sell signal and not a price target.", "本页标示大型期权做市商可能推动或缓冲价格之处。这是价位地图，并非买卖信号、也非目标价。") }}</p>
+      <ul>
+        <li>{{ t("Dealers are the banks that sell most options. To stay market-neutral, they constantly buy and sell the stock to offset what they've sold — and that hedging quietly pushes the price around.", "做市商是卖出大部分期权的银行。为保持市场中性，它们不断买卖股票以对冲卖出的部分 — 这种对冲会悄悄地推动价格。") }}</li>
+        <li>{{ t("Sometimes their hedging calms the market, sometimes it makes it jumpy. When dealers lean against moves, price tends to stick in a range. When they pile into moves, trends and air-pockets run bigger. This is about how volatile, not which direction.", "它们的对冲有时让市场平静、有时让市场跳动。当做市商逆势，价格倾向停在区间；当它们顺势，趋势与急跌都会更大。这关乎波动多大，而非方向。") }}</li>
+        <li>{{ t("“Walls” are price levels where that hedging is heaviest — a call wall above acts like a ceiling, a put wall below like a floor. We score each Strong → Faint so you see which are firm. They're where price tends to stall, not targets.", "“墙”是对冲最重的价位 — 上方看涨墙像天花板，下方看跌墙像地板。我们为每面墙评分（强 → 微弱），以便看清哪些坚固。价格倾向在此停滞，而非以其为目标。") }}</li>
+        <li>{{ t("“The flip” is the line between calm and jumpy. Above it the market is usually calmer; below it, jumpier. It's a regime boundary you watch like a thermostat — not a support or resistance level.", "“翻转”是平静与跳动的分界。其上通常更平静，其下更跳动。它是像恒温器一样观察的体制边界 — 而非支撑或阻力位。") }}</li>
+        <li>{{ t("How to use it: pick a ticker, read the one-line verdict, check the levels map and the three reads, then watch the daily-close triggers. The dealer math is solid for big indices/ETFs but shaky for single stocks — treat single-name levels as loose context.", "用法：选一个代码，读一行结论，查看价位地图与三项读数，再关注日线收盘触发。做市商推算对大型指数/ETF稳健，对个股不稳 — 个股价位仅作宽松背景。") }}</li>
+      </ul>
+    </div>
+  </details>
 
-<section id="gx-boardwrap" class="collapsed">
-  <button id="gx-board-expand" class="gx-board-cta" type="button">
-    <span class="big">📋 {{ t('Open the full board', '打开完整看板') }}</span>
-    <span class="sub" id="gx-board-cta-sub">{{ t('every name at a glance · sortable · scored', '所有标的一览 · 可排序 · 已评分') }}</span>
-  </button>
-  <div id="gx-board-inner">
-    <button class="board-collapse top" type="button" data-act="collapse">▴ {{ t('Hide board', '收起看板') }}</button>
-    <div class="board-head">
-      <h2 style="margin:0">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Each column has its own ❓ — hover it for a plain-English explanation. Click a header to sort, or click any row for the full breakdown. Greyed rows (◐) have chains too thin to trust the dealer sign.', '每列都有自己的 ❓ — 悬停查看通俗解释。点击表头排序，或点击任意行查看完整分解。灰色行（◐）期权链过薄，方向不可靠。') }}</h2>
-      <span id="gx-coverage" class="muted sm"></span>
-    </div>
-    <div class="chips" id="gx-chips">
-      <span class="chip on" data-grp="__all">{{ t('All', '全部') }}</span>
-      {% for g in groups %}<span class="chip" data-grp="{{ g }}">{{ td(g) }}</span>{% endfor %}
-    </div>
-    <div class="hm-scroll" id="gx-board-scroll" style="margin-top:10px">
-      <table class="board" id="gx-board">
-        <thead><tr>
-          <th data-sort="key">{{ t('Symbol', '代码') }}</th>
-          <th data-sort="spot">{{ t('Spot', '现价') }}</th>
-          <th data-sort="regime">{{ t('Regime', '体制') }}<span class="bhelp" data-h="regime" tabindex="0" role="button" aria-label="What is Regime?">?</span></th>
-          <th data-sort="vh_state">{{ t('Vol hole', '波动洞') }}<span class="bhelp" data-h="volhole" tabindex="0" role="button" aria-label="What is Vol hole?">?</span></th>
-          <th data-sort="tilt_read">{{ t('Lean', '倾向') }}<span class="bhelp" data-h="lean" tabindex="0" role="button" aria-label="What is Lean?">?</span></th>
-          <th data-sort="net_gex_bn">{{ t('Net GEX', '净GEX') }}<span class="bhelp" data-h="netgex" tabindex="0" role="button" aria-label="What is Net GEX?">?</span></th>
-          <th data-sort="dist_to_flip_pct">{{ t('Flip', '翻转') }}<span class="bhelp" data-h="flip" tabindex="0" role="button" aria-label="What is Flip?">?</span></th>
-          <th data-sort="iv30">IV30<span class="bhelp" data-h="iv30" tabindex="0" role="button" aria-label="What is IV30?">?</span></th>
-          <th data-sort="iv_rank_band">IVR<span class="bhelp" data-h="ivr" tabindex="0" role="button" aria-label="What is IV rank?">?</span></th>
-          <th data-sort="daily_move_pct">{{ t('Exp. move', '预期波动') }}<span class="bhelp" data-h="expmove" tabindex="0" role="button" aria-label="What is Expected move?">?</span></th>
-          <th data-sort="put_call_oi_ratio">P/C<span class="bhelp" data-h="pc" tabindex="0" role="button" aria-label="What is Put/Call?">?</span></th>
-        </tr></thead>
-        <tbody><!-- filled by gex.js --></tbody>
-      </table>
-    </div>
-    <button class="board-collapse bottom" type="button" data-act="collapse">▴ {{ t('Hide board', '收起看板') }}</button>
-  </div>
-</section>
+  <!-- ===================== PER-TICKER DETAIL (rendered by gex.js) ===================== -->
+  <div id="gx-detail"><div class="gx-loading">{{ t('Loading…', '加载中…') }}</div></div>
 
-<div class="panel">
-  <p class="muted xs" style="margin:0">{{ t(
+  <!-- ===================== BOARD (every name — opt-in) ===================== -->
+  <div class="eyebrow"><span class="dot"></span>{{ t('Every name', '所有标的') }}<span class="hint" id="gx-board-hint"></span></div>
+  <section id="gx-boardwrap" class="collapsed">
+    <button id="gx-board-expand" class="gx-board-cta" type="button">
+      <span class="big">📋 {{ t('Open the full board', '打开完整看板') }}</span>
+      <span class="sub" id="gx-board-cta-sub">{{ t('every name at a glance · sortable · scored', '所有标的一览 · 可排序 · 已评分') }}</span>
+    </button>
+    <div id="gx-board-inner">
+      <button class="board-collapse top" type="button" data-act="collapse">▴ {{ t('Hide board', '收起看板') }}</button>
+      <div class="board-head">
+        <h2 style="font-size:14px">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Each column has its own ❓ — hover for a plain-English explanation. Click a header to sort, or a row for the full breakdown. Greyed rows (◐) have chains too thin to trust the dealer sign.', '每列都有自己的 ❓ — 悬停查看通俗解释。点击表头排序，或点击任意行查看完整分解。灰色行（◐）期权链过薄，方向不可靠。') }}</h2>
+        <span id="gx-coverage" class="muted sm"></span>
+      </div>
+      <div class="chips" id="gx-chips">
+        <span class="chip on" data-grp="__all">{{ t('All', '全部') }}</span>
+        {% for g in groups %}<span class="chip" data-grp="{{ g }}">{{ td(g) }}</span>{% endfor %}
+      </div>
+      <div class="hm-scroll" id="gx-board-scroll" style="margin-top:12px">
+        <table class="board" id="gx-board">
+          <thead><tr>
+            <th data-sort="key">{{ t('Symbol', '代码') }}</th>
+            <th data-sort="spot">{{ t('Spot', '现价') }}</th>
+            <th data-sort="regime">{{ t('Regime', '体制') }}<span class="bhelp" data-h="regime" tabindex="0" role="button" aria-label="What is Regime?">?</span></th>
+            <th data-sort="vh_state">{{ t('Vol hole', '波动洞') }}<span class="bhelp" data-h="volhole" tabindex="0" role="button" aria-label="What is Vol hole?">?</span></th>
+            <th data-sort="tilt_read">{{ t('Lean', '倾向') }}<span class="bhelp" data-h="lean" tabindex="0" role="button" aria-label="What is Lean?">?</span></th>
+            <th data-sort="net_gex_bn">{{ t('Net GEX', '净GEX') }}<span class="bhelp" data-h="netgex" tabindex="0" role="button" aria-label="What is Net GEX?">?</span></th>
+            <th data-sort="dist_to_flip_pct">{{ t('Flip', '翻转') }}<span class="bhelp" data-h="flip" tabindex="0" role="button" aria-label="What is Flip?">?</span></th>
+            <th data-sort="iv30">IV30<span class="bhelp" data-h="iv30" tabindex="0" role="button" aria-label="What is IV30?">?</span></th>
+            <th data-sort="iv_rank_band">IVR<span class="bhelp" data-h="ivr" tabindex="0" role="button" aria-label="What is IV rank?">?</span></th>
+            <th data-sort="daily_move_pct">{{ t('Exp. move', '预期波动') }}<span class="bhelp" data-h="expmove" tabindex="0" role="button" aria-label="What is Expected move?">?</span></th>
+            <th data-sort="put_call_oi_ratio">P/C<span class="bhelp" data-h="pc" tabindex="0" role="button" aria-label="What is Put/Call?">?</span></th>
+          </tr></thead>
+          <tbody><!-- filled by gex.js --></tbody>
+        </table>
+      </div>
+      <button class="board-collapse bottom" type="button" data-act="collapse">▴ {{ t('Hide board', '收起看板') }}</button>
+    </div>
+  </section>
+
+  <!-- ===================== SOURCE FOOTER ===================== -->
+  <p class="muted xs" style="margin:26px 0 0;padding-top:16px;border-top:1px solid var(--line);line-height:1.55">{{ t(
     'Source: Cboe delayed option chains (free, keyless) → engine/gex_model.py + engine/gex_engine.py. Greeks dividend-adjusted; the gamma-flip & profile curve are grid-reevaluated across spot. Level strength, 25Δ skew, IV-rank & the timeframed tilt are transparent display-only derivations — never scored signals. Daily EOD levels, delayed — OI updates once per day, this is NOT live intraday flow and misses 0DTE. See LIMITATIONS.md.',
     '来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_model.py + engine/gex_engine.py。希腊字母经股息调整；Gamma翻转与曲线在现价网格上重估。墙强度、25Δ偏斜、IV分位与带时间窗的倾向均为透明的仅供展示推导 — 绝非评分信号。每日延迟价位 — OI每日更新一次，并非实时盘中流动、且不含0DTE。') }}
     {{ t('Generated', '生成于') }} {{ built }}</p>
