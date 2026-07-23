@@ -50,13 +50,18 @@ Append to `/etc/macro-api.env` (NOT git), then `systemctl restart macro-api`:
 ```
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...          # from step 4
+STRIPE_PUBLISHABLE_KEY=pk_test_...       # REQUIRED for the Elements lane (W2); GET /api/billing/config serves it
 SUPABASE_SERVICE_ROLE_KEY=...            # likely already present (analytics/brain use it)
 MM_SITE_BASE=https://mastermind-x.com
 STRIPE_AUTOMATIC_TAX=1                    # or 0 until Stripe Tax origin is configured (step 6)
 ```
 
-The **publishable key is not needed** anywhere — the hosted-Checkout redirect flow never loads
-Stripe.js in the browser.
+`STRIPE_PUBLISHABLE_KEY` is delivered to the droplet by the **deploy-api-secrets** GitHub Actions
+workflow (`.github/workflows/deploy-api-secrets.yml`) alongside the other `/etc/macro-api.env`
+secrets. The hosted-Checkout redirect flow never loads Stripe.js, but the **Elements lane (below)
+does** — its `GET /api/billing/config` returns this key so the onboarding sheet can boot Stripe.js.
+The key is public by design (it can only tokenize cards, never move money), so serving it unauthed is
+safe; the route 503s cleanly if the env is unset, letting the sheet fall back to hosted Checkout.
 
 ## 4. Create the webhook endpoint
 
@@ -73,6 +78,29 @@ Stripe Dashboard → **Developers → Webhooks → Add endpoint**:
 
 Dashboard → **Settings → Billing → Customer portal**: allow the Insider/Pro products, enable
 cancel + plan switching. `GET /api/billing/portal` returns a portal session for the signed-in user.
+
+## 5b. Elements lane (W2)
+
+The onboarding sheet (Terminal repo) captures the card **in-sheet** with Stripe Elements instead of
+redirecting to hosted Checkout. It proxies to three endpoints on macro-api, added beside the
+Checkout lane in `app/billing.py`. **Card-up-front trial law:** the subscription is not created
+until the card is captured — SetupIntent first, subscription second.
+
+| Endpoint | Auth | Purpose |
+|---|---|---|
+| `GET /api/billing/config` | none | `{"publishable_key": <STRIPE_PUBLISHABLE_KEY>}` so the sheet can boot Stripe.js. 503 when the env is unset (publishable keys are public by design). |
+| `POST /api/billing/subscribe/init` | bearer | Body `{tier, interval}`. Find-or-creates the Stripe customer (persists the `user_id → stripe_customer_id` mapping only), then creates a `SetupIntent(usage="off_session")`. Returns `{client_secret, customer_id}`. 409 `already subscribed` if a live sub exists; **no subscription yet**. |
+| `POST /api/billing/subscribe/complete` | bearer | Body `{setup_intent_id, tier, interval}`. Verifies the SetupIntent succeeded and belongs to this user's customer, then creates the trialing subscription (7-day trial, captured payment method, cancel-on-missing-PM). Recomputes + upserts the entitlement row so `/api/me` shows `trialing` instantly; the webhook remains the convergent source. Returns `{status, subscription_id, trial_end}`. |
+
+Requires `STRIPE_PUBLISHABLE_KEY` in `/etc/macro-api.env` (step 3) — delivered via the
+**deploy-api-secrets** workflow. No dashboard step is needed to enable the lane; it uses the same
+products/prices/customers as Checkout and fires the same webhook events, so the entitlement writes
+converge with the hosted flow.
+
+The **webhook endpoint** (`we_…`) for this account is created via the Stripe **API** (not clicked
+in the dashboard) and its signing secret is auto-installed into `/etc/macro-api.env` by the same
+deploy-api-secrets workflow — so step 4's manual dashboard endpoint is the fallback, not the primary
+path, once the workflow is wired.
 
 ## 6. Stripe Tax
 
