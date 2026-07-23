@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Research Vault — mockup</title>
+<!-- theme + lang init (mirrors the standalone-page convention) -->
+<script>try{var t=localStorage.getItem('rv_theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('rv_lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESEARCH VAULT — flagship mockup v2 (self-contained; no external CSS/JS)
+   Skinned in the house macro.html mx5 aurora-glass language. Tokens mirror
+   site/theme.css :root + the dashboard.html.j2 #mx5-css block so this reads as
+   native macro, not a lookalike.
+   ── Signature accent: --rv BLUE. A STABLE brand token (research / intelligence)
+      that harmonises with macro's Fed-beam blue. It is a brand accent, NOT price
+      direction — it is NEVER flipped in zh. Buy = house green --up; a SELL rating
+      is editorial amber (--sell), not alarm red. Blue must never read as up/down.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* Inter — self-hosted, the same faces the whole site uses. UI + titles both.
+   The serif "reading room" face is retired: macro's identity is Inter-for-UI +
+   mono-for-numerals, so every numeral rides --num / SF Mono. */
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
+
+:root{
+  --font-ui: Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --font-mono: ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+  /* --num : the macro data face. Every count / date / page-no / quota / GW figure
+     uses it, exactly like the macro dashboard's numerals. */
+  --num: var(--font-mono);
+
+  /* macro canvas tokens (verbatim from theme.css :root) */
+  --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3;
+  --muted:#8b93a1; --line:#2a2f3a;
+  --up:#45b873; --down:#e06464; --orange:#e08b45; --warn:#e0a030;
+  --info:#5b9bf0; --link:#7aa7e0;
+
+  /* ── mx5 glass recipe (verbatim from dashboard.html.j2 #mx5-css) ───────────── */
+  --mx5-glass-bg:      rgba(16,22,30,.55);
+  --mx5-pop-bg:        rgba(13,18,26,.96);
+  --mx5-glass-border:  rgba(255,255,255,.12);
+  --mx5-glass-shadow:  0 8px 32px rgba(0,0,0,.55), 0 1.5px 0 rgba(255,255,255,.07) inset;
+  --mx5-glass-hover:   0 12px 40px rgba(0,0,0,.65), 0 1.5px 0 rgba(255,255,255,.09) inset;
+  --mx5-blur:          blur(20px);
+  --mx5-radius-card:   18px;
+  --mx5-radius-pill:   999px;
+  --mx5-hover-bg:      rgba(22,29,38,.62);
+  --mx5-hover-border:  rgba(255,255,255,.16);
+
+  /* ── signature: the Vault BLUE intelligence accent ─────────────────────────
+     Direction-STABLE (like the prophet-card verb hues) — deliberately NOT flipped
+     by html[data-lang="zh"]. Harmonises with macro's Fed-beam blue (--q4 #3f78d8,
+     --g-cold #4d8df0). --rv-2 is the cyan companion for beam / aurora depth. */
+  --rv:#4f8ff7;                /* primary brand accent — research / intelligence */
+  --rv-2:#38bdf8;              /* cyan companion for gradient + beam depth */
+  --rv-ink:#9cc2ff;            /* light-on-dark accent text (>=4.5:1 on glass) */
+  --rv-dim: rgba(79,143,247,.13);
+  --rv-glow: rgba(79,143,247,.34);
+  --gold:#d8b26a;              /* editorial highlight (Top Picks) — brass, not neon */
+
+  /* rating stamps — a SELL is editorial (amber), NOT a danger state, so it never
+     borrows --down red (which would misread as an alarm, doctrine Law 5). */
+  --buy:#45b873; --sell:#dCA24a; --indep:#8c93c8;
+
+  --glass-blur: saturate(180%) blur(20px);
+}
+html[data-theme="light"]{
+  --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f6; --text:#1c2430;
+  --muted:#5d6b7e; --line:#eaecf0;
+  --up:#1f9a55; --down:#cf4040; --orange:#c4781f; --warn:#b9791a;
+  --info:#285fff; --link:#285fff;
+
+  --mx5-glass-bg:      rgba(255,255,255,.82);
+  --mx5-pop-bg:        rgba(255,255,255,.97);
+  --mx5-glass-border:  rgba(0,0,0,.06);
+  --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
+  --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
+  --mx5-hover-bg:      rgba(255,255,255,.92);
+  --mx5-hover-border:  rgba(0,0,0,.14);
+
+  --rv:#285fff; --rv-2:#0f8fd8; --rv-ink:#1b49c8;
+  --rv-dim: rgba(40,95,255,.10); --rv-glow: rgba(40,95,255,.26);
+  --gold:#a9812e;
+  --buy:#1f9a55; --sell:#a9781f; --indep:#5b62a8;
+}
+/* Asia colour convention: in zh, a bullish BUY stamp reads bullish only if red.
+   We swap the BUY stamp toward red; the SELL stamp stays editorial amber. The
+   brand blue (--rv) is deliberately NOT touched — it is not a direction. */
+html[data-lang="zh"]{ --buy:#e06464; }
+html[data-theme="light"][data-lang="zh"]{ --buy:#cf4040; }
+
+/* language dual-emit toggle (house pattern) */
+html:not([data-lang="zh"]) .l-zh{ display:none; }
+html[data-lang="zh"] .l-en{ display:none; }
+html[data-lang="zh"] body{ --font-ui:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif; }
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background:var(--bg); color:var(--text); font-family:var(--font-ui);
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  min-height:100vh; overflow-x:hidden;
+}
+
+/* ── mx5 aurora backdrop (verbatim recipe, re-biased BLUE/cyan; violet dropped) ─
+   Two brand-blue blobs + two cyan companions, blur 90px, fixed. Compositor-safe:
+   no animation on the blobs (they're static gradients). */
+.mx5-aurora{ position:fixed; inset:0; pointer-events:none; z-index:-1; overflow:hidden; }
+.mx5-aurora::before{ content:""; position:absolute; width:900px; height:700px; top:-200px; left:-160px;
+  border-radius:50%; filter:blur(90px); background:radial-gradient(ellipse, rgba(79,143,247,.15) 0%, transparent 70%); }
+.mx5-aurora::after{ content:""; position:absolute; width:720px; height:600px; bottom:-120px; right:-110px;
+  border-radius:50%; filter:blur(90px); background:radial-gradient(ellipse, rgba(56,189,248,.11) 0%, transparent 70%); }
+.mx5-aurora .a3{ position:absolute; width:620px; height:520px; top:38%; left:52%; transform:translate(-50%,-50%);
+  border-radius:50%; filter:blur(90px); background:radial-gradient(ellipse, rgba(79,143,247,.08) 0%, transparent 70%); }
+.mx5-aurora .a4{ position:absolute; width:820px; height:600px; bottom:-160px; left:16%;
+  border-radius:50%; filter:blur(90px); background:radial-gradient(ellipse, rgba(56,189,248,.07) 0%, transparent 70%); }
+html[data-theme="light"] .mx5-aurora::before{ background:radial-gradient(ellipse, rgba(40,95,255,.07) 0%, transparent 70%); }
+html[data-theme="light"] .mx5-aurora::after { background:radial-gradient(ellipse, rgba(15,143,216,.05) 0%, transparent 70%); }
+html[data-theme="light"] .mx5-aurora .a3{ background:radial-gradient(ellipse, rgba(40,95,255,.04) 0%, transparent 70%); }
+html[data-theme="light"] .mx5-aurora .a4{ background:radial-gradient(ellipse, rgba(15,143,216,.035) 0%, transparent 70%); }
+
+.wrap{ max-width:1240px; margin:0 auto; padding:0 22px 96px; }
+a{ color:var(--link); text-decoration:none; }
+
+/* keyboard focus floor */
+:focus-visible{ outline:2px solid var(--rv); outline-offset:2px; border-radius:6px; }
+
+/* shared mx5 glass surface */
+.glass{
+  background:var(--mx5-glass-bg); border:1px solid var(--mx5-glass-border);
+  -webkit-backdrop-filter:var(--mx5-blur); backdrop-filter:var(--mx5-blur);
+  box-shadow:var(--mx5-glass-shadow); border-radius:var(--mx5-radius-card);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass{ background:var(--panel); }
+}
+
+/* ═══════════════ top nav (aurora-glass parity with macro) ═══════════════════ */
+.rv-nav{ position:sticky; top:0; z-index:60; margin:0 -22px 0; padding:11px 22px;
+  background:color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(18px); backdrop-filter:saturate(180%) blur(18px);
+  border-bottom:1px solid color-mix(in srgb, var(--mx5-glass-border) 80%, transparent);
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.rv-mark{ display:flex; align-items:center; gap:11px; }
+.rv-crest{ width:34px; height:34px; border-radius:10px; flex:none; display:grid; place-items:center;
+  background:linear-gradient(150deg, var(--rv), var(--rv-2)); color:#fff;
+  box-shadow:0 6px 18px -6px var(--rv-glow), inset 0 1px 0 rgba(255,255,255,.35); }
+.rv-crest svg{ width:19px; height:19px; }
+.rv-name b{ font-weight:800; font-size:15px; letter-spacing:-.01em; }
+.rv-name .rv-sub{ display:block; font-family:var(--num); font-size:10px; font-weight:600; color:var(--muted);
+  letter-spacing:.12em; text-transform:uppercase; margin-top:1px; }
+.rv-ctrls{ display:flex; align-items:center; gap:8px; }
+.rv-seg{ display:inline-flex; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:2px; }
+.rv-seg button{ appearance:none; border:0; background:transparent; color:var(--muted); font:inherit;
+  font-size:12px; font-weight:700; padding:5px 11px; border-radius:8px; cursor:pointer; transition:.16s; }
+.rv-seg button.on{ background:var(--panel); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.22); }
+html[data-theme="light"] .rv-seg button.on{ box-shadow:0 1px 3px rgba(20,30,50,.12); }
+
+/* ═══════════════ 1 · THIS WEEK — mx5 command hero ═══════════════════════════ */
+.rv-hero{ position:relative; margin-top:22px; overflow:hidden; isolation:isolate;
+  padding:30px 32px; display:grid; grid-template-columns:1.35fr 1fr; gap:30px; align-items:center; }
+.rv-hero::before{ content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(560px 320px at 86% 8%, var(--rv-dim), transparent 70%); }
+.rv-eyebrow{ display:inline-flex; align-items:center; gap:8px; font-family:var(--num); font-size:10.5px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--rv-ink); margin-bottom:14px; }
+html[data-theme="light"] .rv-eyebrow{ color:var(--rv); }
+.rv-eyebrow .dot{ width:7px; height:7px; border-radius:50%; background:var(--rv);
+  box-shadow:0 0 0 4px var(--rv-dim); }
+.rv-hero h1{ font-family:var(--font-ui); font-weight:800; font-size:clamp(27px,3.4vw,40px);
+  line-height:1.08; letter-spacing:-.022em; margin:0 0 14px; max-width:20ch; color:var(--text); }
+.rv-hero h1 .accent{ color:transparent; background:linear-gradient(100deg, var(--rv), var(--rv-2));
+  -webkit-background-clip:text; background-clip:text; }
+.rv-verdict{ font-size:15.5px; line-height:1.55; color:color-mix(in srgb,var(--text) 92%,var(--muted)); max-width:56ch; margin:0; }
+.rv-verdict b{ font-weight:700; color:var(--text); }
+.rv-stance{ display:inline-flex; align-items:center; gap:9px; margin-top:16px; padding:9px 15px;
+  border-radius:12px; background:var(--rv-dim); border:1px solid color-mix(in srgb,var(--rv) 32%,transparent);
+  font-size:13.5px; font-weight:600; color:var(--text); }
+.rv-stance svg{ width:16px; height:16px; color:var(--rv); flex:none; }
+.rv-stance b{ font-weight:800; color:var(--rv-ink); }
+html[data-theme="light"] .rv-stance b{ color:var(--rv); }
+
+/* stat tiles — mx5 numerals */
+.rv-figs{ display:flex; flex-wrap:wrap; gap:12px; margin-top:22px; }
+.rv-fig{ flex:1 1 120px; min-width:104px; padding:13px 15px; border-radius:13px;
+  background:color-mix(in srgb, var(--panel2) 46%, transparent); border:1px solid var(--mx5-glass-border); }
+.rv-fig .n{ font-family:var(--num); font-size:26px; font-weight:700; line-height:1; color:var(--text);
+  font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+.rv-fig .n.hl{ color:var(--rv-ink); } html[data-theme="light"] .rv-fig .n.hl{ color:var(--rv); }
+.rv-fig .k{ font-size:11.5px; font-weight:600; color:var(--muted); margin-top:5px; letter-spacing:.01em; }
+
+/* ── signature: the Publishing Beam (blue Fed-beam / arc echo) ────────────────
+   A macro-style beam: a blue arc sweeps across nodes = the desks publishing this
+   week. The count rides the beam. DESCRIPTIVE, not a signal. Static SVG + one
+   compositor-only opacity shimmer on the beam node (no infinite filter loops). */
+.rv-beam{ position:relative; align-self:stretch; min-height:230px; border-radius:16px; overflow:hidden;
+  background:color-mix(in srgb, var(--panel2) 40%, transparent); border:1px solid var(--mx5-glass-border);
+  padding:18px 18px 16px; display:flex; flex-direction:column; }
+.rv-beam-hd{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.rv-beam-hd .lb{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--muted); }
+.rv-beam-hd .big{ font-family:var(--num); font-size:19px; font-weight:700; color:var(--rv-ink);
+  font-variant-numeric:tabular-nums; }
+html[data-theme="light"] .rv-beam-hd .big{ color:var(--rv); }
+.rv-beam-stage{ position:relative; flex:1; margin-top:6px; }
+.rv-beam-svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.rv-beam-cap{ margin-top:8px; font-size:11.5px; line-height:1.45; color:var(--muted); }
+.rv-beam-cap b{ color:color-mix(in srgb,var(--text) 82%,var(--muted)); font-weight:700; }
+/* the sweeping node glow — opacity pulse only (compositor-safe) */
+@keyframes rvPulse{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
+.rv-beam-svg .pulse{ animation:rvPulse 3.4s ease-in-out infinite; transform-origin:center; }
+
+/* ═══════════════ 2 · LANE TABS (segmented, unread badges) ═══════════════════ */
+.rv-lanes{ display:flex; align-items:center; gap:8px; margin-top:30px; flex-wrap:wrap; }
+.rv-lane{ appearance:none; display:inline-flex; align-items:center; gap:9px; font:inherit; font-size:14px; font-weight:700;
+  padding:9px 15px; border-radius:var(--mx5-radius-pill); cursor:pointer; color:var(--muted);
+  background:color-mix(in srgb, var(--panel2) 52%, transparent); border:1px solid var(--mx5-glass-border); transition:.16s; }
+.rv-lane:hover{ color:var(--text); border-color:var(--mx5-hover-border); }
+.rv-lane.on{ color:#fff; background:linear-gradient(120deg, var(--rv), color-mix(in srgb,var(--rv) 72%,var(--rv-2)));
+  border-color:transparent; box-shadow:0 6px 18px -6px var(--rv-glow); }
+html[data-theme="light"] .rv-lane.on{ color:#fff; }
+.rv-lane .badge{ font-family:var(--num); font-size:11px; font-weight:700; min-width:20px; text-align:center;
+  padding:1px 6px; border-radius:999px; background:color-mix(in srgb, var(--text) 12%, transparent); color:var(--text);
+  font-variant-numeric:tabular-nums; }
+.rv-lane.on .badge{ background:rgba(255,255,255,.24); color:#fff; }
+.rv-lane svg{ width:15px; height:15px; }
+.rv-unread{ margin-left:auto; font-size:12.5px; color:var(--muted); font-family:var(--num); font-variant-numeric:tabular-nums; }
+.rv-unread b{ color:var(--rv-ink); font-weight:700; }
+html[data-theme="light"] .rv-unread b{ color:var(--rv); }
+
+/* ═══════════════ 3 · WORKBENCH (browse rail + filter + feed) ════════════════ */
+.rv-work{ display:grid; grid-template-columns:236px 1fr; gap:22px; margin-top:18px; align-items:start; }
+
+/* ── browse rail: date → institution tree ── */
+.rv-rail{ position:sticky; top:70px; padding:16px 15px; }
+.rv-rail-hd{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+.rv-rail-hd h3{ margin:0; font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.rv-rail-hd .rv-drawer-x{ display:none; }
+.rv-tree{ list-style:none; margin:0; padding:0; font-size:13.5px; }
+.rv-tree li{ margin:0; }
+.rv-tw{ display:flex; align-items:center; gap:7px; width:100%; text-align:left; appearance:none; border:0; background:none;
+  font:inherit; color:var(--text); padding:6px 8px; border-radius:9px; cursor:pointer; transition:.14s; }
+.rv-tw:hover{ background:color-mix(in srgb,var(--rv) 12%,transparent); color:var(--rv-ink); }
+html[data-theme="light"] .rv-tw:hover{ color:var(--rv); }
+.rv-tw.sel{ background:var(--rv-dim); color:var(--rv-ink); font-weight:700; }
+html[data-theme="light"] .rv-tw.sel{ color:var(--rv); }
+.rv-tw .caret{ width:13px; height:13px; flex:none; transition:transform .18s; color:var(--muted); }
+.rv-node.open > .rv-tw .caret{ transform:rotate(90deg); }
+.rv-tw .lbl{ flex:1; min-width:0; }
+.rv-tw .cn{ font-family:var(--num); font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.rv-children{ list-style:none; margin:2px 0 4px; padding:0 0 0 16px; border-left:1px solid var(--line);
+  display:none; }
+.rv-node.open > .rv-children{ display:block; }
+.rv-leaf .rv-tw{ font-size:13px; }
+.rv-leaf .rv-tw .dotinst{ width:6px; height:6px; border-radius:50%; background:var(--rv); opacity:.6; flex:none; }
+
+/* ── filter + search ── */
+.rv-filter{ position:sticky; top:60px; z-index:40; padding:13px 15px; margin-bottom:16px; }
+.rv-search{ display:flex; align-items:center; }
+.rv-search input[type="search"]{
+  appearance:none; -webkit-appearance:none; flex:1 1 auto; min-width:0; box-sizing:border-box;
+  padding:10px 14px 10px 40px; border-radius:11px; border:1px solid var(--line); color:var(--text);
+  font:inherit; font-size:14px; outline:none; transition:border-color .18s, box-shadow .25s ease;
+  background:var(--panel2)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b94a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E")
+    no-repeat 13px 50%; background-size:16px; }
+.rv-search input::placeholder{ color:var(--muted); }
+.rv-search input:hover{ border-color:color-mix(in srgb,var(--rv) 40%,var(--line)); }
+.rv-search input:focus{ border-color:var(--rv); box-shadow:0 0 0 3px var(--rv-dim); }
+.rv-facets{ display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:12px; align-items:center; }
+.facet-grp{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.facet-lbl{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-right:2px; }
+.aff{ appearance:none; padding:6px 13px; border-radius:var(--mx5-radius-pill); background:color-mix(in srgb,var(--panel2) 60%,transparent);
+  color:var(--muted); font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer; border:1px solid var(--mx5-glass-border); transition:.16s; white-space:nowrap; }
+.aff:hover{ color:var(--text); border-color:var(--mx5-hover-border); }
+.aff.active{ background:var(--rv); color:#fff; border-color:var(--rv); box-shadow:0 4px 12px -4px var(--rv-glow); }
+.rv-result{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px;
+  padding-top:11px; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent); flex-wrap:wrap; }
+.rv-result .cnt{ font-size:13px; color:var(--muted); font-family:var(--num); font-variant-numeric:tabular-nums; }
+.rv-result .cnt b{ color:var(--text); font-weight:700; }
+.rv-active{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.chiptag{ display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; padding:4px 6px 4px 11px;
+  border-radius:var(--mx5-radius-pill); background:var(--rv-dim); border:1px solid color-mix(in srgb,var(--rv) 30%,transparent); color:var(--text); }
+.chiptag button{ appearance:none; border:0; background:color-mix(in srgb,var(--rv) 26%,transparent); color:var(--text);
+  width:17px; height:17px; border-radius:50%; cursor:pointer; display:grid; place-items:center; font-size:11px; line-height:1; padding:0; }
+.chiptag button:hover{ background:var(--rv); color:#fff; }
+.rv-clear{ appearance:none; border:0; background:none; color:var(--rv); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; padding:2px; }
+html[data-theme="light"] .rv-clear{ color:var(--rv); }
+.rv-clear:hover{ text-decoration:underline; }
+
+/* mobile browse drawer trigger + scrim (both hidden on desktop) */
+.rv-browse-btn{ display:none; }
+.rv-scrim{ display:none; }
+
+/* ── Top Picks rail (horizontal, appears only on Top Picks lane) ── */
+.rv-picks-hd{ display:flex; align-items:baseline; gap:11px; margin-bottom:14px; flex-wrap:wrap; }
+.rv-picks-hd h2{ margin:0; font-size:20px; font-weight:800; letter-spacing:-.015em; color:var(--text); }
+.rv-picks-hd .why{ font-size:12.5px; color:var(--muted); }
+
+/* ═══════════════ 4 · REPORT CARDS (mx5 glass) ═══════════════════════════════ */
+.rv-feed{ display:flex; flex-direction:column; gap:14px; }
+.rep{ position:relative; display:grid; grid-template-columns:1fr; gap:0; padding:19px 21px; transition:transform .2s ease-out, box-shadow .2s, border-color .2s, background .2s; }
+.rep:hover{ transform:translateY(-1px); background:var(--mx5-hover-bg); border-color:var(--mx5-hover-border); box-shadow:var(--mx5-glass-hover); }
+.rep.pick{ border-color:color-mix(in srgb,var(--rv) 34%,var(--mx5-glass-border)); }
+.rep.pick::before{ content:""; position:absolute; top:0; left:0; right:0; height:3px; border-radius:18px 18px 0 0;
+  background:linear-gradient(90deg, var(--rv), var(--rv-2)); }
+.rep.saved-glow{}
+.rep-top{ display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+.rep-logo{ width:30px; height:30px; border-radius:8px; flex:none; display:grid; place-items:center;
+  font-family:var(--num); font-weight:700; font-size:11.5px; color:#fff; letter-spacing:-.02em;
+  background:linear-gradient(150deg, var(--rv), var(--rv-2)); box-shadow:inset 0 1px 0 rgba(255,255,255,.28); }
+.rep.needs .rep-logo{ background:linear-gradient(150deg, var(--muted), color-mix(in srgb,var(--muted) 60%,var(--panel2))); }
+.rep-inst{ font-size:13px; font-weight:800; color:var(--text); }
+.rep.needs .rep-inst{ color:var(--muted); }
+.rep-desk{ font-size:12px; color:var(--muted); }
+.rep-sep{ color:color-mix(in srgb,var(--text) 22%,transparent); }
+.rep-unread{ width:8px; height:8px; border-radius:50%; background:var(--rv); flex:none;
+  box-shadow:0 0 0 3px var(--rv-dim); margin-left:1px; }
+.rep.read .rep-unread{ background:transparent; box-shadow:none; border:1px solid var(--line); }
+.rep-pin{ display:inline-flex; align-items:center; gap:5px; font-family:var(--num); font-size:9.5px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--rv-ink); padding:3px 8px; border-radius:999px; background:var(--rv-dim);
+  border:1px solid color-mix(in srgb,var(--rv) 30%,transparent); }
+html[data-theme="light"] .rep-pin{ color:var(--rv); }
+.rep-pin svg{ width:10px; height:10px; }
+.rep-savebtn{ margin-left:auto; appearance:none; border:1px solid var(--mx5-glass-border); background:color-mix(in srgb,var(--panel2) 50%,transparent);
+  color:var(--muted); width:32px; height:32px; border-radius:9px; cursor:pointer; display:grid; place-items:center; transition:.16s; flex:none; }
+.rep-savebtn svg{ width:16px; height:16px; }
+.rep-savebtn:hover{ color:var(--rv); border-color:color-mix(in srgb,var(--rv) 45%,var(--line)); }
+.rep-savebtn.on{ color:var(--rv); background:var(--rv-dim); border-color:color-mix(in srgb,var(--rv) 40%,transparent); }
+.rep-savebtn.on svg{ fill:var(--rv); }
+.rep h3{ font-family:var(--font-ui); font-weight:700; font-size:17.5px; line-height:1.28; margin:0 0 10px;
+  letter-spacing:-.012em; color:var(--text); }
+.rep-points{ list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:6px; }
+.rep-points li{ position:relative; padding-left:18px; font-size:13.5px; line-height:1.5; color:color-mix(in srgb,var(--text) 88%,var(--muted)); }
+.rep-points li::before{ content:""; position:absolute; left:2px; top:8px; width:6px; height:6px; border-radius:2px;
+  background:var(--rv); transform:rotate(45deg); }
+.rep-points.pend li{ color:var(--muted); font-style:italic; }
+.rep-more{ appearance:none; border:0; background:none; color:var(--rv); font:inherit; font-size:12.5px; font-weight:700;
+  cursor:pointer; padding:0; margin:-2px 0 12px; display:inline-flex; align-items:center; gap:5px; }
+html[data-theme="light"] .rep-more{ color:var(--rv); }
+.rep-more:hover{ text-decoration:underline; }
+.rep-more svg{ width:13px; height:13px; transition:transform .2s; }
+.rep.open-pts .rep-more svg{ transform:rotate(180deg); }
+.rep-points .extra{ display:none; }
+.rep.open-pts .rep-points .extra{ display:list-item; }
+
+.rep-foot{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  padding-top:13px; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent); }
+.rep-meta{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.rep-date{ font-family:var(--num); font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; display:inline-flex; align-items:center; gap:6px; }
+.rep-date svg{ width:13px; height:13px; opacity:.7; }
+.rep-tags{ display:flex; gap:6px; flex-wrap:wrap; }
+.rep-tag{ font-size:11px; font-weight:600; color:var(--muted); padding:2px 8px; border-radius:6px;
+  background:color-mix(in srgb,var(--text) 6%,transparent); }
+.rep-acts{ display:flex; align-items:center; gap:8px; }
+.btn{ appearance:none; display:inline-flex; align-items:center; gap:7px; font:inherit; font-size:12.5px; font-weight:700;
+  padding:8px 14px; border-radius:10px; cursor:pointer; border:1px solid var(--mx5-glass-border);
+  background:color-mix(in srgb,var(--panel2) 55%,transparent); color:var(--text); transition:.16s; }
+.btn svg{ width:15px; height:15px; }
+.btn:hover{ transform:translateY(-1px); border-color:var(--mx5-hover-border); }
+.btn.primary{ background:linear-gradient(120deg, var(--rv), color-mix(in srgb,var(--rv) 74%,var(--rv-2)));
+  border-color:transparent; color:#fff; box-shadow:0 6px 16px -6px var(--rv-glow); }
+.btn.primary:hover{ filter:brightness(1.06); }
+.btn.ghost{ background:transparent; }
+
+/* rating stamp (archival classification mark) */
+.stamp{ display:inline-flex; align-items:center; gap:5px; font-family:var(--num); font-size:10px;
+  font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:6px;
+  border:1.5px solid currentColor; }
+.stamp.buy{ color:var(--buy); } .stamp.sell{ color:var(--sell); } .stamp.indep{ color:var(--indep); }
+.stamp .dt{ width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+.rep .backfill{ font-size:11px; color:var(--muted); font-style:italic; }
+
+/* empty state (Saved lane when nothing saved / filter matches nothing) */
+.rv-empty{ padding:40px 24px; text-align:center; }
+.rv-empty svg{ width:34px; height:34px; color:var(--muted); opacity:.6; margin-bottom:12px; }
+.rv-empty h3{ margin:0 0 6px; font-size:16px; font-weight:800; color:var(--text); }
+.rv-empty p{ margin:0; font-size:13px; color:var(--muted); max-width:38ch; margin-inline:auto; }
+
+/* footer disclaimer */
+.rv-foot{ margin-top:44px; padding-top:22px; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent);
+  font-size:12px; line-height:1.6; color:var(--muted); max-width:78ch; }
+.rv-foot b{ color:color-mix(in srgb,var(--text) 80%,var(--muted)); font-weight:700; }
+
+/* ═══════════════ 5 · PDF VIEWER modal (clones the auth-overlay) ══════════════ */
+.rv-overlay{ position:fixed; inset:0; z-index:100001; display:flex; align-items:center; justify-content:center;
+  padding:24px; background:color-mix(in srgb,#04060c 74%,transparent);
+  -webkit-backdrop-filter:blur(12px) saturate(1.05); backdrop-filter:blur(12px) saturate(1.05);
+  opacity:0; visibility:hidden; pointer-events:none; transition:opacity .26s ease, visibility 0s linear .26s; }
+.rv-overlay.open{ opacity:1; visibility:visible; pointer-events:auto; transition:opacity .26s ease, visibility 0s; }
+html.rv-lock{ overflow:hidden; }
+.rv-modal{ position:relative; width:min(1060px,97vw); height:min(90vh,900px); box-sizing:border-box;
+  border-radius:20px; overflow:hidden; isolation:isolate; display:grid; grid-template-columns:96px 1fr; grid-template-rows:auto 1fr auto auto;
+  background:var(--mx5-pop-bg); border:1px solid var(--mx5-glass-border);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4); backdrop-filter:blur(20px) saturate(1.4);
+  box-shadow:0 34px 100px -24px rgba(0,0,0,.84), inset 0 1px 0 rgba(255,255,255,.08);
+  transform:translateY(14px) scale(.98); opacity:.4; transition:transform .34s cubic-bezier(.32,1.28,.5,1), opacity .22s ease;
+  color:var(--text); }
+.rv-overlay.open .rv-modal{ transform:none; opacity:1; }
+html[data-theme="light"] .rv-modal{ box-shadow:0 32px 88px -26px rgba(20,30,50,.44), inset 0 1px 0 rgba(255,255,255,.72); }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .rv-modal{ background:var(--panel); } }
+.rv-modal::before{ content:""; position:absolute; top:0; left:0; right:0; height:3px; z-index:5;
+  background:linear-gradient(90deg, var(--rv), var(--rv-2), color-mix(in srgb,var(--rv) 20%,transparent)); }
+
+/* modal header (spans both cols) */
+.vh{ grid-column:1 / 3; display:flex; align-items:flex-start; gap:14px; padding:17px 20px 14px;
+  border-bottom:1px solid color-mix(in srgb,var(--text) 9%,transparent); }
+.vh-logo{ width:34px; height:34px; border-radius:9px; flex:none; display:grid; place-items:center;
+  font-family:var(--num); font-weight:700; font-size:13px; color:#fff; letter-spacing:-.02em;
+  background:linear-gradient(150deg, var(--rv), var(--rv-2)); box-shadow:inset 0 1px 0 rgba(255,255,255,.28); }
+.vh-txt{ min-width:0; flex:1; }
+.vh-txt .vh-inst{ font-size:12px; font-weight:800; color:var(--muted); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.vh-txt h3{ font-family:var(--font-ui); font-weight:700; font-size:16px; line-height:1.28; margin:3px 0 0; color:var(--text);
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.vh-tools{ display:flex; align-items:center; gap:6px; flex:none; }
+.vh-find{ position:relative; display:flex; align-items:center; }
+.vh-find input{ appearance:none; width:150px; padding:7px 10px 7px 30px; border-radius:9px; border:1px solid var(--line);
+  background:var(--panel2)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b94a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E")
+    no-repeat 9px 50%; background-size:14px; color:var(--text); font:inherit; font-size:12.5px; outline:none; transition:.16s; }
+.vh-find input:focus{ border-color:var(--rv); box-shadow:0 0 0 3px var(--rv-dim); }
+.vh-tbtn{ appearance:none; width:34px; height:34px; border-radius:9px; border:1px solid var(--mx5-glass-border);
+  background:color-mix(in srgb,var(--panel2) 55%,transparent); color:var(--muted); cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; transition:.16s; }
+.vh-tbtn:hover{ color:var(--rv); border-color:color-mix(in srgb,var(--rv) 45%,var(--line)); }
+.vh-tbtn.on{ color:var(--rv); background:var(--rv-dim); border-color:color-mix(in srgb,var(--rv) 40%,transparent); }
+.vh-tbtn svg{ width:16px; height:16px; }
+.vh-x{ appearance:none; width:34px; height:34px; border-radius:9px; border:1px solid transparent; background:transparent;
+  color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:.18s; flex:none; }
+.vh-x:hover{ background:color-mix(in srgb,var(--text) 8%,transparent); color:var(--text); }
+.vh-x svg{ width:17px; height:17px; }
+
+/* thumbnail rail (left column) */
+.vthumbs{ grid-row:2 / 3; overflow-y:auto; padding:14px 10px; border-right:1px solid color-mix(in srgb,var(--text) 8%,transparent);
+  display:flex; flex-direction:column; gap:9px; background:color-mix(in srgb,var(--panel) 40%,transparent); }
+.vthumb{ appearance:none; border:1.5px solid var(--line); background:#fff; border-radius:5px; cursor:pointer; padding:0;
+  aspect-ratio:1/1.3; position:relative; overflow:hidden; transition:.16s; flex:none; }
+.vthumb .tl{ position:absolute; left:14%; right:14%; height:2px; border-radius:2px; background:#d6dae2; }
+.vthumb .tb{ position:absolute; left:14%; width:34%; height:3px; border-radius:2px; background:var(--rv); top:14%; }
+.vthumb:hover{ border-color:color-mix(in srgb,var(--rv) 55%,var(--line)); transform:translateY(-1px); }
+.vthumb.on{ border-color:var(--rv); box-shadow:0 0 0 2px var(--rv-dim); }
+.vthumb .tn{ position:absolute; bottom:2px; right:3px; font-family:var(--num); font-size:8px; color:var(--muted); }
+
+/* stage (faux pdf.js canvas) */
+.vstage{ grid-row:2 / 3; min-height:0; overflow:auto; position:relative;
+  background:radial-gradient(600px 400px at 50% 0%, var(--rv-dim), transparent 70%), color-mix(in srgb,var(--bg) 60%,#000);
+  padding:24px; display:flex; justify-content:center; }
+html[data-theme="light"] .vstage{ background:radial-gradient(600px 400px at 50% 0%, var(--rv-dim), transparent 70%), #dfe3ea; }
+.vpage{ position:relative; width:min(560px,100%); aspect-ratio:1/1.32; background:#fff; color:#1a1f2b;
+  border-radius:3px; box-shadow:0 20px 60px -20px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.3);
+  padding:44px 46px; transform-origin:top center; transition:transform .3s ease; overflow:hidden;
+  font-family:var(--font-ui); align-self:flex-start; }
+/* dark-invert toggle for the PDF (accessibility) */
+.vstage.inverted .vpage{ filter:invert(1) hue-rotate(180deg); }
+/* faux document content */
+.vpage .doc-band{ height:5px; width:52px; border-radius:3px; background:var(--rv); margin-bottom:22px; }
+.vpage .doc-h{ font-size:21px; font-weight:800; line-height:1.2; color:#141821; margin:0 0 6px; letter-spacing:-.01em; }
+.vpage .doc-sub{ font-family:var(--num); font-size:11px; color:#5a6270; margin:0 0 26px; font-weight:600; letter-spacing:.05em; }
+.vpage .doc-p{ height:9px; border-radius:3px; background:#e7e9ee; margin:0 0 11px; }
+.vpage .doc-p.s1{ width:100%; } .vpage .doc-p.s2{ width:96%; } .vpage .doc-p.s3{ width:88%; } .vpage .doc-p.s4{ width:70%; }
+.vpage .doc-fig{ height:120px; border-radius:6px; margin:22px 0; background:linear-gradient(180deg,#f3f5f9,#e9edf4);
+  border:1px solid #e2e6ee; display:flex; align-items:flex-end; gap:8px; padding:14px; }
+.vpage .doc-fig i{ display:block; flex:1; border-radius:3px 3px 0 0; background:linear-gradient(180deg,var(--rv-2),var(--rv)); opacity:.85; }
+.vpage .doc-foot{ position:absolute; left:46px; right:46px; bottom:20px; display:flex; justify-content:space-between;
+  font-family:var(--num); font-size:9px; color:#9aa2b0; letter-spacing:.04em; }
+.vpage .doc-wm{ position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; opacity:.06;
+  font-weight:900; font-size:34px; letter-spacing:.14em; color:#1a1f2b; transform:rotate(-24deg); text-transform:uppercase; }
+
+/* load shimmer (compositor-only: transform sweep of a masked gradient) */
+.vpage.loading > *:not(.shimmer){ opacity:0; }
+.shimmer{ position:absolute; inset:0; display:none; overflow:hidden; background:#fff; }
+.vpage.loading .shimmer{ display:block; }
+.shimmer::before{ content:""; position:absolute; top:0; bottom:0; width:60%; left:-60%;
+  background:linear-gradient(90deg, transparent, color-mix(in srgb,var(--rv) 14%,#eef0f5), transparent);
+  animation:vshim 1.15s linear infinite; }
+.shimmer .sk{ position:absolute; left:46px; right:46px; height:10px; border-radius:4px; background:#eef0f5; }
+@keyframes vshim{ to{ transform:translateX(280%); } }
+
+/* related strip (spans stage col, above controls) */
+.vrelated{ grid-column:2 / 3; display:flex; align-items:center; gap:11px; padding:10px 18px; overflow-x:auto;
+  border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent); background:color-mix(in srgb,var(--panel) 50%,transparent); }
+.vrelated .vr-lb{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); flex:none; }
+.vr-chip{ appearance:none; display:inline-flex; align-items:center; gap:8px; flex:none; padding:6px 11px; border-radius:10px;
+  border:1px solid var(--mx5-glass-border); background:color-mix(in srgb,var(--panel2) 55%,transparent); color:var(--text);
+  font:inherit; font-size:12px; cursor:pointer; transition:.16s; white-space:nowrap; }
+.vr-chip:hover{ border-color:color-mix(in srgb,var(--rv) 45%,var(--line)); transform:translateY(-1px); }
+.vr-chip .vr-inst{ font-weight:700; } .vr-chip .vr-tk{ font-family:var(--num); font-size:11px; color:var(--muted); }
+
+/* controls dock (page-turn + zoom + fullscreen) */
+.vctrl{ grid-column:1 / 3; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 18px;
+  border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent); background:color-mix(in srgb,var(--panel) 55%,transparent); flex-wrap:wrap; }
+.vc-grp{ display:inline-flex; align-items:center; gap:6px; }
+.vc-btn{ appearance:none; height:34px; min-width:34px; padding:0 8px; border-radius:9px; border:1px solid var(--mx5-glass-border);
+  background:color-mix(in srgb,var(--panel2) 55%,transparent); color:var(--text); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  font:inherit; font-size:12px; font-weight:700; transition:.16s; }
+.vc-btn:hover:not(:disabled){ border-color:var(--rv); color:var(--rv); transform:translateY(-1px); }
+.vc-btn:disabled{ opacity:.4; cursor:default; }
+.vc-btn svg{ width:16px; height:16px; }
+.vc-page{ font-family:var(--num); font-size:12.5px; color:var(--text); font-variant-numeric:tabular-nums; min-width:60px; text-align:center; }
+.vc-zoom{ font-family:var(--num); font-size:12px; color:var(--muted); min-width:44px; text-align:center; }
+.vc-hint{ font-size:11px; color:var(--muted); display:inline-flex; align-items:center; gap:6px; }
+.vc-hint kbd{ font-family:var(--num); font-size:10px; padding:1px 5px; border-radius:4px; border:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel2) 60%,transparent); color:var(--muted); }
+
+/* download rail — reflects quota state (all three states shown) */
+.vdl{ grid-column:1 / 3; padding:13px 18px 15px; border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent);
+  background:color-mix(in srgb,var(--panel2) 55%,transparent); display:flex; flex-direction:column; gap:10px; }
+.vdl-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.vdl-state{ display:flex; align-items:center; gap:10px; font-size:12.5px; }
+.vdl-meter{ width:74px; height:6px; border-radius:6px; background:color-mix(in srgb,var(--text) 10%,transparent); overflow:hidden; flex:none; }
+.vdl-meter i{ display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--rv),var(--rv-2)); }
+.vdl-txt b{ font-weight:800; color:var(--text); font-family:var(--num); } .vdl-txt{ color:var(--muted); }
+.vdl-txt.warnc b{ color:var(--warn); }
+.btn.block{ padding:9px 16px; }
+.btn.primary:disabled{ opacity:.5; cursor:default; filter:none; box-shadow:none; background:color-mix(in srgb,var(--panel2) 55%,transparent); border:1px solid var(--mx5-glass-border); color:var(--muted); }
+.btn.upgrade{ background:linear-gradient(120deg,var(--gold),color-mix(in srgb,var(--gold) 60%,var(--rv-2))); border:0; color:#241a05; }
+html[data-theme="light"] .btn.upgrade{ color:#fff; }
+.vdl-wm{ font-size:11px; color:var(--muted); display:inline-flex; align-items:center; gap:7px; }
+.vdl-wm svg{ width:13px; height:13px; opacity:.75; }
+.vdl-demo{ display:flex; gap:6px; }
+.vdl-demo button{ appearance:none; font:inherit; font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:7px;
+  border:1px solid var(--line); background:transparent; color:var(--muted); cursor:pointer; }
+.vdl-demo button.on{ background:var(--rv); border-color:var(--rv); color:#fff; }
+
+/* fullscreen viewer */
+.rv-overlay.fs{ padding:0; }
+.rv-overlay.fs .rv-modal{ width:100vw; height:100vh; border-radius:0; }
+
+/* ═══════════════ responsive ═══════════════════════════════════════════════ */
+@media (max-width:980px){
+  .rv-hero{ grid-template-columns:1fr; gap:22px; }
+  .rv-beam{ min-height:190px; }
+  .rv-work{ grid-template-columns:1fr; }
+  .rv-rail{ display:none; }
+  .rv-browse-btn{ display:inline-flex; align-items:center; gap:7px; appearance:none; font:inherit; font-size:12.5px; font-weight:700;
+    padding:8px 14px; border-radius:var(--mx5-radius-pill); border:1px solid var(--mx5-glass-border);
+    background:color-mix(in srgb,var(--panel2) 55%,transparent); color:var(--text); cursor:pointer; }
+  .rv-browse-btn svg{ width:15px; height:15px; }
+  /* drawer form of the rail */
+  .rv-rail.drawer-open{ display:block; position:fixed; top:0; left:0; bottom:0; width:280px; max-width:86vw; z-index:70;
+    border-radius:0 18px 18px 0; overflow-y:auto; }
+  .rv-rail.drawer-open .rv-rail-hd .rv-drawer-x{ display:inline-flex; appearance:none; border:0; background:none; color:var(--muted); cursor:pointer; padding:2px; }
+  .rv-scrim{ display:none; position:fixed; inset:0; z-index:69; background:color-mix(in srgb,#04060c 55%,transparent);
+    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
+  .rv-scrim.on{ display:block; }
+}
+@media (max-width:640px){
+  .wrap{ padding:0 15px 80px; }
+  .rv-nav{ margin:0 -15px 0; padding:10px 15px; }
+  .rv-hero{ padding:22px 18px; }
+  .rep{ padding:16px 16px; }
+  .rep-acts{ width:100%; } .rep-acts .btn{ flex:1; justify-content:center; }
+  .rep-savebtn{ order:-1; }
+  /* viewer becomes a bottom-sheet, single column (thumbs hidden) */
+  .rv-overlay{ align-items:flex-end; padding:0; }
+  .rv-modal{ width:100%; height:94vh; height:94dvh; border-radius:20px 20px 0 0; grid-template-columns:1fr;
+    transform:translateY(100%); opacity:1; }
+  .rv-overlay.open .rv-modal{ transform:none; }
+  .vthumbs{ display:none; }
+  .vh, .vstage, .vrelated, .vctrl, .vdl{ grid-column:1 / 2; }
+  .vh-find input{ width:96px; }
+  .vpage{ padding:30px 26px; }
+}
+
+/* reduced motion — kill transforms/animations (mobile-perf law) */
+@media (prefers-reduced-motion:reduce){
+  *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.12s !important; }
+  .rv-overlay,.rv-modal{ transition:opacity .12s ease; } .rv-modal{ transform:none; }
+  .rep:hover,.btn:hover,.vc-btn:hover,.vr-chip:hover,.vthumb:hover{ transform:none; }
+  .shimmer::before{ animation:none; } .rv-beam-svg .pulse{ animation:none; opacity:.85; }
+}
+</style>
+</head>
+<body>
+<div class="mx5-aurora" aria-hidden="true"><div class="a3"></div><div class="a4"></div></div>
+<div class="wrap">
+
+  <!-- ── top nav (aurora-glass parity; theme + lang toggles) ── -->
+  <div class="rv-nav">
+    <div class="rv-mark">
+      <span class="rv-crest" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 5.5V20.5"/><path d="M9 8h7M9 11.5h7"/></svg>
+      </span>
+      <span class="rv-name">
+        <b class="l-en">Research Vault</b><b class="l-zh">研报库</b>
+        <span class="rv-sub"><span class="l-en">Institutional desk research</span><span class="l-zh">机构研究报告</span></span>
+      </span>
+    </div>
+    <div class="rv-ctrls">
+      <div class="rv-seg" role="group" aria-label="Language">
+        <button id="lang-en" onclick="setLang('')">EN</button>
+        <button id="lang-zh" onclick="setLang('zh')">中文</button>
+      </div>
+      <div class="rv-seg" role="group" aria-label="Theme">
+        <button id="th-dark" onclick="setTheme('dark')"><span class="l-en">Dark</span><span class="l-zh">深色</span></button>
+        <button id="th-light" onclick="setTheme('light')"><span class="l-en">Light</span><span class="l-zh">浅色</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 1 · THIS WEEK — mx5 command hero ═══════════ -->
+  <section class="rv-hero glass">
+    <div>
+      <span class="rv-eyebrow"><span class="dot"></span><span class="l-en">This week · Updated hourly · Jul 21–25</span><span class="l-zh">本周 · 每小时更新 · 7月21–25日</span></span>
+      <h1>
+        <span class="l-en">The desk research, <span class="accent">the way the analysts wrote it.</span></span>
+        <span class="l-zh">分析师原文研报，<span class="accent">原汁原味呈现。</span></span>
+      </h1>
+      <p class="rv-verdict">
+        <span class="l-en"><b>14 new institutional reports this week · 5 highlighted · 9 desks publishing.</b> Data-center capex and the rate path lead the flow. Read the ones that touch what you hold.</span>
+        <span class="l-zh"><b>本周新增 14 篇机构研报 · 5 篇精选 · 9 家研究部门在发。</b>数据中心资本开支与利率路径是本周焦点。挑与你持仓相关的读。</span>
+      </p>
+      <span class="rv-stance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="l-en">Read to understand the desks' arguments — <b>not a trade recommendation.</b></span>
+        <span class="l-zh">用于理解各机构的论证逻辑 —— <b>非交易建议。</b></span>
+      </span>
+      <div class="rv-figs">
+        <div class="rv-fig"><span class="n">14</span><div class="k"><span class="l-en">New this week</span><span class="l-zh">本周新增</span></div></div>
+        <div class="rv-fig"><span class="n hl">9</span><div class="k"><span class="l-en">Desks publishing</span><span class="l-zh">在发机构</span></div></div>
+        <div class="rv-fig"><span class="n">Data centers</span><div class="k"><span class="l-en">Most-covered theme</span><span class="l-zh">覆盖最多主题</span></div></div>
+        <div class="rv-fig"><span class="n">312</span><div class="k"><span class="l-en">In the vault</span><span class="l-zh">库内总量</span></div></div>
+      </div>
+    </div>
+
+    <!-- signature: the Publishing Beam (blue Fed-beam / arc echo, descriptive) -->
+    <div class="rv-beam" role="img"
+         aria-label="Nine research desks published this week; the beam marks each one.">
+      <div class="rv-beam-hd">
+        <span class="lb"><span class="l-en">Desks publishing this week</span><span class="l-zh">本周在发机构</span></span>
+        <span class="big">9</span>
+      </div>
+      <div class="rv-beam-stage">
+        <svg class="rv-beam-svg" viewBox="0 0 300 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="rvBeamGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="var(--rv)" stop-opacity="0.15"/>
+              <stop offset="0.5" stop-color="var(--rv)" stop-opacity="0.95"/>
+              <stop offset="1" stop-color="var(--rv-2)" stop-opacity="0.55"/>
+            </linearGradient>
+            <radialGradient id="rvNodeGlow"><stop offset="0" stop-color="var(--rv)" stop-opacity="0.5"/><stop offset="1" stop-color="var(--rv)" stop-opacity="0"/></radialGradient>
+          </defs>
+          <!-- the arc beam (Fed-beam echo) -->
+          <path d="M18,118 Q150,6 282,118" fill="none" stroke="url(#rvBeamGrad)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M18,118 Q150,6 282,118" fill="none" stroke="var(--rv)" stroke-width="9" stroke-linecap="round" opacity="0.10"/>
+          <!-- 9 desk nodes riding the arc; positions sampled along the quadratic -->
+          <g id="rvNodes"></g>
+        </svg>
+      </div>
+      <p class="rv-beam-cap">
+        <span class="l-en">Each dot is a desk that published research this week — <b>9 of 9 institutions active.</b> A busy tape, not a market call.</span>
+        <span class="l-zh">每个点代表本周有发报告的机构 —— <b>9 家机构全部活跃。</b>这是研究热度，并非行情判断。</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════ 2 · LANE TABS ═══════════ -->
+  <div class="rv-lanes" role="tablist" aria-label="Feed lanes">
+    <button class="rv-lane on" role="tab" data-lane="latest" onclick="setLane('latest',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+      <span class="l-en">Latest</span><span class="l-zh">最新</span><span class="badge" id="badge-latest">14</span>
+    </button>
+    <button class="rv-lane" role="tab" data-lane="picks" onclick="setLane('picks',this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg>
+      <span class="l-en">Top Picks</span><span class="l-zh">精选</span><span class="badge" id="badge-picks">5</span>
+    </button>
+    <button class="rv-lane" role="tab" data-lane="saved" onclick="setLane('saved',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span class="l-en">Saved</span><span class="l-zh">收藏</span><span class="badge" id="badge-saved">2</span>
+    </button>
+    <span class="rv-unread"><b id="unread-n">14</b> <span class="l-en">unread</span><span class="l-zh">未读</span></span>
+  </div>
+
+  <!-- ═══════════ 3 · WORKBENCH (browse rail + filter + feed) ═══════════ -->
+  <div class="rv-work">
+
+    <!-- browse rail: date → institution tree -->
+    <div class="rv-scrim" id="scrim" onclick="closeDrawer()"></div>
+    <aside class="rv-rail glass" id="rail" aria-label="Browse by date">
+      <div class="rv-rail-hd">
+        <h3><span class="l-en">Browse</span><span class="l-zh">浏览</span></h3>
+        <button class="rv-drawer-x" onclick="closeDrawer()" aria-label="Close browse">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <ul class="rv-tree" id="tree"><!-- tree injected --></ul>
+    </aside>
+
+    <!-- feed column -->
+    <div>
+      <!-- Top Picks header (shown only on picks lane) -->
+      <div class="rv-picks-hd" id="picks-hd" style="display:none">
+        <h2><span class="l-en">Highlighted this week</span><span class="l-zh">本周精选</span></h2>
+        <span class="why"><span class="l-en">Chosen by our desk for the quality of the argument — highlighted research, never a trade call.</span><span class="l-zh">因论证质量入选 —— 精选研究，非交易建议。</span></span>
+      </div>
+
+      <div class="rv-filter glass">
+        <div class="rv-search">
+          <button class="rv-browse-btn" onclick="openDrawer()" aria-label="Open browse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <span class="l-en">Browse</span><span class="l-zh">浏览</span>
+          </button>
+          <input type="search" id="q" aria-label="Search research"
+            data-ph-en="Search titles, summaries, and full text…"
+            data-ph-zh="搜索标题、摘要与全文…"
+            placeholder="Search titles, summaries, and full text…" oninput="applyFilters()">
+        </div>
+        <div class="rv-facets">
+          <div class="facet-grp">
+            <span class="facet-lbl"><span class="l-en">Institution</span><span class="l-zh">机构</span></span>
+            <button class="aff active" data-f="inst" data-v="" onclick="setFacet('inst','',this)"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+            <button class="aff" data-f="inst" data-v="Bernstein" onclick="setFacet('inst','Bernstein',this)">Bernstein</button>
+            <button class="aff" data-f="inst" data-v="Goldman Sachs" onclick="setFacet('inst','Goldman Sachs',this)">Goldman Sachs</button>
+            <button class="aff" data-f="inst" data-v="Morgan Stanley" onclick="setFacet('inst','Morgan Stanley',this)">Morgan Stanley</button>
+            <button class="aff" data-f="inst" data-v="UBS" onclick="setFacet('inst','UBS',this)">UBS</button>
+          </div>
+          <div class="facet-grp">
+            <span class="facet-lbl"><span class="l-en">Rating</span><span class="l-zh">评级</span></span>
+            <button class="aff active" data-f="side" data-v="" onclick="setFacet('side','',this)"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+            <button class="aff" data-f="side" data-v="buy" onclick="setFacet('side','buy',this)"><span class="l-en">Buy-side</span><span class="l-zh">看多</span></button>
+            <button class="aff" data-f="side" data-v="sell" onclick="setFacet('side','sell',this)"><span class="l-en">Sell-side</span><span class="l-zh">看空</span></button>
+            <button class="aff" data-f="side" data-v="independent" onclick="setFacet('side','independent',this)"><span class="l-en">Independent</span><span class="l-zh">独立</span></button>
+          </div>
+          <div class="facet-grp">
+            <span class="facet-lbl"><span class="l-en">Theme</span><span class="l-zh">主题</span></span>
+            <button class="aff active" data-f="theme" data-v="" onclick="setFacet('theme','',this)"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+            <button class="aff" data-f="theme" data-v="AI" onclick="setFacet('theme','AI',this)">AI</button>
+            <button class="aff" data-f="theme" data-v="Rates" onclick="setFacet('theme','Rates',this)"><span class="l-en">Rates</span><span class="l-zh">利率</span></button>
+            <button class="aff" data-f="theme" data-v="China" onclick="setFacet('theme','China',this)"><span class="l-en">China</span><span class="l-zh">中国</span></button>
+          </div>
+        </div>
+        <div class="rv-result">
+          <span class="cnt"><span class="l-en">Showing</span><span class="l-zh">显示</span> <b id="cnt-n">11</b> <span class="l-en">of</span><span class="l-zh">/</span> <b id="cnt-t">11</b> <span class="l-en">reports</span><span class="l-zh">篇</span></span>
+          <div class="rv-active" id="active-chips"><!-- active-filter chips injected --></div>
+        </div>
+      </div>
+
+      <div class="rv-feed" id="feed"><!-- report cards injected --></div>
+    </div>
+  </div>
+
+  <!-- footer disclaimer (mirrors report_base intent) -->
+  <p class="rv-foot">
+    <span class="l-en"><b>Not investment advice.</b> The Research Vault hosts third-party institutional research for reference and education. Highlighted reports are chosen for the quality of their argument, not as recommendations to buy or sell. Documents are provided by their authors; ratings and views are the authors', not ours. Access is metered and every download is watermarked — <b>not for redistribution.</b></span>
+    <span class="l-zh"><b>非投资建议。</b>研报库仅收录第三方机构研究，供参考与学习之用。精选报告因其论证质量入选，并非买卖建议。文档由作者提供，其中评级与观点均属作者本人，与本平台无关。访问受配额限制，下载均加水印 —— <b>不得转发。</b></span>
+  </p>
+
+</div>
+
+<!-- ═══════════ 5 · PDF VIEWER modal ═══════════ -->
+<div class="rv-overlay" id="overlay" aria-hidden="true">
+  <div class="rv-modal" role="dialog" aria-modal="true" aria-labelledby="vh-title" id="modal">
+    <div class="vh">
+      <span class="vh-logo" id="vh-logo">B</span>
+      <div class="vh-txt">
+        <span class="vh-inst"><span id="vh-inst">Bernstein</span><span class="rep-sep">·</span><span id="vh-desk">Data Centers</span><span class="stamp sell" id="vh-stamp"><span class="dt"></span>SELL</span></span>
+        <h3 id="vh-title">Data-center pipeline probabilities — separating credible developers from PowerPoints</h3>
+      </div>
+      <div class="vh-tools">
+        <div class="vh-find">
+          <input type="search" id="vh-find-in" aria-label="Find in document"
+            data-ph-en="Find in document…" data-ph-zh="在文档中查找…" placeholder="Find in document…">
+        </div>
+        <button class="vh-tbtn" id="vh-invert" onclick="toggleInvert(this)" aria-label="Invert page colors" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0 0 18z"/><circle cx="12" cy="12" r="9"/></svg>
+        </button>
+        <button class="vh-tbtn" id="vh-fs" onclick="toggleFullscreen(this)" aria-label="Fullscreen" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        </button>
+        <button class="vh-x" onclick="closeViewer()" aria-label="Close viewer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+    </div>
+
+    <!-- thumbnail rail -->
+    <div class="vthumbs" id="vthumbs" aria-label="Page thumbnails"><!-- thumbs injected --></div>
+
+    <div class="vstage" id="vstage">
+      <div class="vpage loading" id="vpage">
+        <div class="shimmer">
+          <span class="sk" style="top:44px;width:52px;height:6px"></span>
+          <span class="sk" style="top:66px;width:70%;height:14px"></span>
+          <span class="sk" style="top:96px;width:40%"></span>
+          <span class="sk" style="top:140px"></span><span class="sk" style="top:162px"></span>
+          <span class="sk" style="top:184px;width:88%"></span>
+          <span class="sk" style="top:240px;height:120px;border-radius:6px"></span>
+        </div>
+        <div class="doc-wm">Mastermind</div>
+        <div class="doc-band"></div>
+        <h2 class="doc-h" id="doc-h">Data-Center Pipeline Probabilities</h2>
+        <p class="doc-sub" id="doc-sub">BERNSTEIN · DATA CENTERS · JULY 2026</p>
+        <div class="doc-p s1"></div><div class="doc-p s2"></div><div class="doc-p s3"></div>
+        <div class="doc-fig"><i style="height:40%"></i><i style="height:66%"></i><i style="height:52%"></i><i style="height:88%"></i><i style="height:72%"></i><i style="height:94%"></i></div>
+        <div class="doc-p s1"></div><div class="doc-p s2"></div><div class="doc-p s4"></div>
+        <div class="doc-foot"><span id="doc-wm-line">longr2512@gmail.com · 2026-07-22 · not for redistribution</span><span id="doc-pageno">1 / 12</span></div>
+      </div>
+    </div>
+
+    <!-- related strip -->
+    <div class="vrelated" id="vrelated" aria-label="Related research">
+      <span class="vr-lb"><span class="l-en">Related</span><span class="l-zh">相关</span></span>
+      <div id="vr-chips" style="display:flex;gap:11px"></div>
+    </div>
+
+    <div class="vctrl">
+      <div class="vc-grp">
+        <button class="vc-btn" id="pg-prev" onclick="turnPage(-1)" aria-label="Previous page" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <span class="vc-page" id="pg-ind">1 / 12</span>
+        <button class="vc-btn" id="pg-next" onclick="turnPage(1)" aria-label="Next page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+        <span class="vc-hint"><kbd>←</kbd><kbd>→</kbd> <span class="l-en">to turn pages</span><span class="l-zh">翻页</span></span>
+      </div>
+      <div class="vc-grp">
+        <button class="vc-btn" onclick="fitWidth()" aria-label="Fit width"><span class="l-en">Fit width</span><span class="l-zh">适应宽度</span></button>
+        <button class="vc-btn" onclick="zoomPage(-1)" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+        <span class="vc-zoom" id="zoom-ind">100%</span>
+        <button class="vc-btn" onclick="zoomPage(1)" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    </div>
+
+    <div class="vdl">
+      <div class="vdl-row">
+        <!-- STATE A: paid, quota remaining (default) -->
+        <div class="vdl-state" id="dl-state-ok" style="display:flex">
+          <span class="vdl-meter"><i style="width:40%"></i></span>
+          <span class="vdl-txt"><b>3</b> <span class="l-en">of 5 downloads left today</span><span class="l-zh"> / 今日剩余 5 次下载</span></span>
+        </div>
+        <!-- STATE B: quota exhausted -->
+        <div class="vdl-state" id="dl-state-max" style="display:none">
+          <span class="vdl-meter"><i style="width:100%;background:color-mix(in srgb,var(--warn) 90%,transparent)"></i></span>
+          <span class="vdl-txt warnc"><b><span class="l-en">Daily limit reached</span><span class="l-zh">今日已达上限</span></b> <span class="l-en">— resets 00:00 UTC</span><span class="l-zh"> —— 00:00 UTC 重置</span></span>
+        </div>
+        <!-- STATE C: not paid -->
+        <div class="vdl-state" id="dl-state-free" style="display:none">
+          <span class="vdl-txt"><span class="l-en">Viewing and downloads are for subscribers.</span><span class="l-zh">查看与下载为订阅用户专享。</span></span>
+        </div>
+
+        <div class="vc-grp">
+          <button class="btn primary block" id="dl-btn-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg><span class="l-en">Download PDF</span><span class="l-zh">下载 PDF</span></button>
+          <button class="btn primary block" id="dl-btn-max" disabled style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg><span class="l-en">Limit reached</span><span class="l-zh">已达上限</span></button>
+          <button class="btn upgrade block" id="dl-btn-free" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg><span class="l-en">Upgrade to view &amp; download</span><span class="l-zh">升级以查看与下载</span></button>
+        </div>
+      </div>
+      <div class="vdl-row">
+        <span class="vdl-wm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span class="l-en">Watermarked with your account · not for redistribution</span><span class="l-zh">已加注你的账户水印 · 不得转发</span></span>
+        <!-- demo-only quota-state switcher so the reviewer can see all three -->
+        <div class="vdl-demo" aria-label="Demo: quota state">
+          <button class="on" data-dl="ok" onclick="setDlState('ok',this)"><span class="l-en">Paid</span><span class="l-zh">已订阅</span></button>
+          <button data-dl="max" onclick="setDlState('max',this)"><span class="l-en">At limit</span><span class="l-zh">达上限</span></button>
+          <button data-dl="free" onclick="setDlState('free',this)"><span class="l-en">Not paid</span><span class="l-zh">未订阅</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════ seed data — 12 realistic fake catalog items (§6 schema) ═══════════════ */
+var LANG = document.documentElement.getAttribute('data-lang') === 'zh' ? 'zh' : 'en';
+function T(en, zh){ return LANG === 'zh' ? zh : en; }
+
+var ITEMS = [
+  { id:'bernstein-2026-07-22-dc-pipeline', inst:'Bernstein', logo:'B', desk:'Data Centers', deskZh:'数据中心',
+    side:'sell', date:'2026-07-22', month:'2026-07', pages:12, top:true, needs:false, saved:false, read:false,
+    title:'Data-center pipeline probabilities — separating credible developers from PowerPoints',
+    titleZh:'数据中心供给概率 —— 把可信开发商从「PPT」里分出来',
+    note:'Only a third of the announced pipeline looks buildable; the rest is optionality dressed as capacity.',
+    noteZh:'已公布产能中仅约三分之一真正可建，其余更像被包装成产能的期权。',
+    points:[
+      'Only 33% (135GW) of the 500GW announced pipeline looks credible.',
+      'Hyperscalers control 42% of that credible capacity; the top 10 developers hold 60%.',
+      'Texas leads on nameplate (93GW) but completes just 29%, versus Louisiana at 88%.',
+      'Grid interconnect queues, not land, are the real bottleneck into 2027.'],
+    pointsZh:[
+      '已公布 500GW 供给中，仅 33%（135GW）具备可信度。',
+      '超大规模云厂商掌握其中 42% 的可信产能；前十开发商合计占 60%。',
+      '德州名义产能领先（93GW），但完工率仅 29%，路易斯安那高达 88%。',
+      '真正的瓶颈是并网排队而非土地，将延续至 2027 年。'],
+    tags:['AI','Data centers','Capex'], tagsZh:['AI','数据中心','资本开支'], tickers:'EQIX · DLR' },
+
+  { id:'goldman-2026-07-22-rates-h2', inst:'Goldman Sachs', logo:'GS', desk:'Global Rates', deskZh:'全球利率',
+    side:'buy', date:'2026-07-22', month:'2026-07', pages:18, top:true, needs:false, saved:true, read:false,
+    title:'The last cut of the cycle — positioning for a shallow, data-dependent easing path',
+    titleZh:'本轮最后一降 —— 为浅幅、依赖数据的宽松路径布局',
+    note:'A shallow easing path is under-priced at the front end; curve steepeners carry well from here.',
+    noteZh:'前端对浅幅宽松定价不足；从当前点位看曲线陡峭化具备正息差。',
+    points:[
+      'Base case: two more 25bp cuts, then a long hold through mid-2027.',
+      'The front end under-prices how shallow the path is — receivers look rich.',
+      '2s10s steepeners carry positively and hedge a growth wobble.'],
+    pointsZh:[
+      '基准情景：再降息两次各 25 基点，随后长期观望至 2027 年年中。',
+      '前端对「浅幅」定价不足 —— 收款方估值偏贵。',
+      '2s10s 陡峭化具备正持有收益，并可对冲增长波动。'],
+    tags:['Rates','Macro','Fed'], tagsZh:['利率','宏观','美联储'], tickers:'TLT · IEF' },
+
+  { id:'ms-2026-07-21-semis-cycle', inst:'Morgan Stanley', logo:'MS', desk:'Semiconductors', deskZh:'半导体',
+    side:'buy', date:'2026-07-21', month:'2026-07', pages:22, top:true, needs:false, saved:false, read:false,
+    title:'Memory up-cycle has legs — HBM tightness extends the recovery into 2027',
+    titleZh:'存储上行周期尚有后劲 —— HBM 供给偏紧将复苏延续至 2027 年',
+    note:'HBM allocation, not wafers, gates supply; the up-cycle looks longer than the tape assumes.',
+    noteZh:'瓶颈在 HBM 分配而非晶圆产能；本轮上行周期或长于市场预期。',
+    points:[
+      'HBM allocation — not wafer capacity — is the binding constraint through 2026.',
+      'Contract pricing has room to run another two quarters before parity.',
+      'The up-cycle looks longer than consensus; downside is a demand shock, not supply.'],
+    pointsZh:[
+      '2026 年瓶颈在 HBM 分配而非晶圆产能。',
+      '合约价在触及均衡前仍有约两个季度上行空间。',
+      '本轮上行周期或长于市场共识；下行风险来自需求冲击而非供给。'],
+    tags:['Semis','AI','Memory'], tagsZh:['半导体','AI','存储'], tickers:'MU · SK Hynix' },
+
+  { id:'ubs-2026-07-21-china-consumer', inst:'UBS', logo:'UBS', desk:'China Consumer', deskZh:'中国消费',
+    side:'independent', date:'2026-07-21', month:'2026-07', pages:9, top:true, needs:false, saved:false, read:false,
+    title:'China consumption — the trade-in stimulus is pulling demand forward, not creating it',
+    titleZh:'中国消费 —— 以旧换新在透支需求，而非创造需求',
+    note:'Appliance and auto trade-ins flatter the print now; watch for the air-pocket into Q1.',
+    noteZh:'家电与汽车以旧换新短期美化数据；需警惕明年一季度的需求真空。',
+    points:[
+      'Trade-in subsidies lifted appliance and auto volumes double-digits in Q2.',
+      'Survey work suggests most buyers simply brought purchases forward.',
+      'Base effects turn into a headwind from Q1 next year — model the air-pocket.'],
+    pointsZh:[
+      '以旧换新补贴带动二季度家电与汽车销量双位数增长。',
+      '调研显示多数消费者只是把原有购买计划提前。',
+      '基数效应将于明年一季度转为逆风 —— 需为需求真空建模。'],
+    tags:['China','Consumer'], tagsZh:['中国','消费'], tickers:'PDD · BABA' },
+
+  { id:'citi-2026-07-21-utilities-ai', inst:'Citi', logo:'CI', desk:'Utilities', deskZh:'公用事业',
+    side:'buy', date:'2026-07-21', month:'2026-07', pages:20, top:true, needs:false, saved:false, read:false,
+    title:'Power is the new bottleneck — regulated utilities are the picks-and-shovels of AI',
+    titleZh:'电力成为新瓶颈 —— 受监管公用事业是 AI 的「卖铲人」',
+    note:'Load growth is real and durable; rate-base expansion is the cleanest way to own the AI build-out.',
+    noteZh:'负荷增长真实且持久；扩大费率基数是持有 AI 基建最干净的方式。',
+    points:[
+      'US electricity demand is growing again after two flat decades.',
+      'Data-center load concentrates in a dozen utility service territories.',
+      'Rate-base growth compounds earnings without commodity exposure.'],
+    pointsZh:[
+      '在停滞二十年后，美国电力需求重回增长。',
+      '数据中心负荷集中于十余个公用事业供电区域。',
+      '费率基数增长可在不承担商品价格风险下复利提升盈利。'],
+    tags:['Utilities','AI','Power'], tagsZh:['公用事业','AI','电力'], tickers:'NEE · SO' },
+
+  { id:'db-2026-07-20-europe-gas', inst:'Deutsche Bank', logo:'DB', desk:'Commodities', deskZh:'大宗商品',
+    side:'sell', date:'2026-07-20', month:'2026-07', pages:11, top:false, needs:false, saved:false, read:true,
+    title:'European gas — storage is full early and the winter risk premium looks mispriced',
+    titleZh:'欧洲天然气 —— 库存提前注满，冬季风险溢价定价偏高',
+    note:'Full storage ahead of schedule caps the upside; the curve prices a scarcity that is not there.',
+    noteZh:'库存提前注满压制上行空间；曲线定价的稀缺并不存在。',
+    points:[
+      'Storage hit 90% weeks ahead of the five-year norm.',
+      'The winter risk premium in the curve looks rich versus balances.',
+      'A cold snap is the main upside risk — position for mean reversion, not a spike.'],
+    pointsZh:[
+      '库存较五年均值提前数周达到 90%。',
+      '曲线中的冬季风险溢价相对供需平衡显得偏贵。',
+      '寒潮是主要上行风险 —— 宜布局均值回归而非价格飙升。'],
+    tags:['Energy','Europe','Gas'], tagsZh:['能源','欧洲','天然气'], tickers:'TTF' },
+
+  { id:'jpm-2026-07-19-credit-spreads', inst:'J.P. Morgan', logo:'JPM', desk:'Credit Strategy', deskZh:'信用策略',
+    side:'sell', date:'2026-07-19', month:'2026-07', pages:14, top:false, needs:false, saved:false, read:false,
+    title:'Investment-grade credit — spreads are priced for perfection with no margin for error',
+    titleZh:'投资级信用 —— 利差已按「完美情景」定价，毫无容错空间',
+    note:'IG spreads near cycle tights leave little cushion; up-in-quality is nearly free here.',
+    noteZh:'投资级利差接近周期低位，缓冲有限；此处「提质」几乎零成本。',
+    points:[
+      'IG spreads sit within 10bp of the cycle tights.',
+      'Dispersion is low — the market is not paying you to take single-name risk.',
+      'Rotate up in quality; the give-up in yield is minimal for the protection.'],
+    pointsZh:[
+      '投资级利差距周期低位不足 10 基点。',
+      '离散度偏低 —— 市场并未为承担个券风险提供补偿。',
+      '宜提升持仓质量；为获取保护所放弃的收益极为有限。'],
+    tags:['Credit','Rates'], tagsZh:['信用','利率'], tickers:'LQD · HYG' },
+
+  { id:'barclays-2026-07-18-em-fx', inst:'Barclays', logo:'BC', desk:'EM Strategy', deskZh:'新兴市场策略',
+    side:'buy', date:'2026-07-18', month:'2026-07', pages:16, top:false, needs:false, saved:true, read:false,
+    title:'EM local rates — real-yield cushion makes select high-carry names attractive again',
+    titleZh:'新兴市场本币利率 —— 实际收益缓冲令部分高息品种重具吸引力',
+    note:'Positive real yields and easing cycles align; carry looks paid-for in a handful of names.',
+    noteZh:'正实际收益与宽松周期共振；少数品种的息差具备合理补偿。',
+    points:[
+      'Real yields across several EM markets sit well above their own history.',
+      'Local easing cycles are underway while the carry cushion stays intact.',
+      'Prefer the high-real-yield, low-external-vulnerability cohort.'],
+    pointsZh:[
+      '多个新兴市场的实际收益率显著高于自身历史水平。',
+      '本币宽松周期已启动，息差缓冲仍然完好。',
+      '偏好高实际收益、低外部脆弱性的一篮子品种。'],
+    tags:['EM','FX','Rates'], tagsZh:['新兴市场','外汇','利率'], tickers:'MXN · BRL' },
+
+  { id:'wf-2026-07-17-housing', inst:'Wells Fargo', logo:'WF', desk:'US Housing', deskZh:'美国房地产',
+    side:'independent', date:'2026-07-17', month:'2026-07', pages:15, top:false, needs:false, saved:false, read:false,
+    title:'US housing — the lock-in effect is finally cracking as move-up buyers give in',
+    titleZh:'美国住房 —— 换房需求松动，「锁定效应」终于开始瓦解',
+    note:'Existing-home supply is thawing at the margin; affordability still gates first-time buyers.',
+    noteZh:'二手房供给边际回暖；但可负担性仍卡住首次购房者。',
+    points:[
+      'Listings are rising year-on-year for the first time since the rate shock.',
+      'Move-up buyers are transacting despite higher mortgage rates.',
+      'First-time affordability remains the binding constraint on volumes.'],
+    pointsZh:[
+      '自利率冲击以来，挂牌量首次同比回升。',
+      '换房买家在按揭利率走高的情况下仍在成交。',
+      '首次购房的可负担性仍是成交量的核心约束。'],
+    tags:['Housing','Rates','US'], tagsZh:['房地产','利率','美国'], tickers:'ITB · LEN' },
+
+  { id:'ms-2026-07-16-japan-gov', inst:'Morgan Stanley', logo:'MS', desk:'Japan Equity', deskZh:'日本股票',
+    side:'buy', date:'2026-07-16', month:'2026-07', pages:19, top:false, needs:false, saved:false, read:false,
+    title:'Japan equities — the second leg of governance reform is about balance sheets, not optics',
+    titleZh:'日本股市 —— 治理改革第二波聚焦资产负债表，而非表面功夫',
+    note:'Cross-holding unwinds and buybacks accelerate; the re-rating still has room versus history.',
+    noteZh:'交叉持股拆解与回购提速；相对历史，重估仍有空间。',
+    points:[
+      'Cross-shareholding unwinds are accelerating across the TOPIX.',
+      'Buyback announcements hit a record pace in the first half.',
+      'The re-rating looks mid-cycle, not late, versus the long history.'],
+    pointsZh:[
+      '整个东证指数的交叉持股拆解正在加速。',
+      '上半年回购公告规模创下纪录。',
+      '相对长期历史，本轮重估更像中段而非尾声。'],
+    tags:['Japan','Equity'], tagsZh:['日本','股票'], tickers:'EWJ · TOPIX' },
+
+  { id:'jefferies-2026-06-30-biotech-ma', inst:'Jefferies', logo:'JF', desk:'Healthcare', deskZh:'医疗健康',
+    side:'independent', date:'2026-06-30', month:'2026-06', pages:13, top:false, needs:false, saved:false, read:true,
+    title:'Biotech M&A window — large-cap patent cliffs meet a repaired balance sheet',
+    titleZh:'生物科技并购窗口 —— 大型药企专利悬崖遇上修复后的资产负债表',
+    note:'The cliff is a forcing function; expect bolt-on deals to accelerate through year-end.',
+    noteZh:'专利悬崖是硬约束；预计补强型并购将在年底前加速。',
+    points:[
+      'Roughly $180bn of large-cap revenue faces patent expiry by 2028.',
+      'Balance sheets are repaired and financing costs have eased.',
+      'Bolt-on deals in oncology and immunology look most likely.'],
+    pointsZh:[
+      '至 2028 年，约 1800 亿美元大型药企营收面临专利到期。',
+      '资产负债表已修复，融资成本有所缓解。',
+      '肿瘤与免疫领域的补强型并购可能性最高。'],
+    tags:['Healthcare','M&A'], tagsZh:['医疗','并购'], tickers:'XBI · IBB' },
+
+  /* one item with a graceful "summary pending / needs metadata" state (doctrine: nulls printed) */
+  { id:'unknown-2026-07-20-korea-note', inst:'Unknown', logo:'?', desk:'', deskZh:'',
+    side:'independent', date:'2026-07-20', month:'2026-07', pages:0, top:false, needs:true, saved:false, read:false,
+    title:'Korea equities — the export cycle turns, but the won is doing the heavy lifting',
+    titleZh:'韩国股市 —— 出口周期回暖，但主要靠韩元贬值撑起',
+    note:'', noteZh:'',
+    points:[], pointsZh:[],
+    tags:['Korea'], tagsZh:['韩国'], tickers:'EWY' }
+];
+
+/* side stamp label */
+function stampLabel(side){
+  if(side==='buy') return T('BUY','看多');
+  if(side==='sell') return T('SELL','看空');
+  return T('IND','独立');
+}
+function stampClass(side){ return side==='buy'?'buy':(side==='sell'?'sell':'indep'); }
+function fmtDate(d){
+  var p=d.split('-'); var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if(LANG==='zh') return p[0]+'年'+(+p[1])+'月'+(+p[2])+'日';
+  return mo[+p[1]-1]+' '+(+p[2])+', '+p[0];
+}
+var CAL_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+var STAR_SVG='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg>';
+var CHEV_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+var VIEW_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+var DL_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>';
+var BOOK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+
+/* ── signature beam: place 9 nodes along the quadratic arc ── */
+function buildBeam(){
+  var g=document.getElementById('rvNodes'); if(!g) return;
+  var N=9, html='';
+  // quadratic Bezier P0(18,118) P1(150,6) P2(282,118)
+  for(var i=0;i<N;i++){
+    var t=(i+0.5)/N;
+    var x=(1-t)*(1-t)*18 + 2*(1-t)*t*150 + t*t*282;
+    var y=(1-t)*(1-t)*118 + 2*(1-t)*t*6 + t*t*118;
+    var mid = (i===Math.floor(N/2));
+    var r = mid?5.5:4;
+    var glowR = mid?16:11;
+    var pulseCls = mid?' class="pulse"':'';
+    var delay = (i*0.32).toFixed(2);
+    html += '<g'+pulseCls+' style="animation-delay:'+delay+'s">'
+      + '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+glowR+'" fill="url(#rvNodeGlow)"/>'
+      + '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="var(--rv)" stroke="var(--bg)" stroke-width="1.5"/>'
+      + '</g>';
+  }
+  g.innerHTML=html;
+}
+
+/* ── browse tree: date → institution ── */
+function buildTree(){
+  // group by month → day → institutions
+  var byMonth={};
+  ITEMS.forEach(function(x){
+    var p=x.date.split('-'); var mk=p[0]+'-'+p[1]; var dk=x.date;
+    byMonth[mk]=byMonth[mk]||{days:{},n:0}; byMonth[mk].n++;
+    byMonth[mk].days[dk]=byMonth[mk].days[dk]||[]; byMonth[mk].days[dk].push(x);
+  });
+  var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var moZh=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  var mkeys=Object.keys(byMonth).sort().reverse();
+  var html='';
+  // year node (single year in seed)
+  html+='<li class="rv-node open"><button class="rv-tw" onclick="toggleNode(this)"><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg><span class="lbl">2026</span><span class="cn">'+ITEMS.length+'</span></button><ul class="rv-children">';
+  mkeys.forEach(function(mk,mi){
+    var mp=mk.split('-'); var mlabel_en=mo[+mp[1]-1]+' '+mp[0]; var mlabel_zh=mp[0]+'年'+moZh[+mp[1]-1];
+    var openCls = mi===0?' open':'';
+    html+='<li class="rv-node'+openCls+'"><button class="rv-tw" onclick="toggleNode(this)"><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg><span class="lbl"><span class="l-en">'+mlabel_en+'</span><span class="l-zh">'+mlabel_zh+'</span></span><span class="cn">'+byMonth[mk].n+'</span></button><ul class="rv-children">';
+    var dkeys=Object.keys(byMonth[mk].days).sort().reverse();
+    dkeys.forEach(function(dk,di){
+      var dp=dk.split('-'); var dlabel_en=mo[+dp[1]-1]+' '+(+dp[2]); var dlabel_zh=(+dp[1])+'月'+(+dp[2])+'日';
+      var insts=byMonth[mk].days[dk];
+      var dopen = (mi===0&&di===0)?' open':'';
+      html+='<li class="rv-node'+dopen+'"><button class="rv-tw" onclick="toggleNode(this)"><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg><span class="lbl"><span class="l-en">'+dlabel_en+'</span><span class="l-zh">'+dlabel_zh+'</span></span><span class="cn">'+insts.length+'</span></button><ul class="rv-children">';
+      insts.forEach(function(x){
+        html+='<li class="rv-leaf"><button class="rv-tw" data-inst="'+esc(x.inst)+'" onclick="pickTreeInst(this,\''+esc(x.inst)+'\')"><span class="dotinst"></span><span class="lbl">'+esc(x.inst)+'</span></button></li>';
+      });
+      html+='</ul></li>';
+    });
+    html+='</ul></li>';
+  });
+  html+='</ul></li>';
+  document.getElementById('tree').innerHTML=html;
+}
+function toggleNode(btn){ btn.closest('.rv-node').classList.toggle('open'); }
+function pickTreeInst(btn, inst){
+  document.querySelectorAll('#tree .rv-tw').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  // set the institution facet + sync facet chip
+  FILT.inst = inst;
+  document.querySelectorAll('.aff[data-f="inst"]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-v')===inst); });
+  // a browsed institution might not be in the facet list → still filter
+  if(!document.querySelector('.aff[data-f="inst"].active')){
+    document.querySelector('.aff[data-f="inst"][data-v=""]').classList.remove('active');
+  }
+  closeDrawer();
+  renderFeed();
+}
+
+/* ── mobile browse drawer ── */
+function openDrawer(){ document.getElementById('rail').classList.add('drawer-open'); document.getElementById('scrim').classList.add('on'); }
+function closeDrawer(){ document.getElementById('rail').classList.remove('drawer-open'); document.getElementById('scrim').classList.remove('on'); }
+
+/* ═══════════════ lanes ═══════════════ */
+var LANE='latest';
+function setLane(lane, el){
+  LANE=lane;
+  document.querySelectorAll('.rv-lane').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-lane')===lane); b.setAttribute('aria-selected', b.getAttribute('data-lane')===lane); });
+  document.getElementById('picks-hd').style.display = lane==='picks'?'flex':'none';
+  renderFeed();
+}
+
+/* ═══════════════ feed ═══════════════ */
+var FILT = { inst:'', side:'', theme:'', q:'' };
+function laneMatch(x){
+  if(LANE==='picks') return x.top;
+  if(LANE==='saved') return x.saved;
+  return true; // latest = all
+}
+function matchItem(x){
+  if(!laneMatch(x)) return false;
+  if(FILT.inst && x.inst!==FILT.inst) return false;
+  if(FILT.side && x.side!==FILT.side) return false;
+  if(FILT.theme && (x.tags.indexOf(FILT.theme)<0)) return false;
+  if(FILT.q){
+    var hay=(x.title+' '+x.titleZh+' '+x.note+' '+x.noteZh+' '+x.inst+' '+(x.points.join(' '))+' '+(x.pointsZh.join(' '))+' '+x.tags.join(' ')+' '+(x.tickers||'')).toLowerCase();
+    if(hay.indexOf(FILT.q.toLowerCase())<0) return false;
+  }
+  return true;
+}
+function renderFeed(){
+  var rows = ITEMS.filter(matchItem);
+  var feed = document.getElementById('feed');
+  if(!rows.length){
+    var msg_en = LANE==='saved' ? 'Nothing saved yet' : 'No reports match';
+    var msg_zh = LANE==='saved' ? '还没有收藏' : '没有匹配的研报';
+    var sub_en = LANE==='saved' ? 'Tap the bookmark on any report to keep it here for later.' : 'Try clearing a filter or widening your search.';
+    var sub_zh = LANE==='saved' ? '点击任意报告上的书签，即可收藏到此处。' : '试试清除筛选或放宽搜索条件。';
+    feed.innerHTML = '<div class="rv-empty glass">'+BOOK_SVG+'<h3>'+T(msg_en,msg_zh)+'</h3><p>'+T(sub_en,sub_zh)+'</p></div>';
+  } else {
+    feed.innerHTML = rows.map(cardHTML).join('');
+  }
+  document.getElementById('cnt-n').textContent = rows.length;
+  document.getElementById('cnt-t').textContent = ITEMS.filter(laneMatch).length;
+  renderActiveChips();
+}
+function cardHTML(x){
+  var pts = T(x.points, x.pointsZh);
+  var hasPts = pts.length>0;
+  var visible = pts.slice(0,2), extra = pts.slice(2);
+  var ptsHtml;
+  if(!hasPts){
+    ptsHtml = '<ul class="rep-points pend"><li>'+T('Summary pending — full report available to read.','摘要生成中 —— 全文已可查看。')+'</li></ul>';
+  } else {
+    ptsHtml = '<ul class="rep-points">'
+      + visible.map(function(p){ return '<li>'+esc(p)+'</li>'; }).join('')
+      + extra.map(function(p){ return '<li class="extra">'+esc(p)+'</li>'; }).join('')
+      + '</ul>';
+  }
+  var moreBtn = extra.length ? '<button class="rep-more" onclick="togglePts(this)">'+CHEV_SVG+'<span class="mt">'+T('+'+extra.length+' more points','再看 '+extra.length+' 点')+'</span></button>' : '';
+  var deskBits = x.desk ? '<span class="rep-sep">·</span><span class="rep-desk">'+esc(T(x.desk,x.deskZh))+'</span>' : (x.needs?'<span class="rep-sep">·</span><span class="backfill">'+T('institution to be confirmed','机构待确认')+'</span>':'');
+  var pinBadge = x.top ? '<span class="rep-pin">'+STAR_SVG+T('Highlighted','精选')+'</span>' : '';
+  var savedCls = x.saved?' on':'';
+  var readCls = x.read?' read':'';
+  return '<article class="rep glass'+(x.top?' pick':'')+(x.needs?' needs':'')+readCls+'" data-id="'+esc(x.id)+'">'
+    + '<div class="rep-top">'
+      + '<span class="rep-logo">'+esc(x.logo)+'</span>'
+      + '<span class="rep-unread" aria-hidden="true"></span>'
+      + '<span class="rep-inst">'+esc(x.inst)+'</span>'+deskBits
+      + '<span class="stamp '+stampClass(x.side)+'"><span class="dt"></span>'+stampLabel(x.side)+'</span>'+pinBadge
+      + '<button class="rep-savebtn'+savedCls+'" aria-pressed="'+(x.saved?'true':'false')+'" aria-label="'+T('Save report','收藏报告')+'" onclick="toggleSave(\''+esc(x.id)+'\',this)">'+BOOK_SVG+'</button>'
+    + '</div>'
+    + '<h3>'+esc(T(x.title,x.titleZh))+'</h3>'
+    + ptsHtml + moreBtn
+    + '<div class="rep-foot"><div class="rep-meta">'
+      + '<span class="rep-date">'+CAL_SVG+fmtDate(x.date)+'</span>'
+      + '<span class="rep-tags">'+T(x.tags,x.tagsZh).map(function(t){ return '<span class="rep-tag">'+esc(t)+'</span>'; }).join('')+'</span></div>'
+      + '<div class="rep-acts">'
+        + '<button class="btn ghost" onclick="openViewer(\''+esc(x.id)+'\')">'+VIEW_SVG+T('View','查看')+'</button>'
+        + '<button class="btn primary" onclick="openViewer(\''+esc(x.id)+'\')">'+DL_SVG+T('Download','下载')+'</button>'
+      + '</div></div>'
+    + '</article>';
+}
+function togglePts(btn){ btn.closest('.rep').classList.toggle('open-pts'); }
+function toggleSave(id, btn){
+  var x=ITEMS.find(function(i){ return i.id===id; }); if(!x) return;
+  x.saved=!x.saved; btn.classList.toggle('on', x.saved); btn.setAttribute('aria-pressed', x.saved?'true':'false');
+  document.getElementById('badge-saved').textContent = ITEMS.filter(function(i){return i.saved;}).length;
+  if(LANE==='saved') renderFeed(); // drop it out of the saved lane live
+}
+
+/* ── filter bar ── */
+function setFacet(dim, val, el){
+  FILT[dim] = val;
+  var grp = el.closest('.facet-grp');
+  grp.querySelectorAll('.aff[data-f="'+dim+'"]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-v')===val); });
+  if(dim==='inst'){ // keep the tree selection in sync
+    document.querySelectorAll('#tree .rv-tw').forEach(function(b){ b.classList.toggle('sel', val!=='' && b.getAttribute('data-inst')===val); });
+  }
+  renderFeed();
+}
+function applyFilters(){ FILT.q = document.getElementById('q').value.trim(); renderFeed(); }
+
+function labelFor(dim,val){
+  if(dim==='inst') return val;
+  if(dim==='theme') return val;
+  if(dim==='side') return val==='buy'?T('Buy-side','看多'):(val==='sell'?T('Sell-side','看空'):T('Independent','独立'));
+  return val;
+}
+function renderActiveChips(){
+  var host=document.getElementById('active-chips'); var chips=[];
+  ['inst','side','theme'].forEach(function(dim){
+    if(FILT[dim]) chips.push('<span class="chiptag">'+esc(labelFor(dim,FILT[dim]))+'<button aria-label="'+T('Remove','移除')+'" onclick="clearFacet(\''+dim+'\')">&times;</button></span>');
+  });
+  if(FILT.q) chips.push('<span class="chiptag">“'+esc(FILT.q)+'”<button aria-label="'+T('Remove','移除')+'" onclick="clearQ()">&times;</button></span>');
+  if(chips.length) chips.push('<button class="rv-clear" onclick="clearAll()">'+T('Clear all','清除全部')+'</button>');
+  host.innerHTML = chips.join('');
+}
+function clearFacet(dim){
+  FILT[dim]='';
+  document.querySelectorAll('.aff[data-f="'+dim+'"]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-v')===''); });
+  if(dim==='inst') document.querySelectorAll('#tree .rv-tw').forEach(function(b){ b.classList.remove('sel'); });
+  renderFeed();
+}
+function clearQ(){ FILT.q=''; document.getElementById('q').value=''; renderFeed(); }
+function clearAll(){ FILT={inst:'',side:'',theme:'',q:''}; document.getElementById('q').value='';
+  document.querySelectorAll('.aff').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-v')===''); });
+  document.querySelectorAll('#tree .rv-tw').forEach(function(b){ b.classList.remove('sel'); });
+  renderFeed(); }
+
+/* ═══════════════ PDF VIEWER modal ═══════════════ */
+var VPAGES=12, vcur=1, vzoom=100, _vLastFocus=null, _shimTimer=null, _curItem=null;
+function openViewer(id){
+  var x = ITEMS.find(function(i){ return i.id===id; }); if(!x) return;
+  _curItem=x;
+  // mark read
+  if(!x.read){ x.read=true; updateUnread(); var card=document.querySelector('.rep[data-id="'+id+'"]'); if(card) card.classList.add('read'); }
+  _vLastFocus = document.activeElement;
+  document.getElementById('vh-logo').textContent = x.logo;
+  document.getElementById('vh-inst').textContent = x.inst;
+  var dk=document.getElementById('vh-desk'); dk.textContent = x.desk?T(x.desk,x.deskZh):'';
+  dk.previousElementSibling.style.display = x.desk?'':'none';
+  document.getElementById('vh-title').textContent = T(x.title,x.titleZh);
+  var st=document.getElementById('vh-stamp'); st.className='stamp '+stampClass(x.side); st.innerHTML='<span class="dt"></span>'+stampLabel(x.side);
+  // faux doc content
+  document.getElementById('doc-h').textContent = T(x.title,x.titleZh).split('—')[0].trim();
+  document.getElementById('doc-sub').textContent = (x.inst+' · '+(x.desk?T(x.desk,x.deskZh)+' · ':'')+fmtDate(x.date)).toUpperCase();
+  VPAGES = x.pages || 1; vcur=1; vzoom=100; updatePager(); updateZoom(); buildThumbs(); buildRelated(x);
+  document.getElementById('doc-wm-line').textContent = 'longr2512@gmail.com · 2026-07-22 · '+T('not for redistribution','不得转发');
+  // reset invert
+  document.getElementById('vstage').classList.remove('inverted');
+  document.getElementById('vh-invert').classList.remove('on'); document.getElementById('vh-invert').setAttribute('aria-pressed','false');
+  // open + shimmer
+  var ov=document.getElementById('overlay'); ov.classList.add('open'); ov.setAttribute('aria-hidden','false');
+  document.documentElement.classList.add('rv-lock');
+  var pg=document.getElementById('vpage'); pg.classList.add('loading');
+  clearTimeout(_shimTimer);
+  var rm = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  _shimTimer=setTimeout(function(){ pg.classList.remove('loading'); }, rm?120:950);
+  setTimeout(function(){ document.querySelector('.vh-x').focus(); }, 60);
+}
+function closeViewer(){
+  var ov=document.getElementById('overlay'); ov.classList.remove('open','fs'); ov.setAttribute('aria-hidden','true');
+  document.getElementById('vh-fs').classList.remove('on'); document.getElementById('vh-fs').setAttribute('aria-pressed','false');
+  document.documentElement.classList.remove('rv-lock');
+  if(_vLastFocus && _vLastFocus.focus) _vLastFocus.focus();
+}
+function buildThumbs(){
+  var host=document.getElementById('vthumbs'); var html='';
+  for(var i=1;i<=VPAGES;i++){
+    var lines='<span class="tb"></span>'
+      + '<span class="tl" style="top:34%"></span><span class="tl" style="top:44%;right:26%"></span>'
+      + '<span class="tl" style="top:54%"></span><span class="tl" style="top:64%;right:34%"></span>';
+    html+='<button class="vthumb'+(i===1?' on':'')+'" onclick="gotoPage('+i+')" aria-label="'+T('Page','第')+' '+i+'">'+lines+'<span class="tn">'+i+'</span></button>';
+  }
+  host.innerHTML=html;
+}
+function buildRelated(x){
+  // "more from <inst>" — other items by the same institution, else same theme
+  var rel = ITEMS.filter(function(i){ return i.id!==x.id && i.inst===x.inst; });
+  if(rel.length<2){
+    var extra = ITEMS.filter(function(i){ return i.id!==x.id && i.inst!==x.inst && i.tags.some(function(t){ return x.tags.indexOf(t)>=0; }); });
+    rel = rel.concat(extra).slice(0,3);
+  } else rel=rel.slice(0,3);
+  var host=document.getElementById('vr-chips');
+  if(!rel.length){ host.innerHTML='<span class="vr-tk" style="padding:6px 2px">'+T('No related reports yet','暂无相关报告')+'</span>'; return; }
+  host.innerHTML = rel.map(function(r){
+    return '<button class="vr-chip" onclick="openViewer(\''+esc(r.id)+'\')">'
+      + '<span class="vr-inst">'+esc(r.inst)+'</span>'
+      + '<span class="vr-tk">'+esc(r.tickers||T(r.tags,r.tagsZh)[0]||'')+'</span></button>';
+  }).join('');
+}
+function updatePager(){
+  document.getElementById('pg-ind').textContent = vcur+' / '+VPAGES;
+  document.getElementById('doc-pageno').textContent = vcur+' / '+VPAGES;
+  document.getElementById('pg-prev').disabled = vcur<=1;
+  document.getElementById('pg-next').disabled = vcur>=VPAGES;
+  document.querySelectorAll('.vthumb').forEach(function(b,i){ b.classList.toggle('on', (i+1)===vcur); });
+}
+function gotoPage(n){ if(n<1||n>VPAGES) return; vcur=n; _pageFlip(); updatePager(); }
+function turnPage(d){ var n=vcur+d; if(n<1||n>VPAGES) return; vcur=n; _pageFlip(); updatePager(); }
+function _pageFlip(){
+  var pg=document.getElementById('vpage');
+  var rm=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(!rm){ pg.style.transform='translateY(6px) scale(.992)'; setTimeout(function(){ pg.style.transform=''; },180); }
+}
+function zoomPage(d){ vzoom=Math.max(70,Math.min(180,vzoom+d*15)); updateZoom(); }
+function fitWidth(){ vzoom=100; updateZoom(); }
+function updateZoom(){
+  document.getElementById('zoom-ind').textContent = vzoom+'%';
+  var pg=document.getElementById('vpage'); pg.style.width = 'min('+(560*vzoom/100)+'px, 100%)';
+}
+function toggleInvert(btn){
+  var on = document.getElementById('vstage').classList.toggle('inverted');
+  btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on?'true':'false');
+}
+function toggleFullscreen(btn){
+  var on = document.getElementById('overlay').classList.toggle('fs');
+  btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on?'true':'false');
+}
+/* demo quota-state switcher (mockup only) */
+function setDlState(s, el){
+  ['ok','max','free'].forEach(function(k){
+    document.getElementById('dl-state-'+k).style.display = (k===s)?'flex':'none';
+    document.getElementById('dl-btn-'+k).style.display = (k===s)?'inline-flex':'none';
+  });
+  el.parentNode.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b===el); });
+}
+
+/* close on overlay click + Escape; focus-trap */
+document.getElementById('overlay').addEventListener('click', function(e){ if(e.target===this) closeViewer(); });
+document.addEventListener('keydown', function(e){
+  var open = document.getElementById('overlay').classList.contains('open');
+  if(!open) return;
+  var inField = /^(INPUT|TEXTAREA)$/.test((e.target.tagName||''));
+  if(e.key==='Escape'){ closeViewer(); return; }
+  if(!inField && e.key==='ArrowRight') turnPage(1);
+  if(!inField && e.key==='ArrowLeft') turnPage(-1);
+  if(e.key==='Tab'){ // trap within modal
+    var f=document.getElementById('modal').querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+    f=Array.prototype.filter.call(f,function(el){ return el.offsetParent!==null && !el.disabled; });
+    if(!f.length) return; var first=f[0], last=f[f.length-1];
+    if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+  }
+});
+
+/* unread count */
+function updateUnread(){
+  var n = ITEMS.filter(function(x){ return !x.read; }).length;
+  document.getElementById('unread-n').textContent = n;
+  document.getElementById('badge-latest').textContent = ITEMS.length;
+}
+
+/* ═══════════════ theme + lang toggles ═══════════════ */
+function reflectToggles(){
+  var th=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  document.getElementById('th-dark').classList.toggle('on',th==='dark');
+  document.getElementById('th-light').classList.toggle('on',th==='light');
+  var lg=document.documentElement.getAttribute('data-lang')==='zh'?'zh':'en';
+  document.getElementById('lang-en').classList.toggle('on',lg==='en');
+  document.getElementById('lang-zh').classList.toggle('on',lg==='zh');
+}
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  try{ localStorage.setItem('rv_theme',t); }catch(e){}
+  reflectToggles();
+}
+function setLang(l){
+  if(l) document.documentElement.setAttribute('data-lang',l);
+  else document.documentElement.removeAttribute('data-lang');
+  try{ localStorage.setItem('rv_lang',l); }catch(e){}
+  LANG = l==='zh'?'zh':'en';
+  // swap search placeholders (can't use dual-span in an attribute)
+  var q=document.getElementById('q'); q.placeholder = q.getAttribute('data-ph-'+(LANG==='zh'?'zh':'en'));
+  var vf=document.getElementById('vh-find-in'); vf.placeholder = vf.getAttribute('data-ph-'+(LANG==='zh'?'zh':'en'));
+  buildTree(); renderFeed(); reflectToggles();
+}
+
+/* util: escape */
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* boot */
+(function(){
+  if(document.documentElement.getAttribute('data-theme')!=='light') document.documentElement.setAttribute('data-theme','dark');
+  var q=document.getElementById('q'); q.placeholder = q.getAttribute('data-ph-'+(LANG==='zh'?'zh':'en'));
+  var vf=document.getElementById('vh-find-in'); vf.placeholder = vf.getAttribute('data-ph-'+(LANG==='zh'?'zh':'en'));
+  buildBeam(); buildTree(); renderFeed(); updateUnread();
+  document.getElementById('badge-saved').textContent = ITEMS.filter(function(i){return i.saved;}).length;
+  reflectToggles();
+})();
+</script>
+</body>
+</html>
