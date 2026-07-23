@@ -3398,6 +3398,85 @@ def _compose_stage_analysis(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
+def _compose_darkpool_flow(root: "Path | str | None" = None) -> dict:
+    """Compose darkpool_flow lobe from data/darkpool/context/latest.json.
+
+    Off-exchange positioning context (darkpool_context.v1): quiet-accumulation /
+    distribution / unusual leans, a laid-out standout board, and weekly venue shifts.
+    Follows the _compose_stage_analysis discipline: all IO here, _clean() every scalar,
+    display_only=True + is_context_only=True ALWAYS (incl. the null fallback), absent
+    artifact → honest-null block (caller appends NO gap).
+
+    Standing law: every lean is a deterministic threshold on observed off-exchange data —
+    display-tier context only, NEVER a signal, rank, size, or escalation. LLM consumers
+    read this and may only de-escalate, never originate.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "darkpool" / "context" / "latest.json"
+
+    null_out: dict = {
+        "as_of": None, "tally": None, "leans": None, "standouts": None,
+        "venue_mover": None, "changes": None,
+        "display_only": True, "is_context_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        tally_raw = raw.get("tally") or {}
+        tally_out = {k: _clean(v) for k, v in tally_raw.items()} \
+            if isinstance(tally_raw, dict) and tally_raw else None
+
+        # leans — n + top names + plain stance (drop the long bilingual reads)
+        leans_raw = raw.get("leans") or {}
+        leans_out: dict | None = None
+        if isinstance(leans_raw, dict) and leans_raw:
+            leans_out = {}
+            for k in ("accumulation", "distribution", "unusual"):
+                L = leans_raw.get(k) or {}
+                leans_out[k] = {
+                    "n": _clean(L.get("n")),
+                    "names": [str(n) for n in (L.get("names") or [])[:8]],
+                    "stance": (L.get("stance") or {}).get("en") if isinstance(L.get("stance"), dict) else None,
+                }
+
+        # standouts — cap 8, trimmed to a display subset
+        _KEEP = ("ticker", "lean", "oe_share", "oe_share_40d", "oe_z", "short_ratio", "trend_pp")
+        top_raw = raw.get("standouts") or []
+        standouts_out: list[dict] = []
+        if isinstance(top_raw, list):
+            for s in top_raw[:8]:
+                if isinstance(s, dict):
+                    standouts_out.append({k: _clean(s.get(k)) for k in _KEEP})
+
+        venues = raw.get("venues") or {}
+        mover = (venues.get("mover") or {}) if isinstance(venues, dict) else {}
+        venue_mover = {"name": _clean(mover.get("name")), "wow_pp": _clean(mover.get("wow_pp"))} if mover else None
+
+        changes_raw = (raw.get("changes") or {}).get("items") or []
+        changes_out: list[dict] = []
+        if isinstance(changes_raw, list):
+            for item in changes_raw[:8]:
+                if isinstance(item, dict):
+                    changes_out.append({k: _clean(v) for k, v in item.items()})
+
+        return {
+            "as_of": _clean(raw.get("asof")),
+            "tally": tally_out,
+            "leans": leans_out,
+            "standouts": standouts_out,
+            "venue_mover": venue_mover,
+            "changes": changes_out,
+            "display_only": True,
+            "is_context_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("darkpool_flow: compose failed — %s", exc)
+        return null_out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Liquidity Plumbing lobe (neuralweb.liquidity_plumbing.v1)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -4125,6 +4204,22 @@ def build_world_state(
     # producer (scripts/build_stage_analysis.py) is optional until its first
     # nightly run. Matches the theme_rotation / intl_risk optional-artifact pattern.
 
+    # Dark-pool flow context lobe (darkpool_context.v1, display-only, fail-open)
+    _dpf_path = data_dir / "darkpool" / "context" / "latest.json"
+    try:
+        darkpool_flow_block: dict = _compose_darkpool_flow(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: darkpool_flow lobe failed — %s", exc)
+        gaps.append(f"darkpool_flow: {exc}")
+        darkpool_flow_block = {
+            "as_of": None, "tally": None, "leans": None, "standouts": None,
+            "venue_mover": None, "changes": None, "display_only": True, "is_context_only": True,
+        }
+    sources[str(_dpf_path.relative_to(repo))] = (darkpool_flow_block or {}).get("as_of")
+    # No gap appended when absent: the honest-null block communicates absence; the
+    # producer (scripts/build_darkpool_desk.py → engine.darkpool_context) is optional
+    # until its first nightly run. Matches the stage_analysis optional-artifact pattern.
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "verdict": verdict_block,
@@ -4170,6 +4265,7 @@ def build_world_state(
         "theme_rotation": theme_rotation_block,  # theme_context.v1 NW integration (display-only)
         "market_structure": market_structure_block,  # MSP-W3 market-structure context lobe (display-only)
         "stage_analysis": stage_analysis_block,  # SGA-W2 stage_context.v1 lobe (display-only, None-fields until first run)
+        "darkpool_flow": darkpool_flow_block,  # darkpool_context.v1 off-exchange positioning lobe (display-only)
         "rates_command": rates_command_block,  # RCB Forward Path board lobe (display-only)
         "gaps": gaps,
         "sources": sources,

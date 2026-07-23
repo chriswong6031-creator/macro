@@ -413,6 +413,13 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
             kw["out_path"] = site_dir / "darkpool_eod.json"
             return orig_emit(*a, **kw)
 
+        # main() also builds the darkpool_context.v1 artifact under config.ROOT —
+        # which is the REAL repo here (templates must resolve). Redirect its write
+        # to tmp so the synthetic 2024 panel can't clobber the live context feed.
+        import engine.darkpool_context as _dpc
+        orig_ctx = _dpc.build_context_feed
+        _dpc.build_context_feed = lambda *a, **k: orig_ctx(*a, **{**k, "root": tmp_path})
+
         bdd.write_page = _fake_write
         bdd._emit_pane_json = _fake_emit
         try:
@@ -420,6 +427,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
         finally:
             bdd.write_page = orig_write
             bdd._emit_pane_json = orig_emit
+            _dpc.build_context_feed = orig_ctx
 
         if rc != 0:
             pytest.skip("builder returned non-zero — may need data; skip nav check")
@@ -436,7 +444,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path):
         # content inside its own responsive shell.
         assert html.count('<nav class="site-nav">') == 1, "darkpool.html should render one shared nav"
         assert 'class="dp-shell"' in html, "darkpool.html missing responsive content shell"
-        assert "<title>Dark Pool Desk - off-exchange and short volume</title>" in html
+        assert "<title>Dark Pool — where the big money trades off the public tape</title>" in html
         assert '<meta name="description" content="<span' not in html
 
     finally:
@@ -518,3 +526,113 @@ def test_pane_json_no_data_vendor_name(tmp_path):
     text = out.read_text(encoding="utf-8").lower()
     for vendor in ("thetadata", "theta data", "polygon"):
         assert vendor not in text, f"debrand: {vendor!r} leaked into public artifact"
+
+
+# ---------------------------------------------------------------------------
+# 7. darkpool_context — actionable leans + change-feed (darkpool_context.v1)
+# ---------------------------------------------------------------------------
+from engine import darkpool_context as dctx
+
+
+def _row(ticker, oe_z, oe_share, trend_pp=0.0, ratio_z=0.0, oe_share_40d=None, short_ratio=0.5):
+    return {"ticker": ticker, "oe_z": oe_z, "oe_share": oe_share, "trend_pp": trend_pp,
+            "ratio_z": ratio_z, "oe_share_40d": oe_share_40d if oe_share_40d is not None else oe_share * 0.7,
+            "short_ratio": short_ratio, "oe_trend_pp": 1.0, "ats_top_venue": None}
+
+
+def test_classify_leans_by_short_trend():
+    """Standout lean is driven by the CHANGE in short-marking, not the raw level."""
+    assert dctx.classify(_row("ACC", oe_z=2.0, oe_share=0.55, trend_pp=-3.0)) == "accumulation"
+    assert dctx.classify(_row("DIS", oe_z=2.0, oe_share=0.50, trend_pp=5.0)) == "distribution"
+    assert dctx.classify(_row("UNC", oe_z=2.0, oe_share=0.50, trend_pp=1.0, ratio_z=0.0)) == "unusual"
+
+
+def test_classify_lean_by_own_norm_ratio_z():
+    """A name at/above its own short-ratio norm leans distribution even with a flat trend."""
+    assert dctx.classify(_row("D2", oe_z=2.0, oe_share=0.5, trend_pp=0.0, ratio_z=1.4)) == "distribution"
+    assert dctx.classify(_row("A2", oe_z=2.0, oe_share=0.5, trend_pp=0.0, ratio_z=-1.2)) == "accumulation"
+
+
+def test_standout_gate_excludes_low_z_low_share_and_null():
+    assert dctx.classify(_row("LOWZ", oe_z=0.5, oe_share=0.60)) is None      # not unusual vs own norm
+    assert dctx.classify(_row("LOWSH", oe_z=2.5, oe_share=0.30)) is None     # not materially dark
+    assert dctx.classify({"ticker": "NOZ", "oe_z": None, "oe_share": 0.6}) is None  # no history → honest null
+
+
+def test_build_snapshot_shape_and_hero_honesty():
+    rows = [
+        _row("ACC1", 2.5, 0.60, trend_pp=-4.0), _row("ACC2", 2.0, 0.55, trend_pp=-3.0),
+        _row("DIS1", 2.2, 0.52, trend_pp=6.0),
+        _row("UNC1", 1.8, 0.48, trend_pp=1.0),
+        _row("SKIP", 0.2, 0.60),   # not a standout
+    ]
+    snap = dctx.build_snapshot(rows, None, "2026-07-21")
+    assert snap["tally"] == {"accumulation": 2, "distribution": 1, "unusual": 1}
+    assert snap["n_standouts"] == 4
+    assert "SKIP" not in [s["ticker"] for s in snap["standouts"]]
+    # accumulation leads → hero says so, and never gives a trade call
+    hero = snap["hero"]["en"].lower()
+    assert "accumulation" in hero and "distribution" in hero
+    for banned in ("buy", "sell", "validated"):
+        assert banned not in hero
+    # every stance is a Watch-family heads-up, never an entry
+    for k in ("accumulation", "distribution", "unusual"):
+        st = snap["leans"][k]["stance"]["en"].lower()
+        assert "watch" in st or "weakness" in st
+
+
+def test_standout_depth_marker_carries_own_norm():
+    """The depth-bar 'norm' marker uses the name's own 40-day baseline."""
+    snap = dctx.build_snapshot([_row("X", 2.0, 0.60, trend_pp=-3.0, oe_share_40d=0.42)], None, "2026-07-21")
+    s = snap["standouts"][0]
+    assert s["oe_share"] == 0.60 and s["oe_share_40d"] == 0.42
+
+
+def test_change_feed_first_run_is_empty():
+    snap = dctx.build_snapshot([_row("A", 2.0, 0.55, trend_pp=-3.0)], None, "2026-07-21")
+    changes, prev = dctx.build_changes(None, snap, "2026-07-21")
+    assert changes == {"vs_asof": None, "items": []}
+
+
+def test_change_feed_detects_new_day_entrant():
+    prior = dctx.build_context_feed([_row("A", 2.0, 0.55, trend_pp=-3.0)], None,
+                                    asof="2026-07-20", built="t", write=False)
+    today = dctx.build_snapshot([_row("A", 2.0, 0.55, trend_pp=-3.0),
+                                 _row("B", 2.0, 0.55, trend_pp=-3.0)], None, "2026-07-21")
+    changes, _ = dctx.build_changes(prior, today, "2026-07-21")
+    joined = " ".join(i["en"] for i in changes["items"])
+    assert "B entered quiet-accumulation watch" in joined
+    assert "A " not in joined  # A was already there → no phantom entry
+
+
+def test_change_feed_same_day_rebuild_is_idempotent():
+    """A same-day rebuild reuses prev_state so the day's diff isn't wiped/duplicated."""
+    y = dctx.build_context_feed([_row("A", 2.0, 0.55, trend_pp=-3.0)], None,
+                                asof="2026-07-20", built="t", write=False)
+    # First run today: B enters
+    today = dctx.build_snapshot([_row("A", 2.0, 0.55, trend_pp=-3.0),
+                                 _row("B", 2.0, 0.55, trend_pp=-3.0)], None, "2026-07-21")
+    ch1, prev1 = dctx.build_changes(y, today, "2026-07-21")
+    # Reassemble today's contract (as build_context_feed would persist it) and rebuild same day
+    contract = {"asof": "2026-07-21", "leans": today["leans"], "venues": today["venues"],
+                "prev_state": prev1}
+    ch2, _ = dctx.build_changes(contract, today, "2026-07-21")
+    assert [i["en"] for i in ch1["items"]] == [i["en"] for i in ch2["items"]]
+
+
+def test_context_feed_artifact_contract(tmp_path):
+    rows = [_row("ACC1", 2.5, 0.60, trend_pp=-4.0), _row("DIS1", 2.2, 0.52, trend_pp=6.0)]
+    ats = {"week_start": "2026-06-15", "lag_note": "2–4 wk publication lag",
+           "venues": [{"mpid": "BLUE", "venue_name": "BLUE BOATS", "share_of_total_pct": 7.4,
+                       "wow_pp": 2.9, "wow_is_new": False}]}
+    art = dctx.build_context_feed(rows, ats, asof="2026-07-21", built="2026-07-21 00:00 UTC",
+                                  root=tmp_path)
+    assert art["schema"] == "darkpool_context.v1"
+    assert art["is_context_only"] is True and art["display_only"] is True
+    assert art["tally"]["accumulation"] == 1 and art["tally"]["distribution"] == 1
+    assert art["venues"]["mover"]["name"] == "BLUE BOATS"
+    # persisted to data/darkpool/context/latest.json under the given root
+    on_disk = _json.loads((tmp_path / "data" / "darkpool" / "context" / "latest.json").read_text(encoding="utf-8"))
+    assert on_disk["schema"] == "darkpool_context.v1"
+    # honesty: the artifact never claims a validated edge
+    assert "validated" not in _json.dumps(art).lower()

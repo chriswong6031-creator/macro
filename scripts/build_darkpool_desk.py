@@ -506,6 +506,23 @@ def main() -> int:
     site.mkdir(parents=True, exist_ok=True)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
+    # Actionable positioning context + same-day change-feed (darkpool_context.v1).
+    # Turns the raw desk into plain-word accumulation/distribution/unusual leans, a
+    # laid-out standout board, and a hero verdict — and persists the artifact the
+    # Neural Web dark-pool lobe reads. Additive + guarded: NEVER breaks the HTML desk.
+    dp_ctx: dict | None = None
+    try:
+        from engine import darkpool_context as _dpc
+        dp_ctx = _dpc.build_context_feed(
+            rows_clean,
+            {"week_start": ats_table.get("week_start"),
+             "venues": ats_table.get("venues", []),
+             "lag_note": ats_lag_note},
+            asof=panel_latest, built=built, root=config.ROOT,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("darkpool_context build failed (non-fatal): %s", e)
+
     from engine.i18n import td, tr
     env = Environment(
         loader=FileSystemLoader(str(config.ROOT / "templates")),
@@ -525,6 +542,7 @@ def main() -> int:
         n_with_oe=n_with_oe,
         n_with_ats=n_with_ats,
         table_json=table_json,
+        dp=dp_ctx,
     )
     out = site / "darkpool.html"
     write_page(out, html)

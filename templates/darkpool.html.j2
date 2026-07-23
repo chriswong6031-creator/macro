@@ -1,6 +1,9 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{% macro bl(d) -%}
+<span class="l-en">{{ d.en }}</span><span class="l-zh">{{ d.zh }}</span>
+{%- endmacro %}
 {% macro chip(label_en, label_zh='', cls='') -%}
 <span class="chip {{ cls }}"><span class="l-en">{{ label_en }}</span><span class="l-zh">{{ label_zh if label_zh else label_en }}</span></span>
 {%- endmacro %}
@@ -12,96 +15,181 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dark Pool Desk - off-exchange and short volume</title>
-{% set seo_title = "Dark Pool Desk — Mastermind" %}{% set seo_desc = "Off-exchange and short-volume tracking — where dark pool activity concentrates and what it says about real positioning. Updated nightly." %}{% set seo_path = "darkpool.html" %}
+<title>Dark Pool — where the big money trades off the public tape</title>
+{% set seo_title = "Dark Pool — Mastermind" %}{% set seo_desc = "Where the biggest players trade off the public tape — and which way today's hidden flow leans. Quiet-accumulation vs distribution footprints, standout names, and venue shifts. Positioning context, updated nightly." %}{% set seo_path = "darkpool.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0; overflow-x:hidden; }
-  .site-nav { width:min(1500px,calc(100% - 36px)); margin-top:18px; }
-  .dp-shell { width:min(1400px,calc(100% - 36px)); margin:0 auto 22px; }
-  .whb { max-width:100%; overflow:hidden; }
+  body { background:var(--bg); color:var(--text); font:15px/1.5 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0; overflow-x:hidden; }
+  .site-nav { width:min(1200px,calc(100% - 36px)); margin-top:18px; }
+  .dp-shell { width:min(1180px,calc(100% - 36px)); margin:0 auto 40px; }
   a { text-decoration:none; color:inherit; }
-  h1 { font-size:20px; font-weight:700; margin:0; }
-  h2 { font-size:13px; margin:0 0 4px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
+  h2 { margin:0; }
   .muted { color:var(--muted); }
   .sm { font-size:12px; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; min-width:0; overflow-wrap:break-word; }
-  .toprow { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
-  .chip { display:inline-flex; align-items:center; font-size:11.5px; padding:2px 9px; border-radius:20px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); white-space:normal; max-width:100%; }
-  .chip.warn { background:rgba(255,190,0,.10); border-color:rgba(255,190,0,.35); color:#b8860b; }
-  .chip.lag { background:rgba(120,130,180,.10); border-color:rgba(120,130,180,.30); color:var(--muted); }
-  .chip.ok { background:rgba(35,134,54,.10); border-color:rgba(35,134,54,.30); color:var(--up); }
-  .chip.up { background:rgba(35,134,54,.12); border-color:rgba(35,134,54,.35); color:var(--up); }
-  .chip.dn { background:rgba(220,50,50,.10); border-color:rgba(220,50,50,.30); color:var(--down); }
-  .chip.new-venue { background:rgba(100,120,200,.12); border-color:rgba(100,120,200,.30); color:var(--muted); }
-  .chip.preset { cursor:pointer; user-select:none; }
-  .chip.preset:hover { background:var(--panel2); border-color:var(--text); color:var(--text); }
-  .chip.preset.active { background:var(--accent,#2563eb); border-color:transparent; color:#fff; }
-  .honest-box { background:rgba(255,190,0,.07); border:1px solid rgba(255,190,0,.25); border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; line-height:1.6; color:var(--muted); overflow-wrap:break-word; }
-  .honest-box strong { color:var(--text); }
-  /* Table */
-  .tbl-wrap { overflow-x:auto; margin-top:8px; max-width:100%; -webkit-overflow-scrolling:touch; }
+
+  /* lean identity hues — the page's organising colour language.
+     --acc (accumulation/up) & --dis (distribution/down) are DIRECTION reads →
+     they swap under html[data-lang="zh"] per the house 红涨绿跌 ruling.
+     --unc (amber) & --dpb (blue) are non-directional → they never swap. */
+  :root { --ink:#e8edf4; --faint:#6b7280; --acc:#2dd4a7; --dis:#e5738a; --unc:#e0a44a; --dpb:#8b96f8; }
+  html[data-theme="light"] { --ink:#0f1622; --faint:#8894a6; --acc:#0f9b7a; --dis:#cf5570; --unc:#b9791a; --dpb:#4559dc; }
+  html[data-lang="zh"] { --acc:#e5738a; --dis:#2dd4a7; }
+  html[data-theme="light"][data-lang="zh"] { --acc:#cf5570; --dis:#0f9b7a; }
+
+  /* ---------- hero ---------- */
+  .dp-hero { padding:26px 0 4px; animation:dpUp .55s cubic-bezier(.2,.7,.3,1) both; }
+  .dp-brand { display:flex; align-items:center; gap:11px; font-weight:800; font-size:26px; color:var(--ink); letter-spacing:-.02em; }
+  .dp-mark { width:30px; height:30px; flex:none; }
+  .dp-mark svg { display:block; width:30px; height:30px; }
+  .dp-brand .gn { background:linear-gradient(96deg,var(--acc),var(--dpb) 60%,var(--unc)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .dp-sub { color:var(--muted); font-size:14px; margin:5px 0 0; max-width:640px; }
+  .dp-verdict { font-size:clamp(20px,3vw,28px); font-weight:800; color:var(--ink); letter-spacing:-.022em; line-height:1.3; margin:18px 0 4px; max-width:900px; }
+  .dp-asof { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-top:8px; }
+  .dp-dot { width:7px; height:7px; border-radius:50%; background:var(--up); animation:dpBreathe 2.8s ease-in-out infinite; flex:none; }
+
+  /* ---------- what changed ---------- */
+  .dp-changes { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:22px 0 2px; }
+  .dp-changes .eb { font-size:10.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin-right:2px; }
+  .cchip { display:inline-flex; align-items:center; gap:7px; padding:6px 13px; border-radius:999px; border:1px solid var(--line); background:var(--panel); font-size:12.5px; font-weight:600; color:var(--ink); }
+  .cchip .cd { width:6px; height:6px; border-radius:50%; background:var(--unc); flex:none; animation:dpBreathe 2.2s ease-in-out infinite; }
+  .cchip.calm { color:var(--muted); font-weight:500; }
+  .cchip.calm .cd { background:var(--up); }
+
+  /* ---------- section chrome ---------- */
+  .sec { display:flex; align-items:baseline; gap:11px; margin:36px 0 3px; flex-wrap:wrap; }
+  .sec .sd { width:8px; height:8px; border-radius:2px; background:var(--sc,var(--faint)); align-self:center; flex:none; }
+  .sec h2 { font-size:12px; font-weight:800; color:var(--ink); text-transform:uppercase; letter-spacing:.08em; }
+  .sec .cnt { font-size:12px; color:var(--faint); font-weight:600; }
+  .sec-sub { font-size:13px; color:var(--muted); margin:2px 0 15px; max-width:820px; }
+
+  /* ---------- lean rail (the thesis + glance) ---------- */
+  .rail { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media(max-width:820px){ .rail { grid-template-columns:1fr; } }
+  .lc { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 18px 16px; overflow:hidden; animation:dpUp .55s cubic-bezier(.2,.7,.3,1) both; }
+  .lc::before { content:''; position:absolute; inset:0 0 auto 0; height:3px; background:var(--c); }
+  .lc.acc { --c:var(--acc); } .lc.dis { --c:var(--dis); } .lc.unc { --c:var(--unc); }
+  .lc:nth-child(2){ animation-delay:.05s; } .lc:nth-child(3){ animation-delay:.1s; }
+  /* prints settling into the dark — cheap opacity-only ambient */
+  .pool { position:absolute; right:14px; top:15px; width:52px; height:42px; opacity:.5; pointer-events:none; }
+  .pool i { position:absolute; width:4px; height:4px; border-radius:50%; background:var(--c); opacity:0; animation:dpSink 3.6s ease-in infinite; }
+  .pool i:nth-child(1){ left:5px; animation-delay:0s; } .pool i:nth-child(2){ left:19px; animation-delay:.9s; }
+  .pool i:nth-child(3){ left:33px; animation-delay:1.8s; } .pool i:nth-child(4){ left:46px; animation-delay:2.6s; }
+  .lc-k { display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--c); }
+  .lc-state { font-size:23px; font-weight:800; color:var(--ink); letter-spacing:-.02em; margin:11px 0 2px; line-height:1.12; }
+  .lc-state small { font-size:14px; color:var(--muted); font-weight:600; }
+  .lc-read { font-size:12.5px; color:var(--muted); line-height:1.5; margin:6px 0 0; }
+  .lc-names { display:flex; flex-wrap:wrap; gap:5px; margin-top:12px; }
+  .tag { display:inline-block; padding:3px 9px; border-radius:7px; font-size:11.5px; font-weight:700; font-variant-numeric:tabular-nums; background:color-mix(in srgb,var(--c) 13%,var(--panel)); color:var(--c); }
+  .lc-foot { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+  .stance { display:inline-flex; align-items:center; gap:6px; padding:5px 13px; border-radius:999px; font-size:12px; font-weight:700; background:color-mix(in srgb,var(--c) 11%,var(--panel)); color:var(--c); border:1px solid color-mix(in srgb,var(--c) 28%,var(--line)); }
+  .stance .sdot { background:currentColor; width:6px; height:6px; border-radius:50%; animation:dpBreathe 2.4s ease-in-out infinite; flex:none; }
+
+  /* ---------- standouts board (actionable payload) ---------- */
+  .board { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+  @media(max-width:760px){ .board { grid-template-columns:1fr; } }
+  .name { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:15px; padding:15px 17px; overflow:hidden; transition:transform .16s ease,border-color .2s ease,box-shadow .2s ease; animation:dpUp .5s cubic-bezier(.2,.7,.3,1) both; }
+  .name:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--c) 45%,var(--line)); box-shadow:0 12px 30px -18px rgba(0,0,0,.5); }
+  .name::before { content:''; position:absolute; inset:0 auto 0 0; width:3px; background:var(--c); }
+  .name.acc { --c:var(--acc); } .name.dis { --c:var(--dis); } .name.unc { --c:var(--unc); }
+  .n-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .n-tk { font-size:19px; font-weight:800; color:var(--ink); letter-spacing:-.01em; }
+  .n-lean { display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; background:color-mix(in srgb,var(--c) 13%,var(--panel)); color:var(--c); border:1px solid color-mix(in srgb,var(--c) 32%,var(--line)); }
+  /* depth meter — the signature: how much of the day's volume went dark */
+  .n-depth { margin:15px 0 4px; }
+  .n-depth .dl { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); font-weight:600; letter-spacing:.02em; margin-bottom:6px; }
+  .n-depth .dl b { color:var(--ink); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .dtrack { position:relative; height:10px; border-radius:6px; background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--line) 60%,transparent) 0 2px,transparent 2px 7px); border:1px solid var(--line); overflow:visible; }
+  .dfill { position:absolute; inset:0 auto 0 0; border-radius:5px; background:linear-gradient(90deg,color-mix(in srgb,var(--c) 22%,transparent),color-mix(in srgb,var(--c) 60%,transparent)); animation:dpGrow .8s cubic-bezier(.2,.7,.3,1) both; transform-origin:left; }
+  .dnorm { position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink); opacity:.5; border-radius:2px; }
+  .dnorm::after { content:attr(data-le); position:absolute; top:-13px; left:50%; transform:translateX(-50%); font-size:8px; color:var(--faint); font-weight:700; letter-spacing:.03em; white-space:nowrap; }
+  html[data-lang="zh"] .dnorm::after { content:attr(data-lz); }
+  .n-facts { display:flex; gap:16px; margin-top:13px; flex-wrap:wrap; }
+  .nf { font-size:11px; color:var(--muted); }
+  .nf b { display:block; font-size:13px; color:var(--ink); font-weight:700; font-variant-numeric:tabular-nums; margin-top:1px; }
+  .nf b.up { color:var(--dis); } .nf b.dn { color:var(--acc); }
+  .n-read { font-size:12px; color:var(--muted); line-height:1.45; margin-top:11px; padding-top:11px; border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent); }
+  .n-read b { color:var(--text); font-weight:600; }
+
+  /* ---------- venue flow ---------- */
+  .vcard { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px 20px; }
+  .vrow { display:grid; grid-template-columns:minmax(150px,1.1fr) 2fr 132px; align-items:center; gap:14px; padding:9px 0; }
+  .vrow + .vrow { border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
+  @media(max-width:620px){ .vrow { grid-template-columns:1fr 96px; } .vtrack { display:none; } }
+  .vn { font-size:13px; font-weight:700; color:var(--ink); }
+  .vn .mp { display:block; font-size:10.5px; font-weight:500; color:var(--faint); margin-top:1px; letter-spacing:.02em; }
+  .vtrack { position:relative; height:9px; background:color-mix(in srgb,var(--line) 55%,var(--panel)); border-radius:999px; overflow:hidden; }
+  .vfill { position:absolute; inset:0 auto 0 0; border-radius:999px; background:linear-gradient(90deg,color-mix(in srgb,var(--dpb) 28%,transparent),color-mix(in srgb,var(--dpb) 60%,transparent)); animation:dpGrow .8s cubic-bezier(.2,.7,.3,1) both; transform-origin:left; }
+  .vfill.mover { background:linear-gradient(90deg,color-mix(in srgb,var(--acc) 32%,transparent),color-mix(in srgb,var(--acc) 64%,transparent)); }
+  .vwow { justify-self:end; display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .vpct { color:var(--ink); }
+  .vd { font-size:11.5px; font-weight:700; } .vd.u { color:var(--acc); } .vd.dn { color:var(--dis); } .vd.f { color:var(--faint); }
+  .vnew { font-size:9.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--acc); background:color-mix(in srgb,var(--acc) 12%,var(--panel)); padding:2px 7px; border-radius:6px; }
+
+  /* ---------- quiet state ---------- */
+  .dp-quiet { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; color:var(--muted); font-size:14px; line-height:1.6; }
+
+  /* ---------- shelves (go deeper: desk + method) ---------- */
+  .shelf details { background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-top:12px; overflow:hidden; }
+  .shelf summary { list-style:none; cursor:pointer; padding:15px 20px; display:flex; align-items:center; gap:12px; font-size:14px; font-weight:700; color:var(--ink); }
+  .shelf summary::-webkit-details-marker { display:none; }
+  .shelf summary:hover { background:color-mix(in srgb,var(--dpb) 5%,var(--panel)); }
+  .shelf summary .si { flex:none; width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; background:color-mix(in srgb,var(--dpb) 10%,var(--panel)); }
+  .shelf summary .sh { margin-left:auto; font-size:11.5px; font-weight:600; color:var(--faint); }
+  .shelf summary .sc { flex:none; font-size:11px; color:var(--faint); transition:transform .25s; }
+  .shelf details[open] summary .sc { transform:rotate(90deg); }
+  .shelf .sb { padding:6px 20px 20px; border-top:1px solid var(--line); }
+  .method { font-size:13px; color:var(--muted); line-height:1.7; max-width:840px; }
+  .method p { margin:8px 0; }
+  .method b { color:var(--ink); }
+
+  .disc { font-size:12px; color:var(--muted); margin:28px 0 0; padding-top:14px; border-top:1px solid var(--line); line-height:1.6; }
+
+  /* ---------- desk (demoted) ---------- */
+  .tbl-wrap { overflow-x:auto; margin-top:10px; max-width:100%; -webkit-overflow-scrolling:touch; }
   table.dp-tbl { border-collapse:collapse; width:100%; font-size:12.5px; }
   table.dp-tbl th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em; padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; cursor:pointer; user-select:none; }
   table.dp-tbl th:first-child { text-align:left; }
   table.dp-tbl th.sort-asc::after { content:' ▲'; font-size:9px; }
   table.dp-tbl th.sort-desc::after { content:' ▼'; font-size:9px; }
   table.dp-tbl td { padding:5px 8px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
-  table.dp-tbl td:first-child { text-align:left; font-weight:600; }
+  table.dp-tbl td:first-child { text-align:left; font-weight:600; color:var(--ink); }
   table.dp-tbl tr:hover td { background:var(--panel2); }
-  .num-pos { color:var(--up); }
-  .num-neg { color:var(--down); }
-  .num-neu { color:var(--muted); }
-  /* Norm chip inside td */
+  .num-pos { color:var(--up); } .num-neg { color:var(--down); } .num-neu { color:var(--muted); }
   .norm-chip { display:inline-block; font-size:10.5px; padding:1px 7px; border-radius:12px; white-space:nowrap; }
-  .norm-hi2  { background:rgba(220,50,50,.14); color:var(--down); }
-  .norm-hi1  { background:rgba(220,50,50,.07); color:var(--down); }
-  .norm-mid  { background:var(--panel2); color:var(--muted); }
-  .norm-lo1  { background:rgba(35,134,54,.07); color:var(--up); }
-  .norm-lo2  { background:rgba(35,134,54,.14); color:var(--up); }
-  /* Sparkline */
-  .spark-cell { min-width:90px; }
-  svg.spark { display:block; overflow:visible; }
-  /* ATS venue table */
-  .venue-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; margin-top:10px; }
-  .venue-card { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; min-width:0; overflow-wrap:break-word; }
-  .venue-card .vname { font-size:12.5px; font-weight:600; margin-bottom:2px; }
-  .venue-card .vmpid { font-size:11px; color:var(--muted); margin-bottom:4px; }
-  .venue-card .vstat { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:11.5px; margin-bottom:4px; }
-  .venue-card .vstat .lbl { color:var(--muted); }
-  .venue-card .vchips { display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
-  /* Filters row */
-  .filters-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px; }
-  .dp-input { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-size:13px; color:var(--text); outline:none; }
+  .norm-hi2 { background:rgba(220,50,50,.14); color:var(--down); } .norm-hi1 { background:rgba(220,50,50,.07); color:var(--down); }
+  .norm-mid { background:var(--panel2); color:var(--muted); }
+  .norm-lo1 { background:rgba(35,134,54,.07); color:var(--up); } .norm-lo2 { background:rgba(35,134,54,.14); color:var(--up); }
+  .spark-cell { min-width:90px; } svg.spark { display:block; overflow:visible; }
+  .filters-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; }
+  .dp-input, .dp-select { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-size:13px; color:var(--text); outline:none; }
   .dp-input::placeholder { color:var(--muted); }
-  .dp-select { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px 8px; font-size:12px; color:var(--text); outline:none; }
-  #dp-search { max-width:200px; }
-  #dp-min-share { max-width:90px; }
-  .clear-btn { font-size:12px; color:var(--muted); cursor:pointer; padding:4px 8px; border:1px solid var(--line); border-radius:8px; background:none; }
-  .clear-btn:hover { border-color:var(--text); color:var(--text); }
-  .export-btn { font-size:12px; color:var(--muted); cursor:pointer; padding:4px 8px; border:1px solid var(--line); border-radius:8px; background:none; margin-left:auto; }
-  .export-btn:hover { border-color:var(--text); color:var(--text); }
-  .row-count { font-size:11.5px; color:var(--muted); }
-  .presets-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
-  /* tip popover */
+  #dp-search { max-width:200px; } #dp-min-share { max-width:110px; }
+  .clear-btn, .export-btn { font-size:12px; color:var(--muted); cursor:pointer; padding:4px 8px; border:1px solid var(--line); border-radius:8px; background:none; }
+  .clear-btn:hover, .export-btn:hover { border-color:var(--text); color:var(--text); }
+  .export-btn { margin-left:auto; }
+  .row-count { font-size:11.5px; color:var(--muted); margin-bottom:6px; }
+  .presets-row { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 10px; }
+  .chip { display:inline-flex; align-items:center; font-size:11.5px; padding:2px 9px; border-radius:20px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); white-space:normal; max-width:100%; }
+  .chip.preset { cursor:pointer; user-select:none; }
+  .chip.preset:hover { background:var(--panel2); border-color:var(--text); color:var(--text); }
+  .chip.preset.active { background:var(--dpb); border-color:transparent; color:#fff; }
   .tip-wrap { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:9px; font-weight:700; cursor:help; position:relative; vertical-align:middle; margin-left:3px; }
-  .tip-pop { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:min(260px,calc(100vw - 32px)); background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 12px; z-index:80; font-size:12px; line-height:1.5; color:var(--text); box-shadow:0 4px 16px rgba(0,0,0,.18); pointer-events:none; white-space:normal; overflow-wrap:break-word; }
+  .tip-pop { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:min(260px,calc(100vw - 32px)); background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 12px; z-index:80; font-size:12px; line-height:1.5; color:var(--text); box-shadow:0 4px 16px rgba(0,0,0,.18); pointer-events:none; white-space:normal; overflow-wrap:break-word; font-weight:400; text-transform:none; letter-spacing:0; }
   .tip-wrap:hover .tip-pop { display:block; }
-  /* sc-hide responsive */
+
+  /* ---------- motion ---------- */
+  @keyframes dpUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+  @keyframes dpBreathe { 0%,100%{opacity:.45;transform:scale(.85)} 50%{opacity:1;transform:scale(1.1)} }
+  @keyframes dpGrow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+  @keyframes dpSink { 0%{opacity:0;transform:translateY(-6px)} 25%{opacity:.9} 70%{opacity:.5} 100%{opacity:0;transform:translateY(28px)} }
+  @media(max-width:900px){ .pool { display:none; } }
+  @media(prefers-reduced-motion:reduce){ .dp-hero,.lc,.name,.dfill,.vfill,.dp-dot,.cchip .cd,.stance .sdot,.pool i { animation:none; } * { transition:none !important; } }
+
   @media (max-width:900px) { .sc-hide { display:none; } }
-  @media (max-width:640px) {
-    .site-nav,.dp-shell { width:min(1500px,calc(100% - 24px)); }
-    .site-nav { margin-top:12px; }
-    .panel { padding:12px; border-radius:8px; }
-    .toprow { align-items:flex-start; }
-    .sc-hide-sm { display:none; }
-    table.dp-tbl { font-size:12px; }
-    table.dp-tbl td,table.dp-tbl th { padding:5px 6px; }
-    #dp-search { max-width:none; }
-  }
+  @media (max-width:640px) { .sc-hide-sm { display:none; } }
   @media (max-width:480px) { .sc-hide-xs { display:none; } }
 </style>
 </head>
@@ -111,243 +199,220 @@
 {% include "_site_nav.html.j2" ignore missing %}
 
 <main class="dp-shell">
-<div class="toprow">
-  <h1>{{ t('Dark Pool Desk', '场外暗池台') }}</h1>
-  {{ chip('EOD · display-only', 'EOD · 仅供展示') }}
-{% if below_floor %}
-  {{ chip('⚠ thin history (' ~ panel_dates ~ ' dates)', '⚠ 历史数据不足（' ~ panel_dates ~ ' 天）', 'warn') }}
-{% else %}
-  {{ chip(panel_dates|string ~ ' dates available', panel_dates|string ~ ' 个交易日数据', 'ok') }}
-{% endif %}
-  <span class="muted sm">{{ t('as of', '数据截至') }} {{ panel_latest }} · {{ t('built', '构建于') }} {{ built }}</span>
-</div>
+{% set LC = {'accumulation':'acc','distribution':'dis','unusual':'unc'} %}
+{% set LEAN_ORDER = ['accumulation','distribution','unusual'] %}
 
-<div class="honest-box">
-  <strong>{{ t('Data provenance', '数据来源说明') }}</strong> ·
-  {{ t('T1e: FINRA CNMSshvol — off-exchange (FINRA-facility) volume and short-sale volume reported by FINRA member firms. This is NOT live trading data and NOT direct dark-pool print data. "Short ratio" = short-sale volume ÷ FINRA-facility total volume. "Off-exchange share" = FINRA-facility volume ÷ yahoo consolidated day volume (exact-date match; labeled per row). T2e: FINRA OTC Transparency weekly per-ATS venue data — 2–4 week publication lag; not a real-time feed.',
-     'T1e：FINRA CNMSshvol — FINRA成员机构上报的场外（FINRA设施）成交量与卖空成交量。本数据非实时交易数据，亦非直接的暗池成交记录。"融券比率"=卖空成交量÷FINRA设施总成交量。"场外占比"=FINRA设施成交量÷雅虎综合日成交量（精确日期匹配；各行标注分母来源）。T2e：FINRA场外透明度每周各ATS场所数据——公布滞后2–4周，非实时数据。') }}
-</div>
-
-{# JSON data payload — consumed by client-side table renderer #}
-<script id="dp-data" type="application/json">{{ table_json | safe }}</script>
-
-{# ═══════════════════════════════════════════════ Per-name table ═════════════ #}
-<div class="panel">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
-    <h2>{{ t('Off-Exchange Volume — Per Name', '场外成交量 — 各个股') }}</h2>
-    <span class="muted sm">{{ display_universe_size }} {{ t('names', '个股') }} · {{ n_with_oe }} {{ t('with OE share', '有场外占比') }} · {{ n_with_ats }} {{ t('with ATS match', '有ATS匹配') }}</span>
+<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+<header class="dp-hero">
+  <div class="dp-brand">
+    <span class="dp-mark"><svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="var(--dpb)" stroke-width="1.4" opacity=".5"/><path d="M15 2a13 13 0 0 0 0 26z" fill="var(--acc)" opacity=".9"/><circle cx="15" cy="15" r="4.4" fill="var(--bg)"/></svg></span>
+    <span class="gn">{{ t('Dark Pool', '暗池') }}</span>
   </div>
+  <p class="dp-sub">{{ t("Where the biggest players trade off the public tape — and which way today's hidden flow leans.", '最大的参与者在公开报价带之外的成交所在——以及今日暗池资金的倾向。') }}</p>
+  {% if dp and dp.hero %}<div class="dp-verdict">{{ bl(dp.hero) }}</div>{% endif %}
+  <div class="dp-asof"><span class="dp-dot"></span>{{ t('As of', '截至') }} {{ panel_latest }}
+    {% if below_floor %}· <span style="color:var(--warn)">{{ t('thin history (' ~ panel_dates ~ ' dates)', '历史较短（' ~ panel_dates ~ ' 天）') }}</span>{% endif %}
+    · {{ t('settled off-exchange tape · positioning context, not trade calls', '结算后的场外成交 · 仅为仓位背景，非交易信号') }}</div>
+</header>
 
-  {# Preset chips #}
-  <div class="presets-row">
-    <span class="chip preset" data-preset="heavy-oe"
-      data-en="Off-exchange heavy" data-zh="场外占比高">
-      <span class="l-en">Off-exchange heavy</span><span class="l-zh">场外占比高</span>
-    </span>
-    <span class="chip preset" data-preset="rising-oe"
-      data-en="Rising off-ex" data-zh="场外占比上升">
-      <span class="l-en">Rising off-ex</span><span class="l-zh">场外占比上升</span>
-    </span>
-    <span class="chip preset" data-preset="short-spike"
-      data-en="Short-volume spike" data-zh="融券成交激增">
-      <span class="l-en">Short-volume spike</span><span class="l-zh">融券成交激增</span>
-    </span>
-    <span class="chip preset" data-preset="fading-oe"
-      data-en="Fading off-ex" data-zh="场外占比下降">
-      <span class="l-en">Fading off-ex</span><span class="l-zh">场外占比下降</span>
-    </span>
-  </div>
-
-  {# Filters row #}
-  <div class="filters-row">
-    <input id="dp-search" class="dp-input" type="text"
-      placeholder="Filter ticker…"
-      data-ph-en="Filter ticker…" data-ph-zh="筛选代码…"
-      autocomplete="off">
-    <input id="dp-min-share" class="dp-input" type="number" min="0" max="100" step="1"
-      placeholder="Min OE %"
-      data-ph-en="Min OE %" data-ph-zh="最低场外占比%"
-      autocomplete="off">
-    <select id="dp-trend" class="dp-select">
-      <option value="all" data-en="All trends" data-zh="全部趋势">All trends</option>
-      <option value="rising" data-en="Rising (≥+1pp)" data-zh="上升（≥+1pp）">Rising (≥+1pp)</option>
-      <option value="falling" data-en="Falling (≤−1pp)" data-zh="下降（≤−1pp）">Falling (≤−1pp)</option>
-    </select>
-    <select id="dp-norm" class="dp-select">
-      <option value="all" data-en="All vs norm" data-zh="全部vs基准">All vs norm</option>
-      <option value="above" data-en="Above norm (z≥1)" data-zh="高于基准（z≥1）">Above norm (z≥1)</option>
-      <option value="below" data-en="Below norm (z≤−1)" data-zh="低于基准（z≤−1）">Below norm (z≤−1)</option>
-    </select>
-    <button class="clear-btn" id="dp-clear">{{ t('Clear', '清除') }}</button>
-    <button class="export-btn" id="dp-export">{{ t('Export CSV', '导出CSV') }}</button>
-  </div>
-  <div id="dp-row-count" class="row-count" style="margin-bottom:6px;"></div>
-
-  <div class="tbl-wrap">
-    <table class="dp-tbl" id="dp-table">
-      <thead>
-        <tr>
-          <th data-col="ticker" data-type="str">{{ t('Ticker','代码') }}</th>
-          <th data-col="asof" data-type="str" class="sc-hide-sm">{{ t('Date','日期') }}</th>
-          <th data-col="oe_share" data-type="num">{{ t('Off-Ex Share','场外占比') }}
-            {{ tip('FINRA-facility total volume ÷ yahoo consolidated day volume (exact date match). Measures what fraction of this name\'s daily volume was routed through FINRA off-exchange facilities.','FINRA设施总成交量÷雅虎综合日成交量（精确日期匹配）。衡量该股当日成交量中路由至FINRA场外设施的比例。') }}
-          </th>
-          <th data-col="spark" data-type="none" class="spark-cell sc-hide">{{ t('20d trend','20日走势') }}</th>
-          <th data-col="oe_trend_pp" data-type="num">{{ t('OE trend pp','场外趋势pp') }}
-            {{ tip('5-day mean OE share minus 40-day mean OE share, in percentage points. Positive = off-exchange share has been rising recently vs its own longer-term level.','近5日平均场外占比减去40日平均场外占比，单位百分点。正值=场外占比近期相对自身较长期水平上升。') }}
-          </th>
-          <th data-col="oe_z" data-type="num">{{ t('vs norm','对比基准') }}
-            {{ tip('Today\'s off-exchange share z-scored against own history (≥20 obs). "Well above norm" ≥2σ; "above" ≥1σ; "normal" −1..1σ; "below" ≤−1σ; "well below" ≤−2σ. Exact z shown in this tip when available.','当日场外占比相对自身历史（≥20个观测值）的Z值。"远高基准"≥2σ；"高于基准"≥1σ；"正常"−1..1σ；"低于基准"≤−1σ；"远低基准"≤−2σ。') }}
-          </th>
-          <th data-col="short_ratio" data-type="num">{{ t('Short Ratio','融券比率') }}
-            {{ tip('Short-sale volume ÷ FINRA-facility total volume for this session. NOT the NYSE/Nasdaq consolidated tape ratio.','卖空成交量÷当日FINRA设施总成交量，非NYSE/纳斯达克综合报价带比率。') }}
-          </th>
-          <th data-col="trend_pp" data-type="num" class="sc-hide-sm">{{ t('SR trend pp','融券趋势pp') }}
-            {{ tip('Recent 5d volume-weighted short ratio minus 40d baseline, in pp.','近5日量加权融券比率减去40日基准，单位百分点。') }}
-          </th>
-          <th data-col="ats_top_venue" data-type="str" class="sc-hide">{{ t('ATS top venue','ATS主场所') }}
-            {{ tip('Top ATS venue by share count for latest published week (2–4 wk lag). Source: FINRA OTC Transparency.','最新公布周（滞后2–4周）按成交量排名第一的ATS场所。来源：FINRA场外透明度。') }}
-          </th>
-          <th data-col="finra_total_vol" data-type="num" class="sc-hide-xs">{{ t('FINRA vol','FINRA量') }}</th>
-          <th data-col="n_days" data-type="num" class="sc-hide">{{ t('Days','天数') }}</th>
-        </tr>
-      </thead>
-      <tbody id="dp-tbody"></tbody>
-    </table>
-  </div>
-  <p class="muted sm" style="margin-top:6px;">
-    {{ t('Off-exchange share denominator: Yahoo Finance consolidated day volume (exact date match, T+0).', '场外占比分母：雅虎财经综合日成交量（精确日期匹配，T+0）。') }}
-  </p>
-</div>
-
-{# ═══════════════════════════════════════════ ATS Venue table ════════════════ #}
-<div class="panel">
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-    <h2>{{ t('Weekly ATS Venue Breakdown', '每周ATS场所分项') }}</h2>
-    {% if ats_lag_note %}
-    {{ chip('⏱ ' ~ ats_lag_note, '⏱ ' ~ ats_lag_note, 'lag') }}
-    {% endif %}
-    {% if ats_table and ats_table.week_start %}
-    <span class="muted sm">{{ t('week of', '报告周：') }} {{ ats_table.week_start }}</span>
-    {% endif %}
-  </div>
-  {% if ats_table and ats_table.venues %}
-  <p class="muted sm" style="margin-bottom:10px;">
-    {{ t('Source: FINRA OTC Transparency API (keyless). Aggregate weekly shares and trades per registered ATS for', '来源：FINRA场外透明度API（无需密钥）。每个注册ATS场所的每周累计成交量与交易笔数，涵盖') }}
-    {{ ats_table.n_symbols_total }} {{ t('symbols. NOT "live" — 2–4 week publication lag from reporting week end.', '个标的。非实时数据——距报告周结束有2–4周公布滞后。') }}
-  </p>
-  <div class="venue-grid">
-    {% for v in ats_table.venues %}
-    <div class="venue-card">
-      <div class="vname">{{ v.venue_name if v.venue_name else v.mpid }}</div>
-      <div class="vmpid">{{ t('MPID:', 'MPID：') }} {{ v.mpid }}</div>
-      <div class="vstat">
-        <span><span class="lbl">{{ t('Shares', '成交量') }}</span> {{ "{:,.0f}".format(v.total_shares) }}</span>
-        <span><span class="lbl">{{ t('Trades', '笔数') }}</span> {{ "{:,}".format(v.total_trades) }}</span>
-        <span><span class="lbl">{{ t('Symbols', '标的') }}</span> {{ v.n_symbols }}</span>
-      </div>
-      <div class="vchips">
-        {% if v.share_of_total_pct is not none %}
-        <span class="chip" style="font-size:11px;">{{ "%.1f"|format(v.share_of_total_pct) }}% {{ t('of total','总占比') }}</span>
-        {% endif %}
-        {% if v.wow_is_new %}
-        <span class="chip new-venue" style="font-size:11px;">{{ t('new','新增') }}</span>
-        {% elif v.wow_pp is not none %}
-          {% if v.wow_pp > 0 %}
-          <span class="chip up" style="font-size:11px;">▲ +{{ "%.2f"|format(v.wow_pp) }}pp {{ t('vs prior wk','对比前周') }}</span>
-          {% elif v.wow_pp < 0 %}
-          <span class="chip dn" style="font-size:11px;">▼ {{ "%.2f"|format(v.wow_pp) }}pp {{ t('vs prior wk','对比前周') }}</span>
-          {% else %}
-          <span class="chip" style="font-size:11px;">0.00pp {{ t('vs prior wk','对比前周') }}</span>
-          {% endif %}
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
+{% if dp and dp.n_standouts and dp.n_standouts > 0 %}
+<!-- ═══════════════════════════ WHAT CHANGED ══════════════════════════ -->
+<div class="dp-changes">
+  <span class="eb">{{ t('What changed', '最新变化') }}</span>
+  {% if dp.changes and dp.changes['items'] %}
+    {% for it in dp.changes['items'] %}<span class="cchip {{ LC.get(it.key.split('_')[-1], '') }}"><span class="cd"></span>{{ bl(it) }}</span>{% endfor %}
   {% else %}
-  <p class="muted">
-    {{ t('No ATS venue data available yet. Run the collector to fetch the latest published week:', '暂无ATS场所数据。请运行采集器获取最新公布周数据：') }}
-    <code>python -m collectors.finra_ats_transparency</code>
-  </p>
+    <span class="cchip calm"><span class="cd"></span>{{ t('No new leans since the last session.', '自上一交易日以来无新的倾向变化。') }}</span>
   {% endif %}
 </div>
 
-{# ═══════════════════════════════════════════ Methodology box ════════════════ #}
-<div class="panel">
-  <h2>{{ t('Methodology & Limitations', '方法论与局限性') }}</h2>
-  <div style="font-size:13px; line-height:1.7; color:var(--muted); max-width:820px;">
-    <p>
-      <strong class="l-en">T1e — Off-exchange (FINRA-facility) volume:</strong>
-      <strong class="l-zh">T1e — 场外（FINRA设施）成交量：</strong>
-      <span class="l-en">FINRA publishes daily consolidated short-volume (CNMSshvol) files reporting each member firm's short-sale and total volume routed through FINRA-regulated facilities (e.g. FINRA's Alternative Display Facility, broker internalization). These are NOT equivalent to NYSE/Nasdaq consolidated tape volumes.</span>
-      <span class="l-zh">FINRA每日发布综合融券成交量（CNMSshvol）文件，记录各成员机构通过FINRA监管设施（如FINRA另类显示设施、券商内部化）路由的卖空及总成交量。此数据与NYSE/纳斯达克综合报价带成交量并不等同。</span>
-    </p>
-    <p>
-      <strong class="l-en">Short ratio and short-ratio trend:</strong>
-      <strong class="l-zh">融券比率与融券趋势：</strong>
-      <span class="l-en">Short ratio = short-sale volume ÷ FINRA-facility total volume for the session. Trend (pp) = recent 5-day volume-weighted ratio minus 40-day baseline, in percentage points. Used here as a positioning context confirmer, not a scored alpha factor.</span>
-      <span class="l-zh">融券比率=当日卖空成交量÷FINRA设施总成交量。趋势（pp）=近5日量加权比率减去40日基准，单位百分点。本台仅作为仓位情境印证，非评分型阿尔法因子。</span>
-    </p>
-    <p>
-      <strong class="l-en">Off-exchange share, trend, and vs-norm columns:</strong>
-      <strong class="l-zh">场外占比、趋势与对比基准列：</strong>
-      <span class="l-en">OE share = FINRA-facility total volume ÷ yahoo consolidated day volume (exact calendar-date inner join; rows where yahoo volume is missing are shown as "—"). OE trend (pp) = mean of last 5 days minus mean of last 40 days; positive means the fraction has been running higher lately. "Vs norm" is the today's OE share z-scored against the ticker's own full available history (requires ≥20 matched trading days): "well above norm" ≥2σ; "above norm" ≥1σ; "normal" −1..1σ; "below norm" ≤−1σ; "well below norm" ≤−2σ. The sparkline shows the last 20 days of OE share.</span>
-      <span class="l-zh">场外占比=FINRA设施总成交量÷雅虎综合日成交量（精确日历日期内连接；雅虎成交量缺失的行显示"—"）。场外趋势（pp）=近5日均值减去近40日均值；正值表示近期该比例偏高。"对比基准"为当日场外占比相对该股自身全部可用历史的Z值（需≥20个匹配交易日）："远高基准"≥2σ；"高于基准"≥1σ；"正常"−1..1σ；"低于基准"≤−1σ；"远低基准"≤−2σ。迷你图显示最近20日的场外占比。</span>
-    </p>
-    <p>
-      <strong class="l-en">Off-exchange share denominator:</strong>
-      <strong class="l-zh">场外占比分母：</strong>
-      <span class="l-en">Consolidated day volume sourced from Yahoo Finance EOD data. This is the best available free denominator for the display universe; Yahoo volumes can lag intraday rounding vs official tape totals.</span>
-      <span class="l-zh">综合日成交量来源于雅虎财经EOD数据。这是展示范围内最优质的免费分母数据；雅虎成交量与官方报价带汇总数据可能存在日内舍入差异。</span>
-    </p>
-    <p>
-      <strong class="l-en">T2e — FINRA OTC Transparency (weekly ATS) and ATS columns:</strong>
-      <strong class="l-zh">T2e — FINRA场外透明度（每周ATS）与ATS列：</strong>
-      <span class="l-en">FINRA's OTC Transparency programme mandates weekly reporting from all registered ATS; data is published 2–4 weeks after the reporting week via the FINRA API (keyless). The "ATS top venue" column shows the venue with the most shares for that ticker in the latest published week. "ATS share %" = ATS shares ÷ yahoo volume for that Mon–Fri window × 100; null when yahoo doesn't cover that week. Venue cards show each ATS's share of that week's total ATS volume, plus week-over-week change in percentage points.</span>
-      <span class="l-zh">FINRA场外透明度计划要求所有注册ATS每周上报，经由FINRA API（无需密钥）在报告周后2–4周公布。"ATS主场所"列显示该股最新公布周成交量最大的ATS场所。"ATS占比%"=ATS成交量÷该周（周一至周五）雅虎成交量×100；雅虎数据不覆盖该周时显示空值。场所卡片显示各ATS占该周ATS总成交量的比例及周环比变化（百分点）。</span>
-    </p>
-    <p class="sm">
-      <span class="l-en">Display universe: ~{{ display_universe_size }} names (options universe gex_symbols). Full ~8-year backfill restricted to this universe to satisfy the 30 MB git-tracked-file ceiling. As of {{ panel_latest }}: {{ n_with_oe }} names have OE share data, {{ n_with_ats }} have an ATS match for the latest published week.</span>
-      <span class="l-zh">展示范围：约{{ display_universe_size }}个标的（期权范围gex_symbols）。完整~8年回填数据受限于此范围，以满足30MB git追踪文件上限。截至{{ panel_latest }}：{{ n_with_oe }}个标的有场外占比数据，{{ n_with_ats }}个标的有最新公布周ATS匹配数据。</span>
-    </p>
-  </div>
+<!-- ═══════════════════════════ LEAN RAIL ═════════════════════════════ -->
+<div class="sec"><span class="sd" style="--sc:var(--acc)"></span><h2>{{ t('Which way is the dark flow leaning', '暗池资金倾向哪一边') }}</h2></div>
+<p class="sec-sub">{{ t("Off-exchange volume hides direction. Pairing it with the change in short-marked selling gives an honest lean — a heads-up to watch, never a buy or sell call.", '场外成交本身隐藏方向。将其与卖空标记的变化结合，才得出一个诚实的倾向——仅供留意，绝非买卖信号。') }}</p>
+<div class="rail">
+  {% for k in LEAN_ORDER %}{% set L = dp.leans[k] %}
+  <section class="lc {{ LC[k] }}">
+    <div class="pool"><i></i><i></i><i></i><i></i></div>
+    <div class="lc-k">◐ {{ bl(L.label) }}</div>
+    <div class="lc-state">{{ L.n }} {{ t('names', '只') }} <small>{{ bl(L.dir) }}</small></div>
+    <div class="lc-read">{{ bl(L.read) }}</div>
+    {% if L.names %}
+    <div class="lc-names">
+      {% for tk in L.names[:5] %}<span class="tag">{{ tk }}</span>{% endfor %}
+      {% if L.names|length > 5 %}<span class="tag">+{{ L.names|length - 5 }}</span>{% endif %}
+    </div>
+    {% endif %}
+    <div class="lc-foot"><span class="stance"><span class="sdot"></span>{{ bl(L.stance) }}</span></div>
+  </section>
+  {% endfor %}
 </div>
+
+<!-- ═════════════════════════ STANDOUTS BOARD ═════════════════════════ -->
+<div class="sec"><span class="sd" style="--sc:var(--unc)"></span><h2>{{ t('Standouts today', '今日焦点个股') }}</h2>
+  <span class="cnt">{{ dp.standouts|length }} {{ t('of', '/') }} {{ dp.n_standouts }} {{ t('names with unusual dark activity', '只出现异常暗池活动') }}</span></div>
+<p class="sec-sub">{{ t("The names where off-exchange volume is most unusual right now — laid out so you don't have to hunt a full table. The complete desk is one click below.", '当前场外成交最异常的个股——直接呈现，无需在整张表格中翻找。完整数据台见下方一键展开。') }}</p>
+<div class="board">
+  {% for s in dp.standouts %}
+  <div class="name {{ LC[s.lean] }}">
+    <div class="n-top">
+      <div class="n-tk">{{ s.ticker }}</div>
+      <span class="n-lean">◐ {{ bl(s.lean_label) }}</span>
+    </div>
+    <div class="n-depth">
+      <div class="dl"><span>{{ t('Volume trading in the dark', '暗池成交占比') }}</span><b>{{ '%.1f'|format((s.oe_share or 0)*100) }}%</b></div>
+      <div class="dtrack">
+        <span class="dfill" style="width:{{ '%.1f'|format((s.oe_share or 0)*100) }}%"></span>
+        {% if s.oe_share_40d is not none %}<span class="dnorm" data-le="norm" data-lz="常态" style="left:{{ '%.1f'|format((s.oe_share_40d)*100) }}%"></span>{% endif %}
+      </div>
+    </div>
+    <div class="n-facts">
+      <div class="nf">{{ t('vs its own norm', '相对自身常态') }}<b>{{ bl(s.norm_label) }}</b></div>
+      <div class="nf">{{ t('Short-marked selling', '卖空标记') }}<b class="{{ 'up' if s.lean == 'distribution' else 'dn' if s.lean == 'accumulation' else '' }}">{{ bl(s.short_label) }}</b></div>
+    </div>
+    <div class="n-read"><b>{{ t('Read:', '解读：') }}</b> {{ bl(s.read) }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="dp-quiet">{{ t("Off-exchange activity is quiet today — no names are trading unusually heavily in the dark versus their own history. The full desk is still available below.", '今日场外活动平静——没有个股相对自身历史出现异常沉重的暗池成交。完整数据台仍可在下方查看。') }}</div>
+{% endif %}
+
+<!-- ═══════════════════════════ VENUE FLOW ════════════════════════════ -->
+{% if dp and dp.venues and dp.venues.top %}
+<div class="sec"><span class="sd" style="--sc:var(--dpb)"></span><h2>{{ t('Where the dark volume pools', '暗池成交流向何处') }}</h2>
+  {% if dp.venues.week_start %}<span class="cnt">{{ t('week of', '报告周') }} {{ dp.venues.week_start }} · {{ dp.venues.lag_note }}</span>{% endif %}</div>
+<p class="sec-sub">{{ t('Which off-exchange venues the reported volume ran through, and how each pool\'s share shifted week over week.', '上报的场外成交流经了哪些交易场所，以及各暗池的占比如何周环比变化。') }}</p>
+{% set vmax = (dp.venues.top[0].share_pct or 1) %}
+<div class="vcard">
+  {% for v in dp.venues.top %}
+  <div class="vrow">
+    <div class="vn">{{ v.name }}{% if v.mpid and v.mpid != v.name %}<span class="mp">{{ v.mpid }}</span>{% endif %}</div>
+    <div class="vtrack"><span class="vfill {{ 'mover' if dp.venues.mover and dp.venues.mover.mpid == v.mpid }}" style="width:{{ '%.0f'|format((v.share_pct or 0)/vmax*100) }}%"></span></div>
+    <div class="vwow">
+      {% if v.is_new %}<span class="vnew">{{ t('new','新') }}</span>{% elif dp.venues.mover and dp.venues.mover.mpid == v.mpid %}<span class="vnew">{{ t('mover','异动') }}</span>{% endif %}
+      <span class="vpct">{{ '%.1f'|format(v.share_pct or 0) }}%</span>
+      {% if v.wow_pp is not none %}<span class="vd {{ 'u' if v.wow_pp > 0.05 else 'dn' if v.wow_pp < -0.05 else 'f' }}">{{ '▲' if v.wow_pp > 0.05 else '▼' if v.wow_pp < -0.05 else '·' }}{{ '%.1f'|format(v.wow_pp|abs) }}</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ═══════════════════════════ GO DEEPER ═════════════════════════════ -->
+<div class="sec"><span class="sd"></span><h2>{{ t('Go deeper', '深入查看') }}</h2></div>
+
+<!-- Full desk (demoted) -->
+<div class="shelf">
+  <details>
+    <summary><span class="si">▦</span>{{ t('Browse all', '浏览全部') }} {{ n_with_oe }} {{ t('names — sortable desk', '只 — 可排序数据台') }}<span class="sh">{{ t('off-exchange share · trend · vs-norm · short ratio · venue', '场外占比 · 趋势 · vs常态 · 融券比率 · 场所') }}</span><span class="sc">▶</span></summary>
+    <div class="sb">
+      {# JSON data payload — consumed by client-side table renderer #}
+      <script id="dp-data" type="application/json">{{ table_json | safe }}</script>
+
+      <div class="presets-row">
+        <span class="chip preset" data-preset="heavy-oe"><span class="l-en">Off-exchange heavy</span><span class="l-zh">场外占比高</span></span>
+        <span class="chip preset" data-preset="rising-oe"><span class="l-en">Rising off-ex</span><span class="l-zh">场外占比上升</span></span>
+        <span class="chip preset" data-preset="short-spike"><span class="l-en">Short-volume spike</span><span class="l-zh">融券成交激增</span></span>
+        <span class="chip preset" data-preset="fading-oe"><span class="l-en">Fading off-ex</span><span class="l-zh">场外占比下降</span></span>
+      </div>
+
+      <div class="filters-row">
+        <input id="dp-search" class="dp-input" type="text" placeholder="Filter ticker…" data-ph-en="Filter ticker…" data-ph-zh="筛选代码…" autocomplete="off">
+        <input id="dp-min-share" class="dp-input" type="number" min="0" max="100" step="1" placeholder="Min OE %" data-ph-en="Min OE %" data-ph-zh="最低场外占比%" autocomplete="off">
+        <select id="dp-trend" class="dp-select">
+          <option value="all" data-en="All trends" data-zh="全部趋势">All trends</option>
+          <option value="rising" data-en="Rising (≥+1pp)" data-zh="上升（≥+1pp）">Rising (≥+1pp)</option>
+          <option value="falling" data-en="Falling (≤−1pp)" data-zh="下降（≤−1pp）">Falling (≤−1pp)</option>
+        </select>
+        <select id="dp-norm" class="dp-select">
+          <option value="all" data-en="All vs norm" data-zh="全部vs基准">All vs norm</option>
+          <option value="above" data-en="Above norm (z≥1)" data-zh="高于基准（z≥1）">Above norm (z≥1)</option>
+          <option value="below" data-en="Below norm (z≤−1)" data-zh="低于基准（z≤−1）">Below norm (z≤−1)</option>
+        </select>
+        <button class="clear-btn" id="dp-clear">{{ t('Clear', '清除') }}</button>
+        <button class="export-btn" id="dp-export">{{ t('Export CSV', '导出CSV') }}</button>
+      </div>
+      <div id="dp-row-count" class="row-count"></div>
+
+      <div class="tbl-wrap">
+        <table class="dp-tbl" id="dp-table">
+          <thead>
+            <tr>
+              <th data-col="ticker" data-type="str">{{ t('Ticker','代码') }}</th>
+              <th data-col="asof" data-type="str" class="sc-hide-sm">{{ t('Date','日期') }}</th>
+              <th data-col="oe_share" data-type="num">{{ t('Off-Ex Share','场外占比') }}
+                {{ tip('FINRA-facility total volume ÷ consolidated day volume (exact date match). What fraction of this name\'s daily volume routed through off-exchange facilities.','FINRA设施总成交量÷综合日成交量（精确日期匹配）。该股当日成交量中路由至场外设施的比例。') }}</th>
+              <th data-col="spark" data-type="none" class="spark-cell sc-hide">{{ t('20d trend','20日走势') }}</th>
+              <th data-col="oe_trend_pp" data-type="num">{{ t('OE trend pp','场外趋势pp') }}
+                {{ tip('5-day mean off-exchange share minus 40-day mean, in percentage points. Positive = off-exchange share rising recently vs its own longer-term level.','近5日平均场外占比减去40日平均，单位百分点。正值=场外占比近期相对自身较长期水平上升。') }}</th>
+              <th data-col="oe_z" data-type="num">{{ t('vs norm','对比基准') }}
+                {{ tip('Today\'s off-exchange share z-scored against own history (≥20 obs). Well above ≥2σ; above ≥1σ; normal −1..1σ; below ≤−1σ; well below ≤−2σ.','当日场外占比相对自身历史（≥20个观测值）的Z值。远高≥2σ；高于≥1σ；正常−1..1σ；低于≤−1σ；远低≤−2σ。') }}</th>
+              <th data-col="short_ratio" data-type="num">{{ t('Short Ratio','融券比率') }}
+                {{ tip('Short-sale volume ÷ FINRA-facility total volume for this session. NOT the NYSE/Nasdaq consolidated tape ratio.','卖空成交量÷当日FINRA设施总成交量，非NYSE/纳斯达克综合报价带比率。') }}</th>
+              <th data-col="trend_pp" data-type="num" class="sc-hide-sm">{{ t('SR trend pp','融券趋势pp') }}
+                {{ tip('Recent 5d volume-weighted short ratio minus 40d baseline, in pp. Positive = short-marked selling building.','近5日量加权融券比率减去40日基准，单位百分点。正值=卖空标记增加。') }}</th>
+              <th data-col="ats_top_venue" data-type="str" class="sc-hide">{{ t('ATS top venue','ATS主场所') }}
+                {{ tip('Top ATS venue by share for the latest published week (2–4 wk lag). Source: FINRA OTC Transparency.','最新公布周（滞后2–4周）按成交量排名第一的ATS场所。来源：FINRA场外透明度。') }}</th>
+              <th data-col="finra_total_vol" data-type="num" class="sc-hide-xs">{{ t('FINRA vol','FINRA量') }}</th>
+              <th data-col="n_days" data-type="num" class="sc-hide">{{ t('Days','天数') }}</th>
+            </tr>
+          </thead>
+          <tbody id="dp-tbody"></tbody>
+        </table>
+      </div>
+      <p class="muted sm" style="margin-top:6px;">
+        {{ t('Off-exchange share denominator: consolidated day volume (exact date match, T+0). Universe: ~' ~ display_universe_size ~ ' options-universe names.', '场外占比分母：综合日成交量（精确日期匹配，T+0）。范围：约' ~ display_universe_size ~ '个期权范围标的。') }}
+        {{ n_with_oe }} {{ t('with off-exchange share', '有场外占比') }} · {{ n_with_ats }} {{ t('with an ATS match', '有ATS匹配') }}.</p>
+    </div>
+  </details>
+</div>
+
+<!-- How to read (methodology, demoted) -->
+<div class="shelf">
+  <details>
+    <summary><span class="si">?</span>{{ t('How to read this — data & limits', '如何解读——数据与局限') }}<span class="sh">{{ t('plain-word method + receipts', '通俗方法 + 数据依据') }}</span><span class="sc">▶</span></summary>
+    <div class="sb method">
+      <p><b>{{ t('What "dark" means here.', '这里的「暗池」指什么。') }}</b>
+        {{ t('The share of a stock\'s daily volume reported to FINRA\'s off-exchange facilities (dark pools + broker internalisers) rather than the lit exchanges. This is settled end-of-day tape — NOT live prints, and NOT direct dark-pool trade records. "Off-exchange share" = FINRA-facility volume ÷ consolidated day volume (exact date match).',
+           '个股当日成交量中上报至FINRA场外设施（暗池+券商内部化）而非公开交易所的比例。此为结算后的日终成交数据——非实时成交，亦非直接的暗池成交记录。「场外占比」=FINRA设施成交量÷综合日成交量（精确日期匹配）。') }}</p>
+      <p><b>{{ t('Why the lean is honest but soft.', '为何这个倾向诚实但偏软。') }}</b>
+        {{ t('Off-exchange volume hides who is trading, so it can\'t call direction on its own. Roughly half of off-exchange volume is short-marked by default, so we read the change in short-marking (recent vs 40-day baseline) and each name\'s own norm — never the raw level. A name is a "standout" only when its off-exchange share is both well above its own norm (≥1.5σ) and material (≥40% of volume). Heavy dark volume with short-marking fading leans accumulation; with short-marking building fast, distribution; mixed, unusual. A broad-market off-exchange spike can light up many names at once — this is context, a heads-up, never a trade signal.',
+           '场外成交隐藏了交易方身份，因此本身无法判断方向。约一半的场外成交默认被标记为卖空，故我们观察卖空标记的变化（近期对比40日基准）与各股自身常态——绝不看绝对水平。个股仅在其场外占比既明显高于自身常态（≥1.5σ）又足够显著（≥成交量40%）时才列为「焦点」。暗池成交沉重而卖空标记回落偏向吸筹；卖空标记快速上升偏向派发；混合则为异常。全市场场外占比整体跳升可能同时点亮多只个股——这是背景提示，绝非交易信号。') }}</p>
+      <p><b>{{ t('Venues.', '交易场所。') }}</b>
+        {{ t('FINRA OTC Transparency weekly per-ATS breakdown, published 2–4 weeks after the reporting week. Bar length is each venue\'s share of that week\'s total ATS volume; the arrow is the week-over-week change in percentage points.',
+           'FINRA场外透明度每周各ATS分项，于报告周后2–4周公布。条形长度为各场所占该周ATS总成交量的比例；箭头为周环比变化（百分点）。') }}</p>
+    </div>
+  </details>
+</div>
+
+<p class="disc">{{ t('Positioning context, not trade calls. Off-exchange & short-volume data from FINRA facility reporting; consolidated volume from end-of-day data. Nothing here is a buy or sell recommendation. Updated nightly.', '仓位背景，非交易信号。场外与卖空成交量数据来自FINRA设施上报；综合成交量来自日终数据。此处内容均非买卖建议。每晚更新。') }}</p>
+
+</main>
 
 <script>
 (function() {
   'use strict';
-
-  // ── Placeholder i18n (data-ph-en / data-ph-zh + langchange) ──────────────
   function updatePlaceholders() {
     var lang = document.documentElement.getAttribute('data-lang') || 'en';
     document.querySelectorAll('[data-ph-en]').forEach(function(el) {
-      el.placeholder = lang === 'zh'
-        ? (el.getAttribute('data-ph-zh') || el.getAttribute('data-ph-en'))
-        : el.getAttribute('data-ph-en');
+      el.placeholder = lang === 'zh' ? (el.getAttribute('data-ph-zh') || el.getAttribute('data-ph-en')) : el.getAttribute('data-ph-en');
     });
-    // Select option labels
     document.querySelectorAll('.dp-select option[data-en]').forEach(function(opt) {
-      opt.textContent = lang === 'zh'
-        ? (opt.getAttribute('data-zh') || opt.getAttribute('data-en'))
-        : opt.getAttribute('data-en');
+      opt.textContent = lang === 'zh' ? (opt.getAttribute('data-zh') || opt.getAttribute('data-en')) : opt.getAttribute('data-en');
     });
   }
   document.addEventListener('langchange', updatePlaceholders);
   updatePlaceholders();
 
-  // ── Data ─────────────────────────────────────────────────────────────────
   var rawEl = document.getElementById('dp-data');
   var allRows = [];
   try { allRows = JSON.parse(rawEl ? rawEl.textContent : '[]'); } catch(e) {}
 
-  // ── State ─────────────────────────────────────────────────────────────────
   var sortCol = 'oe_share';
-  var sortDir = -1; // -1 = desc
+  var sortDir = -1;
   var activePreset = null;
-  var hiddenRatioZ  = null; // set by short-spike preset
+  var hiddenRatioZ = null;
 
-  // ── Norm chip helper ──────────────────────────────────────────────────────
   function normChip(z) {
     var lang = document.documentElement.getAttribute('data-lang') || 'en';
     if (z === null || z === undefined) return '<span class="norm-chip norm-mid muted">—</span>';
@@ -360,7 +425,6 @@
     return '<span class="norm-chip ' + cls + '" title="z=' + z.toFixed(2) + '">' + label + '</span>';
   }
 
-  // ── Sparkline helper ──────────────────────────────────────────────────────
   function sparkSVG(arr) {
     if (!arr || arr.length < 2) return '';
     var mn = Math.min.apply(null, arr), mx = Math.max.apply(null, arr);
@@ -374,29 +438,16 @@
     var last = pts[pts.length - 1].split(',');
     return '<svg class="spark" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' +
       '<polyline points="' + pts.join(' ') + '" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.3"/>' +
-      '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.2" fill="currentColor" fill-opacity=".7"/>' +
-      '</svg>';
+      '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.2" fill="currentColor" fill-opacity=".7"/></svg>';
   }
 
-  // ── Trend color class ─────────────────────────────────────────────────────
-  function trendCls(v) {
-    if (v === null || v === undefined) return 'num-neu';
-    return v > 0 ? 'num-pos' : (v < 0 ? 'num-neg' : 'num-neu');
-  }
-  function srTrendCls(v) {
-    // Rising short ratio = mildly negative sentiment signal → color red
-    if (v === null || v === undefined) return 'num-neu';
-    return v > 0 ? 'num-neg' : (v < 0 ? 'num-pos' : 'num-neu');
-  }
-
-  // ── Format helpers ─────────────────────────────────────────────────────────
+  function trendCls(v) { if (v === null || v === undefined) return 'num-neu'; return v > 0 ? 'num-pos' : (v < 0 ? 'num-neg' : 'num-neu'); }
+  function srTrendCls(v) { if (v === null || v === undefined) return 'num-neu'; return v > 0 ? 'num-neg' : (v < 0 ? 'num-pos' : 'num-neu'); }
   function fmtPct(v, dec) { return v === null || v === undefined ? '—' : (v * 100).toFixed(dec === undefined ? 1 : dec) + '%'; }
   function fmtPP(v)  { return v === null || v === undefined ? '—' : (v > 0 ? '+' : '') + v.toFixed(2); }
   function fmtM(v)   { return v === null || v === undefined ? '—' : (v / 1e6).toFixed(1) + 'M'; }
-  // venue names are external FINRA strings — escape anything that goes through innerHTML
   function esc(s) { return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
-  // ── Row renderer ──────────────────────────────────────────────────────────
   function renderRow(r) {
     var tc = trendCls(r.oe_trend_pp);
     var sc = srTrendCls(r.trend_pp);
@@ -409,48 +460,32 @@
       '<td>' + normChip(r.oe_z) + '</td>' +
       '<td>' + fmtPct(r.short_ratio) + '</td>' +
       '<td class="' + sc + ' sc-hide-sm">' + fmtPP(r.trend_pp) + '</td>' +
-      '<td class="sc-hide">' + (r.ats_top_venue ? '<span class="chip lag" style="font-size:10.5px;padding:1px 6px;">' + esc(r.ats_top_venue.substring(0, 22)) + '</span>' : '<span class="muted">—</span>') + '</td>' +
+      '<td class="sc-hide">' + (r.ats_top_venue ? '<span class="chip" style="font-size:10.5px;padding:1px 6px;">' + esc(r.ats_top_venue.substring(0, 22)) + '</span>' : '<span class="muted">—</span>') + '</td>' +
       '<td class="sc-hide-xs muted">' + fmtM(r.finra_total_vol) + '</td>' +
       '<td class="sc-hide muted">' + (r.n_days || '—') + '</td>' +
       '</tr>';
   }
 
-  // ── Sorting ──────────────────────────────────────────────────────────────
   function getValue(r, col) {
-    var map = {
-      ticker: r.ticker,
-      asof: r.asof,
-      oe_share: r.oe_share,
-      spark: r.oe_share,
-      oe_trend_pp: r.oe_trend_pp,
-      oe_z: r.oe_z,
-      short_ratio: r.short_ratio,
-      trend_pp: r.trend_pp,
-      ats_top_venue: r.ats_top_venue,
-      finra_total_vol: r.finra_total_vol,
-      n_days: r.n_days,
-    };
+    var map = { ticker:r.ticker, asof:r.asof, oe_share:r.oe_share, spark:r.oe_share, oe_trend_pp:r.oe_trend_pp,
+      oe_z:r.oe_z, short_ratio:r.short_ratio, trend_pp:r.trend_pp, ats_top_venue:r.ats_top_venue,
+      finra_total_vol:r.finra_total_vol, n_days:r.n_days };
     return map[col] !== undefined ? map[col] : null;
   }
-
   function sortRows(rows) {
     return rows.slice().sort(function(a, b) {
       var av = getValue(a, sortCol), bv = getValue(b, sortCol);
-      // nulls always last regardless of direction
       if (av === null || av === undefined) return 1;
       if (bv === null || bv === undefined) return -1;
       if (typeof av === 'string') return sortDir * av.localeCompare(bv);
       return sortDir * (av - bv);
     });
   }
-
-  // ── Filters ───────────────────────────────────────────────────────────────
   function getFiltered() {
-    var q      = (document.getElementById('dp-search').value || '').trim().toUpperCase();
+    var q = (document.getElementById('dp-search').value || '').trim().toUpperCase();
     var minPct = parseFloat(document.getElementById('dp-min-share').value) || 0;
-    var trend  = document.getElementById('dp-trend').value;
-    var norm   = document.getElementById('dp-norm').value;
-
+    var trend = document.getElementById('dp-trend').value;
+    var norm = document.getElementById('dp-norm').value;
     return allRows.filter(function(r) {
       if (q && (r.ticker || '').toUpperCase().indexOf(q) === -1) return false;
       if (minPct > 0 && (r.oe_share === null || r.oe_share === undefined || r.oe_share * 100 < minPct)) return false;
@@ -458,103 +493,67 @@
       if (trend === 'falling' && (r.oe_trend_pp === null || r.oe_trend_pp === undefined || r.oe_trend_pp > -1)) return false;
       if (norm  === 'above'   && (r.oe_z === null || r.oe_z === undefined || r.oe_z < 1))  return false;
       if (norm  === 'below'   && (r.oe_z === null || r.oe_z === undefined || r.oe_z > -1)) return false;
-      // hidden ratio_z bound (short-spike preset)
       if (hiddenRatioZ !== null && (r.ratio_z === null || r.ratio_z === undefined || r.ratio_z < hiddenRatioZ)) return false;
       return true;
     });
   }
-
-  // ── Render table ──────────────────────────────────────────────────────────
   function renderTable() {
     var filtered = getFiltered();
-    var sorted   = sortRows(filtered);
+    var sorted = sortRows(filtered);
     var tbody = document.getElementById('dp-tbody');
     if (tbody) tbody.innerHTML = sorted.map(renderRow).join('');
     var rc = document.getElementById('dp-row-count');
     if (rc) {
       var lang = document.documentElement.getAttribute('data-lang') || 'en';
-      rc.textContent = lang === 'zh'
-        ? '显示 ' + sorted.length + ' / ' + allRows.length + ' 个股'
-        : 'Showing ' + sorted.length + ' of ' + allRows.length + ' names';
+      rc.textContent = lang === 'zh' ? '显示 ' + sorted.length + ' / ' + allRows.length + ' 个股' : 'Showing ' + sorted.length + ' of ' + allRows.length + ' names';
     }
   }
 
-  // ── Sortable headers ──────────────────────────────────────────────────────
   document.querySelectorAll('table.dp-tbl th[data-col]').forEach(function(th) {
     if (th.getAttribute('data-type') === 'none') return;
     th.addEventListener('click', function() {
       var col = th.getAttribute('data-col');
-      if (sortCol === col) {
-        sortDir = -sortDir;
-      } else {
-        sortCol = col;
-        sortDir = -1;
-      }
-      document.querySelectorAll('table.dp-tbl th').forEach(function(h) {
-        h.classList.remove('sort-asc', 'sort-desc');
-      });
+      if (sortCol === col) { sortDir = -sortDir; } else { sortCol = col; sortDir = -1; }
+      document.querySelectorAll('table.dp-tbl th').forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
       th.classList.add(sortDir === -1 ? 'sort-desc' : 'sort-asc');
       renderTable();
     });
   });
-
-  // ── Filter inputs ─────────────────────────────────────────────────────────
   ['dp-search','dp-min-share','dp-trend','dp-norm'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('input', function() {
-      activePreset = null;
-      hiddenRatioZ = null;
+      activePreset = null; hiddenRatioZ = null;
       document.querySelectorAll('.chip.preset').forEach(function(c) { c.classList.remove('active'); });
       renderTable();
     });
   });
-
-  // ── Clear ──────────────────────────────────────────────────────────────────
   document.getElementById('dp-clear').addEventListener('click', function() {
-    document.getElementById('dp-search').value = '';
-    document.getElementById('dp-min-share').value = '';
-    document.getElementById('dp-trend').value = 'all';
-    document.getElementById('dp-norm').value = 'all';
-    hiddenRatioZ = null;
-    activePreset = null;
+    document.getElementById('dp-search').value = ''; document.getElementById('dp-min-share').value = '';
+    document.getElementById('dp-trend').value = 'all'; document.getElementById('dp-norm').value = 'all';
+    hiddenRatioZ = null; activePreset = null;
     document.querySelectorAll('.chip.preset').forEach(function(c) { c.classList.remove('active'); });
     renderTable();
   });
-
-  // ── Presets ────────────────────────────────────────────────────────────────
   document.querySelectorAll('.chip.preset').forEach(function(chip) {
     chip.addEventListener('click', function() {
       var p = chip.getAttribute('data-preset');
-      if (activePreset === p) {
-        // Second click clears
-        document.getElementById('dp-clear').click();
-        return;
-      }
-      // Clear first
-      document.getElementById('dp-search').value = '';
-      document.getElementById('dp-min-share').value = '';
-      document.getElementById('dp-trend').value = 'all';
-      document.getElementById('dp-norm').value = 'all';
-      hiddenRatioZ = null;
-
+      if (activePreset === p) { document.getElementById('dp-clear').click(); return; }
+      document.getElementById('dp-search').value = ''; document.getElementById('dp-min-share').value = '';
+      document.getElementById('dp-trend').value = 'all'; document.getElementById('dp-norm').value = 'all'; hiddenRatioZ = null;
       if (p === 'heavy-oe')   { document.getElementById('dp-min-share').value = '45'; }
       if (p === 'rising-oe')  { document.getElementById('dp-trend').value = 'rising'; document.getElementById('dp-min-share').value = '2'; }
       if (p === 'short-spike'){ hiddenRatioZ = 2; }
       if (p === 'fading-oe')  { document.getElementById('dp-trend').value = 'falling'; }
-
       activePreset = p;
       document.querySelectorAll('.chip.preset').forEach(function(c) { c.classList.remove('active'); });
       chip.classList.add('active');
       renderTable();
     });
   });
-
-  // ── CSV export ─────────────────────────────────────────────────────────────
   document.getElementById('dp-export').addEventListener('click', function() {
     var filtered = sortRows(getFiltered());
     var cols = ['ticker','asof','oe_share','oe_share_5d','oe_share_40d','oe_trend_pp','oe_z',
-                'short_ratio','trend_pp','ratio_z','ats_top_venue','ats_shares','ats_share_pct',
-                'finra_total_vol','n_days'];
+                'short_ratio','trend_pp','ratio_z','ats_top_venue','ats_shares','ats_share_pct','finra_total_vol','n_days'];
     var header = cols.join(',') + '\n';
     var body = filtered.map(function(r) {
       return cols.map(function(c) {
@@ -568,23 +567,15 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url; a.download = 'darkpool_desk.csv';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
-
-  // ── Re-render on langchange (norm chip labels change) ─────────────────────
   document.addEventListener('langchange', renderTable);
-
-  // ── Initial render ────────────────────────────────────────────────────────
-  // Set default sort indicator
   var defaultTh = document.querySelector('th[data-col="oe_share"]');
   if (defaultTh) defaultTh.classList.add('sort-desc');
   renderTable();
-
 })();
 </script>
-</main>
 <script src="theme.js"></script>
 </body>
 </html>

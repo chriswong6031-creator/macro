@@ -10291,6 +10291,39 @@ artifacts:
       until scripts/build_stage_analysis.py first runs; all consumers fail-open
       (block=None or honest-null).
 
+  darkpool-context-latest:
+    path: data/darkpool/context/latest.json
+    format: json
+    producer: scripts/build_darkpool_desk.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: darkpool_context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Nightly context feed for off-exchange (dark-pool) positioning, built by
+      engine/darkpool_context.py alongside the Dark Pool desk page. Turns the raw desk
+      into plain-word leans — quiet-accumulation / distribution / unusual — from a
+      deterministic threshold on each name's off-exchange share vs its own norm (oe_z)
+      paired with the CHANGE in short-marked selling (never the raw level, since ~half
+      of off-exchange volume is short-marked by default). Carries a hero verdict, a
+      laid-out standout board, weekly per-ATS venue shifts, and a same-day idempotent
+      change-feed (names entering/leaving each lean + venue movers vs prev_state).
+      Off-exchange volume hides direction, so every lean is a heads-up to watch —
+      display/context tier only, NEVER a signal, rank, size, or escalation.
+      is_context_only=true, display_only=true. Absent until scripts/build_darkpool_desk.py
+      first runs; all consumers fail-open (block=None or honest-null).
+
   special-sits-context-latest:
     path: data/special_situations/context/latest.json
     format: json
