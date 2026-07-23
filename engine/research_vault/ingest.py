@@ -262,8 +262,15 @@ def _restore_corpus(store, corpus_path: str | Path) -> str:
 # batch run
 # ---------------------------------------------------------------------------
 
+# Publish catalog+corpus every N ingested docs so a killed run (e.g. the GHA
+# 15-min timeout mid-backfill) loses at most the last partial batch — receipts
+# are written per item, so WITHOUT checkpoints the receipted-but-unpublished
+# items would be skipped by every later run yet never appear in catalog/corpus.
+CHECKPOINT_EVERY = 100
+
+
 def run(store, corpus_path: str | Path, now: datetime | None = None,
-        dry_run: bool = False) -> dict:
+        dry_run: bool = False, checkpoint_every: int = CHECKPOINT_EVERY) -> dict:
     """Run one ingestion pass. Idempotent + never-raise-per-item.
 
     Restores the canonical corpus from the store (source of truth), lists new
@@ -338,6 +345,17 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
             summary["ingested"] += 1
             if item.get("needs_metadata"):
                 summary["needs_metadata"] += 1
+
+            # Mid-run checkpoint (real runs only): commit catalog + corpus to the
+            # store so receipted work survives a killed run. The connection is
+            # committed first so the single-file sqlite bytes are copy-safe.
+            if (not dry_run and checkpoint_every > 0
+                    and summary["ingested"] % checkpoint_every == 0):
+                catalog_mod.write(store, cat, now=now)
+                conn.commit()
+                publish_corpus(store, corpus_path)
+                log.info("research_vault: checkpoint at %d ingested",
+                         summary["ingested"])
 
         # Catalog: serialize always (for the repo snapshot); write to the store
         # only on a real run.

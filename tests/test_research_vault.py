@@ -569,6 +569,62 @@ def test_ingest_corpus_persists_across_runs_via_store(tmp_path, canned_pdftotext
     conn.close()
 
 
+def test_ingest_checkpoint_survives_mid_run_kill(tmp_path, canned_pdftotext, monkeypatch):
+    """A run killed mid-backfill must not orphan receipted docs (backfill hardening).
+
+    Receipts are written per item; without mid-run checkpoints, a killed run
+    leaves receipted docs that every later run skips but that never reached the
+    published catalog/corpus. With checkpoint_every=1 we kill the run at the
+    SECOND corpus checkpoint and prove (a) the store already holds the first
+    doc, and (b) a plain re-run converges to all three.
+    """
+    store = LocalStore(tmp_path / "store")
+    for i, d in enumerate(["2026-07-01", "2026-07-02", "2026-07-03"]):
+        _seed_pdf(store, f"research_inbox/p{i}.pdf", {
+            "title": f"Paper {i}", "institution": "GS", "published_at": d})
+
+    real_publish = ingest_mod.publish_corpus
+    calls = {"n": 0}
+
+    def _killing_publish(store_, corpus_path_):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise KeyboardInterrupt("simulated GHA kill")  # BaseException: not swallowed
+        return real_publish(store_, corpus_path_)
+
+    monkeypatch.setattr(ingest_mod, "publish_corpus", _killing_publish)
+    with pytest.raises(KeyboardInterrupt):
+        ingest_mod.run(store, tmp_path / "run1" / "c.sqlite", checkpoint_every=1)
+
+    # Checkpoint #1 landed: the store catalog + corpus already hold early work.
+    assert catalog_mod.load(store)["count"] >= 1
+    assert store.exists(ingest_mod.CORPUS_KEY)
+
+    # Recovery: a plain re-run (fresh runner path) converges to all 3.
+    monkeypatch.setattr(ingest_mod, "publish_corpus", real_publish)
+    ingest_mod.run(store, tmp_path / "run2" / "c.sqlite", checkpoint_every=1)
+    assert catalog_mod.load(store)["count"] == 3
+    pulled = tmp_path / "pulled.sqlite"
+    pulled.write_bytes(store.get_bytes(ingest_mod.CORPUS_KEY))
+    conn = corpus_mod.open_db(pulled)
+    assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 3
+    conn.close()
+
+
+def test_corpus_body_capped(tmp_path):
+    """Body text is capped per doc so a backfilled corpus stays transferable."""
+    conn = corpus_mod.open_db(tmp_path / "c.sqlite")
+    body = ("EARLYTOKEN " * 3) + ("x" * corpus_mod.BODY_MAX_CHARS) + " LATETOKEN"
+    corpus_mod.upsert(conn, sidecar_mod.normalize(
+        {"id": "cap", "title": "t", "institution": "GS",
+         "published_at": "2026-07-01"}), body)
+    stored = conn.execute("SELECT length(body) FROM documents").fetchone()[0]
+    assert stored <= corpus_mod.BODY_MAX_CHARS
+    assert len(corpus_mod.search(conn, "EARLYTOKEN")) == 1   # inside cap: searchable
+    assert corpus_mod.search(conn, "LATETOKEN") == []        # beyond cap: dropped
+    conn.close()
+
+
 def test_ingest_dry_run_mutates_nothing(tmp_path, canned_pdftotext):
     """--dry-run reports what it WOULD do but writes nothing to the store."""
     store = LocalStore(tmp_path / "store")
