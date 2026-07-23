@@ -1438,6 +1438,16 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal inside the "commit
+          engine outputs" push retry loop (post-rebase, pre-push) — added by #3285
+          after the 2026-07-23 incident (4b356dd6b1a): externalize_css lifts the
+          plain-copy landing/chat pages' inline <style> to hashed files, and this
+          lane shipped the resulting template↔site divergence, reddening the sync
+          gate on main. Mirrors the render.yml/engine-render.yml/daily.yml step.
       - id: publish_r2_asia
         module: scripts.publish_r2
         note: non-fatal; uploads CN/HK OHLC + stockdata to R2
@@ -1841,6 +1851,15 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync heal in the inject/externalize
+          step, BEFORE `git add site/` in the commit step — weekly's push loop is
+          minimal (no post-rebase --fix like render.yml/asia-close.yml), so the heal
+          runs pre-commit so weekly never ships the landing/chat template↔site
+          divergence that externalize_css creates (#3285, 2026-07-23).
 
   # ── sentinel.yml / flash-crash ──────────────────────────────────────────
   - workflow: .github/workflows/sentinel.yml
