@@ -91,6 +91,14 @@ _BM25_WEIGHTS = "4.0, 3.0, 1.0, 2.0"
 
 _EXCERPT_LEN = 240
 
+# Per-document body-text cap. The corpus ships to R2 and is pulled whole by the
+# API, so unbounded body text (40-page PDFs ≈ 100KB+ each) would balloon the
+# .sqlite into hundreds of MB across a multi-thousand-doc backfill. 60KB keeps
+# roughly the first 15-25 pages searchable — headline/thesis/core argument —
+# while bounding the file. Raise deliberately if deep-tail search matters more
+# than transfer size.
+BODY_MAX_CHARS = 60_000
+
 
 # ---------------------------------------------------------------------------
 # FTS5 query sanitization (copied idiom: context_index/lexical._sanitize_fts5)
@@ -162,7 +170,7 @@ def upsert(conn: sqlite3.Connection, item: dict, body_text: str) -> None:
     side = item.get("side") or ""
     published_at = item.get("published_at") or ""
     published_date = published_at[:10] if len(published_at) >= 10 else ""
-    body = body_text or ""
+    body = (body_text or "")[:BODY_MAX_CHARS]
 
     conn.execute("DELETE FROM documents WHERE doc_id=?", (doc_id,))
     conn.execute(

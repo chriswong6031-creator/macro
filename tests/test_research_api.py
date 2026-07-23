@@ -614,3 +614,61 @@ def test_view_route_429_when_rate_limited(client, monkeypatch):
     r = c.get(f"/api/research/view/{_DOC_ID}", headers=_AUTH)
     assert r.status_code == 429
     assert r.json()["error"] == "rate_limited"
+
+
+# ===========================================================================
+# corpus read-through: serve-stale-while-revalidate (backfill hardening)
+# ===========================================================================
+
+def test_corpus_conn_nonblocking_refresh(monkeypatch, tmp_path):
+    """A present local corpus is served immediately; a stale one triggers ONE
+    background refresh instead of an inline re-download (a backfilled corpus is
+    far too large to fetch inside a user's search request)."""
+    import time as _time
+    from app import research as R
+    from engine.research_vault import corpus as C
+
+    fetches = {"n": 0}
+
+    class FakeStore:
+        def get_bytes(self, key):
+            fetches["n"] += 1
+            src = tmp_path / f"src{fetches['n']}.sqlite"
+            conn = C.open_db(src)
+            C.upsert(conn, {"id": f"d{fetches['n']}", "title": "t",
+                            "institution": "GS", "published_at": "2026-07-01",
+                            "summary_points": [], "side": "sell"}, "body text")
+            conn.close()
+            return src.read_bytes()
+
+    monkeypatch.setattr(R, "_build_store", lambda: FakeStore())
+    monkeypatch.setattr(R, "_corpus_path", None)
+    monkeypatch.setattr(R, "_corpus_fetched_at", 0.0)
+    monkeypatch.setattr(R, "_corpus_refreshing", False)
+
+    # First call: no local copy -> blocks once, downloads (fetch #1).
+    c1 = R._corpus_conn()
+    assert c1 is not None
+    c1.close()
+    assert fetches["n"] == 1
+
+    # Fresh within TTL: served locally, NO store hit.
+    c2 = R._corpus_conn()
+    assert c2 is not None
+    c2.close()
+    assert fetches["n"] == 1
+
+    # Force stale: the call returns IMMEDIATELY (old copy) and kicks exactly one
+    # background refresh (fetch #2).
+    monkeypatch.setattr(R, "_corpus_fetched_at",
+                        _time.monotonic() - R._CORPUS_TTL - 1)
+    c3 = R._corpus_conn()
+    assert c3 is not None
+    c3.close()
+    deadline = _time.time() + 5
+    while _time.time() < deadline:
+        with R._CORPUS_LOCK:
+            if not R._corpus_refreshing:
+                break
+        _time.sleep(0.05)
+    assert fetches["n"] == 2

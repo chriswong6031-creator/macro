@@ -186,56 +186,28 @@ def _catalog_title(doc_id: str) -> str:
 # corpus read-through: download corpus.sqlite from R2 to a temp file, TTL-cached
 # ---------------------------------------------------------------------------
 
-_CORPUS_TTL = 300.0  # seconds — re-download when the cached copy is older
+_CORPUS_TTL = 300.0  # seconds — refresh the local copy when older than this
 _CORPUS_LOCK = threading.Lock()
 _corpus_path: Path | None = None
 _corpus_fetched_at: float = 0.0
+_corpus_refreshing: bool = False  # guarded by _CORPUS_LOCK — one refresher at a time
 
 
-def _corpus_conn():
-    """Open (or refresh) a local sqlite copy of corpus.sqlite and return a conn.
+def _refresh_corpus_from_store() -> Path | None:
+    """Download corpus.sqlite from R2 to the local temp path (SYNCHRONOUS).
 
-    The API is a READ path: it downloads the whole .sqlite from R2 to a temp file
-    with a TTL, then opens it read-only via ``corpus.open_db``. Returns a
-    connection or None (no store / never fetched). Never raises.
+    Returns the local path on success, None on any failure. Never raises. Called
+    inline only when no local copy exists yet; otherwise runs on a background
+    thread so a user's search never pays the multi-MB download (the corpus grows
+    with the archive — a backfilled corpus is far too large to fetch inline).
     """
     global _corpus_path, _corpus_fetched_at
-    now = time.monotonic()
-
-    with _CORPUS_LOCK:
-        fresh = (
-            _corpus_path is not None
-            and _corpus_path.exists()
-            and (now - _corpus_fetched_at) < _CORPUS_TTL
-        )
-        if fresh:
-            try:
-                return corpus_mod.open_db(_corpus_path)  # type: ignore[arg-type]
-            except Exception:  # noqa: BLE001 — reopen below on any error
-                pass
-
     store = _build_store()
     if store is None:
-        # No store: reuse a stale copy if we have one, else no corpus.
-        with _CORPUS_LOCK:
-            if _corpus_path is not None and _corpus_path.exists():
-                try:
-                    return corpus_mod.open_db(_corpus_path)  # type: ignore[arg-type]
-                except Exception:  # noqa: BLE001
-                    return None
         return None
-
     data = store.get_bytes(_CORPUS_KEY)
     if not data:
-        # Refresh miss: fall back to a prior copy if present.
-        with _CORPUS_LOCK:
-            if _corpus_path is not None and _corpus_path.exists():
-                try:
-                    return corpus_mod.open_db(_corpus_path)  # type: ignore[arg-type]
-                except Exception:  # noqa: BLE001
-                    return None
         return None
-
     try:
         tmp_dir = Path(tempfile.gettempdir()) / "research_vault_corpus"
         tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -245,10 +217,54 @@ def _corpus_conn():
         os.replace(tmp, dst)
         with _CORPUS_LOCK:
             _corpus_path = dst
-            _corpus_fetched_at = now
-        return corpus_mod.open_db(dst)
-    except Exception as exc:  # noqa: BLE001 — write/open failure → degrade
+            _corpus_fetched_at = time.monotonic()
+        return dst
+    except Exception as exc:  # noqa: BLE001 — write failure → degrade
         log.debug("research_vault: corpus refresh failed (%s)", exc)
+        return None
+
+
+def _refresh_corpus_bg() -> None:
+    """Background-thread wrapper: refresh, then clear the in-flight flag."""
+    global _corpus_refreshing
+    try:
+        _refresh_corpus_from_store()
+    finally:
+        with _CORPUS_LOCK:
+            _corpus_refreshing = False
+
+
+def _corpus_conn():
+    """Open the local corpus copy, refreshing it WITHOUT blocking the request.
+
+    Serve-stale-while-revalidate: a present local copy is served immediately;
+    when it is older than the TTL a single background thread re-downloads it
+    (dropped-not-queued if one is already in flight). Only the very first call
+    (no local copy at all) downloads inline. Returns a connection or None.
+    Never raises.
+    """
+    global _corpus_refreshing
+    now = time.monotonic()
+
+    with _CORPUS_LOCK:
+        have_local = _corpus_path is not None and _corpus_path.exists()
+        stale = not have_local or (now - _corpus_fetched_at) >= _CORPUS_TTL
+        path = _corpus_path
+        if have_local and stale and not _corpus_refreshing:
+            _corpus_refreshing = True
+            threading.Thread(target=_refresh_corpus_bg, daemon=True,
+                             name="rv-corpus-refresh").start()
+
+    if not have_local:
+        # First fetch ever on this process: nothing to serve yet — block once.
+        path = _refresh_corpus_from_store()
+        if path is None:
+            return None
+
+    try:
+        return corpus_mod.open_db(path)  # type: ignore[arg-type]
+    except Exception as exc:  # noqa: BLE001 — unreadable local copy → degrade
+        log.debug("research_vault: corpus open failed (%s)", exc)
         return None
 
 
