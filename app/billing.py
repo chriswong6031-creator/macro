@@ -554,6 +554,12 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
         si = stripe.SetupIntent.create(
             customer=customer_id,
             usage="off_session",
+            # Card-family only, no redirect-based payment methods: redirect PMs would
+            # (a) demand a return_url on confirm and (b) navigate away from the
+            # floating onboarding sheet — the exact thing the Elements lane exists to
+            # avoid. Found live in the sandbox E2E: without this, dashboard-enabled
+            # redirect PMs make SetupIntent.confirm 400 ("must provide a return_url").
+            automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
             metadata={"mm_user_id": user_id, "mm_tier": tier, "mm_interval": interval},
         )
     except Exception as exc:  # noqa: BLE001

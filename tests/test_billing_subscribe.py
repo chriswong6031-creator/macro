@@ -144,10 +144,13 @@ def test_init_creates_customer_persists_mapping_and_returns_secret(monkeypatch):
         "email": "buyer@example.com", "metadata": {"mm_user_id": "user_1"}}
     # mapping persisted (mapping-only helper, not the full upsert)
     assert persisted == {"uid": "user_1", "cid": "cus_new"}
-    # SetupIntent carries off_session usage + tier/interval metadata for /complete + the webhook
+    # SetupIntent carries off_session usage + tier/interval metadata for /complete + the webhook,
+    # and card-family-only automatic payment methods (redirect PMs would demand a return_url on
+    # confirm and navigate away from the floating sheet — found live in the sandbox E2E).
     assert fake.calls["si_create"] == {
         "customer": "cus_new",
         "usage": "off_session",
+        "automatic_payment_methods": {"enabled": True, "allow_redirects": "never"},
         "metadata": {"mm_user_id": "user_1", "mm_tier": "pro", "mm_interval": "monthly"},
     }
 
