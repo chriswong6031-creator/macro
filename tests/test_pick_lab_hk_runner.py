@@ -759,6 +759,81 @@ class TestEnrichmentHelpers:
         assert result["1234.HK"]["catalyst_days_to"] == 3
         assert result["5678.HK"]["catalyst_days_to"] == 1
 
+    def test_build_catalyst_imminent_as_dict_no_crash(self):
+        """Real hk_catalyst_calendar.json ships `imminent` as a SINGLE dict, not a
+        list.  The pre-fix `upcoming + imminent` did `list + dict` → TypeError,
+        crashing the whole nightly build (lab empty since 2026-07-09).  Regression:
+        a dict `imminent` must be normalized to [dict] and not raise."""
+        from scripts.build_hk_pick_lab import _build_catalyst_by_ticker
+
+        catalyst = {
+            "upcoming": [{"ticker": "1234.HK", "days_until": 8}],
+            # single dict, exactly as the real artifact emits it
+            "imminent": {"ticker": "5678.HK", "days_until": 2, "type": "RESULTS"},
+        }
+        result = _build_catalyst_by_ticker(catalyst)  # must not raise
+        assert result["1234.HK"]["catalyst_days_to"] == 8
+        assert result["5678.HK"]["catalyst_days_to"] == 2
+
+    def test_build_catalyst_reads_days_until(self):
+        """Real items carry `days_until` (not days_to/sessions_to).  The extractor
+        must fall through to it, else nothing is ever extracted."""
+        from scripts.build_hk_pick_lab import _build_catalyst_by_ticker
+
+        catalyst = {
+            "upcoming": [
+                {"ticker": "700.HK", "days_until": 12},
+                {"ticker": "700.HK", "days_until": 4},   # nearer — should win
+            ],
+            "imminent": [],
+        }
+        result = _build_catalyst_by_ticker(catalyst)
+        assert result["700.HK"]["catalyst_days_to"] == 4
+
+    def test_build_catalyst_skips_index_and_junk_items(self):
+        """Index-level events (MSCI reviews) carry no `ticker` and are skipped;
+        non-dict items in the list are skipped rather than crashing on .get()."""
+        from scripts.build_hk_pick_lab import _build_catalyst_by_ticker
+
+        catalyst = {
+            "upcoming": [
+                {"type": "MSCI_REVIEW", "days_until": 39},  # no ticker → skip
+                "garbage-string",                            # non-dict → skip
+                None,                                        # non-dict → skip
+                {"ticker": "9988.HK", "days_until": 6},      # kept
+            ],
+            "imminent": {"type": "MSCI_REVIEW", "days_until": 39},  # no ticker → skip
+        }
+        result = _build_catalyst_by_ticker(catalyst)  # must not raise
+        assert result == {"9988.HK": {"catalyst_days_to": 6}}
+
+    def test_build_standouts_cohort_dict_no_crash(self):
+        """Real hk_standouts.json ships `cohort` as a regime-summary DICT
+        (state/median_ext_z/... — no ticker rows), not a list of names.  The
+        pre-fix code iterated `cohort` and called .get() on string keys →
+        AttributeError, the second latent crash in the enrichment path.
+        Regression: a dict `cohort` must not be treated as ticker rows."""
+        from scripts.build_hk_pick_lab import _build_standouts_by_ticker
+
+        standouts = {
+            "buy": [
+                {"ticker": "9988.HK", "southbound": {"accum_z": 1.2}},
+            ],
+            # regime-summary dict exactly as the real artifact emits it
+            "cohort": {
+                "state": "neutral", "median_ext_z": 0.3, "pct_parabolic": 0.1,
+                "pct_stretched": 0.2, "pct_at_highs": 0.15, "n": 156,
+            },
+            # a stray non-dict row must be skipped, not crash
+            "watch": ["not-a-dict", {"ticker": "700.HK", "southbound": {"accum_z": -0.4}}],
+        }
+        result = _build_standouts_by_ticker(standouts)  # must not raise
+        assert result["9988.HK"]["sb_accum_z"] == 1.2
+        assert result["700.HK"]["sb_accum_z"] == -0.4
+        # regime-summary keys must never leak in as tickers
+        assert "state" not in result
+        assert "median_ext_z" not in result
+
     def test_build_standouts_by_ticker(self):
         """_build_standouts_by_ticker extracts sb_accum_z, ah_discount_pctile, sfc_short_pressure_q."""
         from scripts.build_hk_pick_lab import _build_standouts_by_ticker

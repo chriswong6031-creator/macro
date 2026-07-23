@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from jinja2 import Environment
+from jinja2 import Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -167,20 +167,28 @@ def _render_chip(divergence: dict) -> str:
 
     The standalone SOUTHBOUND-vs-PRICE chip was folded into the combined
     SOUTHBOUND & A/H panel by the HK dashboard UX overhaul (#2017); the
-    divergence read now renders as the panel's "Flow vs price" card.
+    2026-07-22 hk_stocks revamp then merged that panel + "Smart-money flows"
+    into the single 🇨🇳 MAINLAND MONEY panel — the divergence read renders as
+    its "Flow vs price" card.
     """
     src = (ROOT / "templates" / "hk.html.j2").read_text()
     macros = src[: src.index("<!DOCTYPE")]
-    start = src.index("<!-- ===================== SOUTHBOUND & A/H")
-    # stop at the combined panel's closing region (it lives inside the mode!=macro
-    # block) so the extracted fragment is balanced Jinja
-    end = src.index("{% endif %}{# /mode != macro", start)
+    start = src.index("MAINLAND MONEY (merged")
+    start = src.rindex("{#", 0, start)
+    # stop before the next section (sector rotation) and drop its dangling
+    # `{% if mode != 'macro' %}` opener so the extracted fragment is balanced Jinja
+    end = src.index("<!-- sector rotation board", start)
     chip = src[start:end]
-    env = Environment(autoescape=False)
+    chip = chip[: chip.rindex("{% if mode != 'macro' %}")]
+    # the macros prefix carries the template's top-level {% import %} lines,
+    # which need a loader at render time (pre-existing rot: this render broke
+    # silently once those imports landed — the file is not CI-whitelisted)
+    env = Environment(autoescape=False, loader=FileSystemLoader(ROOT / "templates"))
     tmpl = env.from_string(macros + chip)
-    # Only sb_divergence supplied: the sibling southbound-flow and A/H cards
-    # must gate themselves off without their data.
-    return tmpl.render(internals={"sb_divergence": divergence}, ah=None)
+    # Only sb_divergence supplied: the sibling southbound-flow, A/H and
+    # per-name-table pieces must gate themselves off without their data.
+    return tmpl.render(mode="stocks", internals={"sb_divergence": divergence},
+                       ah=None, setups=None)
 
 
 @pytest.mark.parametrize("state,en_word,zh_word", [

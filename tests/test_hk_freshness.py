@@ -287,7 +287,9 @@ class TestHKFreshnessSentinel:
             assert result["banner_message"] is None
 
     def test_coherence_broken_forces_stale(self, tmp_path):
-        """Standouts and regime dates diverge -> coherence bad -> stale."""
+        """Standouts and regime dates diverge by MORE than one session -> coherence bad
+        -> stale. (A one-session lag is tolerated — see the phase-tolerance tests below.)
+        """
         now = datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc)
         from lib.hk_calendar import expected_last_session
         expected = expected_last_session(now)
@@ -297,27 +299,150 @@ class TestHKFreshnessSentinel:
             cache_date=expected,
             bell_date=expected,
             standouts_asof=expected,
-            regime_date=date(2026, 7, 1),   # regime is a week old
+            regime_date=date(2026, 7, 1),   # regime is a week old (>1 session gap)
         )
         assert not result["coherence"]["ok"], "Coherence must be broken"
         assert result["verdict"] == "stale"
 
-    def test_missing_cache_is_dead_and_stale(self, tmp_path):
-        """No cache file -> dead state -> stale verdict."""
+    # ------------------------------------------------------------------
+    # 2026-07-23 revision: coherence phase tolerance (<= 1 business day)
+    # ------------------------------------------------------------------
+
+    def test_coherence_one_session_lag_is_ok(self, tmp_path):
+        """standouts = T, regime = T-1 (one business day behind, the normal pipeline
+        phase) -> coherence ok WITH a note, verdict ok when everything else is fresh.
+
+        This is the chronic false-red case: the committed regime artifact advances one
+        asia-close behind the evening stock scan. It must NOT fire "stale".
+        """
+        now = datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc)
+        from lib.hk_calendar import expected_last_session
+        expected = expected_last_session(now)   # 2026-07-08 (Wed)
+        regime_prev = date(2026, 7, 7)           # Tue — exactly one session behind
+
+        result = self._run_sentinel(
+            tmp_path, now,
+            cache_date=expected,
+            bell_date=expected,
+            standouts_asof=expected,
+            regime_date=regime_prev,
+            southbound_date=expected,
+        )
+        assert result["coherence"]["ok"], (
+            f"One-session lag must be coherent, got {result['coherence']}")
+        assert result["coherence"].get("gap_sessions") == 1
+        assert result["coherence"].get("note"), "One-session lag should carry a note"
+        assert result["verdict"] == "ok", (
+            f"One-session regime lag must not fire stale, got {result['verdict']}: {result}")
+
+    def test_coherence_two_session_gap_is_stale(self, tmp_path):
+        """standouts = T, regime = T-2 (two business days) -> coherence bad -> stale."""
+        now = datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc)
+        from lib.hk_calendar import expected_last_session
+        expected = expected_last_session(now)   # 2026-07-08 (Wed)
+        regime_two_back = date(2026, 7, 6)       # Mon — two sessions behind Wed
+
+        result = self._run_sentinel(
+            tmp_path, now,
+            cache_date=expected,
+            bell_date=expected,
+            standouts_asof=expected,
+            regime_date=regime_two_back,
+        )
+        assert result["coherence"].get("gap_sessions") == 2
+        assert not result["coherence"]["ok"], "Two-session gap must break coherence"
+        assert result["verdict"] == "stale", (
+            f"Two-session gap must be stale, got {result['verdict']}")
+
+    # ------------------------------------------------------------------
+    # 2026-07-23 revision: cache missing (absent) vs stale (present-but-old)
+    # ------------------------------------------------------------------
+
+    def test_missing_cache_is_degraded_not_stale(self, tmp_path):
+        """No cache FILE at all (the ephemeral-runner case: gitignored cache never
+        shipped) -> state 'missing' -> verdict 'degraded', NOT 'stale'.
+
+        A merely-absent cache is a runner condition, not stale data. It must not fire
+        the full-red "do not act" banner.
+        """
         now = datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc)
         from lib.hk_calendar import expected_last_session
         expected = expected_last_session(now)
 
-        # Omit cache_date entirely
+        # Omit cache_date entirely -> file absent
         result = self._run_sentinel(
             tmp_path, now,
-            cache_date=None,   # cache missing
+            cache_date=None,   # cache file missing
             bell_date=expected,
             standouts_asof=expected,
             regime_date=expected,
+            southbound_date=expected,
         )
-        assert result["stores"]["cache"]["state"] == "dead"
-        assert result["verdict"] == "stale"
+        assert result["stores"]["cache"]["state"] == "missing", (
+            f"Absent cache should be 'missing', got {result['stores']['cache']}")
+        assert result["verdict"] == "degraded", (
+            f"Absent cache must be degraded, not stale, got {result['verdict']}")
+
+    def test_present_but_old_cache_is_stale(self, tmp_path):
+        """Cache PRESENT but 5+ days old (the 2026-07-08 rollback incident) -> stale.
+
+        Incident protection: a present-but-stale cache still forces full-red.
+        """
+        now = datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc)
+        from lib.hk_calendar import expected_last_session
+        expected = expected_last_session(now)
+        old_cache = date(2026, 7, 2)   # 6 cal days behind 2026-07-08 -> lag >= 5
+
+        result = self._run_sentinel(
+            tmp_path, now,
+            cache_date=old_cache,   # present but stale
+            bell_date=expected,
+            standouts_asof=expected,
+            regime_date=expected,
+            southbound_date=expected,
+        )
+        assert result["stores"]["cache"]["state"] == "stale", (
+            f"Present-but-old cache should be 'stale', got {result['stores']['cache']}")
+        assert result["verdict"] == "stale", (
+            f"Present-but-old cache must force stale, got {result['verdict']}")
+
+    def test_banner_copy_has_no_internal_vocab(self, tmp_path):
+        """Banner strings (stale AND degraded) must be plain words — no store slugs,
+        no 'incoherent', no 'snapshot'. Tier-1 User-First Design Doctrine.
+        """
+        now = datetime(2026, 7, 8, 12, 0, tzinfo=timezone.utc)
+        from lib.hk_calendar import expected_last_session
+        expected = expected_last_session(now)
+        banned = ("incoherent", "snapshot", "bellwether", "southbound",
+                  "standouts", "_closes_cache", "cache")
+
+        # Separate subdirs so the first run's cache parquet + state.json don't leak into
+        # the second scenario (the helper doesn't delete files it isn't asked to write).
+        stale = self._run_sentinel(
+            tmp_path / "stale_case", now,
+            cache_date=date(2026, 7, 2), bell_date=expected,
+            standouts_asof=expected, regime_date=expected, southbound_date=expected,
+        )
+        assert stale["verdict"] == "stale"
+        for lang in ("en", "zh"):
+            msg = stale["banner_message"][lang].lower()
+            for term in banned:
+                assert term not in msg, (
+                    f"Stale banner[{lang}] leaks '{term}': {stale['banner_message'][lang]}")
+
+        # Degraded banner (missing cache)
+        degraded = self._run_sentinel(
+            tmp_path / "degraded_case", now,
+            cache_date=None, bell_date=expected,
+            standouts_asof=expected, regime_date=expected, southbound_date=expected,
+        )
+        assert degraded["verdict"] == "degraded"
+        for lang in ("en", "zh"):
+            msg = degraded["banner_message"][lang].lower()
+            for term in banned:
+                assert term not in msg, (
+                    f"Degraded banner[{lang}] leaks '{term}': "
+                    f"{degraded['banner_message'][lang]}")
 
     def test_result_is_always_a_dict(self, tmp_path):
         """Sentinel never raises; always returns a dict.
