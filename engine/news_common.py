@@ -162,6 +162,11 @@ _ROUNDUP_RE = re.compile(
     r"|\b(?:stock|stocks|etf|etfs|fund|funds)\s+(?:for|to\s+buy\s+for)\s+(?:your\s+)?(?:portfolio|retirement|income|dividends?|passive\s+income|the\s+long[-\s]term|long[-\s]term|big\s+returns|solid\s+returns|steady\s+returns|\d{4})\b"
     r"|\b(?:best|top|hottest|smartest|safest|cheapest|favou?rite|must-own|must-buy|top-rated)\s+(?:[\w-]+\s+){0,2}?dividend\s+stocks?\b"
     r"|\bstocks?\s+(?:that\s+could|to)\s+(?:soar|surge|explode|double|triple|skyrocket|make\s+you)\b"
+    # SEO listicle frames from aggregator feeds ("Best AI Stocks", "Top Performing
+    # Monthly Dividend ETFs", "Best Stocks to Day Trade"). PLURAL-anchored so real
+    # single-name news ("Nvidia stock rises", "the top stock in the Dow") is untouched.
+    r"|\b(?:best|top|hottest|smartest|safest|cheapest|top-rated|top[-\s]?performing)\s+(?:[\w'&-]+\s+){0,3}?(?:stocks|etfs)\b"
+    r"|\bstocks\s+under\s+\$?\s?\d"
     r")", re.I)
 
 # SINGLE-stock advertorials that dodge the roundup framing above because they name
@@ -483,6 +488,154 @@ def quality_score(title: str, domain: str, seendate_iso: str = "",
     rel = max(0.0, min(1.0, relevance) - clickbait_penalty(title))
     rec = recency_weight(seendate_iso, now, half_life_h)
     return int(round(100.0 * tw * rel * (0.45 + 0.55 * rec)))
+
+
+# --------------------------------------------------------------------------- #
+# Display aging + the unified multi-signal display RANKER.
+#
+# Display order only — NEVER a trade signal. The news→score firewall
+# (build_site.py "News NEVER feeds any score") is intact; these reshape what the
+# reader sees first, nothing more.
+#
+#   display_max_age_days / display_age_ok — a per-tier MAX age past which an item
+#     is too old to show as "news" (this is what kills the 30-41d official
+#     stragglers). The FETCH window (macro_news official_window_days=45) is
+#     unchanged — items are still INGESTED for the event ledger / accrual; this
+#     governs DISPLAY only.
+#   rank_score — a normalised 0-100 blend of importance × novelty × cross-source
+#     echo × event-type × recency-decay × entity/ticker reach × (optional) an
+#     external AI feed's precomputed importance. Monotone in every positive axis
+#     so "more important / newer / more corroborated" always ranks higher.
+# --------------------------------------------------------------------------- #
+
+# Per source-tier max display age (days). An official statement stays relevant
+# longer than a wire blip; a stock-wire item is stale within days. Overridable
+# via cfg['display_max_age_days'] (a {tier: days} dict).
+DISPLAY_MAX_AGE_DAYS: dict[str, int] = {
+    "official": 14, "tier1": 10, "tier2": 8, "quality": 7,
+    "stock_wire": 5, "default": 7,
+}
+
+# Event-class display weight (0..1) — how much a typed catalyst should lift an
+# item in the ranked feed. Hard catalysts (guidance/M&A/earnings) outrank soft
+# ones (rating tweaks); macro_release is scheduling context. Keys mirror
+# engine/news_events.py _EVENT_CLASSES.
+EVENT_WEIGHT: dict[str, float] = {
+    "guidance_cut": 1.0, "guidance_raise": 0.95, "preannouncement": 0.9,
+    "earnings_result": 0.85, "mna_confirmed": 0.95, "mna_rumor": 0.6,
+    "contract_award": 0.7, "customer_win": 0.6, "customer_loss": 0.7,
+    "product_launch": 0.55, "product_delay": 0.6, "regulatory_probe": 0.75,
+    "litigation": 0.6, "bankruptcy_restructuring": 0.85, "activist_campaign": 0.7,
+    "management_change": 0.6, "equity_offering": 0.6, "buyback": 0.55,
+    "dividend_change": 0.55, "analyst_estimate_revision": 0.5, "rating_change": 0.5,
+    "policy_trade_control": 0.8, "macro_release": 0.7,
+}
+
+# Blend weights (sum to 1.0). importance is primary; the rest reshape order.
+RANK_WEIGHTS: dict[str, float] = {
+    "importance": 0.42, "novelty": 0.16, "echo": 0.12,
+    "event": 0.10, "ticker": 0.06, "ai": 0.14,
+}
+
+
+def age_days(seendate_iso: str, now: datetime | None = None) -> float | None:
+    """Age in days from an ISO timestamp; None if blank/unparseable. PURE."""
+    _now = now if now is not None else datetime.now(timezone.utc)
+    s = (seendate_iso or "").strip()
+    if not s:
+        return None
+    try:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return max(0.0, (_now - dt).total_seconds() / 86400.0)
+
+
+def display_max_age_days(source_tier_str: str, cfg: dict | None = None) -> int:
+    """Max display age (days) for a source tier. cfg may override the whole table
+    via 'display_max_age_days': {tier: days}. PURE."""
+    table = dict(DISPLAY_MAX_AGE_DAYS)
+    if cfg:
+        ov = cfg.get("display_max_age_days")
+        if isinstance(ov, dict):
+            for k, v in ov.items():
+                try:
+                    table[str(k)] = int(v)
+                except (TypeError, ValueError):
+                    continue
+    return int(table.get(source_tier_str or "default", table["default"]))
+
+
+def display_age_ok(seendate_iso: str, source_tier_str: str = "",
+                   cfg: dict | None = None, now: datetime | None = None) -> bool:
+    """True when an item is fresh enough to DISPLAY as news for its tier.
+    Blank/unparseable dates are KEPT (fail-open — never hide on a parse miss).
+    Governs display only; the fetch window and event ledger are untouched. PURE."""
+    ad = age_days(seendate_iso, now)
+    if ad is None:
+        return True
+    return ad <= display_max_age_days(source_tier_str, cfg)
+
+
+def rank_score(h: dict, now: datetime | None = None,
+               half_life_h: float = 30.0) -> float:
+    """Unified 0-100 DISPLAY rank for a headline dict. Monotone in every positive
+    axis. Reads (all optional, null-safe):
+      importance_score 0-100 · novelty_z · echo{n_sources} · event.event_type ·
+      seendate (recency-decay) · tickers/related_tickers · ai_importance 0-100 /
+      ai_sentiment (external feed, when present).
+    Display order ONLY — never a trade signal. PURE (clock injected)."""
+    _now = now if now is not None else datetime.now(timezone.utc)
+    # macro items carry importance_score; financial/ticker items carry `quality`
+    # (both 0-100 from the same display-rank family) — fall back so the unified feed
+    # ranks either kind.
+    try:
+        _imp_raw = float(h.get("importance_score") or h.get("quality") or 0)
+    except (TypeError, ValueError):
+        _imp_raw = 0.0
+    imp = max(0.0, min(1.0, _imp_raw / 100.0))
+
+    nz = h.get("novelty_z")
+    try:
+        nov = min(1.0, abs(float(nz)) / 3.0) if nz is not None else 0.0
+    except (TypeError, ValueError):
+        nov = 0.0
+
+    echo = h.get("echo") or {}
+    n_src = int(echo.get("n_sources", 0) or 0) if isinstance(echo, dict) else 0
+    ech = min(1.0, max(0, n_src - 1) / 4.0)
+
+    ev = h.get("event") or {}
+    etype = ev.get("event_type") if isinstance(ev, dict) else None
+    evw = EVENT_WEIGHT.get(etype or "", 0.0)
+
+    tks = h.get("tickers") or h.get("related_tickers") or []
+    if not isinstance(tks, (list, tuple, set)):
+        tks = []
+    n_tk = len(tks)
+    has_mag = any((t if isinstance(t, str) else (t.get("ticker", "") if isinstance(t, dict) else "")) in MAG7
+                  for t in tks)
+    tick = min(1.0, n_tk / 3.0)
+    if has_mag:
+        tick = min(1.0, tick + 0.34)
+
+    ai_imp = h.get("ai_importance")
+    if ai_imp is None:
+        ai = imp                       # neutral: absent AI signal never penalises
+    else:
+        try:
+            v = float(ai_imp)
+            ai = max(0.0, min(1.0, v / 100.0 if v > 1.0 else v))
+        except (TypeError, ValueError):
+            ai = imp
+
+    W = RANK_WEIGHTS
+    base = (W["importance"] * imp + W["novelty"] * nov + W["echo"] * ech
+            + W["event"] * evw + W["ticker"] * tick + W["ai"] * ai)
+    rec = recency_weight(h.get("seendate", ""), _now, half_life_h)
+    return round(100.0 * base * (0.55 + 0.45 * rec), 2)
 
 
 # --------------------------------------------------------------------------- #

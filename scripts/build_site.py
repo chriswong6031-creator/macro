@@ -5267,36 +5267,87 @@ def main() -> int:
             _financial_news_data = json.loads(_fn_path.read_text())
     except Exception as _e:  # noqa: BLE001 — additive, never fatal
         log.warning("news financial.json load failed: %s", _e)
-    # W3 fix: sort event-typed headlines by |novelty_z| desc then seendate desc so
-    # the Delta Board renders in spec order without relying on Jinja abs().  Context
-    # (non-event) headlines are left in their original intelligence_score order and
-    # appended after event headlines.  A shallow copy avoids mutating the shared vm.
+    # NEWS-RANK: the display feed is already aged + ranked by engine.macro_news
+    # (rank_score desc, per-tier display-age cutoff). Re-apply BOTH here defensively
+    # so a stale on-disk artifact — or an older macro_news build — can never surface
+    # a 30-45d straggler or a mis-ordered lead. Display order ONLY, never a score.
     _news_vm_macro_news = vm.get("macro_news")
     if _news_vm_macro_news and _news_vm_macro_news.get("headlines"):
         try:
-            _raw_heads = _news_vm_macro_news["headlines"]
-            _ev   = [h for h in _raw_heads if h.get("event")]
-            _ctx  = [h for h in _raw_heads if not h.get("event")]
-            # Three-pass stable sort: seendate desc, then abs(novelty_z) desc, then
-            # a fresh-first partition (NEWS-DD-02: an aged official item must never
-            # take the lead slot on novelty alone — a >5d-old card sorts after every
-            # fresh card regardless of novelty).  Timsort stability preserves the
-            # inner order within each partition.
-            from datetime import datetime as _dt, timedelta as _td, timezone as _tz
-            _fresh_cut = (_dt.now(_tz.utc) - _td(days=5)).isoformat()
-            _ev.sort(key=lambda h: h.get("seendate") or "", reverse=True)
-            _ev.sort(
-                key=lambda h: abs(float(h["novelty_z"])) if h.get("novelty_z") is not None else 0.0,
-                reverse=True,
-            )
-            _ev.sort(key=lambda h: (h.get("seendate") or "") >= _fresh_cut, reverse=True)
+            from engine import news_common as _nc_rank
+            from datetime import datetime as _dt, timezone as _tz
+            _now_r = _dt.now(_tz.utc)
+            _mncfg_r = config.load().get("macro_news", {}) or {}
+            _heads = [h for h in _news_vm_macro_news["headlines"]
+                      if _nc_rank.display_age_ok(h.get("seendate", ""),
+                                                 h.get("source_tier", ""), _mncfg_r, _now_r)]
+            _heads.sort(key=lambda h: h.get("rank_score") if h.get("rank_score") is not None
+                        else _nc_rank.rank_score(h, _now_r), reverse=True)
             _sorted_macro_news = dict(_news_vm_macro_news)
-            _sorted_macro_news["headlines"] = _ev + _ctx
-        except Exception as _e:  # noqa: BLE001 — sort is best-effort; degrade to raw order
-            log.warning("news ev_heads sort failed: %s", _e)
+            _sorted_macro_news["headlines"] = _heads
+        except Exception as _e:  # noqa: BLE001 — best-effort; degrade to raw order
+            log.warning("news rank/age sort failed: %s", _e)
             _sorted_macro_news = _news_vm_macro_news
     else:
         _sorted_macro_news = _news_vm_macro_news
+
+    # NEWS-FEED: a single importance-ranked stream the redesigned page reads for its
+    # hero + "Top stories" feed. Merge the (aged, ranked) macro headlines with the
+    # financial market wires, dedup, tag a lane (Fed / Macro / Companies / Markets),
+    # and order by rank_score. Display order ONLY — never a score. Guarded: degrades
+    # to the macro list (or empty) on any error, so the page always renders.
+    _news_feed = []
+    try:
+        from engine import news_common as _nc_feed
+        from datetime import datetime as _dtf, timezone as _tzf
+        _feed_now = _dtf.now(_tzf.utc)
+        _mncfg_feed = config.load().get("macro_news", {}) or {}
+        _macro_hl = (_sorted_macro_news or {}).get("headlines", []) or []
+        _fin_market = (_financial_news_data or {}).get("market", []) or []
+        if not isinstance(_fin_market, list):
+            _fin_market = []
+        _stock_themes = {"earnings", "guidance", "analyst", "deals", "capital_return", "stocks"}
+
+        def _lane_of(h):
+            th = (h.get("theme") or "").lower()
+            ev = h.get("event") or {}
+            et = ev.get("event_type") if isinstance(ev, dict) else None
+            if th in ("monetary", "credit"):
+                return "fed"
+            if th in ("inflation", "labor", "growth", "fiscal", "macro"):
+                return "macro"
+            if h.get("tickers") or et or th in _stock_themes:
+                return "companies"
+            return "markets"
+
+        _seen_feed, _combined = set(), []
+        for _h in (list(_macro_hl) + list(_fin_market)):
+            if not isinstance(_h, dict):
+                continue
+            _idk = _h.get("_id") or ((_h.get("title", "") or "")[:80].lower()
+                                     + "|" + (_h.get("domain", "") or ""))
+            if _idk in _seen_feed:
+                continue
+            _seen_feed.add(_idk)
+            _rec = dict(_h)
+            _rec.setdefault("source_tier", {1: "tier1", 2: "quality", 3: "quality"}
+                            .get(_rec.get("tier"), "quality"))
+            if _rec.get("rank_score") is None:
+                try:
+                    _rec["rank_score"] = _nc_feed.rank_score(_rec, _feed_now)
+                except Exception:  # noqa: BLE001
+                    _rec["rank_score"] = 0.0
+            if not _nc_feed.display_age_ok(_rec.get("seendate", ""),
+                                           _rec.get("source_tier", ""), _mncfg_feed, _feed_now):
+                continue
+            _rec["lane"] = _lane_of(_rec)
+            _combined.append(_rec)
+        _combined.sort(key=lambda h: h.get("rank_score", 0.0), reverse=True)
+        _news_feed = _combined[:80]
+    except Exception as _e:  # noqa: BLE001 — additive; never fatal
+        log.warning("news_feed build failed: %s", _e)
+        _news_feed = []
+
     out_news = site / "news.html"
     # vm already carries a 'macro_news' key (assigned above), so we must NOT splat
     # **vm AND pass macro_news= explicitly — that collides at argument binding and
@@ -5316,6 +5367,7 @@ def main() -> int:
             news_rejected=_news_rejected_data,
             news_calibration=_news_calibration_data,
             financial_news=_financial_news_data,
+            news_feed=_news_feed,
         )
     except Exception as _e:  # noqa: BLE001 — degrade, never raise
         log.error("news.html render failed (%s: %s) — retrying without side-artifacts",
@@ -5328,6 +5380,7 @@ def main() -> int:
                 news_rejected=None,
                 news_calibration=None,
                 financial_news=None,
+                news_feed=_news_feed,
             )
         except Exception as _e2:  # noqa: BLE001 — degrade, never raise
             log.error("news.html artifact-free render failed too (%s: %s) — "

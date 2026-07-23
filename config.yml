@@ -3748,6 +3748,34 @@ macro_news:
   llm_model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
   api_key_env: DEEPSEEK_API_KEY
+  # NEWS-AGE (2026 revamp): per source-tier MAX display age (days). Past this an
+  # item is too old to show as "news" and is dropped from the DISPLAY feed only —
+  # the fetch windows (official_window_days / news_window_days) and the event
+  # ledger are untouched, so accrual is unaffected. Omit a tier to fall back to
+  # engine/news_common.DISPLAY_MAX_AGE_DAYS.
+  display_max_age_days:
+    official: 14
+    tier1: 10
+    quality: 7
+    stock_wire: 5
+    default: 7
+
+# =============================================================================
+# AI-native news feed (engine/news_ai_feed.py) — OPTIONAL, key-gated, DISPLAY-ONLY.
+# A precomputed AI-sentiment/importance stream (default provider: Finlight, free
+# tier ~5k req/mo with full article bodies) merged into the market news pool. Its
+# ai_* fields are INPUTS to the deterministic display ranker (news_common.rank_score)
+# — never a trade signal, never crosses the news→score firewall. With no key it
+# returns nothing and the build is byte-identical to the keyless render.
+# To enable: set enabled:true AND export the key (env FINLIGHT_KEY).
+# =============================================================================
+news_ai_feed:
+  enabled: false
+  provider: finlight
+  base_url: https://api.finlight.me
+  api_key_env: FINLIGHT_KEY
+  max_articles: 50
+  query: "stock market OR earnings OR Federal Reserve OR US economy"
 
 # =============================================================================
 # News-vector PIT event bus (engine/news_vector.py) — Stage 1 of the narrative-
