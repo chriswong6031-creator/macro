@@ -337,10 +337,13 @@ on:
       - "scripts/export_signal_contracts.py"
       - "site/factordata/contracts/artifact_manifest.json"
       - "tests/test_contract_drift.py"
-      # Portfolio-Aware Intelligence W0: portfolio_ctx.v1 bake + tests (see the
-      # portfolio-ctx job). Whitelisted so the bake's unit suite runs on any change.
+      # Portfolio-Aware Intelligence W0/W1: portfolio_ctx.v1 bake + brief composer +
+      # tests (see the portfolio-ctx job). Whitelisted so both unit suites run on any
+      # change to the bake, the composer, or their tests.
       - "scripts/build_portfolio_ctx.py"
       - "tests/test_build_portfolio_ctx.py"
+      - "engine/portfolio_brief.py"
+      - "tests/test_portfolio_brief.py"
       # Research Factory W1 (RF-11): authority guard, ledger schemas, state machine.
       - "scripts/research_factory*.py"
       - "scripts/*research_factory*.py"
@@ -2573,13 +2576,16 @@ jobs:
         run: python -m pytest tests/test_marketing_engine.py -q
 
   portfolio-ctx:
-    # Portfolio-Aware Intelligence W0 (charter:
-    # research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §6). Unit suite for the
-    # portfolio_ctx.v1 bake — build_ctx joins/omission/verbatim-vocab/congress-window
-    # invariants run on synthetic dicts (parquet-free); one integration smoke test
-    # runs main() against the real committed sources (skips gracefully if absent, and
-    # reads data/quiver/congress.parquet → needs pandas+pyarrow). Whitelisted so this
-    # never rots red on main after nightly first advances the artifact (W1).
+    # Portfolio-Aware Intelligence W0 + W1 (charter:
+    # research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §6). Two unit suites:
+    #   * test_build_portfolio_ctx — the portfolio_ctx.v1 bake (build_ctx joins/omission/
+    #     verbatim-vocab/congress-window on synthetic dicts + a main() integration smoke
+    #     against the real committed sources; reads congress.parquet → pandas+pyarrow).
+    #   * test_portfolio_brief — the W1 deterministic brief composer + GET
+    #     /api/portfolio/brief endpoint smoke. The composer tests are dependency-free; the
+    #     endpoint smoke uses the FastAPI TestClient (fastapi+httpx+pydantic) and
+    #     pytest.importorskip's away cleanly if those are absent.
+    # Whitelisted so neither rots red on main after nightly first advances the artifact.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2587,6 +2593,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas pyarrow
-      - name: portfolio-ctx unit tests
+        run: pip install pytest pandas pyarrow fastapi httpx pydantic
+      - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py -q
+      - name: portfolio-brief composer + endpoint tests
+        run: python -m pytest tests/test_portfolio_brief.py -q

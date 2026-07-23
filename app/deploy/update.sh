@@ -71,7 +71,7 @@ fi
 # without a restart an engine-side fix never goes live. Doctrine CONTENT
 # (engine/neuralweb/doctrine/*.md) is deliberately NOT here: doctrine.py reloads
 # the .md files on mtime change, so prose-only edits go live without an /api blip.
-if echo "$CHANGED" | grep -qE '^(app/(main\.py|requirements\.txt|__init__\.py)|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine)\.py|engine/llm_auth\.py)$'; then
+if echo "$CHANGED" | grep -qE '^(app/(main\.py|requirements\.txt|__init__\.py)|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine)\.py|engine/(llm_auth|portfolio_brief)\.py)$'; then
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 

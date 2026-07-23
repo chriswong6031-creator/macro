@@ -1,0 +1,103 @@
+{
+  "asof": "2026-07-23",
+  "book": {
+    "covered": 4,
+    "n": 5,
+    "uncovered": [
+      "FOO"
+    ]
+  },
+  "generated_at": "2026-07-23T14:00:00+00:00",
+  "headline": {
+    "en": "Your book today: 5 names, top weight Consumer Defensive 25%, desk read Risk-on.",
+    "zh": "你今日的持仓：5 只个股，最大权重Consumer Defensive 25%，桌面判读风险偏好。"
+  },
+  "schema": "portfolio_brief.v1",
+  "sections": [
+    {
+      "key": "exposure",
+      "lines": [
+        {
+          "en": "25% of your book is Consumer Defensive — today's desk read on Consumer Defensive is Accumulate (watching for entry).",
+          "zh": "你的持仓有 25% 在Consumer Defensive — 桌面今日对Consumer Defensive的判读为积极配置（watching for entry）。"
+        }
+      ],
+      "title_en": "Exposure",
+      "title_zh": "持仓暴露"
+    },
+    {
+      "key": "lanes",
+      "lines": [
+        {
+          "en": "Your sectors on the board: Consumer Defensive — Accumulate (watching for entry); Energy — Cautious (trend running); Financial — Reduce (extended — watch); Utilities — Accumulate.",
+          "zh": "你的板块在桌面的位置：Consumer Defensive — 积极配置（watching for entry）；Energy — 谨慎（trend running）；Financial — 减配（extended — watch）；Utilities — 积极配置。"
+        },
+        {
+          "en": "Desk tailwinds/headwinds touching your book: tailwind Consumer Defensive, Energy, Utilities; headwind Financial.",
+          "zh": "触及你持仓的桌面顺风/逆风：顺风：Consumer Defensive、Energy、Utilities；逆风：Financial。"
+        }
+      ],
+      "title_en": "Rotation board",
+      "title_zh": "轮动板"
+    },
+    {
+      "key": "signals",
+      "lines": [
+        {
+          "en": "2 of your 4 covered names are in Stage 2 uptrends. 1 is in a Stage 3 topping.",
+          "zh": "你 4 只有覆盖的个股中，有 2 只处于第 2 阶段上升趋势。另有 1 只处于第 3 阶段见顶。"
+        },
+        {
+          "en": "The desk's global entry gate is shut tonight — new-entry signals are blocked.",
+          "zh": "桌面的全局入场闸门今晚关闭 — 新入场信号被拦下。"
+        }
+      ],
+      "title_en": "Signals",
+      "title_zh": "信号"
+    },
+    {
+      "key": "regime",
+      "lines": [
+        {
+          "en": "The desk's daily read: Risk-on (77/100).",
+          "zh": "桌面今日判读：风险偏好（77/100）。"
+        },
+        {
+          "en": "Of your sectors, the regime favors Consumer Defensive, Energy, Utilities and leans against Financial.",
+          "zh": "在你的板块中，当前环境偏好Consumer Defensive、Energy、Utilities，对Financial偏弱。"
+        }
+      ],
+      "title_en": "Regime",
+      "title_zh": "市场环境"
+    },
+    {
+      "key": "filings",
+      "lines": [
+        {
+          "en": "This week: a Congress sell in XOM (filed 2026-07-20).",
+          "zh": "本周：XOM 出现一笔国会售出披露（申报于 2026-07-20）。"
+        },
+        {
+          "en": "Insider tape: JPM 0 buyers / 4 sellers.",
+          "zh": "内部人动向：JPM 0 买 / 4 卖。"
+        },
+        {
+          "en": "Insider tape: KO 3 buyers / 0 sellers.",
+          "zh": "内部人动向：KO 3 买 / 0 卖。"
+        },
+        {
+          "en": "13F trend: 1 of your names saw more trims than adds last quarter.",
+          "zh": "13F 趋势：上季度有 1 只被更多机构减持而非增持。"
+        }
+      ],
+      "title_en": "Filings desk",
+      "title_zh": "监管申报"
+    }
+  ],
+  "stale": false,
+  "weighting": {
+    "label_en": "equal-weighted",
+    "label_zh": "等权",
+    "mode": "equal"
+  }
+}
