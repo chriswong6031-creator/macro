@@ -4,6 +4,12 @@ Minimal by design: health + overlay now; Supabase-JWT-gated routes activate the
 moment ``SUPABASE_JWT_SECRET`` is set in the service environment. This wraps the
 existing build artifacts under /opt/macro — it does NOT recompute the engine.
 
+DEPLOY NOTE (2026-07-23, CMX W4): this docstring touch intentionally rides with
+the app/deploy/update.sh restart-trigger widening (brain_gateway/chart_perception/
+doctrine) — main.py matches the OLD trigger regex still running on the box, so
+this pull restarts macro-api and brings the already-merged W4 doctrine injection
+live; the widened regex takes over from the next cron tick.
+
 W8b PR2 — /api/ask and /api/ask/stream
 ---------------------------------------
 POST /api/ask          — authed (require_user); interrogate the Neural Web brain
