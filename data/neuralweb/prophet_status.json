@@ -1,6 +1,6 @@
 {
   "schema": "prophet.status/v1",
-  "as_of": "2026-07-22T03:49:46+00:00",
+  "as_of": "2026-07-23T03:44:49+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "markets": {
     "us": {
@@ -8,7 +8,12 @@
       "benchmark": "SPY",
       "fill_basis": "next_bar_close",
       "ledger_born": "2026-07-10",
-      "data_gaps": [],
+      "data_gaps": [
+        {
+          "field": "bottom_ledger",
+          "note": "site/factordata/us_bottom_ledger.json absent (Bottom Ledger P1 not yet emitted \u2014 expected after first nightly)"
+        }
+      ],
       "maturity_state": "accruing",
       "retro_grades": {
         "total_rows": 1592,
@@ -33,19 +38,19 @@
         "status": null
       },
       "audit_scoreboard": {
-        "as_of": "2026-07-22",
+        "as_of": "2026-07-23",
         "status": null,
         "n_matured": null,
         "win_rate": null
       },
       "fitness_card": {
-        "as_of": "2026-07-22",
+        "as_of": "2026-07-23",
         "hit_quality": null,
         "coverage_health": null,
         "process_integrity": null
       },
       "track_history": {
-        "as_of": "2026-07-21",
+        "as_of": "2026-07-22",
         "n_cohorts": null,
         "status": null
       },
@@ -70,7 +75,7 @@
         "process_integrity": null
       },
       "audit_scoreboard": {
-        "as_of": "2026-07-22",
+        "as_of": "2026-07-23",
         "status": null,
         "n_matured": null
       },
@@ -128,11 +133,11 @@
   },
   "cross_market": {
     "markets_covered": 5,
-    "markets_with_data_gaps": 0,
-    "total_data_gap_count": 0,
+    "markets_with_data_gaps": 1,
+    "total_data_gap_count": 1,
     "per_market_receipts": {
       "us": {
-        "data_gap_count": 0,
+        "data_gap_count": 1,
         "fill_basis": "next_bar_close",
         "maturity_state": "accruing",
         "benchmark": "SPY"
@@ -172,26 +177,26 @@
           "artifact": "us-audit-scoreboard",
           "path": "site/factordata/us_audit_scoreboard.json",
           "status": "ok",
-          "age_hours": 3.8,
+          "age_hours": 3.7,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-track-history",
           "path": "site/factordata/us_track_history.json",
           "status": "ok",
-          "age_hours": 27.8,
+          "age_hours": 27.7,
           "sla_hours": 48.0
         },
         {
           "artifact": "us-board-outcomes",
           "path": "site/factordata/us_board_outcomes.json",
-          "status": "ok",
-          "age_hours": 27.8,
+          "status": "stale",
+          "age_hours": 51.7,
           "sla_hours": 48
         }
       ],
-      "data_gap_count": 0,
-      "overall_health": "ok"
+      "data_gap_count": 1,
+      "overall_health": "degraded"
     },
     "cn": {
       "market": "cn",
@@ -199,13 +204,13 @@
         {
           "artifact": "site-china-standouts",
           "path": "data/metabolism/fitness/standouts_cn.json",
-          "status": "ok",
-          "age_hours": 27.8,
+          "status": "stale",
+          "age_hours": 51.7,
           "sla_hours": 30.0
         }
       ],
       "data_gap_count": 0,
-      "overall_health": "ok"
+      "overall_health": "degraded"
     },
     "hk": {
       "market": "hk",
@@ -214,7 +219,7 @@
           "artifact": "hk-board-ledger",
           "path": "data/board_ledger/hk_board.parquet",
           "status": "ok",
-          "age_hours": 17.3,
+          "age_hours": 37.3,
           "sla_hours": 48
         }
       ],
@@ -228,7 +233,7 @@
           "artifact": "ca-board-ledger",
           "path": "data/board_ledger/ca_board.parquet",
           "status": "ok",
-          "age_hours": 0.0,
+          "age_hours": 24.0,
           "sla_hours": 48
         }
       ],
@@ -242,7 +247,7 @@
           "artifact": "intl-setups",
           "path": "site/factordata/intl_setups.json",
           "status": "ok",
-          "age_hours": 0.0,
+          "age_hours": 4.8,
           "sla_hours": 48
         }
       ],
