@@ -1246,6 +1246,16 @@ try:
 except ImportError:
     pass  # app/hub.py not yet present — hub routes unavailable until lane B merges
 
+# ---------------------------------------------------------------------------
+# Research Vault serving tier (RV W2 — app/research.py)
+# /api/research/* : public catalog+search read-throughs + paid view/download gate.
+# Wrapped in try/except so this file stays green if research.py lands later.
+# ---------------------------------------------------------------------------
+try:
+    from app.research import router as research_router  # noqa: E402
+    app.include_router(research_router)
+except ImportError:
+    pass  # app/research.py not yet present — vault routes unavailable until RV W2
 
 # ---------------------------------------------------------------------------
 # Billing spine router (MNZ W2 — app/billing.py): /api/billing/checkout|webhook|portal.

@@ -1,0 +1,80 @@
+name: research-ingest
+# Hourly Research Vault ingestion (RV W1). Pulls new third-party research PDFs +
+# JSON sidecars from the PRIVATE R2 inbox (research_inbox/), extracts body text
+# (pdftotext), promotes each PDF into research_vault/, and publishes the public-safe
+# catalog.json + FTS corpus.sqlite back to R2. A snapshot of catalog.json is
+# committed to data/research_vault/catalog.json so the nightly render can SSR-bake
+# without R2 at render time.
+#
+# WHY macstudio-light: needs poppler `pdftotext` (already used by
+# collectors/hk_cbbc_sld.py) which lives on the self-hosted Macs, and this is a
+# ~hourly light job that must not queue behind the heavy nightly pool.
+#
+# The pipeline is idempotent + never-raise-per-item: a re-run ingests 0, and one
+# bad PDF/sidecar never aborts the batch (engine/research_vault/ingest.py).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"   # top of every hour — mirrors btc-live.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  # Only the latest ingest matters — cancel any in-flight run.
+  group: research-ingest
+  cancel-in-progress: true
+
+jobs:
+  ingest:
+    runs-on: [self-hosted, macstudio-light]   # light runner (needs poppler pdftotext)
+    timeout-minutes: 15
+    env:
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      # boto3 (R2 client) + pyyaml are already in requirements; pdftotext is a
+      # system binary (poppler), not a pip dep. No heavy pandas/scipy needed here.
+      - run: pip install --quiet boto3 pyyaml
+      - name: research vault ingest (hourly)
+        id: ingest
+        run: |
+          set +e
+          python -m scripts.ingest_research
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+      # Salvage-push the catalog snapshot regardless of the ingest step's rc
+      # (never-raise: the CLI exits 0 even on internal error). Commit ONLY the
+      # catalog snapshot — the PDFs + corpus.sqlite live in R2, never in git.
+      - name: commit catalog snapshot (salvage-push)
+        if: always()
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/research_vault/catalog.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no catalog change"; exit 0; fi
+          git commit -m "research_vault: catalog $(date -u +%FT%H:%MZ)"
+          for i in 1 2 3 4 5; do
+            # Untracked-collision sweep (mirrors commodity-sentinel.yml): a mid-run
+            # commit on origin/main can TRACK a path this job wrote as an untracked
+            # side-effect; drop the local throwaway so the rebase checkout succeeds.
+            git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            git pull --rebase --autostash -X theirs origin main && git push && exit 0
+            echo "push attempt $i failed; retrying"; sleep $((i*3))
+          done
+          echo "::warning::could not push research_vault catalog after 5 attempts (non-fatal)"
