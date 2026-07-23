@@ -240,17 +240,43 @@ def _build_narrative_by_ticker(narrative: dict) -> dict[str, dict]:
     return result
 
 
+def _as_list(val: object) -> list:
+    """Normalize an artifact field to a list of dicts.
+
+    Real hk_catalyst_calendar.json carries `upcoming` as a list of event dicts but
+    `imminent` as a SINGLE event dict (or absent).  Coerce dict → [dict], list → list,
+    anything else → [] so downstream iteration never hits `list + dict` or a scalar.
+    """
+    if isinstance(val, list):
+        return val
+    if isinstance(val, dict):
+        return [val]
+    return []
+
+
 def _build_catalyst_by_ticker(catalyst: dict) -> dict[str, dict]:
     """Extract {ticker: {catalyst_days_to}} from hk_catalyst_calendar.json.
 
-    Uses the nearest upcoming catalyst for each ticker (minimum days_to).
+    Uses the nearest upcoming catalyst for each ticker (minimum days).
+
+    Shape-robust: `upcoming` is a list, `imminent` may be a single dict (real
+    artifact) or a list; both are normalized.  Index-level events (MSCI reviews
+    etc.) carry no `ticker` and are correctly skipped.  Days are read from
+    `days_to` / `sessions_to` / `days_until` (first present) — the real artifact
+    uses `days_until`.
     """
     result: dict[str, dict] = {}
-    for item in (catalyst.get("upcoming") or []) + (catalyst.get("imminent") or []):
+    for item in _as_list(catalyst.get("upcoming")) + _as_list(catalyst.get("imminent")):
+        if not isinstance(item, dict):
+            continue
         ticker = item.get("ticker", "")
         if not ticker:
             continue
-        days = item.get("days_to") or item.get("sessions_to")
+        days = item.get("days_to")
+        if days is None:
+            days = item.get("sessions_to")
+        if days is None:
+            days = item.get("days_until")
         if days is None:
             continue
         try:
@@ -266,13 +292,18 @@ def _build_catalyst_by_ticker(catalyst: dict) -> dict[str, dict]:
 def _build_standouts_by_ticker(standouts: dict) -> dict[str, dict]:
     """Extract per-ticker SB accum_z, A/H percentile, SFC short quartile.
 
-    hk_standouts.json has buy/watch/laggard rows with the full ticker context.
-    We join across all cohorts.
+    hk_standouts.json has buy/watch/laggards rows with the full ticker context.
+    We join across those cohorts.  NOTE: the `cohort` key in the real artifact is
+    a regime-summary DICT (state/median_ext_z/... — no ticker rows), NOT a list of
+    names, so it is deliberately excluded here; iterating it would yield string
+    keys and crash on `.get()`.  The isinstance guard skips any stray non-dict row.
     """
     result: dict[str, dict] = {}
-    cohorts = ["buy", "watch", "laggards", "cohort"]
+    cohorts = ["buy", "watch", "laggards"]
     for cohort_key in cohorts:
         for item in (standouts.get(cohort_key) or []):
+            if not isinstance(item, dict):
+                continue
             ticker = item.get("ticker", "")
             if not ticker:
                 continue

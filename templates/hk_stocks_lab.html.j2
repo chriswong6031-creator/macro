@@ -372,11 +372,17 @@
       <p class="stale-cross-note">
         {{ t('The operator hypothesis: names that crossed 1D momentum and immediately ran (the blastoff cohort) should out-perform names that crossed 2D/3D but "based" for ≥5 sessions without running (|return since cross| < 3%). This side-by-side shows forward 21d HSI-excess for both cohorts from the same scoreboard data. Accruing — first read 2026-08-20.', '操作员假设：1日动量交叉后立即上涨（起飞群组）应优于2D/3D交叉后"盘整"≥5节未上涨（|交叉后回报|<3%）的个股。此对比显示两个群组的前向21日恒生超额（来自相同记分板数据）。累积中 — 首次读取2026-08-20。') }}
       </p>
-      {% if stale_cross %}
+      {# stale_cross is the runner's stale_cross_diagnostic: a LIST of cohort rows
+         (ticker/sessions_since_23d_cross/ret_since_23d_cross, graded at h=21 over
+         weeks).  The aggregated two-cohort {blastoff, stale_cross} summary with
+         n_fires/med_excess21 is a future shape; support it via .get when present,
+         otherwise render the accruing cohort count from the list. #}
+      {% set _sc_is_map = stale_cross is mapping %}
+      {% if _sc_is_map %}
       <div class="diag-grid">
         <div class="diag-col">
           <h4>⚡ {{ t('1D Blastoff cohort', '1日起飞群组') }} (hklab_1d_blastoff)</h4>
-          {% set _bl = stale_cross.get('blastoff') if stale_cross else none %}
+          {% set _bl = stale_cross.get('blastoff') %}
           {% if _bl %}
           <p style="font-size:12.5px;color:var(--muted);margin:0">
             {{ t('N fires', 'N触发') }}: <b>{{ _bl.get('n_fires', '—') }}</b> ·
@@ -388,7 +394,7 @@
         </div>
         <div class="diag-col">
           <h4>⏱ {{ t('Stale-cross cohort', '迟滞交叉群组') }} (2D/3D ≥5 sess, |ret|&lt;3%)</h4>
-          {% set _sc = stale_cross.get('stale_cross') if stale_cross else none %}
+          {% set _sc = stale_cross.get('stale_cross') %}
           {% if _sc %}
           <p style="font-size:12.5px;color:var(--muted);margin:0">
             {{ t('N fires', 'N触发') }}: <b>{{ _sc.get('n_fires', '—') }}</b> ·
@@ -399,8 +405,16 @@
           {% endif %}
         </div>
       </div>
+      {% elif stale_cross %}
+      <div class="diag-col">
+        <h4>⏱ {{ t('Stale-cross cohort', '迟滞交叉群组') }} (2D/3D ≥5 sess, |ret|&lt;3%)</h4>
+        <p style="font-size:12.5px;color:var(--muted);margin:0">
+          {{ t('Names tracked', '追踪个股') }}: <b>{{ stale_cross|length }}</b> ·
+          {{ t('Forward 21d HSI-excess accrues nightly — grades mature over ~4 weeks.', '前向21日恒生超额每夜累积 — 评级约4周成熟。') }}
+        </p>
+      </div>
       {% else %}
-      <p class="stale-cross-empty">{{ t('Diagnostic data not yet available — will populate after the first nightly run.', '诊断数据尚不可用 — 首次夜间运行后填充。') }}</p>
+      <p class="stale-cross-empty">{{ t('Diagnostic data accrues nightly — cohort grades mature over the coming weeks.', '诊断数据每夜累积 — 群组评级将在未来数周内成熟。') }}</p>
       {% endif %}
     </div>
     {% endif %}

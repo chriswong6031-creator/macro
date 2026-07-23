@@ -463,10 +463,19 @@ def _internals_vm(latest: dict) -> dict:
     vm: dict = {}
     sb = ci.southbound_flow()
     if sb:
+        # Store unit is ¥ MILLIONS; the page displays 亿 (¥100M), so scale by /100 ONCE
+        # here. (china.html.j2 divides in-template instead and never scales its chart —
+        # the HK page renders these values directly and feeds the scaled series to the
+        # chart chip, so both the card and the chip read the same 亿 magnitude.)
+        sb["net"] = round(sb["net"] / 100, 1)
+        sb["cum_20d"] = round(sb["cum_20d"] / 100, 1)
+        cc = sb.get("chart_cum")
+        if cc and cc.get("vals"):
+            cc["vals"] = [None if v is None else round(v / 100, 1) for v in cc["vals"]]
         sb["chart_html"] = _ilx(sb.get("chart_cum"), "var(--info)", kind="baseline",
                                 baseline=0, height=190, unit_en="亿", unit_zh="亿",
                                 value_fmt="{:+,.0f}",
-                                aria_en="Cumulative southbound net flow, 20-day")
+                                aria_en="Southbound 20-day rolling net flow, 2 years")
         if sb.get("hold_chart"):
             sb["hold_html"] = _ilx(sb["hold_chart"], "var(--up)", height=150,
                                    aria_en="Southbound holdings trend")
@@ -832,9 +841,21 @@ def _hk_track_record_vm() -> dict | None:
 
 
 def main() -> int:
-    # Run the freshness sentinel FIRST so the banner can be set before any data is read.
-    # Fail-open: sentinel crashes are caught inside run_sentinel; a degraded result still
-    # allows the page to render — it just shows a banner. Never blocks the build.
+    try:
+        from engine.hk_run import run
+        latest = run()
+    except Exception as e:  # noqa: BLE001 — never break the site build
+        log.error("hk engine failed (%s); skipping hk page", e)
+        return 0
+
+    # Run the freshness sentinel AFTER run() succeeds. run() refreshes
+    # data/hk_regime/latest.json for tonight; the sentinel's coherence check must read
+    # that just-written regime artifact, not yesterday's — running the sentinel first
+    # (the old order) compared tonight's fresh stock scan against a stale regime file
+    # and fired a false "stale" banner every night (see engine/hk_freshness.py revision
+    # 2026-07-23). If run() fails above, we return before rendering any page, so no
+    # sentinel/banner is needed. Fail-open: sentinel crashes are caught inside
+    # run_sentinel; a degraded result still renders the page with a banner, never blocks.
     freshness = None
     try:
         from engine.hk_freshness import run_sentinel as _hk_sentinel
@@ -843,13 +864,6 @@ def main() -> int:
                  freshness.get("verdict"), freshness.get("expected_session"))
     except Exception as e:  # noqa: BLE001 — sentinel must never block the build
         log.error("hk freshness sentinel import/call failed (%s); continuing without it", e)
-
-    try:
-        from engine.hk_run import run
-        latest = run()
-    except Exception as e:  # noqa: BLE001 — never break the site build
-        log.error("hk engine failed (%s); skipping hk page", e)
-        return 0
 
     try:
         sectors = _sector_cards(latest)
