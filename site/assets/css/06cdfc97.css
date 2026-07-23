@@ -141,6 +141,9 @@
   .help:hover .tip { display:block; }
   .stat-row { display:flex; flex-wrap:wrap; gap:18px; align-items:baseline; margin:2px 0 10px; }
   .stat-row .v { font-size:22px; font-weight:800; color:var(--text); }
+  /* .stat-row .v is more specific than the generic .pos/.neg — restate direction color
+     at higher specificity so flow/premium stats read green/red (and zh-flip via tokens) */
+  .stat-row .v.pos { color: var(--up); } .stat-row .v.neg { color: var(--down); }
   table.sortable th.th-sort { cursor: pointer; user-select: none; }
   table.sortable th.sorted { color: var(--text); }
   table.sortable th .sarrow { font-size: 9px; opacity: .32; margin-left: 3px; font-weight: 700; }
@@ -235,6 +238,14 @@
   .health-banner .hb-h { margin: 0 0 4px; font-weight: 800; color: var(--warn); text-transform: none; }
   .health-banner .hb-list { margin: 0; padding-left: 18px; }
   .health-banner .hb-item { font-size: 11.5px; line-height: 1.6; color: var(--fg); }
+  /* freshness sentinel — stale = loud red panel; degraded = one thin amber line */
+  .hk-fresh-stale { border: 1px solid color-mix(in srgb, var(--down) 50%, var(--line)); background: color-mix(in srgb, var(--down) 7%, var(--panel)); }
+  .hk-fresh-stale .hb-h { margin: 0 0 5px; font-weight: 800; color: var(--down); text-transform: none; }
+  .hk-fresh-stale .hb-msg { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--fg); }
+  .hk-fresh-stale .hb-exp { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+  .hk-fresh-degraded { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 8px; font-size: 12px; line-height: 1.4;
+    color: color-mix(in srgb, var(--warn) 85%, var(--fg)); border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--line)); background: color-mix(in srgb, var(--warn) 7%, var(--panel)); }
+  .hk-fresh-degraded .hfd-i { color: var(--warn); font-size: 13px; }
   .nbcard .nch { background: transparent; margin: 4px 0 2px; }
   .nb-bot { display: flex; align-items: center; gap: 6px; margin-top: 1px; }
   .nb-state { font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 1px 7px; border-radius: 8px; }
@@ -462,13 +473,7 @@
   .watch-grid .wg-plc-chip { margin-top: 3px; font-size: 9px; font-weight: 800; line-height: 1.25;
       color: var(--down); }
   /* Washout Watch strip — igniting · unconfirmed · high-risk */
-  .ww-strip { margin: 14px 0 2px; padding: 11px 13px; border-radius: 10px;
-      background: color-mix(in srgb, var(--down) 8%, var(--panel));
-      border: 1px solid color-mix(in srgb, var(--down) 30%, var(--line)); }
-  .ww-strip .ww-h { font-size: 12px; font-weight: 800;
-      color: color-mix(in srgb, var(--down) 80%, var(--text));
-      margin: 0 0 3px; text-transform: uppercase; letter-spacing: .04em; }
-  .ww-strip .ww-sub { font-size: 10.5px; color: var(--muted); margin: 0 0 8px; }
+  .ww-strip { margin: 8px 0 0; }
   .ww-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .ww-card { display: flex; flex-direction: column; gap: 3px; padding: 8px 11px; border-radius: 9px;
       min-width: 160px; max-width: 240px;
@@ -507,6 +512,20 @@
   .ww-hint { font-size: 9.5px; color: var(--muted); line-height: 1.3; margin-top: 2px; }
   .ww-meta { font-size: 9px; color: var(--muted); margin-top: 2px; }
   .ww-empty { font-size: 11.5px; color: var(--muted); padding: 6px 0; }
+  /* compact chip row for non-igniting watch names (Law-4: constant text moved to the footer) */
+  .ww-cold-wrap { margin-top: 10px; }
+  .ww-cold-h { font-size: 10.5px; font-weight: 700; color: var(--muted); margin: 0 0 6px;
+      text-transform: uppercase; letter-spacing: .04em; }
+  .ww-cold-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ww-cold-chip { display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 9px;
+      border-radius: 8px; text-decoration: none; color: var(--text);
+      background: color-mix(in srgb, var(--down) 6%, var(--panel));
+      border: 1px solid color-mix(in srgb, var(--down) 22%, var(--line)); transition: border-color .12s; }
+  .ww-cold-chip:hover { border-color: var(--link); }
+  .ww-cold-tk { font-weight: 800; font-size: 12px; }
+  .ww-cold-nm { font-size: 10px; color: var(--muted); }
+  .ww-cold-knife { font-size: 10px; }
+  .ww-foot { font-size: 11px; color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
   /* H5 peg-liquidity regime conditioner chip in the deskhero */
   .desk-liq { margin-top: 9px; display: flex; flex-direction: column; gap: 3px; padding: 8px 11px;
       border-radius: 9px; border: 1px solid var(--line); background: var(--panel); }
@@ -1117,19 +1136,19 @@
   #hk-command-panel .cp-tape .row a.tk:hover{text-decoration:underline}
   @media (max-width:640px){ #hk-command-panel .cp-watch{grid-template-columns:1fr} #hk-command-panel .cp-meters{margin-left:0;width:100%} }
   /* ===== combined Southbound & A/H section (flow + cross-listing value, each with a read) ===== */
-  #sb-ah-combined .sbah-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:11px;margin:6px 0 10px}
-  #sb-ah-combined .sbah-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
-  #sb-ah-combined .sbah-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
-  #sb-ah-combined .sbah-t{font-size:12.5px;font-weight:800}
-  #sb-ah-combined .sbah-sig{font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;white-space:nowrap;
+  #mainland-money .sbah-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:11px;margin:6px 0 10px}
+  #mainland-money .sbah-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  #mainland-money .sbah-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+  #mainland-money .sbah-t{font-size:12.5px;font-weight:800}
+  #mainland-money .sbah-sig{font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;white-space:nowrap;
     border:1px solid var(--c,var(--muted));color:var(--c,var(--muted));background:color-mix(in srgb,var(--c,var(--muted)) 13%,transparent)}
-  #sb-ah-combined .sig-in{--c:var(--up)}
-  #sb-ah-combined .sig-out{--c:var(--down)}
-  #sb-ah-combined .sig-neu{--c:var(--muted)}
-  #sb-ah-combined .sbah-read{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45}
-  #sb-ah-combined .sbah-pairs{margin-top:9px;width:100%;font-size:11px;border-collapse:collapse}
-  #sb-ah-combined .sbah-pairs td{padding:2px 0;border-bottom:1px solid var(--line)}
-  #sb-ah-combined .sbah-pairs td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  #mainland-money .sig-in{--c:var(--up)}
+  #mainland-money .sig-out{--c:var(--down)}
+  #mainland-money .sig-neu{--c:var(--muted)}
+  #mainland-money .sbah-read{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45}
+  #mainland-money .sbah-pairs{margin-top:9px;width:100%;font-size:11px;border-collapse:collapse}
+  #mainland-money .sbah-pairs td{padding:2px 0;border-bottom:1px solid var(--line)}
+  #mainland-money .sbah-pairs td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 
   /* ── W8-G: Standout table view (HK port of W8-E/W8-R6) ──────────────────── */
   .st-view-toggle { display:inline-flex; gap:3px; padding:3px; border-radius:8px;
