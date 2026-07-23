@@ -21,3 +21,9 @@ maxminddb>=1.4
 # gracefully unavailable rather than crashing the API process).
 pandas>=2.2
 pyarrow>=16
+# Research Vault download watermark (RV W2): stamp a per-user footer on downloaded
+# PDFs. SOFT deps — engine/research_vault/watermark.py imports them lazily and
+# degrades to the un-watermarked original bytes if either is absent (a failed
+# stamp must never block a paid download).
+pypdf>=4.0
+reportlab>=4.0
