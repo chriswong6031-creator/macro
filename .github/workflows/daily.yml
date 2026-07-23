@@ -2788,6 +2788,9 @@ jobs:
           # (config copywriter.llm.enabled AND this env var); any LLM failure or
           # per-post validation failure falls back to the deterministic templates.
           MARKETING_LLM_ENABLED: "1"
+          # Emits the current D1 content-plan items into the outbox queue
+          # (status=queued). Posting stays gated by approval + MARKETING_PUBLISH_ENABLED.
+          MARKETING_OUTBOX_ENABLED: "1"
         run: |
           set +e
           python -m scripts.build_marketing; rc=$?
@@ -2815,6 +2818,7 @@ jobs:
           git add data/marketing/radar_report.json 2>/dev/null || true
           git add data/marketing/opportunities.jsonl 2>/dev/null || true
           git add data/marketing/radar_plan_history.json 2>/dev/null || true
+          git add data/marketing/outbox 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)
