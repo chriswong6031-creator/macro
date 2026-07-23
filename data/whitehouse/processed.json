@@ -341,6 +341,18 @@
       "at": "2026-07-22T20:22:04.411274+00:00",
       "activated": true,
       "importance": 75
+    },
+    "https://www.whitehouse.gov/?p=45918": {
+      "id": "wh-2026-07-23-actions-by-the-united-states-in-the-investigations-under-section-301-of-the-trad",
+      "at": "2026-07-23T23:11:51.963868+00:00",
+      "activated": true,
+      "importance": 78
+    },
+    "https://www.whitehouse.gov/?p=45910": {
+      "id": "wh-2026-07-23-president-trumps-ratepayer-protection-pledge-secures-american-ai-dominance-prote",
+      "at": "2026-07-23T23:12:01.963633+00:00",
+      "activated": false,
+      "importance": 45
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

@@ -1,10 +1,23 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-23T21:21:02.084889+00:00",
-  "posts_seen": 20,
-  "seen_total": 57,
-  "evaluated": 0,
-  "activated": 0,
+  "as_of": "2026-07-23T23:12:01.965211+00:00",
+  "posts_seen": 22,
+  "seen_total": 59,
+  "evaluated": 2,
+  "activated": 1,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-23-actions-by-the-united-states-in-the-investigations-under-section-301-of-the-trad",
+      "importance": 78,
+      "activated": true,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-07-23-president-trumps-ratepayer-protection-pledge-secures-american-ai-dominance-prote",
+      "importance": 45,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
