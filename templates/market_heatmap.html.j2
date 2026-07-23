@@ -71,7 +71,7 @@
   <div class="hm-head">
     <div>
       <h1>{{ mk.icon }} {{ t(mk.h1_en, mk.h1_zh) }}</h1>
-      <div class="sub">{{ t(mk.sub_en, mk.sub_zh) }}</div>
+      <div class="sub">{{ t('Winners and losers at a glance — every name a tile, shaded by the move you pick.', '涨跌一目了然 —— 每只个股一个方块，按所选周期着色。') }}<span class="hx-help" tabindex="0" aria-label="How to read this">?<span class="hx-tip">{{ t(mk.sub_en, mk.sub_zh) }}</span></span></div>
     </div>
     {# live.js populates [data-live-label] with the honest feed caption
        (e.g. "≈15-min delayed (Polygon Standard / Yahoo)") when a live feed
@@ -82,7 +82,7 @@
   <div id="heatmap-full" data-hm-maps='[{"key":"{{ mk.key }}","icon":"{{ mk.icon }}","label_en":"{{ mk.label_en }}","label_zh":"{{ mk.label_zh }}","url":"{{ mk.json }}"}]'></div>
 
   <div class="hm-foot">
-    {{ t(mk.foot_en, mk.foot_zh) }}
+    {{ t('Green = up, red = down (inverted in 中文). Our market read is research context — never a buy signal.', '绿涨红跌（中文按亚洲习惯反转）。市场研判仅供研究参考，绝非买入信号。') }}<span class="hx-help" tabindex="0" aria-label="Details">?<span class="hx-tip">{{ t(mk.foot_en, mk.foot_zh) }}</span></span>
   </div>
 </div>
 
