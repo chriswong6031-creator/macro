@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-23T03:50:00.285267+00:00",
+  "produced_at": "2026-07-23T20:40:41.881802+00:00",
   "as_of": "2026-07-21",
   "status": "warn",
   "phase": "final",
@@ -410,13 +410,13 @@
   },
   "china_market_state": {
     "available": true,
-    "as_of": "2026-07-21",
+    "as_of": "2026-07-23",
     "phase": "POLICY_PUT",
     "phase_confidence": 0.75,
     "who_controls": "mixed",
     "policy_impulse": "targeted_support",
     "top_contradiction": null,
-    "data_gaps_count": 3,
+    "data_gaps_count": 2,
     "display_only": true
   },
   "thematic_line": {
