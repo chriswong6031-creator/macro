@@ -1,0 +1,861 @@
+"""engine.marketing.publish_time_content — publish-time mover/theme generation.
+
+`mover` ("Mover of the Day") and `theme_list` ("Theme Tape") posts are the one
+family the NIGHTLY content plan deliberately generates but never emits: a "+7%
+today" claim written at 23:45 ET is stale by the next morning's opening bell.
+This module builds the HONEST version — it runs INSIDE the publisher's slot runs
+(10:00 / 13:30 / 16:15 ET on the ubuntu publish workflow), reads the freshest
+tape available in that checkout, renders copy from the SAME v3 template banks the
+nightly desk uses, enqueues text-only items via the outbox, and hands them to the
+existing post-time tape gate (engine/marketing/live_verify.py) which re-verifies
+the exact number the copy claims before it may post.
+
+Import constraint (the ubuntu publish workflow installs ONLY pyyaml+pandas+
+pyarrow): every top-level import here is stdlib or an engine.marketing module
+that is itself stdlib-only (movers_source, copywriter, outbox, sentinel,
+live_verify). pandas / chart_render / logo_cache are NEVER imported at module
+top level. Items are text-only (no media → they never touch the media cap).
+
+Public API (a single orchestrator the publisher calls):
+    generate_slot_items(root, *, cfg, now, state, approved_due, posted_counts,
+                        cap, live, account_filter=None) -> dict
+
+Fail-soft law: the whole body is wrapped in try/except → a broken generation
+NEVER raises into the legacy publisher flow; it logs a warning and returns a
+report with the error noted. In dry-run (live=False) it writes NOTHING and
+collects candidates into "would_generate".
+
+Display-tier ops (no signal authority, no forward-ledger writes): this only
+describes what already moved on the tape.
+"""
+from __future__ import annotations
+
+import logging
+import re
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from engine.marketing import copywriter, live_verify, movers_source, outbox, sentinel
+
+log = logging.getLogger(__name__)
+
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}\b")
+
+# In-code defaults for the publish.publish_time_movers config block. CONSERVATIVE
+# by design: `enabled` is False when the block is absent, so old configs and the
+# test-suite fixtures that carry no block are unaffected (generation disabled).
+_DEFAULTS: dict[str, Any] = {
+    "enabled": False,
+    "max_per_run": 2,           # network-wide new items per slot run
+    "min_abs_mover_pct": 3.0,   # floor for a single-name move claim
+    "min_abs_theme_pct": 1.0,   # floor for a theme-average claim
+    "max_quote_age_min": 45,    # generation freshness gate (mirrors live_gate)
+    "min_active_tiles": 25,     # flat-tape belt: skip when the board isn't moving
+}
+
+# A tile counts as "active" for the flat-tape belt when its overlaid 1D move is
+# at least this large. Heuristic, not a sentinel cap: a normal RTH session has
+# hundreds of S&P names past ±0.5%; a closed market (holiday whose feeds still
+# tick) or a stale/static splice has almost none — that is the failure the belt
+# catches, because _tape_stale can be anchored fresh by a non-equity quote (BTC
+# in the display feed) while every equity pct rides yesterday's board.
+_ACTIVE_TILE_MIN_ABS = 0.5
+
+_PROVENANCE = "publisher_live_movers"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Config
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _pt_cfg(cfg: dict | None) -> dict[str, Any]:
+    """Resolve publish.publish_time_movers over the in-code defaults (fail-soft)."""
+    out = dict(_DEFAULTS)
+    try:
+        block = ((cfg or {}).get("publish") or {}).get("publish_time_movers") or {}
+        for k, dv in _DEFAULTS.items():
+            if k in block:
+                if isinstance(dv, bool):
+                    v = block[k]
+                    out[k] = v if isinstance(v, bool) else (
+                        str(v).strip().lower() in {"1", "true", "yes"})
+                else:
+                    out[k] = type(dv)(block[k])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_time_content: bad publish.publish_time_movers config "
+                    "(%s) — using defaults", exc)
+    return out
+
+
+def _sentinel_knob(cfg: dict | None, key: str, default: Any) -> Any:
+    """Read a sentinel: knob from cfg, matching sentinel's in-code fallback."""
+    try:
+        block = (cfg or {}).get("sentinel") or {}
+        if key in block and block[key] is not None:
+            return type(default)(block[key])
+    except Exception:  # noqa: BLE001
+        pass
+    return default
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Slot / gating helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _slot_label(now: datetime) -> str | None:
+    """Map now (UTC) to a slot label, or None outside the posting window.
+
+    Window: 13:30 <= now UTC < 22:00 (the AM/PM/EOD posting slots run in RTH).
+      [13:30, 16:30) -> "AM"   (10:00 ET slot)
+      [16:30, 19:30) -> "PM"   (13:30 ET slot)
+      [19:30, 22:00) -> "EOD"  (16:15 ET slot)
+    """
+    minutes = now.hour * 60 + now.minute
+    if minutes < (13 * 60 + 30) or minutes >= (22 * 60):
+        return None
+    if minutes < (16 * 60 + 30):
+        return "AM"
+    if minutes < (19 * 60 + 30):
+        return "PM"
+    return "EOD"
+
+
+def _slot_index(slot: str) -> int:
+    return {"AM": 0, "PM": 1, "EOD": 2}.get(slot, 0)
+
+
+def _iso_now(now: datetime) -> str:
+    return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _empty_report(slot: str | None, *, enabled: bool, quote_source: str = "none",
+                  drop: list[dict] | None = None) -> dict:
+    return {
+        "enabled": enabled,
+        "generated": [],
+        "would_generate": [],
+        "dropped": drop or [],
+        "quote_source": quote_source,
+        "slot": slot or "",
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Tape freshness + live overlay
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tape_stale(tape: dict, movers_data: dict | None, now: datetime,
+                max_age_min: float) -> bool:
+    """True when the freshest tape is older than the generation freshness gate.
+
+    Precedence: if the tape carries per-ticker ts/asof (snapshot/display), use
+    live_verify._quote_age_min semantics over the freshest ticker. When the tape
+    is heatmap-only (no ts, no asof), fall back to the movers heatmap's own asof.
+    """
+    quotes = (tape or {}).get("quotes") or {}
+    asof = (tape or {}).get("asof")
+    ages: list[float] = []
+    for q in quotes.values():
+        age = live_verify._quote_age_min(q, asof, now)
+        if age is not None:
+            ages.append(age)
+    if ages:
+        return min(ages) > max_age_min
+    # Heatmap-only source: no per-ticker ts and no snapshot asof — age the tiles
+    # by the sp500 heatmap asof field (movers_source.load_movers surfaces it).
+    heat_asof = (movers_data or {}).get("asof")
+    if heat_asof:
+        age = live_verify._quote_age_min({}, str(heat_asof), now)
+        if age is not None:
+            return age > max_age_min
+    # Nothing datable → treat as stale (fail closed: never claim a move we cannot
+    # anchor to a fresh timestamp).
+    return True
+
+
+def _live_pct(tape_quotes: dict, ticker: str) -> float | None:
+    """The live change_pct for a ticker if the tape has a numeric one, else None."""
+    q = tape_quotes.get(str(ticker).upper())
+    if not q:
+        return None
+    return live_verify._f(q.get("change_pct"))
+
+
+def _overlay_movers(movers_data: dict, tape: dict) -> dict:
+    """Return a COPY of the movers data with live tape pcts overlaid.
+
+    For every sp500 tile and every theme member, if the tape has that ticker with
+    a numeric change_pct, replace perf["1D"] with the live change_pct. When the
+    tape source includes "snapshot" or "display" (a real quote feed), DROP tiles
+    and members that lack a live quote — the heatmap's own 1D is stale next to a
+    live feed. When the tape is heatmap-only, the tiles ARE the freshest source,
+    so keep them all. Never mutates the loaded dicts in place.
+    """
+    tape_quotes = (tape or {}).get("quotes") or {}
+    src = str((tape or {}).get("source") or "")
+    has_feed = ("snapshot" in src) or ("display" in src)
+
+    out: dict[str, Any] = {"asof": (movers_data or {}).get("asof")}
+
+    new_sp500: list[dict] = []
+    for tile in (movers_data or {}).get("sp500_tiles") or []:
+        if not isinstance(tile, dict):
+            continue
+        tkr = tile.get("t", "")
+        lp = _live_pct(tape_quotes, tkr) if tkr else None
+        if lp is None:
+            if has_feed:
+                continue  # a live feed exists but not for this name → stale, drop
+            new_sp500.append(dict(tile))  # heatmap-only: keep the tile as-is
+            continue
+        new_tile = dict(tile)
+        new_perf = dict(new_tile.get("perf") or {})
+        new_perf["1D"] = lp
+        new_tile["perf"] = new_perf
+        new_sp500.append(new_tile)
+    out["sp500_tiles"] = new_sp500
+
+    new_theme: list[dict] = []
+    for tile in (movers_data or {}).get("theme_tiles") or []:
+        if not isinstance(tile, dict):
+            continue
+        new_tile = dict(tile)
+        new_members: list[dict] = []
+        for m in tile.get("members") or []:
+            if not isinstance(m, dict):
+                continue
+            tkr = m.get("t", "")
+            lp = _live_pct(tape_quotes, tkr) if tkr else None
+            if lp is None:
+                if has_feed:
+                    continue
+                new_members.append(dict(m))
+                continue
+            nm = dict(m)
+            nm_perf = dict(nm.get("perf") or {})
+            nm_perf["1D"] = lp
+            nm["perf"] = nm_perf
+            new_members.append(nm)
+        new_tile["members"] = new_members
+        new_theme.append(new_tile)
+    out["theme_tiles"] = new_theme
+
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Candidate generation (mirrors content_studio nightly wiring)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _radar_tier_map(root: Path, cfg: dict | None) -> dict | None:
+    """The radar tier map, only when settings.radar_tiers_enabled is true.
+
+    radar_internal is loaded lazily (kept off the module top-level import set so a
+    missing optional dep never breaks the publisher). Fail-soft: absent → None.
+    """
+    try:
+        if not (cfg or {}).get("settings", {}).get("radar_tiers_enabled"):
+            return None
+        from engine.marketing.radar_internal import load_cashtag_tiers as _lct  # noqa: PLC0415
+        tiers = _lct(root)
+        if tiers:
+            return {t: v["tier"] for t, v in (tiers.get("tickers") or {}).items()}
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
+def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict) -> list[dict]:
+    """Build interleaved [theme1, mover1, theme2, mover2, ...] candidates.
+
+    Replicates the nightly wiring (content_studio.py ~1126-1239): cashtag_tiers
+    via movers_source._load_cashtag_tiers; the radar tier_map only under
+    settings.radar_tiers_enabled; min_abs from the publish config. Movers are
+    ranked by abs(pct) desc over losers+gainers (nightly convention — losers
+    listed first so they win ties). Themes and movers interleave THEME-first.
+    Each candidate is a movers-desk-shaped item dict (no copy yet).
+    """
+    tier_map = _radar_tier_map(root, cfg)
+    cashtag_tiers: dict | None = None
+    try:
+        ct = movers_source._load_cashtag_tiers(root)
+        if ct:
+            cashtag_tiers = ct
+    except Exception:  # noqa: BLE001
+        cashtag_tiers = None
+
+    mv_result = movers_source.top_movers(
+        overlaid, min_abs=float(pt["min_abs_mover_pct"]), tier_map=tier_map)
+    tl_result = movers_source.theme_lists(
+        overlaid, min_abs_theme=float(pt["min_abs_theme_pct"]),
+        cashtag_tiers=cashtag_tiers)
+
+    # Rank movers by |pct| desc; losers first so they win ties (nightly convention).
+    all_movers = list(mv_result.get("losers") or []) + list(mv_result.get("gainers") or [])
+    all_movers.sort(key=lambda x: abs(x.get("pct", 0)), reverse=True)
+
+    mover_items: list[dict] = []
+    used_mover_tickers: set[str] = set()
+    for mv in all_movers:
+        tkr = mv.get("ticker", "")
+        if not tkr or tkr in used_mover_tickers:
+            continue
+        used_mover_tickers.add(tkr)
+        mover_items.append({
+            "type": "mover",
+            "ticker": tkr,
+            "cashtag": f"${tkr}",
+            "_mover_data": mv,
+            "_mover_facts": movers_source.mover_facts(mv),
+        })
+
+    theme_items: list[dict] = []
+    for tl in tl_result:
+        members = tl.get("members") or []
+        if not members:
+            continue
+        lead = members[0]
+        theme_items.append({
+            "type": "theme_list",
+            "ticker": "",
+            "cashtags": [f"${m['ticker']}" for m in members[:10]],
+            "_theme_data": tl,
+            "_theme_facts": movers_source.theme_facts(tl),
+            "_lead_ticker": lead.get("ticker", ""),
+            "_lead_pct": lead.get("pct"),
+            "_theme_name": tl.get("theme", ""),
+            "_agg_pct": tl.get("agg_pct"),
+        })
+
+    # Interleave THEME-first: [theme1, mover1, theme2, mover2, ...].
+    interleaved: list[dict] = []
+    for i in range(max(len(theme_items), len(mover_items))):
+        if i < len(theme_items):
+            interleaved.append(theme_items[i])
+        if i < len(mover_items):
+            interleaved.append(mover_items[i])
+    return interleaved
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Copy (reuse-only — v3 banks via copywriter)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _persona_for(cfg: dict, account: str, voice: str) -> dict:
+    """Resolve the persona card the same way content_studio does: by account id,
+    then by voice, from cfg copywriter.personas."""
+    personas = (cfg or {}).get("copywriter", {}).get("personas", {}) or {}
+    return personas.get(account) or personas.get(voice) or {}
+
+
+def _render_copy(candidate: dict, *, account: str, voice: str, persona: dict,
+                 slot: str) -> tuple[str, str, list[str]]:
+    """Render (text, headline, violations) for a candidate via the v3 banks.
+
+    Builds a movers-desk item dict exactly like content_studio's nightly ones,
+    builds the writer context via copywriter.build_context (facts drive the
+    number whitelist), stamps type/voice/slot on the context (LIVE-<slot> so the
+    hash key — and thus the chosen template variant — varies across slots for the
+    same ticker), and renders with write_posts_deterministic. NEVER calls
+    write_posts_llm (no network / model at post time). Post text is the
+    emit_from_content_plan convention: headline + "\n\n" + body.
+    """
+    if candidate["type"] == "mover":
+        item = {
+            "type": "mover",
+            "account": account,
+            "ticker": candidate["ticker"],
+            "cashtag": candidate["cashtag"],
+            "_mover_data": candidate["_mover_data"],
+            "_mover_facts": candidate["_mover_facts"],
+        }
+        facts = candidate["_mover_facts"]
+    else:
+        item = {
+            "type": "theme_list",
+            "account": account,
+            "ticker": "",
+            "cashtags": candidate["cashtags"],
+            "_theme_data": candidate["_theme_data"],
+            "_theme_facts": candidate["_theme_facts"],
+        }
+        facts = candidate["_theme_facts"]
+
+    ctx = copywriter.build_context(item, persona=persona or None, facts=facts)
+    ctx["type"] = item["type"]
+    ctx["voice"] = voice
+    ctx["slot"] = f"LIVE-{slot}"
+    # Text-only lane: exclude template variants that claim an attached chart
+    # ("Chart below", "levels are on the chart") — see copywriter._variant_allowed.
+    ctx["has_chart"] = False
+    if item["type"] == "theme_list":
+        # Selection identity only (theme_list skips the ticker-cashtag copy law):
+        # a theme item carries ticker "" and a single-context render would always
+        # rotate to variant 0. Hashing on the lead member + account + LIVE-slot
+        # restores cross-slot/day variety exactly like ticker posts get.
+        ctx["ticker"] = candidate.get("_lead_ticker", "")
+
+    posts = copywriter.write_posts_deterministic([ctx])
+    post = posts[0] if posts else {"headline": "", "body": "", "violations": ["empty render"]}
+    headline = post.get("headline", "") or ""
+    body = post.get("body", "") or ""
+    text = f"{headline}\n\n{body}" if headline and body else (headline or body)
+    return text, headline, list(post.get("violations") or [])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ledger-derived today-state (posts-today + existing-today dedupe corpus)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _folded_status(state: dict, iid: str) -> str:
+    return (state.get("status") or {}).get(iid, "queued")
+
+
+def _posted_today_by_account(state: dict, today: str) -> dict[str, int]:
+    """Ledger-based posts-today per account.
+
+    Nightly items carry the GENERATION day's as_of (yesterday), so as_of counting
+    undercounts. Count instead by the last ledger row's `at` date: an item whose
+    folded status is posted/posting AND whose last transition happened today.
+    """
+    items = state.get("items") or {}
+    last = state.get("last") or {}
+    out: dict[str, int] = {}
+    for iid, it in items.items():
+        st = _folded_status(state, iid)
+        if st not in {"posted", "posting"}:
+            continue
+        at = str((last.get(iid) or {}).get("at") or "")
+        if at[:10] == today:
+            acct = it.get("account", "")
+            out[acct] = out.get(acct, 0) + 1
+    return out
+
+
+def _existing_today_items(state: dict, today: str) -> list[dict]:
+    """Every item that belongs to 'today' — as_of==today OR created_at date==today.
+
+    This is the corpus for per-day dedupe (mover ticker / theme name) and the
+    near-dup gate (jaccard vs any existing today text), across all accounts and
+    all statuses.
+    """
+    items = state.get("items") or {}
+    out: list[dict] = []
+    for it in items.values():
+        as_of = str(it.get("as_of") or "")
+        created = str(it.get("created_at") or "")
+        if as_of == today or created[:10] == today:
+            out.append(it)
+    return out
+
+
+def _live_queued_pt_today(state: dict, today: str) -> list[dict]:
+    """This-lane items already queued today (kind mover/theme_list, provenance
+    publisher_live_movers, created today). They may still auto-approve this run,
+    so they count toward posts-today and the per-account one-per-run law."""
+    out: list[dict] = []
+    for it in (state.get("items") or {}).values():
+        if it.get("provenance") != _PROVENANCE:
+            continue
+        if it.get("kind") not in {"mover", "theme_list"}:
+            continue
+        if str(it.get("created_at") or "")[:10] == today:
+            out.append(it)
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Orchestrator
+# ─────────────────────────────────────────────────────────────────────────────
+
+def generate_slot_items(
+    root: Path | str,
+    *,
+    cfg: dict,
+    now: datetime,
+    state: dict,
+    approved_due: list[dict],
+    posted_counts: dict[str, int] | None = None,
+    cap: int,
+    live: bool,
+    account_filter: str | None = None,
+) -> dict:
+    """Generate publish-time mover/theme items for the current slot run.
+
+    Returns a report dict {enabled, generated:[ids], would_generate:[...],
+    dropped:[{reason, detail}], quote_source, slot}. NEVER raises — the whole
+    body is fail-soft; on error it logs a warning and returns a report with the
+    error noted. In dry-run (live=False) it writes NOTHING and fills
+    would_generate; enqueues only when live is True.
+
+    `posted_counts` is accepted for API completeness (the publisher passes its
+    as_of-based tally) but the cap decision uses the LEDGER-based posts-today this
+    module computes from `state` — as_of counting undercounts nightly items that
+    carry yesterday's as_of.
+    """
+    slot: str | None = None
+    try:
+        r = Path(root)
+        pt = _pt_cfg(cfg)
+
+        if not pt["enabled"]:
+            return _empty_report(None, enabled=False,
+                                 drop=[{"reason": "disabled",
+                                        "detail": "publish.publish_time_movers.enabled is false"}])
+
+        # ── Gate 1: weekday + posting window ────────────────────────────────
+        if now.weekday() >= 5:  # Sat/Sun
+            return _empty_report(None, enabled=True,
+                                 drop=[{"reason": "not_weekday", "detail": now.strftime("%A")}])
+        slot = _slot_label(now)
+        if slot is None:
+            return _empty_report(None, enabled=True,
+                                 drop=[{"reason": "outside_window",
+                                        "detail": f"{now.strftime('%H:%M')}Z not in [13:30,22:00)"}])
+
+        dropped: list[dict] = []
+
+        # ── Load tape + heatmap ─────────────────────────────────────────────
+        tape = live_verify.load_live_quotes(r)
+        quote_source = str(tape.get("source") or "none")
+        movers_data = movers_source.load_movers(r)
+        if not movers_data:
+            return _empty_report(slot, enabled=True, quote_source=quote_source,
+                                 drop=[{"reason": "no_heatmap",
+                                        "detail": "movers_source.load_movers returned None"}])
+
+        # ── Gate 2: generation freshness ────────────────────────────────────
+        if _tape_stale(tape, movers_data, now, float(pt["max_quote_age_min"])):
+            return _empty_report(slot, enabled=True, quote_source=quote_source,
+                                 drop=[{"reason": "tape stale",
+                                        "detail": f"freshest tape older than "
+                                                  f"{pt['max_quote_age_min']}m ({quote_source})"}])
+
+        # ── Live overlay + candidates ───────────────────────────────────────
+        overlaid = _overlay_movers(movers_data, tape)
+
+        # ── Gate 3: flat-tape belt ──────────────────────────────────────────
+        # The market must actually be MOVING before we claim anything did: a
+        # holiday (weekday, crypto still ticking → _tape_stale passes) or a
+        # static delayed splice leaves ~every name near 0%. Counted over the
+        # union of everything generation draws from — S&P tiles AND theme
+        # members (deduped by ticker) — so a theme-only universe is measured
+        # by its members, not an absent index board. Fail closed.
+        _active_seen: dict[str, float] = {}
+        for t in overlaid.get("sp500_tiles") or []:
+            tkr = str(t.get("t") or "")
+            if tkr:
+                _active_seen[tkr] = live_verify._f((t.get("perf") or {}).get("1D")) or 0.0
+        for tt in overlaid.get("theme_tiles") or []:
+            for m in tt.get("members") or []:
+                tkr = str(m.get("t") or "")
+                if tkr and tkr not in _active_seen:
+                    _active_seen[tkr] = live_verify._f((m.get("perf") or {}).get("1D")) or 0.0
+        active_tiles = sum(1 for v in _active_seen.values()
+                           if abs(v) >= _ACTIVE_TILE_MIN_ABS)
+        if active_tiles < int(pt["min_active_tiles"]):
+            return _empty_report(slot, enabled=True, quote_source=quote_source,
+                                 drop=[{"reason": "tape_flat",
+                                        "detail": f"only {active_tiles} tiles moved "
+                                                  f"≥{_ACTIVE_TILE_MIN_ABS}% (min "
+                                                  f"{pt['min_active_tiles']}; closed market?)"}])
+
+        candidates = _build_candidates(overlaid, r, cfg or {}, pt)
+        if not candidates:
+            return _empty_report(slot, enabled=True, quote_source=quote_source,
+                                 drop=[{"reason": "no_candidates",
+                                        "detail": "no mover/theme cleared the min_abs floors"}])
+
+        # ── Today-state (ledger-based) ──────────────────────────────────────
+        today = now.strftime("%Y-%m-%d")
+        posted_today = _posted_today_by_account(state, today)
+        for it in _live_queued_pt_today(state, today):
+            acct = it.get("account", "")
+            posted_today[acct] = posted_today.get(acct, 0) + 1
+        # This run's already-selected approved_due items also consume a slot.
+        for it in (approved_due or []):
+            acct = it.get("account", "")
+            posted_today[acct] = posted_today.get(acct, 0) + 1
+
+        existing_today = _existing_today_items(state, today)
+        # Accounts that already have an approved_due item this run (spacing law:
+        # one post per account per slot run).
+        due_accounts = {it.get("account", "") for it in (approved_due or [])}
+        # Accounts with a live-lane item already queued today (one per run).
+        for it in _live_queued_pt_today(state, today):
+            due_accounts.add(it.get("account", ""))
+
+        # ── Eligible accounts (deterministic, config order) ─────────────────
+        accounts = (cfg or {}).get("desk_network", {}).get("accounts", []) or []
+        pub_channels = ((cfg or {}).get("publish") or {}).get("channels") or {}
+        eligible: list[str] = []
+        for acc in accounts:
+            aid = str(acc.get("id", "") or "")
+            if not aid:
+                continue
+            if acc.get("disabled"):
+                continue
+            if not str(pub_channels.get(aid, "") or "").strip():
+                continue  # no channel id → the item could never post
+            if account_filter is not None and aid != account_filter:
+                continue
+            eligible.append(aid)
+        if not eligible:
+            return _empty_report(slot, enabled=True, quote_source=quote_source,
+                                 drop=[{"reason": "no_eligible_accounts",
+                                        "detail": "no account has a publish channel id (or filter mismatch)"}])
+
+        voice_by_id = {str(a.get("id", "")): a.get("voice", "authoritative desk")
+                       for a in accounts}
+
+        # Rotate the starting account so the same desk doesn't always lead.
+        start = (now.timetuple().tm_yday + _slot_index(slot)) % len(eligible)
+        rotated = eligible[start:] + eligible[:start]
+
+        # Sentinel knobs (read from cfg with sentinel in-code fallbacks — never
+        # hardcode a cap constant here).
+        near_dup_thresh = float(_sentinel_knob(cfg, "near_dup_jaccard",
+                                               sentinel._DEFAULT_NEAR_DUP_JACCARD))
+        max_cashtags = int(_sentinel_knob(cfg, "max_cashtags_per_post",
+                                          sentinel._DEFAULT_MAX_CASHTAGS_PER_POST))
+        max_same_cashtag = int(_sentinel_knob(cfg, "max_same_cashtag_per_account_per_day",
+                                              sentinel._DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY))
+
+        max_per_run = int(pt["max_per_run"])
+
+        # Pre-compute today token sets for the near-dup gate.
+        existing_token_sets = [sentinel._token_set(_item_full_text(it)) for it in existing_today]
+
+        generated: list[str] = []
+        would_generate: list[dict] = []
+        accepted_texts: list[frozenset[str]] = []
+        assigned_accounts: set[str] = set()
+        acct_cursor = 0
+
+        for cand in candidates:
+            if (len(generated) + len(would_generate)) >= max_per_run:
+                break
+            if assigned_accounts >= set(rotated):
+                # Every postable account already took an item this run — no
+                # later candidate can land. One summary row, not one per drop.
+                dropped.append({"reason": "accounts_exhausted",
+                                "detail": f"all {len(assigned_accounts)} eligible "
+                                          f"account(s) assigned this run"})
+                break
+
+            lead_ticker = (cand["ticker"] if cand["type"] == "mover"
+                           else cand.get("_lead_ticker", ""))
+            lead_cashtag = f"${lead_ticker}" if lead_ticker else ""
+
+            # ── Per-day dedupe (any account/status) ─────────────────────────
+            if cand["type"] == "mover":
+                if any(it.get("kind") == "mover"
+                       and str((it.get("source") or {}).get("ticker") or "").upper() == cand["ticker"].upper()
+                       for it in existing_today):
+                    dropped.append({"reason": "dup_today_mover", "detail": cand["ticker"]})
+                    continue
+            else:
+                theme_name = cand.get("_theme_name", "")
+                if any(it.get("kind") == "theme_list"
+                       and str((it.get("source") or {}).get("theme") or "") == theme_name
+                       for it in existing_today):
+                    dropped.append({"reason": "dup_today_theme", "detail": theme_name})
+                    continue
+
+            # ── Pick an eligible account for this candidate ─────────────────
+            chosen: str | None = None
+            for _ in range(len(rotated)):
+                aid = rotated[acct_cursor % len(rotated)]
+                acct_cursor += 1
+                if aid in assigned_accounts:
+                    continue
+                if aid in due_accounts:
+                    continue  # spacing: one post per account per slot run
+                if posted_today.get(aid, 0) >= cap:
+                    continue  # ledger-based daily cap
+                # Per-account same-cashtag day cap: skip an account already
+                # carrying an item today with this candidate's ticker or lead
+                # cashtag in its text (sentinel max_same_cashtag_per_account_per_day).
+                if _account_same_cashtag_today(existing_today, aid, lead_ticker,
+                                               lead_cashtag) >= max_same_cashtag:
+                    continue
+                chosen = aid
+                break
+            if chosen is None:
+                dropped.append({"reason": "no_account",
+                                "detail": f"no eligible account for {lead_cashtag or cand['type']}"})
+                continue
+
+            voice = voice_by_id.get(chosen, "authoritative desk")
+            persona = _persona_for(cfg or {}, chosen, voice)
+
+            # ── Copy (reuse-only) ───────────────────────────────────────────
+            try:
+                text, headline, violations = _render_copy(
+                    cand, account=chosen, voice=voice, persona=persona, slot=slot)
+            except Exception as exc:  # noqa: BLE001
+                dropped.append({"reason": "copy_error", "detail": f"{lead_cashtag}: {exc}"})
+                continue
+            if not text:
+                dropped.append({"reason": "empty_copy", "detail": lead_cashtag})
+                continue
+            # Fail-closed: any validate_copy violation drops the candidate — there
+            # is no operator at post time to catch bad copy.
+            if violations:
+                dropped.append({"reason": "copy_violation",
+                                "detail": f"{lead_cashtag}: {violations[:3]}"})
+                continue
+
+            # ── Cashtag breadth (movers only; theme_list exempt, per sentinel) ─
+            if cand["type"] == "mover":
+                distinct = set(_CASHTAG_RE.findall(text))
+                if len(distinct) > max_cashtags:
+                    dropped.append({"reason": "cashtag_breadth",
+                                    "detail": f"{lead_cashtag}: {len(distinct)} > {max_cashtags}"})
+                    continue
+
+            # ── Near-dup gate (vs other accepted this run + existing today) ──
+            tokset = sentinel._token_set(text)
+            if any(sentinel._jaccard_sets(tokset, prev) >= near_dup_thresh
+                   for prev in accepted_texts):
+                dropped.append({"reason": "near_dup_run", "detail": lead_cashtag})
+                continue
+            if any(sentinel._jaccard_sets(tokset, prev) >= near_dup_thresh
+                   for prev in existing_token_sets):
+                dropped.append({"reason": "near_dup_today", "detail": lead_cashtag})
+                continue
+
+            # ── Build the outbox item + source stamp ────────────────────────
+            source = _build_source(cand, slot, now, quote_source)
+            try:
+                item = outbox.make_item(
+                    account=chosen,
+                    kind=cand["type"],
+                    text=text,
+                    as_of=today,
+                    scheduled_at="immediate",
+                    slot=f"LIVE-{slot}",
+                    priority=6,   # operator-approved D1 items are priority 5 → sort first
+                    provenance=_PROVENANCE,
+                    source=source,
+                    now=now,
+                )
+            except ValueError as exc:
+                dropped.append({"reason": "make_item_invalid", "detail": f"{lead_cashtag}: {exc}"})
+                continue
+
+            # Commit account assignment BEFORE enqueue so a per-run second
+            # candidate never targets the same desk even if enqueue duplicates.
+            assigned_accounts.add(chosen)
+            accepted_texts.append(tokset)
+
+            if not live:
+                would_generate.append({
+                    "id": item["id"], "account": chosen, "kind": cand["type"],
+                    "ticker": lead_ticker, "slot": f"LIVE-{slot}",
+                    "text": text.replace("\n", " ")[:200],
+                })
+                # Charge the account so the next candidate rotates onward in dry-run too.
+                posted_today[chosen] = posted_today.get(chosen, 0) + 1
+                existing_token_sets.append(tokset)
+                existing_today.append(item)
+                continue
+
+            result = outbox.enqueue(item, r, max_per_account_day=cap)
+            if result == "queued":
+                generated.append(item["id"])
+                posted_today[chosen] = posted_today.get(chosen, 0) + 1
+                existing_token_sets.append(tokset)
+                existing_today.append(item)
+            elif result == "duplicate":
+                # EXPECTED when the tape hasn't moved since the prior slot: the
+                # identical text hashes to the same id. That idempotency is a
+                # feature — report it quietly, don't treat it as an error.
+                dropped.append({"reason": "duplicate", "detail": f"{lead_cashtag} ({item['id']})"})
+            elif result == "cap_exceeded":
+                dropped.append({"reason": "cap_exceeded", "detail": lead_cashtag})
+                # Roll back the account reservation — nothing was written.
+                assigned_accounts.discard(chosen)
+                accepted_texts.pop()
+            else:
+                dropped.append({"reason": "enqueue_failed", "detail": f"{lead_cashtag}: {result}"})
+                assigned_accounts.discard(chosen)
+                accepted_texts.pop()
+
+        return {
+            "enabled": True,
+            "generated": generated,
+            "would_generate": would_generate,
+            "dropped": dropped,
+            "quote_source": quote_source,
+            "slot": slot,
+        }
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_time_content.generate_slot_items: %s", exc)
+        return {
+            "enabled": True,
+            "generated": [],
+            "would_generate": [],
+            "dropped": [{"reason": "error", "detail": str(exc)}],
+            "quote_source": "none",
+            "slot": slot or "",
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Small pure helpers used above
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _item_full_text(item: dict) -> str:
+    """The text used for near-dup — outbox items carry a single flat `text`."""
+    return str(item.get("text") or "")
+
+
+def _account_same_cashtag_today(existing_today: list[dict], account: str,
+                                ticker: str, cashtag: str) -> int:
+    """Count today's items on `account` whose source.ticker matches the candidate
+    ticker OR whose text contains the candidate's lead cashtag (sentinel's
+    per-account same-cashtag/day heuristic)."""
+    tkr_u = str(ticker or "").upper()
+    n = 0
+    for it in existing_today:
+        if it.get("account", "") != account:
+            continue
+        src_tkr = str((it.get("source") or {}).get("ticker") or "").upper()
+        if tkr_u and src_tkr == tkr_u:
+            n += 1
+            continue
+        if cashtag and cashtag in str(it.get("text") or ""):
+            n += 1
+    return n
+
+
+def _build_source(cand: dict, slot: str, now: datetime, quote_source: str) -> dict[str, Any]:
+    """The source stamp the live tape gate re-checks at post time.
+
+    baseline_pct / ticker are what live_verify.verify_item re-verifies. For a
+    mover that is the mover's ticker + its live pct. For a theme it is the LEAD
+    MEMBER's ticker + pct (not the aggregate) — stamping the loudest number in
+    the text makes the gate verify the exact figure a reader sees.
+    """
+    if cand["type"] == "mover":
+        return {
+            "lane": "publish_time",
+            "slot_run": slot,
+            "generated_at": _iso_now(now),
+            "quote_source": quote_source,
+            "ticker": cand["ticker"],
+            "baseline_pct": (cand.get("_mover_data") or {}).get("pct"),
+        }
+    return {
+        "lane": "publish_time",
+        "slot_run": slot,
+        "generated_at": _iso_now(now),
+        "quote_source": quote_source,
+        "ticker": cand.get("_lead_ticker", ""),
+        "baseline_pct": cand.get("_lead_pct"),
+        "theme": cand.get("_theme_name", ""),
+        "agg_pct": cand.get("_agg_pct"),
+    }

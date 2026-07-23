@@ -1316,10 +1316,13 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # {theme_agg_pct} = "-2.1%"
     # {theme_question} = "Which one comes back first?"
     # {top_fact} = theme aggregate text
+    # Optional 3rd element = applicability tags (see _variant_allowed): a
+    # down-flavored headline must never ship on an up-tape theme.
     ("theme_list", "authoritative desk"): [
         (
             "{theme_name} names all getting hit today",
             "{cashtag_list}\n{top_fact} {theme_question}",
+            ("down_only",),
         ),
         (
             "Whole {theme_name} group moving together",
@@ -1332,6 +1335,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{theme_name} tape, worst first",
             "{cashtag_list}\n{top_fact} {theme_question}",
+            ("down_only",),
         ),
         (
             "The whole {theme_name} group just moved",
@@ -1368,6 +1372,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{theme_name} | pressure across the group",
             "{cashtag_list}\n{top_fact} {theme_question}",
+            ("down_only",),
         ),
         (
             "Every {theme_name} name on my screen moved today",
@@ -1386,6 +1391,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "This is what group-wide selling looks like",
             "{cashtag_list}\n{top_fact} {theme_question}",
+            ("down_only",),
         ),
         (
             "{theme_name} | a group move in real time",
@@ -1400,6 +1406,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{theme_name} names getting hit 👀",
             "{cashtag_list}\n{top_fact} {theme_question}",
+            ("down_only",),
         ),
         (
             "Every {theme_name} name is {theme_direction} right now",
@@ -1422,6 +1429,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{theme_name} under pressure | seen this one",
             "{cashtag_list}\n{top_fact} {theme_question}",
+            ("down_only",),
         ),
         (
             "{theme_name} | a rhyme worth watching",
@@ -1436,20 +1444,27 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # ── mover (all voices) — biggest single mover, charted, bearish framing ok ──
     # {cashtag} = "$ISRG"  {top_fact} = "ISRG fell -14.2% today (Healthcare)."
     # {mover_pct} = "-14.2%"
+    # Optional 3rd element = applicability tags (see _variant_allowed):
+    #   "down_only"/"up_only" — the line's flavor only fits that tape direction
+    #   "needs_chart" — the line claims an attached chart; text-only callers
+    #   (publish-time lane sets ctx["has_chart"]=False) never select it
     ("mover", "authoritative desk"): [
         (
             "{cashtag} {mover_pct} today. Ugly.",
             "{top_fact} The kind of flush where I start watching for a bottom setup. "
             "Not catching it yet, levels are on the chart.",
+            ("down_only", "needs_chart"),
         ),
         (
             "{cashtag} did something today",
             "{top_fact} One of the bigger moves in the index. The dip buyers get to find out "
             "who was early. Watching, not chasing.",
+            ("down_only",),
         ),
         (
             "{cashtag} | {mover_pct} today",
             "{top_fact} Respecting the move, not stepping in front of it. Levels on the chart.",
+            ("needs_chart",),
         ),
         (
             "{cashtag}, biggest move in the index today",
@@ -1458,6 +1473,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} | {mover_pct}, noted",
             "{top_fact} Worth knowing the same day, not worth chasing the candle. Chart below.",
+            ("needs_chart",),
         ),
     ],
     ("mover", "dry, receipts-forward"): [
@@ -1468,6 +1484,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} {mover_pct}",
             "{top_fact} Numbers on the tape, chart below. Letting it settle.",
+            ("needs_chart",),
         ),
         (
             "{cashtag} | biggest mover, {mover_pct}",
@@ -1495,6 +1512,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} | {mover_pct}, group read",
             "{top_fact} Chart below. The neighbors' reaction tells you more than the name itself.",
+            ("needs_chart",),
         ),
     ],
     ("mover", "educational"): [
@@ -1523,10 +1541,12 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} | {mover_pct}, fast chart",
             "{top_fact} Letting the dust settle before doing anything clever.",
+            ("needs_chart",),
         ),
         (
             "{cashtag} moving {mover_pct} today",
             "{top_fact} Chart below. Respecting it, not stepping in front.",
+            ("needs_chart",),
         ),
         (
             "{cashtag} {mover_pct}",
@@ -1537,6 +1557,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} {mover_pct} | seen this movie",
             "{top_fact} These have a rough pattern. Watching for the setup, not catching the drop.",
+            ("down_only",),
         ),
         (
             "{cashtag} | {mover_pct}, the base rate",
@@ -1549,6 +1570,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         (
             "{cashtag} {mover_pct} | rhyme, not repeat",
             "{top_fact} I let these settle before I trust them. Levels on the chart.",
+            ("needs_chart",),
         ),
     ],
 
@@ -1941,6 +1963,36 @@ def _pick_variant(
 # write_posts_deterministic
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _variant_allowed(variant: tuple, ctx: dict) -> bool:
+    """Applicability filter for a template variant against this context.
+
+    Variants may carry an optional third element: a tuple of tags —
+      "down_only" / "up_only": the line's flavor only fits that tape direction
+        (mover direction from the signed mover_pct, theme from theme_direction);
+        unknown direction (empty fields) filters NOTHING, so the nightly D-slot
+        path (no _mover_data/_theme_data) selects from the full bank unchanged.
+      "needs_chart": the line references an attached chart ("Chart below",
+        "levels are on the chart"); filtered ONLY when the caller explicitly set
+        ctx["has_chart"] = False (text-only publish-time items). Unset → kept.
+    """
+    tags = variant[2] if len(variant) > 2 else ()
+    if not tags:
+        return True
+    direction = ""
+    if ctx.get("type") == "mover":
+        mp = ctx.get("mover_pct") or ""
+        direction = "down" if mp.startswith("-") else ("up" if mp.startswith("+") else "")
+    elif ctx.get("type") == "theme_list":
+        direction = ctx.get("theme_direction") or ""
+    if "down_only" in tags and direction == "up":
+        return False
+    if "up_only" in tags and direction == "down":
+        return False
+    if "needs_chart" in tags and ctx.get("has_chart") is False:
+        return False
+    return True
+
+
 def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
     """Generate (headline, body) for each context via deterministic variant selection.
 
@@ -1952,6 +2004,9 @@ def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
     - Ticker posts: hash(ticker + account + slot) → stable per ticker+account
     - Non-ticker posts (education, macro, watchlist, event): rotating counter
       per (type, voice) pair to prevent repeat headlines in the same plan
+    - Variants carrying applicability tags (_variant_allowed) are filtered out
+      when they contradict the item's tape direction or claim an absent chart;
+      an over-filtered (empty) pool falls back to the full bank rather than crash
     """
     results: list[dict] = []
     all_headlines: list[str] = []
@@ -1971,6 +2026,10 @@ def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
             # Last-resort generic
             variants = [("{cashtag} update", "Tracking {ticker}. {top_fact}.")]
 
+        # Applicability filter (direction / chart-dependency tags). An empty
+        # pool falls back to the unfiltered bank — selection must never crash.
+        pool = [v for v in variants if _variant_allowed(v, ctx)] or variants
+
         ticker = ctx.get("ticker", "")
         slot = ctx.get("slot", str(i))
 
@@ -1979,14 +2038,14 @@ def write_posts_deterministic(contexts: list[dict]) -> list[dict]:
             account = ctx.get("account", "")
             hash_key = f"{ticker}|{account}|{slot}"
             h = int(hashlib.sha256(hash_key.encode()).hexdigest()[:8], 16)
-            variant_idx = h % len(variants)
+            variant_idx = h % len(pool)
         else:
             # Non-ticker post: rotate through variants to avoid headline repeat
             counter = type_voice_counters.get(key, 0)
-            variant_idx = counter % len(variants)
+            variant_idx = counter % len(pool)
             type_voice_counters[key] = counter + 1
 
-        hl_tpl, body_tpl = variants[variant_idx]
+        hl_tpl, body_tpl = pool[variant_idx][:2]
 
         headline = _render_template(hl_tpl, ctx)
         body = _render_template(body_tpl, ctx)
