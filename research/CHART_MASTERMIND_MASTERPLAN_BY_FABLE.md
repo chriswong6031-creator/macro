@@ -1,6 +1,6 @@
 # Chart Mastermind (CMX) — the Brain inhabits the Terminal chart
 
-**Status:** CHARTERED; W1+W2 dispatched same-day
+**Status:** CHARTERED; W1–W3 shipped + live 2026-07-22 (terminal#161/#162, macro#3187); W4 doctrine library shipped 2026-07-23 (11 modules, intent-routed, terminal-only injection)
 **Date:** 2026-07-22
 **Owner program:** `chart-mastermind` (CMX)
 **Operator directive (2026-07-22, verbatim intent):** "Allow for a more robust connection system between Mastermind AI and Terminal chart… different indicators, different timeframes, and drawings and labeling to help map out something. Make this process interactive and actually viewable by the user as it draws… an overlay… shows exactly what the Mastermind AI is thinking in full view… beautifully crafted, animated, and futuristic… how do we shove the world's best technical trader and his knowledge and strategies into Mastermind AI's head."
