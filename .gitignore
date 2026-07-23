@@ -430,8 +430,15 @@ data/earnings_calls/backfill_analysis.parquet
 # Nightly is the sole advancer of forward ledgers; the daemon is an intraday lane.
 data/marketing/fastlane_seen.jsonl
 data/marketing/fastlane_quarantine.jsonl
-data/marketing/outbox/
 data/marketing/fastlane_heartbeat.txt
+# The outbox itself IS committed since W1 (#3288 nightly emit + marketing-publish
+# ledger commit-back both `git add data/marketing/outbox` — a blanket ignore here
+# silently no-ops both and the queue evaporates on the next runner clean).
+# Only the transient advisory lock stays local.
+data/marketing/outbox/.lock
+# Publish-workflow-local fetch of the live-data branch quotes (tape gate input);
+# ephemeral per-run, never committed.
+data/marketing/live_quotes_snapshot.json
 # D05 breaking-feed local-only poller state (seen ledger + ETag state);
 # the nightly blanket "git add data/" must never stage these.
 data/marketing/breaking/

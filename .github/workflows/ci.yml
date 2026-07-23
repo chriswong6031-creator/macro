@@ -691,6 +691,8 @@ on:
       - "tests/test_marketing_outbox.py"
       # W1 wiring layer: auto-approve gate + writeless dry-run report + admin panel.
       - "tests/test_marketing_publisher_autoapprove.py"
+      # Post-time tape gate: never post yesterday's read against today's tape.
+      - "tests/test_marketing_live_verify.py"
       # Marketing lobe engine unit suite (see the marketing-engine job). Whitelisted
       # 2026-07-23 after it rotted red on main: opportunities.jsonl is a forward
       # ledger the nightly radar fills with live radar-* rows, but the seed round-trip
@@ -2509,7 +2511,9 @@ jobs:
           python-version: "3.12"
       - name: install deps
         # Pure stdlib engine (sqlite3 + subprocess) + jinja2 for the W3 page build.
-        run: pip install pytest jinja2
+        # pyyaml: build_research_vault imports lib.config (yaml) at module level
+        # since #3315 — the lane was red on every PR until it was added here.
+        run: pip install pytest jinja2 pyyaml
       - name: research vault ingestion-spine + page unit tests
         run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py -q
 
@@ -2551,7 +2555,10 @@ jobs:
       - name: install deps
         run: pip install pytest pyyaml
       - name: social publisher + outbox + wiring-layer unit tests
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py -q
+        # test_marketing_live_verify is co-run: the post-time tape gate ships
+        # inside the publisher loop (pandas-free here — its earnings guard is
+        # fail-soft and the one pandas-dependent test importorskips).
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py -q
 
   marketing-engine:
     # Marketing lobe engine unit suite (state, departments, authority ladder,

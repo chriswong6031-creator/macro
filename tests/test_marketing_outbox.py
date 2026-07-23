@@ -1117,3 +1117,49 @@ def test_sentinel_contract_string_false_stays_false():
     assert c["links_allowed"] is False
     c2 = sentinel_contract({"sentinel": {"links_allowed": "true"}})
     assert c2["links_allowed"] is True
+
+
+def test_emit_stamps_tape_claim_source(tmp_path):
+    """The publisher's live tape gate needs structured claim data on each item:
+    ticker, thesis direction/entry/invalidation from the attached _plan, and a
+    baseline_pct for same-day move claims. emit stamps them into item.source."""
+    from engine.marketing.outbox import emit_from_content_plan, read_items
+
+    plan = _make_plan_fixture()
+    sig = plan["accounts"][0]["queue"][0]
+    assert sig["type"] == "signal"
+    sig["_plan"] = {"id": "prophet-NVDA-1", "direction": "BULL",
+                    "entry": 950.0, "invalidation": 899.0}
+    # A mover-shaped D1 item with baseline data.
+    plan["accounts"][0]["queue"].append({
+        "id": "post-flagship-006",
+        "type": "mover",
+        "account": "flagship",
+        "cashtag": "$ISRG",
+        "ticker": "ISRG",
+        "headline": "$ISRG -14.2% today",
+        "body": "Biggest drop in the index. Watching, not chasing.",
+        "provenance": "movers_desk",
+        "chart_id": None,
+        "slot": "D1-EOD",
+        "status": "drafted",
+        "_mover_data": {"ticker": "ISRG", "pct": -14.2},
+    })
+
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+    items = {i["source"].get("plan_item_id"): i for i in read_items(tmp_path)
+             if i.get("source")}
+
+    sig_item = items.get(sig["id"])
+    assert sig_item is not None
+    src = sig_item["source"]
+    assert src["ticker"] == sig["ticker"]
+    assert src["direction"] == "BULL"
+    assert src["entry"] == 950.0
+    assert src["invalidation"] == 899.0
+    assert src["signal_id"] == "prophet-NVDA-1"
+
+    mover_item = items.get("post-flagship-006")
+    assert mover_item is not None
+    assert mover_item["source"]["ticker"] == "ISRG"
+    assert mover_item["source"]["baseline_pct"] == -14.2

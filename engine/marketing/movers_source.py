@@ -24,18 +24,18 @@ PathLike = Union[str, Path]
 
 _EMPTY_FACTS: dict = {"facts": [], "numbers_whitelist": []}
 
-# Reply-bait questions by direction
+# Reply-bait questions by direction (doctrine v3: dry, trader-to-trader)
 _QUESTION_DOWN = [
     "Which one comes back first?",
-    "Dead-cat bounce or real dip? Which do you buy?",
-    "Who recovers fastest from here?",
-    "Which one do you buy into this?",
+    "Dead-cat bounce or the real dip?",
+    "Who's actually washed out here?",
+    "Which one do you want on sale?",
 ]
 _QUESTION_UP = [
     "Which one breaks out first?",
-    "How long does this run last?",
-    "Who leads this theme higher?",
-    "Which one do you fade here?",
+    "Real demand or a squeeze?",
+    "Who leads this group higher?",
+    "Which one's already run too far?",
 ]
 
 

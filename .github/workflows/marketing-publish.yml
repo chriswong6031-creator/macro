@@ -61,15 +61,34 @@ jobs:
           python-version: "3.12"
 
       - name: install deps
-        # The runner + its engine import chain is stdlib-only except pyyaml
-        # (config/marketing.yml load). Nothing else is needed for the publish path.
-        run: pip install --quiet pyyaml
+        # pyyaml: config/marketing.yml load. pandas+pyarrow: the tape gate's
+        # earnings-day guard reads data/earnings/earnings.parquet (fail-soft —
+        # the guard degrades open if the import or file is missing).
+        run: pip install --quiet pyyaml pandas pyarrow
 
       - name: humanizing jitter
         # Spread posts off perfectly round cron times (Actions cron is already
         # best-effort ~0-15m late; this adds up to 10 more minutes of scatter so
         # the account never posts on the exact same wall-clock minute).
         run: sleep $((RANDOM % 600))
+
+      - name: fetch full-universe live quotes (tape gate input)
+        # AFTER the jitter sleep so the snapshot is as fresh as possible at post
+        # time. The live-data orphan branch carries a ~2k-symbol quotes.json
+        # refreshed every 5 min in RTH (15-min-delayed prices). The publisher's
+        # tape gate (engine/marketing/live_verify.py) uses it to re-verify every
+        # item against TODAY's tape before posting — the content plan was
+        # written off yesterday's close. Fail-soft: without the snapshot the
+        # gate falls back to site/live/quotes.json + the sp500 heatmap, and
+        # holds any signal it cannot verify.
+        run: |
+          if git fetch --depth 1 origin live-data && \
+             git show FETCH_HEAD:quotes.json > data/marketing/live_quotes_snapshot.json 2>/dev/null; then
+            echo "live quotes snapshot: $(wc -c < data/marketing/live_quotes_snapshot.json) bytes"
+          else
+            echo "::warning::live-data quotes unavailable — tape gate falls back to site/live artifacts"
+            rm -f data/marketing/live_quotes_snapshot.json
+          fi
 
       - name: run publisher (dark until the kill-switch secret is set)
         run: |
