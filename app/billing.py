@@ -237,6 +237,25 @@ def _upsert_entitlement(user_id: str, customer_id: str | None, ent: dict) -> Non
         prefer="resolution=merge-duplicates,return=minimal")
 
 
+def _persist_customer(user_id: str, customer_id: str) -> None:
+    """Persist ONLY the user_id -> stripe_customer_id mapping, without touching tier/status/features.
+
+    Used by the Elements /subscribe/init lane the instant a Stripe customer is created, BEFORE any
+    subscription exists (card-up-front trial law). merge-duplicates on the user_id conflict target
+    REPLACES exactly the columns present in the body, so shipping only {user_id, stripe_customer_id,
+    updated_at} leaves an existing row's tier/status/current_period_end/features untouched (or, for a
+    brand-new row, they default per the 0005 migration). The convergent webhook + the /complete
+    recompute own the entitlement fields; this only pins the mapping so the webhook can resolve it.
+    """
+    _pg("POST", "user_entitlements?on_conflict=user_id",
+        body=[{
+            "user_id": user_id,
+            "stripe_customer_id": customer_id,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }],
+        prefer="resolution=merge-duplicates,return=minimal")
+
+
 # --------------------------------------------------------------------------- #
 # Tier-cache invalidation bridge (into brain_gateway, same process)
 # --------------------------------------------------------------------------- #
@@ -355,6 +374,22 @@ def _compute_entitlement(customer_id: str) -> dict:
     return _entitlement_from_state(subs, keys)
 
 
+def _has_live_subscription(customer_id: str) -> bool:
+    """True if the customer already holds an active or trialing subscription.
+
+    The Elements lane's no-double-subscribe guard (409). Checked at BOTH /subscribe/init (fail
+    early before creating a SetupIntent) and /subscribe/complete (a second tab could have subscribed
+    between the two calls — the card-up-front window). `status='all'` then filter, mirroring
+    _cancel_subscriptions, so this sees the same set the recompute reduces over.
+    """
+    stripe = _stripe()
+    for s in stripe.Subscription.list(customer=customer_id, status="all", limit=20).data:
+        status = s["status"] if isinstance(s, dict) else s.status
+        if status in ("active", "trialing"):
+            return True
+    return False
+
+
 # --------------------------------------------------------------------------- #
 # Auth dependency (lazy import avoids the app.main <-> app.billing import cycle)
 # --------------------------------------------------------------------------- #
@@ -428,6 +463,188 @@ def portal(user: dict = Depends(_current_user)) -> dict:
     stripe = _stripe()
     session = stripe.billing_portal.Session.create(customer=customer, return_url=f"{MM_SITE_BASE}/plans.html")
     return {"url": session.url}
+
+
+# --------------------------------------------------------------------------- #
+# Elements subscription lane (MNZ onboarding W2) — the in-sheet alternative to hosted Checkout.
+#
+# Card-up-front trial law (masterplan §2/§6): the subscription must NOT exist until the card is
+# captured. Two round trips enforce it:
+#   /subscribe/init     — find-or-create the customer, create a SetupIntent, hand its client_secret
+#                         to the sheet's Stripe.js Elements. NO subscription yet.
+#   /subscribe/complete — after Elements confirms the SetupIntent client-side, the sheet posts the
+#                         setup_intent_id back; we verify it succeeded + belongs to THIS customer,
+#                         THEN create the trialing subscription with the captured payment method.
+# GET /api/billing/config exposes the publishable key (public by design) so the sheet can boot
+# Stripe.js without shipping the key in a build.
+# --------------------------------------------------------------------------- #
+def _resolve_lookup_key(tier: str, interval: str) -> str:
+    """Validate (tier, interval) exactly like checkout() and return the price lookup_key (or 400)."""
+    if tier not in {p["tier"] for p in _catalog()["products"].values()}:
+        raise HTTPException(400, f"unknown tier '{tier}'")
+    if interval not in ("monthly", "annual"):
+        raise HTTPException(400, f"unknown interval '{interval}'")
+    lookup_key = _tier_to_lookup_key(tier, interval)
+    if not lookup_key:
+        raise HTTPException(400, f"no price for {tier}/{interval}")
+    return lookup_key
+
+
+@router.get("/api/billing/config")
+def billing_config() -> dict:
+    """Public Stripe publishable key for booting Elements in the browser.
+
+    NO auth: publishable keys are public by design (they can only tokenize cards, never move money).
+    503 cleanly when unset so the sheet can fall back to hosted Checkout instead of showing a broken
+    card form.
+    """
+    pk = os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
+    if not pk:
+        raise HTTPException(503, "billing not configured (STRIPE_PUBLISHABLE_KEY unset)")
+    return {"publishable_key": pk}
+
+
+class SubscribeInitRequest(BaseModel):
+    tier: str = Field(..., description="'insider' | 'pro'")
+    interval: str = Field("annual", description="'monthly' | 'annual'")
+
+
+@router.post("/api/billing/subscribe/init")
+def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_user)) -> dict:
+    """Find-or-create the Stripe customer and open a SetupIntent for in-sheet card capture.
+
+    No subscription is created here — that is /subscribe/complete's job, after the card is captured
+    (card-up-front trial law). Returns the SetupIntent client_secret for Stripe.js Elements + the
+    customer id (opaque to the browser; /complete re-derives it server-side, never trusting it back).
+    """
+    tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
+    _resolve_lookup_key(tier, interval)  # validate before touching Stripe
+
+    user_id = user.get("id")
+    if not user_id:
+        raise HTTPException(401, "no user id")
+    email = user.get("email")
+
+    stripe = _stripe()
+    customer_id = _existing_customer(user_id)
+    if not customer_id:
+        try:
+            customer = stripe.Customer.create(email=email, metadata={"mm_user_id": user_id})
+        except Exception as exc:  # noqa: BLE001
+            log.warning("billing: customer create failed for %s (%s)", user_id, exc)
+            raise HTTPException(502, f"subscribe init failed: {exc}") from None
+        customer_id = customer.id
+        # Persist the mapping immediately (mapping only — no tier/status), so the webhook can resolve
+        # customer->user even if the browser abandons before /complete.
+        try:
+            _persist_customer(user_id, customer_id)
+        except Exception as exc:  # noqa: BLE001 — mapping persist is best-effort; sub metadata still carries mm_user_id
+            log.warning("billing: persist customer mapping failed for %s (%s)", user_id, exc)
+
+    # No-double-subscribe guard (409) — fail before creating a SetupIntent for an already-paid user.
+    try:
+        already = _has_live_subscription(customer_id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing: subscribe init sub-check failed (%s)", exc)
+        raise HTTPException(502, f"subscribe init failed: {exc}") from None
+    if already:
+        raise HTTPException(409, "already subscribed")
+
+    try:
+        si = stripe.SetupIntent.create(
+            customer=customer_id,
+            usage="off_session",
+            metadata={"mm_user_id": user_id, "mm_tier": tier, "mm_interval": interval},
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing: setup intent create failed for %s (%s)", user_id, exc)
+        raise HTTPException(502, f"subscribe init failed: {exc}") from None
+    return {"client_secret": si.client_secret, "customer_id": customer_id}
+
+
+class SubscribeCompleteRequest(BaseModel):
+    setup_intent_id: str = Field(..., description="the SetupIntent confirmed client-side by Elements")
+    tier: str = Field(..., description="'insider' | 'pro'")
+    interval: str = Field("annual", description="'monthly' | 'annual'")
+
+
+@router.post("/api/billing/subscribe/complete")
+def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_current_user)) -> dict:
+    """Create the trialing subscription once the SetupIntent has captured the card.
+
+    Everything the client sends is re-verified server-side (never trust the client): the SetupIntent
+    is retrieved fresh, must be 'succeeded', must belong to THIS user's customer, and must carry a
+    payment method. Only then is the subscription created with the 7-day trial and the captured PM.
+    """
+    tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
+    lookup_key = _resolve_lookup_key(tier, interval)
+
+    user_id = user.get("id")
+    if not user_id:
+        raise HTTPException(401, "no user id")
+    customer_id = _existing_customer(user_id)
+    if not customer_id:
+        raise HTTPException(400, "no billing customer for this user (call /subscribe/init first)")
+
+    stripe = _stripe()
+    try:
+        si = stripe.SetupIntent.retrieve(body.setup_intent_id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing: setup intent retrieve failed (%s)", exc)
+        raise HTTPException(502, f"subscribe complete failed: {exc}") from None
+
+    si_status = si["status"] if isinstance(si, dict) else si.status
+    si_customer = si["customer"] if isinstance(si, dict) else si.customer
+    si_pm = si["payment_method"] if isinstance(si, dict) else si.payment_method
+    if si_status != "succeeded":
+        raise HTTPException(400, f"setup intent not succeeded (status={si_status})")
+    if si_customer != customer_id:
+        # Never trust the client: the SI must belong to THIS user's customer.
+        raise HTTPException(400, "setup intent customer mismatch")
+    if not si_pm:
+        raise HTTPException(400, "setup intent has no payment method")
+
+    # Re-check the no-double-subscribe guard — a second tab could have subscribed in the card-capture
+    # window between /init and /complete.
+    try:
+        if _has_live_subscription(customer_id):
+            raise HTTPException(409, "already subscribed")
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing: subscribe complete sub-check failed (%s)", exc)
+        raise HTTPException(502, f"subscribe complete failed: {exc}") from None
+
+    try:
+        sub = stripe.Subscription.create(
+            customer=customer_id,
+            items=[{"price": _price_id(lookup_key)}],
+            trial_period_days=_tier_trial_days(tier),
+            default_payment_method=si_pm,
+            payment_settings={"save_default_payment_method": "on_subscription"},
+            trial_settings={"end_behavior": {"missing_payment_method": "cancel"}},
+            metadata={"mm_user_id": user_id},
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing: subscription create failed for %s (%s)", user_id, exc)
+        raise HTTPException(502, f"subscribe complete failed: {exc}") from None
+
+    # Same-module authority (MNZ-R3): this IS the billing spine, so it may write the entitlement row
+    # directly. Recompute + upsert + invalidate exactly like _handle_event, so /api/me reflects
+    # `trialing` instantly instead of waiting on the webhook round trip. The webhook remains the
+    # convergent source of truth — this write is naturally idempotent with it (both recompute from
+    # the same live Stripe state).
+    try:
+        ent = _compute_entitlement(customer_id)
+        _upsert_entitlement(user_id, customer_id, ent)
+        _invalidate(user_id)
+    except Exception as exc:  # noqa: BLE001 — the sub exists; the webhook will converge the row even if this fails
+        log.warning("billing: post-subscribe entitlement sync failed for %s (%s)", user_id, exc)
+
+    trial_end = sub["trial_end"] if isinstance(sub, dict) else sub.trial_end
+    sub_id = sub["id"] if isinstance(sub, dict) else sub.id
+    sub_status = sub["status"] if isinstance(sub, dict) else sub.status
+    return {"status": sub_status, "subscription_id": sub_id, "trial_end": trial_end}
 
 
 # events we act on; anything else is acknowledged (200) and ignored
