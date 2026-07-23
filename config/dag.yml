@@ -1442,12 +1442,12 @@ lanes:
         module: scripts.check_template_site_sync
         args: [--fix]
         note: >
-          non-fatal (|| true); ui.template_site_sync self-heal inside the commit step's
-          push retry loop (post-rebase, pre-push) — re-copies plain-copy landing/chat page
-          assets from post-rebase templates/ so `git pull --rebase -X theirs` can never
-          resurrect the divergence externalize_css opened. Step added by #3285 without a
-          matching dag.yml entry (the daily/engine-render/render declarations predate it,
-          #2984); declared here to close the dag-conformance red it left on main.
+          non-fatal (|| true); ui.template_site_sync self-heal inside the "commit
+          engine outputs" push retry loop (post-rebase, pre-push) — added by #3285
+          after the 2026-07-23 incident (4b356dd6b1a): externalize_css lifts the
+          plain-copy landing/chat pages' inline <style> to hashed files, and this
+          lane shipped the resulting template↔site divergence, reddening the sync
+          gate on main. Mirrors the render.yml/engine-render.yml/daily.yml step.
       - id: publish_r2_asia
         module: scripts.publish_r2
         note: non-fatal; uploads CN/HK OHLC + stockdata to R2
@@ -1855,12 +1855,11 @@ lanes:
         module: scripts.check_template_site_sync
         args: [--fix]
         note: >
-          non-fatal (|| true); ui.template_site_sync self-heal — externalize_css above lifts
-          the plain-copy landing/chat pages' inline <style> to hashed files, diverging
-          site/index.html + site/chat.html from templates/; --fix re-copies BEFORE the commit
-          step's `git add site/` so weekly never ships the divergence. Step added by #3285
-          without a matching dag.yml entry; declared here to close the dag-conformance red it
-          left on main.
+          non-fatal (|| true); ui.template_site_sync heal in the inject/externalize
+          step, BEFORE `git add site/` in the commit step — weekly's push loop is
+          minimal (no post-rebase --fix like render.yml/asia-close.yml), so the heal
+          runs pre-commit so weekly never ships the landing/chat template↔site
+          divergence that externalize_css creates (#3285, 2026-07-23).
 
   # ── sentinel.yml / flash-crash ──────────────────────────────────────────
   - workflow: .github/workflows/sentinel.yml
