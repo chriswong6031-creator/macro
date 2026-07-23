@@ -1,26 +1,7 @@
 {
-  "ts": "2026-07-23T20:06:48+00:00",
-  "main_sha": "8077b7bddbb861771bd1a55baaa740d6f76fb147",
-  "red_required": [
-    {
-      "name": "Supabase Preview",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/runs/89315949540"
-    },
-    {
-      "name": "dag-conformance",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/30039412185/job/89315369159"
-    },
-    {
-      "name": "nav-gap",
-      "conclusion": "failure",
-      "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/30039412185/job/89315369121"
-    }
-  ],
-  "green": false,
-  "consecutive_failures": 2
+  "ts": "2026-07-23T21:35:21+00:00",
+  "main_sha": "98b58102d25b5e0e8534de0300f8d4b97b3cd8ff",
+  "red_required": [],
+  "green": true,
+  "consecutive_failures": 0
 }
