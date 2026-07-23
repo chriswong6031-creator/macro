@@ -63,9 +63,7 @@
   #mmb-launch .lk{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;white-space:nowrap}
   #mmb-launch .lt{display:flex;flex-direction:column}
   /* phones: collapse the labelled pill down to the lone orb — the label is desktop
-     affordance, and the full pill both crowds small screens and sat on top of the
-     back-to-top FAB. theme.js re-homes that FAB just above this orb (it tags
-     <html> with .mmb-has-launch when it mounts us). */
+     affordance and the full pill crowds small screens. */
   @media(max-width:700px){
     #mmb-launch{right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:8px;gap:0}
     #mmb-launch .lt{display:none}
