@@ -2260,7 +2260,12 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            # rename/rename on content-hashed site/assets/css/* is deterministic across
+            # retries (path conflict; -X theirs can't settle it — 2026-07-22 asia-close
+            # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
+            # both sides' hashed files (next externalize_css prunes the orphan) and
+            # finishes the rebase; anything else is left for the abort+retry below.
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; then
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
@@ -2284,7 +2289,11 @@ jobs:
             git rebase --abort 2>/dev/null || true
             echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
-          echo "::warning::could not push engine outputs after 5 attempts (non-fatal — site still deploys via artifact)"
+          # Loud but non-fatal: publish/oracle/tech-lab/briefs jobs `needs: engine`, so a
+          # hard fail here would cascade-skip the deploy. The real loss is the data/
+          # forward-ledger day (sole-advancer law) — surface it where eyes are.
+          echo "::error title=nightly engine outputs NOT pushed::5 rebase/push attempts failed — the nightly's data/ forward ledgers + rendered site/ exist only on this runner and are lost at the next checkout (the site still deploys via artifact, the LEDGER DAY does not). See scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ❌ nightly engine outputs NOT pushed after 5 attempts — forward-ledger day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
       - name: assemble machine-consumable feeds (site/feeds -> R2)
         if: always()
         # Handoff H4 (2026-07-02 incident): risk_radar snapshot, froth/dislocation
