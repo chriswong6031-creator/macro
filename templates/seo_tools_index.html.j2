@@ -1,51 +1,74 @@
 {#=============================================================================
-  seo_tools_index.html.j2 — Tools hub ("Calculator Lab")
+  seo_tools_index.html.j2 — Tools hub ("Free calculators")
   Context (CONTRACT §5): page, rel, site, items (calculator cards from
   calculators.yml: {slug/url_path, title, blurb, cluster}), + a featured
   spreadsheet card (trading journal). page.section == 'tools'.
+
+  Design = macro terminal language. Section headers wear the regime rail; cards
+  are hairline/machined panels; each card carries its OWN bespoke glyph (by
+  slug, via _estate_glyphs) — no more one-shared-chart-line.
 =============================================================================#}
 {% extends "seo_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
 {% block body_class %}est-tools{% endblock %}
 
 {% block estate_css %}
   .th-hero{max-width:1120px; margin:22px auto 0; padding:0 24px;}
-  .th-tools{max-width:1120px; margin:26px auto 0; padding:0 24px;}
-  .th-sech{font-family:var(--font-ui); font-size:11.5px; font-weight:700; letter-spacing:.11em;
-    text-transform:uppercase; color:var(--muted); margin:0 0 14px; display:flex; align-items:baseline; gap:10px;}
-  .th-sech .n{font-family:var(--font-mono); color:var(--link); opacity:.9;}
-  .th-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;}
-  .th-card{display:block; border:1px solid var(--line); border-radius:15px; padding:18px 20px 20px;
-    background:var(--panel); text-decoration:none; position:relative; overflow:hidden;
-    transition:transform .2s cubic-bezier(.2,.7,.3,1),border-color .2s,box-shadow .2s;}
-  .th-card:hover{transform:translateY(-3px); border-color:color-mix(in srgb,var(--link) 46%,var(--line));
+  .th-tools{max-width:1120px; margin:30px auto 0; padding:0 24px;}
+
+  /* ── regime-rail section header (the estate signature) ─────────────────────── */
+  .th-sech{display:flex; align-items:center; gap:11px; margin:0 0 16px;
+    padding:0 0 var(--sp-3); border-bottom:1px solid var(--hair-strong);}
+  .th-sech::before{content:""; flex:none; align-self:center; width:3px; height:18px; border-radius:2px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 35%,transparent));}
+  .th-sech .sh-n{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-label);
+    font-weight:700; letter-spacing:.06em; color:var(--ink-3);}
+  .th-sech .sh-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+    letter-spacing:-.01em; color:var(--ink-1);}
+  html[data-lang="zh"] .th-sech .sh-t{letter-spacing:0;}
+  .th-sech .sh-count{margin-left:auto; font-family:var(--num); font-variant-numeric:tabular-nums;
+    font-size:var(--fs-label); font-weight:700; letter-spacing:.06em; color:var(--ink-3);
+    text-transform:uppercase;}
+
+  /* ── calculator cards — machined hairline panels, one glyph each ──────────── */
+  .th-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(288px,1fr)); gap:16px;}
+  .th-card{display:flex; flex-direction:column; border:1px solid var(--hair-strong); border-radius:var(--r-lg);
+    padding:18px 20px 18px; background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+    position:relative; overflow:hidden; transition:transform .2s cubic-bezier(.2,.7,.3,1),border-color .2s,box-shadow .2s;}
+  .th-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 22%,transparent));
+    opacity:0; transition:opacity .2s;}
+  .th-card:hover{transform:translateY(-3px); border-color:color-mix(in srgb,var(--link) 46%,var(--hair-strong));
     box-shadow:0 18px 38px -20px color-mix(in srgb,var(--link) 42%,transparent); text-decoration:none;}
-  .th-card .glyph{color:var(--link);}
-  .th-card .tc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
-  .th-card .tc-title{font-family:var(--serif); font-size:20px; font-weight:600; color:var(--text);
-    line-height:1.24; margin:0;}
-  .th-card .tc-blurb{font-family:var(--serif); font-size:15px; line-height:1.5; color:var(--muted); margin:8px 0 0;}
-  .th-card .tc-go{font-family:var(--font-mono); font-size:11.5px; letter-spacing:.03em; color:var(--link);
-    margin:14px 0 0; display:inline-flex; align-items:center; gap:6px;}
+  .th-card:hover::before{opacity:1;}
+  .th-card .tc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .th-card .tc-glyph{flex:none; width:56px; height:36px; margin:-1px -2px 0 0;}
+  .th-card .tc-title{font-family:var(--font-ui); font-size:calc(var(--fs-md) + 3px); font-weight:700;
+    color:var(--ink-1); line-height:1.24; letter-spacing:-.01em; margin:0;}
+  html[data-lang="zh"] .th-card .tc-title{letter-spacing:0;}
+  .th-card .tc-blurb{font-family:var(--font-ui); font-size:var(--fs-body); line-height:1.5;
+    color:var(--ink-2); margin:8px 0 0;}
+  .th-card .tc-go{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm);
+    letter-spacing:.02em; color:var(--link); margin:16px 0 0 0; display:inline-flex; align-items:center; gap:6px;
+    padding-top:12px; border-top:1px solid var(--hair);}
   .th-card .tc-go .arw{transition:transform .2s;}
   .th-card:hover .tc-go .arw{transform:translateX(3px);}
-  /* a tiny plotted-line motif drawn on the card corner — the desk's signature */
-  .th-card .tc-plot{position:absolute; right:14px; top:16px; width:56px; height:20px; opacity:.8;}
-  .th-card .tc-plot path{fill:none; stroke:var(--link); stroke-width:1.6; stroke-linecap:round;
-    stroke-linejoin:round; vector-effect:non-scaling-stroke;}
-  .th-card .tc-plot .d{fill:var(--link);}
 
-  /* featured spreadsheet card — wider, ledger-ruled */
+  /* ── featured spreadsheet — a wider machined panel with accent edge ───────── */
   .th-feat{display:grid; grid-template-columns:1fr auto; align-items:center; gap:22px;
-    border:1px solid color-mix(in srgb,var(--link) 26%,var(--line)); border-radius:16px;
-    padding:22px 24px; background:
+    border:1px solid color-mix(in srgb,var(--link) 26%,var(--hair-strong)); border-radius:var(--r-lg);
+    border-left:3px solid var(--rail); padding:22px 24px; box-shadow:var(--ms); background:
       radial-gradient(130% 150% at 100% 0%, color-mix(in srgb,var(--link) 9%,transparent), transparent 58%),
-      linear-gradient(var(--rule),var(--rule)) 0 0/100% 1px no-repeat, var(--panel);
+      var(--panel);
     text-decoration:none; transition:transform .2s,border-color .2s,box-shadow .2s;}
   .th-feat:hover{transform:translateY(-2px); border-color:var(--link);
     box-shadow:0 18px 40px -22px color-mix(in srgb,var(--link) 45%,transparent); text-decoration:none;}
-  .th-feat .ft-k{font-family:var(--font-mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--link);}
-  .th-feat .ft-t{font-family:var(--serif); font-size:23px; font-weight:600; color:var(--text); margin:4px 0 0; line-height:1.22;}
-  .th-feat .ft-d{font-family:var(--serif); font-size:15.5px; color:var(--muted); margin:8px 0 0; max-width:60ch;}
+  .th-feat .ft-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.07em;
+    text-transform:uppercase; color:var(--link);}
+  .th-feat .ft-t{font-family:var(--font-ui); font-size:calc(var(--fs-num-lg) + 1px); font-weight:800;
+    color:var(--ink-1); margin:5px 0 0; line-height:1.18; letter-spacing:-.015em;}
+  html[data-lang="zh"] .th-feat .ft-t{letter-spacing:0;}
+  .th-feat .ft-d{font-family:var(--font-ui); font-size:var(--fs-md); color:var(--ink-2); margin:9px 0 0; max-width:62ch;}
   .th-feat .ft-btn{flex:none; font-family:var(--font-ui);}
   @media (max-width:640px){ .th-feat{grid-template-columns:1fr;} .th-feat .ft-btn{justify-self:start;} }
 {% endblock %}
@@ -53,28 +76,26 @@
 {% block main %}
 <div class="th-hero">
   <div class="est-head" style="max-width:none; margin:0; padding:0;">
-    <span class="est-kicker">{{ t('Calculator Lab', '计算器实验室') }}</span>
-    <svg class="plot-line est-kicker-plot" viewBox="0 0 220 14" preserveAspectRatio="none" aria-hidden="true"
-         style="--pl-len:230;">
-      <path d="M2 11 C 40 11, 55 4, 90 7 S 150 3, 178 5 S 210 4, 218 3"/>
-      <circle class="dot" cx="218" cy="3" r="2.6"/>
-    </svg>
-    <h1 class="est-title">{{ t('Free trading &amp; risk calculators', '免费交易与风险计算器') }}</h1>
-    <p class="est-dek">{{ t('Six tools that answer one question each, show the math, and never ask you to sign up. Position size, risk-to-reward, compounding — worked out in front of you.',
-       '六款工具，每款只回答一个问题，把算式摆在你面前，且无需注册。仓位、盈亏比、复利——当场为你算清。') }}</p>
+    <span class="est-kicker">{{ t('Free calculators', '免费计算器') }}</span>
+    <h1 class="est-title">{{ t('Trading &amp; risk calculators', '交易与风险计算器') }}</h1>
+    <p class="est-dek">{{ t('Calculators that answer one question each, show the math, and never ask you to sign up — position sizing, options, dividends, risk of ruin and more, worked out in front of you.',
+       '每款计算器只回答一个问题，把算式摆在你面前，且无需注册——仓位管理、期权、股息、破产风险等等，当场为你算清。') }}</p>
   </div>
 </div>
 
 <section class="th-tools" aria-label="Calculators">
-  <h2 class="th-sech"><span class="n">01</span> {{ t('Calculators', '计算器') }}</h2>
+  <div class="th-sech">
+    <span class="sh-n">01</span>
+    <span class="sh-t">{{ t('Calculators', '计算器') }}</span>
+    <span class="sh-count">{{ items|length }} {{ t('tools', '款') }}</span>
+  </div>
   <div class="th-grid">
     {% for it in items %}
     <a class="th-card" href="{{ rel }}{{ it.url_path.lstrip('/') }}">
-      <svg class="tc-plot" viewBox="0 0 56 20" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M1 15 L11 9 L21 12 L32 4 L44 8 L55 3"/>
-        <circle class="d" cx="55" cy="3" r="2"/>
-      </svg>
-      <div class="tc-top"><h3 class="tc-title">{{ it.title }}</h3></div>
+      <div class="tc-top">
+        <h2 class="tc-title">{{ it.title }}</h2>
+        <span class="tc-glyph">{{ glyphs.glyph(it.slug, 'card') }}</span>
+      </div>
       <p class="tc-blurb">{{ it.blurb }}</p>
       <span class="tc-go">{{ t('Open calculator', '打开计算器') }} <span class="arw">→</span></span>
     </a>
@@ -83,7 +104,10 @@
 </section>
 
 <section class="th-tools" aria-label="Spreadsheets" style="margin-top:34px;">
-  <h2 class="th-sech"><span class="n">02</span> {{ t('Spreadsheets', '电子表格') }}</h2>
+  <div class="th-sech">
+    <span class="sh-n">02</span>
+    <span class="sh-t">{{ t('Spreadsheets', '电子表格') }}</span>
+  </div>
   <a class="th-feat" href="{{ rel }}tools/spreadsheets/trading-journal.html">
     <div>
       <span class="ft-k">{{ t('Free download · Excel', '免费下载 · Excel') }}</span>

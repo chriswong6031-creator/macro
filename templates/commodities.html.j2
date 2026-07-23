@@ -468,6 +468,27 @@ html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
   </div>
 </div>
 
+{% if oil_episode %}
+<!-- Cross-asset read (display-tier CONTEXT, not a scored signal): oil trend-episode -> Canadian energy (XEG). engine/trend_episode.py + research/COMMODITY_C1R2_OIL_XEG_PREREG.md -->
+<div class="panel2" style="display:flex;gap:11px;align-items:flex-start;margin:0 0 14px;border-left:3px solid var(--line2)">
+  <span style="font-size:17px;line-height:1.4" aria-hidden="true">🛢️→🇨🇦</span>
+  <div style="font-size:12.5px;line-height:1.55">
+    <div style="font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:10px;opacity:.6;margin-bottom:2px">{{ t('Cross-asset read · Canadian energy (XEG)', '跨资产读数 · 加拿大能源 (XEG)') }}</div>
+    {% if oil_episode.state == 'bull' and oil_episode.confirmed %}
+    <span class="l-en">Oil is in a <b>confirmed up-trend episode</b> ({{ oil_episode.run_len }}d). Historically, when oil enters one, Canadian energy (XEG) has returned <b>+1.9% over the next 4 weeks</b> (episode study: n=32, t=+2.75, q=0.009) — a tailwind.</span>
+    <span class="l-zh">原油处于<b>确认的上行趋势阶段</b>（{{ oil_episode.run_len }} 天）。历史上原油进入该阶段时，加拿大能源（XEG）随后 4 周平均回报 <b>+1.9%</b>（阶段研究：n=32，t=+2.75，q=0.009）——顺风。</span>
+    {% elif oil_episode.state == 'bear' and oil_episode.confirmed %}
+    <span class="l-en">Oil is in a <b>confirmed down-trend episode</b> ({{ oil_episode.run_len }}d) — the up-side tailwind for Canadian energy (XEG) is <b>not active</b>. The down-side link is weaker and underpowered (C1b, provisional).</span>
+    <span class="l-zh">原油处于<b>确认的下行趋势阶段</b>（{{ oil_episode.run_len }} 天）——对加拿大能源（XEG）的上行顺风<b>未激活</b>；下行关联更弱、样本不足（C1b，暂定）。</span>
+    {% else %}
+    <span class="l-en">Oil has <b>no confirmed trend episode</b> right now. When it enters a confirmed up-trend, Canadian energy (XEG) has historically gained <b>+1.9% / 4 weeks</b> (n=32, t=+2.75).</span>
+    <span class="l-zh">原油当前<b>无确认的趋势阶段</b>。当其进入确认上行趋势时，加拿大能源（XEG）历史上随后 4 周平均 <b>+1.9%</b>（n=32，t=+2.75）。</span>
+    {% endif %}
+    <span style="opacity:.6"> — {{ t('historical context, not a gauntleted signal (C1-R2 pre-registration)', '历史背景，非经考验的信号（C1-R2 预注册）') }}</span>
+  </div>
+</div>
+{% endif %}
+
 {% if vm %}
 {% set br = vm.breadth %}
 {% set ix = vm.index %}

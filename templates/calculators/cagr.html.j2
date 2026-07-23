@@ -8,6 +8,9 @@
   toc, related, cta.
 =============================================================================#}
 {% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('cagr', 'crown') }}{% endblock %}
 
 {% block calc_form %}
 <p class="cc-lede">{{ t('Switch between finding the compound annual growth rate of an investment or projecting a future value at a target rate.',

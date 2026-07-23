@@ -25,6 +25,10 @@ on:
       # hub-a11y guard: five static a11y regressions on globe-deck pages.
       - "scripts/check_hub_a11y.py"
       - "tests/test_check_hub_a11y.py"
+      # hashed-css rebase autoresolver: every render lane's push loop leans on it to not
+      # silently drop a day's engine outputs (2026-07-22 asia-close run 29904079071).
+      - "scripts/rebase_autoresolve_hashed_css.sh"
+      - "tests/test_rebase_autoresolve_hashed_css.py"
       # font-ui guard: body-level var(--font-ui) must resolve (theme.css or local def) — #2647.
       - "scripts/check_font_ui_defined.py"
       - "tests/test_check_font_ui_defined.py"
@@ -288,6 +292,8 @@ on:
       # PR-C health builder tests (weekend-aware staleness, cadence exclusion, staleness_from).
       - "tests/test_neuralweb_health.py"
       - "tests/test_neuralweb_daily_brief.py"
+      # CMX W4: technician doctrine library tests (neural-web-core job).
+      - "tests/test_brain_doctrine.py"
       - "tests/test_admin_neural_web.py"
       - "tests/test_admin_metabolism.py"
       - "tests/test_admin_metabolism_history.py"
@@ -667,6 +673,23 @@ on:
       - "scripts/build_vol_regime.py"
       - "tests/test_opex_risk.py"
       - "data/opex_windows/.gitkeep"
+      # D02 W1 live social publisher: backend-agnostic publisher + Buffer adapter,
+      # the live runner, and the outbox status machine it drives (posting state).
+      - "engine/marketing/social_publisher.py"
+      - "engine/marketing/outbox.py"
+      - "scripts/marketing_publisher.py"
+      - "tests/test_marketing_social_publisher.py"
+      - "tests/test_marketing_outbox.py"
+      # W1 wiring layer: auto-approve gate + writeless dry-run report + admin panel.
+      - "tests/test_marketing_publisher_autoapprove.py"
+      # Marketing lobe engine unit suite (see the marketing-engine job). Whitelisted
+      # 2026-07-23 after it rotted red on main: opportunities.jsonl is a forward
+      # ledger the nightly radar fills with live radar-* rows, but the seed round-trip
+      # test asserted shadow-only. Triggers on the engine tree + the committed ledgers.
+      - "engine/marketing/**"
+      - "tests/test_marketing_engine.py"
+      - "data/marketing/opportunities.jsonl"
+      - "data/marketing/claims.jsonl"
   workflow_dispatch:
 
 permissions:
@@ -782,6 +805,25 @@ jobs:
         run: pip install pytest pandas numpy
       - name: guard constants must match engine/market_state.py
         run: python -m pytest tests/test_check_ms_board_coherence.py -q
+
+  rebase-css-autoresolve:
+    # 2026-07-22 incident: asia-close run 29904079071 committed the day's engine outputs,
+    # then every push retry died on the SAME rename/rename conflict — two lanes had
+    # renamed a content-hashed site/assets/css/<hash>.css to different hashes, and
+    # `pull --rebase -X theirs` can't settle path-level conflicts. The loop gave up with
+    # a ::warning under a green run, silently dropping the day (hk_regime stuck 07-21).
+    # scripts/rebase_autoresolve_hashed_css.sh now finishes such rebases (keeps both
+    # hashed files byte-pure; refuses anything else); these tests replay the incident
+    # with real git repos, so a git-version behavior change shows up here, not in prod.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: autoresolver must finish rename/rename rebases on hashed css (and refuse all else)
+        run: python -m pytest tests/test_rebase_autoresolve_hashed_css.py -q
 
   conflict-markers:
     # 2026-07-03 incident: a merge commit shipped literal git conflict markers
@@ -972,6 +1014,7 @@ jobs:
           tests/test_pick_autopsy_selection.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
           tests/test_news_page_render.py tests/test_china_lens_hub.py
+          tests/test_news_rank_aging.py
           tests/test_build_netliq_daily.py
           tests/test_ignition_radar.py
           tests/test_mag7_regime.py
@@ -1149,7 +1192,7 @@ jobs:
       - name: install deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_brain_doctrine.py -q
 
   cn-standout-audit:
     # SA-W2: CN PIT regime store + species_id + two-axis attribution + fitness card.
@@ -2375,12 +2418,16 @@ jobs:
     # (86.7% of snapshot rows, ~1475 of 1702 names).  Spec §3 says missing
     # dollar_adv_20d must PASS with liq_unknown=True.
     # Fix: adv.isna() | adv.ge(_LIQ_ADV_MIN) in _apply_liquidity().
-    # Two suites:
+    # Four suites:
     #   test_pick_lab_liquidity.py — four required cases (null-adv pass,
     #                                below-threshold excluded, above-threshold
     #                                pass, close<5+null-adv excluded) plus
     #                                boundary / multi-row regression pins.
     #   test_pick_lab_core.py      — full core suite must not regress.
+    #   test_pick_lab_hk_runner.py — HK runner end-to-end + regression pins
+    #                                (catalyst/standouts/stale-cross shapes,
+    #                                _col container values, snapshot upsert).
+    #   test_pick_lab_hk_render.py — HK lab page renderer suite (needs jinja2).
     # Network-free; no data/ writes.
     runs-on: ubuntu-latest
     steps:
@@ -2389,9 +2436,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: pick lab liquidity gate regression tests
-        run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py -q
+        run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py tests/test_pick_lab_hk_runner.py tests/test_pick_lab_hk_render.py -q
 
   ric-w2-surface:
     # RIC W2 SURFACE: whole-market dealer-surface history engine unit tests.
@@ -2475,3 +2522,39 @@ jobs:
         run: pip install pytest fastapi httpx pypdf reportlab
       - name: research vault serving-API security tests
         run: python -m pytest tests/test_research_api.py -q
+
+  marketing-social-publisher:
+    # D02 W1 live social publisher: tweet_length/validate_postable, the Buffer
+    # adapter (all HTTP mocked via _transport), and the live runner (kill-switch
+    # + --live gating, approved→posting→posted, idempotency, no-double-post).
+    # test_marketing_outbox is co-run because W1 extended its status machine.
+    # DARK BY DEFAULT: zero live network — every transport path is mocked.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml
+      - name: social publisher + outbox + wiring-layer unit tests
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py -q
+
+  marketing-engine:
+    # Marketing lobe engine unit suite (state, departments, authority ladder,
+    # opportunity scoring/bus, campaign compiler, economics, events, ledgers,
+    # provenance, claims + seed-ledger round-trips). Never whitelisted when it
+    # landed in #2984, so it rotted red on main once the nightly radar accrued
+    # live radar-* rows into opportunities.jsonl (a forward ledger, not a
+    # shadow-only seed). Deps: stdlib + pytest + pyyaml only — no pandas/numpy,
+    # verified against a minimal-import env.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml
+      - name: marketing engine unit tests
+        run: python -m pytest tests/test_marketing_engine.py -q

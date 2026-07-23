@@ -1,0 +1,342 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forex Pip Value Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Value one pip of any forex pair: pip value in your account currency, the quote currency, and per 0.1 lot, from position size and rate.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/forex-pip-value.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Forex Pip Value Calculator">
+<meta property="og:description" content="Value one pip of any forex pair: pip value in your account currency, the quote currency, and per 0.1 lot, from position size and rate.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/forex-pip-value.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Forex Pip Value Calculator">
+<meta name="twitter:description" content="Value one pip of any forex pair: pip value in your account currency, the quote currency, and per 0.1 lot, from position size and rate.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Forex Pip Value Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Forex Pip Value Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Forex Pip Value Calculator</h1>
+  <p class="est-dek">Value one pip of any forex pair: pip value in your account currency, the quote currency, and per 0.1 lot, from position size and rate.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 28 h48"/><path class="egl-still" d="M12 24 v8 M20 26 v6 M28 24 v8 M36 26 v6 M44 24 v8 M52 26 v6"/><circle class="egl-still" cx="30" cy="18" r="9"/><path class="egl-draw" d="M30 24 v-12 M24 18 h12"/><line class="egl-mark" x1="36.4" y1="24.4" x2="46" y2="34"/><circle class="egl-mark-dot" cx="30" cy="18" r="2.4"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter your position size, the pip size for the pair, and the rate that turns the quote currency into your account currency. You get the cash value of a one-pip move.</span><span class="l-zh">填入仓位规模、货币对的一个点大小，以及把报价货币换算成账户货币的汇率，即可得到一个点波动所对应的现金价值。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Position size (units)</span><span class="l-zh">仓位规模（单位）</span> <span class="hint"><span class="l-en">100,000 = 1 standard lot</span><span class="l-zh">100,000 = 1 标准手</span></span></span>
+    <input id="units" inputmode="decimal" autocomplete="off" placeholder="100,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Quote → account rate</span><span class="l-zh">报价→账户 汇率</span> <span class="hint"><span class="l-en">1 if quote = account currency</span><span class="l-zh">报价与账户货币相同则为 1</span></span></span>
+    <input id="qrate" inputmode="decimal" autocomplete="off" placeholder="1"></label>
+  <div class="ci ci-wide">
+    <span class="ci-l"><span class="l-en">Pip size</span><span class="l-zh">一个点大小</span> <span class="hint"><span class="l-en">0.01 for JPY-quoted pairs</span><span class="l-zh">JPY 报价货币对为 0.01</span></span></span>
+    <div class="ci-seg" role="radiogroup" data-name="pipsize" aria-label="Pip size">
+      <button class="on" type="button" data-v="0.0001" role="radio" aria-checked="true"><span class="l-en">0.0001 standard</span><span class="l-zh">0.0001 标准</span></button>
+      <button type="button" data-v="0.01" role="radio" aria-checked="false"><span class="l-en">0.01 JPY pairs</span><span class="l-zh">0.01 日元对</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">per pip (account)</span><span class="l-zh">每点（账户货币）</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in the fields to value one pip.</span><span class="l-zh">填入字段即可计算一个点的价值。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Pip value (quote ccy)</span><span class="l-zh">每点价值（报价货币）</span></dt><dd id="out-quote">—</dd></div>
+    <div><dt><span class="l-en">Pip value (account)</span><span class="l-zh">每点价值（账户货币）</span></dt><dd id="out-account">—</dd></div>
+    <div><dt><span class="l-en">Per 0.1 lot</span><span class="l-zh">每 0.1 手</span></dt><dd id="out-mini">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">The value of one pip is your <strong>pip size</strong> times your <strong>position size</strong>, expressed in the quote currency, then converted into your account currency. On a standard 100,000-unit lot of a pair quoted in your own currency, one pip is worth about <span class="num">10</span> of that currency — and that number scales straight up and down with the size you trade.</span><span class="l-zh">一个点的价值等于<strong>一个点大小</strong>乘以<strong>仓位规模</strong>，先以报价货币表示，再换算成你的账户货币。对于以你自身货币报价的一手 100,000 单位标准仓位，一个点约值该货币的 <span class="num">10</span> 个单位——而这个数字会随着交易规模等比例增减。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Pip value (quote)</strong> = Pip size × Position size</span><span class="l-zh"><strong>每点价值（报价）</strong> = 一个点大小 × 仓位规模</span><br>
+<span class="l-en"><strong>Pip value (account)</strong> = Pip value (quote) × Quote→account rate</span><span class="l-zh"><strong>每点价值（账户）</strong> = 每点价值（报价） × 报价→账户 汇率</span><br>
+<span class="l-en">Per 0.1 lot (10,000 units) = Pip size × 10,000 × Quote→account rate</span><span class="l-zh">每 0.1 手（10,000 单位） = 一个点大小 × 10,000 × 报价→账户 汇率</span>
+</div>
+<p><span class="l-en">A pip is the standard smallest quoted step of an exchange rate — <span class="num">0.0001</span> for most pairs, and <span class="num">0.01</span> for pairs quoted in Japanese yen, where prices carry fewer decimals. The pip value falls out of the currency the pair is <em>quoted</em> in (the second one, e.g. the USD in EUR/USD); the rate then carries that into the currency your account is denominated in. When the quote currency already <em>is</em> your account currency, the rate is <span class="num">1</span> and the two figures match.</span><span class="l-zh">一个点是汇率报价的标准最小变动单位——多数货币对为 <span class="num">0.0001</span>，而以日元报价的货币对为 <span class="num">0.01</span>，因为其价格小数位更少。每点价值由货币对的<em>报价</em>货币决定（即第二种货币，例如 EUR/USD 中的 USD）；汇率再把它换算成你账户所计价的货币。当报价货币本身<em>就是</em>你的账户货币时，汇率为 <span class="num">1</span>，两个数值相等。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader holds one standard lot — <span class="num">100,000</span> units — of a USD-quoted pair, and their account is also in USD (so the rate is <span class="num">1</span>).</span><span class="l-zh">假设一位交易者持有一手标准仓位——<span class="num">100,000</span> 单位——的以美元报价的货币对，且账户同样以美元计价（因此汇率为 <span class="num">1</span>）。</span></p>
+<ul>
+<li><span class="l-en">Pip value (quote) = <span class="num">0.0001 × 100,000 = $10.00</span></span><span class="l-zh">每点价值（报价） = <span class="num">0.0001 × 100,000 = $10.00</span></span></li>
+<li><span class="l-en">Pip value (account) = <span class="num">10.00 × 1 = $10.00</span></span><span class="l-zh">每点价值（账户） = <span class="num">10.00 × 1 = $10.00</span></span></li>
+<li><span class="l-en">Trade a mini lot (<span class="num">10,000</span> units) instead and one pip is worth <span class="num">$1.00</span>; a micro lot (<span class="num">1,000</span>) makes it <span class="num">$0.10</span>.</span><span class="l-zh">若改为交易一手迷你仓位（<span class="num">10,000</span> 单位），一个点值 <span class="num">$1.00</span>；一手微型仓位（<span class="num">1,000</span> 单位）则为 <span class="num">$0.10</span>。</span></li>
+</ul>
+<p><span class="l-en">For a yen pair — pip size <span class="num">0.01</span>, one standard lot — a pip is worth <span class="num">1,000 JPY</span>. If the account is in USD and one USD buys ~150 JPY, the rate is <span class="num">1 ÷ 150 ≈ 0.006667</span>, so the pip is <span class="num">1,000 × 0.006667 ≈ $6.67</span>.</span><span class="l-zh">对于日元货币对——一个点大小 <span class="num">0.01</span>，一手标准仓位——一个点值 <span class="num">1,000 日元</span>。若账户以美元计价，且 1 美元约兑 150 日元，则汇率为 <span class="num">1 ÷ 150 ≈ 0.006667</span>，因此一个点约为 <span class="num">1,000 × 0.006667 ≈ $6.67</span>。</span></p>
+</div>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Using the wrong rate — or forgetting it entirely</span><span class="l-zh">用错汇率——或干脆忘了它</span></span>
+<p><span class="l-en">The rate here converts the <em>quote</em> currency into your account currency, not the base currency. On EUR/USD with a USD account, that rate is simply <span class="num">1</span> and often gets dropped without harm. But on a cross where neither currency is your account currency — say GBP/JPY held in a USD account — the pip is first worth a number of yen, and you must convert <em>from the yen</em> into dollars. Plug in the base-currency rate by mistake and the pip value can be off by a wide margin.</span><span class="l-zh">这里的汇率是把<em>报价</em>货币换算成你的账户货币，而不是基准货币。对于以美元计价账户的 EUR/USD，该汇率就是 <span class="num">1</span>，省略也无妨。但对于两种货币都不是你账户货币的交叉盘——比如以美元账户持有的 GBP/JPY——一个点先以若干日元计价，你必须<em>从日元</em>换算成美元。若误填基准货币的汇率，每点价值可能相差甚远。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This math gives the pip value cleanly for a single position at a single moment. A few honest limits:</span><span class="l-zh">这套算法能干净地算出单一仓位在某一时刻的每点价值。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>The rate moves.</strong> Your quote→account rate is itself an exchange rate that drifts through the session, so the pip value shifts slightly as it does. For sizing, the value at entry is close enough; for a precise mark, use the current rate.</span><span class="l-zh"><strong>汇率是变动的。</strong>报价→账户汇率本身也是一个会在盘中漂移的汇率，因此每点价值也会随之小幅变化。用于定仓时，入场时的数值已足够接近；若需精确计价，请使用当前汇率。</span></li>
+<li><span class="l-en"><strong>Fractional pips and spreads.</strong> Many brokers quote a fifth decimal (a "pipette", one-tenth of a pip). This tool values a whole pip; the spread you pay is a separate cost, not part of the pip value.</span><span class="l-zh"><strong>零点几个点与点差。</strong>许多经纪商报第五位小数（即“分点”，等于一个点的十分之一）。本工具计算的是一个整点的价值；你支付的点差是一项独立成本，不计入每点价值。</span></li>
+<li><span class="l-en"><strong>Contract-size quirks.</strong> A "lot" is a convention, not a law — some instruments and CFDs use non-standard contract sizes. Enter the actual number of units you hold rather than assuming 100,000.</span><span class="l-zh"><strong>合约规模的特殊情形。</strong>“手”是一种约定俗成，而非硬性规则——某些品种和差价合约采用非标准合约规模。请填入你实际持有的单位数，而不要默认为 100,000。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Pip value scales one-for-one with position size, and it lands in the quote currency before it lands in yours.</span><span class="l-zh">每点价值与仓位规模一一对应地缩放，且它先落在报价货币上，再落到你的账户货币上。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Turn a pip value into a risk-based share of your account with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">, or read the lesson on <a href="</span><span class="l-zh">把每点价值换算成占账户的风险比例，或阅读 <a href="</span>../../learn/risk/position-sizing.html"><span class="l-en">position sizing</span><span class="l-zh">仓位管理</span></a><span class="l-en">.</span><span class="l-zh"> 这节课。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (do not re-derive) ────────────────────────────────────────
+  // inputs: {U units, p pipSize, q quote→account rate}. Returns an outputs
+  // object, or {ok:false, msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var U=inp.U, p=inp.p, q=inp.q;
+    if(!(U>0)) return {ok:false, msg:"Enter a position size above zero (100,000 = 1 standard lot)."};
+    if(!(p>0)) return {ok:false, msg:"Choose a pip size."};
+    if(!(q>0)) return {ok:false, msg:"Enter the quote→account rate (use 1 if the quote currency is your account currency)."};
+    var pipQuote = p * U;
+    var pipAccount = pipQuote * q;
+    // a mini lot is a fixed 10,000 units (0.1 standard lot) — a reference figure
+    // that does NOT depend on the size entered above
+    var perMiniLot = p * 10000 * q;
+    return {
+      ok:true, pipQuote:pipQuote, pipAccount:pipAccount, perMiniLot:perMiniLot,
+      sameCcy: Math.abs(q - 1) < 1e-9
+    };
+  }
+
+  // ── self-check: run the canonical fixtures on load, console.error on drift ──
+  var WORKED_EXAMPLES = [
+    { in:{U:100000, p:0.0001, q:1},          want:{pipQuote:10,   pipAccount:10,   perMiniLot:1} },
+    { in:{U:10000,  p:0.0001, q:1},          want:{pipQuote:1,    pipAccount:1,    perMiniLot:1} },
+    { in:{U:100000, p:0.01,   q:1/150},      want:{pipQuote:1000, pipAccount:6.6667, perMiniLot:0.66667} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("forex-pip-value self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.01){
+        console.error("forex-pip-value self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { units:$("units"), qrate:$("qrate") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outQuote=$("out-quote"), outAccount=$("out-account"), outMini=$("out-mini"),
+        copyBtn=$("copy-result"), copied=$("copied");
+    var seg = document.querySelector('.ci-seg[data-name="pipsize"]');
+    var pipSize = 0.0001;
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function plain(n){ return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function dash(){ outMain.textContent="—";
+      [outQuote,outAccount,outMini].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ U:numFrom(els.units), p:pipSize, q:numFrom(els.qrate) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent   = money(res.pipAccount);
+      outQuote.textContent  = plain(res.pipQuote);
+      outAccount.textContent= money(res.pipAccount);
+      outMini.textContent   = money(res.perMiniLot);
+      // Law 3: plain-word interpretation under the number
+      var line = "One pip moves this position by " + money(res.pipAccount) + " in your account currency";
+      if(res.sameCcy){
+        line += " — the quote currency is your account currency, so the two figures match.";
+      } else {
+        line += " (" + plain(res.pipQuote) + " in the quote currency, converted at your rate).";
+      }
+      outPlain.textContent = line; outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Pip value: " + money(last.pipAccount) + " per pip (account) · " +
+        plain(last.pipQuote) + " in quote currency · " + money(last.perMiniLot) +
+        " per 0.1 lot — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    if(seg){
+      seg.addEventListener("click", function(e){
+        var b=e.target.closest("button[data-v]"); if(!b) return;
+        pipSize = parseFloat(b.getAttribute("data-v"));
+        [].forEach.call(seg.querySelectorAll("button"), function(x){
+          var on = x===b; x.classList.toggle("on", on); x.setAttribute("aria-checked", on?"true":"false"); });
+        render();
+      });
+    }
+    ["units","qrate"].forEach(function(id){ els[id].addEventListener("input", render); });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

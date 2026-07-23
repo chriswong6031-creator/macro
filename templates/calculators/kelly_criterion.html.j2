@@ -1,0 +1,205 @@
+{#=============================================================================
+  calculators/kelly_criterion.html.j2 — Kelly Criterion Calculator
+  Clones the position_size.html.j2 flagship structure. Implements the Kelly
+  fraction from win probability W and win/loss ratio R (§7 formula style),
+  with the §6 WORKED_EXAMPLES self-check. Explainer follows §8: direct answer
+  → formula → worked example → common trap → where it breaks → links.
+
+  compute() is PURE (no DOM); wire() does all DOM reads/writes; WORKED_EXAMPLES
+  runs each fixture through compute() on load and console.error's any mismatch
+  (silent when green). Never render NaN/Infinity; empty/invalid → plain-word
+  sentence in .co-plain and "—" in the number. Inputs accept commas.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('kelly-criterion', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter how often the trade wins and how big an average win is versus an average loss. You get the fraction of capital that maximizes long-run growth — and the gentler half-Kelly most traders actually use.',
+   '填入交易的胜率，以及平均盈利相对平均亏损的倍数。即可得到——能让长期复合增长最大化的下注比例，以及多数交易者实际采用的、更温和的「半凯利」。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Win probability (%)', '胜率（%）') }} <span class="hint">{{ t('how often it wins', '获胜的频率') }}</span></span>
+    <input id="winprob" inputmode="decimal" autocomplete="off" placeholder="55"></label>
+  <label class="ci"><span class="ci-l">{{ t('Win/loss ratio (R)', '盈亏比（R）') }} <span class="hint">{{ t('avg win ÷ avg loss', '平均盈利 ÷ 平均亏损') }}</span></span>
+    <input id="wlratio" inputmode="decimal" autocomplete="off" placeholder="2"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('of capital (Kelly)', '资金占比（凯利）') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in both fields to size the bet.', '填入两个字段即可计算下注比例。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Half-Kelly', '半凯利') }}</dt><dd id="out-half">—</dd></div>
+    <div><dt>{{ t('Implied edge', '隐含优势') }}</dt><dd id="out-edge">—</dd></div>
+    <div><dt>{{ t('Loss probability', '败率') }}</dt><dd id="out-loss">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('The Kelly fraction is the share of capital to stake so that long-run compound growth is fastest. It rises with your <strong>win rate</strong> and with the <strong>size of a win relative to a loss</strong>, and it turns negative — telling you not to bet at all — the moment those two together stop paying. It answers one question only: given a known edge, how much is too much?',
+   '凯利比例是——为使长期复合增长最快——应投入的资金份额。它随你的<strong>胜率</strong>以及<strong>盈利相对亏损的倍数</strong>而上升；一旦这两者合起来不再带来正收益，它就转为负值——告诉你根本不该下注。它只回答一个问题：在优势已知的前提下，下多少才算过头？') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>f</strong> = W − ( 1 − W ) ÷ R', '<strong>f</strong> = W − ( 1 − W ) ÷ R') }}<br>
+{{ t('where W = win probability (as a decimal), R = win/loss ratio', '其中 W = 胜率（小数形式），R = 盈亏比') }}<br>
+{{ t('<strong>Kelly %</strong> = 100 × f', '<strong>凯利 %</strong> = 100 × f') }}<br>
+{{ t('<strong>Half-Kelly %</strong> = Kelly % ÷ 2', '<strong>半凯利 %</strong> = 凯利 % ÷ 2') }}
+</div>
+<p>{{ t('R is the <em>ratio</em> of your average win to your average loss, in R-multiples — win $200 on a typical winner and lose $100 on a typical loser, and R = 2. If <strong>f</strong> comes out at zero or below, the edge does not clear its own losses: Kelly says stand aside, not bet small.',
+   'R 是你的平均盈利与平均亏损之<em>比</em>，以 R 倍数计——典型盈利赚 $200、典型亏损亏 $100，则 R = 2。若 <strong>f</strong> 算出为零或更低，说明优势填不平自身的亏损：此时凯利的结论是空仓，而非小注。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a trader wins <span class="num">55%</span> of the time, and a typical win is <span class="num">twice</span> the size of a typical loss (R = 2).',
+   '假设一位交易者的胜率为 <span class="num">55%</span>，且典型盈利是典型亏损的 <span class="num">两倍</span>（R = 2）。') }}</p>
+<ul>
+<li>{{ t('W = <span class="num">0.55</span>, R = <span class="num">2</span>', 'W = <span class="num">0.55</span>，R = <span class="num">2</span>') }}</li>
+<li>{{ t('f = <span class="num">0.55 − (1 − 0.55) ÷ 2 = 0.55 − 0.225 = 0.325</span>', 'f = <span class="num">0.55 − (1 − 0.55) ÷ 2 = 0.55 − 0.225 = 0.325</span>') }}</li>
+<li>{{ t('Kelly = <span class="num">32.5%</span> of capital', '凯利 = 资金的 <span class="num">32.5%</span>') }}</li>
+<li>{{ t('Half-Kelly = <span class="num">16.25%</span> — the size most traders actually run.', '半凯利 = <span class="num">16.25%</span>——多数交易者实际采用的仓位。') }}</li>
+</ul>
+</div>
+<p>{{ t('Full Kelly here says stake nearly a third of the account on one bet. That is mathematically growth-optimal <em>only</em> if the 55% and the 2× are exactly right and never change — which is a heroic assumption. That gap between the clean math and the messy edge is why half-Kelly exists.',
+   '此处的完整凯利建议在一笔下注上押上账户近三分之一。这在数学上是增长最优的——但<em>仅当</em>那 55% 与 2× 分毫不差且永不改变时才成立，而这是一个近乎苛刻的假设。正是这道「干净的数学」与「模糊的真实优势」之间的裂缝，催生了半凯利。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Overbetting a fuzzy edge', '对模糊优势过度下注') }}</span>
+<p>{{ t('Full Kelly is brutally volatile — even when the inputs are correct, drawdowns of 50% or more are ordinary along the way. Worse, traders rarely know their true win rate; an overestimate pushes <strong>f</strong> too high, and betting <em>above</em> Kelly lowers growth <em>and</em> raises risk at the same time — the worst of both. This is why the common practice is half-Kelly (or less): it keeps most of the growth for a fraction of the swings, and it forgives an over-optimistic estimate.',
+   '完整凯利波动极其剧烈——即便输入无误，途中出现 50% 甚至更大的回撤也属寻常。更糟的是，交易者很少知道自己真实的胜率；高估会把 <strong>f</strong> 推得过高，而下注<em>超过</em>凯利会同时——降低增长<em>并</em>抬升风险，两头皆输。这正是普遍采用半凯利（或更低）的原因：以一小部分的波动换取大部分的增长，并为过于乐观的估计留出余地。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('Kelly assumes a known, stable, repeatable edge and independent bets. Trading offers almost none of those cleanly. A few honest limits:',
+   '凯利假设优势是已知、稳定、可重复的，且各次下注相互独立。而交易几乎无一能干净地满足。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>The edge is estimated, not known.</strong> W and R come from a finite, noisy sample of past trades. A small sample can flatter you; Kelly then sizes off a number that may not survive the next hundred trades.',
+   '<strong>优势是估计的，而非已知的。</strong>W 和 R 来自过往交易这一有限且带噪声的样本。小样本容易让人自我美化；凯利于是按一个未必能挺过下一百笔交易的数字来定仓。') }}</li>
+<li>{{ t('<strong>Edges drift.</strong> A win rate is not a constant of nature — regimes change, crowding erodes an edge, and a strategy that paid last year may not this year. Kelly has no memory of that decay.',
+   '<strong>优势会漂移。</strong>胜率并非自然常数——市场环境会变、拥挤会侵蚀优势，去年有效的策略今年未必有效。凯利对这种衰减毫无记忆。') }}</li>
+<li>{{ t('<strong>Correlated bets.</strong> Kelly sizes one independent bet. Run several correlated positions at their individual Kelly sizes and your true stake — and true risk — is far larger than any one number suggests.',
+   '<strong>相关的下注。</strong>凯利为单一的独立下注定仓。若你按各自的凯利仓位同时持有多个相关头寸，你真实的敞口——与真实的风险——将远大于任一单独数字所暗示的。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Kelly tells you the most you could bet if your edge were certain. Because it never is, sizing below it — half-Kelly or less — is the honest default.',
+   '凯利告诉你——若优势确定无疑——最多能下多少。而正因优势从不确定，把仓位定在它之下——半凯利或更低——才是诚实的默认选择。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Ground it in the lesson on <a href="', '在这节课中打好基础 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t(', or turn a win rate and payoff into an edge with the <a href="', '，或用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t('.', '把胜率与赔付换算成优势。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute ───────────────────────────────────────────────────────────
+  // inputs: {W winProbPct, R winLossRatio}. Returns an outputs object, or
+  // {ok:false, msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var W=inp.W, R=inp.R;
+    if(!(W>0) || W>=100) return {ok:false, msg:"Enter a win probability between 0 and 100."};
+    if(!(R>0)) return {ok:false, msg:"Enter a win/loss ratio above zero (average win ÷ average loss)."};
+    var w = W/100;                       // win prob as decimal
+    var lossProb = 1 - w;                // loss prob as decimal
+    var f = w - lossProb / R;            // Kelly fraction
+    var kellyPct = 100 * f;
+    var halfKellyPct = kellyPct / 2;
+    var edgeR = w * R - lossProb;        // expected value per unit staked, in R
+    var noEdge = !(f > 0);
+    return {
+      ok:true, f:f, kellyPct:kellyPct, halfKellyPct:halfKellyPct,
+      edgeR:edgeR, lossPct:100*lossProb, noEdge:noEdge
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{W:55, R:2}, want:{kellyPct:32.5, halfKellyPct:16.25, noEdge:false} },
+    { in:{W:50, R:1}, want:{kellyPct:0,    halfKellyPct:0,     noEdge:true } }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("kelly-criterion self-check "+i+": compute failed", got); return; }
+      for(k in w){
+        if(k === "noEdge"){ if(got[k] !== w[k]){
+          console.error("kelly-criterion self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+        else if(Math.abs(got[k] - w[k]) > 0.01){
+          console.error("kelly-criterion self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); }
+      }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { winprob:$("winprob"), wlratio:$("wlratio") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outHalf=$("out-half"), outEdge=$("out-edge"), outLoss=$("out-loss"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function pct(n, dp){ return n.toFixed(dp===undefined?1:dp) + "%"; }
+    function dash(){ outMain.textContent="—";
+      [outHalf,outEdge,outLoss].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ W:numFrom(els.winprob), R:numFrom(els.wlratio) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      if(res.noEdge){
+        outMain.textContent = "0%";
+        outHalf.textContent = "0%"; outHalf.className="";
+        outEdge.textContent = res.edgeR.toFixed(2) + "R"; outEdge.className="neg";
+        outLoss.textContent = pct(res.lossPct, 0); outLoss.className="";
+        outPlain.textContent = "No positive edge — Kelly says don't bet. At this win rate and payoff, staking anything shrinks capital over the long run.";
+        outPlain.className="co-plain warn";
+        return;
+      }
+
+      outMain.textContent = pct(res.kellyPct);
+      outHalf.textContent = pct(res.halfKellyPct); outHalf.className="";
+      outEdge.textContent = res.edgeR.toFixed(2) + "R"; outEdge.className = res.edgeR>0 ? "pos" : "neg";
+      outLoss.textContent = pct(res.lossPct, 0); outLoss.className="";
+      // Law 3: plain-word interpretation under the number
+      outPlain.textContent = "Full Kelly stakes " + pct(res.kellyPct) + " of capital per bet — growth-optimal only if the edge is exact. Most traders run half-Kelly (" +
+        pct(res.halfKellyPct) + ") to keep most of the growth for a fraction of the swings.";
+      outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      if(last.noEdge) return "Kelly criterion: no positive edge — don't bet. — mastermind-x.com";
+      return "Kelly criterion: " + pct(last.kellyPct) + " of capital (half-Kelly " + pct(last.halfKellyPct) +
+        "), implied edge " + last.edgeR.toFixed(2) + "R — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["winprob","wlratio"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

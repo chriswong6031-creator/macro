@@ -5,18 +5,72 @@
 
 {% block title %}Thematic Foresight Desk — Macro Dashboard{% endblock %}
 
-{# ---- band -> tone class helpers (house colour system) ---- #}
-{% macro bn_tone(band) -%}
-{%- if band in ('SOLD_OUT','TIGHT') -%}hot{%- elif band in ('TIGHT (text)','TIGHTENING','TIGHTENING (text)') -%}warn{%- elif band == 'LOOSE' -%}cool{%- else -%}mute{%- endif -%}
+{# ============================================================================
+   PLAIN-WORD STAGE SYSTEM (DESIGN_DOCTRINE Law 1 + Law 2)
+   The engine stages (PRECIPICE / BROADENING / RE-RATING / GLUT-RISK / WATCH) are
+   internal vocabulary — banned on the glance tier. Every card wears a plain-word
+   stance instead; the machine stage moves to a hover receipt.
+   `(text)` / `(fingerprint)` qualifiers are stripped for the badge and surfaced
+   as a small "provisional" mark.
+   Lifecycle hues (early/confirm/late/fade) are NOT price-direction reads, so they
+   do NOT swap in zh (same rule transmission uses for health/validation colours).
+   ============================================================================ #}
+{% macro sbase(stage) -%}{{ (stage or 'UNKNOWN').split(' (')[0] }}{%- endmacro %}
+{% macro stance_word(sb) -%}
+{%- if sb == 'PRECIPICE' -%}{{ t('Early','早期') }}
+{%- elif sb == 'BROADENING' -%}{{ t('Confirming','确认中') }}
+{%- elif sb == 'RE-RATING' -%}{{ t('Late','偏晚') }}
+{%- elif sb == 'GLUT-RISK' -%}{{ t('Fading','退潮') }}
+{%- elif sb == 'WATCH' -%}{{ t('Watching','观察中') }}
+{%- else -%}{{ t('No read','暂无读数') }}{%- endif -%}
 {%- endmacro %}
-{% macro dm_tone(band) -%}
-{%- if band in ('ACCELERATING','STEADY') -%}hot{%- elif band == 'COOLING' -%}warn{%- elif band == 'CONTRACTING' -%}cool{%- else -%}mute{%- endif -%}
+{% macro stance_line(sb) -%}
+{%- if sb == 'PRECIPICE' -%}{{ t('Supply is tight before estimates have moved — the biggest head start. The buy still waits for a dip.','供给已紧、预期未动——先机最大。买点仍等待回调。') }}
+{%- elif sb == 'BROADENING' -%}{{ t('Estimates are starting to catch up — runway confirmed. Don’t chase the spikes.','预期开始跟上——跑道确认。勿追高。') }}
+{%- elif sb == 'RE-RATING' -%}{{ t('The crowd has arrived — estimates are already broad. Don’t chase.','人群已到——预期普遍上修。勿追高。') }}
+{%- elif sb == 'GLUT-RISK' -%}{{ t('Supply is catching up while estimates stay high — trim / exit clock.','供给赶上而预期仍高——减仓／退出倒计时。') }}
+{%- elif sb == 'WATCH' -%}{{ t('Not enough signal yet — on the watchlist.','信号尚不足——列入观察。') }}
+{%- else -%}{{ t('No clear read right now.','当前无明确读数。') }}{%- endif -%}
 {%- endmacro %}
-{% macro rv_tone(level) -%}
-{%- if level == 'POSITIVE' -%}hot{%- elif level == 'NEGATIVE' -%}cool{%- elif level == 'FLAT_LOW' -%}info{%- else -%}mute{%- endif -%}
+{# CSS-only bilingual help tip (Tier-2 home for mechanics) — foresight twin of transmission's .txq #}
+{% macro fxq(en, zh) -%}
+<span class="fxq" tabindex="0">?<span class="fxq-tip">{{ t(en, zh) }}</span></span>
 {%- endmacro %}
-{% macro gd_tone(band) -%}
-{%- if band in ('RAISING','BROAD-RAISE') -%}hot{%- elif band == 'CUTTING' -%}cool{%- else -%}mute{%- endif -%}
+{# provisional-basis mark for (text) / (fingerprint) stages #}
+{% macro prov_mark(stage) -%}
+{%- if '(text)' in (stage or '') -%}<span class="fx-prov" tabindex="0">{{ t('early text','纯文本') }}<span class="fxq-tip">{{ t('Read from company filing language only — awaiting a hard, numeric supply confirmation.','仅来自公司备案文本——待硬性数值供给确认。') }}</span></span>
+{%- elif '(fingerprint)' in (stage or '') -%}<span class="fx-prov" tabindex="0">{{ t('from filings','来自年报') }}<span class="fxq-tip">{{ t('Inferred from annual XBRL filing fingerprints — provisional until a live numeric series confirms.','由年度 XBRL 备案指纹推断——在实时数值序列确认前为暂定。') }}</span></span>
+{%- endif -%}
+{%- endmacro %}
+
+{# ---- The lead-time relay: the signature element. Five stops light up as evidence
+       fires; the pulse travels the lit portion; the dim rail ahead = edge remaining. ---- #}
+{% macro relay(r, big=false) -%}
+{%- set sb = sbase(r.stage) -%}
+{%- set l1 = r.bottleneck_band and ('TIGHT' in r.bottleneck_band or 'SOLD_OUT' in r.bottleneck_band) -%}
+{%- set l2 = r.demand_band in ['ACCELERATING','STEADY'] -%}
+{%- set l3 = r.guidance_band in ['BROAD-RAISE','RAISING'] -%}
+{%- set l4 = (r.revision_level == 'POSITIVE') or (r.revision_breadth is not none and r.revision_breadth > 0) -%}
+{%- set le = r.entry_ready -%}
+{%- set frontier = 0 -%}
+{%- if l1 %}{% set frontier = 1 %}{% endif -%}
+{%- if l2 %}{% set frontier = 2 %}{% endif -%}
+{%- if l3 %}{% set frontier = 3 %}{% endif -%}
+{%- if l4 %}{% set frontier = 4 %}{% endif -%}
+{%- if le %}{% set frontier = 5 %}{% endif -%}
+<div class="fx-relay fx-t-{{ sb }}{{ ' big' if big else '' }}" style="--reach:{{ ((frontier-1)/4*100)|round(1) if frontier else 0 }}%">
+  <span class="fx-rail"><span class="fx-rail-fill"></span>{% if frontier >= 2 %}<span class="fx-rail-pulse"></span>{% endif %}</span>
+  <div class="fx-stop{{ ' lit' if l1 }}"{% if r.bottleneck_band %} title="Supply / bottleneck: {{ r.bottleneck_band }}{% if r.tightness is not none %} · tightness {{ '%+.2f'|format(r.tightness) }}{% endif %}"{% endif %}>
+    <span class="fx-node"></span><span class="fx-slbl">{{ t('Supply','供给') }}</span></div>
+  <div class="fx-stop{{ ' lit' if l2 }}"{% if r.demand_band %} title="Demand: {{ r.demand_band }}{% if r.capex_yoy is not none %} · customer capex {{ '%+.0f'|format(r.capex_yoy) }}% YoY{% endif %}"{% endif %}>
+    <span class="fx-node"></span><span class="fx-slbl">{{ t('Demand','需求') }}</span></div>
+  <div class="fx-stop{{ ' lit' if l3 }}"{% if r.guidance_band %} title="Guidance: {{ r.guidance_band }}{% if r.guidance_raisers %} · {{ r.guidance_raisers }} raising{% endif %}{% if r.guidance_cutters %} · {{ r.guidance_cutters }} cutting{% endif %}"{% endif %}>
+    <span class="fx-node"></span><span class="fx-slbl">{{ t('Guidance','指引') }}</span></div>
+  <div class="fx-stop{{ ' lit' if l4 }}"{% if r.revision_breadth is not none %} title="Estimates / revision breadth {{ '%+.2f'|format(r.revision_breadth) }}{% if r.est_drift_90d is not none %} · 90d EPS drift {{ '%+.0f'|format(r.est_drift_90d) }}%{% endif %}"{% endif %}>
+    <span class="fx-node"></span><span class="fx-slbl">{{ t('Estimates','预期') }}</span></div>
+  <div class="fx-stop fx-stop-entry{{ ' lit' if le }}" title="{{ r.entry_note }}">
+    <span class="fx-node"></span><span class="fx-slbl">{{ t('Entry','入场') }}</span></div>
+</div>
 {%- endmacro %}
 
 {%- block head_extra %}
@@ -27,830 +81,785 @@
 {%- endblock %}
 
 {% block base_css %}
-  .fx-wrap { max-width:1060px; margin:0 auto; }
-  .fx-hero { margin:22px 0 6px; }
-  .fx-eyebrow { font-size:11.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--info); }
-  .fx-hero h1 { font-size:27px; line-height:1.15; margin:7px 0 8px; font-weight:800; }
-  .fx-sub { color:var(--muted); font-size:13.5px; max-width:760px; line-height:1.55; }
-  .fx-sub b { color:var(--text); font-weight:700; }
-  .fx-asof { color:var(--muted); font-size:11.5px; margin-top:8px; }
+  /* ============================================================================
+     FORESIGHT DESK — dawn palette + lead-time motion system
+     Built on theme.css tokens (light / dark / zh aware). Signature = the relay.
+     ============================================================================ */
+  :root{
+    --fx-dawn1:#8a6bff; --fx-dawn2:#3ad7ec;         /* violet → cyan "first light" brand */
+    --fx-early:#8f7dff;                              /* PRECIPICE — the pre-dawn edge */
+    --fx-confirm:var(--up); --fx-late:var(--warn); --fx-fade:var(--down);
+    --fx-ink: color-mix(in srgb, var(--text) 78%, var(--bg));
+  }
+  html[data-theme="light"]{
+    --fx-dawn1:#6a45e0; --fx-dawn2:#0aa9cf;
+    --fx-early:#6a54e6;
+  }
+  .fx-wrap{ max-width:1080px; margin:0 auto; }
+  .fx-wrap :focus-visible{ outline:2px solid var(--fx-dawn1); outline-offset:2px; border-radius:6px; }
 
-  /* ── data-health status strip (P0-D) ── */
-  .fx-health { margin:10px 0 4px; }
-  .fx-health-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
-  .fx-hchip { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700;
-              padding:3px 8px; border-radius:7px; border:1px solid var(--line);
-              background:var(--panel2); color:var(--muted); cursor:help; }
-  .fx-hchip.hl-LIVE    { color:var(--up);   border-color:color-mix(in srgb,var(--up)   35%,transparent); background:color-mix(in srgb,var(--up)   10%,var(--panel)); }
-  .fx-hchip.hl-PARTIAL { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,transparent); background:color-mix(in srgb,var(--warn) 10%,var(--panel)); }
-  .fx-hchip.hl-DARK    { color:var(--muted); }
-  .fx-hchip .hdot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
-  .fx-health-mode { font-size:11.5px; font-weight:700; color:var(--warn);
-                    border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);
-                    background:color-mix(in srgb,var(--warn) 10%,var(--panel));
-                    border-radius:8px; padding:4px 11px; display:inline-block; margin-top:7px; }
-  .fx-health-mode.mode-FULL { color:var(--up);
-                    border-color:color-mix(in srgb,var(--up) 35%,transparent);
-                    background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
-  .fx-confirmer-banner { border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);
-                         background:color-mix(in srgb,var(--warn) 8%,var(--panel));
-                         border-radius:10px; padding:9px 14px; margin:8px 0 4px;
-                         font-size:12.5px; color:var(--text); line-height:1.5; }
-  .fx-confirmer-banner b { color:var(--warn); }
+  /* ---------- hero ---------- */
+  .fx-hero{ padding:24px 0 4px; animation:fxUp .55s cubic-bezier(.2,.7,.3,1) both; }
+  .fx-eyebrow{ display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:800;
+               letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .fx-brand{ font-size:28px; font-weight:800; letter-spacing:-.022em; margin:6px 0 0; color:var(--text); }
+  .fx-brand .gn{ background:linear-gradient(96deg,var(--fx-dawn1),var(--fx-dawn2));
+                 -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .fx-tag{ color:var(--muted); font-size:13.5px; margin:5px 0 0; max-width:640px; line-height:1.5; }
+  .fx-verdict{ font-size:clamp(20px,2.9vw,28px); font-weight:800; color:var(--text); letter-spacing:-.02em;
+               line-height:1.32; margin:16px 0 4px; max-width:880px; }
+  .fx-verdict b{ background:linear-gradient(96deg,var(--fx-dawn1),var(--fx-dawn2));
+                 -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .fx-asof{ display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); margin-top:6px; }
+  .fx-asof .fxdot{ width:7px; height:7px; border-radius:50%; background:var(--up);
+                   animation:fxBreathe 2.8s ease-in-out infinite; flex:none; }
+  .fx-mode{ display:inline-flex; align-items:center; gap:7px; margin-top:11px; padding:7px 14px; border-radius:10px;
+            font-size:12.5px; font-weight:600; line-height:1.4;
+            color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);
+            background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .fx-mode .fxdot{ background:var(--warn); }
 
-  /* convergence "neural web" board */
-  .fx-web { border:1px solid var(--line); border-left:5px solid var(--down); border-radius:14px;
-            background:var(--panel); padding:15px 17px; margin:16px 0 6px; }
-  .fx-web-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-  .fx-web-t { font-size:16px; font-weight:800; }
-  .fx-web-sub { font-size:11px; color:var(--muted); }
-  .fx-web-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
-  .fx-hot { border:1px solid var(--line); border-left:4px solid var(--c,var(--down)); border-radius:11px;
-            background:var(--panel2); padding:11px 13px; }
-  .fx-hot-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .fx-hot-nm { font-size:14px; font-weight:800; }
-  .fx-hot-heat { font-size:19px; font-weight:800; color:var(--down); font-variant-numeric:tabular-nums; }
-  .fx-hot-sig { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0; }
-  .fx-sig { font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:5px; color:var(--down);
-            background:color-mix(in srgb,var(--down) 12%,transparent); text-transform:capitalize; }
-  .fx-hot-meta { font-size:10.5px; color:var(--muted); }
-  .fx-web-none { font-size:12.5px; color:var(--muted); line-height:1.55; }
-  .fx-web-partial { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
-  .fx-pc { font-size:11px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line);
-           color:var(--muted); cursor:help; } .fx-pc b { color:var(--text); }
-  .fx-web-foot { font-size:10px; color:var(--muted); margin-top:11px; line-height:1.5; font-style:italic; }
-  /* AI analyst block */
-  .fx-ai { margin-top:13px; padding-top:12px; border-top:1px dashed var(--line); }
-  .fx-ai-h { font-size:13px; font-weight:800; margin-bottom:6px; }
-  .fx-ai-mon { font-size:10.5px; font-weight:800; color:var(--down); margin-left:6px; }
-  .fx-ai-regime { font-size:12.5px; color:var(--text); line-height:1.55; margin-bottom:9px; }
-  .fx-ai-th { border-left:3px solid var(--info); padding:2px 0 2px 11px; margin:8px 0; }
-  .fx-ai-mech { font-size:12.5px; line-height:1.5; }
-  .fx-ai-conf { font-size:9px; font-weight:800; text-transform:uppercase; padding:1px 6px; border-radius:5px;
-                background:color-mix(in srgb,var(--cc,var(--muted)) 16%,transparent); color:var(--cc,var(--muted)); }
-  .c-high { --cc:var(--up); } .c-medium { --cc:var(--info); } .c-low { --cc:var(--muted); }
-  .fx-ai-no { font-size:11.5px; color:var(--info); margin-top:3px; line-height:1.45; }
-  .fx-ai-kill { font-size:10.5px; color:var(--muted); margin-top:4px; }
-  .fx-kc { display:inline-block; font-size:10px; padding:1px 6px; margin:1px 4px 1px 0; border-radius:5px;
-           background:var(--panel2); border:1px solid var(--line); }
-  .fx-ai-foot { font-size:9.5px; color:var(--muted); margin-top:9px; font-style:italic; line-height:1.5; }
+  /* ---------- the lead-time relay (signature) ---------- */
+  .fx-relay{ position:relative; display:grid; grid-template-columns:repeat(5,1fr);
+             align-items:start; margin:12px 0 2px; --st:var(--muted); }
+  .fx-rail{ position:absolute; left:10%; right:10%; top:9px; height:3px; border-radius:3px;
+            background:repeating-linear-gradient(90deg,color-mix(in srgb,var(--line) 90%,transparent) 0 7px,transparent 7px 13px); }
+  .fx-rail-fill{ position:absolute; left:0; top:0; bottom:0; width:var(--reach,0%); border-radius:3px;
+                 background:linear-gradient(90deg,color-mix(in srgb,var(--st) 65%,transparent),var(--st));
+                 animation:fxGrow .8s cubic-bezier(.2,.7,.3,1) both; transform-origin:left; }
+  .fx-rail-pulse{ position:absolute; top:50%; left:0; width:22px; height:3px; transform:translateY(-50%);
+                  border-radius:3px; background:linear-gradient(90deg,transparent,var(--st),transparent);
+                  filter:drop-shadow(0 0 4px var(--st));
+                  animation:fxTravel 3.4s cubic-bezier(.5,0,.5,1) infinite; opacity:.9; }
+  .fx-stop{ position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; z-index:1; }
+  .fx-node{ width:15px; height:15px; border-radius:50%; background:var(--panel);
+            border:2px solid color-mix(in srgb,var(--line) 92%,var(--muted)); transition:.2s; }
+  .fx-stop.lit .fx-node{ background:var(--st); border-color:var(--st);
+                         box-shadow:0 0 0 4px color-mix(in srgb,var(--st) 16%,transparent); }
+  .fx-stop-entry .fx-node{ border-radius:4px; }
+  .fx-stop.fx-stop-entry.lit .fx-node{ background:var(--up); border-color:var(--up);
+                         box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 18%,transparent); }
+  .fx-slbl{ font-size:10px; font-weight:700; letter-spacing:.03em; color:var(--muted); text-align:center; }
+  .fx-stop.lit .fx-slbl{ color:var(--text); }
+  .fx-relay.big{ margin:6px 0 0; }
+  .fx-relay.big .fx-rail{ top:11px; height:4px; }
+  .fx-relay.big .fx-node{ width:19px; height:19px; }
+  .fx-relay.big .fx-slbl{ font-size:12px; }
+  .fx-t-PRECIPICE{ --st:var(--fx-early); } .fx-t-BROADENING{ --st:var(--fx-confirm); }
+  .fx-t-RE-RATING{ --st:var(--fx-late); }  .fx-t-GLUT-RISK{ --st:var(--fx-fade); }
+  .fx-t-WATCH,.fx-t-UNKNOWN{ --st:var(--muted); }
 
-  /* macro banners (demand pool + entry/dislocation) */
-  .fx-banners { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0 8px; }
-  @media(max-width:680px){ .fx-banners{ grid-template-columns:1fr; } }
-  .fx-bn { border:1px solid var(--line); border-radius:13px; padding:13px 16px; background:var(--panel);
-           border-left:5px solid var(--c,var(--muted)); }
-  .fx-bn .k { font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  .fx-bn .v { font-size:20px; font-weight:800; margin:3px 0 2px; color:var(--c,var(--text)); }
-  .fx-bn .d { font-size:12px; color:var(--muted); line-height:1.4; }
-  .fx-bn.pool { --c:var(--g-hot); } .fx-bn.entry-on { --c:var(--up); } .fx-bn.entry-off { --c:var(--muted); }
+  /* hero concept-relay card + entry gate */
+  .fx-concept{ margin:20px 0 6px; border:1px solid var(--line); border-radius:16px; background:var(--panel);
+               padding:17px 20px 14px; overflow:hidden; animation:fxUp .55s cubic-bezier(.2,.7,.3,1) .06s both; }
+  .fx-concept::before{ content:""; position:absolute; }
+  .fx-concept-h{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:2px; }
+  .fx-concept-t{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text); }
+  .fx-concept-sub{ font-size:12px; color:var(--muted); }
+  .fx-concept .fx-relay{ margin-top:14px; }
+  .fx-legend-row{ display:flex; flex-wrap:wrap; gap:7px 9px; margin-top:16px; padding-top:13px;
+                  border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
+  .fx-lchip{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); }
+  .fx-lchip i{ width:9px; height:9px; border-radius:3px; background:var(--c,var(--muted)); flex:none; }
+  .fx-lchip b{ color:var(--text); font-weight:700; }
+  .fx-lchip.e i{ --c:var(--fx-early); } .fx-lchip.c i{ --c:var(--fx-confirm); }
+  .fx-lchip.l i{ --c:var(--fx-late); }  .fx-lchip.f i{ --c:var(--fx-fade); }
 
-  /* stage distribution strip */
-  .fx-stages { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 6px; }
-  .fx-stage-pill { display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:700;
-                   padding:6px 12px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
-  .fx-stage-pill .n { font-weight:800; font-size:13px; color:var(--c,var(--text)); }
-  .fx-stage-pill .dot { width:9px; height:9px; border-radius:50%; background:var(--c,var(--muted)); }
+  /* entry-gate banner */
+  .fx-gate{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0 2px; padding:12px 17px;
+            border-radius:13px; border:1px solid var(--line); background:var(--panel);
+            border-left:4px solid var(--muted); animation:fxUp .55s cubic-bezier(.2,.7,.3,1) .1s both; }
+  .fx-gate.open{ border-left-color:var(--up); background:color-mix(in srgb,var(--up) 6%,var(--panel)); }
+  .fx-gate-ic{ font-size:17px; }
+  .fx-gate-k{ font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+  .fx-gate-v{ font-size:15px; font-weight:800; color:var(--text); }
+  .fx-gate.open .fx-gate-v{ color:var(--up); }
+  .fx-gate-d{ font-size:12px; color:var(--muted); flex:1 1 260px; line-height:1.4; }
 
-  /* stage colour tokens */
-  .stg-PRECIPICE { --c:var(--info); }
-  .stg-BROADENING { --c:var(--up); }
-  .stg-RE-RATING { --c:var(--warn); }
-  .stg-GLUT-RISK { --c:var(--down); }
-  .stg-WATCH, .stg-UNKNOWN { --c:var(--muted); }
+  /* ---------- section chrome (shared, matches transmission) ---------- */
+  .fx-sec{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:34px 0 3px; }
+  .fx-sec .sh-dot{ width:9px; height:9px; border-radius:3px; background:var(--sh-c,var(--fx-dawn1)); align-self:center; flex:none; }
+  .fx-sec h2{ font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text); margin:0; }
+  .fx-sec .n{ font-size:12px; font-weight:700; color:var(--muted); }
+  .fx-ssub{ font-size:13px; color:var(--muted); margin:0 0 14px; line-height:1.5; }
 
-  /* legend */
-  details.fx-legend { border:1px solid var(--line); border-radius:12px; background:var(--panel); margin:10px 0 4px; padding:0 15px; }
-  details.fx-legend summary { cursor:pointer; padding:12px 0; font-weight:700; font-size:13px; list-style:none; }
-  details.fx-legend summary::-webkit-details-marker { display:none; }
-  details.fx-legend summary::before { content:"▸"; color:var(--muted); margin-right:8px; }
-  details.fx-legend[open] summary::before { content:"▾"; }
-  .fx-leg-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px 18px; padding:4px 0 16px; }
-  .fx-leg-item { font-size:12.5px; line-height:1.45; }
-  .fx-leg-item b { color:var(--text); } .fx-leg-item .mut { color:var(--muted); }
-  .fx-flow { font-size:12.5px; color:var(--muted); padding:2px 0 14px; }
-  .fx-flow b { color:var(--text); } .fx-flow .arr { color:var(--info); font-weight:800; padding:0 5px; }
+  /* ---------- heating-up board ---------- */
+  .fx-heat-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px; }
+  .fx-heat{ position:relative; border:1px solid var(--line); border-radius:14px; background:var(--panel);
+            padding:14px 15px 13px; overflow:hidden; animation:fxUp .5s cubic-bezier(.2,.7,.3,1) both; }
+  .fx-heat::before{ content:""; position:absolute; inset:0 0 auto 0; height:3px; background:var(--st,var(--fx-dawn1)); }
+  .fx-heat-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .fx-heat-nm{ font-size:14.5px; font-weight:800; color:var(--text); line-height:1.2; }
+  .fx-heat-badge{ font-size:9.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:3px 8px;
+                  border-radius:7px; white-space:nowrap; color:var(--st,var(--muted));
+                  background:color-mix(in srgb,var(--st,var(--muted)) 14%,var(--panel));
+                  border:1px solid color-mix(in srgb,var(--st,var(--muted)) 30%,transparent); }
+  .fx-heat-meter{ height:6px; border-radius:3px; background:color-mix(in srgb,var(--line) 60%,transparent);
+                  overflow:hidden; margin:11px 0 8px; }
+  .fx-heat-meter i{ display:block; height:100%; border-radius:3px; background:linear-gradient(90deg,var(--fx-dawn1),var(--fx-dawn2));
+                    animation:fxGrow .8s cubic-bezier(.2,.7,.3,1) both; transform-origin:left; }
+  .fx-heat-src{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+  .fx-src{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:var(--fx-dawn1);
+           background:color-mix(in srgb,var(--fx-dawn1) 11%,transparent); text-transform:capitalize; }
+  .fx-heat-meta{ font-size:11px; color:var(--muted); line-height:1.4; }
+  .fx-heat-meta b{ color:var(--text); font-weight:700; }
+  .fx-heat-conf{ color:var(--up); font-weight:700; }
+  .fx-meta-card{ grid-column:1/-1; border-left:4px solid var(--warn); background:color-mix(in srgb,var(--warn) 6%,var(--panel)); }
+  .fx-meta-card::before{ background:var(--warn); }
+  .fx-empty{ border:1px dashed var(--line); border-radius:14px; background:var(--panel); padding:16px 18px;
+             font-size:13px; color:var(--muted); line-height:1.55; }
+  .fx-empty b{ color:var(--text); }
+  .fx-partial{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+  .fx-pc{ font-size:11px; padding:5px 11px; border-radius:8px; background:var(--panel); border:1px solid var(--line);
+          color:var(--muted); cursor:help; } .fx-pc b{ color:var(--text); }
 
-  /* theme cards */
-  .fx-cards { display:flex; flex-direction:column; gap:11px; margin-top:8px; }
-  .fx-card { border:1px solid var(--line); border-radius:13px;
-             background:var(--panel); padding:14px 16px; }
-  .fx-card .row1 { display:flex; align-items:baseline; gap:11px; flex-wrap:wrap; }
-  .fx-card .nm { font-size:16px; font-weight:800; }
-  .fx-card .badge { font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
-                    padding:4px 10px; border-radius:8px;
-                    background:color-mix(in srgb, var(--c) 16%, var(--panel)); color:var(--c); border:1px solid color-mix(in srgb,var(--c) 32%,transparent); }
-  .fx-card .tagline { font-size:11.5px; color:var(--muted); margin-left:auto; }
-  .fx-score { display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
-              min-width:50px; padding:4px 8px; border-radius:10px; cursor:help;
-              border:1px solid color-mix(in srgb,var(--sc,var(--muted)) 35%,transparent);
-              background:color-mix(in srgb,var(--sc,var(--muted)) 12%,var(--panel)); }
-  .fx-score .s { font-size:20px; font-weight:800; line-height:1; color:var(--sc,var(--text)); }
-  .fx-score .l { font-size:8.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-top:2px; }
-  .sc-hi { --sc:var(--up); } .sc-mid { --sc:var(--g-cold); } .sc-watch { --sc:var(--warn); } .sc-low { --sc:var(--muted); }
-  .fx-cap { font-size:10.5px; color:var(--muted); margin-top:6px; font-style:italic; }
+  /* ---------- theme cards ---------- */
+  .fx-cards{ display:flex; flex-direction:column; gap:12px; margin-top:6px; }
+  .fx-card{ position:relative; border:1px solid var(--line); border-radius:16px; background:var(--panel);
+            padding:17px 19px 15px; overflow:hidden; animation:fxUp .5s cubic-bezier(.2,.7,.3,1) both;
+            transition:transform .18s ease, box-shadow .2s ease, border-color .2s ease; }
+  .fx-card::before{ content:""; position:absolute; inset:0 0 auto 0; height:3px; background:var(--st,var(--muted)); }
+  .fx-card:hover{ transform:translateY(-2px); box-shadow:0 12px 30px -18px rgba(10,15,40,.4);
+                  border-color:color-mix(in srgb,var(--st,var(--line)) 30%,var(--line)); }
+  .fx-card.fx-t-PRECIPICE{ --st:var(--fx-early); } .fx-card.fx-t-BROADENING{ --st:var(--fx-confirm); }
+  .fx-card.fx-t-RE-RATING{ --st:var(--fx-late); }  .fx-card.fx-t-GLUT-RISK{ --st:var(--fx-fade); }
+  .fx-card.fx-t-WATCH,.fx-card.fx-t-UNKNOWN{ --st:var(--muted); }
+  .fx-crow{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .fx-score{ display:inline-flex; flex-direction:column; align-items:center; justify-content:center; min-width:48px;
+             padding:5px 9px; border-radius:11px; cursor:help; flex:none;
+             border:1px solid color-mix(in srgb,var(--st,var(--muted)) 34%,transparent);
+             background:color-mix(in srgb,var(--st,var(--muted)) 11%,var(--panel)); }
+  .fx-score .s{ font-size:21px; font-weight:800; line-height:1; color:var(--st,var(--text)); font-variant-numeric:tabular-nums; }
+  .fx-score .l{ font-size:8px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+  .fx-nm{ font-size:17px; font-weight:800; color:var(--text); letter-spacing:-.01em; line-height:1.15; }
+  .fx-badge{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800; letter-spacing:.04em;
+             text-transform:uppercase; padding:4px 11px; border-radius:999px; white-space:nowrap; color:var(--st,var(--muted));
+             background:color-mix(in srgb,var(--st,var(--muted)) 13%,var(--panel));
+             border:1px solid color-mix(in srgb,var(--st,var(--muted)) 30%,transparent); }
+  .fx-badge .fxdot{ width:6px; height:6px; border-radius:50%; background:currentColor;
+                    animation:fxBreathe 2.4s ease-in-out infinite; flex:none; }
+  .fx-prov{ font-size:9.5px; font-weight:700; color:var(--muted); padding:2px 6px; border-radius:5px;
+            background:var(--panel2); border:1px dashed var(--line); cursor:help; position:relative; text-transform:none; letter-spacing:0; }
+  .fx-tagline{ font-size:11.5px; color:var(--muted); margin-left:auto; }
+  .fx-stance-line{ font-size:12.5px; color:var(--st,var(--muted)); font-weight:600; margin:11px 0 2px; line-height:1.45; }
+  .fx-why{ font-size:12.5px; color:var(--text); line-height:1.5; margin:8px 0 0; }
+  .fx-chips{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-top:11px; }
+  .fx-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:5px 11px;
+            border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); cursor:default; }
+  .fx-chip.entry.ready{ color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,transparent);
+                        background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
+  .fx-chip.size-add,.fx-chip.size-core{ color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,transparent); background:color-mix(in srgb,var(--up) 9%,var(--panel)); }
+  .fx-chip.size-starter{ color:var(--info); border-color:color-mix(in srgb,var(--info) 34%,transparent); background:color-mix(in srgb,var(--info) 9%,var(--panel)); }
+  .fx-chip.size-trim,.fx-chip.size-exit,.fx-chip.exit{ color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,transparent); background:color-mix(in srgb,var(--down) 10%,var(--panel)); }
+  .fx-chip.conf.lit{ color:var(--info); border-color:color-mix(in srgb,var(--info) 34%,transparent); background:color-mix(in srgb,var(--info) 9%,var(--panel)); }
+  .fx-chip.feed-warn{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 36%,transparent); background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .fx-chip.feed-cool{ color:var(--down); border-color:color-mix(in srgb,var(--down) 36%,transparent); background:color-mix(in srgb,var(--down) 9%,var(--panel)); }
+  .fx-cap{ font-size:10.5px; color:var(--muted); margin-top:8px; font-style:italic; }
 
-  .fx-strip { display:flex; flex-wrap:wrap; gap:8px; margin:11px 0 9px; }
-  .fx-leg { flex:1 1 150px; min-width:140px; border:1px solid var(--line); border-radius:10px; padding:8px 11px;
-            background:var(--panel2); border-left:3px solid var(--lc,var(--muted)); }
-  .fx-leg .lk { font-size:9.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
-  .fx-leg .lv { font-size:14px; font-weight:800; color:var(--lc,var(--text)); margin-top:2px; }
-  .fx-leg .ld { font-size:10.5px; color:var(--muted); margin-top:1px; }
-  .fx-leg.hot { --lc:var(--g-hot); } .fx-leg.warn { --lc:var(--warn); } .fx-leg.cool { --lc:var(--down); }
-  .fx-leg.info { --lc:var(--info); } .fx-leg.mute { --lc:var(--muted); }
+  /* ---------- inline stance legend (themes header) ---------- */
+  .fx-legend-inline{ display:flex; flex-wrap:wrap; gap:6px 12px; margin:0 0 14px; }
 
-  .fx-card .why { font-size:12.5px; color:var(--text); line-height:1.5; margin:2px 0 0; }
-  .fx-card .why .mut { color:var(--muted); }
-  .fx-entry { display:inline-flex; align-items:center; gap:6px; margin-top:9px; font-size:11.5px; font-weight:700;
-              padding:5px 11px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); }
-  .fx-entry.ready { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent);
-                    background:color-mix(in srgb,var(--up) 11%,var(--panel)); }
+  /* ---------- watch shelf ---------- */
+  .fx-watch-shelf{ margin-top:14px; border:1px solid var(--line); border-radius:16px; background:var(--panel); padding:15px 18px; }
+  .fx-watch-shelf-h{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:5px; }
+  .fx-watch-shelf-t{ font-size:13px; font-weight:800; color:var(--text); }
+  .fx-watch-shelf-n{ font-size:11.5px; font-weight:700; color:var(--muted); margin-left:auto; }
+  .fx-watch-shelf-sub{ font-size:12px; color:var(--muted); line-height:1.45; margin-bottom:11px; }
+  .fx-wrow{ display:grid; grid-template-columns:minmax(150px,1.1fr) auto auto 2fr; align-items:center; gap:11px;
+            padding:9px 0; border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
+  .fx-wrow:first-of-type{ border-top:none; }
+  @media(max-width:620px){ .fx-wrow{ grid-template-columns:1fr auto; } .fx-wrow .wwhy{ grid-column:1/-1; } }
+  .fx-wrow .wname{ font-size:13.5px; font-weight:700; color:var(--text); }
+  .fx-wrow .wbadge{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; padding:3px 9px;
+                    border-radius:7px; white-space:nowrap; color:var(--st,var(--muted));
+                    background:color-mix(in srgb,var(--st,var(--muted)) 13%,var(--panel)); }
+  .fx-wrow.fx-t-PRECIPICE{ --st:var(--fx-early); } .fx-wrow.fx-t-BROADENING{ --st:var(--fx-confirm); }
+  .fx-wrow.fx-t-RE-RATING{ --st:var(--fx-late); } .fx-wrow.fx-t-GLUT-RISK{ --st:var(--fx-fade); }
+  .fx-wrow.fx-t-WATCH,.fx-wrow.fx-t-UNKNOWN{ --st:var(--muted); }
+  .fx-wrow .wbreadth{ font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .fx-wrow .wwhy{ font-size:11.5px; color:var(--muted); line-height:1.4; }
 
-  /* track record + methodology */
-  .fx-panel { border:1px solid var(--line); border-radius:13px; background:var(--panel); padding:15px 17px; margin:18px 0 0; }
-  .fx-panel h2 { font-size:15px; margin:0 0 4px; }
-  .fx-panel .sub { font-size:12px; color:var(--muted); margin-bottom:11px; }
-  .fx-rec { display:flex; flex-wrap:wrap; gap:7px; }
-  .fx-rec .chip2 { font-size:11px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
-  .fx-rec .chip2 b { color:var(--text); }
-  .fx-meth { font-size:12px; color:var(--muted); line-height:1.6; }
-  .fx-meth b { color:var(--text); }
-  .fx-exit { display:inline-flex; align-items:center; gap:6px; margin:9px 0 0 8px; font-size:11.5px; font-weight:700;
-             padding:5px 11px; border-radius:8px; color:var(--down);
-             border:1px solid color-mix(in srgb,var(--down) 40%,transparent);
-             background:color-mix(in srgb,var(--down) 11%,var(--panel)); }
+  /* ---------- market backdrop ---------- */
+  .fx-backdrop{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(max-width:640px){ .fx-backdrop{ grid-template-columns:1fr; } }
+  .fx-bd{ border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:14px 17px;
+          border-left:4px solid var(--c,var(--muted)); }
+  .fx-bd .k{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .fx-bd .v{ font-size:21px; font-weight:800; margin:4px 0 2px; color:var(--c,var(--text)); font-variant-numeric:tabular-nums; }
+  .fx-bd .d{ font-size:12px; color:var(--muted); line-height:1.45; }
+  .fx-bd .d b{ color:var(--text); }
+  .fx-bd.pool{ --c:var(--fx-dawn2); } .fx-bd.tight{ --c:var(--warn); } .fx-bd.loose{ --c:var(--muted); }
 
-  /* sizing & concentration banner */
-  .fx-sizing { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:10px 0 2px;
-               padding:9px 14px; border:1px solid var(--line); border-radius:11px; background:var(--panel2);
-               border-left:5px solid var(--info); font-size:12px; }
-  .fx-sizing.concentrated { border-left-color:var(--warn); }
-  .fx-sizing-k { font-weight:800; letter-spacing:.04em; text-transform:uppercase; font-size:10.5px; color:var(--muted); }
-  .fx-sizing-v { color:var(--text); }
-  .fx-sizing.concentrated .fx-sizing-v { color:var(--warn); font-weight:600; }
-  .fx-sizing-derisk { margin-left:auto; font-weight:800; color:var(--down); }
+  /* ---------- discover ---------- */
+  .fx-disco-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+  .fx-cand{ border:1px solid var(--line); border-radius:13px; background:var(--panel); padding:13px 15px; }
+  .fx-cand-h{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .fx-cand-nm{ font-size:14px; font-weight:800; color:var(--text); line-height:1.2; }
+  .fx-cand-sic{ font-size:10px; font-weight:700; color:var(--muted); }
+  .fx-cand-vel{ font-size:10.5px; font-weight:800; color:var(--up); margin-left:auto; }
+  .fx-cand-meta{ font-size:11.5px; color:var(--muted); margin:7px 0; } .fx-cand-meta b{ color:var(--fx-dawn1); }
+  .fx-cand-tk{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
+  .fx-tk{ font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:6px; background:var(--panel2);
+          border:1px solid var(--line); color:var(--text); }
+  .fx-cand-ph{ display:flex; flex-wrap:wrap; gap:4px; }
+  .fx-ph{ font-size:10px; font-style:italic; color:var(--fx-dawn1); padding:2px 6px; border-radius:6px;
+          background:color-mix(in srgb,var(--fx-dawn1) 9%,transparent); }
 
-  /* per-card posture chip */
-  .fx-size { display:inline-flex; align-items:center; gap:5px; margin:9px 8px 0 0; font-size:11.5px;
-             font-weight:800; letter-spacing:.03em; padding:5px 11px; border-radius:8px; cursor:help;
-             border:1px solid color-mix(in srgb,var(--pc,var(--muted)) 40%,transparent);
-             background:color-mix(in srgb,var(--pc,var(--muted)) 12%,var(--panel)); color:var(--pc,var(--text)); }
-  .sz-ADD, .sz-CORE { --pc:var(--up); }
-  .sz-STARTER { --pc:var(--info); }
-  .sz-HOLD, .sz-WATCH { --pc:var(--muted); }
-  .sz-TRIM, .sz-EXIT { --pc:var(--down); }
+  /* ---------- study shelf (Tier 3 — everything with the machinery showing) ---------- */
+  .fx-study{ margin-top:16px; }
+  .fx-study details{ border:1px solid var(--line); border-radius:14px; background:var(--panel); margin-bottom:11px; overflow:hidden; }
+  .fx-study summary{ list-style:none; cursor:pointer; padding:15px 19px; display:flex; align-items:center; gap:12px;
+                     font-size:14px; font-weight:700; color:var(--text); transition:background .18s; }
+  .fx-study summary::-webkit-details-marker{ display:none; }
+  .fx-study summary:hover{ background:color-mix(in srgb,var(--fx-dawn1) 5%,var(--panel)); }
+  .fx-study summary .sh-ic{ flex:none; width:28px; height:28px; border-radius:9px; display:flex; align-items:center;
+                            justify-content:center; font-size:14px; background:color-mix(in srgb,var(--fx-dawn1) 10%,var(--panel)); }
+  .fx-study summary .sh-hint{ margin-left:auto; font-size:11px; font-weight:600; color:var(--muted); }
+  .fx-study summary .sh-car{ flex:none; font-size:11px; color:var(--muted); transition:transform .25s; }
+  .fx-study details[open] summary .sh-car{ transform:rotate(90deg); }
+  .fx-study .sh-body{ padding:8px 19px 19px; border-top:1px solid var(--line); font-size:12.5px; color:var(--text); line-height:1.6; }
+  .fx-study .sh-body p{ margin:0 0 10px; color:var(--muted); } .fx-study .sh-body p b{ color:var(--text); }
+  .fx-note{ font-size:12.5px; color:var(--muted); line-height:1.6; } .fx-note b{ color:var(--text); }
+  .fx-recgrid{ display:flex; flex-wrap:wrap; gap:7px; margin-top:4px; }
+  .fx-rchip{ font-size:11px; padding:5px 11px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .fx-rchip b{ color:var(--text); }
+  .fx-ai-th{ border-left:3px solid var(--fx-dawn1); padding:2px 0 2px 12px; margin:10px 0; }
+  .fx-ai-mech{ font-size:12.5px; line-height:1.5; color:var(--text); } .fx-ai-mech b{ color:var(--text); }
+  .fx-ai-conf{ font-size:8.5px; font-weight:800; text-transform:uppercase; padding:1px 6px; border-radius:5px;
+               background:color-mix(in srgb,var(--cc,var(--muted)) 16%,transparent); color:var(--cc,var(--muted)); }
+  .c-high{ --cc:var(--up); } .c-medium{ --cc:var(--info); } .c-low{ --cc:var(--muted); }
+  .fx-ai-no{ font-size:11.5px; color:var(--info); margin-top:3px; } .fx-ai-kill{ font-size:10.5px; color:var(--muted); margin-top:4px; }
+  .fx-kc{ display:inline-block; font-size:10px; padding:1px 6px; margin:1px 4px 1px 0; border-radius:5px; background:var(--panel2); border:1px solid var(--line); }
+  .fx-mon{ display:inline-flex; align-items:center; gap:9px; flex-wrap:wrap; padding:8px 13px; border-radius:10px;
+           border:1px solid var(--line); background:var(--panel2); font-size:12px; margin:2px 0 10px; }
+  .fx-mon.broken{ border-color:color-mix(in srgb,var(--down) 40%,transparent); background:color-mix(in srgb,var(--down) 8%,var(--panel)); }
+  .fx-mon.weak{ border-color:color-mix(in srgb,var(--warn) 40%,transparent); background:color-mix(in srgb,var(--warn) 8%,var(--panel)); }
+  .fx-mon b.mb{ color:var(--down); } .fx-mon b.mw{ color:var(--warn); } .fx-mon b.mo{ color:var(--up); }
+  /* divergence mini-cards */
+  .fx-div-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin:6px 0 10px; }
+  .fx-div-card{ border:1px solid var(--line); border-left:4px solid var(--c,var(--line)); border-radius:11px; padding:11px 12px;
+                background:color-mix(in srgb,var(--c,var(--panel)) 6%,var(--panel)); }
+  .q-hidden_opportunity{ --c:var(--up); } .q-confirmed{ --c:var(--info); } .q-hype_risk{ --c:var(--down); } .q-ignore{ opacity:.5; }
+  .fx-div-nm{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .fx-div-q{ font-size:12.5px; font-weight:800; color:var(--c,var(--text)); margin:3px 0 6px; }
+  .fx-div-exp{ font-size:9.5px; font-weight:800; color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,transparent);
+               border-radius:5px; padding:2px 6px; margin-bottom:5px; display:inline-block; }
+  .fx-div-bars{ display:flex; flex-direction:column; gap:4px; }
+  .fx-div-br{ display:flex; align-items:center; gap:6px; font-size:9.5px; color:var(--muted); }
+  .fx-div-br .lbl{ width:34px; flex:none; font-weight:700; }
+  .fx-div-br .wrap{ flex:1; height:5px; background:color-mix(in srgb,var(--line) 60%,transparent); border-radius:3px; overflow:hidden; }
+  .fx-div-br .wrap i{ display:block; height:100%; border-radius:3px; } .fx-div-br .wrap i.n{ background:var(--warn); } .fx-div-br .wrap i.m{ background:var(--up); }
+  .fx-div-br .val{ width:30px; text-align:right; flex:none; font-variant-numeric:tabular-nums; }
+  /* tables (policy / subsector) */
+  .fx-tbl{ width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
+  .fx-tbl th{ text-align:left; font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted);
+              padding:6px 9px; border-bottom:1px solid var(--line); }
+  .fx-tbl th.num,.fx-tbl td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .fx-tbl td{ padding:7px 9px; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent); color:var(--text); }
+  .fx-tbl tr:last-child td{ border-bottom:none; }
+  .fx-rstage{ font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; color:var(--st,var(--muted));
+              background:color-mix(in srgb,var(--st,var(--muted)) 13%,var(--panel)); }
+  .fx-rstage.fx-t-PRECIPICE{ --st:var(--fx-early); } .fx-rstage.fx-t-BROADENING{ --st:var(--fx-confirm); }
+  .fx-rstage.fx-t-RE-RATING{ --st:var(--fx-late); } .fx-rstage.fx-t-GLUT-RISK{ --st:var(--fx-fade); }
+  .fx-rstage.fx-t-WATCH,.fx-rstage.fx-t-UNKNOWN{ --st:var(--muted); }
+  tr.pol-urgent td{ background:color-mix(in srgb,var(--down) 7%,transparent); } tr.pol-soon td{ background:color-mix(in srgb,var(--warn) 5%,transparent); }
+  .fx-scar{ font-weight:800; color:var(--warn); cursor:help; }
+  /* health strip (demoted to study) */
+  .fx-hchips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
+  .fx-hchip{ display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:700; padding:3px 9px; border-radius:7px;
+             border:1px solid var(--line); background:var(--panel2); color:var(--muted); cursor:help; }
+  .fx-hchip.hl-LIVE{ color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
+  .fx-hchip.hl-PARTIAL{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,transparent); }
+  .fx-hchip .hdot{ width:6px; height:6px; border-radius:50%; background:currentColor; flex:none; }
 
-  /* per-card alt-data confirmer chip */
-  .fx-conf { display:inline-flex; align-items:center; gap:5px; margin:9px 8px 0 0; font-size:11px; font-weight:700;
-             padding:5px 11px; border-radius:8px; cursor:help; color:var(--muted);
-             border:1px solid var(--line); background:var(--panel2); }
-  .fx-conf.lit { color:var(--info); border-color:color-mix(in srgb,var(--info) 38%,transparent);
-                 background:color-mix(in srgb,var(--info) 10%,var(--panel)); }
+  /* ---------- ?-help tip (CSS-only bilingual popover) ---------- */
+  .fxq{ position:relative; display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
+        border-radius:50%; border:1px solid var(--line); color:var(--muted); font-size:10px; font-weight:700; cursor:help; flex:none; }
+  .fxq .fxq-tip,.fx-prov .fxq-tip{ display:none; position:absolute; top:22px; left:50%; transform:translateX(-50%); z-index:40; width:250px;
+        padding:11px 13px; border-radius:11px; background:var(--panel); border:1px solid var(--line);
+        box-shadow:var(--popover-shadow,0 12px 30px -12px rgba(9,17,40,.4)); font-size:12px; font-weight:500; color:var(--text);
+        line-height:1.5; text-transform:none; letter-spacing:0; text-align:left; }
+  .fxq:hover .fxq-tip,.fxq:focus .fxq-tip,.fx-prov:hover .fxq-tip,.fx-prov:focus .fxq-tip{ display:block; }
 
-  /* W5b: per-theme physical feed chip (FDA shortages, future: Pink Sheet, LBNL) */
-  .fx-feed { display:inline-flex; align-items:center; gap:5px; margin:9px 8px 0 0; font-size:11px; font-weight:700;
-             padding:5px 11px; border-radius:8px; cursor:help; color:var(--muted);
-             border:1px solid var(--line); background:var(--panel2); }
-  .fx-feed.feed-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 38%,transparent);
-                       background:color-mix(in srgb,var(--warn) 10%,var(--panel)); }
-  .fx-feed.feed-cool { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,transparent);
-                       background:color-mix(in srgb,var(--down) 10%,var(--panel)); }
+  .fx-disclosure{ font-size:12.5px; color:var(--muted); margin:26px 0 0; padding-top:14px; border-top:1px solid var(--line); line-height:1.6; }
 
-  /* W5b: watch shelf — Tier W compact rows */
-  .fx-watch-shelf { margin-top:18px; border:1px solid var(--line); border-left:5px solid var(--muted);
-                    border-radius:13px; background:var(--panel); padding:14px 16px; }
-  .fx-watch-header { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
-  .fx-watch-title { font-size:14px; font-weight:800; color:var(--muted); }
-  .fx-watch-caveat { font-size:11.5px; color:var(--muted); line-height:1.45; margin-bottom:11px; }
-  .fx-watch-count { font-size:11px; font-weight:700; color:var(--muted); margin-left:auto; }
-  .fx-watch-rows { display:flex; flex-direction:column; gap:7px; }
-  .fx-wrow { display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:7px 10px;
-             border:1px solid var(--line); border-radius:9px; background:var(--panel2); }
-  .fx-wrow .wname { font-size:13px; font-weight:800; color:var(--muted); }
-  .fx-wrow .wstage { font-size:10px; font-weight:800; padding:2px 7px; border-radius:6px;
-                     color:var(--c,var(--muted)); background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel2)); }
-  .fx-wrow .wbreadth { font-size:11px; color:var(--muted); }
-  .fx-wrow .wwhy { font-size:11.5px; color:var(--muted); flex:1 1 200px; }
+  /* ---------- narrow screens: keep the 5-stop relay legible ---------- */
+  @media(max-width:560px){
+    .fx-slbl{ font-size:9px; letter-spacing:0; }
+    .fx-relay.big .fx-slbl{ font-size:9.5px; }
+    .fx-relay{ grid-template-columns:repeat(5,1fr); }
+    .fx-rail{ left:9%; right:9%; }
+    .fx-crow{ gap:9px; } .fx-nm{ font-size:15.5px; }
+    .fx-verdict{ font-size:20px; }
+  }
 
-  /* W5b: watch-shelf chip in stage pills row */
-  .fx-watch-chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700;
-                   padding:5px 11px; border-radius:999px; border:1px dashed var(--muted);
-                   background:var(--panel2); color:var(--muted); cursor:help; }
-
-  /* discovery panel */
-  .fx-disco { border-left:5px solid var(--info); }
-  .fx-disco-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:11px; margin-top:4px; }
-  .fx-cand { border:1px solid var(--line); border-radius:11px; background:var(--panel2); padding:11px 13px; }
-  .fx-cand-h { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-  .fx-cand-nm { font-size:13.5px; font-weight:800; line-height:1.2; }
-  .fx-cand-sic { font-size:10px; font-weight:700; color:var(--muted); }
-  .fx-cand-vel { font-size:10px; font-weight:800; color:var(--up); margin-left:auto; }
-  .fx-cand-meta { font-size:11.5px; color:var(--muted); margin:6px 0 7px; }
-  .fx-cand-meta b { color:var(--info); }
-  .fx-cand-tickers { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
-  .fx-tk { font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:5px; background:var(--panel);
-           border:1px solid var(--line); color:var(--text); }
-  .fx-cand-lang { display:flex; flex-wrap:wrap; gap:4px; }
-  .fx-ph { font-size:10px; font-style:italic; color:var(--info); padding:1px 5px; border-radius:5px;
-           background:color-mix(in srgb,var(--info) 10%,transparent); }
-  .fx-disco-foot { font-size:10.5px; color:var(--muted); margin-top:11px; line-height:1.5; font-style:italic; }
-
-  /* subsector radar table */
-  .fx-radar-tbl { width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
-  .fx-radar-tbl th { text-align:left; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
-                     color:var(--muted); padding:5px 8px; border-bottom:1px solid var(--line); }
-  .fx-radar-tbl th.num, .fx-radar-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
-  .fx-radar-tbl td { padding:6px 8px; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
-  .fx-rstage { font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; color:var(--c,var(--muted));
-               background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel)); }
-  .fx-rsub { font-weight:700; } .fx-rsec { font-size:10px; color:var(--muted); }
-  .fx-rscar { font-weight:800; color:var(--g-hot); cursor:help; }
-  /* W1a — Narrative-to-Money Divergence board */
-  .fx-div-board { border:1px solid var(--line); border-left:5px solid var(--info); border-radius:14px; padding:16px 18px 12px; margin:18px 0; background:var(--panel); }
-  .fx-div-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-  .fx-div-t { font-size:14.5px; font-weight:800; color:var(--text); cursor:help; }
-  .fx-div-sub { font-size:11.5px; color:var(--muted); }
-  .fx-div-thin { color:var(--warn); font-size:12.5px; font-weight:700; padding:8px 0; }
-  .fx-div-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(175px,1fr)); gap:10px; margin:8px 0 12px; }
-  .fx-div-card { border:1px solid var(--line); border-left:4px solid var(--c,var(--line)); border-radius:10px; padding:10px 11px 8px; background:color-mix(in srgb,var(--c,var(--panel)) 7%,var(--panel)); }
-  .q-hidden_opportunity { --c:var(--up); }
-  .q-confirmed          { --c:var(--info); }
-  .q-hype_risk          { --c:var(--down); }
-  .q-ignore             { opacity:0.55; }
-  .fx-div-name { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px; }
-  .fx-div-quad { font-size:12px; font-weight:800; color:var(--c,var(--text)); margin-bottom:6px; }
-  .fx-div-expired { font-size:10px; font-weight:800; color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,transparent); border-radius:4px; padding:2px 5px; margin-bottom:5px; display:inline-block; }
-  .fx-div-bars { display:flex; flex-direction:column; gap:3px; margin:4px 0; }
-  .fx-div-bar-row { display:flex; align-items:center; gap:5px; font-size:9.5px; }
-  .fx-div-bar-lbl { width:26px; color:var(--muted); font-weight:700; flex-shrink:0; }
-  .fx-div-bar-wrap { flex:1; height:5px; background:color-mix(in srgb,var(--line) 60%,transparent); border-radius:3px; overflow:hidden; }
-  .fx-div-bar-n { display:block; height:100%; background:var(--warn); border-radius:3px; }
-  .fx-div-bar-m { display:block; height:100%; background:var(--up); border-radius:3px; }
-  .fx-div-bar-val { width:26px; color:var(--muted); font-size:9.5px; text-align:right; flex-shrink:0; }
-  .fx-div-legs { font-size:9.5px; color:var(--muted); margin-top:5px; }
-  .fx-div-foot { font-size:10.5px; color:var(--muted); line-height:1.55; margin-top:8px; border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); padding-top:7px; }
+  /* ---------- motion ---------- */
+  @keyframes fxUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  @keyframes fxBreathe{ 0%,100%{ opacity:.45; transform:scale(.85); } 50%{ opacity:1; transform:scale(1.1); } }
+  @keyframes fxGrow{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+  @keyframes fxTravel{ 0%{ left:0; opacity:0; } 12%{ opacity:.95; } 88%{ opacity:.95; } 100%{ left:calc(var(--reach,0%) - 22px); opacity:0; } }
+  @media (prefers-reduced-motion: reduce){
+    .fx-hero,.fx-concept,.fx-gate,.fx-heat,.fx-card,.fx-rail-fill,.fx-heat-meter i{ animation:none; }
+    .fxdot,.fx-rail-pulse,.fx-badge .fxdot{ animation:none; }
+    .fx-rail-pulse{ display:none; }
+    *{ transition:none !important; }
+  }
 {% endblock %}
 
 {% block content %}
 <div class="fx-wrap">
 
+  {# ===================== HERO ===================== #}
+  {%- set ns = namespace(early=[], confirm=[], late=0, fade=0) -%}
+  {%- for r in themes -%}
+    {%- set _sb = sbase(r.stage) -%}
+    {%- if _sb == 'GLUT-RISK' -%}{% set ns.fade = ns.fade + 1 %}
+    {%- elif _sb == 'PRECIPICE' -%}{% set ns.early = ns.early + [r.name] %}
+    {%- elif _sb == 'BROADENING' -%}{% set ns.confirm = ns.confirm + [r.name] %}
+    {%- elif _sb == 'RE-RATING' -%}{% set ns.late = ns.late + 1 %}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- set n_edge = ns.early|length + ns.confirm|length -%}
+  {%- set hot_names = (convergence.heating_up | map(attribute='name') | select | list) if convergence and convergence.heating_up else [] -%}
+
   <header class="fx-hero">
     <div class="fx-eyebrow">🔮 {{ t('Thematic Foresight Desk', '主题前瞻台') }}</div>
-    <h1>{{ t('Catch the theme before the revisions explode', '在盈利预期爆发前抓住主题') }}</h1>
-    <p class="fx-sub">{{ t(
-      'Anticipate themes at the <b>precipice of induction</b> and convert them to calls <b>before</b> estimate revisions broaden. Physical-supply tightness (T1) <b>leads</b> the revision; customer capex (T2) and revision-breadth (T4) <b>confirm</b>; the buy is deferred to a dislocation. Worked case: the June-2024 13D HBM/DRAM call — <i>sold out, concentrated, underpriced</i>, right and ~9 months early.',
-      '在主题处于<b>诱发临界点</b>时提前布局，在盈利预期普遍上修<b>之前</b>转化为决策。物理供给紧张（T1）<b>领先</b>预期修正；客户资本开支（T2）与预期上修广度（T4）<b>确认</b>；买点交由错位回调触发。范例：2024年6月 13D 的 HBM/DRAM 判断——售罄、集中、被低估，正确且早约9个月。') }}</p>
-    <div class="fx-asof">{{ t('Revisions as of', '预期数据截至') }} {{ asof or '—' }} · {{ t('generated', '生成于') }} {{ generated_utc }}</div>
+    <h1 class="fx-brand"><span class="gn">{{ t('Catch the theme early', '在主题成为共识前抓住它') }}</span></h1>
+    <p class="fx-tag">{{ t('Where supply is tightening before Wall Street’s estimates catch up — ranked earliest first.', '在华尔街盈利预期跟上之前，找出供给正在收紧之处——按最早期优先排序。') }} {{ fxq('The desk catches a theme at its earliest — supply tightness leads, demand and guidance pre-signal, analyst estimates confirm — then defers the buy to a market dislocation (buy the flush, not the pop). Worked case: the mid-2024 memory / HBM call, right and ~9 months early.', '本台在主题最早期捕捉——供给紧张领先，需求与指引预示，分析师预期确认——再将买点交由市场错位（买回调，不买冲高）。范例：2024年年中的存储/HBM判断，正确且早约9个月。') }}</p>
+
+    <div class="fx-verdict">
+      {%- if n_edge and hot_names -%}
+        <span class="l-en"><b>{{ n_edge }} theme{{ 's' if n_edge != 1 }}</b> sit early in the cycle right now — {{ hot_names[:2]|join(' and ') }} {{ 'are' if hot_names[:2]|length != 1 else 'is' }} lighting up before the tape.</span>
+        <span class="l-zh">当前有 <b>{{ n_edge }} 个主题</b>处于周期早段——{{ hot_names[:2]|join('、') }} 正在行情之前点亮。</span>
+      {%- elif n_edge -%}
+        <span class="l-en"><b>{{ n_edge }} theme{{ 's' if n_edge != 1 }}</b> sit early in the cycle right now — supply is tightening before estimates have moved.</span>
+        <span class="l-zh">当前有 <b>{{ n_edge }} 个主题</b>处于周期早段——供给收紧、预期未动。</span>
+      {%- elif hot_names -%}
+        <span class="l-en">Nothing is confirmed-early today, but <b>{{ hot_names[:2]|join(' and ') }}</b> {{ 'are' if hot_names[:2]|length != 1 else 'is' }} starting to heat up. Watch — don’t chase.</span>
+        <span class="l-zh">今日暂无确认的早期主题，但 <b>{{ hot_names[:2]|join('、') }}</b> 开始升温。观望，勿追。</span>
+      {%- else -%}
+        <span class="l-en">Nothing is early right now — the themes we track are either late or still quiet. <b>Watch, don’t chase.</b></span>
+        <span class="l-zh">当前没有早期主题——我们跟踪的主题要么偏晚、要么仍平静。<b>观望，勿追。</b></span>
+      {%- endif -%}
+    </div>
+    <div class="fx-asof"><span class="fxdot"></span>{{ t('As of', '截至') }} {{ asof or '—' }} · {{ t('context, not trade calls', '仅为背景，非交易信号') }}</div>
+
+    {%- if health and health.mode == 'CONFIRMER-ONLY' %}
+    <div class="fx-mode"><span class="fxdot"></span>{{ t('Leading signals are dark right now — the desk is showing confirmations only, so no theme can be called truly early until a supply signal lights.', '领先信号当前暗淡——本台仅显示确认信号；在供给信号点亮前，任何主题都无法被判定为真正早期。') }}</div>
+    {%- endif %}
   </header>
 
-  {# ── P0-D data-health status strip ── #}
-  {% if health %}
-  <div class="fx-health">
-    {%- set _leg_labels = {
-      't1_fred':    'T1 FRED',
-      't1_text':    'T1 text',
-      't2_demand':  'T2 demand',
-      't3_guidance':'T3 guidance',
-      't4_level':   'T4 level',
-      't4_accel':   'T4 accel',
-      'glut':       'glut',
-      'power':      'power',
-      'confirmers': 'confirmers',
-      'analyst':    'analyst',
-      'monitor':    'monitor',
-      'grading':    'grading',
-    } -%}
-    <div class="fx-health-chips">
-      {% for key, label in _leg_labels.items() %}
-      {%- set lg = health.legs.get(key) if health.legs else none -%}
-      {%- set st = (lg.status if lg else 'DARK') -%}
-      {%- set why = (lg.why if lg else 'no data') -%}
-      {%- set det = (lg.detail if lg else none) -%}
-      <span class="fx-hchip hl-{{ st }}" title="{{ why }}">
-        <span class="hdot"></span>{{ label }}{% if det %} <span style="opacity:.7">{{ det }}</span>{% endif %}
-      </span>
-      {% endfor %}
+  {# ===================== CONCEPT RELAY (signature + legend, folds in the old "how to read") ===================== #}
+  <div class="fx-concept">
+    <div class="fx-concept-h">
+      <span class="fx-concept-t">{{ t('How a theme travels', '主题如何传导') }}</span>
+      <span class="fx-concept-sub">{{ t('supply leads · estimates confirm · the buy waits for a dip', '供给领先 · 预期确认 · 买点等待回调') }}</span>
     </div>
-    <span class="fx-health-mode mode-{{ health.mode }}">
-      {%- if health.mode == 'FULL' -%}
-      {{ t('FULL mode', '完整模式') }}
-      {%- else -%}
-      {{ t('CONFIRMER-ONLY mode', '仅确认模式') }}
-      {%- endif -%}
-    </span>
-    {% if health.mode == 'CONFIRMER-ONLY' %}
-    <div class="fx-confirmer-banner">
-      <b>{{ t('Leading legs dark', '领先腿暗') }}</b> —
-      {{ t('the desk is currently running in CONFIRMER-ONLY mode (revision-breadth screener). Stage calls below cannot reach PRECIPICE/BROADENING until a physical leg lights.',
-          '本台当前运行在仅确认模式（预期上修广度筛选器）。在物理腿激活之前，以下阶段判断无法达到 PRECIPICE / BROADENING。') }}
+    <div class="fx-relay big fx-t-BROADENING" style="--reach:50%">
+      <span class="fx-rail"><span class="fx-rail-fill"></span><span class="fx-rail-pulse"></span></span>
+      <div class="fx-stop lit"><span class="fx-node"></span><span class="fx-slbl">{{ t('Supply','供给') }}</span></div>
+      <div class="fx-stop lit"><span class="fx-node"></span><span class="fx-slbl">{{ t('Demand','需求') }}</span></div>
+      <div class="fx-stop lit"><span class="fx-node"></span><span class="fx-slbl">{{ t('Guidance','指引') }}</span></div>
+      <div class="fx-stop"><span class="fx-node"></span><span class="fx-slbl">{{ t('Estimates','预期') }}</span></div>
+      <div class="fx-stop fx-stop-entry"><span class="fx-node"></span><span class="fx-slbl">{{ t('Entry','入场') }}</span></div>
     </div>
-    {% endif %}
+    <div class="fx-legend-row">
+      <span class="fx-lchip e"><i></i><b>{{ t('Early','早期') }}</b> · {{ t('supply tight, estimates quiet — best head start','供给紧、预期静——先机最佳') }}</span>
+      <span class="fx-lchip c"><i></i><b>{{ t('Confirming','确认中') }}</b> · {{ t('estimates catching up — runway','预期跟上——跑道确认') }}</span>
+      <span class="fx-lchip l"><i></i><b>{{ t('Late','偏晚') }}</b> · {{ t('crowd has arrived — don’t chase','人群已到——勿追高') }}</span>
+      <span class="fx-lchip f"><i></i><b>{{ t('Fading','退潮') }}</b> · {{ t('supply catching up — exit clock','供给赶上——退出倒计时') }}</span>
+    </div>
   </div>
-  {% endif %}
 
-  {# ---- CONVERGENCE: the "what's heating up early" board (the neural web) — W4a rebuild ---- #}
+  {# ---- entry gate (the global timing rule: buy the dislocation, not the pop) ---- #}
+  {%- set gate_open = dislocation and (dislocation.active or dislocation.verdict == 'buyable_washout') -%}
+  <div class="fx-gate {{ 'open' if gate_open else '' }}">
+    <span class="fx-gate-ic">{{ '✅' if gate_open else '⏳' }}</span>
+    <div>
+      <div class="fx-gate-k">{{ t('Entry window', '入场窗口') }}</div>
+      <div class="fx-gate-v">{{ t('Open — a dislocation to buy into', '开启——出现可买入的错位') if gate_open else t('Closed — no dislocation yet', '关闭——暂无错位') }}</div>
+    </div>
+    <div class="fx-gate-d">{{ (dislocation.headline if dislocation else '') or t('Detection runs continuously. The buy waits for a flush — the desk names the theme early, the dip names the moment.', '检测持续运行。买点等待回调——本台提前锁定主题，回调决定时机。') }}</div>
+  </div>
+
+  {# ===================== WHAT'S HEATING UP EARLY (convergence, redesigned) ===================== #}
   {% if convergence and convergence.ranked %}
-  <div class="fx-web">
-    <div class="fx-web-h">
-      <span class="fx-web-t">🔥 {{ t('What\'s heating up early', '正在早期升温的') }}</span>
-      <span class="fx-web-sub">{{ t('distinct data sources converging', '独立数据源共振') }} · {{ t('max', '最多') }} {{ convergence.max_sources or convergence.max_signals }} {{ t('sources', '数据源') }}</span>
-    </div>
+  <div class="fx-sec"><span class="sh-dot"></span><h2>{{ t('Heating up early', '正在早期升温') }}</h2>
+    <span class="n">{{ t('up to', '最多') }} {{ convergence.max_sources or convergence.max_signals }} {{ t('independent sources', '个独立数据源') }}</span></div>
+  <p class="fx-ssub">{{ t('Themes where several independent signals are stacking up at once — the earliest heads-up, before any single number is loud.', '多个独立信号同时叠加的主题——在任何单一数据变响之前，最早的提示。') }} {{ fxq('Sources = supply · demand · guidance · alt-data · filings. A theme surfaces when several agree at once while it is still early. Dark sources are dropped, not penalised. A heads-up, not a buy signal — coverage differs by theme, so heat is not perfectly comparable across themes. Threshold provisional, pending calibration.', '数据源＝供给·需求·指引·替代数据·备案。当多个源在早期同时一致时，主题浮现。暗源直接舍弃，不惩罚。这是提示，非买入信号——各主题覆盖不同，热度不完全可比。阈值暂定，待校准。') }}</p>
 
-    {# ---- meta-driver cards (§3.5): ≥3 co-heating same-cluster themes ---- #}
-    {% if convergence.meta_drivers %}
-    <div style="margin-bottom:10px;">
-      {% for md in convergence.meta_drivers %}
-      <div class="fx-hot" style="--c:var(--warn); margin-bottom:7px;">
-        <div class="fx-hot-top">
-          <span class="fx-hot-nm">{{ t(md.cluster_name, md.cluster_name) }}</span>
-          <span class="fx-hot-heat" style="font-size:15px;">{{ t('meta-driver', '元驱动') }}</span>
-        </div>
-        <div class="fx-hot-sig">
-          {% for src in md.shared_sources %}<span class="fx-sig">{{ src.replace('_',' ') }}</span>{% endfor %}
-        </div>
-        <div class="fx-hot-meta">
-          {{ md.n_members }} {{ t('themes', '主题') }}: {{ md.member_names|join(' · ') }} ·
-          {{ t('combined heat', '综合热度') }} {{ (md.combined_heat*100)|round|int }} ·
-          {{ t('shared sources', '共享数据源') }}: {{ md.shared_sources|join(', ') if md.shared_sources else t('none', '无') }}
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:5px;font-style:italic;">{{ md.driver_sentence }}</div>
+  {% if convergence.heating_up %}
+  <div class="fx-heat-grid">
+    {# meta-drivers: ≥3 co-heating themes in the same cluster #}
+    {% for md in (convergence.meta_drivers or []) %}
+    <div class="fx-heat fx-meta-card">
+      <div class="fx-heat-top">
+        <span class="fx-heat-nm">{{ md.cluster_name }}</span>
+        <span class="fx-heat-badge" style="--st:var(--warn)">{{ t('shared driver', '共同驱动') }}</span>
       </div>
-      {% endfor %}
+      <div class="fx-heat-src">{% for src in md.shared_sources %}<span class="fx-src" style="color:var(--warn);background:color-mix(in srgb,var(--warn) 11%,transparent)">{{ src.replace('_',' ') }}</span>{% endfor %}</div>
+      <div class="fx-heat-meta"><b>{{ md.n_members }} {{ t('themes moving together', '个主题同步') }}</b>: {{ md.member_names|join(' · ') }}{% if md.driver_sentence %} — {{ md.driver_sentence }}{% endif %}</div>
     </div>
-    {% endif %}
+    {% endfor %}
 
-    {% if convergence.heating_up %}
-    <div class="fx-web-grid">
-      {% for it in convergence.heating_up %}
-      <div class="fx-hot stg-{{ it.stage }}">
-        <div class="fx-hot-top"><span class="fx-hot-nm">{{ it.name }}</span><span class="fx-hot-heat">{{ (it.heat*100)|round|int }}</span></div>
-        <div class="fx-hot-sig">{% for s in (it.lit_sources or it.signals) %}<span class="fx-sig">{{ s.replace('_',' ') }}</span>{% endfor %}</div>
-        <div class="fx-hot-meta">
-          {{ it.n_lit or it.n_signals }}/{{ it.n_available or convergence.max_sources }} {{ t('sources lit', '数据源点亮') }}
-          {%- if it.earliness is not none %} · {{ t('earliness', '早期度') }} {{ (it.earliness*100)|round|int }}%{% elif it.earliness_absent %} · {{ t('earliness absent', '早期度缺失') }}{% endif %}
-          {%- if it.physical_confirmed %} · ✅ {{ t('physical', '物理') }}{% endif %}
-        </div>
+    {% for it in convergence.heating_up %}
+    {%- set hsb = sbase(it.stage) -%}
+    {%- set hpct = (it.heat*100)|round|int -%}
+    <div class="fx-heat fx-t-{{ hsb }}" title="convergence heat {{ '%.2f'|format(it.heat) }} · {{ it.n_lit or it.n_signals }}/{{ it.n_available or convergence.max_sources }} sources">
+      <div class="fx-heat-top">
+        <span class="fx-heat-nm">{{ it.name }}</span>
+        <span class="fx-heat-badge">{{ stance_word(hsb) }}</span>
       </div>
-      {% endfor %}
+      <div class="fx-heat-meter"><i style="width:{{ hpct }}%"></i></div>
+      <div class="fx-heat-src">{% for s in (it.lit_sources or it.signals) %}<span class="fx-src">{{ {'physical':'supply','edgar_scarcity':'filings','altdata':'alt-data'}.get(s, s.replace('_',' ')) }}</span>{% endfor %}</div>
+      <div class="fx-heat-meta">
+        <b>{{ it.n_lit or it.n_signals }} {{ t('of', '/') }} {{ it.n_available or convergence.max_sources }} {{ t('sources agree', '个数据源一致') }}</b>
+        {%- if it.earliness is not none %} · {{ t('still early', '仍属早期') if it.earliness >= 0.5 else t('mid-cycle', '周期中段') }}
+        {%- elif it.earliness_absent %} · {{ t('early read pending', '早期度待定') }}{% endif %}
+        {%- if it.physical_confirmed %} · <span class="fx-heat-conf">✓ {{ t('supply-confirmed', '供给确认') }}</span>{% endif %}
+      </div>
     </div>
-    {% else %}
-    <div class="fx-web-none">{{ t(
-      'Nothing is converging hot right now — no theme clears the provisional 40% heat threshold across available data sources. Dark sources are excluded from the denominator (no outage penalty). That is an honest read: when independent leading sources genuinely stack up early, they surface here first. Top partial convergences below.',
-      '目前没有强共振——没有主题在可用数据源中超过暂定40%热度门槛。暗数据源已从分母中排除（无停机惩罚）。这是诚实读数：当独立领先源真正在早期叠加时，会首先在此出现。下方为当前部分共振。') }}</div>
-    <div class="fx-web-partial">
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="fx-empty">{{ t(
+    'Nothing is converging hot right now — no theme has several independent sources stacking up early. That’s an honest read: when leading signals genuinely line up before the crowd, they surface here first.',
+    '目前没有强共振——没有主题在早期叠加多个独立数据源。这是诚实读数：当领先信号在人群之前真正对齐时，会首先出现在此。') }}
+    {% set partials = convergence.ranked[:6] | selectattr('n_lit', 'defined') | list %}
+    {% if convergence.ranked %}
+    <div class="fx-partial">
       {% for it in convergence.ranked[:6] %}{% if (it.n_lit or it.n_signals or 0) >= 1 %}
-      <span class="fx-pc" title="{{ (it.lit_sources or it.signals)|join(', ') }}"><b>{{ it.name }}</b> · {{ it.n_lit or it.n_signals }}/{{ it.n_available or convergence.max_sources }} {{ t('sources', '源') }} · {{ t('heat', '热度') }} {{ (it.heat*100)|round|int }}</span>
+      <span class="fx-pc" title="{{ (it.lit_sources or it.signals)|join(', ') }}"><b>{{ it.name }}</b> · {{ it.n_lit or it.n_signals }}/{{ it.n_available or convergence.max_sources }} {{ t('sources', '源') }}</span>
       {% endif %}{% endfor %}
-    </div>
-    {% endif %}
-    <div class="fx-web-foot">{{ t(
-      'W4a: HEAT = n_lit_sources / n_available_sources × earliness (dropped, not filled, when absent). 5 distinct data sources (physical · demand · guidance · altdata · edgar-scarcity — the old subsector-scarcity + discovery-echo counted the same EDGAR parquet twice; now one source). Dark sources leave the denominator — no outage penalty. Earliness from attention engine (Q3); absent below 2 usable legs → factor dropped. Numeric physical bonus ×1.15. Threshold 0.40 PROVISIONAL pending shadow calibration. Note: heat compares agreement among AVAILABLE surfaces only — themes with different data coverage are not on a fully comparable scale.',
-      'W4a：热度＝点亮数据源数/可用数据源数×早期度（缺失时直接舍弃，不填充）。5个独立数据源（物理·需求·指引·替代数据·edgar稀缺——原子行业稀缺+发现回声使用同一EDGAR数据集，现计为一个）。暗数据源排除在分母外。早期度来自注意力引擎（Q3）；少于2个可用腿时直接舍弃因子。数字物理奖励×1.15。阈值0.40暂定，待影子校准。注：热度仅比较各自可用数据源之间的共振程度——数据覆盖度不同的主题不具有完全可比性。') }}</div>
-
-    {# ---- Thesis monitor chip — renders whenever monitor is present (no credential needed) ---- #}
-    {# W4b: un-nested from the analyst block so BROKEN fires even without a credential.         #}
-    {% if monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening) %}
-    <div class="fx-mon-strip{% if monitor.n_broken %} fx-mon-broken{% elif monitor.n_weakening %} fx-mon-weakening{% endif %}">
-      <span class="fx-mon-label">{{ t('Thesis monitor', '论点监视器') }}</span>
-      <span class="fx-mon-counts">
-        {% if monitor.n_broken %}<span class="fx-mon-b">{{ monitor.n_broken }} {{ t('BROKEN', '已失效') }}</span>{% endif %}
-        {% if monitor.n_weakening %}<span class="fx-mon-w">{{ monitor.n_weakening }} {{ t('weakening', '走弱') }}</span>{% endif %}
-        {% if not monitor.n_broken and not monitor.n_weakening %}<span class="fx-mon-ok">{{ monitor.n_open }} {{ t('intact', '稳定') }}</span>{% endif %}
-      </span>
-      {%- if monitor.n_deterministic is defined %}<span class="fx-mon-src">{{ monitor.n_deterministic }} {{ t('det', '确定性') }}{% if monitor.n_llm %} · {{ monitor.n_llm }} {{ t('LLM', 'LLM') }}{% endif %}</span>{% endif %}
-    </div>
-    {% endif %}
-
-    {# ---- AI analyst reasoning over the convergence (lights up when a credential is present) ---- #}
-    {# W4b owns this block — no changes here per worktree isolation rule #}
-    {% if analyst and analyst.regime_read %}
-    <div class="fx-ai">
-      <div class="fx-ai-h">🧠 {{ t('AI analyst read', 'AI 分析师解读') }}</div>
-      <div class="fx-ai-regime">{{ analyst.regime_read }}</div>
-      {% for th in analyst.theses %}
-      <div class="fx-ai-th">
-        <div class="fx-ai-mech"><b>{{ th.theme.replace('_',' ')|title }}</b> <span class="fx-ai-conf c-{{ th.confidence }}">{{ th.confidence }}</span> — {{ th.mechanism }}</div>
-        {% if th.non_obvious %}<div class="fx-ai-no">{{ t('non-obvious', '非显性') }}: {{ th.non_obvious }}</div>{% endif %}
-        {% if th.kill_criteria %}<div class="fx-ai-kill">{{ t('kills if', '失效条件') }}: {% for k in th.kill_criteria %}{% if k is string %}<span class="fx-kc">{{ k }}</span>{% endif %}{% endfor %}</div>{% endif %}
-        {%- if th.n_grounded is not none and th.n_total_evidence %}<div class="fx-ai-cit">{{ t('Citation grounding', '引用核实') }}: {{ th.n_grounded }}/{{ th.n_total_evidence }}</div>{% endif %}
-      </div>
-      {% endfor %}
-      <div class="fx-ai-foot">{{ analyst.disclaimer }} {{ t('The deterministic monitor re-checks each thesis against its convergence every build and flags BROKEN before the tape confirms. The model is FORBIDDEN to forecast a price.', '确定性监视器每次构建都依据其共振重新核验每个论点，并在行情确认前标记失效。模型被禁止预测价格。') }}</div>
     </div>
     {% endif %}
   </div>
   {% endif %}
+  {% endif %}
 
-  {# ---- W1a: Narrative-to-Money Divergence board (display-only, forward-graded) ---- #}
-  {% if divergence_board %}
-  <div class="fx-div-board">
-    <div class="fx-div-h">
-      <span class="fx-div-t" data-tip-en="Per-theme rank-percentile of narrative legs (news velocity + EDGAR language) vs money legs (federal spend + revision breadth). HIDDEN-OPPORTUNITY = money rising, narrative quiet — the logged front-run claim." data-tip-zh="每主题叙事腿（新闻速度+EDGAR语言）与资金腿（联邦支出+修正广度）的百分位排名。隐藏机会=资金上升、叙事平静——已记录的前沿主张。">{{ t('Narrative ↔ Money Divergence', '叙事 ↔ 资金背离') }}</span>
-      <span class="fx-div-sub">{{ t('percentile-rank each side cross-sectionally', '各维度跨主题百分位排名') }} · {{ divergence_board.n_cross_section }} {{ t('themes in cross-section', '主题入截面') }}</span>
-    </div>
-    {% if divergence_board.thin_cross_section %}
-    <div class="fx-div-thin">{{ t('Cross-section too thin for reliable ranks', '跨截面样本量不足') }} (n={{ divergence_board.n_cross_section }} &lt; 6) — {{ t('accruing', '累积中') }}</div>
-    {% else %}
-    <div class="fx-div-grid">
-      {% for it in divergence_board['items'] %}{% if not it.excluded %}
-      <div class="fx-div-card q-{{ it.quadrant | replace('-','_') if it.quadrant else 'none' }}">
-        <div class="fx-div-name">{{ it.name or it.theme }}</div>
-        <div class="fx-div-quad">{% if it.quadrant %}{{ it.quadrant.replace('-',' ').upper() }}{% else %}—{% endif %}</div>
-        {% if it.transition == 'hidden→confirmed' %}
-        <div class="fx-div-expired">⚑ {{ t('FRONT-RUNNING EXPIRED', '早期优势已消失') }}</div>
-        {% endif %}
-        {% if it.narrative_pct is not none and it.money_pct is not none %}
-        <div class="fx-div-bars">
-          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl">{{ t('narr','叙事') }}</span><span class="fx-div-bar-wrap"><span class="fx-div-bar-n" style="width:{{ (it.narrative_pct * 100) | round | int }}%"></span></span><span class="fx-div-bar-val">{{ (it.narrative_pct * 100) | round | int }}%</span></div>
-          <div class="fx-div-bar-row"><span class="fx-div-bar-lbl">{{ t('$','资金') }}</span><span class="fx-div-bar-wrap"><span class="fx-div-bar-m" style="width:{{ (it.money_pct * 100) | round | int }}%"></span></span><span class="fx-div-bar-val">{{ (it.money_pct * 100) | round | int }}%</span></div>
-        </div>
-        {% endif %}
-        <div class="fx-div-legs">{{ it.n_narrative_legs_live }} {{ t('narr leg(s)', '叙事腿') }} · {{ it.n_money_legs_live }} {{ t('$ leg(s)', '资金腿') }}</div>
+  {# ===================== THE THEMES, RANKED ===================== #}
+  {%- set _tier_p = themes | selectattr('tier', 'equalto', 'P') | list -%}
+  {%- set _tier_w = themes | rejectattr('tier', 'equalto', 'P') | list -%}
+  <div class="fx-sec"><span class="sh-dot" style="--sh-c:var(--fx-early)"></span><h2>{{ t('The themes, ranked', '主题排名') }}</h2>
+    <span class="n">{{ _tier_p|length }} {{ t('on the physical desk', '在物理台') }}</span></div>
+  <p class="fx-ssub">{{ t('Each theme’s lead-time relay — how far its signal has travelled, and how much runway is left. Earliest first.', '每个主题的领先时间接力——信号已传导多远、还剩多少跑道。最早期优先。') }}</p>
+
+  <div class="fx-legend-inline">
+    <span class="fx-lchip e"><i></i>{{ t('Early','早期') }}</span>
+    <span class="fx-lchip c"><i></i>{{ t('Confirming','确认中') }}</span>
+    <span class="fx-lchip l"><i></i>{{ t('Late','偏晚') }}</span>
+    <span class="fx-lchip f"><i></i>{{ t('Fading','退潮') }}</span>
+    <span class="fx-lchip"><i></i>{{ t('Watching','观察中') }}</span>
+  </div>
+
+  <div class="fx-cards">
+    {% for r in _tier_p %}
+    {%- set sb = sbase(r.stage) -%}
+    {%- set sv = (r.score_detail or {}).verdict -%}
+    <article class="fx-card fx-t-{{ sb }}">
+      <div class="fx-crow">
+        {% if r.score is defined and r.score is not none %}
+        <span class="fx-score" title="{% for k, v in ((r.score_detail or {}).axes or {}).items() %}{{ k }} {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}">
+          <span class="s">{{ r.score|round|int }}</span><span class="l">{{ t('score', '评分') }}</span>
+        </span>{% endif %}
+        <span class="fx-nm">{{ r.name }}</span>
+        <span class="fx-badge"><span class="fxdot"></span>{{ stance_word(sb) }}</span>
+        {{ prov_mark(r.stage) }}
+        {% if r.demand_strength %}<span class="fx-tagline">{{ t('AI-capex beneficiary', 'AI 资本开支受益') }} · {{ r.demand_strength }}</span>{% endif %}
       </div>
-      {% endif %}{% endfor %}
+
+      {{ relay(r) }}
+
+      <p class="fx-stance-line">{{ stance_line(sb) }}</p>
+      <p class="fx-why">{{ r.rationale }}</p>
+
+      <div class="fx-chips">
+        <span class="fx-chip entry {{ 'ready' if r.entry_ready else '' }}">{{ '✅' if r.entry_ready else '⏳' }} {{ r.entry_note }}</span>
+        {% if r.size_band %}<span class="fx-chip size-{{ r.size_band|lower }}" title="{{ r.size_note }}">⚖ {{ r.size_band|capitalize }}</span>{% endif %}
+        {% if r.glut_band in ('GLUT_FORMING', 'GLUT') %}<span class="fx-chip exit">⚠ {{ t('exit-risk', '退出风险') }}{% if r.glut_score is not none %} ({{ '%+.2f'|format(r.glut_score) }}){% endif %}</span>{% endif %}
+        {% if r.altdata_summary %}<span class="fx-chip conf{{ ' lit' if r.n_altdata_leading else '' }}" title="{{ (r.altdata_members or [])|join(', ') }}">🛰 {{ r.altdata_summary }}</span>{% endif %}
+        {% if r.theme_feed_summary %}{% set tfs = r.theme_feed_summary %}<span class="fx-chip feed-{{ tfs.tone or 'mute' }}" title="{{ tfs.rationale or '' }}">💊 {{ tfs.label }}</span>{% endif %}
+      </div>
+      {% if r.score_detail and r.score_detail.caps %}<div class="fx-cap">⚑ {{ t('score held back', '评分受限') }}: {{ r.score_detail.caps|join(' · ') }}</div>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+
+  {# ---- watch shelf (Tier W: text/breadth-only, no numeric supply correlate) ---- #}
+  {% if _tier_w %}
+  <div class="fx-watch-shelf">
+    <div class="fx-watch-shelf-h">
+      <span class="fx-watch-shelf-t">👁 {{ t('Watch shelf', '观察架') }}</span>
+      <span class="fx-watch-shelf-n">{{ _tier_w|length }} {{ t('theme(s)', '个主题') }}</span>
     </div>
-    {% endif %}
-    <div class="fx-div-foot">{{ t('Display-only. Quadrant thresholds (0.60/0.60) PROVISIONAL — pending forward-graded ledger significance. HIDDEN-OPPORTUNITY = money rising, narrative quiet — the logged claim accrues to data/foresight/divergence_log.jsonl and grades at 60d (catch-up) + 90d (SPY-excess). CONFIRMED transition = narrative catches up = exit-of-earliness event.', '仅供展示。象限阈值（0.60/0.60）暂定——待前向评分账本显著性确认。隐藏机会=资金上升、叙事平静——记录的主张累积至divergence_log.jsonl并在60天（追赶）+90天（超额收益）评分。确认转换=叙事跟上=早期优势结束事件。') }}</div>
+    <p class="fx-watch-shelf-sub">{{ t('Early signs from filings and estimates, but no hard supply number yet — so they can’t be confirmed truly early. Promoted to the desk above when a supply signal lights.', '来自备案与预期的早期迹象，但尚无硬性供给数据——因此无法确认为真正早期。当供给信号点亮时升级至上方物理台。') }}</p>
+    {% for r in _tier_w %}
+    {%- set sb = sbase(r.stage) -%}
+    <div class="fx-wrow fx-t-{{ sb }}">
+      <span class="wname">{{ r.name }} {{ prov_mark(r.stage) }}</span>
+      <span class="wbadge">{{ stance_word(sb) }}</span>
+      <span class="wbreadth">{% if r.revision_breadth is not none %}{{ t('estimates', '预期') }} {{ '%+.2f'|format(r.revision_breadth) }}{% endif %}</span>
+      <span class="wwhy">{{ r.rationale }}</span>
+    </div>
+    {% endfor %}
   </div>
   {% endif %}
 
-  {# ---- macro banners: the demand pool + the entry gate ---- #}
-  <div class="fx-banners">
+  {# ===================== MARKET BACKDROP ===================== #}
+  {% set have_backdrop = (demand_pool and demand_pool.bn is not none) or (power and power.band and power.band != 'AWAITING_DATA') %}
+  {% if have_backdrop %}
+  <div class="fx-sec"><span class="sh-dot" style="--sh-c:var(--fx-dawn2)"></span><h2>{{ t('Market backdrop', '市场背景') }}</h2></div>
+  <p class="fx-ssub">{{ t('The forward-demand engines that pull AI-beneficiary revenue along a few quarters ahead.', '领先 AI 受益营收数个季度的前瞻需求引擎。') }}</p>
+  <div class="fx-backdrop">
     {% if demand_pool and demand_pool.bn is not none %}
-    <div class="fx-bn pool">
-      <div class="k">{{ t('Hyperscaler capex pool (T2 demand)', '云厂商资本开支池（T2 需求）') }}</div>
-      <div class="v">${{ demand_pool.bn|round|int }}B · {% if demand_pool.yoy is not none %}+{{ demand_pool.yoy|round|int }}% YoY{% endif %}</div>
-      <div class="d">{{ t('MSFT · GOOGL · AMZN · META · ORCL — the forward-demand engine that leads AI-beneficiary revenue ~2–4 quarters', 'MSFT · GOOGL · AMZN · META · ORCL — 领先 AI 受益方营收约2–4个季度的前瞻需求引擎') }} · <b>{{ demand_pool.trend or '—' }}</b></div>
+    <div class="fx-bd pool">
+      <div class="k">{{ t('Hyperscaler capex pool', '云厂商资本开支池') }}</div>
+      <div class="v">${{ demand_pool.bn|round|int }}B{% if demand_pool.yoy is not none %} · +{{ demand_pool.yoy|round|int }}% YoY{% endif %}</div>
+      <div class="d">{{ t('MSFT · GOOGL · AMZN · META · ORCL — the spend that leads AI-beneficiary revenue by ~2–4 quarters', 'MSFT · GOOGL · AMZN · META · ORCL — 领先 AI 受益方营收约2–4个季度的开支') }}{% if demand_pool.trend %} · <b>{{ demand_pool.trend }}</b>{% endif %}</div>
     </div>
     {% endif %}
     {% if power and power.band and power.band != 'AWAITING_DATA' %}
-    <div class="fx-bn" style="--c:{{ 'var(--g-hot)' if power.band in ('TIGHT','SOLD_OUT') else ('var(--warn)' if power.band=='TIGHTENING' else 'var(--muted)') }}">
-      <div class="k">{{ t('Power-cluster physical (electricity scarcity)', '电力集群物理（电力短缺）') }}</div>
-      <div class="v">{{ power.band.replace('_',' ') }}{% if power.tightness is not none %} · {{ '%+.2f'|format(power.tightness) }}{% endif %}</div>
-      <div class="d">{{ t('Data-center / grid / nuclear / solar — demand growth + utility capacity-utilization + electricity price', '数据中心/电网/核电/光伏——需求增长＋公用事业产能利用率＋电价') }}{% if power.regime %} · <b>{{ t('regime on', '机制触发') }}</b>{% endif %}</div>
+    {%- set ptight = power.band in ('TIGHT','SOLD_OUT','TIGHTENING') -%}
+    <div class="fx-bd {{ 'tight' if ptight else 'loose' }}">
+      <div class="k">{{ t('Electricity scarcity', '电力短缺') }}</div>
+      <div class="v">{{ power.band.replace('_',' ')|capitalize }}{% if power.tightness is not none %} · {{ '%+.2f'|format(power.tightness) }}{% endif %}</div>
+      <div class="d">{{ t('Data-center / grid / nuclear / solar — demand growth, utility utilisation and electricity price', '数据中心/电网/核电/光伏——需求增长、公用事业利用率与电价') }}{% if power.regime %} · <b>{{ t('scarcity regime on', '短缺机制触发') }}</b>{% endif %}</div>
     </div>
     {% endif %}
-    {% set don = dislocation and (dislocation.active or dislocation.verdict == 'buyable_washout') %}
-    <div class="fx-bn {{ 'entry-on' if don else 'entry-off' }}">
-      <div class="k">{{ t('Entry overlay (dislocation gate)', '入场叠加（错位闸门）') }}</div>
-      <div class="v">{{ t('ENTRY WINDOW OPEN', '入场窗口开启') if don else t('No entry window', '无入场窗口') }}</div>
-      <div class="d">{{ (dislocation.headline if dislocation else '') or t('Detection is live; the BUY waits for a flush — buy the dislocation, not the pop.', '检测持续进行；买点等待回调——买错位，不买冲高。') }}</div>
-    </div>
-  </div>
-
-  {# ---- stage distribution (W5b: Tier P only; Tier W shown as a chip) ---- #}
-  {# F4: rows without a `tier` field (e.g. old cached JSON) default to 'W' so they
-     appear on the watch shelf instead of silently disappearing from both sections. #}
-  {%- set _tier_p_themes = themes | selectattr('tier', 'equalto', 'P') | list -%}
-  {%- set _tier_w_themes = themes | rejectattr('tier', 'equalto', 'P') | list -%}
-  {%- set _stage_counts_p = {} -%}
-  {%- for r in _tier_p_themes -%}
-    {%- set _s = r.stage -%}
-    {%- if _s in stage_order -%}
-      {%- set _ = _stage_counts_p.update({_s: (_stage_counts_p.get(_s, 0) + 1)}) -%}
-    {%- endif -%}
-  {%- endfor -%}
-  <div class="fx-stages">
-    {% for s in stage_order %}{% if _stage_counts_p.get(s) %}
-    <span class="fx-stage-pill stg-{{ s }}"><span class="dot"></span>{{ s }} <span class="n">{{ _stage_counts_p[s] }}</span></span>
-    {% endif %}{% endfor %}
-    {% if _tier_w_themes %}
-    <span class="fx-watch-chip" title="Tier W: text/breadth-only themes on the watch shelf — no numeric physical correlate">+{{ _tier_w_themes | length }} {{ t('on watch shelf', '在观察架') }}</span>
-    {% endif %}
-  </div>
-
-  {# ---- sizing & concentration — W4a: ENB line + cluster dilution (P2-C) ---- #}
-  {% if cascade.sizing %}
-  <div class="fx-sizing {{ 'concentrated' if cascade.sizing.concentration_flag else '' }}">
-    <span class="fx-sizing-k">⚖ {{ t('Sizing & concentration', '仓位与集中度') }}</span>
-    <span class="fx-sizing-v">{{ cascade.sizing.effective_note }}</span>
-    {% if cascade.sizing.n_derisk %}<span class="fx-sizing-derisk">⚠️ {{ cascade.sizing.n_derisk }} {{ t('forced de-risk', '强制减仓') }}</span>{% endif %}
-  </div>
-  {%- if cascade.sizing.enb_note %}
-  <div class="fx-sizing" style="border-left-color:var(--muted);font-size:11.5px;padding:6px 14px;margin-top:4px;">
-    <span class="fx-sizing-k">📐 {{ t('ENB', 'ENB') }}</span>
-    <span class="fx-sizing-v" style="color:var(--muted);">{{ cascade.sizing.enb_note }}</span>
-    {%- if cascade.sizing.concentration_flag %}
-    <span style="color:var(--warn);font-weight:700;font-size:11px;">⚠ {{ t('concentrated', '集中') }}</span>
-    {%- endif %}
-  </div>
-  {%- endif %}
-  {% endif %}
-
-  {# ---- reading guide ---- #}
-  <details class="fx-legend">
-    <summary>{{ t('How to read the cascade', '如何解读级联') }}</summary>
-    <div class="fx-flow">
-      <b>{{ t('The cascade, by lead time', '按领先时间排列的级联') }}:</b>
-      <b>T1 {{ t('Bottleneck', '瓶颈') }}</b><span class="arr">→</span><b>T2 {{ t('Demand', '需求') }}</b><span class="arr">→</span><b>T3 {{ t('Guidance', '指引') }}</b><span class="arr">→</span><b>T4 {{ t('Revisions', '预期修正') }}</b><span class="arr">→</span><b>{{ t('Entry (dislocation)', '入场（错位）') }}</b>.
-      {{ t('Bottleneck LEADS; demand & guidance pre-signal; revisions CONFIRM; entry is timed separately.', '瓶颈领先；需求与指引预示；预期确认；入场单独择时。') }}
-    </div>
-    <div class="fx-leg-grid">
-      <div class="fx-leg-item"><b style="color:var(--info)">PRECIPICE</b> — <span class="mut">{{ t('supply tight, revisions not yet firing — early, highest edge remaining', '供给紧张、预期尚未启动——早期，剩余优势最大') }}</span></div>
-      <div class="fx-leg-item"><b style="color:var(--up)">BROADENING</b> — <span class="mut">{{ t('supply tight + revisions rising — runway confirmed', '供给紧张＋预期上修——跑道确认') }}</span></div>
-      <div class="fx-leg-item"><b style="color:var(--warn)">RE-RATING</b> — <span class="mut">{{ t('revisions already broad — late, do not chase', '预期已普遍上修——偏晚，勿追高') }}</span></div>
-      <div class="fx-leg-item"><b style="color:var(--down)">GLUT-RISK</b> — <span class="mut">{{ t('supply loosening while estimates high — exit clock', '供给松动而预期仍高——退出倒计时') }}</span></div>
-    </div>
-  </details>
-
-  {# ---- per-theme cards (W5b: Tier P = full cards; Tier W = compact watch shelf below) ---- #}
-  {# Macro to render a single theme card — used for both Tier P and Tier W full cards #}
-  {% macro render_card(r) %}
-  <article class="fx-card stg-{{ r.stage }}">
-    <div class="row1">
-      {% if r.score is defined and r.score is not none %}{% set sd = r.score_detail or {} %}
-      <span class="fx-score {{ {'high-conviction':'sc-hi','constructive':'sc-mid','watch':'sc-watch','low / late':'sc-low'}.get(sd.verdict, 'sc-low') }}"
-            title="{% for k, v in (sd.axes or {}).items() %}{{ k }} {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}">
-        <span class="s">{{ r.score|round|int }}</span><span class="l">{{ t('score', '评分') }}</span>
-      </span>{% endif %}
-      <span class="nm">{{ r.name }}</span>
-      <span class="badge">{{ r.stage }}</span>
-      {% if r.demand_strength %}<span class="tagline">{{ t('AI-capex beneficiary', 'AI 资本开支受益') }} · {{ r.demand_strength }}</span>{% endif %}
-    </div>
-
-    <div class="fx-strip">
-      <div class="fx-leg {{ bn_tone(r.bottleneck_band) }}">
-        <div class="lk">T1 · {{ t('Bottleneck', '瓶颈') }}</div>
-        <div class="lv">{{ (r.bottleneck_band or 'AWAITING').replace('_',' ') }}{% if r.bottleneck_text_only %} <span class="fx-text-only" title="text-only — awaiting numeric physical confirmation">{{ t('text-only', '纯文本') }}</span>{% endif %}</div>
-        <div class="ld">{% if r.tightness is not none %}{{ t('tightness', '紧张度') }} {{ '%+.2f'|format(r.tightness) }}{% if r.bottleneck_regime %} · {{ t('regime on', '机制触发') }}{% endif %}{% elif r.bottleneck_text_only %}{{ t('provisional — shadow-calibration pending', '暂定 — 影子校准待完成') }}{% else %}{{ t('FRED capacity pending', 'FRED 产能待采集') }}{% endif %}</div>
-      </div>
-      <div class="fx-leg {{ dm_tone(r.demand_band) }}">
-        <div class="lk">T2 · {{ t('Demand', '需求') }}</div>
-        <div class="lv">{{ r.demand_band or '—' }}</div>
-        <div class="ld">{% if r.capex_yoy is not none %}{{ t('customer capex', '客户资本开支') }} +{{ r.capex_yoy|round|int }}% YoY{% else %}{{ t('not capex-linked', '非资本开支驱动') }}{% endif %}</div>
-      </div>
-      <div class="fx-leg {{ gd_tone(r.guidance_band) }}">
-        <div class="lk">T3 · {{ t('Guidance', '业绩指引') }}</div>
-        <div class="lv">{{ r.guidance_band or '—' }}</div>
-        <div class="ld">{% if r.guidance_band %}{% if r.guidance_raisers %}{{ r.guidance_raisers }} {{ t('raising', '上调') }}{% endif %}{% if r.guidance_raisers and r.guidance_cutters %} · {% endif %}{% if r.guidance_cutters %}{{ r.guidance_cutters }} {{ t('cutting', '下调') }}{% endif %}{% if not r.guidance_raisers and not r.guidance_cutters %}{{ t('balanced', '中性') }}{% endif %}{% else %}{{ t('no 8-K guidance', '无8-K指引') }}{% endif %}</div>
-      </div>
-      <div class="fx-leg {{ rv_tone(r.revision_level) }}">
-        <div class="lk">T4 · {{ t('Revisions', '预期修正') }}</div>
-        <div class="lv">{% if r.revision_breadth is not none %}{{ '%+.2f'|format(r.revision_breadth) }}{% else %}—{% endif %}</div>
-        <div class="ld">{% if r.est_drift_90d is not none %}{{ t('90d EPS drift', '90日EPS漂移') }} {{ '%+.0f'|format(r.est_drift_90d) }}%{% else %}{{ r.broadening_state or '' }}{% endif %}</div>
-      </div>
-    </div>
-
-    <p class="why">{{ r.rationale }}</p>
-    {% if r.size_band %}<span class="fx-size sz-{{ r.size_band }}" title="{{ r.size_note }}">⚖ {{ r.size_band }}</span>{% endif %}
-    {% if r.altdata_summary %}<span class="fx-conf{{ ' lit' if r.n_altdata_leading else '' }}" title="{{ (r.altdata_members or [])|join(', ') }}">🛰 {{ r.altdata_summary }}</span>{% endif %}
-    {# W5b: per-theme physical feed chip (FDA shortages → generic slot for future feeds) #}
-    {% if r.theme_feed_summary %}{% set tfs = r.theme_feed_summary %}
-    <span class="fx-feed feed-{{ tfs.tone or 'mute' }}" title="{{ tfs.rationale or '' }}">💊 {{ tfs.label }}</span>
-    {% endif %}
-    <span class="fx-entry {{ 'ready' if r.entry_ready else '' }}">{{ '✅' if r.entry_ready else '⏳' }} {{ r.entry_note }}</span>
-    {% if r.glut_band in ('GLUT_FORMING', 'GLUT') %}<span class="fx-exit">⚠️ {{ t('exit-risk', '退出风险') }}: {{ r.glut_band.replace('_',' ')|lower }}{% if r.glut_score is not none %} ({{ '%+.2f'|format(r.glut_score) }}){% endif %}</span>{% endif %}
-    {% if r.score_detail and r.score_detail.caps %}<div class="fx-cap">⚑ {{ t('score capped', '评分受限') }}: {{ r.score_detail.caps|join(' · ') }}</div>{% endif %}
-  </article>
-  {% endmacro %}
-
-  {# Tier P: full physical-desk cards #}
-  <div class="fx-cards">
-    {% for r in themes if (r.tier | default('W')) == 'P' %}
-    {{ render_card(r) }}
-    {% endfor %}
-  </div>
-
-  {# W5b: Tier W watch shelf — compact rows, no full score breakdown.
-     F4: uses rejectattr('tier','equalto','P') so tier-less rows (old cached JSON)
-     degrade to the shelf instead of silently vanishing. #}
-  {%- set _w_themes = themes | rejectattr('tier', 'equalto', 'P') | list -%}
-  {% if _w_themes %}
-  <div class="fx-watch-shelf">
-    <div class="fx-watch-header">
-      <span class="fx-watch-title">👁 {{ t('Watch shelf', '观察架') }}</span>
-      <span class="fx-watch-count">{{ _w_themes | length }} {{ t('theme(s)', '个主题') }}</span>
-    </div>
-    <p class="fx-watch-caveat">{{ t(
-      'These themes have no numeric physical correlate — cannot reach a confirmed PRECIPICE. Monitored for revision breadth and text signals only; promoted to the physical desk when a scarcity observable is established.',
-      '这些主题没有数值型物理佐证——无法达到经确认的 PRECIPICE。仅监测预期修正广度与文本信号；当建立可测量的稀缺观测值后升级至物理台。') }}</p>
-    <div class="fx-watch-rows">
-      {% for r in _w_themes %}
-      <div class="fx-wrow stg-{{ r.stage }}">
-        <span class="wname">{{ r.name }}</span>
-        <span class="wstage stg-{{ r.stage }}">{{ r.stage }}</span>
-        {% if r.revision_breadth is not none %}<span class="wbreadth">{{ t('breadth', '广度') }} {{ '%+.2f'|format(r.revision_breadth) }}</span>{% endif %}
-        <span class="wwhy">{{ r.rationale }}</span>
-      </div>
-      {% endfor %}
-    </div>
   </div>
   {% endif %}
 
-  {# ---- DISCOVERY: bottlenecks forming OUTSIDE the tracked themes ---- #}
+  {# ===================== DISCOVER MORE ===================== #}
+  {% if (emergence and emergence.candidates) or (subsectors and subsectors.subsectors) %}
+  <div class="fx-sec"><span class="sh-dot" style="--sh-c:var(--info)"></span><h2>{{ t('Discover more', '发现更多') }}</h2></div>
+  <p class="fx-ssub">{{ t('“What should I be looking at that I’m not?” — bottlenecks forming outside the tracked themes, and the whole market at sub-industry granularity.', '"我还该关注什么却没关注？"——在已跟踪主题之外正在形成的瓶颈，以及以子行业粒度覆盖的全市场。') }}</p>
+
   {% if emergence and emergence.candidates %}
-  <div class="fx-panel fx-disco">
-    <h2>🛰️ {{ t('Discovery — bottlenecks forming outside the tracked themes', '发现——在已跟踪主题之外正在形成的瓶颈') }}</h2>
-    <div class="sub">{{ t(
-      'The cascade above can only <b>confirm</b> the 18 themes we already named. This layer is how the desk answers <i>"what should I be looking at that I\'m not?"</i> — it sweeps physical-scarcity language across <b>all</b> of EDGAR and surfaces industries where a cluster of <b>un-tracked</b> companies is independently reporting "on allocation / extended lead times / record backlog". Each is a <b>candidate on probation</b> — never a buy, never auto-added; it earns a tracked slot only when a physical correlate fires. The pre-13D discovery state.',
-      '上方级联只能<b>确认</b>已命名的18个主题。本层回答<i>“我还应该关注什么却没关注？”</i>——扫描整个 EDGAR 的物理短缺用语，找出一批<b>未跟踪</b>公司在同一行业里独立报告“配额／交期拉长／创纪录在手订单”的行业。每个都是<b>观察期候选</b>——绝非买入、不自动纳入；只有物理佐证出现才升级为正式主题。即13D之前的发现状态。') }}</div>
-    <div class="fx-disco-grid">
-      {% for c in emergence.candidates %}
-      <div class="fx-cand">
-        <div class="fx-cand-h">
-          <span class="fx-cand-nm">{{ c.sic_desc }}</span>
-          <span class="fx-cand-sic">SIC {{ c.sic }}</span>
-          {% if c.velocity and c.velocity > 0 %}<span class="fx-cand-vel">▲ +{{ c.velocity }} {{ t('filers vs prior', '较前期增加') }}</span>{% endif %}
-        </div>
-        <div class="fx-cand-meta"><b>{{ c.n_new_filers }}</b> {{ t('un-tracked filers flagging scarcity', '家未跟踪公司报告短缺') }}{% if c.n_known_filers %} · {{ c.n_known_filers }} {{ t('already tracked', '已跟踪') }}{% endif %}</div>
-        <div class="fx-cand-tickers">{% for tk in c.new_filers %}<span class="fx-tk">{{ tk }}</span>{% endfor %}</div>
-        <div class="fx-cand-lang">{% for p in c.phrases %}<span class="fx-ph">“{{ p }}”</span>{% endfor %}</div>
+  <div class="fx-disco-grid">
+    {% for c in emergence.candidates %}
+    <div class="fx-cand">
+      <div class="fx-cand-h">
+        <span class="fx-cand-nm">{{ c.sic_desc }}</span>
+        {% if c.velocity and c.velocity > 0 %}<span class="fx-cand-vel">▲ +{{ c.velocity }}</span>{% endif %}
       </div>
-      {% endfor %}
+      <div class="fx-cand-meta"><b>{{ c.n_new_filers }}</b> {{ t('un-tracked companies flagging scarcity', '家未跟踪公司报告短缺') }}{% if c.n_known_filers %} · {{ c.n_known_filers }} {{ t('already tracked', '已跟踪') }}{% endif %}</div>
+      <div class="fx-cand-tk">{% for tk in c.new_filers %}<span class="fx-tk">{{ tk }}</span>{% endfor %}</div>
+      <div class="fx-cand-ph">{% for p in c.phrases %}<span class="fx-ph">“{{ p }}”</span>{% endfor %}</div>
     </div>
-    <div class="fx-disco-foot">{{ t('Candidates are ranked by number of un-tracked filers, then by filer-growth velocity. Polysemy-prone domains (real estate, finance, retail) are excluded, and a cluster must use at least one manufacturing-specific phrase. Forward-graded forward like every other leg.', '候选按未跟踪公司数排序，再按公司增长速度排序。已排除易混淆领域（房地产、金融、零售），且每个集群至少须含一个制造业专用用语。与其他每条腿一样进行前瞻评分。') }}</div>
-  </div>
-  {% endif %}
-
-  {# ---- SUBSECTOR RADAR: the cascade signature over all 113 sub-industries ---- #}
-  {% if subsectors and subsectors.subsectors %}
-  <div class="fx-panel fx-radar">
-    <h2>📡 {{ t('Subsector radar — the whole S&P 500 at sub-industry granularity', '子行业雷达——以子行业粒度覆盖整个标普500') }}</h2>
-    <div class="sub">{{ t(
-      'The cascade runs the same <b>bottleneck × revision</b> signature over all <b>113 sub-industries</b> (503 names), not just the 18 curated themes — so you can see, market-wide, <b>where supply scarcity and estimate revisions are aligning</b>. The bottleneck here is a <b>text-only proxy</b> (EDGAR scarcity language), not FRED-confirmed — a screen to investigate, not a confirmed thesis.',
-      '级联将同一<b>瓶颈 × 预期修正</b>信号运行于全部<b>113个子行业</b>（503只成分股），而不仅是18个精选主题——从而在全市场范围看到<b>供给短缺与盈利预期在何处共振</b>。此处瓶颈为<b>纯文本代理</b>（EDGAR 短缺用语），非 FRED 确认——是待查筛选，而非确认论点。') }}
-      <b>{{ subsectors.n_scarcity_aligned }}</b> / {{ subsectors.all_count }} {{ t('scanned sub-industries currently pair scarcity language with their revision read.', '个已扫描子行业当前将短缺用语与其预期读数配对。') }}</div>
-    <table class="fx-radar-tbl">
-      <thead><tr>
-        <th>{{ t('Stage', '阶段') }}</th><th>{{ t('Sub-industry', '子行业') }}</th>
-        <th class="num">{{ t('Breadth', '广度') }}</th><th class="num">{{ t('90d drift', '90日漂移') }}</th>
-        <th class="num">{{ t('Scarcity', '短缺') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for r in subsectors.subsectors %}
-      <tr>
-        <td><span class="fx-rstage stg-{{ r.stage }}">{{ r.stage }}</span></td>
-        <td><span class="fx-rsub">{{ r.sub_industry }}</span> <span class="fx-rsec">{{ r.sector }}</span></td>
-        <td class="num">{% if r.breadth is not none %}{{ '%+.2f'|format(r.breadth) }}{% else %}—{% endif %}</td>
-        <td class="num">{% if r.est_drift_90d is not none %}{{ '%+.0f'|format(r.est_drift_90d) }}%{% else %}—{% endif %}</td>
-        <td class="num">{% if r.n_scarcity %}<span class="fx-rscar" title="{{ r.scarcity_members|join(', ') }}">{{ r.n_scarcity }}🔥</span>{% else %}—{% endif %}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
-
-  {# ---- W1b: Policy Catalyst Calendar + Pipeline (Regulatory-Action Convergence) ---- #}
-  {% if policy_calendar and policy_calendar.themes %}
-  <div class="fx-panel fx-policy-cal">
-    <h2>{{ t('Policy catalyst calendar — regulatory-action convergence', '政策催化日历——监管行动收敛') }}</h2>
-    <div class="sub">{{ t(
-      '<b>Display-only · Dated-structured evidence class.</b> Federal Register PRORULE/RULE events are hard, dated, known-in-advance — publication-date-stamped the day they appear, weeks-to-months before money lands and before financial media narrates. <b>Entity-list additions</b> (BIS / Industry &amp; Security Bureau) are supply-chain-rewiring events directly relevant to semis/minerals themes. <b>Empirical PRORULE→RULE latency</b> is measured via Regulation Identifier Number (RIN) join across the 2015-to-date backfill — never modeled. Forward-graded: every upcoming-event flag seeds a ledger row today.',
-      '<b>仅供展示·有日期结构化证据类。</b>联邦公报 PRORULE/RULE 事件具有硬性日期且提前可知——在资金落地及金融媒体报道之前数周至数月，以发布日期为时点戳记。<b>实体清单新增</b>（BIS/工业与安全局）是直接影响半导体/矿产主题的供应链重组事件。<b>实证 PRORULE→RULE 时滞</b>通过对2015年至今回填数据的监管标识符（RIN）关联测量——从不建模。前瞻评分：每个即将发生的事件标记当日植入账本。') }}
-    </div>
-
-    {# ---- Upcoming dated events strip ---- #}
-    {% set upcoming = policy_calendar.upcoming_events %}
-    {% if upcoming %}
-    <h3 class="fx-sub-h">{{ t('Upcoming comment-close / rule-effective events', '即将到期的意见征集截止/规则生效事项') }}</h3>
-    <table class="fx-pol-tbl">
-      <thead><tr>
-        <th>{{ t('Days', '天') }}</th>
-        <th>{{ t('Date', '日期') }}</th>
-        <th>{{ t('Theme', '主题') }}</th>
-        <th>{{ t('Type', '类型') }}</th>
-        <th>{{ t('Title', '标题') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for ev in upcoming[:20] %}
-      <tr class="{% if ev.days_away is not none and ev.days_away <= 7 %}pol-urgent{% elif ev.days_away is not none and ev.days_away <= 30 %}pol-soon{% endif %}">
-        <td class="num"><b>{{ ev.days_away if ev.days_away is not none else '—' }}</b></td>
-        <td>{{ ev.date }}</td>
-        <td><span class="chip2 chip-sm">{{ ev.basket_id }}</span></td>
-        <td><span class="fx-rstage stg-{{ ev.reg_stage }}">{{ ev.reg_stage }}</span></td>
-        <td class="pol-title">{{ ev.title }}</td>
-      </tr>
-      {% endfor %}
-      {% if upcoming|length > 20 %}
-      <tr><td colspan="5" class="pol-more">{{ t('… and', '…还有') }} {{ upcoming|length - 20 }} {{ t('more', '条') }}</td></tr>
-      {% endif %}
-      </tbody>
-    </table>
-    {% endif %}
-
-    {# ---- Entity-list sub-signal ---- #}
-    {% set el_events = policy_calendar.entity_list_events %}
-    {% if el_events %}
-    <h3 class="fx-sub-h">{{ t('BIS entity-list supply-chain events (semis / minerals / AI)', 'BIS实体清单供应链事件（半导体/矿产/AI）') }}</h3>
-    <div class="sub">{{ t('BIS = Bureau of Industry and Security (U.S. Commerce Dept). Entity-list additions restrict export of controlled technology — a dated supply-chain-rewiring event for ai_semiconductors, semicap_equipment, rare_earth_critical_min, memory_storage themes. Recent = last 60 days.', 'BIS = 美国商务部工业与安全局。实体清单新增限制受控技术出口，是ai_semiconductors、semicap_equipment、rare_earth_critical_min、memory_storage主题的有日期供应链重组事件。近期 = 过去60天。') }}</div>
-    <table class="fx-pol-tbl">
-      <thead><tr>
-        <th>{{ t('Date', '日期') }}</th>
-        <th>{{ t('Status', '状态') }}</th>
-        <th>{{ t('Title', '标题') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for ev in el_events[:15] %}
-      <tr>
-        <td>{{ ev.date }}</td>
-        <td>{% if ev.is_upcoming %}<span class="pol-badge upcoming">{{ t('Upcoming', '即将') }}</span>{% else %}<span class="pol-badge recent">{{ t('Recent', '近期') }}</span>{% endif %}</td>
-        <td class="pol-title">{{ ev.title }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% endif %}
-
-    {# ---- Per-theme pipeline chips ---- #}
-    <h3 class="fx-sub-h">{{ t('Per-theme pipeline status', '各主题管线状态') }}</h3>
-    <div class="fx-pol-chips">
-    {% for basket_id, tr in policy_calendar.themes.items() %}
-    {% if tr.prorule_inflow_60d or tr.rule_finalization_60d or tr.days_to_next_comment_close is not none %}
-    <div class="pol-chip">
-      <span class="pol-basket">{{ basket_id }}</span>
-      {% if tr.days_to_next_comment_close is not none %}
-      <span class="chip2 chip-sm">{{ t('comment close', '意见截止') }} {{ tr.days_to_next_comment_close }}{{ t('d', '天') }}</span>
-      {% endif %}
-      {% if tr.prorule_inflow_60d %}<span class="chip2 chip-sm">{{ tr.prorule_inflow_60d }} {{ t('PRORULE 60d', '拟议规则60天') }}</span>{% endif %}
-      {% if tr.rule_finalization_60d %}<span class="chip2 chip-sm">{{ tr.rule_finalization_60d }} {{ t('RULE 60d', '最终规则60天') }}</span>{% endif %}
-    </div>
-    {% endif %}
     {% endfor %}
-    </div>
-
-    {# ---- Empirical PRORULE→RULE latency ---- #}
-    {% set lat = policy_calendar.latency_summary %}
-    {% if lat %}
-    <h3 class="fx-sub-h">{{ t('Empirical PRORULE→RULE latency (R1 — measured, not modeled)', '实证 PRORULE→RULE 时滞（R1——实测，非建模）') }}</h3>
-    <div class="sub">{{ t('Latency measured via Regulation Identifier Number (RIN) join across the 2015→2026 Federal Register backfill. Open PRORULE rows (no matching RULE yet) are excluded from the median — counted separately as still-pending. This is a distribution measurement, never a latency score.', '时滞通过2015→2026联邦公报回填数据的监管标识符（RIN）关联实测。尚无匹配最终规则的开放PRORULE行从中位数中排除——单独计为仍待决。这是分布测量，绝非时滞评分。') }}</div>
-    <table class="fx-pol-tbl">
-      <thead><tr>
-        <th>{{ t('Theme', '主题') }}</th>
-        <th class="num">{{ t('Median days', '中位天数') }}</th>
-        <th class="num">{{ t('P25', 'P25') }}</th>
-        <th class="num">{{ t('P75', 'P75') }}</th>
-        <th class="num">{{ t('n (matched)', 'n（匹配）') }}</th>
-        <th class="num">{{ t('n open', 'n待决') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for basket, ls in lat.items() %}
-      <tr>
-        <td><span class="chip2 chip-sm">{{ basket }}</span></td>
-        <td class="num">{% if ls.median_days is not none %}<b>{{ ls.median_days }}</b>{% else %}—{% endif %}</td>
-        <td class="num">{{ ls.p25_days if ls.p25_days is not none else '—' }}</td>
-        <td class="num">{{ ls.p75_days if ls.p75_days is not none else '—' }}</td>
-        <td class="num">{{ ls.n }}</td>
-        <td class="num">{{ ls.n_open }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <div class="sub">{{ t('Latency = publication_date(RULE) − publication_date(PRORULE) for the same RIN. One PRORULE may produce multiple RULE amendments; earliest RULE taken per RIN/basket pair. Source: Federal Register API, 2015–present.', '时滞 = 同一RIN的规则发布日期 − 拟议规则发布日期。一条PRORULE可能产生多条规则修订；每个RIN/主题对取最早规则。来源：联邦公报API，2015年至今。') }}</div>
-    {% endif %}
   </div>
+  <p class="fx-cap" style="margin-top:11px">{{ t('Candidates on probation — never a buy, never auto-added. Each earns a tracked slot only when a hard supply signal fires. The pre-discovery state.', '观察期候选——绝非买入、不自动纳入。只有硬性供给信号出现才升级为正式主题。发现前状态。') }} {{ fxq('Ranked by number of un-tracked filers, then filer-growth velocity. Polysemy-prone domains (real estate, finance, retail) excluded; a cluster must use at least one manufacturing-specific phrase. Forward-graded like every other leg.', '按未跟踪公司数排序，再按增长速度。已排除易混淆领域（房地产、金融、零售）；每个集群至少含一个制造业专用用语。与其他每条腿一样前瞻评分。') }}</p>
   {% endif %}
 
-  {# ---- forward-graded track record ---- #}
-  <div class="fx-panel">
-    <h2>{{ t('Forward-graded track record', '前瞻评分记录') }}</h2>
-    <div class="sub">{{ t('Every stage flag (PRECIPICE / BROADENING / RE-RATING / WATCH) is logged at fire time and graded forward vs SPY at 30, 60, and 90-day horizons independently — <b>survivorship-free</b> (delisted members counted at their loss), on <b>point-in-time</b> basket membership, with a <b>Wilson 95% CI</b> and a <b>Benjamini-Yekutieli FDR</b> gate (dependence-robust — more conservative than BH, valid under overlapping horizons and a shared benchmark) on the canonical 90d horizon so a small lucky sample can\'t read as edge. <b>Hit-rates are skill claims and exist only for the directional stages</b> (thesis: PRECIPICE/BROADENING = outperform; exit: GLUT = underperform); RE-RATING / WATCH are <b>control arms</b> — their forward excess validates the "do not chase" rule but is never scored as a hit-rate, because a crowded theme continuing to run is beta, not skill.', '每个阶段标记（PRECIPICE / BROADENING / RE-RATING / WATCH）在触发时记录并对标普在30、60、90天视野独立前瞻评分——<b>免幸存者偏差</b>（退市成分按其亏损计入）、采用<b>时点</b>篮子成分，并附<b>Wilson 95%置信区间</b>与<b>Benjamini-Yekutieli FDR</b>门槛（依赖稳健——比BH更保守，在视野重叠及共用基准下仍有效），在标准90天视野上确保小样本侥幸不被读作优势。<b>命中率是技能主张，仅适用于方向性阶段</b>（论点：PRECIPICE/BROADENING＝跑赢；退出：GLUT＝跑输）；RE-RATING / WATCH 为<b>对照组</b>——其前瞻超额用于检验“勿追高”规则，绝不计为命中率，因为已拥挤主题继续上涨是贝塔，不是技能。') }}</div>
-    <div class="fx-rec">
-      <span class="chip2"><b>{{ track.foresight }}</b> {{ t('cascade flags', '级联标记') }}</span>
-      <span class="chip2"><b>{{ track.bottleneck }}</b> {{ t('bottleneck regimes', '瓶颈机制') }}</span>
-      <span class="chip2"><b>{{ track.glut }}</b> {{ t('glut flags', '过剩标记') }}</span>
-      <span class="chip2"><b>{{ track.revisions }}</b> {{ t('revision reads', '预期读数') }}</span>
-      <span class="chip2"><b>{{ track.guidance }}</b> {{ t('guidance tilts', '指引倾向') }}</span>
-      <span class="chip2"><b>{{ track.emergence }}</b> {{ t('discovery candidates', '发现候选') }}</span>
-      <span class="chip2"><b>{{ track.subsector }}</b> {{ t('subsector flags', '子行业标记') }}</span>
-      {% for e in track.recent %}<span class="chip2">{{ e.theme }} · <b>{{ e.stage }}</b> · {{ e.asof }}</span>{% endfor %}
-    </div>
-    {% if grade %}
-    <div class="fx-rec" style="margin-top:9px">
-      {% if grade.n_graded and grade.n_graded > 0 %}
-        {# STATE 3: graded — hit-rates ONLY for directional (thesis/exit) stages; control
-           arms (RE-RATING/WATCH/UNKNOWN) report forward excess alone — beta, not skill #}
-        {% if grade.pooled_hit_rate is not none %}<span class="chip2"><b>{{ t('pooled 90d', '合计90天') }}</b> {{ (grade.pooled_hit_rate*100)|round|int }}% ({{ grade.pooled_n_directional or grade.n_graded }}){% if grade.pooled_ci95 %} · {{ t('95% CI', '95%置信') }} {{ (grade.pooled_ci95[0]*100)|round|int }}–{{ (grade.pooled_ci95[1]*100)|round|int }}%{% endif %}</span>{% endif %}
-        {% for stage, b in grade.by_stage.items() %}{% if b.n %}
-        {% if b.hit_rate is not none %}
-        <span class="chip2"><b>{{ stage }}</b> {{ t('hit-rate', '命中率') }} {{ (b.hit_rate*100)|round|int }}% ({{ b.hits }}/{{ b.n_dir if b.n_dir is defined else b.n }}) · {{ t('excess', '超额') }} {{ '%+.1f'|format(b.avg_excess_pct) }}%</span>
-        {% else %}
-        <span class="chip2"><b>{{ stage }}</b> {{ t('fwd excess', '前瞻超额') }} {% if b.avg_excess_pct is not none %}{{ '%+.1f'|format(b.avg_excess_pct) }}%{% else %}—{% endif %} (n={{ b.n }}) · {{ t('control arm — validates "do not chase", not a skill claim', '对照组——检验“勿追高”，非技能主张') }}</span>
+  {% if subsectors and subsectors.subsectors %}
+  <div class="fx-study" style="margin-top:14px">
+    <details>
+      <summary><span class="sh-ic">📡</span>{{ t('Subsector radar — the whole market at sub-industry granularity', '子行业雷达——以子行业粒度覆盖全市场') }}<span class="sh-hint">{{ subsectors.n_scarcity_aligned }} / {{ subsectors.all_count }} {{ t('aligned', '共振') }}</span><span class="sh-car">▶</span></summary>
+      <div class="sh-body">
+        <p>{{ t('The same supply × estimates read run over all 113 sub-industries, not just the curated themes — a screen to investigate, not a confirmed call. Supply here is a text-only proxy from filings.', '将同一"供给 × 预期"读数运行于全部113个子行业，而非仅精选主题——待查筛选，非确认判断。此处供给为来自备案的纯文本代理。') }}</p>
+        <table class="fx-tbl">
+          <thead><tr>
+            <th>{{ t('Stage', '阶段') }}</th><th>{{ t('Sub-industry', '子行业') }}</th>
+            <th class="num">{{ t('Estimates', '预期') }}</th><th class="num">{{ t('90d drift', '90日漂移') }}</th><th class="num">{{ t('Scarcity', '短缺') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in subsectors.subsectors %}
+          <tr>
+            <td><span class="fx-rstage fx-t-{{ sbase(r.stage) }}">{{ stance_word(sbase(r.stage)) }}</span></td>
+            <td><b>{{ r.sub_industry }}</b> <span style="color:var(--muted);font-size:10px">{{ r.sector }}</span></td>
+            <td class="num">{% if r.breadth is not none %}{{ '%+.2f'|format(r.breadth) }}{% else %}—{% endif %}</td>
+            <td class="num">{% if r.est_drift_90d is not none %}{{ '%+.0f'|format(r.est_drift_90d) }}%{% else %}—{% endif %}</td>
+            <td class="num">{% if r.n_scarcity %}<span class="fx-scar" title="{{ r.scarcity_members|join(', ') }}">{{ r.n_scarcity }}🔥</span>{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {# ===================== STUDY SHELF (Tier 3 — the machinery) ===================== #}
+  <div class="fx-sec" id="study"><span class="sh-dot" style="--sh-c:var(--muted)"></span><h2>{{ t('The study shelf', '深度研究区') }}</h2></div>
+  <p class="fx-ssub">{{ t('Everything above, with the machinery showing — for readers who want the receipts.', '以上全部内容的完整技术细节——供想查看依据的读者。') }}</p>
+  <div class="fx-study">
+
+    {# ---- AI analyst + thesis monitor ---- #}
+    {% if (analyst and analyst.regime_read) or (monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening)) %}
+    <details>
+      <summary><span class="sh-ic">🧠</span>{{ t('Analyst read & thesis monitor', '分析师解读与论点监视') }}<span class="sh-hint">{{ t('what could break it', '何以证伪') }}</span><span class="sh-car">▶</span></summary>
+      <div class="sh-body">
+        {% if monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening) %}
+        <div class="fx-mon {{ 'broken' if monitor.n_broken else 'weak' if monitor.n_weakening else '' }}">
+          <b>{{ t('Thesis monitor', '论点监视器') }}</b>
+          {% if monitor.n_broken %}<span><b class="mb">{{ monitor.n_broken }}</b> {{ t('broken', '已失效') }}</span>{% endif %}
+          {% if monitor.n_weakening %}<span><b class="mw">{{ monitor.n_weakening }}</b> {{ t('weakening', '走弱') }}</span>{% endif %}
+          {% if not monitor.n_broken and not monitor.n_weakening %}<span><b class="mo">{{ monitor.n_open }}</b> {{ t('intact', '稳定') }}</span>{% endif %}
+        </div>
         {% endif %}
-        {% endif %}{% endfor %}
-        <span class="chip2">✅ <b>{{ grade.n_significant_fdr }}</b> {{ t('themes significant at BY-FDR', '主题在BY-FDR下显著') }} {{ (grade.fdr_q*100)|round|int }}%</span>
-        {% if grade.by_horizon %}
-        {% for h, hs in grade.by_horizon.items() %}{% if hs.n_graded %}
-        <span class="chip2">{{ h }}{{ t('d', '天') }}: <b>{{ hs.n_graded }}</b> {{ t('graded', '已评分') }}{% if hs.pooled_hit_rate is not none %} · {{ (hs.pooled_hit_rate*100)|round|int }}%{% endif %}</span>
-        {% endif %}{% endfor %}
+        {% if analyst and analyst.regime_read %}
+        <p>{{ analyst.regime_read }}</p>
+        {% for th in analyst.theses %}
+        <div class="fx-ai-th">
+          <div class="fx-ai-mech"><b>{{ th.theme.replace('_',' ')|title }}</b> <span class="fx-ai-conf c-{{ th.confidence }}">{{ th.confidence }}</span> — {{ th.mechanism }}</div>
+          {% if th.non_obvious %}<div class="fx-ai-no">{{ t('non-obvious', '非显性') }}: {{ th.non_obvious }}</div>{% endif %}
+          {% if th.kill_criteria %}<div class="fx-ai-kill">{{ t('breaks if', '失效条件') }}: {% for k in th.kill_criteria %}{% if k is string %}<span class="fx-kc">{{ k }}</span>{% endif %}{% endfor %}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <p class="fx-note" style="margin-top:8px">{{ analyst.disclaimer }} {{ t('The deterministic monitor re-checks each thesis every build and flags a break before the tape confirms. The model is forbidden to forecast a price.', '确定性监视器每次构建都重新核验每个论点，并在行情确认前标记失效。模型被禁止预测价格。') }}</p>
         {% endif %}
-      {% elif grade.n_total and grade.n_total > 0 %}
-        {# STATE 2: logged but immature — flags are in the ledger, horizons still maturing #}
-        <span class="chip2">⏳ {{ t('accruing', '累计中') }} — <b>{{ grade.n_total }}</b> {{ t('flags logged', '个标记已记录') }}{% if grade.n_pending %} · <b>{{ grade.n_pending }}</b> {{ t('pending 90d maturity', '个待90天成熟') }}{% endif %}{% if grade.by_horizon %}{% for h, hs in grade.by_horizon.items() %}{% if hs.n_graded %} · <b>{{ hs.n_graded }}</b> {{ t('graded at', '已评') }} {{ h }}{{ t('d', '天') }}{% endif %}{% endfor %}{% endif %}</span>
-      {% else %}
-        {# STATE 1: nothing logged yet — ledger is empty #}
-        <span class="chip2">📋 {{ t('no flags logged yet — ledger starts accruing on next build', '尚无标记记录——下次构建时账本开始累计') }}</span>
-      {% endif %}
-    </div>
+      </div>
+    </details>
     {% endif %}
+
+    {# ---- narrative ↔ money divergence ---- #}
+    {% if divergence_board %}
+    <details>
+      <summary><span class="sh-ic">🧭</span>{{ t('Narrative vs money — who’s early', '叙事 vs 资金——谁更早') }}<span class="sh-hint">{{ divergence_board.n_cross_section }} {{ t('themes', '主题') }}</span><span class="sh-car">▶</span></summary>
+      <div class="sh-body">
+        <p>{{ t('Is the money moving before the story? Each theme ranked on narrative (news + filing language) vs money (federal spend + estimate breadth). Money rising while the story is quiet is the hidden-opportunity front-run.', '资金是否先于故事在动？每个主题按叙事（新闻＋备案文本）与资金（联邦支出＋预期广度）排名。资金上升而故事平静即隐藏机会的前沿卡位。') }}</p>
+        {% if divergence_board.thin_cross_section %}
+        <p style="color:var(--warn)">{{ t('Cross-section too thin for reliable ranks', '跨截面样本量不足') }} (n={{ divergence_board.n_cross_section }} &lt; 6) — {{ t('accruing', '累积中') }}</p>
+        {% else %}
+        <div class="fx-div-grid">
+          {% for it in divergence_board['items'] %}{% if not it.excluded %}
+          <div class="fx-div-card q-{{ it.quadrant | replace('-','_') if it.quadrant else 'ignore' }}">
+            <div class="fx-div-nm">{{ it.name or it.theme }}</div>
+            <div class="fx-div-q">{% if it.quadrant %}{{ it.quadrant.replace('-',' ')|title }}{% else %}—{% endif %}</div>
+            {% if it.transition == 'hidden→confirmed' %}<div class="fx-div-exp">⚑ {{ t('front-run expired', '早期优势消失') }}</div>{% endif %}
+            {% if it.narrative_pct is not none and it.money_pct is not none %}
+            <div class="fx-div-bars">
+              <div class="fx-div-br"><span class="lbl">{{ t('story','叙事') }}</span><span class="wrap"><i class="n" style="width:{{ (it.narrative_pct*100)|round|int }}%"></i></span><span class="val">{{ (it.narrative_pct*100)|round|int }}%</span></div>
+              <div class="fx-div-br"><span class="lbl">{{ t('money','资金') }}</span><span class="wrap"><i class="m" style="width:{{ (it.money_pct*100)|round|int }}%"></i></span><span class="val">{{ (it.money_pct*100)|round|int }}%</span></div>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+        {% endif %}
+        <p class="fx-note">{{ t('Display-only. Thresholds provisional, pending a forward-graded ledger. Hidden-opportunity claims accrue and grade at 60d (catch-up) and 90d (vs SPY). When the story catches up, the early edge is spent.', '仅供展示。阈值暂定，待前向评分账本。隐藏机会主张累积并在60天（追赶）与90天（对标普）评分。当故事跟上时，早期优势即告耗尽。') }}</p>
+      </div>
+    </details>
+    {% endif %}
+
+    {# ---- policy catalyst calendar ---- #}
+    {% if policy_calendar and policy_calendar.themes %}
+    <details>
+      <summary><span class="sh-ic">🏛️</span>{{ t('Policy catalyst calendar', '政策催化日历') }}<span class="sh-hint">{{ t('dated, known in advance', '有日期、提前可知') }}</span><span class="sh-car">▶</span></summary>
+      <div class="sh-body">
+        <p>{{ t('Federal rule-making and export-control events are hard, dated, and public weeks-to-months before money lands or the media narrates. Display-only, forward-graded.', '联邦规则制定与出口管制事件是硬性、有日期、公开的，早于资金落地或媒体报道数周至数月。仅供展示，前瞻评分。') }}</p>
+        {% set upcoming = policy_calendar.upcoming_events %}
+        {% if upcoming %}
+        <table class="fx-tbl">
+          <thead><tr><th class="num">{{ t('Days', '天') }}</th><th>{{ t('Date', '日期') }}</th><th>{{ t('Theme', '主题') }}</th><th>{{ t('Title', '标题') }}</th></tr></thead>
+          <tbody>
+          {% for ev in upcoming[:14] %}
+          <tr class="{% if ev.days_away is not none and ev.days_away <= 7 %}pol-urgent{% elif ev.days_away is not none and ev.days_away <= 30 %}pol-soon{% endif %}">
+            <td class="num"><b>{{ ev.days_away if ev.days_away is not none else '—' }}</b></td>
+            <td>{{ ev.date }}</td>
+            <td><span class="fx-tk">{{ ev.basket_id }}</span></td>
+            <td>{{ ev.title }}</td>
+          </tr>
+          {% endfor %}
+          {% if upcoming|length > 14 %}<tr><td colspan="4" style="color:var(--muted)">{{ t('… and', '…还有') }} {{ upcoming|length - 14 }} {{ t('more', '条') }}</td></tr>{% endif %}
+          </tbody>
+        </table>
+        {% endif %}
+        {% set lat = policy_calendar.latency_summary %}
+        {% if lat %}
+        <p class="fx-note" style="margin-top:12px"><b>{{ t('Rule-making latency (measured, not modelled)', '规则制定时滞（实测，非建模）') }}</b> — {{ t('days from proposed to final rule, joined by Regulation ID across the 2015→2026 record.', '从拟议到最终规则的天数，通过监管标识符关联2015→2026年记录。') }}</p>
+        <table class="fx-tbl">
+          <thead><tr><th>{{ t('Theme', '主题') }}</th><th class="num">{{ t('Median days', '中位天数') }}</th><th class="num">P25</th><th class="num">P75</th><th class="num">n</th></tr></thead>
+          <tbody>
+          {% for basket, ls in lat.items() %}
+          <tr><td><span class="fx-tk">{{ basket }}</span></td>
+            <td class="num">{% if ls.median_days is not none %}<b>{{ ls.median_days }}</b>{% else %}—{% endif %}</td>
+            <td class="num">{{ ls.p25_days if ls.p25_days is not none else '—' }}</td>
+            <td class="num">{{ ls.p75_days if ls.p75_days is not none else '—' }}</td>
+            <td class="num">{{ ls.n }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+    </details>
+    {% endif %}
+
+    {# ---- sizing & concentration ---- #}
+    {% if cascade.sizing %}
+    <details>
+      <summary><span class="sh-ic">⚖️</span>{{ t('Sizing & concentration', '仓位与集中度') }}<span class="sh-hint">{{ t('display-only', '仅供展示') }}</span><span class="sh-car">▶</span></summary>
+      <div class="sh-body">
+        <p>{{ cascade.sizing.effective_note }}{% if cascade.sizing.n_derisk %} · <b style="color:var(--down)">⚠ {{ cascade.sizing.n_derisk }} {{ t('forced de-risk', '强制减仓') }}</b>{% endif %}</p>
+        {% if cascade.sizing.enb_note %}<p>{{ t('Independent bets', '有效独立押注') }}: {{ cascade.sizing.enb_note }}{% if cascade.sizing.concentration_flag %} · <b style="color:var(--warn)">{{ t('concentrated', '集中') }}</b>{% endif %}</p>{% endif %}
+      </div>
+    </details>
+    {% endif %}
+
+    {# ---- forward-graded track record ---- #}
+    <details>
+      <summary><span class="sh-ic">📊</span>{{ t('Track record — graded forward vs SPY', '记录——对标普前瞻评分') }}<span class="sh-hint">{{ t('survivorship-free', '免幸存者偏差') }}</span><span class="sh-car">▶</span></summary>
+      <div class="sh-body">
+        <p>{{ t('Every stage flag is logged when it fires and graded forward against SPY at 30 / 60 / 90 days — survivorship-free, point-in-time membership, with a confidence interval and a false-discovery gate so a small lucky sample can’t read as skill. Hit-rates exist only for the directional stages; Late / Watching are control arms (their forward return checks the “don’t chase” rule but is never scored as skill).', '每个阶段标记在触发时记录，并对标普在30/60/90天前瞻评分——免幸存者偏差、时点成分，附置信区间与错误发现门槛，使小样本侥幸不被读作技能。命中率仅适用于方向性阶段；偏晚/观察为对照组（其前瞻收益检验"勿追高"，绝不计为技能）。') }}</p>
+        <div class="fx-recgrid">
+          <span class="fx-rchip"><b>{{ track.foresight }}</b> {{ t('cascade flags', '级联标记') }}</span>
+          <span class="fx-rchip"><b>{{ track.bottleneck }}</b> {{ t('supply regimes', '供给机制') }}</span>
+          <span class="fx-rchip"><b>{{ track.glut }}</b> {{ t('fade flags', '退潮标记') }}</span>
+          <span class="fx-rchip"><b>{{ track.revisions }}</b> {{ t('estimate reads', '预期读数') }}</span>
+          <span class="fx-rchip"><b>{{ track.guidance }}</b> {{ t('guidance tilts', '指引倾向') }}</span>
+          <span class="fx-rchip"><b>{{ track.emergence }}</b> {{ t('discovery candidates', '发现候选') }}</span>
+          <span class="fx-rchip"><b>{{ track.subsector }}</b> {{ t('subsector flags', '子行业标记') }}</span>
+        </div>
+        {% if grade %}
+        <div class="fx-recgrid" style="margin-top:9px">
+          {% if grade.n_graded and grade.n_graded > 0 %}
+            {% if grade.pooled_hit_rate is not none %}<span class="fx-rchip"><b>{{ t('pooled 90d', '合计90天') }}</b> {{ (grade.pooled_hit_rate*100)|round|int }}% ({{ grade.pooled_n_directional or grade.n_graded }}){% if grade.pooled_ci95 %} · {{ t('95% CI', '95%置信') }} {{ (grade.pooled_ci95[0]*100)|round|int }}–{{ (grade.pooled_ci95[1]*100)|round|int }}%{% endif %}</span>{% endif %}
+            {% for stage, b in grade.by_stage.items() %}{% if b.n %}{% if b.hit_rate is not none %}
+            <span class="fx-rchip"><b>{{ stance_word(sbase(stage)) }}</b> {{ t('hit-rate', '命中率') }} {{ (b.hit_rate*100)|round|int }}% ({{ b.hits }}/{{ b.n_dir if b.n_dir is defined else b.n }}) · {{ t('excess', '超额') }} {{ '%+.1f'|format(b.avg_excess_pct) }}%</span>
+            {% else %}
+            <span class="fx-rchip"><b>{{ stance_word(sbase(stage)) }}</b> {{ t('fwd excess', '前瞻超额') }} {% if b.avg_excess_pct is not none %}{{ '%+.1f'|format(b.avg_excess_pct) }}%{% else %}—{% endif %} (n={{ b.n }}) · {{ t('control arm', '对照组') }}</span>
+            {% endif %}{% endif %}{% endfor %}
+            <span class="fx-rchip">✅ <b>{{ grade.n_significant_fdr }}</b> {{ t('significant after multiple-testing gate', '经多重检验门槛显著') }}</span>
+          {% elif grade.n_total and grade.n_total > 0 %}
+            <span class="fx-rchip">⏳ {{ t('accruing', '累计中') }} — <b>{{ grade.n_total }}</b> {{ t('flags logged', '个标记已记录') }}{% if grade.n_pending %} · <b>{{ grade.n_pending }}</b> {{ t('pending 90d', '待90天') }}{% endif %}</span>
+          {% else %}
+            <span class="fx-rchip">📋 {{ t('no flags logged yet — ledger starts on next build', '尚无标记——下次构建开始累计') }}</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </details>
+
+    {# ---- data health (the old 13-leg telemetry, demoted here) ---- #}
+    {% if health %}
+    <details>
+      <summary><span class="sh-ic">🩺</span>{{ t('Data health — which signals are live tonight', '数据健康——今晚哪些信号在线') }}<span class="sh-hint mode-{{ health.mode }}">{{ t('Full', '完整') if health.mode == 'FULL' else t('Confirmers only', '仅确认') }}</span><span class="sh-car">▶</span></summary>
+      <div class="sh-body">
+        <p>{{ t('Per-source status for tonight’s build. Dark sources are dropped from the read, never faked — an honest gap beats a filled-in guess.', '今晚构建的各数据源状态。暗源直接从读数中舍弃，绝不伪造——诚实的缺口胜过填补的猜测。') }}</p>
+        {%- set _leg_labels = {'t1_fred':'Supply (FRED)','t1_text':'Supply (text)','t1_fingerprint':'Supply (filings)','t2_demand':'Demand','t3_guidance':'Guidance','t4_level':'Estimates','t4_accel':'Estimates trend','glut':'Fade watch','power':'Power','confirmers':'Alt-data','analyst':'Analyst','monitor':'Monitor','grading':'Grading'} -%}
+        <div class="fx-hchips">
+          {% for key, label in _leg_labels.items() %}
+          {%- set lg = health.legs.get(key) if health.legs else none -%}
+          {%- set st = (lg.status if lg else 'DARK') -%}
+          <span class="fx-hchip hl-{{ st }}" title="{{ (lg.why if lg else 'no data') }}"><span class="hdot"></span>{{ label }}{% if lg and lg.detail %} <span style="opacity:.7">{{ lg.detail }}</span>{% endif %}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
+    {% endif %}
+
+    {# ---- methodology & honesty ---- #}
+    <details>
+      <summary><span class="sh-ic">🧾</span>{{ t('How we measure — method & honesty', '测量方法——方法与诚实') }}<span class="sh-hint">{{ t('display-only, no scored signal', '仅供展示，非评分信号') }}</span><span class="sh-car">▶</span></summary>
+      <div class="sh-body">
+        <p><b>{{ t('Display-only.', '仅供展示。') }}</b> {{ t('Nothing here is a scored signal or a sized position. The relay reads free public data: supply tightness from FRED capacity, inventories, orders and industry prices plus SEC filing language (the leading leg); demand from the hyperscaler-capex pool (capex leads beneficiary revenue ~2–4 quarters); guidance from SEC 8-K “raising / lowering” language (management pre-signalling, days-to-weeks ahead); and estimate breadth from analyst EPS revisions (the confirmation gauge, never the entry).', '此处任何内容都不是评分信号或仓位。接力读取免费公开数据：供给紧张来自 FRED 产能、库存、订单与行业价格＋ SEC 备案文本（领先腿）；需求来自云厂商资本开支池（资本开支领先受益方营收约2–4个季度）；指引来自 SEC 8-K "上调／下调"文本（管理层预示，领先数日至数周）；预期广度来自分析师 EPS 修正（确认指标，绝非入场）。') }}</p>
+        <p>{{ t('The desk builds a watchlist and confirms a thesis — it does not time entries. The 2024 memory call was right and ~9 months early, so the buy is deferred to a market dislocation (buy the flush, not the pop). Fade-risk inverts the supply read and takes precedence: a forming glut while estimates stay high is the trim / exit clock. No point-dates — turn detection is coincident, so risk reads are banded.', '本台构建观察名单并确认论点——不择时入场。2024年的存储判断正确但早约9个月，故买点交由市场错位（买回调，不买冲高）。退潮风险与供给读数相反且优先：预期仍高而过剩正在形成即为减仓／退出倒计时。不给精确日期——拐点检测为同步指标，故风险读数以区间呈现。') }}</p>
+        <p class="fx-note" style="font-size:11.5px">{{ t('Revisions as of', '预期数据截至') }} {{ asof or '—' }} · {{ t('generated', '生成于') }} {{ generated_utc }}</p>
+      </div>
+    </details>
   </div>
 
-  <div class="fx-panel">
-    <h2>{{ t('Methodology & honesty', '方法与诚实声明') }}</h2>
-    <p class="fx-meth">{{ t(
-      '<b>Display-only.</b> Nothing here is a scored signal or a sized position. <b>Bottleneck (T1)</b> reads free FRED capacity / inventory / orders / industry-PPI + SEC EDGAR "sold out / on allocation" language; it is the leading thesis and shows <i>AWAITING</i> until the FRED series collect. <b>Demand (T2)</b> projects the hyperscaler-capex pool onto AI-beneficiary themes (capex leads beneficiary revenue ~2–4 quarters). <b>Guidance (T3)</b> reads free SEC EDGAR 8-K "raising / lowering guidance" language — management pre-signaling that leads the consensus revision by days-to-weeks (≥2 filers to call a tilt; a coarse directional band, not a numeric beat/miss — the numeric gap vs whisper is the paid upgrade). <b>Revisions (T4)</b> roll per-name analyst EPS-revision breadth up to the theme — the confirmation gauge, never the entry. The desk is a <b>watchlist-builder / thesis-confirmer, not an entry-timer</b>: 13D was right and ~9 months early, so the BUY is deferred to the dislocation overlay (buy the flush, not the pop). <b>Exit-risk (glut)</b> inverts the bottleneck — capacity rolling over, inventories restocking, pricing fading, and capacity expanding to chase the shortage — and takes precedence over a late read: a forming glut while estimates are still high is the trim/exit clock. No point-dates; turn-detection is measured coincident, so hazard reads are banded.',
-      '<b>仅供展示。</b>此处任何内容都不是评分信号或仓位。<b>瓶颈（T1）</b>读取免费的 FRED 产能/库存/订单/行业 PPI ＋ SEC EDGAR “售罄/配额”用语；它是领先论点，在 FRED 序列采集前显示<i>待采集</i>。<b>需求（T2）</b>将云厂商资本开支池投射到 AI 受益主题（资本开支领先受益方营收约2–4个季度）。<b>指引（T3）</b>读取免费的 SEC EDGAR 8-K “上调／下调业绩指引”用语——管理层预先释放信号，领先市场一致预期修正数日至数周（需≥2家公司方可判定倾向；为粗略方向区间，而非精确超预期幅度——与whisper对比的数值缺口为付费升级）。<b>预期修正（T4）</b>将个股分析师 EPS 上修广度汇总到主题层——确认指标，绝非入场点。本台是<b>观察名单构建器／论点确认器，而非择时器</b>：13D 正确但早约9个月，故买点交由错位叠加（买回调，不买冲高）。<b>退出风险（过剩）</b>与瓶颈相反——产能见顶回落、库存回补、定价走弱、产能为追赶短缺而扩张——并优先于偏晚读数：预期仍高而过剩正在形成即为减仓／退出倒计时。不给精确日期；拐点检测为同步指标，故风险读数以区间呈现。') }}</p>
-  </div>
-
+  <p class="fx-disclosure">{{ t('Everything on this page is a measured, display-only read shown to help you spot themes early — none of it is a prediction, a scored signal, or a trade instruction. When a signal is dark or a relationship unproven, we say so in plain words.', '本页所有内容均为实测、仅供展示的读数，用于帮助你尽早发现主题——皆非预测、评分信号或交易指令。当信号暗淡或关系未经证实时，我们以平实语言如实说明。') }}</p>
 </div>
 {% endblock %}

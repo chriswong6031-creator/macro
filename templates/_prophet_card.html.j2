@@ -36,6 +36,12 @@
 .pvcard.pv-triage::before{box-shadow:0 1px 12px color-mix(in srgb,var(--pvh) 70%,transparent)}
 .pv-chart{position:relative;min-width:0;background:color-mix(in srgb,var(--pvh) 3%,transparent)}
 .pv-chart svg{display:block;width:100%;height:74px}
+{# spark recolor law (band contract): everything strokes the verb hue; filled shapes flip
+   to hue fill. The builder-drawn buy-zone band (_spark_svg zone_lo/zone_hi/zone_state)
+   relies on this exact split — its dashed edge lines carry NO fill attribute (only the
+   stroke rule recolors them, dasharray survives) and its rect keeps a low fill-opacity
+   ATTRIBUTE the fill override does not touch. Don't override fill-opacity/stroke-dasharray
+   here without re-checking the band in the five *_library _spark_svg generators. #}
 .pv-chart svg *{stroke:var(--pvh)!important}
 .pv-chart svg [fill]:not([fill="none"]){fill:var(--pvh)!important;stroke:none!important}
 .pv-nochart{height:74px}
@@ -44,30 +50,30 @@
 .pv-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 13%,var(--panel));color:var(--pvh);border:1px solid color-mix(in srgb,var(--pvh) 40%,transparent)}
 .pv-buy .pv-chip{background:var(--pvh);color:#fff;border-color:transparent}
 .pvcard .nb-px.pv-px{background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;margin:0}
-.pv-bd{padding:7px 10px 8px;display:flex;flex-direction:column;min-width:0;flex:1}
+.pv-bd{padding:8px 11px 9px;display:flex;flex-direction:column;min-width:0;flex:1}
 .pv-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
 .pv-idw{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden}
-.pv-tk{font-size:12.5px;font-weight:800;letter-spacing:.01em;white-space:nowrap}
+.pv-tk{font-size:13px;font-weight:800;letter-spacing:.01em;white-space:nowrap}
 .pv-flg{font-size:12px;flex:none}
-.pv-nm{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pv-nm{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .pv-edge{display:inline-flex;align-items:baseline;gap:4px;flex:none}
 .pv-edl{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .pv-edn{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--pvh);line-height:1}
 .pv-edn.pv-edna{color:var(--muted);font-weight:600;font-size:12px}
-.pv-ind{font-size:10px;color:var(--muted);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.pv-ind{font-size:10.5px;color:var(--muted);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}
 .pv-dot{width:6.5px;height:6.5px;border-radius:50%;background:var(--line);flex:none}
 .pv-seg{flex:1;height:2px;background:var(--line);opacity:.75}
 .pv-dot.pa,.pv-seg.pa{background:color-mix(in srgb,var(--pvh) 45%,var(--line));opacity:1}
 .pv-dot.on{background:var(--pvh);box-shadow:0 0 0 3px color-mix(in srgb,var(--pvh) 18%,transparent)}
-.pv-stl{display:grid;grid-template-columns:repeat(4,1fr);margin-top:3px}
-.pv-stl span{font-size:9.5px;color:var(--muted);opacity:.7;text-align:center;white-space:nowrap;overflow:hidden}
-.pv-stl span.on{color:var(--pvh);opacity:1;font-weight:800}
-.pv-zn{display:flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--panel) 55%,var(--bg));border-top:1px solid var(--line);padding:5px 10px 6px;font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;margin-top:auto}
+.pv-stl{display:flex;justify-content:space-between;gap:3px;margin-top:3px;min-width:0}
+.pv-stl span{font-size:9.5px;color:var(--muted);opacity:.7;white-space:nowrap}
+.pv-stl span.on{color:var(--pvh);opacity:1;font-weight:700}
+.pv-zn{display:flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--panel) 55%,var(--bg));border-top:1px solid var(--line);padding:6px 10px 7px;font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;margin-top:auto}
 .pv-znl{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--pvh);flex:none}
-.pv-znr{font-weight:700}
-.pv-znm{color:var(--muted)}
-.pv-dt{margin-left:auto;color:var(--muted);flex:none;font-size:10px;padding-left:6px}
+.pv-znr{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pv-znm{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pv-dt{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}
 .pv-cau{position:relative;display:inline-flex}
 .pv-cau-btn{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;line-height:1.35;padding:2px 7px;border-radius:999px;cursor:pointer;background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);font-family:inherit}
 .pv-cau-pop{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:30;min-width:190px;max-width:250px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 9px;box-shadow:var(--popover-shadow);white-space:normal}
@@ -77,6 +83,9 @@
 [data-showmore-rows] .pvcard .pv-chart svg,[data-showmore-rows] .pvcard .pv-nochart{height:56px}
 [data-showmore-rows] .pvcard .pv-tk{font-size:11.5px}
 [data-showmore-rows] .pvcard .pv-stl span{font-size:9px}
+@media (min-width:681px){
+  .nbgrid:has(> .pvcard),.cards:has(> .pvcard),.rip-grid:has(> .pvcard){grid-template-columns:repeat(auto-fill,minmax(246px,1fr))!important}
+}
 @media (max-width:680px){
   .pvcard .pv-chart svg,.pvcard .pv-nochart{height:58px}
   .pv-stl span{font-size:9px}
@@ -114,11 +123,11 @@
   <div class="pv-zn">
     {%- set _zk = cx.get('zone_kind') or 'none' -%}
     {%- if _zk == 'active' -%}
-    <span class="pv-znl">{{ t('Zone','买区') }}</span><span class="pv-znr">{{ cx.zone_lo }}{% if cx.get('zone_hi') and cx.zone_hi != cx.zone_lo %} – {{ cx.zone_hi }}{% endif %}</span>
+    <span class="pv-znl">{{ t('Zone','买区') }}</span><span class="pv-znr">{{ cx.zone_lo }}{% if cx.get('zone_hi') and cx.zone_hi != cx.zone_lo %}–{{ cx.zone_hi }}{% endif %}</span>
     {%- elif _zk == 'muted' -%}
-    <span class="pv-znl">{{ t('Zone','买区') }}</span><span class="pv-znm">{{ cx.zone_lo }}{% if cx.get('zone_hi') and cx.zone_hi != cx.zone_lo %} – {{ cx.zone_hi }}{% endif %}</span>
+    <span class="pv-znl">{{ t('Zone','买区') }}</span><span class="pv-znm">{{ cx.zone_lo }}{% if cx.get('zone_hi') and cx.zone_hi != cx.zone_lo %}–{{ cx.zone_hi }}{% endif %}</span>
     {%- elif _zk == 'readd' -%}
-    <span class="pv-znl">{{ t('Re-add','回补') }}</span><span class="pv-znm">{{ cx.zone_lo }}{% if cx.get('zone_hi') and cx.zone_hi != cx.zone_lo %} – {{ cx.zone_hi }}{% endif %}</span>
+    <span class="pv-znl">{{ t('Re-add','回补') }}</span><span class="pv-znm">{{ cx.zone_lo }}{% if cx.get('zone_hi') and cx.zone_hi != cx.zone_lo %}–{{ cx.zone_hi }}{% endif %}</span>
     {%- elif _zk == 'confirm' -%}
     <span class="pv-znm">{{ t('Zone sets on confirmation','买区待确认后生成') }}</span>
     {%- elif _zk == 'note' -%}

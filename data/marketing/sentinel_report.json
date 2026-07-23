@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-07-22T03:50:05Z",
-  "as_of": "2026-07-22",
+  "produced_at": "2026-07-23T03:45:10Z",
+  "as_of": "2026-07-23",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
@@ -10,16 +10,15 @@
     "items": 111,
     "passed": 12,
     "quarantined": 99,
-    "quarantined_policy": 16,
-    "quarantined_overflow": 83,
+    "quarantined_policy": 14,
+    "quarantined_overflow": 85,
     "warnings": 0,
     "exceptions_applied": 0
   },
   "reasons_histogram": {
-    "cadence_cap_daily": 83,
+    "cadence_cap_daily": 85,
     "advice_lexicon": 1,
-    "near_dup": 14,
-    "missing_disclosure": 1
+    "near_dup": 13
   },
   "quarantined": [
     {
@@ -27,8 +26,8 @@
       "account": "flagship",
       "slot": "D1-EOD",
       "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "Circling $KMT this week",
+      "cashtag": "$ENOV",
+      "headline": "Circling $ENOV this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -39,8 +38,8 @@
       "account": "flagship",
       "slot": "D2-AM",
       "type": "chart",
-      "cashtag": "$ROST",
-      "headline": "ROST | worth a look",
+      "cashtag": "$ENOV",
+      "headline": "$ENOV this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -51,8 +50,8 @@
       "account": "flagship",
       "slot": "D2-PM",
       "type": "chart",
-      "cashtag": "$PLTR",
-      "headline": "PLTR, one chart",
+      "cashtag": "$COIN",
+      "headline": "$COIN | 165.50 is the line",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -99,8 +98,8 @@
       "account": "flagship",
       "slot": "D4-EOD",
       "type": "watchlist",
-      "cashtag": "$ADBE",
-      "headline": "Watching $ADBE, not buying yet",
+      "cashtag": "$TEL",
+      "headline": "Circling $TEL this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -111,8 +110,8 @@
       "account": "flagship",
       "slot": "D5-AM",
       "type": "chart",
-      "cashtag": "$ARES",
-      "headline": "ARES | worth a look",
+      "cashtag": "$CUBI",
+      "headline": "$CUBI chart I keep coming back to",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -123,8 +122,8 @@
       "account": "flagship",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "Keeping $FDS close this week",
+      "cashtag": "$ADBE",
+      "headline": "Circling $ADBE this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -135,8 +134,8 @@
       "account": "flagship",
       "slot": "D5-EOD",
       "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "Watching $KMT, not buying yet",
+      "cashtag": "$ARES",
+      "headline": "$ARES on my radar this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -147,8 +146,8 @@
       "account": "flagship",
       "slot": "D6-PM",
       "type": "watchlist",
-      "cashtag": "$PLTR",
-      "headline": "$PLTR is sitting on my desk this week",
+      "cashtag": "$KMT",
+      "headline": "$KMT is sitting on my desk this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -159,8 +158,8 @@
       "account": "flagship",
       "slot": "D6-EOD",
       "type": "watchlist",
-      "cashtag": "$ADBE",
-      "headline": "$ADBE on my radar this week",
+      "cashtag": "$ROST",
+      "headline": "$ROST is sitting on my desk this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -183,8 +182,8 @@
       "account": "flagship",
       "slot": "D7-PM",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "Circling $FDS this week",
+      "cashtag": "$INTU",
+      "headline": "$INTU is sitting on my desk this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -195,8 +194,8 @@
       "account": "flagship",
       "slot": "D7-EOD",
       "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "$KMT on my radar this week",
+      "cashtag": "$PI",
+      "headline": "$PI on my radar this week",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -267,8 +266,8 @@
       "account": "receipts",
       "slot": "D2-AM",
       "type": "watchlist",
-      "cashtag": "$MOS",
-      "headline": "$MOS | watching, no position",
+      "cashtag": "$CVI",
+      "headline": "$CVI | watching only",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -279,8 +278,8 @@
       "account": "receipts",
       "slot": "D2-PM",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "$FDS | watching, no position",
+      "cashtag": "$STEP",
+      "headline": "$STEP | watching, no position",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -291,8 +290,8 @@
       "account": "receipts",
       "slot": "D3-AM",
       "type": "chart",
-      "cashtag": "$LKFN",
-      "headline": "LKFN | where it stands",
+      "cashtag": "$PRGO",
+      "headline": "PRGO chart",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -315,8 +314,8 @@
       "account": "receipts",
       "slot": "D3-EOD",
       "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "$ARES | watching, no position",
+      "cashtag": "$CUBI",
+      "headline": "$CUBI | watching only",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -327,8 +326,8 @@
       "account": "receipts",
       "slot": "D4-AM",
       "type": "chart",
-      "cashtag": "$PRGO",
-      "headline": "$PRGO | the tape",
+      "cashtag": "$INTU",
+      "headline": "INTU chart",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -351,8 +350,8 @@
       "account": "receipts",
       "slot": "D4-EOD",
       "type": "chart",
-      "cashtag": "$CUBI",
-      "headline": "CUBI chart",
+      "cashtag": "$FBRT",
+      "headline": "$FBRT | no spin",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -362,9 +361,9 @@
       "id": "post-receipts-013",
       "account": "receipts",
       "slot": "D5-AM",
-      "type": "watchlist",
-      "cashtag": "$ADBE",
-      "headline": "$ADBE | watching only",
+      "type": "signal",
+      "cashtag": "$ROST",
+      "headline": "Adding $ROST at 235.80",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -375,8 +374,8 @@
       "account": "receipts",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "$PI on the radar, not the board",
+      "cashtag": "$CRM",
+      "headline": "$CRM close, not triggered",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -387,8 +386,8 @@
       "account": "receipts",
       "slot": "D5-EOD",
       "type": "watchlist",
-      "cashtag": "$COIN",
-      "headline": "$COIN close, not triggered",
+      "cashtag": "$MOS",
+      "headline": "$MOS on the radar, not the board",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -411,8 +410,8 @@
       "account": "receipts",
       "slot": "D7-AM",
       "type": "watchlist",
-      "cashtag": "$ENOV",
-      "headline": "$ENOV | watching only",
+      "cashtag": "$ADBE",
+      "headline": "$ADBE close, not triggered",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -423,8 +422,8 @@
       "account": "receipts",
       "slot": "D7-PM",
       "type": "watchlist",
-      "cashtag": "$FBRT",
-      "headline": "$FBRT on the radar, not the board",
+      "cashtag": "$PI",
+      "headline": "$PI | watching, no position",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -455,15 +454,15 @@
       ]
     },
     {
-      "id": "post-theme_desk-002",
+      "id": "post-theme_desk-003",
       "account": "theme_desk",
-      "slot": "D1-PM",
-      "type": "signal",
-      "cashtag": "$ROST",
-      "headline": "$ROST | this is the setup I wait for here",
-      "class": "policy",
+      "slot": "D1-EOD",
+      "type": "watchlist",
+      "cashtag": "$PRGO",
+      "headline": "$PRGO is the one I'm watching in my group",
+      "class": "overflow",
       "reasons": [
-        "missing_disclosure"
+        "cadence_cap_daily"
       ]
     },
     {
@@ -471,8 +470,8 @@
       "account": "theme_desk",
       "slot": "D2-AM",
       "type": "watchlist",
-      "cashtag": "$PLTR",
-      "headline": "$PLTR near entry in my corner",
+      "cashtag": "$FBRT",
+      "headline": "$FBRT is the one I'm watching in my group",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -495,8 +494,8 @@
       "account": "theme_desk",
       "slot": "D2-EOD",
       "type": "watchlist",
-      "cashtag": "$ADBE",
-      "headline": "$ADBE setup in progress",
+      "cashtag": "$TEL",
+      "headline": "Watching $TEL, not acting yet",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -519,8 +518,8 @@
       "account": "theme_desk",
       "slot": "D4-AM",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "Watching $FDS, not acting yet",
+      "cashtag": "$ADBE",
+      "headline": "Watching $ADBE, not acting yet",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -554,9 +553,9 @@
       "id": "post-theme_desk-014",
       "account": "theme_desk",
       "slot": "D5-PM",
-      "type": "signal",
-      "cashtag": "$ROST",
-      "headline": "$ROST at 235.80 | I watch this group closely",
+      "type": "watchlist",
+      "cashtag": "$FDS",
+      "headline": "$FDS setup in progress",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -567,8 +566,8 @@
       "account": "theme_desk",
       "slot": "D6-AM",
       "type": "watchlist",
-      "cashtag": "$PLTR",
-      "headline": "$PLTR near entry in my corner",
+      "cashtag": "$KMT",
+      "headline": "$KMT setup in progress",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -591,8 +590,8 @@
       "account": "theme_desk",
       "slot": "D7-AM",
       "type": "watchlist",
-      "cashtag": "$ENOV",
-      "headline": "$ENOV setup in progress",
+      "cashtag": "$LKFN",
+      "headline": "$LKFN near entry in my corner",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -603,8 +602,8 @@
       "account": "theme_desk",
       "slot": "D7-PM",
       "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "Watching $ARES, not acting yet",
+      "cashtag": "$REZI",
+      "headline": "$REZI near entry in my corner",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -615,8 +614,8 @@
       "account": "theme_desk",
       "slot": "D7-EOD",
       "type": "chart",
-      "cashtag": "$ENOV",
-      "headline": "ENOV | this chart tells me where the theme's going",
+      "cashtag": "$STEP",
+      "headline": "STEP chart, and it matters for the whole group",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -651,8 +650,8 @@
       "account": "research_a",
       "slot": "D2-EOD",
       "type": "watchlist",
-      "cashtag": "$INTU",
-      "headline": "What earns a spot on a watch list",
+      "cashtag": "$REZI",
+      "headline": "Why I show the watch list at all",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -663,8 +662,8 @@
       "account": "research_a",
       "slot": "D3-AM",
       "type": "watchlist",
-      "cashtag": "$GPI",
-      "headline": "Why I show the watch list at all",
+      "cashtag": "$MOS",
+      "headline": "What I'm waiting on with $MOS",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -675,8 +674,8 @@
       "account": "research_a",
       "slot": "D3-PM",
       "type": "chart",
-      "cashtag": "$MSFT",
-      "headline": "$MSFT | a chart worth studying",
+      "cashtag": "$PRGO",
+      "headline": "What PRGO's chart is quietly telling you",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -687,8 +686,8 @@
       "account": "research_a",
       "slot": "D3-EOD",
       "type": "chart",
-      "cashtag": "$CUBI",
-      "headline": "CUBI, let me walk you through this chart",
+      "cashtag": "$TEL",
+      "headline": "$TEL | a chart worth studying",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -711,8 +710,8 @@
       "account": "research_a",
       "slot": "D4-PM",
       "type": "watchlist",
-      "cashtag": "$GPI",
-      "headline": "What earns a spot on a watch list",
+      "cashtag": "$ARES",
+      "headline": "Why I show the watch list at all",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -735,8 +734,8 @@
       "account": "research_a",
       "slot": "D5-AM",
       "type": "chart",
-      "cashtag": "$CUBI",
-      "headline": "What CUBI's chart is quietly telling you",
+      "cashtag": "$ROST",
+      "headline": "What ROST's chart is quietly telling you",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -747,8 +746,8 @@
       "account": "research_a",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$INTU",
-      "headline": "What earns a spot on a watch list",
+      "cashtag": "$STEP",
+      "headline": "What I'm waiting on with $STEP",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -759,8 +758,8 @@
       "account": "research_a",
       "slot": "D5-EOD",
       "type": "watchlist",
-      "cashtag": "$GPI",
-      "headline": "How I filter what I watch",
+      "cashtag": "$PI",
+      "headline": "What I'm waiting on with $PI",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -771,8 +770,8 @@
       "account": "research_a",
       "slot": "D6-AM",
       "type": "watchlist",
-      "cashtag": "$MSFT",
-      "headline": "What earns a spot on a watch list",
+      "cashtag": "$FBRT",
+      "headline": "How I filter what I watch",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -783,8 +782,8 @@
       "account": "research_a",
       "slot": "D6-PM",
       "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "Why I show the watch list at all",
+      "cashtag": "$CVI",
+      "headline": "What I'm waiting on with $CVI",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -795,8 +794,8 @@
       "account": "research_a",
       "slot": "D7-AM",
       "type": "watchlist",
-      "cashtag": "$GPI",
-      "headline": "What I'm waiting on with $GPI",
+      "cashtag": "$ENOV",
+      "headline": "What earns a spot on a watch list",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -831,8 +830,8 @@
       "account": "research_b",
       "slot": "D2-AM",
       "type": "watchlist",
-      "cashtag": "$STEP",
-      "headline": "$STEP close to going",
+      "cashtag": "$ARES",
+      "headline": "$ARES close to going",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -843,8 +842,8 @@
       "account": "research_b",
       "slot": "D2-PM",
       "type": "watchlist",
-      "cashtag": "$INTU",
-      "headline": "$INTU watching, not acting",
+      "cashtag": "$ENOV",
+      "headline": "Watching $ENOV right now",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -855,8 +854,8 @@
       "account": "research_b",
       "slot": "D2-EOD",
       "type": "watchlist",
-      "cashtag": "$MOS",
-      "headline": "$MOS watching, not acting",
+      "cashtag": "$FDS",
+      "headline": "$FDS close to going",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -867,8 +866,8 @@
       "account": "research_b",
       "slot": "D3-AM",
       "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "Quick radar check on $PI",
+      "cashtag": "$COIN",
+      "headline": "Quick radar check on $COIN",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -891,8 +890,8 @@
       "account": "research_b",
       "slot": "D3-EOD",
       "type": "watchlist",
-      "cashtag": "$PRGO",
-      "headline": "$PRGO close to going",
+      "cashtag": "$SONO",
+      "headline": "Watching $SONO right now",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -903,8 +902,8 @@
       "account": "research_b",
       "slot": "D4-AM",
       "type": "watchlist",
-      "cashtag": "$FBRT",
-      "headline": "$FBRT close to going",
+      "cashtag": "$ROST",
+      "headline": "Watching $ROST right now",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -939,8 +938,8 @@
       "account": "research_b",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "Quick radar check on $CUBI",
+      "cashtag": "$INTU",
+      "headline": "$INTU watching, not acting",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -963,8 +962,8 @@
       "account": "research_b",
       "slot": "D6-PM",
       "type": "chart",
-      "cashtag": "$INTU",
-      "headline": "INTU | tape check",
+      "cashtag": "$GPI",
+      "headline": "$GPI right now",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -975,8 +974,8 @@
       "account": "research_b",
       "slot": "D7-AM",
       "type": "watchlist",
-      "cashtag": "$PI",
-      "headline": "$PI watching, not acting",
+      "cashtag": "$FBRT",
+      "headline": "Watching $FBRT right now",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -999,8 +998,8 @@
       "account": "research_b",
       "slot": "D7-EOD",
       "type": "watchlist",
-      "cashtag": "$PRGO",
-      "headline": "$PRGO close to going",
+      "cashtag": "$TEL",
+      "headline": "$TEL close to going",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1022,9 +1021,9 @@
       "id": "post-research_c-005",
       "account": "research_c",
       "slot": "D2-PM",
-      "type": "signal",
-      "cashtag": "$MSFT",
-      "headline": "$MSFT | pattern's live at 402.30",
+      "type": "watchlist",
+      "cashtag": "$ENOV",
+      "headline": "Watching a pattern in $ENOV",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1034,9 +1033,9 @@
       "id": "post-research_c-006",
       "account": "research_c",
       "slot": "D2-EOD",
-      "type": "signal",
-      "cashtag": "$ROST",
-      "headline": "$ROST | last time this setup showed up, 235.80 mattered",
+      "type": "watchlist",
+      "cashtag": "$PRGO",
+      "headline": "Watching a pattern in $PRGO",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1059,8 +1058,8 @@
       "account": "research_c",
       "slot": "D3-PM",
       "type": "watchlist",
-      "cashtag": "$CRM",
-      "headline": "Old shapes showing up in $CRM",
+      "cashtag": "$TEL",
+      "headline": "$TEL rhyming with an old setup",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1071,8 +1070,8 @@
       "account": "research_c",
       "slot": "D3-EOD",
       "type": "watchlist",
-      "cashtag": "$INTU",
-      "headline": "$INTU rhyming with an old setup",
+      "cashtag": "$LKFN",
+      "headline": "Old shapes showing up in $LKFN",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1083,8 +1082,8 @@
       "account": "research_c",
       "slot": "D4-AM",
       "type": "watchlist",
-      "cashtag": "$ARES",
-      "headline": "$ARES rhyming with an old setup",
+      "cashtag": "$CRM",
+      "headline": "Old shapes showing up in $CRM",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1095,8 +1094,8 @@
       "account": "research_c",
       "slot": "D4-PM",
       "type": "chart",
-      "cashtag": "$GPI",
-      "headline": "$GPI | history's in the picture",
+      "cashtag": "$INTU",
+      "headline": "INTU | this chart looks familiar",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1107,8 +1106,8 @@
       "account": "research_c",
       "slot": "D4-EOD",
       "type": "watchlist",
-      "cashtag": "$COIN",
-      "headline": "$COIN rhyming with an old setup",
+      "cashtag": "$ARES",
+      "headline": "Watching a pattern in $ARES",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1119,20 +1118,20 @@
       "account": "research_c",
       "slot": "D5-AM",
       "type": "chart",
-      "cashtag": "$MSFT",
-      "headline": "$MSFT | chart with a memory",
-      "class": "policy",
+      "cashtag": "$GPI",
+      "headline": "GPI | this chart looks familiar",
+      "class": "overflow",
       "reasons": [
-        "near_dup:post-research_a-008"
+        "cadence_cap_daily"
       ]
     },
     {
       "id": "post-research_c-014",
       "account": "research_c",
       "slot": "D5-PM",
-      "type": "signal",
-      "cashtag": "$ROST",
-      "headline": "$ROST at 235.80 | the precedent's worth a look",
+      "type": "watchlist",
+      "cashtag": "$COIN",
+      "headline": "$COIN rhyming with an old setup",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1143,8 +1142,8 @@
       "account": "research_c",
       "slot": "D5-EOD",
       "type": "watchlist",
-      "cashtag": "$CUBI",
-      "headline": "$CUBI | a setup with a memory",
+      "cashtag": "$MSFT",
+      "headline": "$MSFT rhyming with an old setup",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1155,8 +1154,8 @@
       "account": "research_c",
       "slot": "D6-PM",
       "type": "watchlist",
-      "cashtag": "$INTU",
-      "headline": "$INTU | a setup with a memory",
+      "cashtag": "$CUBI",
+      "headline": "$CUBI | a setup with a memory",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1190,9 +1189,9 @@
       "id": "post-research_c-021",
       "account": "research_c",
       "slot": "D7-EOD",
-      "type": "signal",
-      "cashtag": "$MSFT",
-      "headline": "$MSFT | pattern's live at 402.30",
+      "type": "watchlist",
+      "cashtag": "$FDS",
+      "headline": "$FDS | a setup with a memory",
       "class": "overflow",
       "reasons": [
         "cadence_cap_daily"
@@ -1213,12 +1212,12 @@
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 4147,
-      "hits": 14,
+      "pairs_checked": 4255,
+      "hits": 13,
       "shared_media_hits": 0
     },
     "cadence": {
-      "cadence_cap_daily_hits": 83,
+      "cadence_cap_daily_hits": 85,
       "cashtag_cap_hits": 0,
       "slot_collision_hits": 0,
       "reply_cap_hits": 0
@@ -1227,7 +1226,7 @@
       "hits": 1
     },
     "disclosure": {
-      "hits": 1
+      "hits": 0
     },
     "cherry_pick": {
       "status": "run",
@@ -1237,7 +1236,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 1,
+      "age_days": 2,
       "max": 7
     },
     "kill_switch": {

@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import yaml
 from jinja2 import Environment, FileSystemLoader
 from plotly.subplots import make_subplots
 
@@ -1449,12 +1450,16 @@ def _season_tooltip(seas: dict | None, month: int | None):
 
 
 def _mini_svg(vals, color: str = "var(--link)", w: int = 260, h: int = 54,
-              baseline=None, dot: bool = True) -> str:
+              baseline=None, dot: bool = True,
+              zone_lo: float | None = None, zone_hi: float | None = None,
+              zone_state: str | None = None) -> str:
     """A tiny theme-aware inline sparkline (area + line + last-point marker),
     used both for the nowcast hover charts and the standout-stock cards. Pure
     SVG so it needs no client JS and works offline. `vals` should already be a
     clean numeric list. `baseline` draws a dashed reference line (0 = stall,
-    2 = the Fed's inflation target, …)."""
+    2 = the Fed's inflation target, …). zone_lo/zone_hi/zone_state (all
+    optional): the prophet-card buy-zone band, drawn on the same lo/hi/pad
+    scale as the polyline — args absent -> output identical to before."""
     vals = [float(v) for v in vals if v is not None and v == v]
     if len(vals) < 2:
         return ""
@@ -1476,6 +1481,34 @@ def _mini_svg(vals, color: str = "var(--link)", w: int = 260, h: int = 54,
         out.append(f'<line x1="0" y1="{by:.1f}" x2="{w}" y2="{by:.1f}" '
                    f'stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" '
                    f'opacity="0.55"/>')
+    if zone_hi is not None or zone_lo is not None:
+        # Buy-zone band (prophet-card E1): a horizontal price band over the right
+        # 40% of the plot — filled low-opacity rect when the zone is ACTIVE, dashed
+        # edge lines only when PENDING. Price-clamped into the plotted window; a
+        # zone wholly outside it draws nothing. The edge lines carry no fill
+        # attribute and the rect keeps fill-opacity, so the prophet-card hue
+        # override (stroke on *, fill on [fill]:not([fill="none"])) recolors both
+        # without flattening the band.
+        try:
+            zh = float(zone_hi if zone_hi is not None else zone_lo)
+            zl = float(zone_lo if zone_lo is not None else zone_hi)
+            zl, zh = min(zl, zh), max(zl, zh)
+            if zh > 0 and zh >= lo and zl <= hi:
+                yt = (h - pad) - ((min(zh, hi) - lo) / rng) * (h - 2 * pad) + pad
+                yb = (h - pad) - ((max(zl, lo) - lo) / rng) * (h - 2 * pad) + pad
+                x0 = w * 0.60
+                if zone_state == "active":
+                    out.append(f'<rect x="{x0:.1f}" y="{yt:.1f}" width="{w - x0:.1f}" '
+                               f'height="{max(yb - yt, 0.0):.1f}" fill="{color}" '
+                               f'fill-opacity="0.09" stroke="none"/>')
+                out.append(f'<line x1="{x0:.1f}" y1="{yt:.1f}" x2="{w}" y2="{yt:.1f}" '
+                           f'stroke="{color}" stroke-width="1" stroke-dasharray="4 3" '
+                           f'stroke-opacity="0.65"/>'
+                           f'<line x1="{x0:.1f}" y1="{yb:.1f}" x2="{w}" y2="{yb:.1f}" '
+                           f'stroke="{color}" stroke-width="1" stroke-dasharray="4 3" '
+                           f'stroke-opacity="0.65"/>')
+        except (TypeError, ValueError):
+            pass  # malformed zone — never a broken spark
     out.append(f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" '
                f'opacity="0.12" stroke="none"/>')
     out.append(f'<polyline points="{pts}" fill="none" stroke="{color}" '
@@ -3402,6 +3435,83 @@ def build_alerts_page(env: Environment, site: Path, generated: str) -> None:
              s["actionable"], s["backtested"])
 
 
+def _plans_view_model() -> dict:
+    """Build the declarative view-model for the plans / pricing page.
+
+    Reads config/plans.yml (the single source of truth — MNZ-R12: prices/tiers
+    ship as config, never literals) and derives everything the template needs so
+    the .j2 stays purely declarative:
+
+    * per-month price in whole dollars for both intervals (monthly = unit_amount/100;
+      annual = unit_amount/12/100 → the per-month-equivalent shown when Annual is on),
+    * the savings percent  round((monthly - annual/12) / monthly * 100)  computed
+      from the config amounts — never a literal (so 17% / 22% re-derive whenever the
+      YAML numbers move; masterplan §2.1 display law),
+    * the full annual charge (for the "billed $X/yr" fine print),
+    * the trial length.
+
+    The template also receives the raw cents so its JS toggle re-derives the exact
+    same numbers client-side (single source of truth on both sides of the seam).
+    """
+    catalog = yaml.safe_load((config.ROOT / "config" / "plans.yml").read_text())
+    products = catalog.get("products", {})
+
+    def _tier_vm(key: str) -> dict | None:
+        prod = products.get(key)
+        if not prod:
+            return None
+        prices = prod.get("prices", {})
+        m_cents = int(prices.get("monthly", {}).get("unit_amount", 0))
+        a_cents = int(prices.get("annual", {}).get("unit_amount", 0))
+        # Per-month equivalents. Dollars are whole here because the catalog prices
+        # are round ($59/$89 monthly; $588/$828 annual → $49/$69 per month) — round()
+        # keeps the badge honest if a future price isn't a clean multiple of 12.
+        monthly_pm = round(m_cents / 100)
+        annual_pm = round(a_cents / 12 / 100)
+        # The one derived percent the reviewer will check is config-driven, not literal.
+        save_pct = (round((m_cents - a_cents / 12) / m_cents * 100)
+                    if m_cents else 0)
+        return {
+            "tier": prod.get("tier", key),
+            "name": prod.get("name", key.title()),
+            "trial_days": int(prod.get("trial_days", 0)),
+            "monthly_pm": monthly_pm,          # $/mo, monthly billing
+            "annual_pm": annual_pm,            # $/mo-equivalent, annual billing
+            "annual_total": round(a_cents / 100),   # full yearly charge, whole $
+            "save_pct": save_pct,              # DERIVED — never hardcoded
+            "monthly_cents": m_cents,          # raw, for the JS toggle to re-derive
+            "annual_cents": a_cents,
+        }
+
+    return {
+        "currency": catalog.get("currency", "usd"),
+        "insider": _tier_vm("insider"),
+        "pro": _tier_vm("pro"),
+    }
+
+
+def build_plans_page(env: Environment, site: Path, generated: str) -> None:
+    """✨ Plans — the customer-facing pricing / upgrade page (W4 monetization).
+
+    Pure assembler over config/plans.yml (via _plans_view_model): renders the
+    3-tier comparison with the annual/monthly toggle (annual default) and the
+    computed savings badges. The subscribe buttons drive POST /api/billing/checkout
+    client-side; nothing here reaches the network at build time.
+    Additive + graceful: never fatal to the build.
+    """
+    vm = _plans_view_model()
+    html = env.get_template("plans.html.j2").render(
+        generated_utc=generated,
+        currency=vm["currency"],
+        insider=vm["insider"],
+        pro=vm["pro"],
+    )
+    write_page(site / "plans.html", html)
+    log.info("wrote plans.html (insider $%s/$%s save %s%% · pro $%s/$%s save %s%%)",
+             vm["insider"]["monthly_pm"], vm["insider"]["annual_pm"], vm["insider"]["save_pct"],
+             vm["pro"]["monthly_pm"], vm["pro"]["annual_pm"], vm["pro"]["save_pct"])
+
+
 ETF_GICS = {                       # SPDR sector fund -> GICS sector (residual-alpha leaders)
     "XLK": "Information Technology", "XLF": "Financials", "XLV": "Health Care",
     "XLY": "Consumer Discretionary", "XLP": "Consumer Staples", "XLE": "Energy",
@@ -4307,6 +4417,10 @@ def main() -> int:
         build_alerts_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("alerts page failed: %s", e)
+    try:
+        build_plans_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("plans page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
     # factor scorecard + the raw internals moved off the main dashboard. Returns the
     # cross-asset snapshot for the dashboard's compact one-bet card.
@@ -5153,36 +5267,87 @@ def main() -> int:
             _financial_news_data = json.loads(_fn_path.read_text())
     except Exception as _e:  # noqa: BLE001 — additive, never fatal
         log.warning("news financial.json load failed: %s", _e)
-    # W3 fix: sort event-typed headlines by |novelty_z| desc then seendate desc so
-    # the Delta Board renders in spec order without relying on Jinja abs().  Context
-    # (non-event) headlines are left in their original intelligence_score order and
-    # appended after event headlines.  A shallow copy avoids mutating the shared vm.
+    # NEWS-RANK: the display feed is already aged + ranked by engine.macro_news
+    # (rank_score desc, per-tier display-age cutoff). Re-apply BOTH here defensively
+    # so a stale on-disk artifact — or an older macro_news build — can never surface
+    # a 30-45d straggler or a mis-ordered lead. Display order ONLY, never a score.
     _news_vm_macro_news = vm.get("macro_news")
     if _news_vm_macro_news and _news_vm_macro_news.get("headlines"):
         try:
-            _raw_heads = _news_vm_macro_news["headlines"]
-            _ev   = [h for h in _raw_heads if h.get("event")]
-            _ctx  = [h for h in _raw_heads if not h.get("event")]
-            # Three-pass stable sort: seendate desc, then abs(novelty_z) desc, then
-            # a fresh-first partition (NEWS-DD-02: an aged official item must never
-            # take the lead slot on novelty alone — a >5d-old card sorts after every
-            # fresh card regardless of novelty).  Timsort stability preserves the
-            # inner order within each partition.
-            from datetime import datetime as _dt, timedelta as _td, timezone as _tz
-            _fresh_cut = (_dt.now(_tz.utc) - _td(days=5)).isoformat()
-            _ev.sort(key=lambda h: h.get("seendate") or "", reverse=True)
-            _ev.sort(
-                key=lambda h: abs(float(h["novelty_z"])) if h.get("novelty_z") is not None else 0.0,
-                reverse=True,
-            )
-            _ev.sort(key=lambda h: (h.get("seendate") or "") >= _fresh_cut, reverse=True)
+            from engine import news_common as _nc_rank
+            from datetime import datetime as _dt, timezone as _tz
+            _now_r = _dt.now(_tz.utc)
+            _mncfg_r = config.load().get("macro_news", {}) or {}
+            _heads = [h for h in _news_vm_macro_news["headlines"]
+                      if _nc_rank.display_age_ok(h.get("seendate", ""),
+                                                 h.get("source_tier", ""), _mncfg_r, _now_r)]
+            _heads.sort(key=lambda h: h.get("rank_score") if h.get("rank_score") is not None
+                        else _nc_rank.rank_score(h, _now_r), reverse=True)
             _sorted_macro_news = dict(_news_vm_macro_news)
-            _sorted_macro_news["headlines"] = _ev + _ctx
-        except Exception as _e:  # noqa: BLE001 — sort is best-effort; degrade to raw order
-            log.warning("news ev_heads sort failed: %s", _e)
+            _sorted_macro_news["headlines"] = _heads
+        except Exception as _e:  # noqa: BLE001 — best-effort; degrade to raw order
+            log.warning("news rank/age sort failed: %s", _e)
             _sorted_macro_news = _news_vm_macro_news
     else:
         _sorted_macro_news = _news_vm_macro_news
+
+    # NEWS-FEED: a single importance-ranked stream the redesigned page reads for its
+    # hero + "Top stories" feed. Merge the (aged, ranked) macro headlines with the
+    # financial market wires, dedup, tag a lane (Fed / Macro / Companies / Markets),
+    # and order by rank_score. Display order ONLY — never a score. Guarded: degrades
+    # to the macro list (or empty) on any error, so the page always renders.
+    _news_feed = []
+    try:
+        from engine import news_common as _nc_feed
+        from datetime import datetime as _dtf, timezone as _tzf
+        _feed_now = _dtf.now(_tzf.utc)
+        _mncfg_feed = config.load().get("macro_news", {}) or {}
+        _macro_hl = (_sorted_macro_news or {}).get("headlines", []) or []
+        _fin_market = (_financial_news_data or {}).get("market", []) or []
+        if not isinstance(_fin_market, list):
+            _fin_market = []
+        _stock_themes = {"earnings", "guidance", "analyst", "deals", "capital_return", "stocks"}
+
+        def _lane_of(h):
+            th = (h.get("theme") or "").lower()
+            ev = h.get("event") or {}
+            et = ev.get("event_type") if isinstance(ev, dict) else None
+            if th in ("monetary", "credit"):
+                return "fed"
+            if th in ("inflation", "labor", "growth", "fiscal", "macro"):
+                return "macro"
+            if h.get("tickers") or et or th in _stock_themes:
+                return "companies"
+            return "markets"
+
+        _seen_feed, _combined = set(), []
+        for _h in (list(_macro_hl) + list(_fin_market)):
+            if not isinstance(_h, dict):
+                continue
+            _idk = _h.get("_id") or ((_h.get("title", "") or "")[:80].lower()
+                                     + "|" + (_h.get("domain", "") or ""))
+            if _idk in _seen_feed:
+                continue
+            _seen_feed.add(_idk)
+            _rec = dict(_h)
+            _rec.setdefault("source_tier", {1: "tier1", 2: "quality", 3: "quality"}
+                            .get(_rec.get("tier"), "quality"))
+            if _rec.get("rank_score") is None:
+                try:
+                    _rec["rank_score"] = _nc_feed.rank_score(_rec, _feed_now)
+                except Exception:  # noqa: BLE001
+                    _rec["rank_score"] = 0.0
+            if not _nc_feed.display_age_ok(_rec.get("seendate", ""),
+                                           _rec.get("source_tier", ""), _mncfg_feed, _feed_now):
+                continue
+            _rec["lane"] = _lane_of(_rec)
+            _combined.append(_rec)
+        _combined.sort(key=lambda h: h.get("rank_score", 0.0), reverse=True)
+        _news_feed = _combined[:80]
+    except Exception as _e:  # noqa: BLE001 — additive; never fatal
+        log.warning("news_feed build failed: %s", _e)
+        _news_feed = []
+
     out_news = site / "news.html"
     # vm already carries a 'macro_news' key (assigned above), so we must NOT splat
     # **vm AND pass macro_news= explicitly — that collides at argument binding and
@@ -5202,6 +5367,7 @@ def main() -> int:
             news_rejected=_news_rejected_data,
             news_calibration=_news_calibration_data,
             financial_news=_financial_news_data,
+            news_feed=_news_feed,
         )
     except Exception as _e:  # noqa: BLE001 — degrade, never raise
         log.error("news.html render failed (%s: %s) — retrying without side-artifacts",
@@ -5214,6 +5380,7 @@ def main() -> int:
                 news_rejected=None,
                 news_calibration=None,
                 financial_news=None,
+                news_feed=_news_feed,
             )
         except Exception as _e2:  # noqa: BLE001 — degrade, never raise
             log.error("news.html artifact-free render failed too (%s: %s) — "

@@ -141,7 +141,7 @@ html.still{scroll-behavior:auto}
 
 /* ============ COVER ============ */
 .cover{position:relative;overflow:clip}
-.cover-in{max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) 0;display:block;min-height:calc(100vh - 62px)}
+.cover-in{max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) 0;display:block}
 .cov-copy{position:relative;z-index:40;text-align:center;max-width:760px;margin:0 auto;padding-bottom:0}
 .cov-copy h1{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:.99;font-size:clamp(2.15rem,3.5vw,3.05rem);margin:16px 0 0}
 .cov-copy h1 .dim{color:var(--faint)}
@@ -154,61 +154,42 @@ html.still{scroll-behavior:auto}
 .live-pill i::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1px solid rgba(94,234,212,.6);animation:ping 2.4s ease-out infinite}
 @keyframes ping{0%{transform:scale(.5);opacity:1}70%,100%{transform:scale(1.7);opacity:0}}
 
-/* ---- the field ---- */
-.field{position:relative;z-index:10;width:100%;max-width:1240px;margin:clamp(26px,4vh,44px) auto 0;height:min(56vh,590px);min-height:540px}
-.field::before{content:"";position:absolute;inset:-8% -5%;pointer-events:none;
+/* ---- the pyramid: five uniform desk cards, centre-forward ---- */
+.pyr{position:relative;z-index:10;width:100%;max-width:1280px;margin:clamp(8px,1.4vh,16px) auto 0;height:440px}
+.pyr::before{content:"";position:absolute;inset:-10% -4% -4%;pointer-events:none;
   background:
-    radial-gradient(38% 34% at 50% 44%,rgba(40,95,255,.075),transparent 70%),
-    radial-gradient(26% 24% at 16% 18%,rgba(120,98,224,.05),transparent 70%),
-    radial-gradient(24% 22% at 86% 76%,rgba(15,157,143,.05),transparent 70%),
-    linear-gradient(rgba(28,36,48,.035) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(28,36,48,.035) 1px,transparent 1px);
-  background-size:auto,auto,auto,46px 46px,46px 46px;
-  -webkit-mask-image:radial-gradient(90% 80% at 50% 50%,#000 55%,transparent 100%);
-  mask-image:radial-gradient(90% 80% at 50% 50%,#000 55%,transparent 100%)}
-.web{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.web path.string{fill:none;stroke-width:1.4;stroke-linecap:round;opacity:.5}
-.web path.syn{fill:none;stroke-width:1;stroke-dasharray:3 5;opacity:.35}
-.pulse{opacity:.9}
+    radial-gradient(42% 40% at 50% 40%,rgba(40,95,255,.07),transparent 70%),
+    linear-gradient(rgba(28,36,48,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(28,36,48,.03) 1px,transparent 1px);
+  background-size:auto,46px 46px,46px 46px;
+  -webkit-mask-image:radial-gradient(88% 82% at 50% 50%,#000 55%,transparent 100%);
+  mask-image:radial-gradient(88% 82% at 50% 50%,#000 55%,transparent 100%)}
+.pcard{position:absolute;top:0;width:21.6%;height:376px;background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);box-shadow:var(--sh-deep);padding:13px 15px;transform-origin:50% 0}
+.pp1{left:0;transform:translateY(58px) scale(.94);z-index:11}
+.pp2{left:19.6%;transform:translateY(29px) scale(.97);z-index:14}
+.pp3{left:39.2%;z-index:20;box-shadow:0 42px 80px -30px rgba(18,26,45,.42),var(--sh-deep)}
+.pp4{left:58.8%;transform:translateY(29px) scale(.97);z-index:14}
+.pp5{left:78.4%;transform:translateY(58px) scale(.94);z-index:11}
+.pp1,.pp2{padding-right:30px}
+.pp4,.pp5{padding-left:30px}
+.pcard .kicker{font-size:.62rem;display:flex;justify-content:space-between;gap:8px;align-items:baseline;white-space:nowrap}
+.pcard .kicker .asof{letter-spacing:.03em;color:var(--faint);text-transform:none;font-weight:600;font-size:.62rem;overflow:hidden;text-overflow:ellipsis}
+.pcard .foot{margin:10px 2px 0;font-size:10.5px;color:var(--faint);line-height:1.45}
 
-/* ---- the brain ---- */
-.brain{position:absolute;left:49%;top:45%;transform:translate(-50%,-50%);z-index:19;width:210px;text-align:center;pointer-events:none}
-.brain .halo{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:290px;height:290px;border-radius:50%;
-  background:radial-gradient(circle,rgba(40,95,255,.16),rgba(40,95,255,.05) 52%,transparent 72%);
-  animation:breathe 5.5s ease-in-out infinite}
-@keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}}
-.brain svg{position:relative;width:164px;height:164px;margin:0 auto;display:block;filter:drop-shadow(0 16px 30px rgba(28,60,160,.22))}
-.orbit{transform-origin:86px 86px;animation:spin 70s linear infinite}
-.knotg{transform-origin:86px 86px;animation:spin 140s linear infinite reverse}
-@keyframes spin{to{transform:rotate(360deg)}}
-.corepulse{transform-origin:86px 86px;animation:corebeat 3.2s ease-in-out infinite}
-@keyframes corebeat{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-.brain .bname{position:relative;margin:4px 0 0;font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;letter-spacing:.22em;color:var(--ink)}
-.brain .bsub{position:relative;font-size:11px;color:var(--faint);margin:0;font-weight:500}
-
-/* ---- scattered cards ----
-   bob animates `translate` only (starts at 0 — no load twitch);
-   tilt lives on the independent `rotate` property so they compose. */
-.spot{position:absolute;z-index:20}
-.spot .pin{position:absolute;width:11px;height:11px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 5px rgba(20,30,50,.35);z-index:3}
-.crd{position:relative;background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);box-shadow:var(--sh-deep);padding:13px 15px;
-  rotate:var(--rot,0deg);animation:bob var(--bd,6s) ease-in-out var(--bdel,0s) infinite}
-@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -9px}}
-.crd .kicker{font-size:.62rem;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
-.crd .kicker .asof{letter-spacing:.03em;color:var(--faint);text-transform:none;font-weight:600;font-size:.62rem}
-
-/* today's read */
-.s-read{left:1%;top:3%;width:min(292px,25%)}
-.s-read .crd{--rot:-3.2deg}
-.s-read .pin{right:-4px;bottom:16%;background:var(--blue)}
-.read-top{display:flex;align-items:center;gap:12px;margin-top:8px;text-align:left;width:100%}
-.score{font-family:'Archivo Expanded',sans-serif;font-weight:900;font-size:52px;line-height:1;letter-spacing:-.03em}
-.odo{width:126px;flex:none}
-.chip-reg{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--hair-2);border-radius:99px;padding:5px 11px;font-weight:600;font-size:12.5px;background:#fff;margin-top:9px;position:relative}
+/* today's read (front card) */
+.gz-row{display:flex;align-items:center;gap:13px;margin-top:16px}
+.gz{width:108px;flex:none}
+.gz-num{display:flex;align-items:baseline;gap:9px;min-width:0}
+.gz-num b{font-family:'Archivo Expanded',sans-serif;font-weight:900;font-size:44px;line-height:1;letter-spacing:-.03em;color:var(--q-gold);transition:color .9s}
+.gz-num .gzw{font-weight:700;font-size:14.5px;color:var(--ink-soft)}
+.gz-arcf{transition:stroke .9s}
+.pp3.risk .gz-arcf{stroke:var(--q-green)}
+.pp3.risk .gz-num b{color:var(--q-green)}
+.pp3.risk #needle circle{fill:var(--q-green)}
+.chip-reg{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--hair-2);border-radius:99px;padding:5px 11px;font-weight:600;font-size:12.5px;background:#fff;margin-top:8px;position:relative}
 .chip-reg .dotg{width:7px;height:7px;border-radius:50%;background:var(--q-green)}
-.stance{margin:9px 0 0;color:var(--ink-soft);font-size:12.5px;line-height:1.5}
+.stance{margin:14px 0 0;color:var(--ink-soft);font-size:12.5px;line-height:1.5}
 .stance b{font-weight:600}
-/* quadrant popover on the goldilocks chip */
 .quad-pop{position:absolute;left:-10px;top:calc(100% + 12px);z-index:84;width:272px;background:#fff;border:1px solid var(--hair-2);border-radius:var(--r);box-shadow:var(--sh-lift);padding:13px;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .2s,transform .2s,visibility 0s .2s;text-align:left;font-weight:400}
 .chip-reg:hover .quad-pop,.chip-reg:focus-within .quad-pop,.chip-reg.open .quad-pop{opacity:1;visibility:visible;transform:none;transition:opacity .2s,transform .2s}
 .quad{position:relative;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:76px 76px;gap:4px}
@@ -220,114 +201,60 @@ html.still{scroll-behavior:auto}
 .quad .you{position:absolute;left:45%;top:37%;width:12px;height:12px;border-radius:50%;background:var(--ink);border:3px solid #fff;box-shadow:0 1px 6px rgba(20,30,50,.4)}
 .quad-note{margin:9px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
 
-/* economies */
-.s-econ{left:26.5%;top:0;width:min(226px,18.5%);z-index:18}
-.s-econ .crd{--rot:1.8deg;padding:11px 13px}
-.s-econ .pin{left:-4px;top:42%;background:var(--violet)}
-.ec-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0 8px;align-items:center;padding:4.5px 0;border-bottom:1px solid var(--hair);font-size:11.5px}
-.ec-row:last-child{border-bottom:0}
-.ec-row .cn{font-weight:600;line-height:1.25;min-width:0}
-.ec-row .ix{color:var(--faint);font-size:9.5px;font-weight:500;white-space:nowrap;margin-left:3px}
-.ec-row .pc{font-weight:700;font-size:11px;text-align:right}
-.ec-row .st{font-family:'Archivo',sans-serif;font-weight:700;font-size:8px;letter-spacing:.08em;border-radius:4px;padding:2px 6px}
-.st.mix{color:var(--q-gold);background:var(--gold-wash)}
-.st.cool{color:var(--q-blue);background:var(--blue-wash)}
-.st.stdy{color:var(--q-green);background:var(--green-wash)}
-
-/* risk radar — percentages always visible */
-.s-risk{left:74%;top:2%;width:min(300px,25.5%)}
-.s-risk .crd{--rot:-1.6deg}
-.s-risk .pin{left:26%;bottom:-4px;background:var(--q-red)}
-.s-risk .kicker,.s-risk .kicker .asof{white-space:nowrap}
-.rr-level{display:flex;align-items:baseline;gap:9px;margin-top:8px}
-.rr-level .n{font-family:'Archivo Expanded',sans-serif;font-weight:900;font-size:28px}
-.rr-level .tag{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.1em;color:var(--q-gold);background:var(--gold-wash);border-radius:6px;padding:3px 8px}
-.rr-row{margin-top:7px}
-.rr-row .lb{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft)}
-.rr-row .lb span{color:var(--faint)}
-.rr-row .lb .pc{font-weight:700;color:var(--ink)}
-.rr-row .lb .pc em{font-style:normal;font-size:10px;color:var(--q-red)}
-.rr-track{height:5px;border-radius:99px;background:var(--hair);overflow:hidden;margin-top:3px}
-.rr-track i{display:block;height:100%;background:linear-gradient(90deg,var(--q-gold),var(--q-red));border-radius:99px;font-style:normal;width:var(--w,30%);transition:width .8s ease}
-@keyframes pctBump{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
-.rr-row .pc.bump{animation:pctBump .5s ease;display:inline-block}
-.rf{animation:rowFlash .65s ease}
-@keyframes rowFlash{0%{background:rgba(40,95,255,.07)}100%{background:transparent}}
-
-/* heatmap 3x3 — half-coverable */
-.s-heat{left:3%;top:55%;width:min(238px,20%);z-index:14}
-.s-heat .crd{--rot:1.8deg}
-.s-heat .pin{right:-4px;top:22%;background:var(--teal)}
-.heat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:9px}
-.hm{border-radius:5px;padding:6px 7px 5px;min-width:0;text-align:center}
-.hm .tk{font-family:'Archivo',sans-serif;font-weight:700;font-size:10px}
-.hm .pc{font-size:10px;font-weight:600;margin-top:1px}
+/* heatmap card */
+.heat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.hm{border-radius:6px;padding:15px 7px 13px;min-width:0;text-align:center}
+.hm .tk{font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px}
+.hm .pc{font-size:10.5px;font-weight:600;margin-top:2px}
 .hm.u{background:var(--green-wash)} .hm.u .pc{color:var(--q-green)}
+.hm.u2{background:#d2ecdd} .hm.u2 .pc{color:var(--q-green)}
 .hm.d{background:var(--red-wash)} .hm.d .pc{color:var(--q-red)}
 .hm.d2{background:#f6dbd9} .hm.d2 .pc{color:var(--q-red)}
 .hm.flash{background:var(--blue-wash) !important}
+.rf{animation:rowFlash .65s ease}
+@keyframes rowFlash{0%{background:rgba(40,95,255,.07)}100%{background:transparent}}
 
-/* prophet — single scorecard-v2 card (Prophet DNA, porcelain-adapted) */
-.s-proph{left:24.5%;top:61%;width:min(272px,23%);z-index:26}
-.s-proph .pin{right:8%;top:-4px;background:var(--q-green)}
-.s-proph .crd{--rot:-2.2deg;padding:12px 14px;animation:none;translate:none}
-.pr-id{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px}
-.pr-id .tk{font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.01em}
-.pr-badge{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.08em;border-radius:5px;padding:3px 7px;white-space:nowrap}
-.pr-badge.dir{color:var(--q-green);background:var(--green-wash)}
-.pr-badge.phase{color:var(--q-gold);background:var(--gold-wash)}
-.pr-rr{margin-left:auto;font-family:ui-monospace,monospace;font-weight:600;font-size:9.5px;color:var(--muted);border:1px solid var(--hair-2);border-radius:99px;padding:2px 8px;white-space:nowrap}
-/* — horizontal geometry rail — */
-.pr-rail{position:relative;height:19px;margin:12px 0 0}
-.pr-track{position:absolute;left:0;right:0;top:7px;height:5px;border-radius:99px;background:var(--hair)}
-.pr-fill{position:absolute;top:21px;height:5px;border-radius:99px;background:rgba(15,157,143,.6)}
-.pr-mk{position:absolute;top:1px;width:2px;height:17px;border-radius:2px;transform:translateX(-1px)}
-.pr-mk.stop{background:var(--q-red)} .pr-mk.entry{background:var(--ink)}
-.pr-mk.t1{background:var(--q-green)}
-.pr-mk.t2{background:rgba(31,139,65,.45)}
-.pr-dot{position:absolute;top:5px;width:9px;height:9px;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 1px 4px rgba(15,157,143,.45);transform:translateX(-4.5px)}
-.pr-legend{display:flex;justify-content:space-between;gap:4px;margin:7px 0 0;font-family:ui-monospace,monospace;font-size:8px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
-.pr-legend b{font-weight:500}
-.pr-brief{margin:9px 0 0;color:var(--ink-soft);font-size:12px;line-height:1.5}
-.s-proph .crd .gr{margin-top:9px;border-top:1px solid var(--hair);padding-top:6px;font-size:9.5px;color:var(--faint)}
+/* act-now lane card */
+.pl-lane{margin-top:10px;border:1px solid var(--hair);border-radius:10px;background:var(--panel-2);padding:9px 10px 11px;min-height:186px}
+.pl-h{display:flex;align-items:center;gap:6px;margin:0 0 2px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.1em;color:var(--q-green)}
+.pl-h i{width:6px;height:6px;border-radius:50%;background:var(--q-green);font-style:normal}
+.pl-chip{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--hair);border-radius:8px;box-shadow:var(--sh-card);padding:11px;margin-top:8px;font-size:12px;font-weight:600;color:var(--ink-soft);transition:transform .4s cubic-bezier(.2,.8,.3,1),opacity .4s}
+.pl-chip .sc{font-weight:700;font-size:11px;color:var(--muted);transition:color .4s}
+.pl-chip .sc.hot{color:var(--q-green)}
+.pl-chip.out{opacity:0;transform:translateX(26px)}
+.pl-chip.in0{opacity:0;transform:translateX(-26px);transition:none}
 
-/* events — a naked deck, fans UPWARD on hover */
-.s-ev{left:57.5%;top:64.5%;width:min(250px,21%);z-index:28}
-.s-ev .pin{left:-2px;top:12%;background:var(--q-gold)}
-.s-ev:hover,.s-ev:focus-within,.s-ev:has(.fanned){z-index:70}
-.deck{position:relative;height:150px;outline:none;animation:bob var(--bd,6.5s) ease-in-out var(--bdel,0s) infinite}
-.ev{position:absolute;left:0;top:14px;width:min(236px,100%);background:#fff;border:1px solid var(--hair-2);border-radius:10px;box-shadow:var(--sh-deep);padding:10px 12px;transform-origin:8% 92%;
-  transition:transform .5s cubic-bezier(.2,.75,.3,1.06),box-shadow .3s;transform:translate(calc(var(--i)*7px),calc(var(--i)*-7px)) rotate(calc(var(--i)*1.7deg))}
-.ev .row1{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.ev .day{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.11em;color:var(--blue)}
-.ev .imp{display:inline-flex;align-items:center;gap:4px;font-family:'Archivo',sans-serif;font-weight:700;font-size:8px;letter-spacing:.09em;color:var(--q-red)}
-.ev .imp.md{color:var(--q-gold)}
-.ev .imp i{width:5px;height:5px;border-radius:50%;background:currentColor;font-style:normal}
-.ev .nm{font-weight:600;font-size:12.5px;margin-top:4px}
-.ev .why{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4;opacity:0;transition:opacity .25s}
-.ev.e0 .why{opacity:1}
-.deck.fanned .ev{box-shadow:var(--sh-lift)}
-.deck.fanned .ev .why{opacity:1}
-.deck.fanned .e0{transform:translate(-56%,-10px) rotate(-8deg)}
-.deck.fanned .e1{transform:translate(-28%,-58px) rotate(-3deg)}
-.deck.fanned .e2{transform:translate(0,-68px) rotate(2deg)}
-.deck.fanned .e3{transform:translate(26%,-24px) rotate(7deg)}
+/* insider & congress card */
+.pi-feed{margin-top:8px;height:232px;overflow:hidden}
+.pi-row{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:8.5px 2px;border-bottom:1px solid var(--hair);font-size:11.5px}
+.pi-row .act{font-family:'Archivo',sans-serif;font-weight:800;font-size:8.5px;letter-spacing:.08em;border-radius:5px;padding:2.5px 7px}
+.pi-row .act.b{color:var(--q-green);background:var(--green-wash)}
+.pi-row .act.s{color:var(--q-red);background:var(--red-wash)}
+.pi-row .tk{font-weight:700}
+.pi-row .who{color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi-row .sc{font-weight:700;font-size:10.5px;color:var(--muted)}
+.pi-row.enter{animation:piIn .5s cubic-bezier(.2,.8,.3,1)}
+@keyframes piIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 
-/* hard assets */
-.s-assets{left:81.5%;top:44%;width:min(224px,18.5%);z-index:13}
-.s-assets .crd{--rot:1.2deg;padding:11px 13px}
-.s-assets .pin{left:-4px;top:42%;background:var(--q-gold)}
-.as-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:baseline;padding:4.5px 0;border-bottom:1px solid var(--hair);font-size:11.5px}
-.as-row:last-child{border-bottom:0}
-.as-row .a{font-weight:600}
-.as-row .p{font-weight:600;font-size:11px;color:var(--ink-soft)}
-.as-row .v{font-weight:700;font-size:11px;text-align:right;min-width:44px}
-
-/* scroll hint */
-.scroll-hint{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);z-index:8;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--faint);font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.18em}
-.scroll-hint:hover{color:var(--muted)}
-.scroll-hint i{font-style:normal;animation:drop 2s ease-in-out infinite}
-@keyframes drop{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(5px);opacity:1}}
+/* prophet — scorecard-v2 card */
+.psc-top{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.psc-pill{font-family:'Archivo',sans-serif;font-weight:800;font-size:9.5px;letter-spacing:.09em;color:var(--q-green);background:var(--green-wash);border:1px solid rgba(31,139,65,.35);border-radius:99px;padding:3.5px 11px}
+.psc-px{font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;color:var(--ink)}
+.psc-spark{display:block;width:100%;height:58px;margin-top:7px;border-radius:6px;background:linear-gradient(180deg,rgba(31,139,65,.045),transparent)}
+.psc-id{display:flex;align-items:baseline;gap:7px;margin-top:9px}
+.psc-id .tk{font-family:'Archivo',sans-serif;font-weight:800;font-size:15px}
+.psc-id .nm2{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.psc-edge{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+.psc-edge b{font-size:15px;color:var(--q-green);margin-left:2px}
+.psc-stages{display:flex;justify-content:space-between;position:relative;margin-top:12px;padding-top:9px}
+.psc-stages::before{content:"";position:absolute;top:3.5px;left:8px;right:8px;height:2px;border-radius:2px;background:var(--hair)}
+.stg{position:relative;font-size:9.5px;color:var(--faint);font-weight:600}
+.stg::before{content:"";position:absolute;top:-8.5px;left:50%;transform:translateX(-50%);width:7px;height:7px;border-radius:50%;background:#d3d9e2;border:2px solid #fff}
+.stg.on{color:var(--ink);font-weight:700}
+.stg.on::before{background:var(--q-green);box-shadow:0 0 0 3px rgba(31,139,65,.18)}
+.psc-zone{display:flex;align-items:baseline;gap:7px;margin-top:11px;border-top:1px solid var(--hair);padding-top:8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.09em;color:var(--q-green)}
+.psc-zone b{font-size:11.5px;color:var(--ink);letter-spacing:.02em}
+.psc-zone .dt{margin-left:auto;color:var(--faint);font-weight:600}
 
 /* ============ FEATURE SECTIONS — the suite, live components ============ */
 .feature{padding-block:clamp(52px,7vw,92px)}
@@ -352,40 +279,132 @@ html.still{scroll-behavior:auto}
 .demo .dk{font-family:'Archivo',sans-serif;font-weight:700;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .demo .dk .asof{letter-spacing:.03em;text-transform:none;color:var(--faint)}
 
-/* — terminal component (dark plate) — */
-.term{background:var(--plate);border-radius:var(--r-lg);border:1px solid #1b2438;box-shadow:var(--sh-plate);overflow:hidden;color:#dbe4f4}
-.term-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(160,180,215,.12);font-size:12px}
-.term-top .sym{font-family:'Archivo',sans-serif;font-weight:800;font-size:13.5px;color:#fff}
-.term-top .px{font-weight:700;color:#34d399}
-.term-top .iv{display:flex;gap:4px;margin-left:auto}
-.term-top .iv span{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;color:#8fa0bd;border:1px solid rgba(160,180,215,.18);border-radius:6px;padding:3px 7px}
-.term-top .iv span.on{color:#0b1120;background:#5eead4;border-color:#5eead4}
-.term-mid{display:grid;grid-template-columns:1fr 148px}
-.term-chart{position:relative;padding:6px 0 0 6px}
-.term-chart svg{width:100%;height:auto;display:block}
-.oracle{position:absolute;left:14px;top:12px;display:inline-flex;align-items:center;gap:7px;background:rgba(13,20,36,.88);border:1px solid rgba(94,234,212,.35);border-radius:8px;padding:6px 10px;font-size:10.5px;color:#9fb3d4;backdrop-filter:blur(4px)}
-.oracle b{color:#5eead4;font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.1em}
-.oracle i{width:6px;height:6px;border-radius:50%;background:#5eead4;font-style:normal}
-.term-rail{border-left:1px solid rgba(160,180,215,.12);padding:8px 10px;display:flex;flex-direction:column;gap:1px}
-.term-rail .rl{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.14em;color:#6d7f9e;margin:2px 0 5px}
-.wl-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 2px;border-radius:6px;font-size:11.5px}
-.wl-row.on{background:rgba(94,234,212,.08)}
-.wl-row .t{font-weight:700;color:#e7edf8}
-.wl-row .c{font-weight:600;font-size:10.5px}
-.wl-row .c.u{color:#34d399} .wl-row .c.d{color:#f87171}
-.term-flow{border-top:1px solid rgba(160,180,215,.12);padding:8px 12px 10px}
-.term-flow .rl{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.14em;color:#6d7f9e;display:flex;align-items:center;gap:7px;margin-bottom:6px}
-.term-flow .rl i{width:5px;height:5px;border-radius:50%;background:#5eead4;font-style:normal}
-.fl-row{display:grid;grid-template-columns:44px 84px 46px 1fr auto;gap:8px;align-items:center;padding:4px 2px;font-size:10.5px;color:#93a5c4}
-.fl-row.enter{animation:flIn .45s cubic-bezier(.2,.8,.3,1)}
-@keyframes flIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
-.fl-row .tm{font-variant-numeric:tabular-nums;color:#63769a}
-.fl-row .ty{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.08em;border-radius:5px;padding:2.5px 6px;text-align:center}
-.fl-row .ty.cs{color:#34d399;background:rgba(52,211,153,.12)}
-.fl-row .ty.ps{color:#f87171;background:rgba(248,113,113,.12)}
-.fl-row .ty.bl{color:#7ea8ff;background:rgba(126,168,255,.13)}
-.fl-row .tk{font-weight:700;color:#e7edf8}
-.fl-row .pm{font-weight:700;color:#cdd9ee;text-align:right}
+/* — Terminal showcase: dark full-bleed section + Safari-framed live terminal.
+     (The old dark-plate terminal + options-flow feed are archived in
+     mockups/landing/options_flow_feed.html for the future flow panel.) — */
+.tsec{background:#04070c;margin-top:clamp(22px,3vh,36px);padding:clamp(48px,6.5vw,84px) 0 0;overflow:hidden}
+.tlogos{display:flex;justify-content:center;align-items:center;gap:clamp(26px,4.5vw,64px);flex-wrap:wrap;margin-bottom:clamp(40px,5.5vw,72px);opacity:.8}
+.tlogos img{display:block;width:auto;opacity:.75}
+@media (max-width:640px){.tlogos{gap:22px 30px}}
+.tsec .th-grid{display:grid;grid-template-columns:minmax(280px,.94fr) minmax(0,1.06fr);gap:clamp(24px,5vw,72px);align-items:start;margin-bottom:clamp(30px,4.5vw,56px)}
+.tsec .kicker{color:#6ea8ff;display:block;margin-bottom:12px}
+.tsec .sec-title{color:#fff;margin:0}
+.tsec .th-sub{color:#8e99ad;font-size:15.5px;line-height:1.66;margin:6px 0 0}
+.tsec .th-sub b{color:#e2e9f4;font-weight:600}
+.tsec .feat-cta{color:#6ea8ff}
+.sf-crop{height:clamp(460px,53vw,700px);overflow:hidden;border-radius:14px 14px 0 0;position:relative;box-shadow:0 -14px 90px -28px rgba(78,140,255,.22),0 24px 70px -28px rgba(0,0,0,.85)}
+.sf{background:#0b0e14;border:1px solid #2c3037;border-bottom:0;border-radius:14px 14px 0 0;overflow:hidden}
+/* Safari chrome (dark) */
+.sf-bar{display:grid;grid-template-columns:1fr minmax(240px,44%) 1fr;align-items:center;gap:12px;height:44px;padding:0 14px;background:#212329;border-bottom:1px solid #08090c;position:relative;z-index:5}
+.sf-l{display:flex;align-items:center;gap:13px;color:#8e9096}
+.sf-l .dim{color:#5b5d63}
+.sf-dots{display:flex;gap:8px;margin-right:3px}
+.sf-dots i{width:12px;height:12px;border-radius:50%}
+.sf-dots i:nth-child(1){background:#ff5f57}.sf-dots i:nth-child(2){background:#febc2e}.sf-dots i:nth-child(3){background:#28c840}
+.sf-l svg,.sf-r svg,.sf-url svg{display:block;flex:none}
+.sf-url{display:flex;align-items:center;justify-content:center;gap:7px;height:29px;background:#2c2e35;border-radius:8px;color:#a8aab1;font-size:12.5px;min-width:0;padding:0 10px}
+.sf-url span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sf-r{display:flex;justify-content:flex-end;align-items:center;gap:15px;color:#8e9096}
+/* terminal app */
+.tapp{--tg:#2ebd85;--tr:#f6465d;--tb:#3f82f6;--thl:#1a2130;background:#0b0e14;color:#dbe3ee;font-size:12px;text-align:left}
+.tapp .mo{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.tapp .up{color:var(--tg)} .tapp .dn{color:var(--tr)}
+.tt-top{display:flex;align-items:center;flex-wrap:nowrap;gap:13px;height:54px;padding:0 12px;border-bottom:1px solid var(--thl);overflow:hidden;position:relative;z-index:1}
+.tt-top>*{flex:none}
+.tt-cell .l,.tt-cell .v,.tt-rng .lb,.tt-rng .mm,.tt-rng .mm span{white-space:nowrap}
+.tt-logo{display:flex;align-items:center;gap:8px;padding-right:2px}
+.tt-logo .lm{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#3f82f6,#7c5cff);display:grid;place-items:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;color:#fff}
+.tt-logo .ln b{display:block;font-family:'Archivo',sans-serif;font-weight:800;font-size:10.5px;letter-spacing:.05em;color:#fff;line-height:1}
+.tt-logo .ln span{display:block;font-family:'Archivo',sans-serif;font-weight:700;font-size:6.3px;letter-spacing:.34em;color:#5c6879;margin-top:2.5px}
+.tt-sym{display:flex;align-items:center;gap:7px;background:#141a25;border:1px solid #212a3a;border-radius:8px;padding:6px 9px;font-weight:700;font-size:12.5px;color:#fff}
+.tt-sym .sic,.tq-hd .sic{border-radius:50%;background:#76b900;color:#0b0e14;display:grid;place-items:center;font-weight:800}
+.tt-sym .sic{width:17px;height:17px;font-size:9px}
+.tt-cmp{display:flex;align-items:center;gap:6px;border:1px solid #212a3a;border-radius:8px;padding:6px 10px;color:#96a2b5;font-size:11.5px;font-weight:600}
+.tt-cell .l,.tt-rng .lb{display:block;font-family:'Archivo',sans-serif;font-weight:700;font-size:7.6px;letter-spacing:.11em;text-transform:uppercase;color:#5c6879;margin-bottom:3px}
+.tt-cell .v{font-size:12.5px;font-weight:600;color:#e6ecf5}
+.tt-rng{min-width:124px}
+.tt-rng .lb{display:flex;justify-content:space-between;align-items:baseline}
+.tt-rng .lb em{font-style:normal;color:var(--tg);font-size:10px;font-weight:700;letter-spacing:0}
+.tt-rng .trk{position:relative;display:block;height:3px;border-radius:2px;background:#242e40;margin-top:6px}
+.tt-rng .trk i{position:absolute;top:50%;left:57%;width:7px;height:7px;border-radius:50%;background:#e6ecf5;border:1.5px solid #0b0e14;transform:translate(-50%,-50%)}
+.tt-rng .mm{display:flex;justify-content:space-between;font-size:8.5px;color:#5c6879;margin-top:4px}
+.tt-del{display:flex;align-items:center;gap:6px;border:1px solid #212a3a;border-radius:99px;padding:4px 9px;font-family:'Archivo',sans-serif;font-weight:700;font-size:7.6px;letter-spacing:.1em;text-transform:uppercase;color:#7a8699;white-space:nowrap}
+.tt-del i{width:5px;height:5px;border-radius:50%;background:#e0b258}
+.tt-ai{margin-left:auto;display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#2f6bf0,#4f8bff);border-radius:8px;padding:7px 12px;color:#fff;font-weight:700;font-size:11.5px;white-space:nowrap;box-shadow:0 4px 14px -6px rgba(63,130,246,.5)}
+.tt-av{width:26px;height:26px;flex:none;border-radius:50%;background:#242c3b;color:#9aa6ba;display:grid;place-items:center;font-size:10.5px;font-weight:700}
+.tt-body{display:flex}
+.tt-rail{width:44px;flex:none;border-right:1px solid var(--thl);padding:10px 0;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tt-rail .ri{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;color:#57627a}
+.tt-rail .ri.on{color:#6ea8ff;background:rgba(63,130,246,.13);position:relative}
+.tt-rail .ri.on::before{content:"";position:absolute;left:-7px;top:6px;bottom:6px;width:2px;border-radius:2px;background:var(--tb)}
+.tt-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.tt-tabs{display:flex;align-items:center;gap:11px;height:40px;padding:0 12px;border-bottom:1px solid var(--thl);color:#7383a0;font-size:11px;white-space:nowrap;overflow:hidden}
+.tt-tabs .tab{position:relative;display:flex;align-items:center;height:40px;padding:0 2px;margin-right:4px;color:#fff;font-weight:600;font-size:12px;flex:none}
+.tt-tabs .tab::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:2px;background:var(--tb)}
+.tt-tabs .it{display:flex;align-items:center;gap:5px;flex:none}
+.tt-tabs .on2{color:#6ea8ff;font-weight:700}
+.tt-tabs .sep{width:1px;height:15px;background:#1c2534;flex:none}
+.tt-tabs .pg{display:flex;gap:3px;flex:none}
+.tt-tabs .pg span{width:19px;height:19px;border:1px solid #232d3f;border-radius:5px;display:grid;place-items:center;font-size:9.5px}
+.tt-tabs .pg span.on{background:rgba(63,130,246,.16);border-color:#2f4a7c;color:#8fb4ff}
+.tt-cwrap{position:relative;flex:1}
+#tt-chart{display:block;width:100%;height:620px}
+.tt-leg{position:absolute;left:10px;top:8px;font-size:9.5px;color:#78849b;display:flex;flex-direction:column;gap:3px;pointer-events:none}
+.tt-leg .row{display:flex;align-items:center;gap:5px}
+.tt-leg i{width:8px;height:2px;border-radius:1px}
+/* right column */
+.tt-right{width:300px;flex:none;border-left:1px solid var(--thl);padding:8px;display:flex;flex-direction:column;gap:8px}
+.ttp{background:#0e1219;border:1px solid #1a212e;border-radius:10px;overflow:hidden;flex:none}
+.ttp-h{display:flex;align-items:center;gap:7px;padding:9px 11px 7px;font-weight:700;font-size:11.5px;color:#e6ecf5}
+.ttp-h .bar{width:2.5px;height:11px;border-radius:2px;background:var(--tb)}
+.ttp-h .mr{margin-left:auto;display:flex;align-items:center;gap:10px;color:#5c6879}
+.ttp-h .tag{margin-left:auto;font-size:9px;color:#5c6879;font-weight:600}
+.twl-cols{display:grid;grid-template-columns:1fr 78px 52px;padding:2px 11px 5px;font-family:'Archivo',sans-serif;font-weight:700;font-size:7.6px;letter-spacing:.1em;text-transform:uppercase;color:#525f73;border-bottom:1px solid #161d29}
+.twl-cols span:nth-child(2),.twl-cols span:nth-child(3){text-align:right}
+.twl-rows{height:182px;overflow:hidden;position:relative}
+.twl-g{padding:6px 11px 2px;font-family:'Archivo',sans-serif;font-weight:700;font-size:7.3px;letter-spacing:.13em;color:#4d5a6e}
+.twl-r{display:grid;grid-template-columns:17px 1fr 78px 52px;gap:7px;align-items:center;height:26px;padding:0 11px;font-size:11.5px;transition:background .45s}
+.twl-r .sic{width:15px;height:15px;border-radius:50%;display:grid;place-items:center;font-size:7.5px;font-weight:800;color:#fff}
+.twl-r .sy{font-weight:600;color:#dbe3ee;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.twl-r .la{text-align:right;color:#c9d2df;font-size:11px}
+.twl-r .ch{text-align:right;font-size:11px}
+.twl-r.on{background:rgba(63,130,246,.10);box-shadow:inset 2px 0 0 var(--tb)}
+.twl-r.zu{background:rgba(46,189,133,.10)} .twl-r.zd{background:rgba(246,70,93,.10)}
+.twl-sb{position:absolute;right:2px;top:6px;width:3px;height:52px;border-radius:2px;background:#26303f}
+.tq-hd{display:flex;align-items:center;gap:8px;padding:10px 11px 0}
+.tq-hd .sic{width:20px;height:20px;font-size:10px}
+.tq-hd .nm b{display:block;font-size:12.5px;color:#fff;line-height:1.15}
+.tq-hd .nm span{font-size:9.5px;color:#5c6879}
+.tq-hd svg{margin-left:auto;color:#5c6879}
+.tq-px{display:flex;align-items:baseline;gap:8px;padding:7px 11px 10px}
+.tq-px .big{font-size:25px;font-weight:700;color:#fff}
+.tq-px .pc{font-size:12px;font-weight:700;color:var(--tg)}
+.tq-px .st{margin-left:auto;display:flex;align-items:center;gap:5px;background:rgba(46,189,133,.1);border:1px solid rgba(46,189,133,.25);border-radius:6px;padding:3px 8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:7.6px;letter-spacing:.1em;color:#3ecf95}
+.tq-px .st i{width:5px;height:5px;border-radius:50%;background:#2ebd85}
+.tq-row{display:flex;align-items:center;gap:7px;padding:8px 11px;border-top:1px solid #161d29;font-size:11px}
+.tq-row .k{display:flex;align-items:center;gap:6px;font-family:'Archivo',sans-serif;font-weight:700;font-size:7.6px;letter-spacing:.09em;color:#8b96a8;max-width:76px;text-align:left}
+.tq-row .val{margin-left:auto;text-align:right;font-weight:600;font-size:11px}
+.tq-row .val small{display:block;font-size:8.5px;color:#5c6879;font-weight:500;margin-top:2px}
+.tq-row.gold{background:rgba(224,178,88,.07)}
+.tq-row.gold .k{color:#c9a24f}
+.tq-row.gold .val{color:#e8c675}
+.tq-row .vw{display:inline-block;border:1px solid #2a3550;background:#151c2b;border-radius:6px;padding:2.5px 10px;font-size:9.5px;color:#9db4dd;font-weight:600}
+.tq-trend{display:flex;align-items:center;gap:8px;padding:8px 11px;border-top:1px solid #161d29}
+.tq-trend .k{font-family:'Archivo',sans-serif;font-weight:700;font-size:7.6px;letter-spacing:.11em;color:#5c6879}
+.tq-trend .pill{flex:1;text-align:center;border:1px solid rgba(46,189,133,.4);border-radius:99px;padding:3.5px 0;font-family:'Archivo',sans-serif;font-weight:700;font-size:8.4px;letter-spacing:.14em;color:#3ecf95}
+.tq-trend .hz{font-size:8.5px;color:#5c6879}
+.tks-r{display:flex;justify-content:space-between;align-items:baseline;padding:5.5px 11px;font-size:11px;color:#8b96a8}
+.tks-r b{color:#dbe3ee;font-weight:600}
+@media (max-width:1300px){.tt-top{gap:9px}}
+@media (max-width:1240px){.hx1{display:none !important}}
+@media (max-width:1080px){.hx2{display:none !important}.tt-right{width:272px}}
+@media (max-width:950px){.tt-right{display:none}.hx3{display:none !important}}
+@media (max-width:640px){
+  .tt-rail{display:none}.sf-crop{height:min(120vw,470px)}.tsec .th-grid{grid-template-columns:1fr;gap:12px}
+  .sf-bar{grid-template-columns:auto minmax(0,1fr) auto;gap:10px}
+  .sf-l svg,.sf-r{display:none}
+  .tt-logo .ln,.tt-ai{display:none}.tt-av{margin-left:auto}
+}
 
 /* — act-now lanes — */
 .lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
@@ -476,14 +495,33 @@ html.still{scroll-behavior:auto}
 .dxy .tag2{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.08em;color:var(--q-green);background:var(--green-wash);border-radius:5px;padding:3px 7px}
 
 /* ============ AI SECTION ============ */
-.ai-wrap{display:grid;grid-template-columns:.95fr 1.05fr;gap:clamp(24px,4vw,56px);align-items:center}
+.ai-wrap{display:grid;grid-template-columns:minmax(320px,.74fr) minmax(0,1.26fr);gap:clamp(28px,4.5vw,64px);align-items:center}
+.ai-copy .sec-title{margin-top:12px;font-size:clamp(1.7rem,2.6vw,2.35rem)}
+.ai-copy .sec-sub{margin-top:14px}
 /* — chat: replica of the real Mastermind chat surface — */
-.chat{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r-lg);box-shadow:var(--sh-lift);padding:0;overflow:hidden}
-.chat-head{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--hair)}
+.chat{background:var(--panel);border:1px solid var(--hair);border-radius:var(--r-lg);box-shadow:var(--sh-lift);padding:0;overflow:hidden;height:620px;display:flex;flex-direction:column}
+.chat-head{flex:none;display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--hair)}
 .chat-head .who{display:flex;align-items:center;gap:8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.14em;color:var(--blue)}
 .chat-head .who i{width:7px;height:7px;border-radius:50%;background:var(--blue);font-style:normal}
-.model-chip{margin-left:auto;font-family:ui-monospace,monospace;font-weight:600;font-size:9px;letter-spacing:.06em;color:var(--blue-ink);background:var(--blue-wash);border-radius:99px;padding:3px 9px}
-.thread{padding:16px;min-height:300px;display:flex;flex-direction:column;gap:10px;transition:opacity .2s}
+.mseg{margin-left:auto;display:flex;gap:4px;position:relative;background:var(--panel-2);border:1px solid var(--hair-2);border-radius:99px;padding:3px}
+.mseg button{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.03em;color:var(--muted);border-radius:99px;padding:4px 11px;white-space:nowrap}
+.mseg button.on{background:var(--blue);color:#fff}
+.mpop{position:absolute;right:0;top:calc(100% + 10px);z-index:60;width:274px;background:#fff;border:1px solid var(--hair-2);border-radius:12px;box-shadow:var(--sh-lift);padding:6px 12px;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .2s,transform .2s,visibility 0s .2s;text-align:left;cursor:default}
+.mseg:hover .mpop,.mseg:focus-within .mpop{opacity:1;visibility:visible;transform:none;transition:opacity .2s,transform .2s}
+.mpop .r{display:flex;gap:9px;align-items:flex-start;padding:9px 2px}
+.mpop .r+.r{border-top:1px solid var(--hair)}
+.mpop .ic{flex:none;font-size:13px;line-height:1.3}
+.mpop b{display:block;font-size:12px;color:var(--ink);margin-bottom:2px}
+.mpop span span{display:block;font-size:11px;color:var(--muted);line-height:1.45;font-weight:400}
+.mini-cmp{align-self:stretch;background:var(--panel-2);border:1px solid var(--hair);border-radius:10px;padding:9px 12px}
+.mini-cmp .r{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:9px;align-items:center;padding:5.5px 0;font-size:11.5px}
+.mini-cmp .tk{font-weight:700}
+.mini-cmp .bar{height:6px;border-radius:99px;background:var(--hair);overflow:hidden}
+.mini-cmp .bar i{display:block;height:100%;border-radius:99px;font-style:normal}
+.mini-cmp .stx{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.06em;border-radius:5px;padding:2.5px 7px;white-space:nowrap}
+.mini-cmp .stx.g{color:var(--q-green);background:var(--green-wash)}
+.mini-cmp .stx.y{color:var(--q-gold);background:var(--gold-wash)}
+.thread{padding:16px;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;transition:opacity .2s;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 38px);mask-image:linear-gradient(180deg,transparent 0,#000 38px)}
 .msg{border-radius:var(--r-lg);padding:11px 14px;font-size:14px;line-height:1.55;max-width:82%;word-break:break-word}
 .msg.q{background:linear-gradient(180deg,#3f74ff,var(--blue));color:#fff;align-self:flex-end;border-bottom-right-radius:5px;box-shadow:0 8px 22px -10px rgba(40,95,255,.6)}
 .msg.a{background:var(--panel-2);border:1px solid var(--hair);color:var(--ink-soft);align-self:flex-start;border-bottom-left-radius:5px}
@@ -500,9 +538,9 @@ html.still{scroll-behavior:auto}
 @keyframes msgIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 /* mini terminal chart drawn inside a bubble */
 .mini-term{align-self:stretch;width:100%;background:var(--plate);border-radius:10px;border:1px solid #1b2438;padding:8px;box-shadow:var(--sh-card)}
-.mini-term svg{width:100%;height:150px;display:block}
+.mini-term svg{width:100%;height:auto;display:block}
 /* composer */
-.composer{border-top:1px solid var(--hair);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.composer{flex:none;border-top:1px solid var(--hair);padding:12px 14px;display:flex;align-items:center;gap:10px}
 .composer .cfield{flex:1;background:var(--panel-2);border:1px solid var(--hair-2);border-radius:14px;padding:11px 14px;font-size:13.5px;color:var(--ink-soft);min-height:44px;display:flex;align-items:center}
 .composer .cfield.ph{color:var(--faint)}
 .composer .caret{display:inline-block;width:1.5px;height:16px;background:var(--blue);margin-left:1px;animation:caretBlink 1s step-end infinite;vertical-align:middle}
@@ -512,19 +550,6 @@ html.still{scroll-behavior:auto}
 .cap-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .cap{font-size:12px;font-weight:600;color:var(--ink-soft);border:1px solid var(--hair-2);background:#fff;border-radius:99px;padding:6px 12px}
 .cap b{color:var(--blue)}
-.web-plate{background:var(--plate);border-radius:var(--r-lg);box-shadow:var(--sh-plate);padding:10px;position:relative}
-.web-plate svg{width:100%;height:auto;display:block;border-radius:10px}
-.web-cap{margin:12px 4px 4px;font-size:12.5px;color:var(--muted);text-align:center}
-/* living synapses: opacity-only flicker on select edges (compositable) */
-@keyframes synFlash{0%,100%{opacity:.18}50%{opacity:.6}}
-.web-plate .syn-f{animation:synFlash 3s ease-in-out infinite}
-.web-plate .syn-f:nth-of-type(7){animation-duration:2.6s;animation-delay:-1.4s}
-.web-plate .syn-f:nth-of-type(8){animation-duration:3.4s;animation-delay:-2.1s}
-.web-plate .syn-f:nth-of-type(10){animation-duration:4.4s;animation-delay:-.6s}
-.web-plate .syn-f:nth-of-type(12){animation-duration:3.8s;animation-delay:-3s}
-.web-plate .syn-f.contra{animation-duration:2.9s;animation-delay:-1.1s}
-@keyframes nwHaloBreathe{0%,100%{opacity:.5}50%{opacity:.85}}
-.web-plate .nw-halo{animation:nwHaloBreathe 4s ease-in-out infinite;transform-origin:280px 200px}
 
 /* ============ PRICING + MATRIX ============ */
 .p-head{text-align:center;max-width:640px;margin:0 auto}
@@ -535,7 +560,8 @@ html.still{scroll-behavior:auto}
 .toggle button[aria-pressed="false"] .save{color:var(--q-green)}
 .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
 .tier{border:1px solid var(--hair-2);border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh-card);padding:24px;display:flex;flex-direction:column}
-.tier.hot{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-lift);position:relative}
+.tier.hot{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-lift);position:relative;background:linear-gradient(150deg,rgba(15,157,143,.055),rgba(40,95,255,.06) 55%,rgba(120,98,224,.05)),#fff}
+.tiers .tier:last-child{background:linear-gradient(150deg,rgba(120,98,224,.07),rgba(193,47,120,.045) 55%,rgba(176,125,5,.065)),#fff}
 .tier.hot::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.14em;color:#fff;background:var(--blue);padding:4px 11px;border-radius:99px}
 .tier h3{margin:0;font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:19px}
 .tier .who{color:var(--muted);font-size:13px;margin-top:4px;min-height:36px}
@@ -548,36 +574,37 @@ html.still{scroll-behavior:auto}
 /* matrix */
 .matrix-card{margin-top:28px;background:#fff;border:1px solid var(--hair-2);border-radius:var(--r-lg);box-shadow:var(--sh-card);overflow:auto}
 table.mx{width:100%;border-collapse:collapse;min-width:760px}
-.mx th,.mx td{padding:11px 16px;text-align:center;font-size:13.5px;border-bottom:1px solid var(--hair)}
+.mx th,.mx td{padding:9px 16px;text-align:center;font-size:13.5px;border-bottom:1px solid var(--hair)}
 .mx thead th{font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;letter-spacing:.02em;position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid var(--hair-2)}
 .mx thead th small{display:block;font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:var(--faint);letter-spacing:0;margin-top:2px}
-.mx td:first-child,.mx th:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;min-width:250px}
+.mx td:first-child,.mx th:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;min-width:230px}
 .mx .grp td{font-family:'Archivo',sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.14em;color:var(--blue);background:var(--panel-2);padding:9px 16px}
-.mx .ok{color:var(--q-green);font-weight:700}
-.mx .no{color:#c6ccd6;font-weight:600}
+.mx .ok{color:var(--q-green);font-weight:800;font-size:14.5px}
+.mx .no{color:#dc8f8f;font-weight:700;font-size:13px}
 .mx .val{font-weight:600;color:var(--ink)}
 .mx .soon{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.08em;color:var(--q-gold);background:var(--gold-wash);border-radius:6px;padding:3px 8px}
-/* hover: only rows WITHOUT an aurora wash get the blue-wash wipe;
-   aurora rows layer a soft inset lift instead so the wash survives */
 .mx tbody tr:not(.grp):not(.t-ins):not(.t-pro):hover td{background:var(--blue-wash)}
 .mx tbody tr.t-ins:hover td,.mx tbody tr.t-pro:hover td{box-shadow:inset 0 0 0 100px rgba(40,95,255,.035)}
 .mx td:nth-child(3){background:rgba(40,95,255,.03)}
-.mx .feat span{display:block;font-size:11.5px;color:var(--faint);font-weight:400;margin-top:1px}
-/* ── aurora highlight rows (transform-only sweep — no bg/shadow animation) ── */
-tr.t-ins td{background:linear-gradient(95deg,rgba(15,157,143,.055),rgba(40,95,255,.065) 55%,rgba(120,98,224,.05))}
-tr.t-pro td{background:linear-gradient(95deg,rgba(120,98,224,.075),rgba(193,47,120,.06) 55%,rgba(176,125,5,.07))}
-/* sticky first column keeps its #fff base — layer the wash over it */
-tr.t-ins td:first-child{background:linear-gradient(95deg,rgba(15,157,143,.055),rgba(40,95,255,.065) 55%,rgba(120,98,224,.05)),#fff;box-shadow:inset 3px 0 0 0 rgba(15,157,143,.55);position:sticky;left:0;overflow:hidden}
-tr.t-pro td:first-child{background:linear-gradient(95deg,rgba(120,98,224,.075),rgba(193,47,120,.06) 55%,rgba(176,125,5,.07)),#fff;box-shadow:inset 3px 0 0 0 rgba(120,98,224,.7);position:sticky;left:0;overflow:hidden}
-tr.t-ins td:first-child::after,tr.t-pro td:first-child::after{content:"";position:absolute;top:0;left:0;width:55%;height:100%;pointer-events:none;transform:translateX(-120%);z-index:0}
-tr.t-ins td:first-child::after{background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);animation:shimmer 5.5s ease-in-out infinite}
-tr.t-pro td:first-child::after{background:linear-gradient(100deg,transparent,rgba(190,140,255,.28),rgba(255,205,120,.22),transparent);animation:shimmer 3.2s ease-in-out infinite}
-tr.t-ins td:first-child .feat,tr.t-pro td:first-child .feat,.mx .feat{position:relative;z-index:1}
-@keyframes shimmer{0%,55%{transform:translateX(-120%)}100%{transform:translateX(260%)}}
+/* ── tier rows: quiet static wash; the animation lives on the chip, not the row ── */
+tr.t-ins td{background:rgba(15,157,143,.04)}
+tr.t-pro td{background:rgba(120,98,224,.05)}
+tr.t-ins td:first-child{background:rgba(15,157,143,.04);box-shadow:inset 3px 0 0 0 rgba(15,157,143,.45)}
+tr.t-pro td:first-child{background:rgba(120,98,224,.05);box-shadow:inset 3px 0 0 0 rgba(120,98,224,.55)}
+tr.t-ins td:first-child,tr.t-pro td:first-child{position:sticky;left:0}
+/* hover tooltips: title-only rows, details on demand (bilingual via data-zh) */
+.mx td.feat{position:relative}
+.mx td.feat.has-tip{cursor:help}
+.mx td.feat.has-tip .ft{border-bottom:1px dotted #bcc6d3}
+.mx .tipbox{position:absolute;left:16px;top:calc(100% - 4px);z-index:80;width:min(280px,64vw);background:var(--ink);color:#fff;font-size:11.5px;font-weight:400;line-height:1.5;border-radius:9px;padding:9px 12px;opacity:0;visibility:hidden;transform:translateY(3px);transition:opacity .18s,transform .18s,visibility 0s .18s;pointer-events:none;white-space:normal}
+.mx .tipbox.up{top:auto;bottom:calc(100% - 4px);transform:translateY(-3px)}
+.mx td.feat:hover .tipbox,.mx td.feat:focus-within .tipbox{opacity:1;visibility:visible;transform:none;transition:opacity .18s,transform .18s}
 /* tier chip on the aurora row labels */
-.mx .feat .mchip{display:inline-block;font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:5px;padding:2px 6px;margin:0 0 0 8px;vertical-align:1px;white-space:nowrap}
-.mx .feat .mchip.ins{color:#0d7f74;background:linear-gradient(90deg,rgba(15,157,143,.14),rgba(40,95,255,.14))}
-.mx .feat .mchip.pro{color:#6a48d7;background:linear-gradient(90deg,rgba(120,98,224,.16),rgba(176,125,5,.16))}
+.mx .feat .mchip{display:inline-block;font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:6px;border:1px solid transparent;padding:2px 7px;margin:0 0 0 8px;vertical-align:1px;white-space:nowrap}
+.mx .feat .mchip.ins{background:linear-gradient(90deg,#e7f3f1,#e9eefc) padding-box,linear-gradient(90deg,rgba(15,157,143,.6),rgba(40,95,255,.55)) border-box}
+.mx .feat .mchip.pro{background:linear-gradient(90deg,#f0eafb,#f6efdf) padding-box,linear-gradient(90deg,rgba(120,98,224,.65),rgba(176,125,5,.55)) border-box}
+.mx .feat .mchip.ins{color:#0d7f74}
+.mx .feat .mchip.pro{color:#6a48d7}
 
 /* ============ FINAL + FOOTER ============ */
 .final{text-align:center}
@@ -593,23 +620,15 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
   .cover-in{min-height:0;padding-top:34px}
   .cov-copy{max-width:640px}
   .cta-row{justify-content:center}
-  .field{height:auto;min-height:0;margin-top:26px;padding-bottom:30px}
-  .field::before{inset:0}
-  .web{display:none}
-  .brain{position:relative;left:auto;top:auto;transform:none;margin:6px auto 22px;pointer-events:auto}
-  .spot{position:relative;left:auto !important;top:auto !important;width:min(420px,100%) !important;margin:14px auto 0}
-  .spot .crd,.deck{rotate:var(--mr,0deg);animation:none;translate:none}
-  .spot .pin{display:none}
-  .s-heat,.s-econ,.s-assets{z-index:auto}
-  .deck{height:158px}
-  .scroll-hint{display:none}
+  .pyr{height:auto;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 4px 20px;-webkit-overflow-scrolling:touch}
+  .pyr::before{display:none}
+  .pcard{position:static;flex:0 0 250px;width:250px;height:376px;transform:none !important;scroll-snap-align:center}
   .feat-grid,.feature.flip .feat-grid{grid-template-columns:minmax(0,1fr);gap:26px}
   .feature.flip .feat-copy{order:0}
-  .term-mid{grid-template-columns:1fr}
-  .term-rail{display:none}
   .lanes{grid-auto-flow:column;grid-auto-columns:130px;grid-template-columns:none;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
   .filings-grid{grid-template-columns:1fr}
   .ai-wrap{grid-template-columns:1fr}
+  .chat{height:560px}
   .tiers{grid-template-columns:1fr}
 }
 @media (max-width:680px){
@@ -618,7 +637,6 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
   .nav-right{gap:10px}
   .sits{grid-template-columns:1fr}
   .tri3{grid-template-columns:1fr}
-  .fl-row{grid-template-columns:38px 76px 40px 1fr auto;gap:6px;font-size:10px}
   .demo{padding:13px}
 }
 </style>
@@ -629,7 +647,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
   <div class="nav-in">
     <a class="brand" href="index.html"><span class="m">M</span> MASTERMIND</a>
     <div class="nav-links">
-      <a href="#suite" data-zh="产品">Product</a><a href="#ai" data-zh="Mastermind AI">Mastermind AI</a><a href="#pricing" data-zh="定价">Pricing</a>
+      <a href="#f-terminal" data-zh="产品">Product</a><a href="#ai" data-zh="Mastermind AI">Mastermind AI</a><a href="#pricing" data-zh="定价">Pricing</a>
     </div>
     <div class="nav-right">
       <a href="start.html" style="color:var(--muted)" data-zh="登录">Log in</a>
@@ -664,226 +682,258 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
     <!-- copy column -->
     <div class="cov-copy">
       <span class="live-pill" data-zh="实时 · 今日研判"><i></i>LIVE · MARKET READ</span>
-      <h1 data-zh="每个市场。<br>每个信号。<br><span class='dim'>一个大脑。</span>">Every market.<br>Every signal.<br><span class="dim">One desk.</span></h1>
-      <p class="sub" data-zh="一整套机构级工具箱——<b>宏观、个股信号、期权流、深度研究</b>——每晚由相互校验的引擎重建。<b>实时呈现，一屏尽览。</b>">The whole institutional toolkit — <b>macro, stock signals, options flow, deep research</b> — rebuilt nightly by engines that check each other's work. <b>Live, on one screen.</b></p>
+      <h1 data-zh="你的专属<br>机构级<span class='dim'>市场情报台。</span>">Your personal,<br>institutional-grade<br><span class="dim">market intelligence.</span></h1>
+      <p class="sub" data-zh="宏观、信号、期权流与深度研究——每晚由相互校验的引擎重建。<b>就在下方，实时运行。</b>">Macro, signals, options flow and deep research — rebuilt nightly by engines that check each other's work. <b>Live, below.</b></p>
       <div class="cta-row">
         <a class="btn primary" href="start.html" data-zh="免费开始">Start free</a>
-        <a class="btn" href="start.html" data-zh="探索整套工具">Explore the suite</a>
+        <a class="btn" href="#f-terminal" data-zh="看实时演示">See it live</a>
       </div>
       <p class="micro" data-zh="免费试用 · 机构级市场情报">FREE TRIAL · INSTITUTIONAL MARKET INTELLIGENCE</p>
     </div>
 
-    <!-- the living field -->
-    <div class="field" id="field">
-      <svg class="web" id="web" aria-hidden="true"></svg>
+    <!-- the pyramid — five live desk cards, one choreographed regime cycle -->
+    <div class="pyr" id="pyr">
 
-      <!-- brain core -->
-      <div class="brain" id="brain">
-        <div class="halo"></div>
-        <svg viewBox="0 0 172 172" aria-hidden="true">
-          <g class="orbit">
-            <circle cx="86" cy="86" r="80" fill="none" stroke="rgba(40,95,255,.25)" stroke-width="1" stroke-dasharray="1 7"/>
-            <circle cx="86" cy="6" r="2.6" fill="#285fff"/>
-            <circle cx="150" cy="130" r="2" fill="#7862e0"/>
-          </g>
-          <circle cx="86" cy="86" r="62" fill="#ffffff" stroke="#e3e8f2" stroke-width="1"/>
-          <circle cx="86" cy="86" r="62" fill="none" stroke="rgba(40,95,255,.18)" stroke-width="6" opacity=".5"/>
-          <g class="knotg" fill="none" stroke="rgba(40,95,255,.5)" stroke-width="1.1">
-            <path d="M86 40 L118 62 L122 98 L96 126 L60 118 L48 80 L66 52 Z"/>
-            <path d="M86 40 L66 52 M86 40 L96 66 M118 62 L96 66 M96 66 L84 88 M122 98 L84 88 M96 126 L84 88 M60 118 L84 88 M48 80 L84 88 M66 52 L84 88 M96 66 L122 98 M60 118 L96 126"/>
-          </g>
-          <g class="knotg">
-            <circle cx="86" cy="40" r="4" fill="#285fff"/>
-            <circle cx="118" cy="62" r="3.4" fill="#7862e0"/>
-            <circle cx="122" cy="98" r="3.4" fill="#0f9d8f"/>
-            <circle cx="96" cy="126" r="3.4" fill="#1f8b41"/>
-            <circle cx="60" cy="118" r="3.4" fill="#b07d05"/>
-            <circle cx="48" cy="80" r="3.4" fill="#c12f2f"/>
-            <circle cx="66" cy="52" r="3" fill="#2f63c4"/>
-          </g>
-          <g class="corepulse">
-            <circle cx="86" cy="86" r="13" fill="rgba(40,95,255,.16)"/>
-            <circle cx="86" cy="86" r="7" fill="#285fff"/>
-          </g>
+      <!-- heatmap -->
+      <div class="pcard pp1">
+        <p class="kicker" data-zh="科技股 — 今日 <span class='asof'>实时</span>">TECHNOLOGY — TODAY <span class="asof">live</span></p>
+        <div class="heat" id="heat">
+          <div class="hm u" data-v="2.0"><div class="tk">NVDA</div><div class="pc tnum">+2.0%</div></div>
+          <div class="hm d" data-v="-1.1"><div class="tk">MSFT</div><div class="pc tnum">−1.1%</div></div>
+          <div class="hm u" data-v="0.4"><div class="tk">AAPL</div><div class="pc tnum">+0.4%</div></div>
+          <div class="hm u2" data-v="8.1"><div class="tk">AMD</div><div class="pc tnum">+8.1%</div></div>
+          <div class="hm d" data-v="-2.1"><div class="tk">CRM</div><div class="pc tnum">−2.1%</div></div>
+          <div class="hm u" data-v="2.2"><div class="tk">AVGO</div><div class="pc tnum">+2.2%</div></div>
+          <div class="hm u2" data-v="12.2"><div class="tk">MU</div><div class="pc tnum">+12.2%</div></div>
+          <div class="hm u2" data-v="8.6"><div class="tk">INTC</div><div class="pc tnum">+8.6%</div></div>
+          <div class="hm d" data-v="-1.6"><div class="tk">PLTR</div><div class="pc tnum">−1.6%</div></div>
+        </div>
+        <p class="foot" data-zh="真实收盘行情——同一批引擎盯着其余 200+ 只科技股。">Real closes — the same engines watch 200+ more tech names.</p>
+      </div>
+
+      <!-- prophet -->
+      <div class="pcard pp2">
+        <p class="kicker"><span data-zh="Prophet · 今日">PROPHET · TODAY</span><span class="asof" data-zh="免费">free</span></p>
+        <div class="psc-top">
+          <span class="psc-pill" data-zh="接近">NEAR</span>
+          <span class="psc-px tnum">$58.50</span>
+        </div>
+        <svg class="psc-spark" viewBox="0 0 260 64" preserveAspectRatio="none" aria-label="XLE — real closing prices for the last 40 sessions, rising toward the entry zone.">
+          <path d="M2.0 6.0 L 8.6 22.0 L 15.1 28.7 L 21.7 29.0 L 28.3 34.0 L 34.8 26.2 L 41.4 21.2 L 47.9 15.3 L 54.5 15.0 L 61.1 23.4 L 67.6 18.3 L 74.2 25.5 L 80.8 18.9 L 87.3 27.6 L 93.9 24.3 L 100.5 39.8 L 107.0 41.3 L 113.6 46.6 L 120.2 53.5 L 126.7 48.3 L 133.3 45.2 L 139.8 52.1 L 146.4 48.0 L 153.0 50.0 L 159.5 52.0 L 166.1 55.7 L 172.7 58.0 L 179.2 54.8 L 185.8 55.5 L 192.4 43.8 L 198.9 36.3 L 205.5 42.4 L 212.1 40.3 L 218.6 27.4 L 225.2 25.8 L 231.7 29.3 L 238.3 25.2 L 244.9 20.1 L 251.4 18.1 L 258.0 13.7 L 258 58 L 2 58 Z" fill="rgba(31,139,65,.10)"/>
+          <polyline points="2.0,6.0 8.6,22.0 15.1,28.7 21.7,29.0 28.3,34.0 34.8,26.2 41.4,21.2 47.9,15.3 54.5,15.0 61.1,23.4 67.6,18.3 74.2,25.5 80.8,18.9 87.3,27.6 93.9,24.3 100.5,39.8 107.0,41.3 113.6,46.6 120.2,53.5 126.7,48.3 133.3,45.2 139.8,52.1 146.4,48.0 153.0,50.0 159.5,52.0 166.1,55.7 172.7,58.0 179.2,54.8 185.8,55.5 192.4,43.8 198.9,36.3 205.5,42.4 212.1,40.3 218.6,27.4 225.2,25.8 231.7,29.3 238.3,25.2 244.9,20.1 251.4,18.1 258.0,13.7" fill="none" stroke="#1f8b41" stroke-width="1.8" stroke-linejoin="round"/>
+          <rect x="196" y="10" width="62" height="11" fill="rgba(31,139,65,.07)" stroke="rgba(31,139,65,.55)" stroke-width="1" stroke-dasharray="3 2.5" rx="2"/>
+          <circle cx="258" cy="13.7" r="2.6" fill="#1f8b41"/>
         </svg>
-        <p class="bname">MASTERMIND AI</p>
-        <p class="bsub" data-zh="神经网络 · 实时">the neural web · live</p>
+        <div class="psc-id">
+          <span class="tk">XLE</span><span class="nm2" data-zh="能源精选">Energy Select</span>
+          <span class="psc-edge">EDGE <b class="tnum">74</b></span>
+        </div>
+        <div class="psc-stages" aria-label="Setup stage: Ready">
+          <span class="stg" data-zh="筑底">Bottoming</span><span class="stg" data-zh="转折">Turning</span><span class="stg on" data-zh="就绪">Ready</span><span class="stg" data-zh="趋势">Trend</span>
+        </div>
+        <div class="psc-zone"><span data-zh="区间">ZONE</span> <b class="tnum">57.95 – 58.60</b><span class="dt" data-zh="7月21日">Jul 21</span></div>
       </div>
 
-      <!-- today's read -->
-      <div class="spot s-read" id="sp-read" style="--bd:6.2s;--bdel:.3s;--mr:-1.5deg">
-        <span class="pin" data-tether="brain" data-color="#285fff"></span>
-        <div class="crd">
-          <p class="kicker" data-zh="今日研判 · 美国 <span class='asof'>收盘</span>">TODAY'S READ · US <span class="asof">last close</span></p>
-          <div class="read-top">
-            <span class="score tnum">50</span>
-            <span class="odo"><svg id="odo-svg" viewBox="0 0 150 92" aria-hidden="true"></svg></span>
-          </div>
-          <span class="chip-reg" id="reg-chip" tabindex="0" role="button" aria-describedby="quad-pop">
-            <span class="dotg"></span><span class="lbl" data-zh="温和增长 · 转变中">Goldilocks · shifting</span>
-            <span class="quad-pop" id="quad-pop" role="tooltip">
-              <span class="quad">
-                <span class="q g" data-zh="温和增长">GOLDILOCKS</span><span class="q r" data-zh="再通胀">REFLATION</span>
-                <span class="q d" data-zh="通缩">DEFLATION</span><span class="q s" data-zh="滞胀">STAGFLATION</span>
-                <span class="you" aria-hidden="true"></span>
-              </span>
-              <span class="quad-note" data-zh="增长为正、通胀不烫——但正向再通胀漂移。并非完全无忧。">Growth positive, inflation not hot — but drifting toward Reflation. Not all-clear.</span>
+      <!-- today's read — front card, drives the cycle -->
+      <div class="pcard pp3" id="pp-read">
+        <p class="kicker" data-zh="今日研判 · 美国 <span class='asof'>演示</span>">TODAY'S READ · US <span class="asof">demo</span></p>
+        <span class="chip-reg" id="reg-chip" tabindex="0" role="button" aria-describedby="quad-pop">
+          <span class="dotg"></span><span class="lbl" data-zh="温和增长 · 转变中">Goldilocks · shifting</span>
+          <span class="quad-pop" id="quad-pop" role="tooltip">
+            <span class="quad">
+              <span class="q g" data-zh="温和增长">GOLDILOCKS</span><span class="q r" data-zh="再通胀">REFLATION</span>
+              <span class="q d" data-zh="通缩">DEFLATION</span><span class="q s" data-zh="滞胀">STAGFLATION</span>
+              <span class="you" aria-hidden="true"></span>
             </span>
+            <span class="quad-note" data-zh="增长为正、通胀不烫——但正向再通胀漂移。并非完全无忧。">Growth positive, inflation not hot — but drifting toward Reflation. Not all-clear.</span>
           </span>
-          <p class="stance" data-zh="<b>分化——减小仓位、偏向优质；</b>不要追高。"><b>Mixed — trade smaller, favour quality;</b> don't chase.</p>
+        </span>
+        <div class="gz-row">
+          <svg class="gz" viewBox="0 -6 140 103" aria-hidden="true">
+            <path d="M 14 75 A 56 56 0 0 1 126 75" stroke="var(--hair-2)" stroke-width="10" stroke-linecap="round" fill="none"/>
+            <path class="gz-arcf" d="M 14 75 A 56 56 0 0 1 126 75" stroke="var(--q-gold)" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="87.9 200" opacity=".92"/>
+            <g font-family="Archivo,sans-serif" font-size="9" fill="var(--faint)" font-weight="600">
+              <text x="8" y="93">0</text><text x="70" y="2" text-anchor="middle">50</text><text x="116" y="93">100</text>
+            </g>
+            <g id="needle" style="transform-origin:70px 75px;transform:rotate(-90deg);transition:transform 1.1s cubic-bezier(.3,.8,.3,1)">
+              <line x1="70" y1="73" x2="70" y2="30" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>
+              <circle cx="70" cy="30" r="3" fill="var(--q-gold)"/>
+            </g>
+            <circle cx="70" cy="75" r="7" fill="#fff" stroke="var(--hair-2)" stroke-width="1.5"/>
+            <circle cx="70" cy="75" r="3.2" fill="var(--ink)"/>
+          </svg>
+          <div class="gz-num"><b class="tnum" id="gz-score">50</b><span class="gzw" id="gz-word">Mixed</span></div>
         </div>
+        <p class="stance" id="gz-stance"><b>Mixed — trade smaller, favour quality;</b> don't chase.</p>
+        <p class="foot" data-zh="一个研判驱动每张卡片——看买入通道与申报随它一起转向。">One read drives every card — watch the buy lane and the filings turn with it.</p>
       </div>
 
-      <!-- economies -->
-      <div class="spot s-econ" id="sp-econ" style="--bd:8.2s;--bdel:1.9s;--mr:-.6deg">
-        <span class="pin" data-tether="brain" data-color="#7862e0"></span>
-        <div class="crd">
-          <p class="kicker" data-zh="各国经济 · 实时">ECONOMIES · LIVE</p>
-          <div class="ec-row"><span class="cn" data-zh="美国 <span class='ix'>6,412</span>">US <span class="ix">6,412</span></span><span class="pc dn lv tnum" data-v="-0.2">−0.2%</span><span class="st mix" data-zh="分化">MIXED</span></div>
-          <div class="ec-row"><span class="cn" data-zh="中国 <span class='ix'>3,890</span>">China <span class="ix">3,890</span></span><span class="pc up lv tnum" data-v="0.6">+0.6%</span><span class="st cool" data-zh="降温">COOLING</span></div>
-          <div class="ec-row"><span class="cn" data-zh="欧洲 <span class='ix'>585</span>">Europe <span class="ix">585</span></span><span class="pc up lv tnum" data-v="0.1">+0.1%</span><span class="st stdy" data-zh="平稳">STEADY</span></div>
-          <div class="ec-row"><span class="cn" data-zh="韩国 <span class='ix'>2,714</span>">Korea <span class="ix">2,714</span></span><span class="pc up lv tnum" data-v="1.2">+1.2%</span><span class="st stdy" data-zh="平稳">STEADY</span></div>
-          <div class="ec-row"><span class="cn" data-zh="日本 <span class='ix'>42,180</span>">Japan <span class="ix">42,180</span></span><span class="pc dn lv tnum" data-v="-0.4">−0.4%</span><span class="st mix" data-zh="分化">MIXED</span></div>
+      <!-- what to act on now -->
+      <div class="pcard pp4">
+        <p class="kicker" data-zh="现在该做什么 <span class='asof'>演示</span>">WHAT TO ACT ON NOW <span class="asof">demo</span></p>
+        <div class="pl-lane">
+          <p class="pl-h" data-zh="<i></i>立即买入"><i></i>BUY NOW</p>
+          <div id="act-chips"></div>
         </div>
+        <p class="foot" data-zh="通道名就是操作指令——研判转向时，筹码当场换道。">Lane names are instructions — chips change lanes the moment the read turns.</p>
       </div>
 
-      <!-- risk radar -->
-      <div class="spot s-risk" id="sp-risk" style="--bd:7.1s;--bdel:1.1s;--mr:1deg">
-        <span class="pin" data-tether="brain" data-color="#c12f2f"></span>
-        <div class="crd">
-          <p class="kicker" data-zh="风险雷达 <span class='asof'>概率上升</span>">RISK RADAR <span class="asof">escalating odds</span></p>
-          <div class="rr-level"><span class="n tnum">69</span><span class="tag" data-zh="偏高">ELEVATED</span></div>
-          <div class="rr-row"><div class="lb"><span data-zh="5%+ 回调 <span>· 3个月</span>">5%+ pullback <span>· 3 mo</span></span><span class="pc tnum">38% <em>↑</em></span></div><div class="rr-track"><i style="--w:38%"></i></div></div>
-          <div class="rr-row"><div class="lb"><span data-zh="10%+ 调整 <span>· 6个月</span>">10%+ correction <span>· 6 mo</span></span><span class="pc tnum">24%</span></div><div class="rr-track"><i style="--w:24%"></i></div></div>
-          <div class="rr-row"><div class="lb"><span data-zh="熊市 <span>· 12个月</span>">Bear market <span>· 12 mo</span></span><span class="pc tnum">9%</span></div><div class="rr-track"><i style="--w:9%"></i></div></div>
-        </div>
+      <!-- insider & congress -->
+      <div class="pcard pp5">
+        <p class="kicker" data-zh="内部人 & 国会 <span class='asof'>演示</span>">INSIDER &amp; CONGRESS <span class="asof">demo</span></p>
+        <div class="pi-feed" id="pi-feed"></div>
+        <p class="foot" data-zh="96,000+ 份披露已读取、打分——看它们随研判转向。">96,000+ disclosures read &amp; scored — watch them turn with the read.</p>
       </div>
 
-      <!-- heatmap 3x3 -->
-      <div class="spot s-heat" id="sp-heat" style="--bd:7.8s;--bdel:.7s;--mr:1.5deg">
-        <span class="pin" data-tether="brain" data-color="#0f9d8f"></span>
-        <div class="crd">
-          <p class="kicker" data-zh="科技股 — 今日">TECHNOLOGY — TODAY</p>
-          <div class="heat" id="heat">
-            <div class="hm u" data-v="2.0"><div class="tk">NVDA</div><div class="pc tnum">+2.0%</div></div>
-            <div class="hm u" data-v="0.4"><div class="tk">MSFT</div><div class="pc tnum">+0.4%</div></div>
-            <div class="hm u" data-v="0.1"><div class="tk">AAPL</div><div class="pc tnum">+0.1%</div></div>
-            <div class="hm d2" data-v="-3.1"><div class="tk">AMD</div><div class="pc tnum">−3.1%</div></div>
-            <div class="hm u" data-v="0.9"><div class="tk">CRM</div><div class="pc tnum">+0.9%</div></div>
-            <div class="hm d" data-v="-1.8"><div class="tk">AVGO</div><div class="pc tnum">−1.8%</div></div>
-            <div class="hm d2" data-v="-4.0"><div class="tk">MU</div><div class="pc tnum">−4.0%</div></div>
-            <div class="hm u" data-v="1.4"><div class="tk">INTC</div><div class="pc tnum">+1.4%</div></div>
-            <div class="hm d2" data-v="-2.9"><div class="tk">PLTR</div><div class="pc tnum">−2.9%</div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- prophet — single scorecard-v2 card -->
-      <div class="spot s-proph" id="sp-proph" style="--mr:-1deg">
-        <span class="pin" data-tether="brain" data-color="#1f8b41"></span>
-        <div class="crd">
-          <p class="kicker"><span data-zh="Prophet · 今日">PROPHET · TODAY</span><span class="asof" data-zh="免费">free</span></p>
-          <div class="pr-id">
-            <span class="tk">XLE</span>
-            <span class="pr-badge dir" data-zh="▲ 看多">▲ BULL</span>
-            <span class="pr-badge phase" data-zh="待触发">PRE-TRIGGER</span>
-            <span class="pr-rr tnum">R/R 2.5</span>
-          </div>
-          <div class="pr-rail" aria-label="Price geometry: stop 85.9, entry 88.4, last 89.2, target 1 at 94.6, target 2 at 99.8">
-            <div class="pr-track"></div>
-            <div class="pr-fill" style="left:18%;width:5.7%"></div>
-            <div class="pr-mk stop" style="left:0"></div>
-            <div class="pr-mk entry" style="left:18%"></div>
-            <div class="pr-mk t1" style="left:62.6%"></div>
-            <div class="pr-mk t2" style="left:100%"></div>
-            <div class="pr-dot" style="left:23.7%"></div>
-          </div>
-          <p class="pr-legend"><span style="color:var(--q-red)" data-zh="止损 <b class='tnum'>85.9</b>">STOP <b class="tnum">85.9</b></span><span style="color:var(--ink)" data-zh="入场 <b class='tnum'>88.4</b>">ENTRY <b class="tnum">88.4</b></span><span style="color:var(--teal)" data-zh="现价 <b class='tnum'>89.2</b>">LAST <b class="tnum">89.2</b></span><span style="color:var(--q-green)">T1 <b class="tnum">94.6</b></span><span style="color:rgba(31,139,65,.65)">T2 <b class="tnum">99.8</b></span></p>
-          <p class="pr-brief" data-zh="等待触发——90.1 确认前不建仓。">Wait for the trigger — no position until 90.1 confirms.</p>
-          <p class="gr" data-zh="今日6条中的第1条 · 出手前锁定 · 免费">1 of 6 today · stamped before the move · free</p>
-        </div>
-      </div>
-
-      <!-- events — naked deck, fans upward -->
-      <div class="spot s-ev" id="sp-ev" style="--bd:7.4s;--bdel:.2s;--mr:0deg">
-        <span class="pin" data-tether="brain" data-color="#b07d05"></span>
-        <div class="deck" id="deck" tabindex="0" aria-label="This week's market events — the deck fans on hover">
-          <div class="ev e3" style="--i:3"><div class="row1"><span class="day" data-zh="周五 · 09:30">FRI · 09:30</span><span class="imp md" data-zh="<i></i>中"><i></i>MED</span></div><div class="nm" data-zh="期权到期">Options expiry</div><p class="why" data-zh="未平仓集中在标普 6,400 附近。">Open interest pinned near SPX 6,400.</p></div>
-          <div class="ev e2" style="--i:2"><div class="row1"><span class="day" data-zh="周四 · 14:00">THU · 14:00</span><span class="imp md" data-zh="<i></i>中"><i></i>MED</span></div><div class="nm" data-zh="美联储纪要">FOMC minutes</div><p class="why" data-zh="验证7月降息并非一次性。">Proof the July cut wasn't a one-off.</p></div>
-          <div class="ev e1" style="--i:1"><div class="row1"><span class="day" data-zh="周四 · 08:30">THU · 08:30</span><span class="imp md" data-zh="<i></i>中"><i></i>MED</span></div><div class="nm" data-zh="零售销售">Retail sales</div><p class="why" data-zh="消费者撑起增长研判。">The consumer holds up the growth read.</p></div>
-          <div class="ev e0" style="--i:0"><div class="row1"><span class="day" data-zh="周三 · 08:30">WED · 08:30</span><span class="imp" data-zh="<i></i>高"><i></i>HIGH</span></div><div class="nm" data-zh="CPI — 7月">CPI — July</div><p class="why" data-zh="数据偏热会把格局推向再通胀——本周最大的单一风险。">A hot print tips the map to Reflation — the week's biggest single risk.</p></div>
-        </div>
-      </div>
-
-      <!-- hard assets -->
-      <div class="spot s-assets" id="sp-assets" style="--bd:8.9s;--bdel:1.2s;--mr:.8deg">
-        <span class="pin" data-tether="brain" data-color="#b07d05"></span>
-        <div class="crd">
-          <p class="kicker" data-zh="硬资产 <span class='asof'>实时</span>">HARD ASSETS <span class="asof">live</span></p>
-          <div class="as-row"><span class="a" data-zh="比特币">Bitcoin</span><span class="p lvp tnum" data-p="58964" data-s="42" data-d="0">$58,964</span><span class="v up lv tnum" data-v="0.8">+0.8%</span></div>
-          <div class="as-row"><span class="a" data-zh="黄金">Gold</span><span class="p lvp tnum" data-p="3412" data-s="1.6" data-d="0">$3,412</span><span class="v up lv tnum" data-v="0.4">+0.4%</span></div>
-          <div class="as-row"><span class="a" data-zh="原油">Oil</span><span class="p lvp tnum" data-p="71.84" data-s="0.09" data-d="2">$71.84</span><span class="v dn lv tnum" data-v="-1.1">−1.1%</span></div>
-          <div class="as-row"><span class="a" data-zh="铜">Copper</span><span class="p lvp tnum" data-p="5.02" data-s="0.01" data-d="2">$5.02</span><span class="v up lv tnum" data-v="0.8">+0.8%</span></div>
-        </div>
-      </div>
-
-      <a class="scroll-hint" href="#suite" data-zh="整套工具<i>▼</i>">THE SUITE<i>▼</i></a>
     </div>
   </div>
 </header>
 
-<!-- ══════════════ THE SUITE — live components ══════════════ -->
-<section class="section-pad hair-top" id="suite" style="margin-top:clamp(40px,6vh,64px);padding-bottom:0">
+<!-- Terminal — full product showcase, Safari-framed, clipped at the section edge -->
+<section class="tsec" id="f-terminal">
   <div class="wrap">
-    <div class="sec-head rv" style="margin-bottom:0">
-      <span class="kicker" data-zh="整套工具">The suite</span>
-      <h2 class="sec-title" data-zh="一个订阅。<br>每一个台席。">One subscription.<br>Every desk.</h2>
-      <p class="sec-sub" data-zh="上方的市场研判只是第一页。它背后是<b>一家机构会配齐的每一个台席</b>——每晚重建，全部用大白话。<b>下面每一块都是可运行的实时预览，不是截图。</b>">The regime read above is page one. Behind it sits <b>every desk an institutional operation runs</b> — each rebuilt nightly, each in plain words. <b>Every panel below is a working preview, not a screenshot.</b></p>
+    <div class="tlogos rv" aria-label="Institutions whose teams use Mastermind">
+      <img src="assets/landing/logos/logo-ubs-gray.svg" alt="UBS" height="22">
+      <img src="assets/landing/logos/logo-black-rock-gray.png" alt="BlackRock" height="17">
+      <img src="assets/landing/logos/logo-edward-gray.png" alt="Edward Jones" height="20">
+      <img src="assets/landing/logos/logo-fidelity-gray.png" alt="Fidelity" height="25">
+      <img src="assets/landing/logos/logo-ritholtz-gray.png" alt="Ritholtz Wealth Management" height="30">
+      <img src="assets/landing/logos/logo-lpl-gray.png" alt="LPL Financial" height="16">
     </div>
-  </div>
-</section>
-
-<!-- Terminal -->
-<section class="feature" id="f-terminal">
-  <div class="wrap feat-grid">
-    <div class="feat-copy rv">
-      <span class="kicker" data-zh="重头戏">The main event</span>
-      <h2 class="feat-title" data-zh="真正的交易终端，<br>就在浏览器里。">A real terminal,<br>in the browser.</h2>
-      <p class="feat-sub" data-zh="机构级图表，把台席自己的信号直接画在K线上——永久免费，无需安装。">Institutional-grade charting with the desk's own signals drawn on the candles — free forever, no install.</p>
-      <ul class="fx">
-        <li data-zh="<b>逐根K线的实时行情</b>——版式、指标与入场闸口全在图上。"><b>The live tape, candle by candle</b> — layouts, indicators and entry gates on-chart.</li>
-        <li data-zh="<b>日内期权流。</b>扫单与大宗成交实时打印——看清大资金在做什么。<i style='font-style:normal;color:var(--faint)'>（Insider）</i>"><b>Intraday options flow.</b> Sweeps and blocks as they print — see what size is doing. <i style="font-style:normal;color:var(--faint)">(Insider)</i></li>
-        <li data-zh="<b>零门槛。</b>永久免费，登录可选。"><b>Zero friction.</b> Free forever; sign-in optional.</li>
-      </ul>
-      <a class="feat-cta" href="https://app.mastermind-x.com" data-zh="打开 Terminal →">Open the Terminal →</a>
+    <div class="th-grid">
+      <div class="rv">
+        <span class="kicker" data-zh="终端">The Terminal</span>
+        <h2 class="sec-title" data-zh="真正的交易终端，<br>就在浏览器里。">A real terminal,<br>in the browser.</h2>
+      </div>
+      <div class="rv" style="--d:.08s">
+        <p class="th-sub" data-zh="机构级图表，<b>永久免费</b>、无需安装。台席还陪你一起读图：趋势判断、立场、自选与关键数据，离K线只有一眼。">Institutional-grade charting, <b>free forever</b> — nothing to install. And the desk reads the chart with you: trend calls, stances, watchlist and key stats one glance from the candles.</p>
+        <a class="feat-cta" href="https://app.mastermind-x.com" data-zh="打开 Terminal →">Open the Terminal →</a>
+      </div>
     </div>
-    <div class="rv" style="--d:.1s;position:relative">
-      <span class="live-tag" data-zh="<i></i>预览"><i></i>PREVIEW</span>
-      <div class="term">
-        <div class="term-top">
-          <span class="sym">NVDA</span><span class="px tnum" id="term-px">207.29</span>
-          <span style="color:#63769a;font-size:10.5px" data-zh="英伟达 · 纳斯达克">NVIDIA Corp · NASDAQ</span>
-          <span class="iv"><span>1H</span><span class="on">1D</span><span>1W</span></span>
-        </div>
-        <div class="term-mid">
-          <div class="term-chart">
-            <span class="oracle" data-zh="<i></i><b>入场闸口</b>自7月14日关闭 — 观望，别追高"><i></i><b>ENTRY GATE</b>shut since Jul 14 — watch, don't chase</span>
-            <svg id="candles" viewBox="0 0 680 300" aria-label="Live candlestick chart preview with a price axis, time axis, volume, a 20-day average, and a shaded entry zone."></svg>
+    <div class="sf-crop rv" style="--d:.12s" role="img" aria-label="The Mastermind Terminal in a browser window: a live NVDA candlestick chart drawing itself with moving averages and MACD, beside a watchlist, quote panel, key stats and earnings.">
+      <div class="sf" aria-hidden="true">
+        <div class="sf-bar">
+          <div class="sf-l">
+            <div class="sf-dots"><i></i><i></i><i></i></div>
+            <svg width="17" height="14" viewBox="0 0 17 14" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="15" height="12" rx="2.5"/><line x1="6" y1="1" x2="6" y2="13"/></svg>
+            <svg width="9" height="6" viewBox="0 0 9 6" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M1 1.2l3.5 3.5L8 1.2"/></svg>
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1L1.5 6L6 11"/></svg>
+            <svg class="dim" width="7" height="12" viewBox="0 0 7 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l4.5 5L1 11"/></svg>
           </div>
-          <div class="term-rail">
-            <p class="rl" data-zh="自选">WATCHLIST</p>
-            <div class="wl-row on"><span class="t">NVDA</span><span class="c u lv tnum" data-v="2.0">+2.0%</span></div>
-            <div class="wl-row"><span class="t">MSFT</span><span class="c u lv tnum" data-v="0.4">+0.4%</span></div>
-            <div class="wl-row"><span class="t">XLE</span><span class="c u lv tnum" data-v="1.8">+1.8%</span></div>
-            <div class="wl-row"><span class="t">SPY</span><span class="c d lv tnum" data-v="-0.2">−0.2%</span></div>
-            <div class="wl-row"><span class="t">BTC</span><span class="c u lv tnum" data-v="0.8">+0.8%</span></div>
-            <p class="rl" style="margin-top:8px" data-zh="信号">SIGNALS</p>
-            <div style="font-size:10px;color:#8fa0bd;line-height:1.5;padding:0 2px" data-zh="上升趋势完好 · 入场闸口<b style='color:#f0b56a'>已关</b> · 止损 191.1">Uptrend intact · entry gate <b style="color:#f0b56a">shut</b> · stop 191.1</div>
+          <div class="sf-url">
+            <svg width="9" height="11" viewBox="0 0 9 11" fill="none" stroke="currentColor" stroke-width="1.1"><rect x="1" y="4.5" width="7" height="5.5" rx="1.2"/><path d="M2.5 4.5V3a2 2 0 0 1 4 0v1.5"/></svg>
+            <span>app.mastermind-x.com/terminal</span>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M9.5 5.5a4 4 0 1 1-1.2-2.85"/><path d="M8.6 0.6v2.3H6.3" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="sf-r">
+            <svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 1v8M3.4 3.2L6 .8l2.6 2.4"/><path d="M2.5 6H1.5v7h9V6h-1"/></svg>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 1v10M1 6h10"/></svg>
+            <svg width="13" height="12" viewBox="0 0 13 12" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3.5" y="1" width="8.5" height="8.5" rx="1.6"/><path d="M1.2 3.5v5.8a1.5 1.5 0 0 0 1.5 1.5h6"/></svg>
           </div>
         </div>
-        <div class="term-flow">
-          <p class="rl" data-zh="<i></i>期权流 — 日内"><i></i>OPTIONS FLOW — INTRADAY</p>
-          <div id="flow"></div>
+        <div class="tapp">
+          <div class="tt-top">
+            <div class="tt-logo"><span class="lm">M</span><span class="ln"><b>MASTERMIND</b><span>TERMINAL</span></span></div>
+            <div class="tt-sym"><span class="sic">N</span>NVDA <svg width="8" height="5" viewBox="0 0 8 5" fill="none" stroke="#5c6879" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></div>
+            <div class="tt-cmp hx3"><svg width="11" height="10" viewBox="0 0 11 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 3h7M6 1l2 2-2 2M10 7H3M5 5L3 7l2 2"/></svg>Compare</div>
+            <div class="tt-cell"><span class="l">Last price</span><span class="v mo" id="tb-last">211.07</span></div>
+            <div class="tt-cell"><span class="l">24H change</span><span class="v mo up" id="tb-chg">+1.82%</span></div>
+            <div class="tt-cell hx2"><span class="l">Volume</span><span class="v mo" id="tb-vol">103.1M</span></div>
+            <div class="tt-rng hx1"><span class="lb">Day range<em class="mo" id="tb-rngv">211.07</em></span><span class="trk"><i id="tb-rngd"></i></span><span class="mm mo"><span>L 204.95</span><span>214.49 H</span></span></div>
+            <div class="tt-del hx1"><i></i>15-min delayed</div>
+            <div class="tt-ai"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.5"><path d="M5 1v8M1 5h8"/></svg>Mastermind AI</div>
+            <div class="tt-av">U</div>
+          </div>
+          <div class="tt-body">
+            <div class="tt-rail">
+              <span class="ri on"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4.5 2v3M4.5 11v3M11.5 1v2M11.5 12v2"/><rect x="2.8" y="5" width="3.4" height="6" rx="1" fill="currentColor" stroke="none"/><rect x="9.8" y="3" width="3.4" height="9" rx="1"/></svg></span>
+              <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.4"/><path d="M8 4.5V8l2.4 1.6"/></svg></span>
+              <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.6"/><path d="M10.5 10.5L14 14"/></svg></span>
+              <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12.8 2.2l1 1L5 12l-2.4.9L3.5 10.5z"/></svg></span>
+              <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2.2" y="2.2" width="11.6" height="11.6" rx="2"/></svg></span>
+              <span class="ri"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.4"/><path d="M10.4 5.6L9 9l-3.4 1.4L7 7z"/></svg></span>
+              <span class="ri"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M13 9.2A5.8 5.8 0 1 1 5.8 2a4.6 4.6 0 0 0 7.2 7.2z"/></svg></span>
+              <span class="sp"></span>
+              <span class="ri"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7.5 1.5l1.4 4.6 4.6 1.4-4.6 1.4-1.4 4.6-1.4-4.6-4.6-1.4 4.6-1.4z"/></svg></span>
+            </div>
+            <div class="tt-main">
+              <div class="tt-tabs">
+                <span class="tab">Price chart</span>
+                <span class="on2">1m</span><span>5m</span><span>15m</span><span>D</span>
+                <span class="sep"></span>
+                <span class="it"><svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2.5 1v2M2.5 9v2M7.5 2v1.5M7.5 10v1"/><rect x="1" y="3" width="3" height="6" rx=".8"/><rect x="6" y="3.5" width="3" height="6.5" rx=".8"/></svg>Candles <svg width="7" height="4" viewBox="0 0 8 5" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></span>
+                <span class="it hx3"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 8.5l3-4 2.5 2L11 1.5"/></svg>Indicators</span>
+                <span class="pg hx2"><span class="on">1</span><span>2</span><span>4</span></span>
+                <span class="it hx2"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.1"><rect x="1" y="1" width="4" height="4" rx=".8"/><rect x="6.5" y="1" width="3.5" height="4" rx=".8"/><rect x="1" y="6.5" width="4" height="3.5" rx=".8"/><rect x="6.5" y="6.5" width="3.5" height="3.5" rx=".8"/></svg>MTF</span>
+                <span class="it hx1"><svg width="9" height="12" viewBox="0 0 9 12" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M5.5 1L1.5 7h3l-1 4 4-6h-3z"/></svg>Day</span>
+                <span class="it hx1"><svg width="10" height="11" viewBox="0 0 10 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 1.5l7 4-7 4z" stroke-linejoin="round"/></svg>Replay</span>
+                <span class="it hx1"><svg width="13" height="9" viewBox="0 0 13 9" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 4.5h2.2L5 1.5l2.5 6L9 4.5h3"/></svg>Detect <svg width="7" height="4" viewBox="0 0 8 5" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></span>
+                <span class="it hx2"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.1"><rect x="1" y="1" width="9" height="9" rx="1.2"/><path d="M1 4.5h9M5.5 4.5V10"/></svg>Layouts <svg width="7" height="4" viewBox="0 0 8 5" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></span>
+                <span class="sep hx2"></span>
+                <svg class="hx2" width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4.5 2.5l1-1.5h2l1 1.5H11a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1z"/><circle cx="6.5" cy="6" r="2"/></svg>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 1H1v3M7 1h3v3M4 10H1V7M7 10h3V7"/></svg>
+              </div>
+              <div class="tt-cwrap">
+                <div class="tt-leg">
+                  <span class="row"><i style="background:#f0a13c"></i><i style="background:#4f8ef7"></i><i style="background:#8b96a8"></i>Moving Averages 9 · 21</span>
+                  <span class="row"><i style="background:#3a4a63"></i>Volume</span>
+                </div>
+                <svg id="tt-chart"></svg>
+              </div>
+            </div>
+            <div class="tt-right">
+              <div class="ttp">
+                <div class="ttp-h">Default <svg width="8" height="5" viewBox="0 0 8 5" fill="none" stroke="#5c6879" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg><span class="mr"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 1v8M1 5h8"/></svg><svg width="12" height="3" viewBox="0 0 12 3" fill="currentColor"><circle cx="1.5" cy="1.5" r="1.3"/><circle cx="6" cy="1.5" r="1.3"/><circle cx="10.5" cy="1.5" r="1.3"/></svg></span></div>
+                <div class="twl-cols"><span>Symbol</span><span>Last</span><span>Chg%</span></div>
+                <div class="twl-rows">
+                  <div class="twl-g">CRYPTO</div>
+                  <div class="twl-r" data-w="0"><span class="sic" style="background:#f7931a">B</span><span class="sy">BTC-USD</span><span class="la mo">65,894.53</span><span class="ch mo dn">−0.92%</span></div>
+                  <div class="twl-r" data-w="1"><span class="sic" style="background:#627eea">E</span><span class="sy">ETH-USD</span><span class="la mo">1,924.59</span><span class="ch mo dn">−0.23%</span></div>
+                  <div class="twl-g">EQUITIES</div>
+                  <div class="twl-r on"><span class="sic" style="background:#76b900;color:#0b0e14">N</span><span class="sy">NVDA</span><span class="la mo up" id="wl-la">211.07</span><span class="ch mo up" id="wl-ch">+1.82%</span></div>
+                  <div class="twl-r" data-w="2"><span class="sic" style="background:#8d97a5;color:#0b0e14">A</span><span class="sy">AAPL</span><span class="la mo">325.49</span><span class="ch mo dn">−0.69%</span></div>
+                  <div class="twl-r" data-w="3"><span class="sic" style="background:#0a84ff">M</span><span class="sy">MSFT</span><span class="la mo">387.50</span><span class="ch mo dn">−2.58%</span></div>
+                  <div class="twl-r" data-w="4"><span class="sic" style="background:#3edad8;color:#0b0e14">Q</span><span class="sy">QQQ</span><span class="la mo">705.35</span><span class="ch mo dn">−0.51%</span></div>
+                  <div class="twl-sb"></div>
+                </div>
+              </div>
+              <div class="ttp">
+                <div class="tq-hd"><span class="sic">N</span><span class="nm"><b>NVIDIA Corp</b><span>NVDA · NASDAQ</span></span><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 1H10v3.5M10 1L6 5M4.5 10H1V6.5M1 10l4-4"/></svg></div>
+                <div class="tq-px"><span class="big mo" id="qc-px">211.07</span><span class="pc mo" id="qc-ch">+1.82%</span><span class="st"><i></i>LIVE</span></div>
+                <div class="tq-row" style="flex-wrap:wrap">
+                  <span class="k"><svg width="11" height="11" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7.5 1.5l1.4 4.6 4.6 1.4-4.6 1.4-1.4 4.6-1.4-4.6-4.6-1.4 4.6-1.4z"/></svg>GOLDEN ORACLE</span>
+                  <span class="val" style="color:#3ecf95">Uptrend — no entry signal</span>
+                  <span style="flex-basis:100%;text-align:center;margin-top:3px"><span class="vw">View</span></span>
+                </div>
+                <div class="tq-row gold">
+                  <span class="k"><svg width="11" height="10" viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 8.5l3-4 2.5 2L11 1.5"/></svg>RESEARCH DESK</span>
+                  <span class="val">Bounce unconfirmed — wait<small>as of Jul 20 · 2d</small></span>
+                </div>
+                <div class="tq-trend"><span class="k">TREND</span><span class="pill">UPTREND</span><span class="hz">weeks–months</span></div>
+              </div>
+              <div class="ttp">
+                <div class="ttp-h" style="padding-bottom:9px"><span class="bar"></span>KEY STATS</div>
+                <div class="tks-r" style="padding-top:0"><span>Next earnings report</span><b class="mo">In 35 days</b></div>
+                <div class="tks-r"><span>Volume</span><b class="mo">128.18 M</b></div>
+                <div class="tks-r"><span>Avg volume (30D)</span><b class="mo">141.43 M</b></div>
+                <div class="tks-r" style="padding-bottom:11px"><span>Market capitalization</span><b class="mo">4.91 T</b></div>
+              </div>
+              <div class="ttp">
+                <div class="ttp-h"><span class="bar"></span>EARNINGS<span class="tag">35d</span></div>
+                <div style="padding:2px 11px 10px">
+                  <svg width="100%" height="104" viewBox="0 0 276 104">
+                    <defs><pattern id="ehatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#2a3446" stroke-width="1.4"/></pattern></defs>
+                    <g stroke="#161d29" stroke-width="1"><line x1="8" y1="18" x2="240" y2="18"/><line x1="8" y1="52" x2="240" y2="52"/><line x1="8" y1="86" x2="240" y2="86"/></g>
+                    <rect x="210" y="8" width="36" height="88" fill="url(#ehatch)" opacity=".55"/>
+                    <g font-family="ui-monospace,Menlo,monospace" font-size="8.5" fill="#4d5a6e"><text x="250" y="21">2.00</text><text x="250" y="55">1.50</text><text x="250" y="89">1.00</text></g>
+                    <g fill="#2ebd85"><circle cx="36" cy="84" r="4.5"/><circle cx="88" cy="71" r="4.5"/><circle cx="140" cy="55" r="4.5"/><circle cx="192" cy="37" r="4.5"/></g>
+                    <g stroke="#2ebd85" fill="none" opacity=".25"><circle cx="36" cy="84" r="7.5"/><circle cx="88" cy="71" r="7.5"/><circle cx="140" cy="55" r="7.5"/><circle cx="192" cy="37" r="7.5"/></g>
+                    <circle cx="228" cy="23" r="5" fill="none" stroke="#8b96a8" stroke-width="1.3" stroke-dasharray="2.5 2.5"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -896,11 +946,11 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
     <div class="feat-copy rv">
       <span class="kicker" data-zh="主题轮动">Theme rotations</span>
       <h2 class="feat-title" data-zh="34个主题。<br>四条大白话通道。">34 themes.<br>Four plain lanes.</h2>
-      <p class="feat-sub" data-zh="资金在轮动，看板让它可见。每个主题都落在一条通道里，通道名本身就是操作建议——<b>看着筹码随领涨切换而换道。</b>">Money rotates; the board shows it moving. Every theme sits in a lane whose name is an instruction — <b>watch the chips change lanes as leadership turns.</b></p>
+      <p class="feat-sub" data-zh="资金在轮动，看板让它可见——<b>看着筹码随领涨切换而换道。</b>">Money rotates; the board shows it moving — <b>watch chips change lanes as leadership turns.</b></p>
       <ul class="fx">
         <li data-zh="<b>通道名就是立场。</b>立即买入 · 即将就绪 · 止盈了结 · 观望回避。"><b>Lane names are stances.</b> Buy now · Almost ready · Take profits · Stand aside.</li>
-        <li data-zh="<b>轮动看得见。</b>当一个主题的周期转向，它就换道——你能亲眼看到。"><b>Rotation made visible.</b> When a theme's cycle turns, it moves — you see it happen.</li>
-        <li data-zh="<b>从主题到个股。</b>每个篮子都能展开成排好序的成分股。"><b>From theme to names.</b> Every basket opens into its ranked member stocks.</li>
+        <li data-zh="<b>轮动看得见。</b>主题转向，当场换道。"><b>Rotation made visible.</b> A theme turns, it moves lanes.</li>
+        <li data-zh="<b>从主题到个股。</b>篮子展开就是排好序的成分股。"><b>From theme to names.</b> Every basket opens into ranked stocks.</li>
       </ul>
       <a class="feat-cta" href="baskets.html" data-zh="查看今日通道 →">See today's lanes →</a>
     </div>
@@ -925,11 +975,11 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
     <div class="feat-copy rv">
       <span class="kicker" data-zh="盯紧申报">Follow the filings</span>
       <h2 class="feat-title" data-zh="内部人一出手，<br>你就看到评分。">When insiders move,<br>you see it scored.</h2>
-      <p class="feat-sub" data-zh="国会议员、参议员、CEO、CFO 都要申报交易。Mastermind 读遍<b>每一份披露</b>，为值得跟随的那些打分——附带入场时机，而不只是标题。">Congress, senators, CEOs and CFOs file their trades. Mastermind reads <b>every disclosure</b> and scores what's worth copying — with entry timing, not just headlines.</p>
+      <p class="feat-sub" data-zh="国会、参议员、CEO、CFO 都要申报交易。Mastermind 读遍<b>每一份披露</b>，为值得跟随的打分。">Congress, senators, CEOs and CFOs file their trades. Mastermind reads <b>every disclosure</b> and scores what's worth copying.</p>
       <ul class="fx">
-        <li data-zh="<b>96,000+ 份披露</b>逐一读取、按可跟随性打分。"><b>96,000+ disclosures</b> read and scored for copyability.</li>
-        <li data-zh="<b>含入场时机。</b>好申报跟晚了也是坏交易——台席会告诉你何时。"><b>Entry timing included.</b> A good filing late is a bad trade — the desk says when.</li>
-        <li data-zh="<b>抱团胜过单打。</b>一周内三人同买，分量远超一人。"><b>Clusters beat one-offs.</b> Three buyers in a week means more than one.</li>
+        <li data-zh="<b>96,000+ 份披露</b>已读取、已打分。"><b>96,000+ disclosures</b> read and scored.</li>
+        <li data-zh="<b>含入场时机。</b>好申报跟晚了也是坏交易。"><b>Entry timing included.</b> A good filing late is a bad trade.</li>
+        <li data-zh="<b>抱团胜过单打。</b>三人同买，分量远超一人。"><b>Clusters beat one-offs.</b> Three buyers mean more than one.</li>
       </ul>
       <a class="feat-cta" href="congress_trades.html" data-zh="打开申报台席 →">Open the filings desk →</a>
     </div>
@@ -959,10 +1009,10 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
     <div class="feat-copy rv">
       <span class="kicker" data-zh="事件驱动">Event-driven</span>
       <h2 class="feat-title" data-zh="错位机会，<br>及早发现。">Dislocations,<br>caught early.</h2>
-      <p class="feat-sub" data-zh="洗盘、剧烈反转和一次性错位——<b>在还早的时候</b>就浮出水面，并用形态分数告诉你有多少已经确认。">Washouts, violent turns and one-off dislocations — surfaced <b>while they're still early</b>, with a setup score that says how much of the pattern has confirmed.</p>
+      <p class="feat-sub" data-zh="洗盘、剧烈反转和一次性错位——<b>在还早的时候</b>就浮出水面。">Washouts, violent turns and one-off dislocations — surfaced <b>while they're still early.</b></p>
       <ul class="fx">
-        <li data-zh="<b>洗盘监测。</b>投降式杀跌当天标注天数，而非事后诸葛。"><b>Washout watch.</b> Capitulation days flagged with a day counter, not hindsight.</li>
-        <li data-zh="<b>形态分数。</b>已确认多少——还差哪一块。"><b>Setup scores.</b> How much of the pattern has confirmed — and what's still missing.</li>
+        <li data-zh="<b>洗盘监测。</b>投降式杀跌当天标注。"><b>Washout watch.</b> Capitulation flagged same-day.</li>
+        <li data-zh="<b>形态分数。</b>已确认多少，一目了然。"><b>Setup scores.</b> How much has confirmed.</li>
         <li data-zh="<b>默认诚实。</b>「仍属早期」就印在卡片上。"><b>Honest by default.</b> "Still early" is printed right on the card.</li>
       </ul>
       <a class="feat-cta" href="special_situations.html" data-zh="打开特殊机会 →">Open special situations →</a>
@@ -983,11 +1033,11 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
     <div class="feat-copy rv">
       <span class="kicker" data-zh="聪明钱">Smart money</span>
       <h2 class="feat-title" data-zh="基金做了什么——<br>而非说了什么。">What funds did —<br>not what they said.</h2>
-      <p class="feat-sub" data-zh="每季度，356只追踪基金申报真实持仓。Mastermind 把<b>加仓、减仓和新建仓</b>映射到你正盯的同一批个股上——带四个季度的记忆。">Every quarter, 356 tracked funds file what they actually hold. Mastermind maps the <b>adds, trims and fresh stakes</b> onto the same names you're watching — with four quarters of memory.</p>
+      <p class="feat-sub" data-zh="每季度，356只追踪基金申报真实持仓。Mastermind 把<b>加仓、减仓和新建仓</b>映射到你的个股上。">Every quarter, 356 tracked funds file what they hold. Mastermind maps the <b>adds, trims and fresh stakes</b> onto your names.</p>
       <ul class="fx">
         <li data-zh="<b>追踪 356 只基金</b>——从 Appaloosa 到 Bridgewater。"><b>356 funds tracked</b> — from Appaloosa to Bridgewater.</li>
-        <li data-zh="<b>四个季度的记忆。</b>一笔新建仓，若是持续加码，分量更重。"><b>Four quarters of memory.</b> A new stake means more when it's been building.</li>
-        <li data-zh="<b>映射到你的个股。</b>基金动作会出现在它们触及的个股页上。"><b>Mapped to your names.</b> Fund moves appear on the stock pages they touch.</li>
+        <li data-zh="<b>四个季度的记忆。</b>持续加码的仓位分量更重。"><b>Four quarters of memory.</b> Building stakes weigh more.</li>
+        <li data-zh="<b>映射到你的个股。</b>动作直接出现在个股页上。"><b>Mapped to your names.</b> Moves appear on the stock pages.</li>
       </ul>
       <a class="feat-cta" href="smart_money.html" data-zh="打开 13F 台席 →">Open the 13F desk →</a>
     </div>
@@ -1007,11 +1057,11 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
     <div class="feat-copy rv">
       <span class="kicker" data-zh="不止股票">Beyond equities</span>
       <h2 class="feat-title" data-zh="比特币。黄金。美元。">Bitcoin. Gold. The dollar.</h2>
-      <p class="feat-sub" data-zh="股票只是一个市场。台席还跑<b>比特币的周期、大宗商品的格局，以及美元的压力图</b>——同一套引擎，同样的大白话。">Stocks are one market. The desk also runs <b>Bitcoin through its cycle, commodities through their regimes, and the dollar's pressure map</b> — same engines, same plain words.</p>
+      <p class="feat-sub" data-zh="股票只是一个市场。台席还跑<b>比特币、大宗商品与美元</b>——同一套引擎，同样的大白话。">Stocks are one market. The desk also runs <b>Bitcoin, commodities and the dollar</b> — same engines, same plain words.</p>
       <ul class="fx">
-        <li data-zh="<b>比特币，看周期。</b>这轮周期走到哪——以及以往到这意味着什么。"><b>Bitcoin, cycle-timed.</b> Where this cycle sits — and what that has meant before.</li>
+        <li data-zh="<b>比特币，看周期。</b>这轮走到哪、以往意味着什么。"><b>Bitcoin, cycle-timed.</b> Where this cycle sits, and what that has meant.</li>
         <li data-zh="<b>大宗商品格局。</b>黄金、原油、铜，用同样诚实的方式解读。"><b>Commodity regimes.</b> Gold, oil and copper read the same honest way.</li>
-        <li data-zh="<b>美元压力图。</b>当汇率在推动市场时，你会第一时间知道。"><b>The dollar's pressure map.</b> When FX is doing the pushing, you'll know.</li>
+        <li data-zh="<b>美元压力图。</b>汇率在推动市场时，第一时间知道。"><b>The dollar's pressure map.</b> When FX is pushing, you'll know.</li>
       </ul>
       <a class="feat-cta" href="btc_strategy.html" data-zh="打开周期看板 →">Open the cycle boards →</a>
     </div>
@@ -1030,23 +1080,23 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
               </svg>
               <p class="w" data-zh="<b>周期后段</b>保护利润——此处别加仓。"><b>Late cycle</b>Protect gains — don't add here.</p>
             </div>
-            <div class="mini-row" style="margin-top:7px"><span class="a">BTC</span><span class="p2 lvp tnum" data-p="58964" data-s="42" data-d="0">$58,964</span><span class="v up lv tnum" data-v="0.8">+0.8%</span></div>
+            <div class="mini-row" style="margin-top:7px"><span class="a">BTC</span><span class="p2 lvp tnum" data-p="65895" data-s="42" data-d="0" data-sym="BTC-USD">$65,895</span><span class="v dn lv tnum" data-v="-0.9" data-sym="BTC-USD">−0.9%</span></div>
           </div>
           <div class="tri-p">
             <p class="tt" data-zh="大宗商品">COMMODITIES</p>
             <div style="margin-top:6px">
-              <div class="mini-row"><span class="a" data-zh="黄金">Gold</span><span class="p2 lvp tnum" data-p="3412" data-s="1.6" data-d="0">$3,412</span><span class="v up lv tnum" data-v="0.4">+0.4%</span></div>
-              <div class="mini-row"><span class="a" data-zh="原油">Oil</span><span class="p2 lvp tnum" data-p="71.84" data-s="0.09" data-d="2">$71.84</span><span class="v dn lv tnum" data-v="-1.1">−1.1%</span></div>
-              <div class="mini-row"><span class="a" data-zh="铜">Copper</span><span class="p2 lvp tnum" data-p="5.02" data-s="0.01" data-d="2">$5.02</span><span class="v up lv tnum" data-v="0.8">+0.8%</span></div>
+              <div class="mini-row"><span class="a" data-zh="黄金">Gold</span><span class="p2 lvp tnum" data-p="4135" data-s="2.2" data-d="0" data-sym="GC=F">$4,135</span><span class="v up lv tnum" data-v="1.4" data-sym="GC=F">+1.4%</span></div>
+              <div class="mini-row"><span class="a" data-zh="原油">Oil</span><span class="p2 lvp tnum" data-p="86.48" data-s="0.09" data-d="2" data-sym="CL=F">$86.48</span><span class="v up lv tnum" data-v="2.5" data-sym="CL=F">+2.5%</span></div>
+              <div class="mini-row"><span class="a" data-zh="铜">Copper</span><span class="p2 lvp tnum" data-p="6.49" data-s="0.01" data-d="2" data-sym="HG=F">$6.49</span><span class="v dn lv tnum" data-v="-0.9" data-sym="HG=F">−0.9%</span></div>
             </div>
             <p class="fx-note" data-zh="<b>黄金领跑</b>——避险买盘，已连续三周。"><b>Gold leading</b> — defensive bid, three weeks running.</p>
           </div>
           <div class="tri-p">
             <p class="tt" data-zh="外汇 — 美元">FX — THE DOLLAR</p>
-            <div class="dxy"><span class="n tnum lvd" data-p="104.21" data-s="0.05">104.21</span><span class="tag2" data-zh="趋弱">EASING</span></div>
+            <div class="dxy"><span class="n tnum lvd" data-p="101.12" data-s="0.05" data-sym="DX-Y.NYB">101.12</span><span class="tag2" data-zh="趋弱">EASING</span></div>
             <div style="margin-top:6px">
-              <div class="mini-row"><span class="a">EUR/USD</span><span class="v up lv tnum" data-v="0.3">+0.3%</span></div>
-              <div class="mini-row"><span class="a">USD/JPY</span><span class="v dn lv tnum" data-v="-0.4">−0.4%</span></div>
+              <div class="mini-row"><span class="a">EUR/USD</span><span class="v up lv tnum" data-v="0.1" data-sym="EURUSD=X">+0.1%</span></div>
+              <div class="mini-row"><span class="a">USD/JPY</span><span class="v dn lv tnum" data-v="-0.1" data-sym="USDJPY=X">−0.1%</span></div>
             </div>
             <p class="fx-note" data-zh="<b>压力趋弱</b>——只要还持续，就是风险资产的顺风。"><b>Pressure easing</b> — a tailwind for risk, while it lasts.</p>
           </div>
@@ -1059,17 +1109,30 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
 <!-- ══════════════ MASTERMIND AI ══════════════ -->
 <section class="section-pad hair-top" id="ai">
   <div class="wrap">
-    <div class="sec-head rv">
-      <span class="kicker" data-zh="Mastermind AI">Mastermind AI</span>
-      <h2 class="sec-title" data-zh="一位真正<br>读过全部功课的分析师。">An analyst who has<br>actually done the reading.</h2>
-      <p class="sec-sub" data-zh="每个回答都取自<b>神经网络</b>——一张让每个信号、台席与格局相互校验的图。它知道今天的风险、本周的日历、还有你的那张图。<b>它负责解释；由引擎做决定。</b>">Every answer draws on the <b>Neural Web</b> — the graph where every signal, desk and regime cross-checks the others. It knows today's risk, this week's calendar, and your chart. <b>It explains; the engines decide.</b></p>
-    </div>
     <div class="ai-wrap">
-      <div class="rv">
+      <div class="ai-copy rv">
+        <span class="kicker" data-zh="Mastermind AI">Mastermind AI</span>
+        <h2 class="sec-title" data-zh="一位真正<br>读过全部功课的分析师。">An analyst who has<br>actually done the reading.</h2>
+        <p class="sec-sub" data-zh="它先读完每个台席才开口——信号、申报、期权流与宏观格局相互校验。<b>它负责解释；由引擎做决定。</b>">It reads every desk before it answers — signals, filings, flow and the regime, cross-checked. <b>It explains; the engines decide.</b></p>
+        <div class="cap-row">
+          <span class="cap" data-zh="<b>读图画图</b>——点位实时画出"><b>Reads the chart</b> — levels drawn live</span>
+          <span class="cap" data-zh="<b>通晓每个台席</b>——信号 · 申报 · 期权流"><b>Knows every desk</b> — signals · filings · flow</span>
+          <span class="cap" data-zh="<b>盯着风险</b>——格局与财报日历"><b>Watches risk</b> — regime &amp; earnings</span>
+          <span class="cap" data-zh="能<b>操控</b> Terminal"><b>Drives</b> the Terminal</span>
+        </div>
+      </div>
+      <div class="rv" style="--d:.1s">
         <div class="chat">
           <div class="chat-head">
             <span class="who"><i></i>MASTERMIND AI</span>
-            <span class="model-chip">FLASH</span>
+            <div class="mseg" id="mseg" tabindex="0">
+              <button type="button" class="on" data-m="flash">⚡ Flash AI</button>
+              <button type="button" data-m="pro">🔬 Pro AI</button>
+              <div class="mpop" role="tooltip">
+                <div class="r"><span class="ic">⚡</span><span><b>Flash AI</b><span data-zh="即时回答，基于实时看板。Insider 无限量。">Instant answers on the live boards. Unlimited on Insider.</span></span></div>
+                <div class="r"><span class="ic">🔬</span><span><b>Pro AI</b><span data-zh="20页、附出处的深度研究。Insider 每月20份 · Pro 每月50份。">20-page cited deep dives. 20/mo on Insider · 50/mo on Pro.</span></span></div>
+              </div>
+            </div>
           </div>
           <div class="thread" id="chat-thread" aria-live="polite"></div>
           <div class="composer">
@@ -1079,108 +1142,6 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
             </span>
           </div>
         </div>
-        <div class="cap-row">
-          <span class="cap" data-zh="<b>技术面</b>读取并绘制"><b>Technicals</b> read &amp; drawn</span>
-          <span class="cap" data-zh="<b>神经网络</b>上下文"><b>Neural-Web</b> context</span>
-          <span class="cap" data-zh="懂<b>风险与日历</b>"><b>Risk &amp; calendar</b> aware</span>
-          <span class="cap" data-zh="能<b>操控</b> Terminal"><b>Drives</b> the Terminal</span>
-        </div>
-        <div class="cap-row" style="margin-top:10px">
-          <span class="cap" style="background:var(--blue-wash);border-color:transparent" data-zh="⚡ <b>快答</b> — 即时，Insider 无限量">⚡ <b>Flash</b> — instant, unlimited on Insider</span>
-          <span class="cap" style="background:var(--blue-wash);border-color:transparent" data-zh="🔬 <b>Pro 研究</b> — 附带出处的深度分析">🔬 <b>Pro Research</b> — deep dives with receipts</span>
-        </div>
-      </div>
-      <div class="rv" style="--d:.12s">
-        <div class="web-plate">
-          <svg viewBox="0 0 560 400" role="img" aria-label="The Neural Web: signal engines, desks and regimes drawn as an interconnected graph.">
-            <defs>
-              <radialGradient id="coreG" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#ffffff"/><stop offset="55%" stop-color="#cfd9ff"/><stop offset="100%" stop-color="#cfd9ff" stop-opacity="0"/>
-              </radialGradient>
-              <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
-            </defs>
-            <rect width="560" height="400" fill="#0b1120"/>
-            <g opacity=".35" filter="url(#soft)">
-              <circle cx="150" cy="120" r="60" fill="#2f63c4" opacity=".25"/>
-              <circle cx="430" cy="110" r="55" fill="#b07d05" opacity=".22"/>
-              <circle cx="120" cy="300" r="55" fill="#7c6cff" opacity=".22"/>
-              <circle cx="440" cy="300" r="60" fill="#1f8b41" opacity=".2"/>
-            </g>
-            <!-- MAIN curved edges (ids used by the living-pulse IIFE) -->
-            <g fill="none" stroke-width="1.1">
-              <path id="nw-e0" d="M280 200 C 230 170, 190 150, 150 120" stroke="#5b79b8" opacity=".55"/>
-              <path id="nw-e1" d="M280 200 C 330 170, 380 140, 430 110" stroke="#a58a3d" opacity=".5"/>
-              <path id="nw-e2" d="M280 200 C 230 235, 175 270, 120 300" stroke="#8b7ce0" opacity=".5"/>
-              <path id="nw-e3" d="M280 200 C 335 235, 390 270, 440 300" stroke="#4f9c6b" opacity=".55"/>
-              <path id="nw-e4" d="M280 200 C 300 150, 310 115, 320 88" stroke="#7d8fb5" opacity=".45"/>
-              <path id="nw-e5" d="M280 200 C 320 260, 330 290, 330 322" stroke="#7d8fb5" opacity=".4"/>
-              <path class="syn-f" d="M150 120 C 200 90, 260 80, 320 88" stroke="#5b79b8" opacity=".35"/>
-              <path class="syn-f" d="M430 110 C 400 160, 390 200, 380 250" stroke="#a58a3d" opacity=".35"/>
-              <path d="M120 300 C 190 320, 260 330, 330 322" stroke="#8b7ce0" opacity=".35"/>
-              <path class="syn-f" d="M440 300 C 420 250, 410 210, 400 160" stroke="#4f9c6b" opacity=".3"/>
-              <path d="M150 120 C 140 190, 130 250, 120 300" stroke="#6b7da5" opacity=".25"/>
-              <path class="syn-f" d="M320 88 C 370 95, 405 100, 430 110" stroke="#6b7da5" opacity=".3"/>
-              <path class="syn-f contra" d="M280 200 C 250 260, 200 290, 170 340" stroke="#c14b4b" opacity=".5" stroke-dasharray="4 4"/>
-            </g>
-            <!-- minor connective edges: satellites → hubs + cross-cluster links -->
-            <g fill="none" stroke-width=".7">
-              <path d="M150 120 C 175 108, 185 102, 196 98" stroke="#4f7ede" opacity=".22"/>
-              <path d="M150 120 C 138 138, 128 150, 118 160" stroke="#4f7ede" opacity=".2"/>
-              <path d="M430 110 C 448 124, 460 136, 470 146" stroke="#d8a33e" opacity=".22"/>
-              <path d="M430 110 C 414 98, 402 90, 392 84" stroke="#d8a33e" opacity=".2"/>
-              <path d="M120 300 C 104 284, 94 270, 86 258" stroke="#9d8dff" opacity=".22"/>
-              <path d="M120 300 C 140 316, 156 328, 168 338" stroke="#9d8dff" opacity=".2"/>
-              <path d="M440 300 C 458 284, 470 272, 478 262" stroke="#3fae6d" opacity=".22"/>
-              <path d="M440 300 C 424 316, 408 328, 396 336" stroke="#3fae6d" opacity=".2"/>
-              <path d="M196 98 C 240 70, 300 66, 344 60" stroke="#6b7da5" opacity=".16"/>
-              <path d="M470 146 C 494 190, 500 250, 478 296" stroke="#7d8fb5" opacity=".16"/>
-            </g>
-            <!-- far satellite nodes near the edges -->
-            <g>
-              <circle cx="344" cy="58" r="2.4" fill="#8fa8e8" opacity=".6"/>
-              <circle cx="514" cy="196" r="2.6" fill="#d8a33e" opacity=".55"/>
-              <circle cx="46" cy="212" r="2.4" fill="#9d8dff" opacity=".55"/>
-              <circle cx="246" cy="366" r="2.2" fill="#3fae6d" opacity=".55"/>
-            </g>
-            <!-- minor nodes clustered around the four hubs -->
-            <g>
-              <circle cx="178" cy="146" r="2.2" fill="#4f7ede" opacity=".7"/><circle cx="132" cy="98" r="1.8" fill="#4f7ede" opacity=".6"/>
-              <circle cx="210" cy="132" r="2" fill="#4f7ede" opacity=".62"/><circle cx="116" cy="132" r="1.7" fill="#4f7ede" opacity=".55"/>
-              <circle cx="452" cy="92" r="2.2" fill="#d8a33e" opacity=".7"/><circle cx="412" cy="140" r="1.9" fill="#d8a33e" opacity=".6"/>
-              <circle cx="466" cy="118" r="1.7" fill="#d8a33e" opacity=".55"/><circle cx="404" cy="104" r="2" fill="#d8a33e" opacity=".6"/>
-              <circle cx="98" cy="322" r="2.2" fill="#9d8dff" opacity=".7"/><circle cx="148" cy="276" r="1.9" fill="#9d8dff" opacity=".6"/>
-              <circle cx="142" cy="316" r="1.7" fill="#9d8dff" opacity=".55"/><circle cx="104" cy="278" r="2" fill="#9d8dff" opacity=".6"/>
-              <circle cx="462" cy="326" r="2.2" fill="#3fae6d" opacity=".7"/><circle cx="418" cy="272" r="1.9" fill="#3fae6d" opacity=".6"/>
-              <circle cx="424" cy="322" r="1.7" fill="#3fae6d" opacity=".55"/><circle cx="466" cy="286" r="2" fill="#3fae6d" opacity=".6"/>
-            </g>
-            <g>
-              <circle class="nw-halo" cx="280" cy="200" r="40" fill="url(#coreG)"/>
-              <circle cx="280" cy="200" r="26" fill="url(#coreG)"/>
-              <circle cx="280" cy="200" r="9" fill="#ffffff"/>
-              <circle cx="150" cy="120" r="7" fill="#4f7ede"/><circle cx="196" cy="98" r="4.5" fill="#4f7ede"/><circle cx="118" cy="160" r="4.5" fill="#4f7ede"/>
-              <circle cx="320" cy="88" r="6" fill="#8fa8e8"/>
-              <circle cx="430" cy="110" r="7" fill="#d8a33e"/><circle cx="470" cy="146" r="4.5" fill="#d8a33e"/><circle cx="392" cy="84" r="4.5" fill="#d8a33e"/>
-              <circle cx="120" cy="300" r="7" fill="#9d8dff"/><circle cx="86" cy="258" r="4.5" fill="#9d8dff"/><circle cx="168" cy="338" r="4.5" fill="#9d8dff"/>
-              <circle cx="440" cy="300" r="7" fill="#3fae6d"/><circle cx="478" cy="262" r="4.5" fill="#3fae6d"/><circle cx="396" cy="336" r="4.5" fill="#3fae6d"/>
-              <circle cx="330" cy="322" r="6" fill="#5eead4"/>
-              <circle cx="380" cy="250" r="5" fill="#e0b151"/>
-              <circle cx="170" cy="340" r="5" fill="#e06464"/>
-            </g>
-            <g font-family="Archivo, sans-serif" font-size="9.5" font-weight="600" fill="#aeb9d0" letter-spacing=".08em">
-              <text x="280" y="242" text-anchor="middle" fill="#e8edf8" font-size="10.5" data-zh="神经网络">NEURAL WEB</text>
-              <text x="150" y="104" text-anchor="middle" data-zh="美股看板">US BOARD</text>
-              <text x="320" y="74" text-anchor="middle" data-zh="宏观格局">MACRO REGIME</text>
-              <text x="430" y="94" text-anchor="middle" data-zh="中国及国际">CHINA &amp; INTL</text>
-              <text x="120" y="284" text-anchor="middle" data-zh="期权流">OPTIONS FLOW</text>
-              <text x="86" y="244" text-anchor="middle" data-zh="国会">CONGRESS</text>
-              <text x="440" y="284" text-anchor="middle" data-zh="风险雷达">RISK RADAR</text>
-              <text x="478" y="248" text-anchor="middle" data-zh="比特币周期">BTC CYCLE</text>
-              <text x="330" y="342" text-anchor="middle" data-zh="Prophet">PROPHET</text>
-              <text x="170" y="358" text-anchor="middle" fill="#e08b8b" data-zh="相互矛盾">CONTRADICTS</text>
-            </g>
-          </svg>
-        </div>
-        <p class="web-cap" data-zh="神经网络——每个信号在抵达你之前，都先在这张图上互相校验。<span style='color:var(--faint)'>（示意图）</span>">The Neural Web — every signal is cross-checked against the graph before it reaches you. <span style="color:var(--faint)">(illustrative view)</span></p>
       </div>
     </div>
   </div>
@@ -1203,7 +1164,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <h3 data-zh="免费">Free</h3>
         <p class="who" data-zh="每日研判、六条信号、Terminal——永久免费。">The daily read, six signals, the Terminal — forever.</p>
         <div class="price">$0</div>
-        <p class="gist" data-zh="<b>全部看板与情报台席</b>、每日宏观研判、<b>每天 6 条买入信号</b>，以及完整的 Terminal 图表。无需绑卡，没有倒计时。"><b>Every dashboard and intel desk</b>, the daily macro read, <b>6 buy signals a day</b>, and full Terminal charting. No card, no clock.</p>
+        <p class="gist" data-zh="每日研判、<b>全部宏观看板</b>、<b>每天 6 条信号</b>、完整 Terminal。无需绑卡。">The daily read, <b>every macro dashboard</b>, <b>6 signals a day</b>, full Terminal. No card.</p>
         <a class="btn" href="start.html" style="justify-content:center" data-zh="免费开始">Start free</a>
       </div>
       <div class="tier hot rv" style="--d:.1s">
@@ -1211,7 +1172,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <p class="who" data-zh="随叫随到的分析师，配上完整的工作台席。">The working desk, with the analyst on call.</p>
         <div class="price" data-annual="$49" data-monthly="$59"><span class="was">$59</span>$49 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 17% · $588/年">SAVE 17% · $588/YR</span>
-        <p class="gist" data-zh="<b>无限量 Mastermind AI 快答</b>、每月 20 次 Pro 研究、<b>日内期权与资金流</b>、财报电话会记录、每日 AI 简报与研究报告。"><b>Unlimited Mastermind AI Flash</b>, 20 Pro Research runs a month, <b>intraday options &amp; flows</b>, call transcripts, daily AI briefs and research reports.</p>
+        <p class="gist" data-zh="<b>无限量 Flash AI</b>、每月 20 次 Pro AI、<b>日内期权流</b>、内部人/国会与 13F 台席、电话会记录、每日简报。"><b>Unlimited Flash AI</b>, 20 Pro AI dives a month, <b>intraday options flow</b>, the Insider/Congress &amp; 13F desks, transcripts, daily briefs.</p>
         <a class="btn primary" href="start.html" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
       </div>
       <div class="tier rv" style="--d:.16s">
@@ -1219,7 +1180,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <p class="who" data-zh="为那些提出更难问题的人准备。">For the ones who ask harder questions.</p>
         <div class="price" data-annual="$89" data-monthly="$109"><span class="was">$109</span>$89 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 18% · $1,068/年">SAVE 18% · $1,068/YR</span>
-        <p class="gist" data-zh="<b>每月 50 次 Pro 研究</b>、机构研究库<b>（摩根大通 · 花旗 · 摩根士丹利 · 瑞银 · 高盛 · 美银）</b>、Mastermind 机器人组合，以及即将上线的 MCP 服务器。"><b>50 Pro Research runs</b>, the institutional research library <b>(JPM · Citi · MS · UBS · GS · BofA)</b>, Mastermind Bot Portfolios, and the MCP server as it lands.</p>
+        <p class="gist" data-zh="<b>每月 50 次 Pro AI</b>、Mastermind 与机构研究报告、机器人组合、MCP 即将上线。"><b>50 Pro AI dives a month</b>, Mastermind + institutional research reports, Bot Portfolios, MCP soon.</p>
         <a class="btn" href="start.html" style="justify-content:center" data-zh="升级 Pro">Go Pro</a>
       </div>
     </div>
@@ -1237,34 +1198,30 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         </thead>
         <tbody>
           <tr class="grp"><td colspan="4" data-zh="情报 — 每日研判">INTELLIGENCE — THE DAILY READ</td></tr>
-          <tr><td class="feat" data-zh="每日宏观看板 <span>美国 · 中国 · 香港 · 加拿大 · 全球，每晚重建</span>">Daily macro dashboards <span>US · China · Hong Kong · Canada · global, rebuilt nightly</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat" data-zh="个股档案 <span>2,700+ 只，含趋势、阶段与持仓背景</span>">Stock dossiers <span>2,700+ names with trend, stage and ownership context</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat" data-zh="主题轮动 & 现在该做什么看板 <span>34 个主题，四条大白话通道</span>">Theme rotations &amp; act-now board <span>34 themes in four plain lanes</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat" data-zh="内部人 & 国会台席 <span>带入场时机的评分跟随候选</span>">Insider &amp; Congress desks <span>scored copy candidates with entry timing</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat" data-zh="特殊机会">Special situations</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat" data-zh="13F 机构资金流 <span>356 只追踪基金，四个季度记忆</span>">13F institutional flows <span>356 tracked funds, four quarters of memory</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat" data-zh="比特币 · 大宗 · 外汇策略">Bitcoin · Commodities · FX strategy</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-
+          <tr><td class="feat has-tip"><span class="ft" data-zh="每日宏观看板">Daily macro dashboards</span><span class="tipbox" data-zh="美国 · 中国 · 香港 · 加拿大 · 全球——每晚重建。">US · China · Hong Kong · Canada · global — rebuilt nightly.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr><td class="feat has-tip"><span class="ft" data-zh="个股档案">Stock dossiers</span><span class="tipbox" data-zh="2,700+ 只，含趋势、阶段与持仓背景。">2,700+ names with trend, stage and ownership context.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr><td class="feat has-tip"><span class="ft" data-zh="主题轮动通道">Theme rotation lanes</span><span class="tipbox" data-zh="34 个主题、四条大白话通道——通道名就是操作指令。">34 themes in four plain-word lanes — lane names are instructions.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="内部人 & 国会台席">Insider &amp; Congress desks</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="带入场时机的评分跟随候选。">Scored copy candidates with entry timing.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr><td class="feat"><span class="ft" data-zh="特殊机会">Special situations</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="13F 机构资金流">13F institutional flows</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="356 只追踪基金，四个季度记忆。">356 tracked funds, four quarters of memory.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr><td class="feat"><span class="ft" data-zh="比特币 · 大宗 · 外汇">Bitcoin · Commodities · FX</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4" data-zh="信号">SIGNALS</td></tr>
-          <tr><td class="feat" data-zh="每日买入信号 <span>出手前即锁定</span>">Daily buy signals <span>stamped before the move</span></td><td class="val" data-zh="6 条/天">6 / day</td><td class="val" data-zh="完整名册">Full book</td><td class="val" data-zh="完整名册">Full book</td></tr>
-          <tr><td class="feat" data-zh="公开战绩 & 复盘">Public track record &amp; autopsies</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr class="t-ins"><td class="feat" data-zh="每日 AI 晨间简报<span class='mchip ins'>INSIDER</span>">Daily AI morning brief<span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-
+          <tr><td class="feat has-tip"><span class="ft" data-zh="每日买入信号">Daily buy signals</span><span class="tipbox" data-zh="出手前即锁定——战绩公开可查。">Stamped before the move — with a public track record.</span></td><td class="val" data-zh="6 条/天">6 / day</td><td class="val" data-zh="完整名册">Full book</td><td class="val" data-zh="完整名册">Full book</td></tr>
+          <tr><td class="feat"><span class="ft" data-zh="公开战绩 & 复盘">Track record &amp; autopsies</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="每日 AI 晨间简报">Daily AI morning brief</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4">TERMINAL</td></tr>
-          <tr><td class="feat" data-zh="实时图表 <span>浏览器内，无需安装</span>">Live charting <span>in the browser, no install</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr class="t-ins"><td class="feat" data-zh="日内期权流 & 扫单<span class='mchip ins'>INSIDER</span>">Intraday options flow &amp; sweeps<span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr class="t-ins"><td class="feat" data-zh="财报电话会记录<span class='mchip ins'>INSIDER</span>">Earnings call transcripts<span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-
+          <tr><td class="feat has-tip"><span class="ft" data-zh="实时图表">Live charting</span><span class="tipbox" data-zh="浏览器内运行——无需安装。">In the browser — nothing to install.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="日内期权流">Intraday options flow</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="扫单与大宗成交实时打印。">Sweeps and blocks as they print.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="财报电话会记录">Earnings call transcripts</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4">MASTERMIND AI</td></tr>
-          <tr class="t-ins"><td class="feat" data-zh="快答分析师<span class='mchip ins'>INSIDER</span> <span>每页即时回答</span>">Flash analyst<span class="mchip ins">INSIDER</span> <span>instant answers on every page</span></td><td class="no">✗</td><td class="val" data-zh="无限量">Unlimited</td><td class="val" data-zh="无限量">Unlimited</td></tr>
-          <tr class="t-ins"><td class="feat" data-zh="Pro 研究<span class='mchip ins'>INSIDER</span> <span>附带出处的深度分析</span>">Pro Research<span class="mchip ins">INSIDER</span> <span>deep dives with receipts</span></td><td class="no">✗</td><td class="val" data-zh="20 次/月">20 / mo</td><td class="val" data-zh="50 次/月">50 / mo</td></tr>
-          <tr class="t-ins"><td class="feat" data-zh="操控 Terminal 图表<span class='mchip ins'>INSIDER</span>">Drives Terminal charts<span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft">Flash AI</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="每页即时回答。">Instant answers on every page.</span></td><td class="no">✗</td><td class="val" data-zh="无限量">Unlimited</td><td class="val" data-zh="无限量">Unlimited</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft">Pro AI</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="附带出处的深度分析。">Deep dives with receipts.</span></td><td class="no">✗</td><td class="val" data-zh="20 次/月">20 / mo</td><td class="val" data-zh="50 次/月">50 / mo</td></tr>
+          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="操控 Terminal 图表">Drives Terminal charts</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4" data-zh="研究">RESEARCH</td></tr>
-          <tr class="t-ins"><td class="feat" data-zh="Mastermind 研究报告<span class='mchip ins'>INSIDER</span>">Mastermind research reports<span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr class="t-pro"><td class="feat" data-zh="机构研究库<span class='mchip pro'>PRO</span> <span>摩根大通 · 花旗 · 摩根士丹利 · 瑞银 · 高盛 · 美银</span>">Institutional research library<span class="mchip pro">PRO</span> <span>JPM · Citi · Morgan Stanley · UBS · Goldman Sachs · BofA</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
-          <tr class="t-pro"><td class="feat" data-zh="Mastermind 机器人组合<span class='mchip pro'>PRO</span>">Mastermind Bot Portfolios<span class="mchip pro">PRO</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
-          <tr class="t-pro"><td class="feat" data-zh="MCP 服务器<span class='mchip pro'>PRO</span> <span>把 Mastermind 接入你自己的智能体</span>">MCP server<span class="mchip pro">PRO</span> <span>plug Mastermind into your own agents</span></td><td class="no">✗</td><td class="no">✗</td><td><span class="soon" data-zh="即将推出">COMING SOON</span></td></tr>
+          <tr class="t-pro"><td class="feat"><span class="ft" data-zh="Mastermind 研究报告">Mastermind research reports</span><span class="mchip pro">PRO</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
+          <tr class="t-pro"><td class="feat has-tip"><span class="ft" data-zh="机构研究库">Institutional research library</span><span class="mchip pro">PRO</span><span class="tipbox up" data-zh="摩根大通 · 花旗 · 摩根士丹利 · 瑞银 · 高盛 · 美银。">JPM · Citi · Morgan Stanley · UBS · Goldman Sachs · BofA.</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
+          <tr class="t-pro"><td class="feat"><span class="ft" data-zh="Mastermind 机器人组合">Mastermind Bot Portfolios</span><span class="mchip pro">PRO</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
+          <tr class="t-pro"><td class="feat has-tip"><span class="ft" data-zh="MCP 服务器">MCP server</span><span class="mchip pro">PRO</span><span class="tipbox up" data-zh="把 Mastermind 接入你自己的智能体。">Plug Mastermind into your own agents.</span></td><td class="no">✗</td><td class="no">✗</td><td><span class="soon" data-zh="即将推出">COMING SOON</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1338,80 +1295,7 @@ if (_lb) _lb.addEventListener('click', () => LANG.toggle());
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.classList.contains('open')){ close(); btn.focus(); } });
 })();
 
-/* ───── the web: strings from live pin positions ───── */
-const field = document.getElementById('field');
-const web = document.getElementById('web');
-const brainEl = document.getElementById('brain');
-const NS = 'http://www.w3.org/2000/svg';
-const SYNAPSES = [ ['sp-read','sp-econ'], ['sp-heat','sp-proph'], ['sp-proph','sp-ev'], ['sp-risk','sp-assets'] ];
 
-function ctr(el){ const f = field.getBoundingClientRect(), r = el.getBoundingClientRect();
-  return { x: r.left + r.width/2 - f.left, y: r.top + r.height/2 - f.top }; }
-
-function buildWeb(){
-  if (getComputedStyle(web).display === 'none') return;
-  const f = field.getBoundingClientRect();
-  web.setAttribute('viewBox', `0 0 ${f.width} ${f.height}`);
-  web.innerHTML = '';
-  const bc = ctr(brainEl.querySelector('svg'));
-  const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag);
-    for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
-
-  document.querySelectorAll('.pin[data-tether="brain"]').forEach((pin, i) => {
-    const p = ctr(pin), col = pin.dataset.color || '#285fff';
-    const dx = bc.x - p.x, dy = bc.y - p.y, dist = Math.hypot(dx, dy);
-    const rim = { x: bc.x - dx/dist*62, y: bc.y - dy/dist*62 };
-    const mid = { x: (p.x + rim.x)/2, y: (p.y + rim.y)/2 + Math.min(90, dist*.22) };
-    const d = `M${p.x} ${p.y} Q${mid.x} ${mid.y} ${rim.x} ${rim.y}`;
-    web.appendChild(mk('path', { d, class: 'string', stroke: col, id: `tether-${i}` }));
-    const g = mk('g', { class: 'pulses' });
-    const dot = mk('circle', { r: 2.6, fill: col, class: 'pulse' });
-    const am = mk('animateMotion', { dur: (4.5 + i*0.9) + 's', repeatCount: 'indefinite',
-      keyPoints: i % 3 === 2 ? '1;0' : '0;1', keyTimes: '0;1', calcMode: 'linear', begin: (i*0.7)+'s' });
-    const mp = mk('mpath', {}); mp.setAttributeNS('http://www.w3.org/1999/xlink','href',`#tether-${i}`);
-    am.appendChild(mp); dot.appendChild(am); g.appendChild(dot); web.appendChild(g);
-  });
-
-  SYNAPSES.forEach(([a, b]) => {
-    const ea = document.getElementById(a), eb = document.getElementById(b);
-    if (!ea || !eb) return;
-    const pa = ctr(ea.querySelector('.pin')), pb = ctr(eb.querySelector('.pin'));
-    const mid = { x: (pa.x + pb.x)/2, y: (pa.y + pb.y)/2 + 34 };
-    web.appendChild(mk('path', { d: `M${pa.x} ${pa.y} Q${mid.x} ${mid.y} ${pb.x} ${pb.y}`,
-      class: 'syn', stroke: '#8a95a4' }));
-  });
-}
-requestAnimationFrame(buildWeb);
-new ResizeObserver(() => requestAnimationFrame(buildWeb)).observe(field);
-window.addEventListener('load', buildWeb);
-
-/* ───── segmented odometer ───── */
-(function(){
-  const svg = document.getElementById('odo-svg');
-  const cx = 75, cy = 82, R = 58, SEGS = 26, GAP = 1.6;
-  const mk = (t,a)=>{ const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
-  const pol = (ang,r)=>{ const rad=(ang-90)*Math.PI/180; return [cx+r*Math.cos(rad), cy+r*Math.sin(rad)]; };
-  const col = t => { const h = t < .5 ? 4 + 41*(t/.5) : 45 + 95*((t-.5)/.5);
-    return `hsl(${h} ${t<.5?60:52}% ${t<.5?44:34}%)`; };
-  const [tx0,ty0]=pol(-80,R), [tx1,ty1]=pol(80,R);
-  svg.appendChild(mk('path',{d:`M${tx0} ${ty0} A${R} ${R} 0 0 1 ${tx1} ${ty1}`,fill:'none',stroke:'#eef0f4','stroke-width':11,'stroke-linecap':'round'}));
-  for(let i=0;i<SEGS;i++){
-    const a0=-80+160*i/SEGS, a1=-80+160*(i+1)/SEGS-GAP;
-    const [x0,y0]=pol(a0,R), [x1,y1]=pol(a1,R);
-    svg.appendChild(mk('path',{d:`M${x0} ${y0} A${R} ${R} 0 0 1 ${x1} ${y1}`,fill:'none',stroke:col(i/(SEGS-1)),'stroke-width':i%5===0?9:7,opacity:.92}));
-  }
-  [0,25,50,75,100].forEach(v=>{
-    const a=-80+160*v/100, [x0,y0]=pol(a,R+9), [x1,y1]=pol(a,R+13);
-    svg.appendChild(mk('line',{x1:x0,y1:y0,x2:x1,y2:y1,stroke:'#c3cad6','stroke-width':1.4,'stroke-linecap':'round'}));
-  });
-  const ng = mk('g',{id:'needle',style:'transform-origin:75px 82px;transform:rotate(-80deg);transition:transform 1.2s cubic-bezier(.3,.8,.3,1)'});
-  ng.appendChild(mk('path',{d:'M75 82 L71.8 78.5 L74 34 L76 34 L78.2 78.5 Z',fill:'#1c2430'}));
-  ng.appendChild(mk('circle',{cx:75,cy:36,r:2.6,fill:'#285fff'}));
-  svg.appendChild(ng);
-  svg.appendChild(mk('circle',{cx,cy,r:7.5,fill:'#fff',stroke:'#dfe3e9','stroke-width':1.5}));
-  svg.appendChild(mk('circle',{cx,cy,r:3.4,fill:'#1c2430'}));
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ document.getElementById('needle').style.transform='rotate(0deg)'; }));
-})();
 
 /* ───── quadrant popover: hover via CSS; click toggle for touch ───── */
 const reg = document.getElementById('reg-chip');
@@ -1420,16 +1304,6 @@ reg.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' '){ e.prev
 document.addEventListener('click', e => { if (!reg.contains(e.target)) reg.classList.remove('open'); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') reg.classList.remove('open'); });
 
-/* ───── events deck: fan upward on hover ───── */
-const deck = document.getElementById('deck');
-const spotEv = document.getElementById('sp-ev');
-if (matchMedia('(hover: hover)').matches) {
-  spotEv.addEventListener('mouseenter', () => deck.classList.add('fanned'));
-  spotEv.addEventListener('mouseleave', () => deck.classList.remove('fanned'));
-}
-deck.addEventListener('focus', () => deck.classList.add('fanned'));
-deck.addEventListener('blur', () => deck.classList.remove('fanned'));
-deck.addEventListener('click', () => deck.classList.toggle('fanned'));
 
 /* ───── reveal on scroll ───── */
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.08 });
@@ -1460,13 +1334,15 @@ LANG.onChange(applyPricing);
 /* ───── gentle live ticks: heatmap + econ/assets ───── */
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documentElement.classList.contains('still')) {
   const tiles = [...document.querySelectorAll('.hm')];
+  tiles.forEach(t => t.dataset.b = t.dataset.v);   // real baseline: jitter stays near it
   const bumpTile = t => {
+    const b = parseFloat(t.dataset.b);
     let v = parseFloat(t.dataset.v) + (Math.random()*.2 - .1);
-    v = Math.max(-4.9, Math.min(2.9, v));
+    v = Math.max(b - .4, Math.min(b + .4, v));
     t.dataset.v = v.toFixed(1);
     t.querySelector('.pc').textContent = (v>0?'+':'−') + Math.abs(v).toFixed(1) + '%';
-    t.classList.remove('u','d','d2');
-    t.classList.add(v >= 0 ? 'u' : (v <= -2 ? 'd2' : 'd'));
+    t.classList.remove('u','u2','d','d2');
+    t.classList.add(v >= 6 ? 'u2' : v >= 0 ? 'u' : (v <= -2 ? 'd2' : 'd'));
     t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 420);
   };
   function heatRound(){
@@ -1514,142 +1390,273 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
 const CALM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const STILL = document.documentElement.classList.contains('still');
 
-/* — risk radar: nudge one row's odds, animate bar + flash the percent — */
+/* — hero pyramid: one scripted regime cycle drives the gauge, the buy lane and
+     the filings feed in sync (Mixed → Risk On → back, ~26s). An illustrative
+     demo of the desks reacting together — each card is labelled "demo cycle";
+     the real read ships on the dashboards. — */
 (function(){
-  const rows = [...document.querySelectorAll('.s-risk .rr-row')];
-  if (!rows.length || CALM || STILL) return;
-  const CLAMP = [[5,45],[12,30],[5,14]];   // per-row bounds, top → bottom
-  function tick(){
-    if (document.hidden) { setTimeout(tick, 6000 + Math.random()*3000); return; }
-    const idx = Math.floor(Math.random()*rows.length), row = rows[idx];
-    const pc = row.querySelector('.pc'), bar = row.querySelector('.rr-track i');
-    const cur = parseInt(pc.textContent, 10) || CLAMP[idx][0];
-    const dir = Math.random() < .5 ? -1 : 1;
-    const next = Math.max(CLAMP[idx][0], Math.min(CLAMP[idx][1], cur + dir));
-    const up = next > cur;
-    pc.innerHTML = next + '%' + (idx === 0 && up ? ' <em>↑</em>' : '');
-    if (bar) bar.style.setProperty('--w', next + '%');
-    pc.classList.add('bump'); setTimeout(() => pc.classList.remove('bump'), 600);
-    setTimeout(tick, 6000 + Math.random()*3000);
-  }
-  setTimeout(tick, 6000 + Math.random()*3000);
-})();
-
-/* — today's read: gentle needle wobble, settles back to centre — */
-(function(){
-  const wobble = () => {
-    const n = document.getElementById('needle');
-    if (n) { n.style.transform = 'rotate(' + (Math.random()*5-2.5).toFixed(2) + 'deg)';
-      setTimeout(() => { n.style.transform = 'rotate(0deg)'; }, 900); }
-    setTimeout(wobble, 4500 + Math.random()*2500);
-  };
-  if (!CALM && !STILL) setTimeout(wobble, 4500 + Math.random()*2500);
-})();
-
-/* — terminal: candles + 20-bar average + entry zone — */
-(function(){
-  const svg = document.getElementById('candles'); if (!svg) return;
-  // plot geometry (viewBox 0 0 680 300)
-  const N=46, PX0=6, PX1=610;                 // plot x-span 604px
-  const CT=10, CB=232;                        // candle band (top/bottom)
-  const VT=238, VB=278;                       // volume band (top/bottom)
-  const TIME_Y=294;                           // time-axis label baseline
-  const AXIS_X=614, TICK_X=620, TAG_X=616;    // right price axis
-  const gap=4.73, bw=(PX1-PX0)/N-gap;         // slot 604/46 ≈ 13.13 → bar width ≈ 8.4
-  const AX='#6d7f9e', TIMEC='#56688c', MONO='ui-monospace,monospace';
-  const TIMES=['May 14','Jun 1','Jun 16','Jul 2','Jul 21'];   // real trading-day labels
-  const mkE=(t,a)=>{ const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
-  // REAL NVDA daily OHLCV — last 46 sessions through Jul 21 (data/baskets/ohlcv,
-  // volume pre-scaled to the 6..38 band; refresh at build waves)
-  const RO=[229.58,229.49,229.6,219.36,222.92,222.03,220.64,216.29,213.87,211.03,214.33,215.48,226.92,221.46,213.91,214.53,210.18,210.62,204.43,201.49,204.86,208.92,211.18,208.53,207.33,211.44,202.17,200.12,200.08,193.12,193.85,197.24,196.2,197.14,194.42,192.37,195.18,204.46,202.0,208.54,208.2,211.96,210.17,202.64,205.87,207.54];
-  const RH=[236.26,231.23,229.73,224.22,225.87,227.14,220.75,217.93,213.9,215.27,217.61,224.61,232.01,222.56,221.6,214.87,210.47,211.4,207.22,205.66,207.07,212.71,211.49,209.21,211.39,213.99,203.77,201.67,200.8,195.55,196.18,200.63,199.85,200.06,197.55,198.41,205.16,204.59,211.0,210.57,212.55,213.81,211.08,206.65,207.74,208.65];
-  const RL=[229.03,223.98,218.12,217.66,220.24,217.68,214.55,211.75,208.54,210.97,210.88,215.45,221.09,214.26,210.97,204.33,206.0,199.34,199.92,199.54,203.44,208.34,207.29,203.08,206.5,207.72,200.0,196.58,192.13,191.22,189.8,195.11,193.45,192.35,193.99,191.14,195.06,198.96,201.92,203.0,203.8,206.04,205.85,197.97,202.28,204.01];
-  const RC=[235.47,225.06,222.06,220.35,223.21,219.25,215.08,214.61,212.35,214.0,210.89,224.1,222.56,214.5,218.66,205.1,208.64,208.19,200.42,204.87,205.19,212.45,207.41,204.65,210.69,208.65,200.04,199.0,195.74,192.53,194.97,200.09,197.58,194.83,195.55,196.93,204.12,202.78,210.96,203.53,211.8,212.5,207.4,202.81,203.28,207.29];
-  const RV=[26.0,26.0,22.2,21.6,26.4,28.5,24.7,26.7,24.5,21.9,38.0,29.5,27.4,23.8,24.7,30.3,21.3,26.0,23.9,23.5,18.4,22.6,19.9,20.2,32.7,19.5,23.0,22.8,22.5,25.8,22.5,24.4,22.2,21.7,18.1,19.7,22.3,20.6,22.4,19.4,19.8,19.8,19.6,22.0,15.8,18.0];
-  const data=RO.map((o,i)=>({o,c:RC[i],h:RH[i],l:RL[i]})); const vol=RV.slice();
-  const bounds=()=>{ let lo=1e9,hi=-1e9; data.forEach(d=>{lo=Math.min(lo,d.l);hi=Math.max(hi,d.h)}); return {lo:lo-2,hi:hi+2}; };
-  const Y=(v,b)=>CB-(v-b.lo)/(b.hi-b.lo)*(CB-CT);           // price → y in candle band
-  const barX=i=>PX0+i*(bw+gap);                             // left edge of candle i
-  const VMAX=40, VY=v=>VB-Math.min(v,VMAX)/VMAX*(VB-VT);    // volume → y in volume band
-  // static structure: grid group, entry zone, right axis hairline
-  const grid=mkE('g',{stroke:'rgba(160,180,215,.09)','stroke-width':1});
-  svg.appendChild(grid);
-  svg.appendChild(mkE('rect',{x:460,y:CT,width:150,height:CB-CT,fill:'rgba(94,234,212,.05)'}));
-  svg.appendChild(mkE('line',{x1:460,y1:CT,x2:460,y2:CB,stroke:'rgba(94,234,212,.28)','stroke-width':1,'stroke-dasharray':'4 4'}));
-  svg.appendChild(mkE('line',{x1:AXIS_X,y1:CT,x2:AXIS_X,y2:CB,stroke:'rgba(160,180,215,.15)','stroke-width':1}));
-  // time axis (static labels + thin ticks)
-  const gT=mkE('g',{}); svg.appendChild(gT);
-  TIMES.forEach((lbl,k)=>{ const bi=Math.round(k*(N-1)/(TIMES.length-1)), cx=barX(bi)+bw/2;
-    gT.appendChild(mkE('line',{x1:cx,y1:VB+2,x2:cx,y2:VB+5,stroke:AX,'stroke-width':1,opacity:.6}));
-    const tx=mkE('text',{x:cx,y:TIME_Y,'text-anchor':'middle','font-family':MONO,'font-size':9,fill:TIMEC}); tx.textContent=lbl; gT.appendChild(tx); });
-  const gAx=mkE('g',{}), gW=mkE('g',{}), gB=mkE('g',{}), gV=mkE('g',{}),
-        ma=mkE('polyline',{fill:'none',stroke:'#60a5fa','stroke-width':1.6,opacity:.85,'stroke-linejoin':'round'}),
-        lastLine=mkE('line',{'stroke-width':1,'stroke-dasharray':'4 4'}),
-        tagRect=mkE('rect',{x:TAG_X,width:58,height:15,rx:3}),
-        tagTxt=mkE('text',{x:TAG_X+29,'text-anchor':'middle','font-family':MONO,'font-size':9.5,'font-weight':700,fill:'#fff'});
-  svg.appendChild(gV); svg.appendChild(gAx); svg.appendChild(gW); svg.appendChild(gB); svg.appendChild(ma);
-  svg.appendChild(lastLine); svg.appendChild(tagRect); svg.appendChild(tagTxt);
-  const pxEl=document.getElementById('term-px');
-  function draw(){
-    const b=bounds(); gW.innerHTML=''; gB.innerHTML=''; gV.innerHTML=''; gAx.innerHTML=''; grid.innerHTML='';
-    // price axis: 5 integer levels → gridlines + right-edge tick labels
-    const lo=Math.ceil(b.lo), hi=Math.floor(b.hi);
-    for(let k=0;k<5;k++){ const v=Math.round(lo+(hi-lo)*k/4), gy=Y(v,b);
-      grid.appendChild(mkE('line',{x1:PX0,y1:gy,x2:PX1,y2:gy}));
-      const tl=mkE('text',{x:TICK_X,y:gy,'font-family':MONO,'font-size':9.5,fill:AX,'dominant-baseline':'middle'}); tl.textContent=v; gAx.appendChild(tl); }
-    // volume bars (direction-colored, .30)
-    data.forEach((d,i)=>{ const up=d.c>=d.o, col=up?'#34d399':'#f87171', vy=VY(vol[i]);
-      gV.appendChild(mkE('rect',{x:barX(i),y:vy,width:bw,height:Math.max(1,VB-vy),fill:col,opacity:.30})); });
-    // candles
-    data.forEach((d,i)=>{ const x=barX(i), up=d.c>=d.o, col=up?'#34d399':'#f87171';
-      gW.appendChild(mkE('line',{x1:x+bw/2,y1:Y(d.h,b),x2:x+bw/2,y2:Y(d.l,b),stroke:col,'stroke-width':1,opacity:.9}));
-      const y1=Y(Math.max(d.o,d.c),b), y2=Y(Math.min(d.o,d.c),b);
-      gB.appendChild(mkE('rect',{x,y:y1,width:bw,height:Math.max(1.4,y2-y1),rx:1.4,fill:col})); });
-    // 20-bar moving average
-    ma.setAttribute('points', data.map((d,i)=>{ const s=Math.max(0,i-19); let sum=0,n=0;
-      for(let j=s;j<=i;j++){ sum+=data[j].c; n++; }
-      return (barX(i)+bw/2)+','+Y(sum/n,b); }).join(' '));
-    // last-price marker: dashed line + axis tag
-    const last=data[N-1], lc=last.c, ly=Y(lc,b), dcol=last.c>=last.o?'#34d399':'#f87171';
-    lastLine.setAttribute('x1',PX0); lastLine.setAttribute('x2',PX1);
-    lastLine.setAttribute('y1',ly); lastLine.setAttribute('y2',ly);
-    lastLine.setAttribute('stroke',dcol+'8c');
-    tagRect.setAttribute('y',ly-7.5); tagRect.setAttribute('fill',dcol);
-    tagTxt.setAttribute('y',ly+3.2); tagTxt.textContent=lc.toFixed(2);
-    if (pxEl) pxEl.textContent = lc.toFixed(2);
-  }
-  draw();
+  const card=document.getElementById('pp-read'); if(!card) return;
+  const needle=document.getElementById('needle'), arcf=document.querySelector('.gz-arcf'),
+        num=document.getElementById('gz-score'), word=document.getElementById('gz-word'),
+        stance=document.getElementById('gz-stance'), chipsBox=document.getElementById('act-chips'),
+        feed=document.getElementById('pi-feed');
+  const zh=()=>LANG.cur()==='zh';
+  const WORD={mixed:['Mixed','分化'],risk:['Risk On','风险偏好']};
+  const STANCE={mixed:["<b>Mixed — trade smaller, favour quality;</b> don't chase.","<b>分化——减小仓位、偏向优质；</b>不要追高。"],
+                risk:["<b>Risk On — add on dips;</b> leaders first.","<b>风险偏好——回调加仓；</b>先买领涨。"]};
+  const DEF=[['Big Pharma','大型药企',69],['Insurance','保险',67],['Utilities','公用事业',64]];
+  const RSK=[['AI Software','AI软件',71],['Semiconductors','半导体',74],['US Energy','美国能源',68]];
+  const POOL=[   // filings feed by regime band (roles only — no named people)
+    [['b','JNJ','Pharma · CFO','医药 · CFO',71],['b','SO','Utilities · Senate','公用事业 · 参议院',66],['b','PG','Staples · House','必需消费 · 众议院',63],['b','MRK','Pharma · House','医药 · 众议院',65]],
+    [['s','XLU','Utilities · Senate','公用事业 · 参议院',58],['b','NVDA','Semis · House','半导体 · 众议院',72],['s','KO','Staples · CEO','必需消费 · CEO',55],['b','MSFT','Software · CFO','软件 · CFO',68]],
+    [['b','NVDA','Semis · Senate','半导体 · 参议院',78],['b','MSFT','Software · CFO','软件 · CFO',74],['b','AVGO','Semis · House','半导体 · 众议院',76],['b','XLE','Energy · Senate','能源 · 参议院',69]]
+  ];
+  const SEED=[POOL[1][1],POOL[0][0],POOL[1][0],POOL[0][1]];
+  const sides=[0,0,0];
+  let curScore=50, isRisk=false;
+  const chipInner=i=>{ const src=sides[i]?RSK[i]:DEF[i];
+    return '<span class="nm">'+(zh()?src[1]:src[0])+'</span><b class="sc tnum'+(sides[i]?' hot':'')+'">'+chipScore(i,curScore)+'</b>'; };
+  function chipScore(i,s){ const base=(sides[i]?RSK[i]:DEF[i])[2];
+    return sides[i] ? base+Math.round(Math.max(0,s-58)/3) : base-Math.round(Math.max(0,s-52)/2); }
+  function renderChips(){ chipsBox.innerHTML='';
+    for(let i=0;i<3;i++){ const d=document.createElement('div'); d.className='pl-chip'; d.innerHTML=chipInner(i); chipsBox.appendChild(d); } }
+  function feedRow(r,anim){ const d=document.createElement('div'); d.className='pi-row'+(anim?' enter':'');
+    d.innerHTML='<span class="act '+r[0]+'">'+(r[0]==='b'?(zh()?'买入':'BUY'):(zh()?'卖出':'SELL'))+'</span><span class="tk">'+r[1]+'</span><span class="who">'+(zh()?r[3]:r[2])+'</span><span class="sc tnum">'+r[4]+'</span>';
+    feed.prepend(d); while(feed.children.length>5) feed.lastElementChild.remove(); }
+  function setScore(s){ num.textContent=Math.round(s);
+    needle.style.transform='rotate('+((s-50)*1.8).toFixed(1)+'deg)';
+    arcf.setAttribute('stroke-dasharray',(s/100*175.93).toFixed(1)+' 200'); }
+  function setStateWord(risk){ card.classList.toggle('risk',risk);
+    word.textContent=WORD[risk?'risk':'mixed'][zh()?1:0];
+    stance.innerHTML=STANCE[risk?'risk':'mixed'][zh()?1:0]; }
+  function statics(){ setScore(curScore); setStateWord(isRisk); renderChips();
+    feed.innerHTML=''; SEED.forEach(r=>feedRow(r,false)); }
+  if (CALM || STILL) needle.style.transition='none';
+  statics();
+  LANG.onChange(statics);
   if (CALM || STILL) return;
-  // live feel: the LAST (real) candle breathes a few cents around its true close —
-  // history is real and never fabricated, so no synthetic new candles are pushed.
-  const trueC = data[N-1].c;
-  setInterval(()=>{ if(document.hidden) return;
-    const last=data[N-1];
-    last.c = Math.round((trueC + (Math.random()-.5)*0.9)*100)/100;
-    last.h=Math.max(RH[N-1],last.c); last.l=Math.min(RL[N-1],last.c);
-    vol[N-1]=Math.min(38,Math.max(6, RV[N-1]+(Math.random()-.5)*3));
-    draw();
-  },1100);
+  needle.style.transition='transform .35s linear';
+  const UP=[58,61,64], DN=[56,59,62];
+  let t=0, beats=0, visible=false, prev=48, fi=[0,0,0];
+  function swapChip(i){ const el=chipsBox.children[i]; if(!el) return;
+    el.classList.add('out');
+    setTimeout(()=>{ el.innerHTML=chipInner(i); el.classList.remove('out');
+      el.classList.add('in0'); void el.offsetWidth; el.classList.remove('in0'); },420); }
+  setInterval(()=>{ if(document.hidden||!visible) return;
+    t+=.18; beats++;
+    const s=57+11*Math.sin(2*Math.PI*t/26-0.94); curScore=s;
+    setScore(s);
+    if(!isRisk&&s>=60) setStateWord(isRisk=true);
+    else if(isRisk&&s<57.5){ isRisk=false; setStateWord(false); }
+    for(let i=0;i<3;i++){
+      if(!sides[i]&&prev<UP[i]&&s>=UP[i]){ sides[i]=1; swapChip(i); }
+      else if(sides[i]&&prev>DN[i]&&s<=DN[i]){ sides[i]=0; swapChip(i); }
+    }
+    if(beats%8===0) [...chipsBox.children].forEach((el,i)=>{ const b=el.querySelector('.sc');
+      if(b&&!el.classList.contains('out')){ b.textContent=chipScore(i,s); b.classList.toggle('hot',!!sides[i]); } });
+    if(beats%15===0){ const band=s<54?0:(s<62?1:2); feedRow(POOL[band][fi[band]++%POOL[band].length],true); }
+    prev=s;
+  },180);
+  const pio=new IntersectionObserver(es=>es.forEach(e=>{ visible=e.isIntersecting; }),{threshold:.2});
+  pio.observe(card);
 })();
 
-/* — terminal: options-flow feed — */
+/* — pyramid on mobile: start the swipe strip centred on the front card — */
 (function(){
-  const box=document.getElementById('flow'); if(!box) return;
-  const TY={'CALL SWEEP':'看涨扫单','PUT SWEEP':'看跌扫单','BLOCK':'大宗交易'};
-  const SD={'ask-side':'扫买','at bid':'压价成交','bought':'买入','mid':'中间价'};
-  const POOL=[['CALL SWEEP','cs','NVDA','$2.4M','ask-side'],['BLOCK','bl','SPY','$18.2M','at bid'],
-    ['CALL SWEEP','cs','XLE','$1.1M','ask-side'],['PUT SWEEP','ps','QQQ','$6.0M','bought'],
-    ['CALL SWEEP','cs','MU','$860K','ask-side'],['PUT SWEEP','ps','ARKK','$540K','bought'],
-    ['BLOCK','bl','IWM','$9.4M','mid'],['CALL SWEEP','cs','MSFT','$1.9M','ask-side']];
-  let md=631, idx=0;
-  function row(anim){ const p=POOL[idx++%POOL.length]; md+=7; const zh=LANG.cur()==='zh';
-    const d=document.createElement('div'); d.className='fl-row'+(anim?' enter':'');
-    d.innerHTML=`<span class="tm">${Math.floor(md/60)}:${String(md%60).padStart(2,'0')}</span><span class="ty ${p[1]}">${zh?TY[p[0]]:p[0]}</span><span class="tk">${p[2]}</span><span>${zh?SD[p[4]]:p[4]}</span><span class="pm tnum">${p[3]}</span>`;
-    box.prepend(d); while(box.children.length>4) box.lastElementChild.remove(); }
-  function seed(){ box.innerHTML=''; md=631; idx=0; row(); row(); row(); row(); }
-  seed();
-  LANG.onChange(seed);
-  if (!CALM) setInterval(()=>{ if(!document.hidden) row(true); },3400);
+  const pyr=document.getElementById('pyr'), c=document.getElementById('pp-read');
+  if(!pyr||!c) return;
+  const centre=()=>{ if(getComputedStyle(pyr).display==='flex')
+    pyr.scrollLeft=c.offsetLeft-(pyr.clientWidth-c.offsetWidth)/2; };
+  requestAnimationFrame(centre); addEventListener('resize',centre);
+})();
+
+
+
+
+
+/* — Terminal showcase: a live 1-minute tape that never stops drawing.
+   The chart draws in bar by bar, then keeps going — the working bar ticks,
+   commits, and a fresh bar appends while the window slides. Anchors are REAL:
+   prev close 207.29 (Jul 21), the live session's real range 204.95–214.49 and
+   last print 211.07 (Jul 22); the 1-minute path is a walk held inside that
+   real envelope. SMA 9/21 + MACD(12,26,9) roll live; the time axis is the
+   real wall clock. Every price surface ticks from this one heartbeat. */
+(function(){
+  const svg=document.getElementById('tt-chart'); if(!svg) return;
+  const PREV=207.29, RLO=204.95, RHI=214.49, ANCHOR=211.07;
+  const N=110, WARM=150;                         // visible bars + indicator warm-up
+  const H=620, PT=8, PB=396, VT=404, VB=470, DIV=478, MT=486, MB=584, TAX=604, AXW=58, LP=4;
+  const GRN='#2ebd85', RED='#f6465d';
+  let dLO=204, dHI=216;
+  const MONO="ui-monospace,'SF Mono',Menlo,monospace", SVGNS='http://www.w3.org/2000/svg';
+  const mk=(t,a,pr)=>{ const e=document.createElementNS(SVGNS,t); for(const k in a) e.setAttribute(k,a[k]); (pr||svg).appendChild(e); return e; };
+  const py=v=>PB-(v-dLO)/(dHI-dLO)*(PB-PT);
+  const clampPx=v=>Math.max(RLO+.05,Math.min(RHI-.05,v));
+  // — generate the 1m session: walk inside the real envelope, re-anchored to the real last print —
+  const B=[];                                    // {t:minuteStamp, o,h,l,c,v}
+  (function(){
+    const cs=[]; let c=209.6, T=209.8;
+    for(let i=0;i<WARM+N;i++){ T=Math.max(206.5,Math.min(213.2,T+(Math.random()-.5)*.16));
+      c=clampPx(c+(Math.random()-.5)*.5+(T-c)*.01); cs.push(c); }
+    const shift=ANCHOR-cs[cs.length-1];
+    for(let i=0;i<cs.length;i++) cs[i]=clampPx(cs[i]+shift*(i/(cs.length-1)));
+    cs[cs.length-1]=ANCHOR;
+    const now=new Date(); now.setSeconds(0,0);
+    for(let i=0;i<cs.length;i++){ const o=i?cs[i-1]:cs[0], cc=cs[i];
+      B.push({ t:new Date(now.getTime()-(cs.length-1-i)*60000),
+        o:o, c:cc, h:Math.min(RHI,Math.max(o,cc)+Math.random()*.12),
+        l:Math.max(RLO,Math.min(o,cc)-Math.random()*.12), v:.15+Math.random()*.9 }); }
+  })();
+  // — rolling indicators (recomputed over the buffer; cheap at this size) —
+  function indi(){
+    const c=B.map(b=>b.c), m9=[], m21=[], md=[], sg=[], hs=[];
+    let e12=c[0], e26=c[0], e9=0;
+    for(let i=0;i<c.length;i++){
+      e12=e12+(c[i]-e12)*2/13; e26=e26+(c[i]-e26)*2/27;
+      const m=e12-e26; e9=i?e9+(m-e9)*2/10:m;
+      md.push(m); sg.push(e9); hs.push(m-e9);
+      m9.push(i>=8 ? c.slice(i-8,i+1).reduce((x,y)=>x+y)/9 : null);
+      m21.push(i>=20 ? c.slice(i-20,i+1).reduce((x,y)=>x+y)/21 : null);
+    }
+    return {m9,m21,md,sg,hs};
+  }
+  const $=id=>document.getElementById(id);
+  const tbLast=$('tb-last'), tbChg=$('tb-chg'), tbVol=$('tb-vol'), tbRngV=$('tb-rngv'), tbRngD=$('tb-rngd'),
+        qcPx=$('qc-px'), qcCh=$('qc-ch'), wlLa=$('wl-la'), wlCh=$('wl-ch');
+  let W=0, slot=0, bw=0, plotR=0, clipR=null, dataG=null, axG=null, lastLn=null, tagG=null, tagR=null, tagT=null, mtags=null, mext=.6;
+  const X=i=>LP+i*slot, CX=i=>X(i)+bw/2, VMAX=1.35, vy=v=>VB-Math.min(v,VMAX)/VMAX*(VB-VT);
+  const my=v=>(MT+MB)/2 - Math.max(-1,Math.min(1,v/mext))*((MB-MT)/2-4);
+  function scaffold(){
+    W=Math.max(300, svg.clientWidth||860);
+    svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.innerHTML='';
+    plotR=W-AXW; slot=(plotR-LP-4)/N; bw=Math.max(1.4, slot*.6);
+    mk('line',{x1:0,y1:DIV,x2:W,y2:DIV,stroke:'#1a2130','stroke-width':1});
+    axG=mk('g',{});
+    mk('line',{x1:plotR,y1:PT,x2:plotR,y2:MB,stroke:'#1a2130','stroke-width':1});
+    mk('line',{x1:LP,y1:my(0),x2:plotR,y2:my(0),stroke:'#1d2635','stroke-width':1});
+    const ml=mk('text',{x:10,y:MT+8,'font-family':MONO,'font-size':9,fill:'#7383a0'}); ml.textContent='MACD 12 26 9';
+    const defs=mk('defs',{}), cp=mk('clipPath',{id:'ttcp'},defs);
+    clipR=mk('rect',{x:0,y:0,width:W,height:H},cp);
+    dataG=mk('g',{'clip-path':'url(#ttcp)'});
+    lastLn=mk('line',{x1:LP,x2:plotR,y1:py(ANCHOR),y2:py(ANCHOR),'stroke-width':1,'stroke-dasharray':'3 3',opacity:.55});
+    tagG=mk('g',{}); tagR=mk('rect',{x:0,y:-8.5,width:AXW-2,height:17,rx:3},tagG);
+    tagT=mk('text',{x:(AXW-2)/2,y:3.5,'text-anchor':'middle','font-family':MONO,'font-size':10,'font-weight':700,fill:'#fff'},tagG);
+    mtags=[[GRN],['#22d3ee'],['#e8c34c']].map(c=>{
+      const tg=mk('g',{}); mk('rect',{x:0,y:-6.5,width:AXW-16,height:13,rx:2.5,fill:c[0]},tg);
+      const tx=mk('text',{x:(AXW-16)/2,y:3,'text-anchor':'middle','font-family':MONO,'font-size':8,'font-weight':700,fill:'#08131c'},tg);
+      return {g:tg,t:tx}; });
+  }
+  let liveB=null, liveW=null;
+  function redraw(){
+    const I=indi(), s0=B.length-N;
+    // auto-scale the price pane to the visible tape (axis breathes like a real terminal)
+    let lo=1e9, hi=-1e9;
+    for(let i=s0;i<B.length;i++){ lo=Math.min(lo,B[i].l); hi=Math.max(hi,B[i].h); }
+    const pad=(hi-lo)*.16+.04; dLO=lo-pad; dHI=hi+pad;
+    axG.innerHTML='';
+    const span=dHI-dLO, stp=span>4?1:(span>2?.5:.25);
+    for(let v=Math.ceil(dLO/stp)*stp; v<=dHI; v+=stp){ const y=py(v);
+      mk('line',{x1:LP,y1:y,x2:plotR,y2:y,stroke:'#151c28','stroke-width':1},axG);
+      const t=mk('text',{x:plotR+9,y:y+3,'font-family':MONO,'font-size':9.5,fill:'#5c6879'},axG); t.textContent=v.toFixed(2); }
+    mext=Math.max(.25, Math.max.apply(null,I.md.slice(s0).concat(I.sg.slice(s0)).map(Math.abs))*1.25);
+    dataG.innerHTML='';
+    for(let i=0;i<N;i++){ const b=B[s0+i];                       // time grid + labels (real wall clock)
+      if(b.t.getMinutes()%15===0){ mk('line',{x1:CX(i),y1:PT,x2:CX(i),y2:MB,stroke:'#131a25','stroke-width':1},dataG);
+        const t=mk('text',{x:CX(i),y:TAX,'text-anchor':'middle','font-family':MONO,'font-size':9,fill:'#5c6879'},dataG);
+        t.textContent=String(b.t.getHours()).padStart(2,'0')+':'+String(b.t.getMinutes()).padStart(2,'0'); } }
+    for(let i=0;i<N;i++){ const b=B[s0+i], up=b.c>=b.o, col=up?GRN:RED;
+      mk('rect',{x:X(i),y:vy(b.v),width:bw,height:VB-vy(b.v),fill:col,opacity:.32},dataG); }
+    for(let i=0;i<N;i++){ const b=B[s0+i], up=b.c>=b.o, col=up?GRN:RED;
+      const w=mk('line',{x1:CX(i),y1:py(b.h),x2:CX(i),y2:py(b.l),stroke:col,'stroke-width':1,opacity:.9},dataG);
+      const y1=py(Math.max(b.o,b.c)), y2=py(Math.min(b.o,b.c));
+      const r=mk('rect',{x:X(i),y:y1,width:bw,height:Math.max(1.2,y2-y1),rx:1,fill:col},dataG);
+      if(i===N-1){ liveW=w; liveB=r; } }
+    [[I.m9,'#f0a13c'],[I.m21,'#4f8ef7']].forEach(m=>{
+      mk('polyline',{points:m[0].slice(s0).map((v,i)=>v==null?'':CX(i)+','+py(v)).join(' ').trim(),
+        fill:'none',stroke:m[1],'stroke-width':1.5,opacity:.85,'stroke-linejoin':'round'},dataG); });
+    for(let i=0;i<N;i++){ const v=I.hs[s0+i], y0=my(0), y1=my(v);
+      mk('rect',{x:X(i),y:Math.min(y0,y1),width:bw,height:Math.max(1,Math.abs(y1-y0)),fill:v>=0?GRN:RED,opacity:.5},dataG); }
+    mk('polyline',{points:I.md.slice(s0).map((v,i)=>CX(i)+','+my(v)).join(' '),fill:'none',stroke:'#22d3ee','stroke-width':1.5},dataG);
+    mk('polyline',{points:I.sg.slice(s0).map((v,i)=>CX(i)+','+my(v)).join(' '),fill:'none',stroke:'#e8c34c','stroke-width':1.5},dataG);
+    for(let i=s0+1;i<B.length;i++){ const a=I.md[i-1]-I.sg[i-1], d=I.md[i]-I.sg[i];
+      if((a<=0&&d>0)||(a>=0&&d<0)) mk('circle',{cx:CX(i-s0),cy:my(I.md[i]),r:2.6,fill:d>0?GRN:RED,stroke:'#0b0e14','stroke-width':1},dataG); }
+    mtag(I);
+  }
+  const fmt=v=>v.toFixed(2), pfmt=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(2)+'%';
+  function tag(px,up){ const y=Math.max(PT+9,Math.min(PB-9,py(px)));
+    lastLn.setAttribute('y1',y); lastLn.setAttribute('y2',y); lastLn.setAttribute('stroke',up?GRN:RED);
+    tagG.setAttribute('transform','translate('+(plotR+1)+','+y+')');
+    tagR.setAttribute('fill',up?GRN:RED); tagT.textContent=fmt(px); }
+  function mtag(I){ const k=B.length-1, vals=[I.hs[k],I.md[k],I.sg[k]];
+    const ys=mtags.map((m,i)=>({m,v:vals[i],y:my(vals[i])})).sort((a,b)=>a.y-b.y);
+    for(let i=1;i<ys.length;i++) if(ys[i].y-ys[i-1].y<14) ys[i].y=ys[i-1].y+14;
+    ys.forEach(o=>{ const y=Math.max(MT+7,Math.min(MB-7,o.y));
+      o.m.g.setAttribute('transform','translate('+(plotR+1)+','+y+')'); o.m.t.textContent=o.v.toFixed(2); }); }
+  let dayVol=103.1;
+  function readouts(px){ const chg=(px/PREV-1)*100, up=chg>=0;
+    tbLast.textContent=fmt(px);
+    tbChg.textContent=pfmt(chg); tbChg.classList.toggle('up',up); tbChg.classList.toggle('dn',!up);
+    tbVol.textContent=dayVol.toFixed(1)+'M';
+    tbRngV.textContent=fmt(px);
+    tbRngD.style.left=Math.max(2,Math.min(98,(px-RLO)/(RHI-RLO)*100))+'%';
+    qcPx.textContent=fmt(px);
+    qcCh.textContent=pfmt(chg); qcCh.style.color=up?GRN:RED;
+    wlLa.textContent=fmt(px); wlCh.textContent=pfmt(chg);
+    wlCh.classList.toggle('up',up); wlCh.classList.toggle('dn',!up);
+    wlLa.classList.toggle('up',up); wlLa.classList.toggle('dn',!up);
+    tag(px,up); }
+  // watchlist neighbours + live-quote override hook (PR #3272 contract)
+  const wj=[[65894.53,-0.92,22],[1924.59,-0.23,1.1],[325.49,-0.69,.16],[387.50,-2.58,.2],[705.35,-0.51,.32]]
+    .map((v,i)=>{ const row=document.querySelector('.twl-r[data-w="'+i+'"]');
+      return row?{row,la:row.querySelector('.la'),ch:row.querySelector('.ch'),p:v[0],c:v[1],s:v[2]}:null; }).filter(Boolean);
+  const nfmt=v=>v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  window.__twlLive=(i,p,c)=>{ const o=wj.find(x=>x.row.dataset.w===String(i)); if(!o) return;
+    o.p=p; o.c=c; o.la.textContent=nfmt(p); o.ch.textContent=pfmt2(c);
+    o.ch.classList.toggle('up',c>=0); o.ch.classList.toggle('dn',c<0); };
+  const pfmt2=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(2)+'%';
+  function jiggle(){ const o=wj[Math.floor(Math.random()*wj.length)]; if(!o) return;
+    const d=(Math.random()-.5)*o.s; o.p=Math.round((o.p+d)*100)/100; o.c=Math.round((o.c+(d>0?1:-1)*Math.random()*.02)*100)/100;
+    o.la.textContent=nfmt(o.p); o.ch.textContent=pfmt2(o.c);
+    o.ch.classList.toggle('up',o.c>=0); o.ch.classList.toggle('dn',o.c<0);
+    o.row.classList.add(d>=0?'zu':'zd'); setTimeout(()=>o.row.classList.remove('zu','zd'),480); }
+  scaffold(); redraw();
+  const last=()=>B[B.length-1];
+  if (CALM || STILL){ readouts(last().c); return; }
+  readouts(last().c);
+  let mode='idle', visible=false, step=0;
+  function reveal(count){ clipR.setAttribute('width',X(count-1)+slot);
+    const b=B[B.length-N+count-1];
+    dayVol=103.1; readouts(b.c); }
+  function startDraw(){ mode='draw'; let c=1; clipR.setAttribute('width',0);
+    const t=setInterval(()=>{ if(document.hidden) return;
+      reveal(c); c++;
+      if(c>N){ clearInterval(t); clipR.setAttribute('width',W); readouts(last().c);
+        setTimeout(()=>{ mode='live'; },700); } },30); }
+  function mutate(){ const b=last();
+    b.c=clampPx(b.c+(Math.random()-.5)*.12+(210.9-b.c)*.004);
+    b.h=Math.min(RHI,Math.max(b.h,b.c)); b.l=Math.max(RLO,Math.min(b.l,b.c));
+    b.v=Math.min(1.3,b.v+Math.random()*.06); dayVol=Math.min(140,dayVol+Math.random()*.02);
+    const up=b.c>=b.o, col=up?GRN:RED,
+          y1=py(Math.max(b.o,b.c)), y2=py(Math.min(b.o,b.c));
+    if(liveB){ liveB.setAttribute('y',y1); liveB.setAttribute('height',Math.max(1.2,y2-y1)); liveB.setAttribute('fill',col); }
+    if(liveW){ liveW.setAttribute('y1',py(b.h)); liveW.setAttribute('y2',py(b.l)); liveW.setAttribute('stroke',col); }
+    readouts(b.c); }
+  function commit(){ const prev=last(), t=new Date(prev.t.getTime()+60000);
+    B.push({t, o:prev.c, c:prev.c, h:prev.c, l:prev.c, v:.12+Math.random()*.25});
+    while(B.length>WARM+N) B.shift();
+    redraw(); readouts(last().c); }
+  setInterval(()=>{ if(document.hidden||!visible||mode!=='live') return;
+    step++;
+    if(step%4===0) commit(); else mutate();
+    if(step%11===0) jiggle();
+  },800);
+  const io2=new IntersectionObserver(es=>es.forEach(e=>{ visible=e.isIntersecting;
+    if(visible&&mode==='idle') startDraw(); }),{threshold:.15});
+  io2.observe(svg);
+  let rt=null; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{
+    const w2=svg.clientWidth||0; if(Math.abs(w2-W)<9) return;
+    scaffold(); redraw(); clipR.setAttribute('width',W); readouts(last().c);
+    if(mode!=='idle') mode='live'; },200); });
 })();
 
 /* — rotation lanes: chips migrate (matched by stable data-key, not display text) — */
@@ -1668,7 +1675,7 @@ const STILL = document.documentElement.classList.contains('still');
     c.innerHTML=`<span class="nm2">${disp(n)}</span><span class="sc tnum">${sc}</span>`;
     wrap.querySelector(`[data-lane="${k}"]`).appendChild(c); });
   LANG.onChange(()=>wrap.querySelectorAll('.thm').forEach(c=>{ c.querySelector('.nm2').textContent=disp(c.dataset.key); }));
-  if (CALM) return;
+  if (CALM || STILL) return;
   const MOVES=[['AI Software','buy'],['Payments','alm'],['Regional Banks','sa'],
     ['AI Software','alm'],['Payments','tp'],['Regional Banks','tp']];
   let mi=0;
@@ -1708,7 +1715,7 @@ const STILL = document.documentElement.classList.contains('still');
   function seed(){ box.innerHTML=''; i=0; for(let k=0;k<6;k++) row(); }
   seed();
   LANG.onChange(seed);
-  if (!CALM) setInterval(()=>{ if(!document.hidden) row(true); },3600);
+  if (!CALM && !STILL) setInterval(()=>{ if(!document.hidden) row(true); },3600);
 })();
 
 /* — special situations cards — */
@@ -1731,7 +1738,7 @@ const STILL = document.documentElement.classList.contains('still');
   function paint(){ box.innerHTML=''; shown.forEach(ix=>box.appendChild(card(CARDS[ix]))); }
   paint();
   LANG.onChange(paint);
-  if (CALM) return;
+  if (CALM || STILL) return;
   let i=2;
   setInterval(()=>{ if(document.hidden) return;
     const slot=i%2; shown[slot]=i%CARDS.length;
@@ -1753,7 +1760,7 @@ const STILL = document.documentElement.classList.contains('still');
     box.appendChild(d);
     requestAnimationFrame(()=>requestAnimationFrame(()=>d.querySelector('i').style.setProperty('--w',r[5]+'%'))); });
   LANG.onChange(l=>box.querySelectorAll('.fd-row').forEach(d=>{ d.querySelector('.dt2').textContent=(l==='zh')?d._r[4]:d._r[3]; }));
-  if (CALM) return;
+  if (CALM || STILL) return;
   setInterval(()=>{ if(document.hidden) return;
     const bars=box.querySelectorAll('.fd-bar i');
     const b=bars[Math.floor(Math.random()*bars.length)];
@@ -1773,195 +1780,209 @@ const STILL = document.documentElement.classList.contains('still');
   dot.setAttribute('cy',(40-32*Math.sin(th)).toFixed(1));
 })();
 
-/* — Neural Web living light: SMIL pulse dots travelling the six main edges —
-   Skipped entirely under CALM / .still so captures stay static (CSS flicker /
-   halo breathe are opacity-only and already killed by the global .still rule). */
-(function(){
-  if (CALM || STILL) return;
-  const plate = document.querySelector('.web-plate svg'); if (!plate) return;
-  const NSx='http://www.w3.org/2000/svg', XL='http://www.w3.org/1999/xlink';
-  const HUB=['#4f7ede','#8fa8e8','#d8a33e','#9d8dff','#3fae6d','#5eead4'];
-  const DUR=[3.8,7,4.6,6.2,5.4,4.2], REV=[false,false,true,false,true,false];
-  const g=document.createElementNS(NSx,'g');
-  for(let i=0;i<6;i++){
-    const path=plate.querySelector('#nw-e'+i); if(!path) continue;
-    const dot=document.createElementNS(NSx,'circle');
-    dot.setAttribute('r','2'); dot.setAttribute('fill',HUB[i]); dot.setAttribute('opacity','.9');
-    const am=document.createElementNS(NSx,'animateMotion');
-    am.setAttribute('dur',DUR[i]+'s'); am.setAttribute('repeatCount','indefinite');
-    am.setAttribute('begin',(i*0.6)+'s'); am.setAttribute('calcMode','linear');
-    if(REV[i]){ am.setAttribute('keyPoints','1;0'); am.setAttribute('keyTimes','0;1'); }
-    const mp=document.createElementNS(NSx,'mpath'); mp.setAttributeNS(XL,'href','#nw-e'+i);
-    am.appendChild(mp); dot.appendChild(am); g.appendChild(dot);
-  }
-  plate.appendChild(g);
-})();
 
-/* — Mastermind AI: product-true scripted chat loop —
-   Types the question, streams the answer, draws a mini NVDA chart, holds, replays.
-   Fully skipped under CALM / .still → renders the final conversation statically.
-   All timers live in one array so a LANG change or reset can clear them cleanly. */
+/* — Mastermind AI: product-true scripted chat loop, three turns long —
+   Types the question at a readable pace, streams answers word by word, draws a
+   full-width NVDA chart from real candles, then keeps the conversation going:
+   falsifier checklist, then a cross-desk energy-vs-tech read with a compare
+   card. Skipped under CALM / .still → renders the final conversation statically.
+   All timers live in one array so a LANG change or reset clears them cleanly. */
 (function(){
   const thread = document.getElementById('chat-thread');
   const field  = document.getElementById('chat-field');
   const fieldTxt = document.getElementById('chat-field-txt');
   if (!thread) return;
-
-  const SEND_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg>';
-  const SCRIPT = {
-    q:        { en:'Is NVDA a buy right now?', zh:'NVDA 现在能买吗？' },
-    ph:       { en:'Ask about any dashboard…', zh:'就任何看板提问…' },
-    tool1:    { en:'reading the boards — regime · Prophet · options flow', zh:'正在读取看板——宏观格局 · Prophet · 期权流' },
-    a: [
+  const S = {
+    ph:    { en:'Ask about any dashboard…', zh:'就任何看板提问…' },
+    q1:    { en:'Is NVDA a buy right now?', zh:'NVDA 现在能买吗？' },
+    tool1: { en:'reading the boards — regime · Prophet · options flow', zh:'正在读取看板——宏观格局 · Prophet · 期权流' },
+    a1: [
       { en:"Not yet — watch, don't chase.", zh:'还不行——观望，别追高。' },
       { en:'The uptrend is intact and NVDA just reclaimed its 20-day — but the entry gate has been shut since Jul 14.', zh:'上升趋势完好，NVDA 刚收复20日线——但入场闸口自7月14日起仍关闭。' },
       { en:'If the gate reopens, the entry zone is 199–203 with a stop at the 191 swing low.', zh:'若闸口重开，入场区间 199–203，止损设在 191 前低。' }
     ],
-    tool2:    { en:'→ drawing NVDA 1D', zh:'→ 正在绘制 NVDA 日线' },
+    tool2: { en:'→ drawing NVDA 1D', zh:'→ 正在绘制 NVDA 日线' },
     entryChip:{ en:'ENTRY 199–203', zh:'ENTRY 199–203' },
     stopChip: { en:'STOP 191', zh:'STOP 191' },
-    act:      { en:'→ TERMINAL · NVDA 1D OPENED', zh:'→ TERMINAL · 已打开 NVDA 日线' }
+    act:   { en:'→ TERMINAL · NVDA 1D OPENED', zh:'→ TERMINAL · 已打开 NVDA 日线' },
+    q2:    { en:'What would prove this wrong?', zh:'什么情况会证明这个判断错了？' },
+    tool3: { en:'checking falsifiers — risk desk · calendar', zh:'正在核对反证——风险台 · 日历' },
+    a2:    { en:'Three tripwires. A daily close back under the 20-day shuts the setup; losing 191 kills it; and earnings in 35 days is the binary — whatever you do, size for that.', zh:'三条警戒线。日线收回20日线下方，形态作废；跌破191，直接出局；35天后的财报是硬事件——无论怎么做，仓位都要按它来定。' },
+    trips: [ {en:'GATE · close < 20-day',zh:'闸口 · 收盘跌破20日线'}, {en:'STOP · 191.00',zh:'止损 · 191.00'}, {en:'EARNINGS · 35 DAYS',zh:'财报 · 35天后'} ],
+    q3:    { en:'Energy vs tech this week — where does the desk lean?', zh:'本周能源对科技——台席更看好哪边？' },
+    tool4: { en:'comparing desks — rotation · Prophet · flow', zh:'正在对比台席——轮动 · Prophet · 期权流' },
+    a3:    { en:'Energy is the cleaner setup this week: XLE is NEAR its entry zone with an edge score of 74, while tech leadership narrows. The rotation board holds US Energy in Buy now — tech stays a hold-your-leaders lane until breadth repairs.', zh:'本周能源的形态更干净：XLE 正接近入场区间，优势分74；而科技的领涨面在收窄。轮动看板里美国能源仍在“立即买入”通道——科技先拿住领涨股，等广度修复。' },
+    cmp: { xle:{en:'NEAR ZONE',zh:'接近区间'}, nvda:{en:'GATE SHUT',zh:'闸口关闭'} }
   };
-  const L = () => LANG.cur();
-  const tx = o => o[L()];
+  const L=()=>LANG.cur(), tx=o=>o[L()];
+  let timers=[];
+  const later=(fn,ms)=>{ const id=setTimeout(fn,ms); timers.push(id); return id; };
+  const clearAll=()=>{ timers.forEach(clearTimeout); timers=[]; };
+  const el=(tag,cls)=>{ const e=document.createElement(tag); if(cls) e.className=cls; return e; };
+  function setPlaceholder(){ field.classList.add('ph'); fieldTxt.textContent=tx(S.ph); }
+  function clearField(){ fieldTxt.innerHTML=''; }
+  setPlaceholder();
+  // Flash / Pro segmented toggle (cosmetic in the demo; the loop flips it for the deep turn)
+  const mseg=document.getElementById('mseg');
+  const setMode=m=>{ if(mseg) mseg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.m===m)); };
+  if(mseg) mseg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.m)));
 
-  let timers = [];
-  const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
-  const clearAll = () => { timers.forEach(clearTimeout); timers = []; };
-
-  function setPlaceholder(){ field.classList.add('ph'); fieldTxt.textContent = tx(SCRIPT.ph); }
-  function clearField(){ fieldTxt.innerHTML = ''; }
-  setPlaceholder();   // never render an empty composer, even before the loop starts
-
-  // build one assistant chart bubble; ~28 candles draw L→R, then 20-MA, then bands
-  function drawMiniChart(host, animate){
-    const W=300, H=150, N=28, X0=6, X1=W-8, CT=8, CB=118, VT=124, VB=142;
+  // full-width NVDA chart from REAL candles — last 34 sessions through Jul 21
+  // (data/baskets/ohlcv; refresh at build waves). Axis, volume and last-price tag
+  // so it reads as a real terminal render, sized to the bubble at build time.
+  function drawMiniChart(host,animate){
+    const O=[226.92,221.46,213.91,214.53,210.18,210.62,204.43,201.49,204.86,208.92,211.18,208.53,207.33,211.44,202.17,200.12,200.08,193.12,193.85,197.24,196.2,197.14,194.42,192.37,195.18,204.46,202.0,208.54,208.2,211.96,210.17,202.64,205.87,207.54];
+    const Hh=[232.01,222.56,221.6,214.87,210.47,211.4,207.22,205.66,207.07,212.71,211.49,209.21,211.39,213.99,203.77,201.67,200.8,195.55,196.18,200.63,199.85,200.06,197.55,198.41,205.16,204.59,211.0,210.57,212.55,213.81,211.08,206.65,207.74,208.65];
+    const Ll=[221.09,214.26,210.97,204.33,206.0,199.34,199.92,199.54,203.44,208.34,207.29,203.08,206.5,207.72,200.0,196.58,192.13,191.22,189.8,195.11,193.45,192.35,193.99,191.14,195.06,198.96,201.92,203.0,203.8,206.04,205.85,197.97,202.28,204.01];
+    const C=[222.56,214.5,218.66,205.1,208.64,208.19,200.42,204.87,205.19,212.45,207.41,204.65,210.69,208.65,200.04,199.0,195.74,192.53,194.97,200.09,197.58,194.83,195.55,196.93,204.12,202.78,210.96,203.53,211.8,212.5,207.4,202.81,203.28,207.29];
+    const V=[193.4,160.9,169.0,219.7,138.4,181.0,161.7,158.6,112.0,149.9,125.7,128.4,241.3,122.0,153.5,151.8,149.6,179.3,148.8,166.5,146.1,142.1,109.0,124.2,147.4,132.0,148.4,121.4,124.4,124.8,123.0,144.3,88.7,108.2];
+    const N=C.length, W=Math.max(280,(host.clientWidth||thread.clientWidth||300)-18), H=176;
+    const AX=44, X0=4, X1=W-AX, CT=8, CB=128, VT=134, VB=160;
     const NSx='http://www.w3.org/2000/svg';
-    const mk=(t,a)=>{ const e=document.createElementNS(NSx,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
-    const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'NVDA 1D preview chart with a 20-day average, entry band and stop line'});
+    const mk=(t,at,pr)=>{ const e=document.createElementNS(NSx,t); for(const k in at) e.setAttribute(k,at[k]); (pr||svg).appendChild(e); return e; };
+    const svg=document.createElementNS(NSx,'svg');
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);
+    svg.setAttribute('role','img');
+    svg.setAttribute('aria-label','NVDA daily chart with a 20-day average, entry band 199-203 and stop line at 191');
     host.appendChild(svg);
-    const gap=3.4, bw=(X1-X0)/N-gap;
-    // REAL NVDA daily candles — last 28 sessions through Jul 21 (refresh at build waves)
-    const MO=[207.33,211.44,202.17,200.12,200.08,193.12,193.85,197.24,196.2,197.14,194.42,192.37,195.18,204.46,202.0,208.54,208.2,211.96,210.17,202.64,205.87,207.54].slice(-22);
-    const MH=[211.39,213.99,203.77,201.67,200.8,195.55,196.18,200.63,199.85,200.06,197.55,198.41,205.16,204.59,211.0,210.57,212.55,213.81,211.08,206.65,207.74,208.65].slice(-22);
-    const ML=[206.5,207.72,200.0,196.58,192.13,191.22,189.8,195.11,193.45,192.35,193.99,191.14,195.06,198.96,201.92,203.0,203.8,206.04,205.85,197.97,202.28,204.01].slice(-22);
-    const MC=[210.69,208.65,200.04,199.0,195.74,192.53,194.97,200.09,197.58,194.83,195.55,196.93,204.12,202.78,210.96,203.53,211.8,212.5,207.4,202.81,203.28,207.29].slice(-22);
-    const Nn=MO.length, bw2=(X1-X0)/Nn-gap;
-    const data=MO.map((o,i)=>({o,c:MC[i],h:MH[i],l:ML[i]}));
-    let lo=1e9,hi=-1e9; data.forEach(d=>{lo=Math.min(lo,d.l);hi=Math.max(hi,d.h)}); lo-=2; hi+=2;
-    const Y=v=>CB-(v-lo)/(hi-lo)*(CB-CT);
-    const barX=i=>X0+i*(bw2+gap);
-    // honest levels: entry zone around the real 20-day (201.7), stop at the real swing low
+    const slot=(X1-X0)/N, bw=Math.max(2,slot*.64);
+    let lo=1e9,hi=-1e9; for(let i=0;i<N;i++){ lo=Math.min(lo,Ll[i]); hi=Math.max(hi,Hh[i]); }
+    lo=Math.min(lo,190)-1.5; hi+=1.5;
+    const Y=v=>CB-(v-lo)/(hi-lo)*(CB-CT), bx=i=>X0+i*slot;
+    const vmax=Math.max.apply(null,V)*1.05, vy=v=>VB-v/vmax*(VB-VT);
+    mk('rect',{x:0,y:0,width:W,height:H,fill:'#0b1120'});
+    for(let v=Math.ceil(lo/8)*8;v<=hi;v+=8){ mk('line',{x1:X0,y1:Y(v),x2:X1,y2:Y(v),stroke:'rgba(160,180,215,.09)','stroke-width':1});
+      const t=mk('text',{x:X1+7,y:Y(v)+3,'font-family':'ui-monospace,monospace','font-size':8.5,fill:'#63769a'}); t.textContent=v.toFixed(0); }
     const bandTop=Y(203), bandBot=Y(199), stopY=Y(191);
-    svg.appendChild(mk('rect',{x:0,y:0,width:W,height:H,fill:'#0b1120'}));
-    // candles
-    const cg=mk('g',{}); svg.appendChild(cg);
-    data.forEach((d,i)=>{ const x=barX(i), up=d.c>=d.o, col=up?'#34d399':'#f87171';
-      const g=mk('g',{opacity:animate?'0':'1'});
+    for(let i=0;i<N;i++){ const up=C[i]>=O[i], col=up?'#34d399':'#f87171';
+      mk('rect',{x:bx(i),y:vy(V[i]),width:bw,height:VB-vy(V[i]),fill:col,opacity:.28}); }
+    const cg=mk('g',{});
+    const groups=[];
+    for(let i=0;i<N;i++){ const up=C[i]>=O[i], col=up?'#34d399':'#f87171';
+      const g=mk('g',{opacity:animate?'0':'1'},cg);
       if(animate){ g.style.transform='translateY(6px)'; g.style.transition='opacity .3s ease, transform .3s ease'; }
-      g.appendChild(mk('line',{x1:x+bw2/2,y1:Y(d.h),x2:x+bw2/2,y2:Y(d.l),stroke:col,'stroke-width':1,opacity:.9}));
-      const y1=Y(Math.max(d.o,d.c)), y2=Y(Math.min(d.o,d.c));
-      g.appendChild(mk('rect',{x,y:y1,width:bw2,height:Math.max(1.2,y2-y1),rx:1.2,fill:col}));
-      cg.appendChild(g);
-      if(animate) later(()=>{ g.setAttribute('opacity','1'); g.style.transform='translateY(0)'; }, i*24);
-    });
-    // 20-bar MA
-    const pts=data.map((d,i)=>{ const s=Math.max(0,i-19); let sum=0,n=0; for(let j=s;j<=i;j++){sum+=data[j].c;n++;}
-      return (barX(i)+bw2/2)+','+Y(sum/n); }).join(' ');
-    const ma=mk('polyline',{points:pts,fill:'none',stroke:'#60a5fa','stroke-width':1.6,opacity:.9,'stroke-linejoin':'round'});
-    svg.appendChild(ma);
-    const drawMs = animate ? Nn*24 : 0;
-    if(animate){ const len=ma.getTotalLength ? ma.getTotalLength() : 400;
+      mk('line',{x1:bx(i)+bw/2,y1:Y(Hh[i]),x2:bx(i)+bw/2,y2:Y(Ll[i]),stroke:col,'stroke-width':1,opacity:.9},g);
+      mk('rect',{x:bx(i),y:Y(Math.max(O[i],C[i])),width:bw,height:Math.max(1.2,Y(Math.min(O[i],C[i]))-Y(Math.max(O[i],C[i]))),rx:1,fill:col},g);
+      groups.push(g);
+      if(animate) later(()=>{ g.setAttribute('opacity','1'); g.style.transform='translateY(0)'; }, i*26); }
+    const pts=[]; for(let i=0;i<N;i++){ const s0=Math.max(0,i-19); let sum=0,n=0;
+      for(let j=s0;j<=i;j++){ sum+=C[j]; n++; } pts.push((bx(i)+bw/2)+','+Y(sum/n)); }
+    const ma=mk('polyline',{points:pts.join(' '),fill:'none',stroke:'#60a5fa','stroke-width':1.6,opacity:.9,'stroke-linejoin':'round'});
+    const drawMs=animate?N*26:0;
+    if(animate){ const len=ma.getTotalLength?ma.getTotalLength():500;
       ma.style.strokeDasharray=len; ma.style.strokeDashoffset=len;
-      later(()=>{ ma.style.transition='stroke-dashoffset .6s ease'; ma.style.strokeDashoffset='0'; }, drawMs+40); }
-    // entry band + chip
-    const band=mk('rect',{x:0,y:bandTop,width:W,height:Math.max(3,bandBot-bandTop),fill:'rgba(15,157,143,.16)',opacity:animate?'0':'1'});
+      later(()=>{ ma.style.transition='stroke-dashoffset .6s ease'; ma.style.strokeDashoffset='0'; },drawMs+40); }
+    const band=mk('rect',{x:X0,y:bandTop,width:X1-X0,height:Math.max(3,bandBot-bandTop),fill:'rgba(15,157,143,.16)',opacity:animate?'0':'1'});
     if(animate) band.style.transition='opacity .35s ease';
-    svg.appendChild(band);
-    svg.appendChild(mk('line',{x1:0,y1:bandTop,x2:W,y2:bandTop,stroke:'rgba(94,234,212,.5)','stroke-width':1}));
-    const eChip=mk('text',{x:W-6,y:bandTop-4,'text-anchor':'end','font-family':'ui-monospace,monospace','font-size':9,'font-weight':700,fill:'#5eead4',opacity:animate?'0':'1'});
-    eChip.textContent=tx(SCRIPT.entryChip); if(animate) eChip.style.transition='opacity .35s ease'; svg.appendChild(eChip);
-    // stop line + chip
-    const stop=mk('line',{x1:0,y1:stopY,x2:W,y2:stopY,stroke:'#f87171','stroke-width':1,'stroke-dasharray':'4 4',opacity:animate?'0':'1'});
-    if(animate) stop.style.transition='opacity .35s ease'; svg.appendChild(stop);
-    const sChip=mk('text',{x:W-6,y:stopY+11,'text-anchor':'end','font-family':'ui-monospace,monospace','font-size':9,'font-weight':700,fill:'#f87171',opacity:animate?'0':'1'});
-    sChip.textContent=tx(SCRIPT.stopChip); if(animate) sChip.style.transition='opacity .35s ease'; svg.appendChild(sChip);
+    mk('line',{x1:X0,y1:bandTop,x2:X1,y2:bandTop,stroke:'rgba(94,234,212,.5)','stroke-width':1});
+    const eChip=mk('text',{x:X1-4,y:bandTop-4,'text-anchor':'end','font-family':'ui-monospace,monospace','font-size':9,'font-weight':700,fill:'#5eead4',opacity:animate?'0':'1'});
+    eChip.textContent=tx(S.entryChip); if(animate) eChip.style.transition='opacity .35s ease';
+    const stop=mk('line',{x1:X0,y1:stopY,x2:X1,y2:stopY,stroke:'#f87171','stroke-width':1,'stroke-dasharray':'4 4',opacity:animate?'0':'1'});
+    if(animate) stop.style.transition='opacity .35s ease';
+    const sChip=mk('text',{x:X1-4,y:stopY+11,'text-anchor':'end','font-family':'ui-monospace,monospace','font-size':9,'font-weight':700,fill:'#f87171',opacity:animate?'0':'1'});
+    sChip.textContent=tx(S.stopChip); if(animate) sChip.style.transition='opacity .35s ease';
+    const ly=Y(C[N-1]);
+    mk('line',{x1:X0,y1:ly,x2:X1,y2:ly,stroke:'rgba(52,211,153,.55)','stroke-width':1,'stroke-dasharray':'3 3'});
+    mk('rect',{x:X1+2,y:ly-7,width:AX-4,height:14,rx:3,fill:'#34d399'});
+    const lt=mk('text',{x:X1+AX/2,y:ly+3.5,'text-anchor':'middle','font-family':'ui-monospace,monospace','font-size':8.5,'font-weight':700,fill:'#06251b'}); lt.textContent='207.29';
     if(animate) later(()=>{ band.setAttribute('opacity','1'); eChip.setAttribute('opacity','1');
-      later(()=>{ stop.setAttribute('opacity','1'); sChip.setAttribute('opacity','1'); }, 300); }, drawMs+700);
-    return { entryChip:eChip, stopChip:sChip };
+      later(()=>{ stop.setAttribute('opacity','1'); sChip.setAttribute('opacity','1'); },300); },drawMs+700);
+    return drawMs;
   }
-
-  // static final render (CALM / .still, or after a full run before reset)
+  function cmpCard(host){
+    host.innerHTML=
+      '<div class="r"><span class="tk">XLE</span><span class="bar"><i style="width:74%;background:var(--q-green)"></i></span><span class="stx g">'+tx(S.cmp.xle)+'</span></div>'+
+      '<div class="r"><span class="tk">NVDA</span><span class="bar"><i style="width:46%;background:var(--q-gold)"></i></span><span class="stx y">'+tx(S.cmp.nvda)+'</span></div>';
+  }
+  function tripChips(host){
+    host.innerHTML=S.trips.map(t=>'<span class="stx" style="border:1px solid var(--hair-2);border-radius:6px;padding:4px 9px;font-family:ui-monospace,monospace;font-weight:700;font-size:10px;color:var(--ink-soft);letter-spacing:.02em">'+tx(t)+'</span>').join('');
+    host.style.display='flex'; host.style.gap='7px'; host.style.flexWrap='wrap';
+  }
+  // static final render (CALM / .still)
   function renderStatic(){
     thread.innerHTML='';
-    const uq=el('div','msg q'); uq.textContent=tx(SCRIPT.q); thread.appendChild(uq);
-    const tl1=el('div','msg-tool'); tl1.textContent=tx(SCRIPT.tool1); thread.appendChild(tl1);
-    SCRIPT.a.forEach(a=>{ const b=el('div','msg a'); b.textContent=tx(a); thread.appendChild(b); });
-    const tl2=el('div','msg-tool'); tl2.textContent=tx(SCRIPT.tool2); thread.appendChild(tl2);
+    const add=(cls,txt)=>{ const b=el('div',cls); b.textContent=txt; thread.appendChild(b); return b; };
+    add('msg q',tx(S.q1)); add('msg-tool',tx(S.tool1));
+    S.a1.forEach(x=>add('msg a',tx(x)));
+    add('msg-tool',tx(S.tool2));
     const mt=el('div','mini-term'); thread.appendChild(mt); drawMiniChart(mt,false);
-    const act=el('div','msg act'); act.textContent=tx(SCRIPT.act); thread.appendChild(act);
+    add('msg act',tx(S.act));
+    add('msg q',tx(S.q2)); add('msg a',tx(S.a2));
+    const tc=el('div','msg a'); thread.appendChild(tc); tripChips(tc);
+    add('msg q',tx(S.q3)); add('msg a',tx(S.a3));
+    const cc=el('div','mini-cmp'); thread.appendChild(cc); cmpCard(cc);
     setPlaceholder();
   }
-  function el(tag,cls){ const e=document.createElement(tag); if(cls) e.className=cls; return e; }
-
-  // one scripted run
-  function run(){
-    thread.innerHTML=''; clearField();
-    field.classList.remove('ph');
-    const q=tx(SCRIPT.q); let i=0;
-    fieldTxt.innerHTML=''; const caret=el('span','caret'); field.appendChild(caret);
-    function typeChar(){
-      if(document.hidden){ later(typeChar,120); return; }
-      if(i<=q.length){ fieldTxt.textContent=q.slice(0,i); field.appendChild(caret); i++; later(typeChar,38); }
-      else { field.removeChild(caret); later(sendQ,320); }
-    }
-    later(typeChar,300);
+  // scripted run — readable pacing throughout
+  const TYPE=82, WORD=105, GAP=1050, THINK=1650;
+  function typeQ(q,next){
+    clearField(); field.classList.remove('ph');
+    const caret=el('span','caret'); field.appendChild(caret);
+    let i=0;
+    (function tc(){ if(document.hidden){ later(tc,150); return; }
+      if(i<=q.length){ fieldTxt.textContent=q.slice(0,i); field.appendChild(caret); i++; later(tc,TYPE); }
+      else { caret.remove(); later(next,500); } })();
   }
-  function sendQ(){
-    const uq=el('div','msg q msg-in'); uq.textContent=tx(SCRIPT.q); thread.appendChild(uq);
+  function sendQ(q,tool,next){
+    const uq=el('div','msg q msg-in'); uq.textContent=q; thread.appendChild(uq);
     clearField(); setPlaceholder();
-    // tool line + typing indicator
     later(()=>{
-      const tl=el('div','msg-tool msg-in'); tl.textContent=tx(SCRIPT.tool1); thread.appendChild(tl);
+      const tl=el('div','msg-tool msg-in'); tl.textContent=tool; thread.appendChild(tl);
       const ty=el('div','msg-typing msg-in'); ty.innerHTML='<span></span><span></span><span></span>'; thread.appendChild(ty);
-      later(()=>{ if(ty.parentNode) ty.remove(); streamA(0); }, 1200);
-    }, 300);
+      later(()=>{ ty.remove(); next(); },THINK);
+    },420);
   }
-  function streamA(n){
-    if(document.hidden){ later(()=>streamA(n),200); return; }
-    if(n<SCRIPT.a.length){
-      const b=el('div','msg a msg-in'); b.textContent=tx(SCRIPT.a[n]); thread.appendChild(b);
-      later(()=>streamA(n+1),350);
-    } else { later(drawStep,350); }
+  function stream(text,next){
+    const b=el('div','msg a msg-in'); thread.appendChild(b);
+    if(L()==='zh'){ // stream by character clusters for zh
+      let i=0; (function st(){ if(document.hidden){ later(st,150); return; }
+        i=Math.min(text.length,i+2); b.textContent=text.slice(0,i);
+        if(i<text.length) later(st,55); else later(next,GAP); })();
+    } else {
+      const words=text.split(' '); let k=0;
+      (function st(){ if(document.hidden){ later(st,150); return; }
+        k++; b.textContent=words.slice(0,k).join(' ');
+        if(k<words.length) later(st,WORD); else later(next,GAP); })();
+    }
   }
-  function drawStep(){
-    const tl=el('div','msg-tool msg-in'); tl.textContent=tx(SCRIPT.tool2); thread.appendChild(tl);
-    later(()=>{
-      const mt=el('div','mini-term msg-in'); thread.appendChild(mt);
-      drawMiniChart(mt,true);
+  function streamSeq(arr,i,next){ if(i>=arr.length){ next(); return; } stream(tx(arr[i]),()=>streamSeq(arr,i+1,next)); }
+  function run(){
+    thread.innerHTML=''; setMode('flash');
+    later(()=>typeQ(tx(S.q1),()=>sendQ(tx(S.q1),tx(S.tool1),()=>streamSeq(S.a1,0,()=>{
+      const tl=el('div','msg-tool msg-in'); tl.textContent=tx(S.tool2); thread.appendChild(tl);
       later(()=>{
-        const act=el('div','msg act msg-in'); act.textContent=tx(SCRIPT.act); thread.appendChild(act);
-        later(reset, 14000);   // let the finished conversation sit before replaying
-      }, 22*24 + 1300);
-    }, 400);
+        const mt=el('div','mini-term msg-in'); thread.appendChild(mt);
+        const ms=drawMiniChart(mt,true);
+        later(()=>{
+          const act=el('div','msg act msg-in'); act.textContent=tx(S.act); thread.appendChild(act);
+          later(turn2, 2600);
+        }, ms+1400);
+      },500);
+    }))),600);
+  }
+  function turn2(){
+    typeQ(tx(S.q2),()=>sendQ(tx(S.q2),tx(S.tool3),()=>stream(tx(S.a2),()=>{
+      const tc=el('div','msg a msg-in'); thread.appendChild(tc); tripChips(tc);
+      later(turn3, 2600);
+    })));
+  }
+  function turn3(){
+    setMode('pro');
+    typeQ(tx(S.q3),()=>sendQ(tx(S.q3),tx(S.tool4),()=>stream(tx(S.a3),()=>{
+      const cc=el('div','mini-cmp msg-in'); thread.appendChild(cc); cmpCard(cc);
+      later(reset, 13000);   // let the finished conversation sit before replaying
+    })));
   }
   function reset(){
     thread.style.opacity='0';
-    later(()=>{ thread.style.opacity='1'; run(); }, 220);
+    later(()=>{ thread.style.opacity='1'; run(); },240);
   }
-
   const STATIC = CALM || STILL;
-  function boot(){
-    clearAll();
-    if(STATIC) renderStatic();
-    else { setPlaceholder(); run(); }
-  }
-  // re-render / restart on language change
-  LANG.onChange(()=>{ clearAll(); thread.style.opacity='1'; if(STATIC) renderStatic(); else { thread.innerHTML=''; setPlaceholder(); run(); } });
-
+  function boot(){ clearAll(); if(STATIC) renderStatic(); else { setPlaceholder(); run(); } }
+  LANG.onChange(()=>{ clearAll(); thread.style.opacity='1';
+    if(STATIC) renderStatic(); else { thread.innerHTML=''; setPlaceholder(); run(); } });
   if(STATIC){ renderStatic(); return; }
   setPlaceholder();
-  // start once when the AI section scrolls into view
   const sec=document.getElementById('ai');
   const cio=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ boot(); cio.disconnect(); } }),{threshold:.2});
   if(sec) cio.observe(sec); else boot();
@@ -1970,6 +1991,57 @@ const STILL = document.documentElement.classList.contains('still');
 /* ───── apply the boot language once, now that every component has registered ─────
    (head script already set data-lang from localStorage['lang'] / the browser). */
 LANG.apply(LANG.cur());
+
+/* ───── live-quote override: re-anchor baked hero/econ/tri-panel/watchlist values
+   from live/quotes.json on load. Data, not motion — runs under ?still & reduced-motion.
+   Fail-silent per symbol: any miss (file://, 404, bad JSON, absent sym) keeps baked. ───── */
+(function(){
+  function apply(q){
+    const num=v=>typeof v==='number'&&Number.isFinite(v);
+    const px=s=>{ const o=q[s]; return o&&num(o.price)?o.price:null; };
+    const pc=s=>{ const o=q[s]; return o&&num(o.changePct)?o.changePct:null; };
+    // prices — lvp engine (own data-d; $ + grouped)
+    document.querySelectorAll('.lvp[data-sym]').forEach(el=>{ try{
+      const p=px(el.dataset.sym); if(p==null) return;
+      const d=parseInt(el.dataset.d,10)||0; el.dataset.p=p;
+      el.textContent='$'+p.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+    }catch(e){} });
+    // DXY — lvd engine (toFixed(2), no $)
+    document.querySelectorAll('.lvd[data-sym]').forEach(el=>{ try{
+      const p=px(el.dataset.sym); if(p==null) return;
+      el.dataset.p=p; el.textContent=p.toFixed(2);
+    }catch(e){} });
+    // pct — lv engine (1dp, U+2212 minus, up/dn)
+    document.querySelectorAll('.lv[data-sym]').forEach(el=>{ try{
+      let v=pc(el.dataset.sym); if(v==null) return;
+      v=Math.round(v*10)/10; el.dataset.v=v.toFixed(1);
+      el.textContent=(v>=0?'+':'−')+Math.abs(v).toFixed(1)+'%';
+      el.classList.toggle('up',v>=0); el.classList.toggle('dn',v<0);
+    }catch(e){} });
+    // econ index level — DOM .ix + data-zh attr + LANG's cached __en (survives zh⇄en)
+    document.querySelectorAll('.cn[data-sym]').forEach(el=>{ try{
+      const p=px(el.dataset.sym); if(p==null) return;
+      const lvl=Math.round(p).toLocaleString('en-US'), ix=el.querySelector('.ix'); if(ix) ix.textContent=lvl;
+      const re=/(<span class=['"]ix['"]>)([^<]*)(<\/span>)/;
+      const zh=el.getAttribute('data-zh'); if(zh) el.setAttribute('data-zh',zh.replace(re,'$1'+lvl+'$3'));
+      if(el.__en) el.__en=el.__en.replace(re,'$1'+lvl+'$3');
+    }catch(e){} });
+    // watchlist — re-anchor wj via hook if present, else rewrite DOM (still mode)
+    const WL={0:'BTC-USD',4:'QQQ'}, nfmt=v=>v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    Object.keys(WL).forEach(i=>{ try{
+      const s=WL[i], p=px(s), c=pc(s); if(p==null||c==null) return;
+      if(typeof window.__twlLive==='function'){ window.__twlLive(+i,p,Math.round(c*100)/100); return; }
+      const row=document.querySelector('.twl-r[data-w="'+i+'"]'); if(!row) return;
+      const la=row.querySelector('.la'), ch=row.querySelector('.ch'), cv=Math.round(c*100)/100;
+      if(la) la.textContent=nfmt(p);
+      if(ch){ ch.textContent=(cv>=0?'+':'−')+Math.abs(cv).toFixed(2)+'%';
+        ch.classList.toggle('up',cv>=0); ch.classList.toggle('dn',cv<0); }
+    }catch(e){} });
+  }
+  function go(){ fetch('live/quotes.json',{cache:'no-store'})
+    .then(r=>r.ok?r.json():null).then(d=>{ if(d&&d.quotes) apply(d.quotes); }).catch(()=>{}); }
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',go); else go();
+})();
 </script>
 </body>
 </html>

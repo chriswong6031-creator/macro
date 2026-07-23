@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-21",
-  "generated_at": "2026-07-22T03:49:25.579932+00:00",
+  "generated_at": "2026-07-23T03:49:54.185086+00:00",
   "degraded": null,
   "notes": [
     {
@@ -9,19 +9,18 @@
       "ticker": "ROST",
       "name": null,
       "lean": "constructive",
-      "conviction": "medium",
+      "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The deterministic screen places ROST in a constructible band with a validated SUE leg (z=1.92) and strong momentum (z=2.13), while entry conditions are not blocked and price is only 1.8% off highs; the risk controls accept the event-edge context, supporting a relative outperformance lean against the S&P 500.",
+      "thesis": "Strong momentum (alpha z=2.24) and fresh SUE (z=1.92) combined with insider buying create a high-confluence edge that should translate into outperformance, but the 'TURN SIGNALED' board state introduces a monitoring element, so conviction is kept low.",
       "evidence": [
-        "Verdict: High-confluence leader (constructive band)",
-        "SUE z=1.92 (validated leg), fresh 20 days",
-        "Momentum alpha z=2.13",
-        "Entry axis not blocked (urgency, off-high, RSI, vol-squeeze)",
-        "Off high only -1.8%, no cycle block"
+        "selection axis: SUE z=1.92 (fresh 20d), momentum z=2.24",
+        "event-edge trust tier (insider buying + PEAD context)",
+        "entry axis not blocked (off-high -1.8%, vol-squeeze)",
+        "clean accounting"
       ],
-      "dissent": "The event-edge context is not a standalone alpha; the rank itself has no forward edge, and the mixed macro tape could quickly erode the momentum leg.",
+      "dissent": "The 'TURN SIGNALED' board state warns of a potential exhaustion reversal, and a break below $230 could signal that the momentum has topped out.",
       "falsifier": {
-        "text": "ROST underperforms the S&P 500 by more than 3% over any rolling 10-day window, or closes below its 20-day moving average on above-average volume.",
+        "text": "If ROST closes below its 20-day moving average on consecutive days and the board direction flips to 'down'.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ROST",
@@ -38,27 +37,22 @@
       "id": "2026-07-21-BG-2",
       "ticker": "BG",
       "name": null,
-      "lean": "cautious",
+      "lean": "neutral",
       "conviction": "low",
       "horizon_d": 15,
-      "thesis": "The engine flags an accounting warning and an earnings binary in 8 days, making the risk reshape prohibitive despite positive revisions and momentum; a cautious lean better reflects the elevated downside risk until the accounting flag is cleared.",
+      "thesis": "While momentum and insider buying are positive, the accounting warning flag and imminent earnings (6 days) introduce binary-event risk that neutralises any directional edge; wait for clarity.",
       "evidence": [
-        "Verdict: Leader \u00b7 accounting warning \u2014 verify before buying (neutral band)",
-        "Accounting: warn flag",
-        "Caution: \u2018earnings in 8d \u2014 binary event, size down\u2019",
-        "SUE z=-0.81 (negative, stale 83d)",
-        "Selection axis modest (z=0.84, pct 63)"
+        "accounting warn flag on quality axis",
+        "cautions: earnings in 6d -- binary event",
+        "selection axis SUE z=-0.81 (stale)",
+        "board: direction up but off-high -7.5%, urgency hold"
       ],
-      "dissent": "The accounting flag may be a false positive, and the earnings event could surprise strongly to the upside, turning the cautious lean into a missed opportunity.",
+      "dissent": "If earnings are clean and the accounting flag is lifted, the stock could surge, rendering the neutral stance too cautious.",
       "falsifier": {
-        "text": "BG reports a clean earnings beat with raised guidance, and the accounting flag is resolved without a restatement; if the stock subsequently outperforms the S&P 500 by >5% over 10 days, the cautious lean is invalidated.",
+        "text": "If BG reports earnings without a restatement or negative flag and the stock closes above $130 within a week post-report.",
         "check": {
-          "kind": "rel_return",
-          "subject_ticker": "BG",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 15
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
         }
       },
       "check_by": "2026-08-11",
@@ -70,18 +64,41 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The screen shows a constructive base-building profile, but the validated risk gate flags a deteriorating Industrial (Equal-Weight) narrative basket, which caps the edge; a neutral lean acknowledges the balancing forces.",
+      "horizon_d": 15,
+      "thesis": "A constructive base-building setup is offset by the binary earnings event (7d) and the deteriorating Industrials narrative basket -- both validated risk gates; neutral until these air pockets pass.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base (neutral band)",
-        "SUE z=3.0 (validated, though 75d old)",
-        "Momentum alpha z=1.19",
-        "Caution: \u2018Narrative basket (Industrials) deteriorating \u2014 validated risk gate: trim/size down\u2019",
-        "Entry axis modest (z=0.06, pct 51)"
+        "cautions: earnings in 7d",
+        "narrative basket (Industrials Equal-Weight) deteriorating risk gate",
+        "selection axis: SUE z=3.0 (stale 75d) but momentum z=1.2",
+        "board: RALLY ON, building base"
       ],
-      "dissent": "If the industrial narrative basket stabilizes and HWM\u2019s strong SUE effect re-asserts, the stock could break out and deliver absolute gains, making the neutral stance too conservative.",
+      "dissent": "The base could break out on a strong earnings beat and the basket deterioration may already be priced, leaving the neutral call behind.",
       "falsifier": {
-        "text": "HWM closes above 290 on volume with the equal-weight industrial basket simultaneously reclaiming its 50-day average; under those conditions the neutral lean would be disproven to the upside.",
+        "text": "If HWM posts a clean beat and breaks above $290 on high volume within 10 days after earnings.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-11",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-21-GM-4",
+      "ticker": "GM",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Momentum and revisions support a base-build, but the Consumer Discretionary basket is below its long-term trend (validated drawdown gate), acting as a headwind; edge is neutral until the basket stabilises.",
+      "evidence": [
+        "cautions: narrative basket (Consumer Discretionary Equal-Weight) below trend",
+        "selection axis: momentum z=1.15, revisions z=0.85",
+        "board: RALLY ON, building base, off-high -7.5%"
+      ],
+      "dissent": "GM could decouple from the struggling basket if AI-related or EV catalysts surface, and the base might be accumulation.",
+      "falsifier": {
+        "text": "If the Consumer Discretionary equal-weight basket reclaims its 50-day moving average and GM closes above $82 on above-average volume.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -91,53 +108,21 @@
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-07-21-GM-4",
-      "ticker": "GM",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Two risk controls \u2014 imminent earnings binary and a consumer discretionary equal-weight basket below its long-term trend \u2014 override the modest selection and entry signals, justifying a cautious lean relative to the S&P 500.",
-      "evidence": [
-        "Verdict: Constructive \u2014 building a base (neutral band)",
-        "Caution: \u2018earnings imminent \u2014 binary event, size down\u2019",
-        "Caution: \u2018Narrative basket (Consumer Disc. EW) below trend \u2014 validated drawdown gate\u2019",
-        "SUE z=-0.98 (negative, stale 84d)",
-        "Selection z=0.58 (pct 59)"
-      ],
-      "dissent": "If the earnings release surprises sharply higher and the narrative basket mean-reverts, GM could outperform aggressively; the cautious lean would then have been an overreaction to event risk.",
-      "falsifier": {
-        "text": "GM beats earnings estimates with strong forward guidance, and the Consumer Discretionary EW basket surpasses its 200-day moving average within the next 15 days, causing GM to outperform the S&P by >5%.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "GM",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 15
-        }
-      },
-      "check_by": "2026-08-11",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
       "id": "2026-07-21-PLD-5",
       "ticker": "PLD",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The screen delivers no clear edge: selection, entry, and quality axes are all middling, with a negative entry z-score and below-average quality, leaving no falsifiable reason to expect relative outperformance or underperformance.",
+      "thesis": "The selection axis lacks breadth (SUE 0.69, revisions 0.33, momentum 1.08) and entry is poor (near highs, vol-squeeze); no clear edge to take a directional view.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection z=0.60 (SUE 0.69, revisions 0.33)",
-        "Entry z=-0.29 (negative)",
-        "Quality z=-0.51 (pct 42)",
-        "No cautions, no cycle block"
+        "selection axis z=0.61 (59th percentile)",
+        "entry axis: off-high -0.1%, vol-squeeze, 45th percentile",
+        "verdict: 'Neutral -- no clear edge'"
       ],
-      "dissent": "A sudden macro tailwind (e.g., rate relief) could lift PLD\u2019s real estate exposure and its quality metrics could be mispriced, leading to unexpected outperformance.",
+      "dissent": "PLD is a steady compounder that could grind higher regardless of entry timing.",
       "falsifier": {
-        "text": "PLD\u2019s 20-day return diverges from the S&P 500 by more than 4% in either direction; the neutral lean would be disproven by a sustained directional move beyond noise.",
+        "text": "If PLD breaks above $152 with increasing volume and the selection z-score rises above 1 within 15 days.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -150,30 +135,25 @@
       "id": "2026-07-21-UNIT-6",
       "ticker": "UNIT",
       "name": null,
-      "lean": "cautious",
+      "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "The engine\u2019s neutral verdict is accompanied by an accounting warning, deeply negative quality (z=-1.49), and a countertrend bounce from a 13% drawdown with cautionary direction; the risk controls overwhelmingly point to a cautious lean.",
+      "horizon_d": 15,
+      "thesis": "Negative revisions, accounting warning, and a countertrend bounce in a downtrend make this a weak name, but the edge is not sufficient to call a short; neutral as the risk of a dead-cat bounce lingers.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Accounting: warn flag",
-        "Quality z=-1.49 (pct 28)",
-        "Revisions z=-1.33 (literature leg negative)",
-        "Entry z=-0.61 (very weak, caution urgency)"
+        "quality axis: accounting warn, z=-1.49",
+        "selection axis: revisions z=-1.33, SUE missing",
+        "board: direction 'caution', state 'COUNTERTREND BOUNCE', off-high -13.2%",
+        "cautions: accounting warn"
       ],
-      "dissent": "If the accounting flag is a false alarm and the countertrend bounce gains institutional sponsorship, UNIT could stage a sharp mean-reversion rally that catches a cautious lean offside.",
+      "dissent": "The countertrend bounce could morph into a genuine recovery if the accounting issues are resolved or a takeover bid emerges.",
       "falsifier": {
-        "text": "UNIT closes above its 50-day simple moving average on double the average volume, and the accounting warning is resolved without a restatement; under those conditions the cautious lean would be too bearish.",
+        "text": "If UNIT closes above its 200-day moving average on high volume and the accounting flag is removed.",
         "check": {
-          "kind": "rel_return",
-          "subject_ticker": "UNIT",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 10
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-04",
+      "check_by": "2026-08-11",
       "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],

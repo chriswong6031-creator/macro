@@ -878,8 +878,9 @@ def test_jinja_watch_shelf_renders_and_pills_exclude_tier_w():
     # Watch shelf must render with cybersecurity in it
     assert "fx-watch-shelf" in html, "watch shelf container missing"
     assert "Cybersecurity" in html
-    # Watch shelf caveat must contain the honesty text
-    assert "no numeric physical correlate" in html or "cannot reach a confirmed PRECIPICE" in html
+    # Watch shelf caveat must contain the honesty text (plain-word rewrite, DESIGN_DOCTRINE):
+    # explains why these themes can't be confirmed truly early without a hard supply read.
+    assert "no hard supply number yet" in html or "no numeric physical correlate" in html
     # Stage pills region: stage counts are Tier P only — cybersecurity (Tier W, WATCH) excluded
     # The pills only show Tier P themes: 1 PRECIPICE (memory_storage) + 1 WATCH (glp1_obesity,
     # BUT glp1_obesity is Tier P despite WATCH stage because of FDA feed)

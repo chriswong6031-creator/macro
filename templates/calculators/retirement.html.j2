@@ -1,0 +1,224 @@
+{#=============================================================================
+  calculators/retirement.html.j2 — clones the position_size exemplar structure.
+  Implements the CONTRACT retirement projection (future value of a lump sum +
+  monthly annuity) EXACTLY + the §6 WORKED_EXAMPLES self-check.
+
+  Explainer body follows §8 structure: direct answer → formula → worked example
+  → common trap → where it breaks → links. Fully bilingual EN/ZH via t()
+  (calculators = sanctioned dual-DOM exception).
+
+  compute() is PURE (no DOM); wire() does all DOM reads/writes; WORKED_EXAMPLES
+  runs the fixtures through compute() on load and console.error's mismatches
+  (silent when green). Never render NaN/Infinity; empty/invalid → a plain-word
+  sentence in .co-plain and "—" in the number. Inputs accept commas.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('retirement', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter your age now, the age you plan to retire, what you’ve saved so far, what you add each month, and the annual return you expect. You get the projected nest egg at retirement — and how much of it is growth versus what you put in.',
+   '填入你现在的年龄、计划退休的年龄、目前已存的金额、每月新增的金额，以及你预期的年化收益率，即可得到退休时的预计资产总额——以及其中有多少来自增值、多少来自本金投入。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Current age', '当前年龄') }}</span>
+    <input id="curage" inputmode="decimal" autocomplete="off" placeholder="30"></label>
+  <label class="ci"><span class="ci-l">{{ t('Retirement age', '退休年龄') }} <span class="hint">{{ t('must be higher', '需大于当前') }}</span></span>
+    <input id="retage" inputmode="decimal" autocomplete="off" placeholder="65"></label>
+  <label class="ci"><span class="ci-l">{{ t('Current savings ($)', '当前储蓄（$）') }}</span>
+    <input id="principal" inputmode="decimal" autocomplete="off" placeholder="50,000"></label>
+  <label class="ci"><span class="ci-l">{{ t('Monthly contribution ($)', '每月投入（$）') }}</span>
+    <input id="contrib" inputmode="decimal" autocomplete="off" placeholder="500"></label>
+  <label class="ci ci-wide"><span class="ci-l">{{ t('Expected annual return (%)', '预期年化收益率（%）') }} <span class="hint">{{ t('before inflation', '未计通胀') }}</span></span>
+    <input id="rate" inputmode="decimal" autocomplete="off" placeholder="7"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('at retirement', '退休时') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in all five fields to project your nest egg.', '填入五个字段即可预测你的退休资产。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Total contributed', '累计投入') }}</dt><dd id="out-contrib">—</dd></div>
+    <div><dt>{{ t('Investment growth', '投资增值') }}</dt><dd id="out-growth">—</dd></div>
+    <div><dt>{{ t('Years to retirement', '距退休年数') }}</dt><dd id="out-years">—</dd></div>
+    <div><dt>{{ t('Growth share', '增值占比') }}</dt><dd id="out-gshare">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('Your nest egg is what your <strong>current savings</strong> grow into, plus what a stream of <strong>monthly contributions</strong> grows into, both compounded at your expected return until retirement. Two simple pieces — a lump sum and a monthly annuity — added together. The longer the runway and the higher the return, the more of the final number is growth rather than the cash you actually set aside.',
+   '你的退休资产由两部分构成：<strong>当前储蓄</strong>按预期收益率复利增长的结果，加上<strong>每月投入</strong>这条现金流复利增长的结果，两者一直复利到退休。就是这么简单——一笔本金加上一份按月年金相加。时间越长、收益率越高，最终数字中来自增值的部分就越大，而非你实际存入的现金。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Months</strong> = (Retire age − Current age) × 12', '<strong>月数</strong> = （退休年龄 − 当前年龄）× 12') }}<br>
+{{ t('<strong>Monthly rate</strong> i = Annual% ÷ 100 ÷ 12', '<strong>月利率</strong> i = 年化% ÷ 100 ÷ 12') }}<br>
+{{ t('<strong>Nest egg</strong> = P·(1+i)<sup>m</sup> + c·((1+i)<sup>m</sup> − 1) ÷ i', '<strong>退休资产</strong> = P·(1+i)<sup>m</sup> + c·((1+i)<sup>m</sup> − 1) ÷ i') }}<br>
+{{ t('(when i = 0: Nest egg = P + c·m)', '（当 i = 0 时：退休资产 = P + c·m）') }}
+</div>
+<p>{{ t('P is your current savings, c the monthly contribution, m the number of months, and i the monthly return. The first term compounds the money you already have; the second is a standard future-value-of-an-annuity, treating each contribution as arriving at month-end (an ordinary annuity). Total contributed is simply <span class="num">P + c·m</span>; everything above that is growth.',
+   'P 是当前储蓄，c 是每月投入，m 是月数，i 是月收益率。第一项让你已有的钱复利增长；第二项是标准的年金终值，假设每笔投入在月末到账（普通年金）。累计投入就是 <span class="num">P + c·m</span>；超出这一部分的都是增值。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a saver is <span class="num">30</span> today and plans to retire at <span class="num">65</span>. They hold <span class="num">$50,000</span> now, add <span class="num">$500</span> a month, and assume a <span class="num">7%</span> annual return.',
+   '假设一位储户现在 <span class="num">30</span> 岁，计划 <span class="num">65</span> 岁退休。目前持有 <span class="num">$50,000</span>，每月新增 <span class="num">$500</span>，并假设年化收益 <span class="num">7%</span>。') }}</p>
+<ul>
+<li>{{ t('Months = <span class="num">(65 − 30) × 12 = 420</span>; monthly rate i = <span class="num">7 ÷ 100 ÷ 12 ≈ 0.005833</span>', '月数 = <span class="num">(65 − 30) × 12 = 420</span>；月利率 i = <span class="num">7 ÷ 100 ÷ 12 ≈ 0.005833</span>') }}</li>
+<li>{{ t('Lump sum grows to <span class="num">50,000 × (1.005833)<sup>420</sup> ≈ $575,000</span>', '本金增长至 <span class="num">50,000 × (1.005833)<sup>420</sup> ≈ $575,000</span>') }}</li>
+<li>{{ t('Contributions grow to <span class="num">500 × ((1.005833)<sup>420</sup> − 1) ÷ 0.005833 ≈ $901,000</span>', '投入增长至 <span class="num">500 × ((1.005833)<sup>420</sup> − 1) ÷ 0.005833 ≈ $901,000</span>') }}</li>
+<li>{{ t('Nest egg ≈ <span class="num">$1,476,000</span>. Total contributed = <span class="num">50,000 + 500 × 420 = $260,000</span>, so growth is ≈ <span class="num">$1,216,000</span> — over four-fifths of the total.',
+   '退休资产 ≈ <span class="num">$1,476,000</span>。累计投入 = <span class="num">50,000 + 500 × 420 = $260,000</span>，因此增值约为 <span class="num">$1,216,000</span>——占总额五分之四以上。') }}</li>
+</ul>
+</div>
+<p>{{ t('The saver set aside $260,000 over 35 years, yet nearly $1.5 million shows up at the end. That gap is compounding doing the heavy lifting — and it only opens up because the runway is long. Shorten it and the growth share collapses fast.',
+   '这位储户在 35 年里存入 $260,000，最终却出现近 150 万。这个差距正是复利在发力——而它之所以能拉开，全靠时间够长。缩短时间，增值占比会迅速崩塌。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Reading the number as today’s money', '把数字当成今天的钱') }}</span>
+<p>{{ t('A projected <span class="num">$1.5 million</span> in 35 years is not $1.5 million of spending power today. At 3% inflation, prices roughly double every 24 years, so that future sum might buy what about <span class="num">$530,000</span> buys now. This tool projects <em>nominal</em> dollars — the headline figure before inflation. To think in today’s money, either lower the expected return by your inflation assumption, or mentally discount the result. The nest egg is real; its purchasing power is smaller than it looks.',
+   '35 年后的 <span class="num">$150 万</span> 并不等于今天 $150 万的购买力。若通胀率为 3%，物价大约每 24 年翻一倍，因此那笔未来金额的购买力可能仅相当于今天的 <span class="num">$53 万</span> 左右。本工具计算的是<em>名义</em>金额——即未计通胀的表面数字。要以今天的钱来衡量，可将预期收益率减去你的通胀假设，或在心里对结果打个折扣。资产是真实的，但购买力比看上去要小。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('This projection is a clean straight line through a messy world. It assumes a single, steady return every month for decades — reality does not cooperate. A few honest limits:',
+   '这个预测是一条穿越混乱世界的干净直线。它假设几十年里每个月都有单一、稳定的收益——而现实并不配合。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>Returns are not smooth.</strong> Markets deliver their average through wild swings, not a fixed monthly rate. The <em>order</em> of good and bad years — sequence risk — changes the outcome, especially near retirement when the balance is largest.',
+   '<strong>收益并不平滑。</strong>市场是通过剧烈波动来实现其平均值的，而非固定的月收益率。好年份和坏年份的<em>顺序</em>——即序列风险——会改变结果，在临近退休、余额最大时尤其如此。') }}</li>
+<li>{{ t('<strong>The return you type is a guess.</strong> A 7% assumption is common for a stock-heavy mix, but it is not a promise. Try a lower and a higher rate to see how wide the range of outcomes really is.',
+   '<strong>你填的收益率只是一个猜测。</strong>7% 对偏股型组合是常见假设，但绝非承诺。试着用一个更低和一个更高的收益率，看看结果的区间到底有多宽。') }}</li>
+<li>{{ t('<strong>No taxes, fees, or contribution changes.</strong> Account fees, taxes on gains, and a contribution that rises with your income are all left out. It also assumes you never touch the money early.',
+   '<strong>未计税费与投入变化。</strong>账户费用、收益税，以及随收入增长而提高的投入，都未纳入计算。它还假设你从不提前动用这笔钱。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Time on the runway matters more than the size of any single contribution. Starting earlier beats saving harder later — because the growth compounds on itself.',
+   '时间的长短，比任何单笔投入的大小都更重要。早点开始，胜过日后拼命多存——因为增值会在自身之上不断复利。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how the growth curve accelerates in the <a href="', '在 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or check the return an investment earned with the <a href="', ' 中看增长曲线如何加速，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', '年化收益率计算器') }}</a>{{ t('.', ' 计算某笔投资已实现的年化收益。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (CONTRACT retirement projection — do not re-derive) ────────
+  // inputs: {cur currentAge, ret retireAge, P currentSavings, c monthlyContrib,
+  //          r annualPct}. Returns an outputs object, or {ok:false, msg} for
+  // invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var cur=inp.cur, ret=inp.ret, P=inp.P, c=inp.c, r=inp.r;
+    if(!(cur>=0)) return {ok:false, msg:"Enter your current age."};
+    if(!(ret>0)) return {ok:false, msg:"Enter the age you plan to retire."};
+    if(!(ret>cur)) return {ok:false, msg:"Retirement age has to be higher than your current age."};
+    if(!(P>=0)) return {ok:false, msg:"Enter your current savings (0 is fine)."};
+    if(!(c>=0)) return {ok:false, msg:"Enter your monthly contribution (0 is fine)."};
+    if(!(r>=0)) return {ok:false, msg:"Enter the annual return you expect."};
+    if(!(P>0) && !(c>0)) return {ok:false, msg:"Enter some current savings or a monthly contribution to project growth."};
+    var years = ret - cur;
+    var months = years * 12;
+    var i = r / 100 / 12;
+    var fv;
+    if(i === 0){
+      fv = P + c * months;
+    } else {
+      var g = Math.pow(1 + i, months);
+      fv = P * g + c * (g - 1) / i;
+    }
+    if(!isFinite(fv)) return {ok:false, msg:"Those numbers are too large to project — try a shorter horizon or lower return."};
+    var contributed = P + c * months;
+    var growth = fv - contributed;
+    var growthShare = fv > 0 ? (100 * growth / fv) : 0;
+    return {
+      ok:true, fv:fv, contributed:contributed, growth:growth,
+      years:years, months:months, growthShare:growthShare
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{cur:30, ret:65, P:50000, c:500, r:7}, want:{contributed:260000, years:35} }, // fv ≈ 1,476,000
+    { in:{cur:40, ret:65, P:0,     c:0,   r:0}, want:{ok:false} }                       // nothing to grow
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(w.ok === false){ if(got.ok) console.error("retirement self-check "+i+": expected invalid, got ok"); return; }
+      if(!got.ok){ console.error("retirement self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(k==="ok") continue;
+        if(Math.abs(got[k] - w[k]) > 0.5){
+          console.error("retirement self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+      // spot-check the headline fv on fixture 0 (±2,000 tolerance for rounding)
+      if(i===0 && Math.abs(got.fv - 1476000) > 2000){
+        console.error("retirement self-check 0 fv drift: got "+Math.round(got.fv)+" want ~1476000"); }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { curage:$("curage"), retage:$("retage"), principal:$("principal"),
+                contrib:$("contrib"), rate:$("rate") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outContrib=$("out-contrib"), outGrowth=$("out-growth"),
+        outYears=$("out-years"), outGShare=$("out-gshare"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + Math.round(n).toLocaleString("en-US"); }
+    function dash(){ outMain.textContent="—";
+      [outContrib,outGrowth,outYears,outGShare].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ cur:numFrom(els.curage), ret:numFrom(els.retage), P:numFrom(els.principal),
+                c:numFrom(els.contrib), r:numFrom(els.rate) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent    = money(res.fv);
+      outContrib.textContent = money(res.contributed);
+      outGrowth.textContent  = money(res.growth);
+      outGrowth.className     = res.growth >= 0 ? "pos" : "neg";
+      outYears.textContent   = res.years.toLocaleString("en-US");
+      outGShare.textContent  = res.growthShare.toFixed(res.growthShare<10?1:0) + "%";
+      // Law 3: plain-word interpretation under the number
+      var plain = "Projected nest egg of " + money(res.fv) + " at retirement, in " +
+        res.years.toLocaleString("en-US") + " years. You’d contribute " + money(res.contributed) +
+        "; the rest — " + money(res.growth) + " — is investment growth (before inflation).";
+      outPlain.className="co-plain"; outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Retirement projection: " + money(last.fv) + " nest egg in " + last.years +
+        " years · contributed " + money(last.contributed) + " · growth " + money(last.growth) +
+        " (before inflation) — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["curage","retage","principal","contrib","rate"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

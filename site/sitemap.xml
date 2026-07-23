@@ -137,6 +137,7 @@
   <url><loc>https://www.mastermind-x.com/news.html</loc><lastmod>2026-07-23</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/odds.html</loc><lastmod>2026-07-23</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/options_screener.html</loc><lastmod>2026-07-23</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/plans.html</loc><lastmod>2026-07-23</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/policy_watch.html</loc><lastmod>2026-07-23</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/radar.html</loc><lastmod>2026-07-23</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/report_ai_master_plan.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
@@ -236,9 +237,29 @@
   <url><loc>https://www.mastermind-x.com/tools/index.html</loc><lastmod>2026-07-23</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/calculators/cagr.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/calculators/compounding.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/covered-call.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/dividend.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/dollar-cost-averaging.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/calculators/drawdown-recovery.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/forex-pip-value.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/inflation.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/kelly-criterion.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/margin.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/net-worth.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/options-profit.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/percentage-gain-loss.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/portfolio-rebalancing.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/calculators/position-size.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/retirement.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/risk-of-ruin.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/calculators/risk-reward.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/roi.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/rule-of-72.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/savings-goal.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/sharpe-ratio.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/short-selling.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/stock-average.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/tools/calculators/stop-loss-take-profit.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/calculators/trade-profit.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/spreadsheets/trading-journal.html</loc><lastmod>2026-07-23</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/index.html</loc><lastmod>2026-07-21</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-22T09:07:01.812991+00:00",
+  "generated_at": "2026-07-23T09:15:33.016919+00:00",
   "grade_horizons": [
     5,
     21,
@@ -9,11 +9,11 @@
   "by_desk": {
     "altdata": {
       "5": {
-        "n_obs": 294,
-        "n_dates": 19,
-        "hit_rate": 0.544218,
-        "excess_mean": -0.000383,
-        "wilson_ci_low": 0.317075,
+        "n_obs": 308,
+        "n_dates": 20,
+        "hit_rate": 0.545455,
+        "excess_mean": 0.000551,
+        "wilson_ci_low": 0.342082,
         "state": "ACCRUING"
       },
       "21": {
@@ -27,19 +27,19 @@
     },
     "radar": {
       "5": {
-        "n_obs": 4451,
-        "n_dates": 21,
-        "hit_rate": 0.522096,
-        "excess_mean": -0.004886,
-        "wilson_ci_low": 0.323692,
+        "n_obs": 4676,
+        "n_dates": 22,
+        "hit_rate": 0.519827,
+        "excess_mean": -0.004198,
+        "wilson_ci_low": 0.307218,
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 1681,
-        "n_dates": 10,
-        "hit_rate": 0.389054,
-        "excess_mean": -0.046211,
-        "wilson_ci_low": 0.168178,
+        "n_obs": 1979,
+        "n_dates": 11,
+        "hit_rate": 0.400707,
+        "excess_mean": -0.045039,
+        "wilson_ci_low": 0.151662,
         "state": "ACCRUING"
       }
     },
@@ -71,28 +71,28 @@
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 359,
-        "n_dates": 10,
+        "n_obs": 378,
+        "n_dates": 11,
         "hit_rate": null,
-        "excess_mean": -0.053823,
+        "excess_mean": -0.057395,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
     },
     "us_importance_v0": {
       "5": {
-        "n_obs": 4866,
-        "n_dates": 18,
+        "n_obs": 5246,
+        "n_dates": 19,
         "hit_rate": null,
-        "excess_mean": -0.006567,
+        "excess_mean": -0.005615,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 20,
-        "n_dates": 2,
+        "n_obs": 292,
+        "n_dates": 3,
         "hit_rate": null,
-        "excess_mean": 0.008035,
+        "excess_mean": -0.029287,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -107,28 +107,28 @@
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 301,
-        "n_dates": 11,
+        "n_obs": 322,
+        "n_dates": 12,
         "hit_rate": null,
-        "excess_mean": -0.056951,
+        "excess_mean": -0.060929,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
     },
     "us_importance_v0_pit": {
       "5": {
-        "n_obs": 4866,
-        "n_dates": 18,
+        "n_obs": 5246,
+        "n_dates": 19,
         "hit_rate": null,
-        "excess_mean": -0.006567,
+        "excess_mean": -0.005615,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 20,
-        "n_dates": 2,
+        "n_obs": 292,
+        "n_dates": 3,
         "hit_rate": null,
-        "excess_mean": 0.008035,
+        "excess_mean": -0.029287,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -143,10 +143,10 @@
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 301,
-        "n_dates": 11,
+        "n_obs": 322,
+        "n_dates": 12,
         "hit_rate": null,
-        "excess_mean": -0.056951,
+        "excess_mean": -0.060929,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -173,11 +173,11 @@
     },
     "intel_hub": {
       "5": {
-        "n_obs": 382,
-        "n_dates": 6,
-        "hit_rate": 0.661202,
-        "excess_mean": -0.018748,
-        "wilson_ci_low": 0.299988,
+        "n_obs": 438,
+        "n_dates": 7,
+        "hit_rate": 0.606635,
+        "excess_mean": -0.014331,
+        "wilson_ci_low": 0.250454,
         "state": "ACCRUING"
       }
     },
@@ -213,19 +213,19 @@
     },
     "radar": {
       "5": {
-        "n_obs": 4451,
-        "n_dates": 21,
-        "hit_rate": 0.522096,
-        "excess_mean": -0.004886,
-        "wilson_ci_low": 0.323692,
+        "n_obs": 4676,
+        "n_dates": 22,
+        "hit_rate": 0.519827,
+        "excess_mean": -0.004198,
+        "wilson_ci_low": 0.307218,
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 1681,
-        "n_dates": 10,
-        "hit_rate": 0.389054,
-        "excess_mean": -0.046211,
-        "wilson_ci_low": 0.168178,
+        "n_obs": 1979,
+        "n_dates": 11,
+        "hit_rate": 0.400707,
+        "excess_mean": -0.045039,
+        "wilson_ci_low": 0.151662,
         "state": "ACCRUING"
       }
     },
@@ -257,28 +257,28 @@
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 359,
-        "n_dates": 10,
+        "n_obs": 378,
+        "n_dates": 11,
         "hit_rate": null,
-        "excess_mean": -0.053823,
+        "excess_mean": -0.057395,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
     },
     "us_importance_v0": {
       "5": {
-        "n_obs": 4866,
-        "n_dates": 18,
+        "n_obs": 5246,
+        "n_dates": 19,
         "hit_rate": null,
-        "excess_mean": -0.006567,
+        "excess_mean": -0.005615,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 20,
-        "n_dates": 2,
+        "n_obs": 292,
+        "n_dates": 3,
         "hit_rate": null,
-        "excess_mean": 0.008035,
+        "excess_mean": -0.029287,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -293,28 +293,28 @@
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 301,
-        "n_dates": 11,
+        "n_obs": 322,
+        "n_dates": 12,
         "hit_rate": null,
-        "excess_mean": -0.056951,
+        "excess_mean": -0.060929,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
     },
     "us_importance_v0_pit": {
       "5": {
-        "n_obs": 4866,
-        "n_dates": 18,
+        "n_obs": 5246,
+        "n_dates": 19,
         "hit_rate": null,
-        "excess_mean": -0.006567,
+        "excess_mean": -0.005615,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       },
       "21": {
-        "n_obs": 20,
-        "n_dates": 2,
+        "n_obs": 292,
+        "n_dates": 3,
         "hit_rate": null,
-        "excess_mean": 0.008035,
+        "excess_mean": -0.029287,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -329,10 +329,10 @@
         "state": "GRADED"
       },
       "21": {
-        "n_obs": 301,
-        "n_dates": 11,
+        "n_obs": 322,
+        "n_dates": 12,
         "hit_rate": null,
-        "excess_mean": -0.056951,
+        "excess_mean": -0.060929,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -359,11 +359,11 @@
     },
     "intel_hub": {
       "5": {
-        "n_obs": 382,
-        "n_dates": 6,
-        "hit_rate": 0.661202,
-        "excess_mean": -0.018748,
-        "wilson_ci_low": 0.299988,
+        "n_obs": 438,
+        "n_dates": 7,
+        "hit_rate": 0.606635,
+        "excess_mean": -0.014331,
+        "wilson_ci_low": 0.250454,
         "state": "ACCRUING"
       }
     },
@@ -379,31 +379,31 @@
     },
     "altdata_slow": {
       "5": {
-        "n_obs": 57,
-        "n_dates": 2,
-        "hit_rate": 0.596491,
-        "excess_mean": 0.003258,
-        "wilson_ci_low": 0.094529,
+        "n_obs": 58,
+        "n_dates": 3,
+        "hit_rate": 0.586207,
+        "excess_mean": 0.002332,
+        "wilson_ci_low": 0.207655,
         "state": "ACCRUING"
       }
     },
     "altdata_event": {
       "5": {
-        "n_obs": 55,
-        "n_dates": 2,
-        "hit_rate": 0.509091,
-        "excess_mean": -0.006953,
-        "wilson_ci_low": 0.094529,
+        "n_obs": 65,
+        "n_dates": 3,
+        "hit_rate": 0.538462,
+        "excess_mean": -0.0011,
+        "wilson_ci_low": 0.207655,
         "state": "ACCRUING"
       }
     },
     "altdata_flow": {
       "5": {
-        "n_obs": 8,
-        "n_dates": 2,
-        "hit_rate": 0.5,
-        "excess_mean": -0.001299,
-        "wilson_ci_low": 0.094529,
+        "n_obs": 11,
+        "n_dates": 3,
+        "hit_rate": 0.454545,
+        "excess_mean": 0.001069,
+        "wilson_ci_low": 0.06149,
         "state": "ACCRUING"
       }
     },
@@ -429,12 +429,12 @@
         "mean_abs_excess": 0.0
       },
       "altdata_matched": {
-        "n_grades": 248,
-        "mean_abs_excess": 0.031237
+        "n_grades": 276,
+        "mean_abs_excess": 0.030744
       },
       "overall": {
-        "n_grades": 588,
-        "mean_abs_excess": 0.03797
+        "n_grades": 616,
+        "mean_abs_excess": 0.037444
       }
     },
     "21": {
@@ -452,20 +452,20 @@
       }
     },
     "_meta": {
-      "n_placebo_claims": 682,
+      "n_placebo_claims": 700,
       "n_covered_events": 39,
       "n_fallback_events": 39,
       "fallback_rate": 0.5
     }
   },
   "counts": {
-    "n_claims": 24476,
-    "n_grades": 21930,
-    "n_placebo": 682,
+    "n_claims": 25493,
+    "n_grades": 23916,
+    "n_placebo": 700,
     "n_rejected": 1,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 19150
+      "next_bar": 21136
     },
     "n_claims_unstamped_regime": 5773
   },
@@ -502,9 +502,9 @@
     "altdata_event": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters.",
-        "n_dates": 2,
-        "wilson_ci_low": 0.094529,
+        "reason": "n_dates=3 < 25 required. State: ACCRUING. Need 22 more independent date clusters.",
+        "n_dates": 3,
+        "wilson_ci_low": 0.207655,
         "current_state": "ACCRUING",
         "demote": false,
         "pinned_reason": ""
@@ -531,9 +531,9 @@
     "altdata_flow": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters.",
-        "n_dates": 2,
-        "wilson_ci_low": 0.094529,
+        "reason": "n_dates=3 < 25 required. State: ACCRUING. Need 22 more independent date clusters.",
+        "n_dates": 3,
+        "wilson_ci_low": 0.06149,
         "current_state": "ACCRUING",
         "demote": false,
         "pinned_reason": ""
@@ -589,9 +589,9 @@
     "altdata_slow": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters.",
-        "n_dates": 2,
-        "wilson_ci_low": 0.094529,
+        "reason": "n_dates=3 < 25 required. State: ACCRUING. Need 22 more independent date clusters.",
+        "n_dates": 3,
+        "wilson_ci_low": 0.207655,
         "current_state": "ACCRUING",
         "demote": false,
         "pinned_reason": ""
@@ -627,8 +627,8 @@
       },
       "21": {
         "eligible": false,
-        "reason": "n_dates=10 < 25 required. State: ACCRUING. Need 15 more independent date clusters.",
-        "n_dates": 10,
+        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters.",
+        "n_dates": 11,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -656,8 +656,8 @@
       },
       "21": {
         "eligible": false,
-        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters.",
-        "n_dates": 11,
+        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters.",
+        "n_dates": 12,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -685,8 +685,8 @@
       },
       "21": {
         "eligible": false,
-        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters.",
-        "n_dates": 11,
+        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters.",
+        "n_dates": 12,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -734,9 +734,9 @@
     "intel_hub": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=6 < 25 required. State: ACCRUING. Need 19 more independent date clusters.",
-        "n_dates": 6,
-        "wilson_ci_low": 0.299988,
+        "reason": "n_dates=7 < 25 required. State: ACCRUING. Need 18 more independent date clusters.",
+        "n_dates": 7,
+        "wilson_ci_low": 0.250454,
         "current_state": "ACCRUING",
         "demote": false,
         "pinned_reason": ""
@@ -821,18 +821,18 @@
     "radar": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=21 < 25 required. State: ACCRUING. Need 4 more independent date clusters.",
-        "n_dates": 21,
-        "wilson_ci_low": 0.323692,
+        "reason": "n_dates=22 < 25 required. State: ACCRUING. Need 3 more independent date clusters.",
+        "n_dates": 22,
+        "wilson_ci_low": 0.307218,
         "current_state": "ACCRUING",
         "demote": false,
         "pinned_reason": ""
       },
       "21": {
         "eligible": false,
-        "reason": "n_dates=10 < 25 required. State: ACCRUING. Need 15 more independent date clusters.",
-        "n_dates": 10,
-        "wilson_ci_low": 0.168178,
+        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters.",
+        "n_dates": 11,
+        "wilson_ci_low": 0.151662,
         "current_state": "ACCRUING",
         "demote": false,
         "pinned_reason": ""
@@ -850,8 +850,8 @@
     "us_importance_v0": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=18 < 25 required. State: ACCRUING. Need 7 more independent date clusters.",
-        "n_dates": 18,
+        "reason": "n_dates=19 < 25 required. State: ACCRUING. Need 6 more independent date clusters.",
+        "n_dates": 19,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -859,8 +859,8 @@
       },
       "21": {
         "eligible": false,
-        "reason": "n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters.",
-        "n_dates": 2,
+        "reason": "n_dates=3 < 25 required. State: ACCRUING. Need 22 more independent date clusters.",
+        "n_dates": 3,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -879,8 +879,8 @@
     "us_importance_v0_pit": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=18 < 25 required. State: ACCRUING. Need 7 more independent date clusters.",
-        "n_dates": 18,
+        "reason": "n_dates=19 < 25 required. State: ACCRUING. Need 6 more independent date clusters.",
+        "n_dates": 19,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -888,8 +888,8 @@
       },
       "21": {
         "eligible": false,
-        "reason": "n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters.",
-        "n_dates": 2,
+        "reason": "n_dates=3 < 25 required. State: ACCRUING. Need 22 more independent date clusters.",
+        "n_dates": 3,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -935,7 +935,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-22T09:07:15.849584+00:00",
+  "ladder_states_at": "2026-07-23T09:15:46.872883+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -946,7 +946,7 @@
         "excess_mean": 0.000771,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-08-04",
+        "projected_ready_date": "2026-08-06",
         "reason": "n_dates=17 < 25 required. State: ACCRUING. Need 8 more independent date clusters."
       },
       "21": {
@@ -957,7 +957,7 @@
         "excess_mean": -0.035644,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-08-21",
+        "projected_ready_date": "2026-08-22",
         "reason": "n_dates=8 < 25 required. State: ACCRUING. Need 17 more independent date clusters."
       },
       "63": {
@@ -1016,19 +1016,19 @@
         "excess_mean": 0.011168,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2027-01-20",
+        "projected_ready_date": null,
         "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters."
       },
       "21": {
-        "n_dates": 10,
+        "n_dates": 11,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.053823,
+        "excess_mean": -0.057395,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-08-12",
-        "reason": "n_dates=10 < 25 required. State: ACCRUING. Need 15 more independent date clusters."
+        "projected_ready_date": "2026-08-10",
+        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1090,15 +1090,15 @@
         "reason": "n_dates=25 OK but no directional hits recorded (graded_hits=0) — cannot compute Wilson CI. Family may be salience-only (direction=0); salience families gate on |excess| > placebo instead."
       },
       "21": {
-        "n_dates": 11,
+        "n_dates": 12,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.056951,
+        "excess_mean": -0.060929,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-08-09",
-        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters."
+        "projected_ready_date": "2026-08-08",
+        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1125,15 +1125,15 @@
         "reason": "n_dates=25 OK but no directional hits recorded (graded_hits=0) — cannot compute Wilson CI. Family may be salience-only (direction=0); salience families gate on |excess| > placebo instead."
       },
       "21": {
-        "n_dates": 11,
+        "n_dates": 12,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.056951,
+        "excess_mean": -0.060929,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-08-09",
-        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters."
+        "projected_ready_date": "2026-08-08",
+        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1366,7 +1366,7 @@
         "excess_mean": -0.008512,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-10-04",
+        "projected_ready_date": "2026-10-05",
         "reason": "n_dates=4 < 25 required. State: ACCRUING. Need 21 more independent date clusters."
       },
       "21": {
@@ -1499,26 +1499,26 @@
     },
     "radar": {
       "5": {
-        "n_dates": 21,
+        "n_dates": 22,
         "needed": 25,
-        "wilson_ci_low": 0.323692,
-        "hit_rate": 0.522096,
-        "excess_mean": -0.004886,
+        "wilson_ci_low": 0.307218,
+        "hit_rate": 0.519827,
+        "excess_mean": -0.004198,
         "ready": false,
         "approaching": true,
-        "projected_ready_date": "2026-07-28",
-        "reason": "n_dates=21 < 25 required. State: ACCRUING. Need 4 more independent date clusters."
+        "projected_ready_date": "2026-07-27",
+        "reason": "n_dates=22 < 25 required. State: ACCRUING. Need 3 more independent date clusters."
       },
       "21": {
-        "n_dates": 10,
+        "n_dates": 11,
         "needed": 25,
-        "wilson_ci_low": 0.168178,
-        "hit_rate": 0.389054,
-        "excess_mean": -0.046211,
+        "wilson_ci_low": 0.151662,
+        "hit_rate": 0.400707,
+        "excess_mean": -0.045039,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-08-12",
-        "reason": "n_dates=10 < 25 required. State: ACCRUING. Need 15 more independent date clusters."
+        "projected_ready_date": "2026-08-10",
+        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1604,26 +1604,26 @@
     },
     "us_importance_v0": {
       "5": {
-        "n_dates": 18,
+        "n_dates": 19,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.006567,
+        "excess_mean": -0.005615,
         "ready": false,
         "approaching": false,
         "projected_ready_date": "2026-07-29",
-        "reason": "n_dates=18 < 25 required. State: ACCRUING. Need 7 more independent date clusters."
+        "reason": "n_dates=19 < 25 required. State: ACCRUING. Need 6 more independent date clusters."
       },
       "21": {
-        "n_dates": 2,
+        "n_dates": 3,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": 0.008035,
+        "excess_mean": -0.029287,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-12-30",
-        "reason": "n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters."
+        "projected_ready_date": "2026-11-03",
+        "reason": "n_dates=3 < 25 required. State: ACCRUING. Need 22 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1639,26 +1639,26 @@
     },
     "us_importance_v0_pit": {
       "5": {
-        "n_dates": 18,
+        "n_dates": 19,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": -0.006567,
+        "excess_mean": -0.005615,
         "ready": false,
         "approaching": false,
         "projected_ready_date": "2026-07-29",
-        "reason": "n_dates=18 < 25 required. State: ACCRUING. Need 7 more independent date clusters."
+        "reason": "n_dates=19 < 25 required. State: ACCRUING. Need 6 more independent date clusters."
       },
       "21": {
-        "n_dates": 2,
+        "n_dates": 3,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": 0.008035,
+        "excess_mean": -0.029287,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-12-30",
-        "reason": "n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters."
+        "projected_ready_date": "2026-11-03",
+        "reason": "n_dates=3 < 25 required. State: ACCRUING. Need 22 more independent date clusters."
       },
       "63": {
         "n_dates": 0,
@@ -1681,7 +1681,7 @@
         "excess_mean": -0.022161,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-12-30",
+        "projected_ready_date": "2026-12-31",
         "reason": "n_dates=2 < 25 required. State: ACCRUING. Need 23 more independent date clusters."
       },
       "21": {
@@ -1805,10 +1805,10 @@
         "wilson_ci_low_5d": null
       },
       "radar": {
-        "challenger_excess_mean_5d": -0.004886,
+        "challenger_excess_mean_5d": -0.004198,
         "placebo_covered_abs_excess_5d": 0.066272,
-        "n_dates_5d": 21,
-        "wilson_ci_low_5d": 0.323692
+        "n_dates_5d": 22,
+        "wilson_ci_low_5d": 0.307218
       },
       "sfed_sentiment": {
         "challenger_excess_mean_5d": null,
@@ -1823,15 +1823,15 @@
         "wilson_ci_low_5d": null
       },
       "us_importance_v0": {
-        "challenger_excess_mean_5d": -0.006567,
+        "challenger_excess_mean_5d": -0.005615,
         "placebo_covered_abs_excess_5d": 0.066272,
-        "n_dates_5d": 18,
+        "n_dates_5d": 19,
         "wilson_ci_low_5d": null
       },
       "us_importance_v0_pit": {
-        "challenger_excess_mean_5d": -0.006567,
+        "challenger_excess_mean_5d": -0.005615,
         "placebo_covered_abs_excess_5d": 0.066272,
-        "n_dates_5d": 18,
+        "n_dates_5d": 19,
         "wilson_ci_low_5d": null
       },
       "whitehouse": {
@@ -1842,5 +1842,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-22T09:07:36.634346+00:00"
+  "promotion_readiness_at": "2026-07-23T09:16:07.855546+00:00"
 }

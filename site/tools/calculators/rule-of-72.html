@@ -1,0 +1,377 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule of 72 Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="See how long money takes to double at a given annual return, or the return needed to double in a set time — Rule of 72 estimate plus the exact math.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/rule-of-72.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Rule of 72 Calculator">
+<meta property="og:description" content="See how long money takes to double at a given annual return, or the return needed to double in a set time — Rule of 72 estimate plus the exact math.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/rule-of-72.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Rule of 72 Calculator">
+<meta name="twitter:description" content="See how long money takes to double at a given annual return, or the return needed to double in a set time — Rule of 72 estimate plus the exact math.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Rule of 72 Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Rule of 72 Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Rule of 72 Calculator</h1>
+  <p class="est-dek">See how long money takes to double at a given annual return, or the return needed to double in a set time — Rule of 72 estimate plus the exact math.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 20 h9"/>
+  <rect class="egl-fill" x="17" y="14" width="8" height="12" rx="1"/>
+  <path class="egl-draw" d="M29 20 h6"/>
+  <path class="egl-mark" d="M31.5 17 l3 3 l-3 3"/>
+  <rect class="egl-draw-fill" x="39" y="8" width="7" height="24" rx="1"/>
+  <rect class="egl-draw-fill" x="49" y="8" width="7" height="24" rx="1"/>
+  <path class="egl-mark" d="M40 6 h16"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Divide 72 by an annual return to get the years it takes money to double — or divide 72 by a target number of years to get the return you’d need. The exact figure sits alongside so you can see the approximation gap.</span><span class="l-zh">用 72 除以年化收益率，得到本金翻倍所需的年数；或用 72 除以目标年数，得到所需的收益率。旁边同时给出精确值，让你看清近似的误差。</span></p>
+
+<div class="calc-in">
+  <div class="ci ci-wide">
+    <span class="ci-l"><span class="l-en">What do you want to find?</span><span class="l-zh">你想求什么？</span></span>
+    <div class="ci-seg" role="radiogroup" data-name="mode" aria-label="Mode">
+      <button class="on" data-v="rate" type="button"><span class="l-en">Rate → years</span><span class="l-zh">收益率 → 年数</span></button><button data-v="years" type="button"><span class="l-en">Years → rate</span><span class="l-zh">年数 → 收益率</span></button>
+    </div>
+  </div>
+  <label class="ci" id="row-rate"><span class="ci-l"><span class="l-en">Annual return (%)</span><span class="l-zh">年化收益率（%）</span> <span class="hint"><span class="l-en">compounded</span><span class="l-zh">复利</span></span></span>
+    <input id="rate" inputmode="decimal" autocomplete="off" placeholder="8"></label>
+  <label class="ci" id="row-years" hidden><span class="ci-l"><span class="l-en">Years to double</span><span class="l-zh">翻倍年数</span></span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit" id="out-unit"><span class="l-en">years</span><span class="l-zh">年</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Enter an annual return to see how long money takes to double.</span><span class="l-zh">输入年化收益率，即可看到本金翻倍所需的时间。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Rule-of-72 estimate</span><span class="l-zh">72法则估算</span></dt><dd id="out-est">—</dd></div>
+    <div><dt><span class="l-en">Exact math</span><span class="l-zh">精确值</span></dt><dd id="out-exact">—</dd></div>
+    <div><dt><span class="l-en">Approximation gap</span><span class="l-zh">近似误差</span></dt><dd id="out-gap">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">To estimate how many years it takes money to double at a steady annual return, divide <strong>72</strong> by that return written as a whole number — at 8% a year, roughly 72 ÷ 8 = <strong>9 years</strong>. Flip it to find the return a doubling in a set time would demand: divide 72 by the years instead. It is a mental-math shortcut for the exact compounding formula, and it lands remarkably close in the range investors actually use.</span><span class="l-zh">要估算在稳定的年化收益率下本金翻倍需要多少年，就用 <strong>72</strong> 除以以整数表示的收益率——每年 8% 时，约为 72 ÷ 8 = <strong>9 年</strong>。反过来，若想知道在给定年数内翻倍所需的收益率，则用 72 除以年数。它是精确复利公式的一个心算捷径，而在投资者实际使用的区间里，它的结果出奇地接近。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Years to double</strong> ≈ 72 ÷ Return%</span><span class="l-zh"><strong>翻倍年数</strong> ≈ 72 ÷ 收益率%</span><br>
+<span class="l-en"><strong>Return needed</strong> ≈ 72 ÷ Years</span><span class="l-zh"><strong>所需收益率</strong> ≈ 72 ÷ 年数</span><br>
+<span class="l-en"><strong>Exact years</strong> = ln(2) ÷ ln(1 + Return% ÷ 100)</span><span class="l-zh"><strong>精确年数</strong> = ln(2) ÷ ln(1 + 收益率% ÷ 100)</span><br>
+<span class="l-en"><strong>Exact return</strong> = 100 × ( 2^(1 ÷ Years) − 1 )</span><span class="l-zh"><strong>精确收益率</strong> = 100 × ( 2^(1 ÷ 年数) − 1 )</span>
+</div>
+<p><span class="l-en">The exact line comes from solving (1 + r)^t = 2 for the missing term. Seventy-two is chosen because it divides cleanly by 2, 3, 4, 6, 8, 9 and 12, making the mental arithmetic easy — and because its error is smallest right around the 6–10% band where the true multiplier of ln(2) ≈ 69.3 would otherwise undershoot.</span><span class="l-zh">精确的那一行来自求解 (1 + r)^t = 2 中缺失的那一项。选用 72，是因为它能被 2、3、4、6、8、9、12 整除，心算方便——而且在 6–10% 这个区间里它的误差最小，此处真实系数 ln(2) ≈ 69.3 反而会偏低。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a fund compounds at <span class="num">8%</span> a year and you want to know how long it takes to double.</span><span class="l-zh">假设一只基金以每年 <span class="num">8%</span> 复利增长，你想知道它翻倍需要多久。</span></p>
+<ul>
+<li><span class="l-en">Rule of 72 = <span class="num">72 ÷ 8 = 9.00 years</span></span><span class="l-zh">72法则 = <span class="num">72 ÷ 8 = 9.00 年</span></span></li>
+<li><span class="l-en">Exact = <span class="num">ln(2) ÷ ln(1.08) = 9.01 years</span></span><span class="l-zh">精确值 = <span class="num">ln(2) ÷ ln(1.08) = 9.01 年</span></span></li>
+<li><span class="l-en">The estimate is off by about <span class="num">four days</span> — close enough for a decision made in your head.</span><span class="l-zh">估算值仅相差约 <span class="num">四天</span>——对于心算决策已足够接近。</span></li>
+</ul>
+</div>
+<p><span class="l-en">Now run it the other way: to double in <span class="num">10</span> years you would need roughly <span class="num">72 ÷ 10 = 7.2%</span> a year; the exact requirement is <span class="num">7.18%</span>. Both directions rest on the same shortcut, and both stay honest inside the ordinary range of returns.</span><span class="l-zh">再反过来算：要在 <span class="num">10</span> 年内翻倍，你大约需要 <span class="num">72 ÷ 10 = 7.2%</span> 的年化收益；精确要求为 <span class="num">7.18%</span>。两个方向依赖同一个捷径，在通常的收益区间内都保持诚实。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Treating a rough estimate as a promise</span><span class="l-zh">把粗略估算当成承诺</span></span>
+<p><span class="l-en">The rule assumes one fixed, positive return compounding without interruption — a straight line that real markets never draw. An average 8% return made of a −20% year and a +40% year does not double capital on the same schedule as a steady 8%; the swings, taxes, fees and any withdrawals all bend the path. The number is a back-of-envelope sketch, not a forecast, and it says nothing about the odds of earning that return in the first place.</span><span class="l-zh">该法则假设一个固定的正收益率不间断地复利——一条真实市场从不画出的直线。由 −20% 与 +40% 拼成的平均 8% 收益，翻倍的节奏并不等同于稳定的 8%；波动、税费、成本以及任何提取都会改变这条路径。这个数字是信手勾勒的草图，而非预测，它也完全没有说明你能否首先赚到那样的收益率。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">The shortcut is a linear approximation of a curve, so it drifts as you leave the middle. A few honest limits:</span><span class="l-zh">这个捷径是对一条曲线的线性近似，因此一旦偏离中段就会失真。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>High rates overshoot.</strong> At 20%+ a year, 72 exaggerates the doubling time — the true multiplier drifts toward 76 or higher. Some traders switch to 70 for low rates and 78 for high ones; the exact math above never has this problem.</span><span class="l-zh"><strong>高收益率会高估。</strong>年化超过 20% 时，72 会夸大翻倍所需时间——真实系数会漂移到 76 甚至更高。有人对低收益率改用 70、对高收益率改用 78；上面的精确公式则从无此问题。</span></li>
+<li><span class="l-en"><strong>It needs a positive return.</strong> A zero or negative return never doubles, so the rule has no answer there. This tool asks for a return above zero rather than printing a meaningless number.</span><span class="l-zh"><strong>它需要正收益率。</strong>零或负的收益率永远无法翻倍，法则在此没有答案。本工具会要求输入大于零的收益率，而非印出一个无意义的数字。</span></li>
+<li><span class="l-en"><strong>Compounding frequency matters.</strong> The formula assumes the return compounds once per year. Monthly or continuous compounding doubles slightly faster, so the same headline rate reaches 2× a touch sooner than the annual figure suggests.</span><span class="l-zh"><strong>复利频率有影响。</strong>公式假设每年复利一次。按月或连续复利翻倍略快，因此同样的名义收益率达到 2× 的时间会比按年计算略早一些。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Seventy-two over the rate is your doubling time in years — a fast, honest sketch inside the 6–10% band, and a curve worth checking exactly once you stray far from it.</span><span class="l-zh">72 除以收益率就是以年计的翻倍时间——在 6–10% 区间里是一张快速而诚实的草图，一旦远离这个区间，就值得用精确公式核对。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">See the full curve behind the shortcut with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/compounding.html"><span class="l-en">compounding calculator</span><span class="l-zh">复利计算器</span></a><span class="l-en">, or turn a growth rate into an annualized figure with the <a href="</span><span class="l-zh">查看捷径背后的完整曲线，或用 <a href="</span>../../tools/calculators/cagr.html"><span class="l-en">CAGR calculator</span><span class="l-zh">年化增长率计算器</span></a><span class="l-en">.</span><span class="l-zh">把增长率换算成年化数字。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/compounding.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Compound Interest Calculator</span></a><a class="est-relcard" href="../../tools/calculators/cagr.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">CAGR Calculator</span></a><a class="est-relcard" href="../../tools/calculators/retirement.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Retirement Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (do not re-derive) ────────────────────────────────────────
+  // inputs: {mode:"rate"|"years", r annual return %, y years}. Returns an
+  // outputs object, or {ok:false, msg} for invalid input. Never NaN/Infinity.
+  // rate mode:  est = 72/r ;  exact = ln(2)/ln(1+r/100)   → years
+  // years mode: est = 72/y ;  exact = 100*(2^(1/y)-1)     → percent
+  function compute(inp){
+    var mode = inp.mode === "years" ? "years" : "rate";
+    if(mode === "rate"){
+      var r = inp.r;
+      if(!(r > 0)) return {ok:false, msg:"Enter an annual return above zero — a zero or negative return never doubles."};
+      var est = 72 / r;
+      var exact = Math.LN2 / Math.log(1 + r / 100);
+      return { ok:true, mode:"rate", est:est, exact:exact, gap:est - exact, unit:"years" };
+    } else {
+      var y = inp.y;
+      if(!(y > 0)) return {ok:false, msg:"Enter a number of years above zero to see the return it would take."};
+      var estR = 72 / y;
+      var exactR = 100 * (Math.pow(2, 1 / y) - 1);
+      return { ok:true, mode:"years", est:estR, exact:exactR, gap:estR - exactR, unit:"percent" };
+    }
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{mode:"rate",  r:8},  want:{est:9,    exact:9.01} },
+    { in:{mode:"rate",  r:6},  want:{est:12,   exact:11.90} },
+    { in:{mode:"years", y:10}, want:{est:7.2,  exact:7.18} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("rule-of-72 self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.01){
+        console.error("rule-of-72 self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var seg = document.querySelector('.ci-seg[data-name="mode"]');
+    var rowRate=$("row-rate"), rowYears=$("row-years"),
+        rateEl=$("rate"), yearsEl=$("years"),
+        outMain=$("out-main"), outUnit=$("out-unit"), outPlain=$("out-plain"),
+        outEst=$("out-est"), outExact=$("out-exact"), outGap=$("out-gap"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    var mode = "rate";
+    var L = document.documentElement.getAttribute("lang") === "zh";
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function yrs(n){ return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function pct(n){ return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) + "%"; }
+    function dash(){ outMain.textContent="—";
+      [outEst,outExact,outGap].forEach(function(e){e.textContent="—";}); }
+
+    var last=null;
+    function render(){
+      var inp = { mode:mode, r:numFrom(rateEl), y:numFrom(yearsEl) };
+      var res = compute(inp); last = res;
+      if(!res.ok){ dash(); outPlain.textContent = res.msg; outPlain.className="co-plain"; return; }
+
+      if(res.mode === "rate"){
+        outUnit.textContent = L ? "年" : "years";
+        outMain.textContent = res.est.toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1});
+        outEst.textContent   = yrs(res.est) + (L ? " 年" : " yr");
+        outExact.textContent = yrs(res.exact) + (L ? " 年" : " yr");
+        outGap.textContent   = (res.gap >= 0 ? "+" : "") + yrs(res.gap) + (L ? " 年" : " yr");
+        var rTxt = (numFrom(rateEl)).toLocaleString("en-US",{maximumFractionDigits:2});
+        outPlain.textContent = L
+          ? "以每年 " + rTxt + "% 复利，本金约 " + yrs(res.est) + " 年翻倍（精确 " + yrs(res.exact) + " 年）。"
+          : "At " + rTxt + "% a year, money doubles in about " + yrs(res.est) + " years (exact " + yrs(res.exact) + ").";
+      } else {
+        outUnit.textContent = "%";
+        outMain.textContent = res.est.toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1});
+        outEst.textContent   = pct(res.est);
+        outExact.textContent = pct(res.exact);
+        outGap.textContent   = (res.gap >= 0 ? "+" : "") + pct(res.gap);
+        var yTxt = (numFrom(yearsEl)).toLocaleString("en-US",{maximumFractionDigits:2});
+        outPlain.textContent = L
+          ? "要在 " + yTxt + " 年内翻倍，约需每年 " + pct(res.est) + " 的收益（精确 " + pct(res.exact) + "）。"
+          : "To double in " + yTxt + " years you'd need about " + pct(res.est) + " a year (exact " + pct(res.exact) + ").";
+      }
+      outPlain.className="co-plain";
+    }
+
+    function switchMode(m){
+      mode = (m === "years") ? "years" : "rate";
+      [].forEach.call(seg.querySelectorAll("button"), function(b){
+        var on = b.getAttribute("data-v") === mode;
+        b.classList.toggle("on", on); b.setAttribute("aria-checked", on ? "true" : "false");
+      });
+      if(mode === "rate"){ rowRate.hidden=false; rowYears.hidden=true; }
+      else { rowRate.hidden=true; rowYears.hidden=false; }
+      render();
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      if(last.mode === "rate"){
+        var rTxt = (numFrom(rateEl)).toLocaleString("en-US",{maximumFractionDigits:2});
+        return "Rule of 72: at " + rTxt + "% a year money doubles in ~" + yrs(last.est) +
+          " years (exact " + yrs(last.exact) + ") — mastermind-x.com";
+      }
+      var yTxt = (numFrom(yearsEl)).toLocaleString("en-US",{maximumFractionDigits:2});
+      return "Rule of 72: doubling in " + yTxt + " years needs ~" + pct(last.est) +
+        " a year (exact " + pct(last.exact) + ") — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    seg.addEventListener("click", function(e){
+      var b = e.target.closest("button[data-v]"); if(!b) return;
+      switchMode(b.getAttribute("data-v"));
+    });
+    rateEl.addEventListener("input", render);
+    yearsEl.addEventListener("input", render);
+    switchMode("rate");
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

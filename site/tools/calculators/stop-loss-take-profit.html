@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stop-Loss &amp; Take-Profit Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Turn a percent or R distance into exact stop-loss and take-profit prices for a long or short, with the reward-to-risk ratio and dollars at stake.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/stop-loss-take-profit.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Stop-Loss &amp; Take-Profit Calculator">
+<meta property="og:description" content="Turn a percent or R distance into exact stop-loss and take-profit prices for a long or short, with the reward-to-risk ratio and dollars at stake.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/stop-loss-take-profit.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Stop-Loss &amp; Take-Profit Calculator">
+<meta name="twitter:description" content="Turn a percent or R distance into exact stop-loss and take-profit prices for a long or short, with the reward-to-risk ratio and dollars at stake.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Stop-Loss \u0026 Take-Profit Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Stop-Loss &amp; Take-Profit Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Stop-Loss &amp; Take-Profit Calculator</h1>
+  <p class="est-dek">Turn a percent or R distance into exact stop-loss and take-profit prices for a long or short, with the reward-to-risk ratio and dollars at stake.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 20 h48"/>
+  <rect class="egl-up" x="16" y="8" width="32" height="5" rx="1" opacity="0.9"/>
+  <rect class="egl-down" x="16" y="27" width="32" height="5" rx="1" opacity="0.9"/>
+  <path class="egl-draw" d="M8 20 h48"/>
+  <path class="egl-up" d="M52 10.5 l3 0 M52 10.5 l-1.5 -2.5 M52 10.5 l-1.5 2.5"/>
+  <path class="egl-down" d="M52 29.5 l3 0 M52 29.5 l-1.5 -2.5 M52 29.5 l-1.5 2.5"/>
+  <circle class="egl-mark-dot" cx="16" cy="20" r="2.4"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter your entry price, pick a side, and set how far away your stop and target sit as a percent. You get the exact stop and target prices, the reward-to-risk ratio, and — if you add a share count — the dollars at stake.</span><span class="l-zh">填入入场价，选择方向，再以百分比设定止损与目标离入场价的距离，即可得到确切的止损价与目标价、盈亏比，若再填入股数，还能算出对应的金额。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Entry price ($)</span><span class="l-zh">入场价（$）</span></span>
+    <input id="entry" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+  <div class="ci">
+    <span class="ci-l"><span class="l-en">Side</span><span class="l-zh">方向</span></span>
+    <div class="ci-seg" role="radiogroup" data-name="side" aria-label="Trade side">
+      <button type="button" class="on" data-v="long" aria-checked="true" role="radio"><span class="l-en">Long</span><span class="l-zh">做多</span></button>
+      <button type="button" data-v="short" aria-checked="false" role="radio"><span class="l-en">Short</span><span class="l-zh">做空</span></button>
+    </div>
+  </div>
+  <label class="ci"><span class="ci-l"><span class="l-en">Stop distance (%)</span><span class="l-zh">止损距离（%）</span> <span class="hint"><span class="l-en">from entry</span><span class="l-zh">距入场价</span></span></span>
+    <input id="stoppct" inputmode="decimal" autocomplete="off" placeholder="5"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Target distance (%)</span><span class="l-zh">目标距离（%）</span> <span class="hint"><span class="l-en">from entry</span><span class="l-zh">距入场价</span></span></span>
+    <input id="targetpct" inputmode="decimal" autocomplete="off" placeholder="15"></label>
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">Shares</span><span class="l-zh">股数</span> <span class="hint"><span class="l-en">optional — for dollar risk and reward</span><span class="l-zh">可选——用于计算风险与回报金额</span></span></span>
+    <input id="shares" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit" id="out-unit"><span class="l-en">target</span><span class="l-zh">目标</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in the entry and both distances to see your stop and target.</span><span class="l-zh">填入入场价与两个距离，即可看到止损价与目标价。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Stop price</span><span class="l-zh">止损价</span></dt><dd id="out-stop">—</dd></div>
+    <div><dt><span class="l-en">Target price</span><span class="l-zh">目标价</span></dt><dd id="out-target">—</dd></div>
+    <div><dt><span class="l-en">Reward : risk</span><span class="l-zh">盈亏比</span></dt><dd id="out-rr">—</dd></div>
+    <div><dt><span class="l-en">Dollar risk</span><span class="l-zh">风险金额</span></dt><dd id="out-drisk">—</dd></div>
+    <div><dt><span class="l-en">Dollar reward</span><span class="l-zh">回报金额</span></dt><dd id="out-dreward">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">A percent stop and target are just multipliers on your <strong>entry price</strong>: for a long, the stop sits below entry and the target above; for a short, the stop is above and the target below. The <strong>reward-to-risk ratio</strong> is the target distance divided by the stop distance — and it does not depend on the price or the share count at all.</span><span class="l-zh">百分比的止损与目标，只是<strong>入场价</strong>上的乘数：做多时，止损在入场价下方、目标在上方；做空时则相反。<strong>盈亏比</strong>等于目标距离除以止损距离——它与价格和股数都无关。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Long</strong> — Stop = Entry × (1 − Stop% ÷ 100), Target = Entry × (1 + Target% ÷ 100)</span><span class="l-zh"><strong>做多</strong> — 止损价 = 入场价 × (1 − 止损% ÷ 100)，目标价 = 入场价 × (1 + 目标% ÷ 100)</span><br>
+<span class="l-en"><strong>Short</strong> — Stop = Entry × (1 + Stop% ÷ 100), Target = Entry × (1 − Target% ÷ 100)</span><span class="l-zh"><strong>做空</strong> — 止损价 = 入场价 × (1 + 止损% ÷ 100)，目标价 = 入场价 × (1 − 目标% ÷ 100)</span><br>
+<span class="l-en"><strong>Reward : risk</strong> = Target% ÷ Stop%</span><span class="l-zh"><strong>盈亏比</strong> = 目标% ÷ 止损%</span><br>
+<span class="l-en">With shares Q: Dollar risk = |Entry − Stop| × Q, Dollar reward = |Target − Entry| × Q</span><span class="l-zh">若有股数 Q：风险金额 = |入场价 − 止损价| × Q，回报金额 = |目标价 − 入场价| × Q</span>
+</div>
+<p><span class="l-en">Notice the ratio ignores price entirely. A 5% stop against a 15% target is a reward-to-risk of 3-to-1 whether the stock trades at $8 or $800. Price and share count only set the <em>dollars</em> at stake, not the shape of the trade.</span><span class="l-zh">注意盈亏比完全与价格无关。5% 的止损配上 15% 的目标，就是 3 比 1 的盈亏比，无论股价是 $8 还是 $800。价格和股数只决定所涉及的<em>金额</em>，而非交易的结构。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader goes <span class="num">long</span> at <span class="num">$100.00</span>, sets the stop <span class="num">5%</span> away and the target <span class="num">15%</span> away.</span><span class="l-zh">假设一位交易者在 <span class="num">$100.00</span> <span class="num">做多</span>，止损设在 <span class="num">5%</span> 处，目标设在 <span class="num">15%</span> 处。</span></p>
+<ul>
+<li><span class="l-en">Stop = <span class="num">100 × (1 − 0.05) = $95.00</span></span><span class="l-zh">止损价 = <span class="num">100 × (1 − 0.05) = $95.00</span></span></li>
+<li><span class="l-en">Target = <span class="num">100 × (1 + 0.15) = $115.00</span></span><span class="l-zh">目标价 = <span class="num">100 × (1 + 0.15) = $115.00</span></span></li>
+<li><span class="l-en">Reward : risk = <span class="num">15 ÷ 5 = 3.0</span> — three dollars of upside sought for every one at risk.</span><span class="l-zh">盈亏比 = <span class="num">15 ÷ 5 = 3.0</span>——每承担 1 元风险，就寻求 3 元的上行空间。</span></li>
+<li><span class="l-en">With <span class="num">100</span> shares: risk = <span class="num">5 × 100 = $500</span>, reward = <span class="num">15 × 100 = $1,500</span>.</span><span class="l-zh">若持有 <span class="num">100</span> 股：风险 = <span class="num">5 × 100 = $500</span>，回报 = <span class="num">15 × 100 = $1,500</span>。</span></li>
+</ul>
+</div>
+<p><span class="l-en">A short at the same entry simply flips the prices: the stop lands at $105.00 and the target at $85.00, with the identical 3-to-1 ratio. The percentages define the trade; the side just decides which way the prices point.</span><span class="l-zh">在同一入场价做空只是把价格翻转：止损价变为 $105.00，目标价变为 $85.00，盈亏比仍是 3 比 1。百分比决定交易的结构，方向只决定价格朝哪边走。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">A wide target does not fix a bad stop</span><span class="l-zh">宽目标救不了差止损</span></span>
+<p><span class="l-en">It is tempting to chase a fat reward-to-risk by stretching the target far away — a 2% stop against a 20% target reads as a glorious 10-to-1. But a target the price rarely reaches is a number on paper, not a trade. Reward-to-risk only matters alongside how <em>often</em> the target is actually hit; a 10-to-1 ratio that fills once in twenty tries loses money. Set the target where the price can plausibly go, then read the ratio — not the other way around.</span><span class="l-zh">为了追求漂亮的盈亏比，把目标拉得很远很诱人——2% 的止损配 20% 的目标，看起来是壮观的 10 比 1。但价格很少触及的目标，只是纸面上的数字，而非真实的交易。盈亏比只有结合目标实际<em>被触及的频率</em>才有意义；若 20 次才成 1 次，10 比 1 也是亏钱的。先把目标设在价格有望到达之处，再读盈亏比——而非反过来。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This math places two clean price levels from an entry. It says nothing about whether the trade is a good one. A few honest limits:</span><span class="l-zh">这套算法能从入场价干净地放出两个价格水平，但它并不判断这笔交易本身好不好。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>A stop is a request, not a guarantee.</strong> Overnight gaps and thin liquidity can fill you well past the stop price, so the real loss can exceed the dollar risk shown here.</span><span class="l-zh"><strong>止损是一个请求，而非保证。</strong>隔夜跳空与流动性不足可能让你的成交价远超止损价，因此实际亏损可能超过这里显示的风险金额。</span></li>
+<li><span class="l-en"><strong>Percent distances ignore volatility.</strong> A 5% stop is loose on a sleepy utility and tight on a small-cap that swings 8% in a day. Match the distance to how the specific name actually moves, not a habit.</span><span class="l-zh"><strong>百分比距离忽略了波动性。</strong>5% 的止损对一只平稳的公用事业股是宽的，对一天波动 8% 的小盘股却是紧的。要让距离贴合该个股实际的波动幅度，而非套用习惯。</span></li>
+<li><span class="l-en"><strong>The ratio is not the odds.</strong> Reward-to-risk describes the payoff shape, never the probability of reaching the target. A rich ratio with a low hit rate can still lose over many trades.</span><span class="l-zh"><strong>盈亏比不是胜率。</strong>盈亏比描述的是回报的结构，从不代表触及目标的概率。高盈亏比若配上低胜率，在多笔交易后仍可能亏损。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">The percentages set the reward-to-risk shape; the price and share count only scale the dollars. Neither one tells you how often the target is reached.</span><span class="l-zh">百分比决定盈亏比的结构；价格与股数只放大金额。两者都无法告诉你目标被触及的频率。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Turn this ratio into a break-even win rate with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/risk-reward.html"><span class="l-en">risk-to-reward calculator</span><span class="l-zh">盈亏比计算器</span></a><span class="l-en">, or turn a stop into a share count with the <a href="</span><span class="l-zh">把这个比率换算成保本胜率，或用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">.</span><span class="l-zh">把止损换算成股数。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/position-size.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Position Size Calculator</span></a><a class="est-relcard" href="../../tools/calculators/risk-reward.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Risk-Reward Calculator</span></a><a class="est-relcard" href="../../tools/calculators/drawdown-recovery.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Drawdown Recovery Calculator</span></a>
+        <a class="est-relcard" href="../../learn/risk/risk-reward-expectancy.html"><span class="rc-kind"><span class="l-en">Lesson</span><span class="l-zh">课程</span></span><span class="rc-title">Risk/Reward Ratios and Trade Expectancy Explained</span></a>
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    <aside class="est-cta-block">
+      <div class="cta-copy">
+        <span class="cta-k"><span class="l-en">Next step</span><span class="l-zh">下一步</span></span>
+        <p class="cta-t">Read the lesson: Risk/Reward Ratios and Trade Expectancy Explained</p>
+      </div>
+      <a class="gbtn gbtn-lg gbtn-cta" href="../../learn/risk/risk-reward-expectancy.html">Read the lesson: Risk/Reward Ratios and Trade Expectancy Explained</a>
+    </aside>
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute — do not re-derive ────────────────────────────────────────
+  // inputs: {E entry, side 'long'|'short', sp stopPct, tp targetPct, Q shares?}.
+  // Returns an outputs object, or {ok:false, msg} for invalid input.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var E=inp.E, side=inp.side, sp=inp.sp, tp=inp.tp, Q=inp.Q;
+    if(!(E>0)) return {ok:false, msg:"Enter your entry price."};
+    if(!(sp>0)) return {ok:false, msg:"Enter how far your stop sits from entry, as a percent."};
+    if(!(tp>0)) return {ok:false, msg:"Enter how far your target sits from entry, as a percent."};
+    if(side!=="long" && side!=="short") side="long";
+    var stopPrice, targetPrice;
+    if(side==="long"){
+      stopPrice   = E * (1 - sp/100);
+      targetPrice = E * (1 + tp/100);
+    } else {
+      stopPrice   = E * (1 + sp/100);
+      targetPrice = E * (1 - tp/100);
+    }
+    var riskPerShare   = Math.abs(E - stopPrice);
+    var rewardPerShare = Math.abs(targetPrice - E);
+    var rr = riskPerShare > 0 ? rewardPerShare / riskPerShare : 0;
+    var hasQ = (Q>0);
+    var dollarRisk   = hasQ ? riskPerShare   * Q : null;
+    var dollarReward = hasQ ? rewardPerShare * Q : null;
+    var stopBelowZero = stopPrice <= 0 || targetPrice <= 0; // e.g. short target% >= 100
+    return {
+      ok:true, side:side, stopPrice:stopPrice, targetPrice:targetPrice,
+      riskPerShare:riskPerShare, rewardPerShare:rewardPerShare, rr:rr,
+      hasQ:hasQ, dollarRisk:dollarRisk, dollarReward:dollarReward,
+      belowZero: stopBelowZero
+    };
+  }
+
+  // ── §6 self-check: run the fixtures on load, console.error on drift ─────────
+  var WORKED_EXAMPLES = [
+    { in:{E:100, side:"long",  sp:5, tp:15, Q:100}, want:{stopPrice:95, targetPrice:115, rr:3, dollarRisk:500, dollarReward:1500} },
+    { in:{E:50,  side:"short", sp:4, tp:10, Q:100}, want:{stopPrice:52, targetPrice:45,  rr:2.5, dollarRisk:200, dollarReward:500} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("stop-loss-take-profit self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.005){
+        console.error("stop-loss-take-profit self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { entry:$("entry"), stoppct:$("stoppct"), targetpct:$("targetpct"), shares:$("shares") };
+    var seg = document.querySelector('.ci-seg[data-name="side"]');
+    var outMain=$("out-main"), outUnit=$("out-unit"), outPlain=$("out-plain"),
+        outStop=$("out-stop"), outTarget=$("out-target"), outRR=$("out-rr"),
+        outDRisk=$("out-drisk"), outDReward=$("out-dreward"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    var side = "long";
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function dash(){ outMain.textContent="—";
+      [outStop,outTarget,outRR,outDRisk,outDReward].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ E:numFrom(els.entry), side:side, sp:numFrom(els.stoppct), tp:numFrom(els.targetpct), Q:numFrom(els.shares) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      if(res.belowZero){
+        dash();
+        outPlain.textContent = "That distance would price the stop or target at or below zero — trim the percent.";
+        outPlain.className="co-plain warn"; last=null; return;
+      }
+      // co-main = the target price (the outcome you're aiming for)
+      outMain.textContent = money(res.targetPrice);
+      outUnit.textContent = side==="long" ? "target" : "target";
+      outStop.textContent   = money(res.stopPrice);
+      outStop.className     = "neg";
+      outTarget.textContent = money(res.targetPrice);
+      outTarget.className   = "pos";
+      outRR.textContent     = res.rr.toFixed(res.rr < 10 ? 2 : 1).replace(/\.0+$/,"").replace(/(\.\d*[1-9])0+$/,"$1") + " : 1";
+      if(res.hasQ){
+        outDRisk.textContent   = money(res.dollarRisk);   outDRisk.className   = "neg";
+        outDReward.textContent = money(res.dollarReward); outDReward.className = "pos";
+      } else {
+        outDRisk.textContent="—";   outDRisk.className="";
+        outDReward.textContent="—"; outDReward.className="";
+      }
+      // Law 3: plain-word interpretation under the number
+      var rrTxt = res.rr.toFixed(2).replace(/\.?0+$/,"");
+      var lead = side==="long"
+        ? "Going long at " + money(numFrom(els.entry)) + ": stop at " + money(res.stopPrice) + ", target at " + money(res.targetPrice)
+        : "Going short at " + money(numFrom(els.entry)) + ": stop at " + money(res.stopPrice) + ", target at " + money(res.targetPrice);
+      var plain = lead + " — a reward-to-risk of " + rrTxt + " to 1";
+      if(res.hasQ){
+        plain += ", risking " + money(res.dollarRisk) + " to make " + money(res.dollarReward);
+      }
+      plain += ".";
+      outPlain.textContent = plain; outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var rrTxt = last.rr.toFixed(2).replace(/\.?0+$/,"");
+      var line = "Stop/target (" + last.side + "): stop " + money(last.stopPrice) +
+        " · target " + money(last.targetPrice) + " · reward:risk " + rrTxt + ":1";
+      if(last.hasQ){ line += " · risk " + money(last.dollarRisk) + " · reward " + money(last.dollarReward); }
+      return line + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    // segmented side toggle
+    if(seg){
+      seg.addEventListener("click", function(e){
+        var b=e.target.closest("button[data-v]"); if(!b) return;
+        side=b.getAttribute("data-v");
+        [].forEach.call(seg.querySelectorAll("button[data-v]"), function(btn){
+          var on=btn===b; btn.classList.toggle("on",on); btn.setAttribute("aria-checked", on?"true":"false");
+        });
+        render();
+      });
+    }
+    ["entry","stoppct","targetpct","shares"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

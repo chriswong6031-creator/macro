@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelly Criterion Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Find the Kelly criterion fraction from your win rate and win/loss ratio: the optimal share of capital to stake, plus the safer half-Kelly.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/kelly-criterion.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Kelly Criterion Calculator">
+<meta property="og:description" content="Find the Kelly criterion fraction from your win rate and win/loss ratio: the optimal share of capital to stake, plus the safer half-Kelly.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/kelly-criterion.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Kelly Criterion Calculator">
+<meta name="twitter:description" content="Find the Kelly criterion fraction from your win rate and win/loss ratio: the optimal share of capital to stake, plus the safer half-Kelly.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Kelly Criterion Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Kelly Criterion Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Kelly Criterion Calculator</h1>
+  <p class="est-dek">Find the Kelly criterion fraction from your win rate and win/loss ratio: the optimal share of capital to stake, plus the safer half-Kelly.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 30 h48"/>
+  <rect class="egl-still" x="8" y="16" width="48" height="14" rx="1"/>
+  <rect class="egl-fill" x="8" y="16" width="17" height="14" rx="1"/>
+  <path class="egl-mark" d="M25 12 v22"/>
+  <circle class="egl-mark-dot" cx="25" cy="10" r="2.4"/>
+  <path class="egl-draw" d="M8 16 v14 M56 16 v14"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter how often the trade wins and how big an average win is versus an average loss. You get the fraction of capital that maximizes long-run growth — and the gentler half-Kelly most traders actually use.</span><span class="l-zh">填入交易的胜率，以及平均盈利相对平均亏损的倍数。即可得到——能让长期复合增长最大化的下注比例，以及多数交易者实际采用的、更温和的「半凯利」。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Win probability (%)</span><span class="l-zh">胜率（%）</span> <span class="hint"><span class="l-en">how often it wins</span><span class="l-zh">获胜的频率</span></span></span>
+    <input id="winprob" inputmode="decimal" autocomplete="off" placeholder="55"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Win/loss ratio (R)</span><span class="l-zh">盈亏比（R）</span> <span class="hint"><span class="l-en">avg win ÷ avg loss</span><span class="l-zh">平均盈利 ÷ 平均亏损</span></span></span>
+    <input id="wlratio" inputmode="decimal" autocomplete="off" placeholder="2"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">of capital (Kelly)</span><span class="l-zh">资金占比（凯利）</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in both fields to size the bet.</span><span class="l-zh">填入两个字段即可计算下注比例。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Half-Kelly</span><span class="l-zh">半凯利</span></dt><dd id="out-half">—</dd></div>
+    <div><dt><span class="l-en">Implied edge</span><span class="l-zh">隐含优势</span></dt><dd id="out-edge">—</dd></div>
+    <div><dt><span class="l-en">Loss probability</span><span class="l-zh">败率</span></dt><dd id="out-loss">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">The Kelly fraction is the share of capital to stake so that long-run compound growth is fastest. It rises with your <strong>win rate</strong> and with the <strong>size of a win relative to a loss</strong>, and it turns negative — telling you not to bet at all — the moment those two together stop paying. It answers one question only: given a known edge, how much is too much?</span><span class="l-zh">凯利比例是——为使长期复合增长最快——应投入的资金份额。它随你的<strong>胜率</strong>以及<strong>盈利相对亏损的倍数</strong>而上升；一旦这两者合起来不再带来正收益，它就转为负值——告诉你根本不该下注。它只回答一个问题：在优势已知的前提下，下多少才算过头？</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>f</strong> = W − ( 1 − W ) ÷ R</span><span class="l-zh"><strong>f</strong> = W − ( 1 − W ) ÷ R</span><br>
+<span class="l-en">where W = win probability (as a decimal), R = win/loss ratio</span><span class="l-zh">其中 W = 胜率（小数形式），R = 盈亏比</span><br>
+<span class="l-en"><strong>Kelly %</strong> = 100 × f</span><span class="l-zh"><strong>凯利 %</strong> = 100 × f</span><br>
+<span class="l-en"><strong>Half-Kelly %</strong> = Kelly % ÷ 2</span><span class="l-zh"><strong>半凯利 %</strong> = 凯利 % ÷ 2</span>
+</div>
+<p><span class="l-en">R is the <em>ratio</em> of your average win to your average loss, in R-multiples — win $200 on a typical winner and lose $100 on a typical loser, and R = 2. If <strong>f</strong> comes out at zero or below, the edge does not clear its own losses: Kelly says stand aside, not bet small.</span><span class="l-zh">R 是你的平均盈利与平均亏损之<em>比</em>，以 R 倍数计——典型盈利赚 $200、典型亏损亏 $100，则 R = 2。若 <strong>f</strong> 算出为零或更低，说明优势填不平自身的亏损：此时凯利的结论是空仓，而非小注。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader wins <span class="num">55%</span> of the time, and a typical win is <span class="num">twice</span> the size of a typical loss (R = 2).</span><span class="l-zh">假设一位交易者的胜率为 <span class="num">55%</span>，且典型盈利是典型亏损的 <span class="num">两倍</span>（R = 2）。</span></p>
+<ul>
+<li><span class="l-en">W = <span class="num">0.55</span>, R = <span class="num">2</span></span><span class="l-zh">W = <span class="num">0.55</span>，R = <span class="num">2</span></span></li>
+<li><span class="l-en">f = <span class="num">0.55 − (1 − 0.55) ÷ 2 = 0.55 − 0.225 = 0.325</span></span><span class="l-zh">f = <span class="num">0.55 − (1 − 0.55) ÷ 2 = 0.55 − 0.225 = 0.325</span></span></li>
+<li><span class="l-en">Kelly = <span class="num">32.5%</span> of capital</span><span class="l-zh">凯利 = 资金的 <span class="num">32.5%</span></span></li>
+<li><span class="l-en">Half-Kelly = <span class="num">16.25%</span> — the size most traders actually run.</span><span class="l-zh">半凯利 = <span class="num">16.25%</span>——多数交易者实际采用的仓位。</span></li>
+</ul>
+</div>
+<p><span class="l-en">Full Kelly here says stake nearly a third of the account on one bet. That is mathematically growth-optimal <em>only</em> if the 55% and the 2× are exactly right and never change — which is a heroic assumption. That gap between the clean math and the messy edge is why half-Kelly exists.</span><span class="l-zh">此处的完整凯利建议在一笔下注上押上账户近三分之一。这在数学上是增长最优的——但<em>仅当</em>那 55% 与 2× 分毫不差且永不改变时才成立，而这是一个近乎苛刻的假设。正是这道「干净的数学」与「模糊的真实优势」之间的裂缝，催生了半凯利。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Overbetting a fuzzy edge</span><span class="l-zh">对模糊优势过度下注</span></span>
+<p><span class="l-en">Full Kelly is brutally volatile — even when the inputs are correct, drawdowns of 50% or more are ordinary along the way. Worse, traders rarely know their true win rate; an overestimate pushes <strong>f</strong> too high, and betting <em>above</em> Kelly lowers growth <em>and</em> raises risk at the same time — the worst of both. This is why the common practice is half-Kelly (or less): it keeps most of the growth for a fraction of the swings, and it forgives an over-optimistic estimate.</span><span class="l-zh">完整凯利波动极其剧烈——即便输入无误，途中出现 50% 甚至更大的回撤也属寻常。更糟的是，交易者很少知道自己真实的胜率；高估会把 <strong>f</strong> 推得过高，而下注<em>超过</em>凯利会同时——降低增长<em>并</em>抬升风险，两头皆输。这正是普遍采用半凯利（或更低）的原因：以一小部分的波动换取大部分的增长，并为过于乐观的估计留出余地。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">Kelly assumes a known, stable, repeatable edge and independent bets. Trading offers almost none of those cleanly. A few honest limits:</span><span class="l-zh">凯利假设优势是已知、稳定、可重复的，且各次下注相互独立。而交易几乎无一能干净地满足。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>The edge is estimated, not known.</strong> W and R come from a finite, noisy sample of past trades. A small sample can flatter you; Kelly then sizes off a number that may not survive the next hundred trades.</span><span class="l-zh"><strong>优势是估计的，而非已知的。</strong>W 和 R 来自过往交易这一有限且带噪声的样本。小样本容易让人自我美化；凯利于是按一个未必能挺过下一百笔交易的数字来定仓。</span></li>
+<li><span class="l-en"><strong>Edges drift.</strong> A win rate is not a constant of nature — regimes change, crowding erodes an edge, and a strategy that paid last year may not this year. Kelly has no memory of that decay.</span><span class="l-zh"><strong>优势会漂移。</strong>胜率并非自然常数——市场环境会变、拥挤会侵蚀优势，去年有效的策略今年未必有效。凯利对这种衰减毫无记忆。</span></li>
+<li><span class="l-en"><strong>Correlated bets.</strong> Kelly sizes one independent bet. Run several correlated positions at their individual Kelly sizes and your true stake — and true risk — is far larger than any one number suggests.</span><span class="l-zh"><strong>相关的下注。</strong>凯利为单一的独立下注定仓。若你按各自的凯利仓位同时持有多个相关头寸，你真实的敞口——与真实的风险——将远大于任一单独数字所暗示的。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Kelly tells you the most you could bet if your edge were certain. Because it never is, sizing below it — half-Kelly or less — is the honest default.</span><span class="l-zh">凯利告诉你——若优势确定无疑——最多能下多少。而正因优势从不确定，把仓位定在它之下——半凯利或更低——才是诚实的默认选择。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Ground it in the lesson on <a href="</span><span class="l-zh">在这节课中打好基础 <a href="</span>../../learn/risk/position-sizing.html"><span class="l-en">position sizing</span><span class="l-zh">仓位管理</span></a><span class="l-en">, or turn a win rate and payoff into an edge with the <a href="</span><span class="l-zh">，或用 <a href="</span>../../tools/calculators/risk-reward.html"><span class="l-en">risk-to-reward calculator</span><span class="l-zh">盈亏比计算器</span></a><span class="l-en">.</span><span class="l-zh">把胜率与赔付换算成优势。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/position-size.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Position Size Calculator</span></a><a class="est-relcard" href="../../tools/calculators/risk-reward.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Risk-Reward Calculator</span></a><a class="est-relcard" href="../../tools/calculators/drawdown-recovery.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Drawdown Recovery Calculator</span></a>
+        <a class="est-relcard" href="../../learn/risk/position-sizing.html"><span class="rc-kind"><span class="l-en">Lesson</span><span class="l-zh">课程</span></span><span class="rc-title">Position Sizing: The Only Edge You Fully Control</span></a>
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    <aside class="est-cta-block">
+      <div class="cta-copy">
+        <span class="cta-k"><span class="l-en">Next step</span><span class="l-zh">下一步</span></span>
+        <p class="cta-t">Read the lesson: Position Sizing: The Only Edge You Fully Control</p>
+      </div>
+      <a class="gbtn gbtn-lg gbtn-cta" href="../../learn/risk/position-sizing.html">Read the lesson: Position Sizing: The Only Edge You Fully Control</a>
+    </aside>
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute ───────────────────────────────────────────────────────────
+  // inputs: {W winProbPct, R winLossRatio}. Returns an outputs object, or
+  // {ok:false, msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var W=inp.W, R=inp.R;
+    if(!(W>0) || W>=100) return {ok:false, msg:"Enter a win probability between 0 and 100."};
+    if(!(R>0)) return {ok:false, msg:"Enter a win/loss ratio above zero (average win ÷ average loss)."};
+    var w = W/100;                       // win prob as decimal
+    var lossProb = 1 - w;                // loss prob as decimal
+    var f = w - lossProb / R;            // Kelly fraction
+    var kellyPct = 100 * f;
+    var halfKellyPct = kellyPct / 2;
+    var edgeR = w * R - lossProb;        // expected value per unit staked, in R
+    var noEdge = !(f > 0);
+    return {
+      ok:true, f:f, kellyPct:kellyPct, halfKellyPct:halfKellyPct,
+      edgeR:edgeR, lossPct:100*lossProb, noEdge:noEdge
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{W:55, R:2}, want:{kellyPct:32.5, halfKellyPct:16.25, noEdge:false} },
+    { in:{W:50, R:1}, want:{kellyPct:0,    halfKellyPct:0,     noEdge:true } }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("kelly-criterion self-check "+i+": compute failed", got); return; }
+      for(k in w){
+        if(k === "noEdge"){ if(got[k] !== w[k]){
+          console.error("kelly-criterion self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+        else if(Math.abs(got[k] - w[k]) > 0.01){
+          console.error("kelly-criterion self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); }
+      }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { winprob:$("winprob"), wlratio:$("wlratio") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outHalf=$("out-half"), outEdge=$("out-edge"), outLoss=$("out-loss"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function pct(n, dp){ return n.toFixed(dp===undefined?1:dp) + "%"; }
+    function dash(){ outMain.textContent="—";
+      [outHalf,outEdge,outLoss].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ W:numFrom(els.winprob), R:numFrom(els.wlratio) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      if(res.noEdge){
+        outMain.textContent = "0%";
+        outHalf.textContent = "0%"; outHalf.className="";
+        outEdge.textContent = res.edgeR.toFixed(2) + "R"; outEdge.className="neg";
+        outLoss.textContent = pct(res.lossPct, 0); outLoss.className="";
+        outPlain.textContent = "No positive edge — Kelly says don't bet. At this win rate and payoff, staking anything shrinks capital over the long run.";
+        outPlain.className="co-plain warn";
+        return;
+      }
+
+      outMain.textContent = pct(res.kellyPct);
+      outHalf.textContent = pct(res.halfKellyPct); outHalf.className="";
+      outEdge.textContent = res.edgeR.toFixed(2) + "R"; outEdge.className = res.edgeR>0 ? "pos" : "neg";
+      outLoss.textContent = pct(res.lossPct, 0); outLoss.className="";
+      // Law 3: plain-word interpretation under the number
+      outPlain.textContent = "Full Kelly stakes " + pct(res.kellyPct) + " of capital per bet — growth-optimal only if the edge is exact. Most traders run half-Kelly (" +
+        pct(res.halfKellyPct) + ") to keep most of the growth for a fraction of the swings.";
+      outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      if(last.noEdge) return "Kelly criterion: no positive edge — don't bet. — mastermind-x.com";
+      return "Kelly criterion: " + pct(last.kellyPct) + " of capital (half-Kelly " + pct(last.halfKellyPct) +
+        "), implied edge " + last.edgeR.toFixed(2) + "R — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["winprob","wlratio"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

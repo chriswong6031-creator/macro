@@ -12,6 +12,8 @@ Tests
 8. Render call is non-fatal (renderer exception → still returns 0).
 9. Never-break: main() returns 0 even when _build() raises.
 10. Enrichment helpers unit tests (_build_adr_by_ticker, etc.).
+11. _col container values (hklab_washout_sb blank-picks regression).
+12. write_snapshot upsert on multi-asof partitions (unhashable-Series fix).
 """
 from __future__ import annotations
 
@@ -759,6 +761,81 @@ class TestEnrichmentHelpers:
         assert result["1234.HK"]["catalyst_days_to"] == 3
         assert result["5678.HK"]["catalyst_days_to"] == 1
 
+    def test_build_catalyst_imminent_as_dict_no_crash(self):
+        """Real hk_catalyst_calendar.json ships `imminent` as a SINGLE dict, not a
+        list.  The pre-fix `upcoming + imminent` did `list + dict` → TypeError,
+        crashing the whole nightly build (lab empty since 2026-07-09).  Regression:
+        a dict `imminent` must be normalized to [dict] and not raise."""
+        from scripts.build_hk_pick_lab import _build_catalyst_by_ticker
+
+        catalyst = {
+            "upcoming": [{"ticker": "1234.HK", "days_until": 8}],
+            # single dict, exactly as the real artifact emits it
+            "imminent": {"ticker": "5678.HK", "days_until": 2, "type": "RESULTS"},
+        }
+        result = _build_catalyst_by_ticker(catalyst)  # must not raise
+        assert result["1234.HK"]["catalyst_days_to"] == 8
+        assert result["5678.HK"]["catalyst_days_to"] == 2
+
+    def test_build_catalyst_reads_days_until(self):
+        """Real items carry `days_until` (not days_to/sessions_to).  The extractor
+        must fall through to it, else nothing is ever extracted."""
+        from scripts.build_hk_pick_lab import _build_catalyst_by_ticker
+
+        catalyst = {
+            "upcoming": [
+                {"ticker": "700.HK", "days_until": 12},
+                {"ticker": "700.HK", "days_until": 4},   # nearer — should win
+            ],
+            "imminent": [],
+        }
+        result = _build_catalyst_by_ticker(catalyst)
+        assert result["700.HK"]["catalyst_days_to"] == 4
+
+    def test_build_catalyst_skips_index_and_junk_items(self):
+        """Index-level events (MSCI reviews) carry no `ticker` and are skipped;
+        non-dict items in the list are skipped rather than crashing on .get()."""
+        from scripts.build_hk_pick_lab import _build_catalyst_by_ticker
+
+        catalyst = {
+            "upcoming": [
+                {"type": "MSCI_REVIEW", "days_until": 39},  # no ticker → skip
+                "garbage-string",                            # non-dict → skip
+                None,                                        # non-dict → skip
+                {"ticker": "9988.HK", "days_until": 6},      # kept
+            ],
+            "imminent": {"type": "MSCI_REVIEW", "days_until": 39},  # no ticker → skip
+        }
+        result = _build_catalyst_by_ticker(catalyst)  # must not raise
+        assert result == {"9988.HK": {"catalyst_days_to": 6}}
+
+    def test_build_standouts_cohort_dict_no_crash(self):
+        """Real hk_standouts.json ships `cohort` as a regime-summary DICT
+        (state/median_ext_z/... — no ticker rows), not a list of names.  The
+        pre-fix code iterated `cohort` and called .get() on string keys →
+        AttributeError, the second latent crash in the enrichment path.
+        Regression: a dict `cohort` must not be treated as ticker rows."""
+        from scripts.build_hk_pick_lab import _build_standouts_by_ticker
+
+        standouts = {
+            "buy": [
+                {"ticker": "9988.HK", "southbound": {"accum_z": 1.2}},
+            ],
+            # regime-summary dict exactly as the real artifact emits it
+            "cohort": {
+                "state": "neutral", "median_ext_z": 0.3, "pct_parabolic": 0.1,
+                "pct_stretched": 0.2, "pct_at_highs": 0.15, "n": 156,
+            },
+            # a stray non-dict row must be skipped, not crash
+            "watch": ["not-a-dict", {"ticker": "700.HK", "southbound": {"accum_z": -0.4}}],
+        }
+        result = _build_standouts_by_ticker(standouts)  # must not raise
+        assert result["9988.HK"]["sb_accum_z"] == 1.2
+        assert result["700.HK"]["sb_accum_z"] == -0.4
+        # regime-summary keys must never leak in as tickers
+        assert "state" not in result
+        assert "median_ext_z" not in result
+
     def test_build_standouts_by_ticker(self):
         """_build_standouts_by_ticker extracts sb_accum_z, ah_discount_pctile, sfc_short_pressure_q."""
         from scripts.build_hk_pick_lab import _build_standouts_by_ticker
@@ -1076,3 +1153,155 @@ class TestHKHaltSemantics:
 
         # n_ung should be positive (halted.HK counted as ungradeable per elapsed horizon)
         assert n_ung > 0, "ungradeable count should be > 0 for halted.HK"
+
+
+# ---------------------------------------------------------------------------
+# 11. _col container values (hklab_washout_sb blank-picks regression)
+# ---------------------------------------------------------------------------
+
+class TestColContainerValues:
+    """_col must NaN-test only scalars.
+
+    pd.isna() on a multi-element list/ndarray (confluence_signals) is
+    elementwise — its truth value is ambiguous, which crashed
+    _book_hk_washout_sb and blanked the book's picks every run.
+    """
+
+    def _frame(self):
+        import numpy as np
+
+        rows = [
+            {
+                "ticker": "1.HK",
+                "close": 10.0,
+                "sigs_list": ["SB_ACCUM", "BUYBACK"],
+                "sigs_arr": np.array(["SB_ACCUM", "BUYBACK"]),
+                "scalar_nan": float("nan"),
+                "scalar_val": 3.5,
+            },
+        ]
+        return pd.DataFrame(rows).set_index("ticker")
+
+    def test_multi_element_list_returned_as_is(self):
+        from engine.pick_lab.hk import _col
+
+        df = self._frame()
+        assert _col(df, "sigs_list", "1.HK") == ["SB_ACCUM", "BUYBACK"]
+
+    def test_ndarray_returned_as_plain_list(self):
+        from engine.pick_lab.hk import _col
+
+        df = self._frame()
+        v = _col(df, "sigs_arr", "1.HK")
+        assert isinstance(v, list)
+        assert v == ["SB_ACCUM", "BUYBACK"]
+
+    def test_empty_list_returned_not_none(self):
+        from engine.pick_lab.hk import _col
+
+        df = self._frame()
+        df["empty"] = [[]]
+        assert _col(df, "empty", "1.HK") == []
+
+    def test_scalar_semantics_unchanged(self):
+        from engine.pick_lab.hk import _col
+
+        df = self._frame()
+        assert _col(df, "scalar_nan", "1.HK") is None
+        assert _col(df, "scalar_val", "1.HK") == 3.5
+        assert _col(df, "missing_col", "1.HK") is None
+
+    def test_washout_sb_book_fires_with_list_signals(self):
+        """End-to-end: the washout_sb book must produce picks (not the
+        error-swallowed empty result) when confluence_signals holds
+        multi-element lists."""
+        from engine.pick_lab.hk import run_book_hk
+        from engine.pick_lab.registry_hk import HK_BY_ID
+
+        rows = []
+        for i, (ws, sigs, z) in enumerate([
+            ("washout_watch", ["SB_ACCUM", "BUYBACK"], 2.0),
+            ("ignition_watch", ["SB_ACCUM", "ADR_GAP"], 1.5),
+        ], 1):
+            rows.append({
+                "ticker": f"{i}.HK",
+                "name": f"Name {i}",
+                "name_zh": f"名{i}",
+                "sector": "Tech",
+                "close": 10.0 * i,
+                "adv63_hkd": 5e7,
+                "last_print_sessions_ago": 0,
+                "washout_state": ws,
+                "confluence_signals": sigs,
+                "sb_accum_z": z,
+                "organ_fresh_washout": True,
+                "organ_fresh_sb": True,
+            })
+        snap = pd.DataFrame(rows).set_index("ticker")
+        snap.attrs["asof"] = "2026-07-23"
+
+        result = run_book_hk(HK_BY_ID["hklab_washout_sb"], snap)
+
+        assert result["disabled_stale"] is False
+        assert result["n_picks"] == 2
+        top = result["picks"][0]
+        assert top["ticker"] == "1.HK"  # ranked by sb_accum_z desc
+        assert top["features"]["confluence_signals"] == ["SB_ACCUM", "BUYBACK"]
+
+
+# ---------------------------------------------------------------------------
+# 12. write_snapshot upsert on a multi-asof partition (unhashable-Series fix)
+# ---------------------------------------------------------------------------
+
+class TestWriteSnapshotUpsertMultiAsof:
+    """Monthly partitions hold many asof dates, so the ticker index has
+    duplicates; the old upsert did .at lookups that returned a Series and
+    raised 'unhashable type: Series' — the enriched snapshot never persisted.
+    """
+
+    def _write_two_days(self, snap_mod, base):
+        d1 = pd.DataFrame({"ticker": ["1.HK", "2.HK"], "close": [10.0, 20.0]})
+        snap_mod.write_snapshot(d1, "2026-07-02", base)
+        d2 = pd.DataFrame({"ticker": ["1.HK", "2.HK"], "close": [11.0, 21.0]})
+        snap_mod.write_snapshot(d2, "2026-07-03", base)
+
+    def test_upsert_replaces_only_matching_asof(self, tmp_path):
+        from engine.pick_lab import snapshot as snap_mod
+
+        base = str(tmp_path / "snaps")
+        self._write_two_days(snap_mod, base)
+
+        enriched = pd.DataFrame({
+            "ticker": ["1.HK", "2.HK"],
+            "close": [11.0, 21.0],
+            "organ_col": [1.0, 2.0],
+        })
+        n = snap_mod.write_snapshot(enriched, "2026-07-03", base, mode="upsert")
+        assert n == 2
+
+        out = pd.read_parquet(Path(base) / "2026-07.parquet")
+        day1 = out[out["asof"] == "2026-07-02"]
+        day2 = out[out["asof"] == "2026-07-03"]
+        # day-1 rows untouched (no enrichment column values)
+        assert len(day1) == 2
+        assert day1["organ_col"].isna().all()
+        # day-2 rows replaced, not duplicated, and carry the enrichment
+        assert len(day2) == 2
+        assert sorted(day2["organ_col"].tolist()) == [1.0, 2.0]
+
+    def test_upsert_idempotent(self, tmp_path):
+        from engine.pick_lab import snapshot as snap_mod
+
+        base = str(tmp_path / "snaps")
+        self._write_two_days(snap_mod, base)
+
+        enriched = pd.DataFrame({
+            "ticker": ["1.HK", "2.HK"],
+            "close": [11.0, 21.0],
+            "organ_col": [1.0, 2.0],
+        })
+        snap_mod.write_snapshot(enriched, "2026-07-03", base, mode="upsert")
+        snap_mod.write_snapshot(enriched, "2026-07-03", base, mode="upsert")
+
+        out = pd.read_parquet(Path(base) / "2026-07.parquet")
+        assert len(out) == 4  # 2 tickers × 2 asof dates, no duplicates

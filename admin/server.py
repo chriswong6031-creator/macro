@@ -494,6 +494,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.department(dept_id=dept_id))
             if path == "/api/marketing/outbox":
                 return self._json(marketing.outbox())
+            if path == "/api/marketing/publish":
+                return self._json(marketing.publisher())
             if path == "/api/marketing/outbox/media":
                 from .paths import ROOT as _REPO_ROOT  # noqa: PLC0415
                 req_path = (q.get("path") or [""])[0]
@@ -600,6 +602,9 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/users/recent":
                 limit = _int_param(q, "limit", 30, 1, 1000)
                 return self._json(users.recent(limit=limit))
+            if path == "/api/users/subscribers":
+                limit = _int_param(q, "limit", 200, 1, 500)
+                return self._json(users.subscribers(limit=limit))
             # system / services
             if path == "/api/system":
                 return self._json(system.snapshot())
@@ -773,6 +778,17 @@ class Handler(BaseHTTPRequestHandler):
                 if not ok:
                     return self._json({"ok": False, "error": "unknown item id or write failed"}, 400)
                 return self._json({"ok": True, "id": item_id, "decision": decision})
+
+            # Publisher DRY-RUN: compute the "would post" report in-process. This
+            # NEVER touches the network and NEVER writes the ledger (dry_run_report
+            # calls no transition() / _append_activity()). An optional "account"
+            # narrows the report to one desk. Safe with no confirm gate — it has
+            # no side effects.
+            if path == "/api/marketing/publish/dryrun":
+                account = b.get("account") or None
+                if account is not None and not isinstance(account, str):
+                    return self._json({"ok": False, "error": "account must be a string"}, 400)
+                return self._json(marketing.publisher_dryrun(account=account))
 
             if path == "/api/orchestrator/chat":
                 return self._json(orchestrator_chat.chat(b.get("message", ""),

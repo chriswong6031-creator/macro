@@ -1,7 +1,7 @@
 {
   "organ": "corp_credit.v1",
-  "as_of": "2026-07-21",
-  "data_as_of": "2026-07-20",
+  "as_of": "2026-07-22",
+  "data_as_of": "2026-07-21",
   "price_convention": "clean",
   "authority": {
     "rank": false,
@@ -12,33 +12,33 @@
   "accruing": "DISPLAY-ONLY / NOT VALIDATED. Forward accrual since 2026-07-14. Per-criterion validation results print in data/corp_bonds/validation.json on every run. Promotion to authority requires passing CCW pre-registered gauntlet criteria a-d (\u00a73-P2): dirty/clean price verdict, YTM vs iShares within 25bp, IG g-spread vs BAML OAS within 30bp, composition-guard fixture. Gauntlet is a PROMOTION gate, not a build gate. Context accrual proceeds regardless of gate status.",
   "market": {
     "ig": {
-      "n_bonds": 8261,
-      "par_total": 23322139440.52,
-      "price_clean_pw": 97.97774039468874,
-      "ytm_pct_pw": 4.958336283297476,
-      "g_spread_bp_pw": 62.92173773444471,
-      "wam_yrs": 5.154372594257825
+      "n_bonds": 8271,
+      "par_total": 23417200440.52,
+      "price_clean_pw": 97.83147045548915,
+      "ytm_pct_pw": 5.0073132111866885,
+      "g_spread_bp_pw": 62.99135677233715,
+      "wam_yrs": 5.160342226556622
     },
     "hy": {
-      "n_bonds": 1954,
-      "par_total": 18877252375.18,
-      "price_clean_pw": 97.96299099970933,
-      "ytm_pct_pw": 7.953743470280342,
-      "g_spread_bp_pw": 359.4271388079302,
-      "wam_yrs": 5.770828050627376
+      "n_bonds": 1962,
+      "par_total": 18934111303.78,
+      "price_clean_pw": 97.82530978574212,
+      "ytm_pct_pw": 7.989109761301501,
+      "g_spread_bp_pw": 358.1681778632725,
+      "wam_yrs": 5.787486163812511
     },
-    "quality_spread_bp": 296.5054010734855
+    "quality_spread_bp": 295.17682109093533
   },
   "themes": {
     "ai_hardware_credit": {
       "n_bonds": 25,
       "n_issuers": 1,
-      "g_spread_bp_pw": 59.53246275512049,
-      "ytm_pct_pw": 4.87229753664346,
-      "dispersion_bp": 57.96092341832778,
+      "g_spread_bp_pw": 59.48356011643969,
+      "ytm_pct_pw": 4.920868044959685,
+      "dispersion_bp": 58.58395112569378,
       "dispersion_basis": "p90_p10",
       "small_n": false,
-      "wam_yrs": 4.021904721033722,
+      "wam_yrs": 4.01916687024659,
       "coverage_notes": {
         "DELL": "Multiple issuing entities: 'DELL INT LLC / EMC CORP' (co-issuer; most bonds), 'DELL INC' (legacy), 'EMC CORP' (legacy EMC paper). Five distinct cusip6 prefixes from live harvest. Found in SPSB/SPIB/SPLB. All cusip6s confirmed 2026-07-14.",
         "HPE": "Hewlett Packard Enterprise bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest. Note: 'HPE' appears in SPIB but matches HEALTHPEAK (healthcare REIT), not Hewlett Packard. Use full-name pattern 'HEWLETT PACKARD ENTERPRISE' to avoid false positive. No cusip6 harvested \u2014 leave empty until bonds appear."
@@ -47,12 +47,12 @@
     "ai_power_credit": {
       "n_bonds": 44,
       "n_issuers": 3,
-      "g_spread_bp_pw": 57.73414822139953,
-      "ytm_pct_pw": 4.940314019413608,
-      "dispersion_bp": 71.41647480756804,
+      "g_spread_bp_pw": 57.3130529960694,
+      "ytm_pct_pw": 4.9818603855396715,
+      "dispersion_bp": 72.79132080702817,
       "dispersion_basis": "p90_p10",
       "small_n": false,
-      "wam_yrs": 8.610099045805915,
+      "wam_yrs": 8.607361195018784,
       "coverage_notes": {
         "VST": "Rising star: HY-to-IG transition 2025-26 (Ba1\u2192Baa3). Bonds in SPSB/SPIB as 'VISTRA OPERATIONS CO LLC'. Cusip6 92840V confirmed from live harvest 2026-07-14.",
         "CEG": "Constellation Energy Group LLC; bonds not labeled 'CONSTELLATION ENERGY' but 'CONSTELLATION EN GEN LLC' in SSGA files. Pattern 'CONSTELLATION EN' matches both 'CONSTELLATION EN GEN LLC' and potential variant 'CONSTELLATION ENERGY'. Found in SPIB/SPLB. Cusip6 210385 (short/blend tenors) and 30161M (long-dated) confirmed from live harvest 2026-07-14.",
@@ -62,12 +62,12 @@
     "dc_reit_credit": {
       "n_bonds": 18,
       "n_issuers": 2,
-      "g_spread_bp_pw": 61.37088723293441,
-      "ytm_pct_pw": 4.826768036675289,
-      "dispersion_bp": 42.684498924016985,
+      "g_spread_bp_pw": 61.35536593147629,
+      "ytm_pct_pw": 4.876890893915006,
+      "dispersion_bp": 43.423895860196765,
       "dispersion_basis": "p90_p10",
       "small_n": false,
-      "wam_yrs": 2.9914518428293233,
+      "wam_yrs": 3.0227327289234895,
       "coverage_notes": {
         "EQIX": "Multiple issuing entities (EQUINIX INC direct + finance subsidiaries); three distinct cusip6 prefixes observed. Bonds in SPSB/SPIB/SPLB. Cusip6 29444U, 29447K, 29390X confirmed from live harvest 2026-07-14.",
         "DLR": "Bonds issued as 'DIGITAL REALTY TRUST LP' (operating partnership). 'DIGITAL DUTCH' was a pattern candidate from masterplan for European finance-sub; not observed in US index funds as of 2026-07-14 harvest \u2014 refine from unmatched log as European-sub bonds enter SPIB/SPLB. Cusip6 25389J confirmed from live harvest 2026-07-14."
@@ -76,12 +76,12 @@
     "hyperscaler_credit": {
       "n_bonds": 158,
       "n_issuers": 5,
-      "g_spread_bp_pw": 81.95373496540824,
-      "ytm_pct_pw": 5.229142356320604,
-      "dispersion_bp": 200.99848637852782,
+      "g_spread_bp_pw": 84.84138789540793,
+      "ytm_pct_pw": 5.302599160378381,
+      "dispersion_bp": 211.4157169052553,
       "dispersion_basis": "p90_p10",
       "small_n": false,
-      "wam_yrs": 7.6349298222358915,
+      "wam_yrs": 7.630844590402712,
       "coverage_notes": {
         "MSFT": "Aaa/AAA; ~$103B long-term debt 2026; bonds in SPIB and SPLB (1-3y and long-dated tranches). Cusip6 594918 confirmed from live harvest 2026-07-14.",
         "AMZN": "~$119B LT debt; Jul-2026 $25B 8-tranche deal (2029-2066) now entering SPIB/SPLB. Bonds trade as 'AMAZON.COM INC'. Cusip6 023135 confirmed from live harvest 2026-07-14.",
@@ -93,12 +93,12 @@
     "memory_credit": {
       "n_bonds": 6,
       "n_issuers": 2,
-      "g_spread_bp_pw": 239.85366494639743,
-      "ytm_pct_pw": 6.797463294211841,
-      "dispersion_bp": 258.59357513425664,
+      "g_spread_bp_pw": 235.14204287287242,
+      "ytm_pct_pw": 6.797734717762801,
+      "dispersion_bp": 254.3278438213032,
       "dispersion_basis": "max_min",
       "small_n": true,
-      "wam_yrs": 6.158610429406863,
+      "wam_yrs": 6.155409667659244,
       "coverage_notes": {
         "MU": "BBB positive outlook (Moody's); IG bonds in SPIB and SPLB. Small par vs equity market cap. Cusip6 595112 confirmed from live harvest 2026-07-14.",
         "WDC": "Split-rated. Bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest. May be in other indices or have matured/not yet re-issued post-restructuring. No cusip6 harvested \u2014 leave empty until next observation cycle.",
@@ -108,12 +108,12 @@
     "neocloud_credit": {
       "n_bonds": 4,
       "n_issuers": 1,
-      "g_spread_bp_pw": 640.4388478624911,
-      "ytm_pct_pw": 10.731383371469462,
-      "dispersion_bp": 76.7195564410797,
+      "g_spread_bp_pw": 648.2894859370651,
+      "ytm_pct_pw": 10.855039356781514,
+      "dispersion_bp": 77.1495080842127,
       "dispersion_basis": "max_min",
       "small_n": true,
-      "wam_yrs": 4.812935899959079,
+      "wam_yrs": 4.811560844506664,
       "coverage_notes": {
         "CRWV": "Three straight HY note series: 9.25%/2030, 9.75%/2031, 9.625%/2032 \u2014 index-eligible; found in JNK and SPHY. IREN/NBIS are converts-only (not index-eligible \u2014 not visible in this store). Cusip6 21873S confirmed from live harvest 2026-07-14."
       }
@@ -121,12 +121,12 @@
     "telecom_legacy": {
       "n_bonds": 44,
       "n_issuers": 1,
-      "g_spread_bp_pw": 71.58877020536883,
-      "ytm_pct_pw": 5.149461208687868,
-      "dispersion_bp": 62.60542859836547,
+      "g_spread_bp_pw": 71.90966346656784,
+      "ytm_pct_pw": 5.196171897053836,
+      "dispersion_bp": 63.775550606383725,
       "dispersion_basis": "p90_p10",
       "small_n": false,
-      "wam_yrs": 7.561704309422849,
+      "wam_yrs": 7.558966458635717,
       "coverage_notes": {
         "T": "AT&T bonds not observed in SPSB/SPIB/SPLB/JNK/SPHY as of 2026-07-14 harvest \u2014 AT&T IG bonds may be in separate investment-grade indices not served by these SSGA funds, or the fund's holdings simply do not include them on this date. Pattern 'AT&T INC' and 'AT&T CORP' will match when bonds appear. Telecom-legacy control group: the 1990s telecom capex-debt boom is the standing historical rhyme for the AI capex credit cycle. No cusip6 harvested yet.",
         "VZ": "Verizon Communications \u2014 large IG issuer; bonds in SPSB/SPIB/SPLB. Two issuing entity cusip6 prefixes observed. Cusip6 92343V and 92344G confirmed from live harvest 2026-07-14."
@@ -137,125 +137,125 @@
     {
       "sector": "Financials",
       "n_bonds": 684,
-      "par_total": 4146550722.0,
-      "g_spread_bp_pw": 60.57579574979339
+      "par_total": 4152089722.0,
+      "g_spread_bp_pw": 60.62237083138531
     },
     {
       "sector": "Consumer Discretionary",
       "n_bonds": 292,
-      "par_total": 1222454335.0,
-      "g_spread_bp_pw": 70.89719861792284
+      "par_total": 1221012335.0,
+      "g_spread_bp_pw": 71.05697214280264
     },
     {
       "sector": "Utilities",
-      "n_bonds": 350,
-      "par_total": 880596515.0,
-      "g_spread_bp_pw": 86.50671041459938
+      "n_bonds": 351,
+      "par_total": 882456515.0,
+      "g_spread_bp_pw": 86.00740942300575
     },
     {
       "sector": "Industrials",
       "n_bonds": 318,
-      "par_total": 853795449.69,
-      "g_spread_bp_pw": 69.17335731317856
+      "par_total": 852916449.69,
+      "g_spread_bp_pw": 68.89762497275196
     },
     {
       "sector": "Communication Services",
       "n_bonds": 213,
-      "par_total": 739255661.0,
-      "g_spread_bp_pw": 66.08342553021977
+      "par_total": 739701661.0,
+      "g_spread_bp_pw": 66.17461813269834
     },
     {
       "sector": "Health Care",
-      "n_bonds": 244,
-      "par_total": 681427000.0,
-      "g_spread_bp_pw": 59.594465559956426
-    },
-    {
-      "sector": "Information Technology",
-      "n_bonds": 193,
-      "par_total": 629327541.0,
-      "g_spread_bp_pw": 117.91203396946992
+      "n_bonds": 245,
+      "par_total": 688473000.0,
+      "g_spread_bp_pw": 59.58516227728028
     },
     {
       "sector": "Real Estate",
       "n_bonds": 246,
-      "par_total": 624333972.0,
-      "g_spread_bp_pw": 78.91308871582639
+      "par_total": 630274972.0,
+      "g_spread_bp_pw": 78.38935823157476
+    },
+    {
+      "sector": "Information Technology",
+      "n_bonds": 193,
+      "par_total": 629261541.0,
+      "g_spread_bp_pw": 120.54479261929923
     },
     {
       "sector": "Consumer Staples",
       "n_bonds": 217,
-      "par_total": 456793682.0,
-      "g_spread_bp_pw": 45.695789933681695
+      "par_total": 463169682.0,
+      "g_spread_bp_pw": 46.0139629355146
     },
     {
       "sector": "Energy",
       "n_bonds": 166,
-      "par_total": 296364000.0,
-      "g_spread_bp_pw": 67.55105992701378
+      "par_total": 300204000.0,
+      "g_spread_bp_pw": 67.24575285072281
     },
     {
       "sector": "Materials",
       "n_bonds": 67,
       "par_total": 101760000.0,
-      "g_spread_bp_pw": 56.88774390595282
+      "g_spread_bp_pw": 56.742915233985144
     }
   ],
   "maturity_wall": {
     "ig": {
       "0_1y": {
-        "par_total": 195152642.0,
-        "n_bonds": 44
+        "par_total": 197128642.0,
+        "n_bonds": 45
       },
       "1_3y": {
-        "par_total": 12059409320.55,
-        "n_bonds": 1536
+        "par_total": 12095592320.55,
+        "n_bonds": 1537
       },
       "3_5y": {
-        "par_total": 4325967955.74,
-        "n_bonds": 1465
+        "par_total": 4326885955.74,
+        "n_bonds": 1469
       },
       "5_10y": {
-        "par_total": 4817258587.48,
-        "n_bonds": 2194
+        "par_total": 4864050587.48,
+        "n_bonds": 2198
       },
       "10y_plus": {
-        "par_total": 1924350934.75,
+        "par_total": 1933542934.75,
         "n_bonds": 3022
       }
     },
     "hy": {
       "0_1y": {
-        "par_total": 54731362.0,
+        "par_total": 54665362.0,
         "n_bonds": 22
       },
       "1_3y": {
-        "par_total": 3961490636.67,
+        "par_total": 3969883636.67,
         "n_bonds": 543
       },
       "3_5y": {
-        "par_total": 7033625259.5,
-        "n_bonds": 673
+        "par_total": 7037360859.5,
+        "n_bonds": 678
       },
       "5_10y": {
-        "par_total": 6905802581.7,
-        "n_bonds": 604
+        "par_total": 6930896581.7,
+        "n_bonds": 607
       },
       "10y_plus": {
-        "par_total": 921602535.3100001,
+        "par_total": 941304863.91,
         "n_bonds": 112
       }
     }
   },
   "coverage": {
-    "n_bonds_total": 10215,
-    "n_dropped_rows": 385,
-    "matched_par_share": 0.0315,
+    "n_bonds_total": 10233,
+    "n_dropped_rows": 456,
+    "matched_par_share": 0.0314,
     "sector_mapped_par_share": 0.2521,
     "ytm_solver": {
-      "newton_n": 50972,
+      "newton_n": 61201,
       "bisection_n": 0,
-      "failed_n": 22
+      "failed_n": 26
     },
     "curve_pillars_present": [
       "DGS3MO",
@@ -293,5 +293,5 @@
       }
     }
   },
-  "_timing_s": 28.77
+  "_timing_s": 34.41
 }

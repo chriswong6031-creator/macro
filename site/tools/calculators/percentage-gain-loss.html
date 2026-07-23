@@ -1,0 +1,363 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Percentage Gain/Loss Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Percent gain or loss between two prices, the dollar profit or loss on your shares, and the gain needed to climb back to break-even.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/percentage-gain-loss.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Percentage Gain/Loss Calculator">
+<meta property="og:description" content="Percent gain or loss between two prices, the dollar profit or loss on your shares, and the gain needed to climb back to break-even.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/percentage-gain-loss.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Percentage Gain/Loss Calculator">
+<meta name="twitter:description" content="Percent gain or loss between two prices, the dollar profit or loss on your shares, and the gain needed to climb back to break-even.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Percentage Gain/Loss Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Percentage Gain/Loss Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Percentage Gain/Loss Calculator</h1>
+  <p class="est-dek">Percent gain or loss between two prices, the dollar profit or loss on your shares, and the gain needed to climb back to break-even.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 30 h48"/>
+  <circle class="egl-still-dot" cx="14" cy="27" r="2.4"/>
+  <path class="egl-draw" d="M14 27 L50 12"/>
+  <circle class="egl-mark-dot" cx="50" cy="12" r="2.6"/>
+  <path class="egl-up" d="M50 12 l-6 1 M50 12 l0 6"/>
+  <path class="egl-mark" d="M30 20 a3 3 0 1 0 0.1 0 M37 22 a3 3 0 1 0 0.1 0 M31.5 25 L36.5 18"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter the price you bought at and the price you sold (or would sell) at. You get the percent change, the dollar profit or loss if you add a share count, and — on a loss — the gain you’d need to climb back to break-even.</span><span class="l-zh">填入你的买入价与卖出价（或拟卖出价），即可得到涨跌幅；填入股数还能算出盈亏金额；若是亏损，还会显示要回到成本价所需的涨幅。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Buy price ($)</span><span class="l-zh">买入价（$）</span></span>
+    <input id="buy" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Sell price ($)</span><span class="l-zh">卖出价（$）</span></span>
+    <input id="sell" inputmode="decimal" autocomplete="off" placeholder="60"></label>
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">Shares</span><span class="l-zh">股数</span> <span class="hint"><span class="l-en">optional — for dollar P/L</span><span class="l-zh">可选——用于计算盈亏金额</span></span></span>
+    <input id="qty" inputmode="decimal" autocomplete="off" placeholder="200"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">change</span><span class="l-zh">涨跌幅</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in the buy and sell prices to see the percent change.</span><span class="l-zh">填入买入价与卖出价即可查看涨跌幅。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Dollar P/L</span><span class="l-zh">盈亏金额</span></dt><dd id="out-dollar">—</dd></div>
+    <div><dt><span class="l-en">Gain to break even</span><span class="l-zh">回本所需涨幅</span></dt><dd id="out-recover">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">The percent change between two prices is the <strong>difference divided by the price you started at</strong>, times 100 — so a move from $50 to $60 is a $10 gain on a $50 base, or +20%. Multiply the raw dollar move by your share count for the profit or loss in cash. And when the result is a loss, the percentage that recovered it back to break-even is <em>larger</em> than the percentage you lost — a fact worth internalizing.</span><span class="l-zh">两个价格之间的涨跌幅，就是<strong>差额除以起始价格</strong>再乘以 100——所以从 $50 涨到 $60，是在 $50 的基础上涨了 $10，即 +20%。把每股的价格变动乘以股数，就得到以现金计的盈亏。而当结果为亏损时，把它拉回成本价所需的涨幅，会<em>大于</em>你亏掉的跌幅——这一点值得牢记。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Percent change</strong> = 100 × ( Sell − Buy ) ÷ Buy</span><span class="l-zh"><strong>涨跌幅</strong> = 100 × ( 卖出 − 买入 ) ÷ 买入</span><br>
+<span class="l-en"><strong>Dollar P/L</strong> = ( Sell − Buy ) × Shares</span><span class="l-zh"><strong>盈亏金额</strong> = ( 卖出 − 买入 ) × 股数</span><br>
+<span class="l-en"><strong>Gain to break even</strong> = 100 × ( −change% ) ÷ ( 100 + change% )</span><span class="l-zh"><strong>回本所需涨幅</strong> = 100 × ( −涨跌幅% ) ÷ ( 100 + 涨跌幅% )</span>
+</div>
+<p><span class="l-en">The break-even line only appears on a loss. It answers a different question than “how much did I lose”: it asks how far the <em>lower</em> price has to rise to reach your original cost again. Because the climb starts from a smaller base, the required gain always exceeds the loss — lose 20% and you need +25% back; lose 50% and you need +100%.</span><span class="l-zh">回本涨幅一行只在亏损时出现。它回答的是与「我亏了多少」不同的另一个问题：<em>更低</em>的价格要涨多少，才能回到你最初的成本。由于起点更低，所需涨幅总是大于亏损幅度——亏 20% 需涨 +25%，亏 50% 则需涨 +100%。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader buys at <span class="num">$100.00</span> and later sells <span class="num">200</span> shares at <span class="num">$50.00</span>.</span><span class="l-zh">假设一位交易者以 <span class="num">$100.00</span> 买入，之后以 <span class="num">$50.00</span> 卖出 <span class="num">200</span> 股。</span></p>
+<ul>
+<li><span class="l-en">Percent change = <span class="num">100 × (50 − 100) ÷ 100 = −50.00%</span></span><span class="l-zh">涨跌幅 = <span class="num">100 × (50 − 100) ÷ 100 = −50.00%</span></span></li>
+<li><span class="l-en">Dollar P/L = <span class="num">(50 − 100) × 200 = −$10,000</span></span><span class="l-zh">盈亏金额 = <span class="num">(50 − 100) × 200 = −$10,000</span></span></li>
+<li><span class="l-en">Gain to break even = <span class="num">100 × 50 ÷ (100 − 50) = +100%</span> — the $50 price must double to reach $100 again.</span><span class="l-zh">回本所需涨幅 = <span class="num">100 × 50 ÷ (100 − 50) = +100%</span>——$50 的价格必须翻倍才能回到 $100。</span></li>
+</ul>
+</div>
+<p><span class="l-en">The gain and the loss are not symmetric. Halving your money reads as a clean “−50%,” but undoing it takes a full double. This asymmetry is the quiet reason large drawdowns are so costly: the deeper the hole, the steeper the climb out.</span><span class="l-zh">涨幅与跌幅并不对称。资金腰斩看上去只是干脆的「−50%」，但要弥补它却需要整整翻倍。这种不对称，正是大幅回撤代价高昂的隐秘原因：坑挖得越深，爬出来的坡就越陡。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Adding gains and losses as if they cancel</span><span class="l-zh">把涨跌幅当作可以相互抵消</span></span>
+<p><span class="l-en">A +50% gain followed by a −50% loss does not leave you flat. Start at $100, gain 50% to $150, then lose 50% of $150 — you land at $75, down 25%. Percentages compound off a moving base, so they can’t simply be added or subtracted across periods. To combine two moves, multiply the growth factors (1.5 × 0.5 = 0.75), not the percentages.</span><span class="l-zh">先涨 50%、再跌 50%，并不会让你回到原点。从 $100 涨 50% 到 $150，再从 $150 跌 50%——你落在 $75，净跌 25%。百分比是在不断变动的基数上复利计算的，因此不能在不同时期间简单相加或相减。要合并两段变动，应把增长因子相乘（1.5 × 0.5 = 0.75），而非把百分比相加。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This is clean arithmetic on two prices. It stays honest only as long as those two prices are the whole story — and often they aren’t:</span><span class="l-zh">这是对两个价格的干净算术。只有当这两个价格就是全部时它才诚实——而现实往往并非如此：</span></p>
+<ul>
+<li><span class="l-en"><strong>Costs are ignored.</strong> Commissions, spread, slippage and taxes all sit between the quoted change and the money that actually reaches your account. A small percentage move can be entirely eaten by frictions.</span><span class="l-zh"><strong>忽略了成本。</strong>佣金、买卖价差、滑点与税费，都夹在报出的涨跌幅和真正到账的钱之间。一次小幅变动，可能被这些摩擦成本完全吞掉。</span></li>
+<li><span class="l-en"><strong>Dividends and splits.</strong> Raw price change misses cash paid out along the way, and a stock split changes the price without changing value — compare split-adjusted prices, not headline quotes.</span><span class="l-zh"><strong>股息与拆股。</strong>单看价格变动，会漏掉期间派发的现金，而拆股会在不改变价值的情况下改变价格——应比较复权后的价格，而非表面报价。</span></li>
+<li><span class="l-en"><strong>Percent ≠ dollars ≠ risk.</strong> A big percentage on a tiny position can matter less than a small percentage on a large one. Read the percent change alongside how much was at stake, not on its own.</span><span class="l-zh"><strong>百分比 ≠ 金额 ≠ 风险。</strong>小仓位上的大百分比，重要性可能不及大仓位上的小百分比。要把涨跌幅与所投入的规模一并来看，而非孤立地读它。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">A gain and the loss it reverses are never the same size — the smaller your base, the harder it works to climb back.</span><span class="l-zh">一段涨幅与它所弥补的跌幅，从来不是同一个大小——基数越小，爬回原点就越吃力。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">See how deep drawdowns compound in the <a href="</span><span class="l-zh">在 <a href="</span>../../tools/calculators/drawdown-recovery.html"><span class="l-en">drawdown-recovery calculator</span><span class="l-zh">回撤修复计算器</span></a><span class="l-en">, or study how gains and losses combine in the lesson on <a href="</span><span class="l-zh">中看看深度回撤如何累积，或在 <a href="</span>../../learn/risk/risk-reward-expectancy.html"><span class="l-en">risk, reward and expectancy</span><span class="l-zh">风险、回报与期望值</span></a><span class="l-en">.</span><span class="l-zh"> 这节课中学习涨跌如何叠加。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/trade-profit.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Trade Profit &amp; Loss Calculator</span></a><a class="est-relcard" href="../../tools/calculators/roi.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">ROI Calculator</span></a><a class="est-relcard" href="../../tools/calculators/stock-average.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Stock Average (Average Down) Calculator</span></a>
+        <a class="est-relcard" href="../../learn/risk/risk-reward-expectancy.html"><span class="rc-kind"><span class="l-en">Lesson</span><span class="l-zh">课程</span></span><span class="rc-title">Risk/Reward Ratios and Trade Expectancy Explained</span></a>
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    <aside class="est-cta-block">
+      <div class="cta-copy">
+        <span class="cta-k"><span class="l-en">Next step</span><span class="l-zh">下一步</span></span>
+        <p class="cta-t">Read the lesson: Risk/Reward Ratios and Trade Expectancy Explained</p>
+      </div>
+      <a class="gbtn gbtn-lg gbtn-cta" href="../../learn/risk/risk-reward-expectancy.html">Read the lesson: Risk/Reward Ratios and Trade Expectancy Explained</a>
+    </aside>
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (build-brief formula — do not re-derive) ──────────────────
+  // inputs: {E buy, X sell, Q shares|NaN}. Returns an outputs object, or
+  // {ok:false,msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var E=inp.E, X=inp.X, Q=inp.Q;
+    if(!(E>0)) return {ok:false, msg:"Enter your buy price above zero."};
+    if(!isFinite(X)) return {ok:false, msg:"Enter your sell price."};
+    var pct = 100 * (X - E) / E;
+    var hasQty = isFinite(Q) && Q > 0;
+    var dollar = (X - E) * (hasQty ? Q : 1);
+    var isLoss = pct < 0;
+    // recovery: gain from the lower price needed to return to the buy price.
+    // 100·(−pct)/(100+pct); guard the degenerate X<=0 (pct<=−100) case.
+    var recoveryPct = null;
+    if(isLoss && (100 + pct) > 0) recoveryPct = 100 * (-pct) / (100 + pct);
+    return {
+      ok:true, pct:pct, dollar:dollar, hasQty:hasQty,
+      isLoss:isLoss, isGain:pct>0, recoveryPct:recoveryPct,
+      total:(X<=0)
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{E:50,  X:60, Q:NaN}, want:{pct:20} },
+    { in:{E:100, X:50, Q:NaN}, want:{pct:-50, recoveryPct:100} },
+    { in:{E:100, X:50, Q:200}, want:{pct:-50, dollar:-10000, recoveryPct:100} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("percentage-gain-loss self-check "+i+": compute failed", got); return; }
+      for(k in w){
+        var g = got[k];
+        if(g === null || Math.abs(g - w[k]) > 0.01){
+          console.error("percentage-gain-loss self-check "+i+" mismatch on "+k+": got "+g+" want "+w[k]); }
+      }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { buy:$("buy"), sell:$("sell"), qty:$("qty") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outDollar=$("out-dollar"), outRecover=$("out-recover"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ var s=(n<0?"-":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); return s; }
+    function signPct(n){ return (n>=0?"+":"") + n.toFixed(2) + "%"; }
+    function dash(){ outMain.textContent="—"; outMain.className="";
+      [outDollar,outRecover].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ E:numFrom(els.buy), X:numFrom(els.sell), Q:numFrom(els.qty) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outMain.textContent = signPct(res.pct);
+      outMain.className = res.isGain ? "" : (res.isLoss ? "" : "");
+
+      // dollar P/L (only meaningful when a share count is given)
+      if(res.hasQty){ outDollar.textContent = money(res.dollar);
+        outDollar.className = res.dollar>0 ? "pos" : (res.dollar<0 ? "neg" : ""); }
+      else { outDollar.textContent = "—"; outDollar.className=""; }
+
+      // break-even climb (only on a loss)
+      if(res.isLoss && res.recoveryPct!==null){ outRecover.textContent = "+" + res.recoveryPct.toFixed(2) + "%";
+        outRecover.className="neg"; }
+      else if(res.isLoss && res.recoveryPct===null){ outRecover.textContent = "—"; outRecover.className=""; }
+      else { outRecover.textContent = "—"; outRecover.className=""; }
+
+      // Law 3: plain-word interpretation under the number
+      var plain;
+      if(res.isGain){
+        plain = "A gain of " + signPct(res.pct) + " from " + money(inp.E) + " to " + money(inp.X) + ".";
+        if(res.hasQty) plain += " On " + inp.Q.toLocaleString("en-US") + " shares that's " + money(res.dollar) + " in profit.";
+      } else if(res.isLoss){
+        plain = "A loss of " + res.pct.toFixed(2) + "% from " + money(inp.E) + " to " + money(inp.X) + ".";
+        if(res.hasQty) plain += " On " + inp.Q.toLocaleString("en-US") + " shares that's " + money(res.dollar) + ".";
+        if(res.recoveryPct!==null) plain += " It would take a +" + res.recoveryPct.toFixed(2) + "% gain from here to break even.";
+        else plain += " The price has fallen to zero or below — there is no gain that recovers it.";
+      } else {
+        plain = "No change — the sell price equals the buy price.";
+      }
+      outPlain.textContent = plain; outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var inp={ E:numFrom(els.buy), X:numFrom(els.sell), Q:numFrom(els.qty) };
+      var s = "Percent change: " + signPct(last.pct) + " (" + money(inp.E) + " → " + money(inp.X) + ")";
+      if(last.hasQty) s += " · " + money(last.dollar) + " on " + inp.Q.toLocaleString("en-US") + " shares";
+      if(last.isLoss && last.recoveryPct!==null) s += " · needs +" + last.recoveryPct.toFixed(2) + "% to break even";
+      return s + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["buy","sell","qty"].forEach(function(id){ els[id].addEventListener("input", render); });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

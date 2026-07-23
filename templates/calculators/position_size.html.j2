@@ -20,6 +20,9 @@
   in .co-plain and "—" in the number. Inputs accept commas.
 =============================================================================#}
 {% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('position-size', 'crown') }}{% endblock %}
 
 {% block calc_form %}
 <p class="cc-lede">{{ t('Enter your account size, the share of it you’re willing to risk, your entry and your stop. You get the exact number of shares that keeps the loss at that risk if the stop is hit.',

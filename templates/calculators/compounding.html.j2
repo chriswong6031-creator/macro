@@ -8,20 +8,23 @@
   toc, related, cta.
 =============================================================================#}
 {% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('compounding', 'crown') }}{% endblock %}
 
 {% block estate_css %}
 {{ super() }}
-  /* compounding-specific: table + SVG curve */
+  /* compounding-specific: table + SVG curve — terminal treatment */
   .cp-table-wrap{margin:20px 0 0; overflow-x:auto;}
-  .cp-table-wrap table{width:100%; border-collapse:collapse; font-family:var(--font-mono);
-    font-size:13.5px; font-variant-numeric:tabular-nums;}
-  .cp-table-wrap th{font-family:var(--font-ui); font-size:11px; font-weight:600; color:var(--muted);
-    text-transform:uppercase; letter-spacing:.06em; padding:7px 10px; text-align:right; border-bottom:1px solid var(--line);}
+  .cp-table-wrap table{width:100%; border-collapse:collapse; font-family:var(--num);
+    font-size:var(--fs-sm); font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1;}
+  .cp-table-wrap th{font-family:var(--num); font-size:var(--fs-micro); font-weight:700; color:var(--ink-3);
+    text-transform:uppercase; letter-spacing:.08em; padding:7px 10px; text-align:right; border-bottom:1px solid var(--hair-strong);}
   .cp-table-wrap th:first-child{text-align:left;}
-  .cp-table-wrap td{padding:6px 10px; text-align:right; border-bottom:1px solid var(--rule); color:var(--text);}
-  .cp-table-wrap td:first-child{text-align:left; color:var(--muted);}
+  .cp-table-wrap td{padding:6px 10px; text-align:right; border-bottom:1px solid var(--hair); color:var(--ink-1);}
+  .cp-table-wrap td:first-child{text-align:left; color:var(--ink-3);}
   .cp-table-wrap td.pos-col{color:var(--up);}
-  .cp-curve-wrap{margin:20px 0 0; border-radius:12px; border:1px solid var(--line); overflow:hidden;}
+  .cp-curve-wrap{margin:20px 0 0; border-radius:var(--r-md); border:1px solid var(--hair-strong); overflow:hidden;}
   .cp-curve-wrap svg{display:block; width:100%; height:auto; background:var(--panel2);}
 {% endblock %}
 
@@ -80,7 +83,7 @@
   </svg>
 </div>
 
-<div class="cp-table-wrap" id="year-table-wrap" style="display:none;" aria-label="{{ t('Year-by-year breakdown', '逐年明细') }}">
+<div class="cp-table-wrap" id="year-table-wrap" style="display:none;" aria-label="Year-by-year breakdown">
   <table>
     <thead><tr>
       <th>{{ t('Year', '年份') }}</th>

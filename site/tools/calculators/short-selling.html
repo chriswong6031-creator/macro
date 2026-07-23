@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Short Selling Profit Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/short-selling.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Short Selling Profit Calculator">
+<meta property="og:description" content="Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/short-selling.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Short Selling Profit Calculator">
+<meta name="twitter:description" content="Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Short Selling Profit Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Short Selling Profit Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Short Selling Profit Calculator</h1>
+  <p class="est-dek">Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 30 h48"/><path class="egl-fill" d="M16 12 L48 26 L48 30 L16 30 Z"/><path class="egl-draw" d="M16 12 L48 26"/><circle class="egl-mark-dot" cx="16" cy="12" r="2.6"/><path class="egl-down" d="M48 26 l-6 0.8 M48 26 l-0.8 -6"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter the price you shorted at, the price you cover at, and how many shares. Add the annual borrow fee and days held to net out the cost of borrowing the stock.</span><span class="l-zh">填入你的做空价、回补价和股数。加上年化借券费率与持有天数，即可扣除借入股票的成本，得到净盈亏。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Short entry price ($)</span><span class="l-zh">做空价（$）</span> <span class="hint"><span class="l-en">where you sold</span><span class="l-zh">卖出价</span></span></span>
+    <input id="entry" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Cover price ($)</span><span class="l-zh">回补价（$）</span> <span class="hint"><span class="l-en">where you bought back</span><span class="l-zh">买回价</span></span></span>
+    <input id="cover" inputmode="decimal" autocomplete="off" placeholder="40"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Shares</span><span class="l-zh">股数</span></span>
+    <input id="shares" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Annual borrow fee (%)</span><span class="l-zh">年化借券费（%）</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <input id="bfee" inputmode="decimal" autocomplete="off" placeholder="5"></label>
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">Days held</span><span class="l-zh">持有天数</span> <span class="hint"><span class="l-en">optional — used with the borrow fee</span><span class="l-zh">可选——与借券费一同计算</span></span></span>
+    <input id="days" inputmode="decimal" autocomplete="off" placeholder="30"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">net P/L</span><span class="l-zh">净盈亏</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in the entry, cover and share count to see the result.</span><span class="l-zh">填入做空价、回补价与股数即可查看结果。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Gross P/L</span><span class="l-zh">毛盈亏</span></dt><dd id="out-gross">—</dd></div>
+    <div><dt><span class="l-en">Borrow cost</span><span class="l-zh">借券成本</span></dt><dd id="out-borrow">—</dd></div>
+    <div><dt><span class="l-en">Return on notional</span><span class="l-zh">名义收益率</span></dt><dd id="out-ret">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">A short sale profits when the price you <strong>cover</strong> at is below the price you <strong>sold</strong> at: gross profit is the fall per share times the shares, and your net is that gross minus the fee you paid to borrow the stock. Because a short sells first and buys back later, the arithmetic runs the opposite way to a normal trade — but the borrow fee is a cost a long position never carries.</span><span class="l-zh">做空在<strong>回补</strong>价低于<strong>卖出</strong>价时获利：毛利润等于每股跌幅乘以股数，净利润则是毛利润减去借入股票所付的费用。由于做空是先卖后买，其算术方向与普通交易相反——而借券费则是多头持仓从不承担的一项成本。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Gross P/L</strong> = ( Entry − Cover ) × Shares</span><span class="l-zh"><strong>毛盈亏</strong> = ( 做空价 − 回补价 ) × 股数</span><br>
+<span class="l-en"><strong>Borrow cost</strong> = Entry × Shares × (Fee% ÷ 100) × (Days ÷ 365)</span><span class="l-zh"><strong>借券成本</strong> = 做空价 × 股数 × (费率% ÷ 100) × (天数 ÷ 365)</span><br>
+<span class="l-en"><strong>Net P/L</strong> = Gross − Borrow cost</span><span class="l-zh"><strong>净盈亏</strong> = 毛盈亏 − 借券成本</span><br>
+<span class="l-en">Return on notional = 100 × Net ÷ ( Entry × Shares )</span><span class="l-zh">名义收益率 = 100 × 净盈亏 ÷ ( 做空价 × 股数 )</span>
+</div>
+<p><span class="l-en">Notional is the value you sold short — Entry × Shares — which is what your broker charges the borrow fee against. Leaving the fee or days blank simply sets the borrow cost to zero, so the tool shows the raw price move on its own.</span><span class="l-zh">名义价值即你卖空的金额——做空价 × 股数——也是券商据以计收借券费的基数。留空费率或天数会将借券成本设为零，此时工具仅呈现价格变动本身。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader shorts <span class="num">100</span> shares at <span class="num">$50.00</span> and covers at <span class="num">$40.00</span>, holding for <span class="num">30</span> days at a <span class="num">5%</span> annual borrow fee.</span><span class="l-zh">假设一位交易者在 <span class="num">$50.00</span> 做空 <span class="num">100</span> 股，在 <span class="num">$40.00</span> 回补，以 <span class="num">5%</span> 的年化借券费持有 <span class="num">30</span> 天。</span></p>
+<ul>
+<li><span class="l-en">Gross P/L = <span class="num">( 50 − 40 ) × 100 = $1,000</span></span><span class="l-zh">毛盈亏 = <span class="num">( 50 − 40 ) × 100 = $1,000</span></span></li>
+<li><span class="l-en">Borrow cost = <span class="num">50 × 100 × 0.05 × (30 ÷ 365) ≈ $20.55</span></span><span class="l-zh">借券成本 = <span class="num">50 × 100 × 0.05 × (30 ÷ 365) ≈ $20.55</span></span></li>
+<li><span class="l-en">Net P/L = <span class="num">1,000 − 20.55 ≈ $979.45</span></span><span class="l-zh">净盈亏 = <span class="num">1,000 − 20.55 ≈ $979.45</span></span></li>
+<li><span class="l-en">Return on notional = <span class="num">100 × 979.45 ÷ 5,000 ≈ 19.6%</span></span><span class="l-zh">名义收益率 = <span class="num">100 × 979.45 ÷ 5,000 ≈ 19.6%</span></span></li>
+</ul>
+</div>
+<p><span class="l-en">The borrow fee shaved about $20 off a $1,000 win here — small on a fast, deep decline. Hold the same short for a year and the same fee subtracts <span class="num">$250</span>; on a stock that barely moves, the borrow can quietly eat the whole trade.</span><span class="l-zh">这里借券费从 $1,000 的盈利中削去约 $20——对一次快速、深度的下跌而言微不足道。若把同一笔做空持有一年，同样的费率会扣掉 <span class="num">$250</span>；而对一只几乎不动的股票，借券成本可能悄悄吞掉整笔交易。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Capped gain, uncapped loss</span><span class="l-zh">收益有顶，亏损无底</span></span>
+<p><span class="l-en">A short’s best case is the stock going to zero — the most you can make is the entry price per share, no more. But a short’s loss has no ceiling: a stock can rise 200%, 500%, or gap far higher overnight, and each dollar up is a dollar of loss on borrowed shares you must eventually buy back. A short squeeze can force that buying at the worst possible price. Size a short small and cover honestly — the payoff math is the reverse of a long, and so is the risk.</span><span class="l-zh">做空的最好结果是股价归零——你最多只能赚到每股的做空价，仅此而已。但做空的亏损没有上限：股价可以上涨 200%、500%，或隔夜大幅跳空，每上涨一美元就是借来的、终须买回的股票上的一美元亏损。轧空（逼空）可能迫使你在最糟的价格买回。做空仓位要小，回补要诚实——其收益算术与做多相反，风险亦然。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This math nets a <em>single</em> short cleanly, but a few real-world costs and frictions sit outside it:</span><span class="l-zh">这套算法能干净地结算<em>单</em>笔做空，但现实中有几项成本与摩擦不在其中：</span></p>
+<ul>
+<li><span class="l-en"><strong>Hard-to-borrow rates float.</strong> The borrow fee here is a single flat rate, but on crowded shorts it can spike day to day and dwarf a slow price decline. Check the live rate, not yesterday’s.</span><span class="l-zh"><strong>难借券费率会浮动。</strong>这里的借券费是单一固定值，但在拥挤的空头上，它可能逐日飙升，远超缓慢的价格下跌。要看实时费率，而非昨日的。</span></li>
+<li><span class="l-en"><strong>Dividends and recalls.</strong> A short owes any dividend paid while the position is open, and the lender can recall the shares — forcing you to cover early at a price you didn’t choose. Neither is in this figure.</span><span class="l-zh"><strong>股息与召回。</strong>做空期间需赔付所派发的任何股息，且出借方可召回股票——迫使你在非你所选的价格提前回补。二者均不在此数字中。</span></li>
+<li><span class="l-en"><strong>Margin and commissions.</strong> Short selling requires a margin account; margin interest, commissions, and regulatory fees all reduce the net further. This tool isolates the price move and the borrow, not your broker’s full bill.</span><span class="l-zh"><strong>保证金与佣金。</strong>做空需要保证金账户；保证金利息、佣金与监管费都会进一步侵蚀净利。本工具只隔离价格变动与借券成本，而非券商的全部账单。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">A short earns the fall and pays rent while it waits. The price move is your edge; the borrow fee is the clock running against it.</span><span class="l-zh">做空赚取跌幅，并在等待期间支付「租金」。价格变动是你的优势；借券费则是与之赛跑的时钟。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">For the long side of the same trade, use the <a href="</span><span class="l-zh">同一笔交易的多头一侧，可使用 <a href="</span>../../tools/calculators/trade-profit.html"><span class="l-en">trade profit calculator</span><span class="l-zh">交易盈亏计算器</span></a><span class="l-en">, or size the position first with the <a href="</span><span class="l-zh">，或先用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">.</span><span class="l-zh">为仓位定量。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/trade-profit.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Trade Profit &amp; Loss Calculator</span></a><a class="est-relcard" href="../../tools/calculators/roi.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">ROI Calculator</span></a><a class="est-relcard" href="../../tools/calculators/percentage-gain-loss.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Percentage Gain/Loss Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (short-sale P/L incl. borrow cost — do not re-derive) ──────
+  // inputs: {E entry, X cover, Q shares, bf annualBorrowFee%, d daysHeld}.
+  // bf/d optional (NaN/blank ⇒ borrow cost 0). Returns outputs, or {ok:false,msg}.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var E=inp.E, X=inp.X, Q=inp.Q, bf=inp.bf, d=inp.d;
+    if(!(E>0)) return {ok:false, msg:"Enter the price you shorted at."};
+    if(!(X>0)) return {ok:false, msg:"Enter the price you covered at."};
+    if(!(Q>0)) return {ok:false, msg:"Enter the number of shares."};
+    var notional = E * Q;
+    var gross = (E - X) * Q;
+    var hasFee = isFinite(bf) && bf > 0 && isFinite(d) && d > 0;
+    var borrowCost = hasFee ? notional * (bf / 100) * (d / 365) : 0;
+    var net = gross - borrowCost;
+    var returnPct = notional > 0 ? (100 * net / notional) : 0;
+    return {
+      ok:true, notional:notional, gross:gross, borrowCost:borrowCost,
+      net:net, returnPct:returnPct, hasFee:hasFee
+    };
+  }
+
+  // ── self-check: run the canonical fixtures on load, console.error on drift ──
+  var WORKED_EXAMPLES = [
+    { in:{E:50, X:40, Q:100},                 want:{gross:1000, borrowCost:0,     net:1000,   returnPct:20} },
+    { in:{E:50, X:40, Q:100, bf:5, d:30},      want:{gross:1000, borrowCost:20.55, net:979.45, returnPct:19.589} },
+    { in:{E:200, X:210, Q:10},                 want:{gross:-100, borrowCost:0,     net:-100,   returnPct:-5} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("short-selling self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.05){
+        console.error("short-selling self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { entry:$("entry"), cover:$("cover"), shares:$("shares"), bfee:$("bfee"), days:$("days") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outGross=$("out-gross"), outBorrow=$("out-borrow"), outRet=$("out-ret"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ var s=(n<0?"-$":"$")+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); return s; }
+    function pct(n){ return n.toFixed(Math.abs(n)<10?2:1) + "%"; }
+    function dash(){ outMain.textContent="—"; outMain.className="";
+      [outGross,outBorrow,outRet].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ E:numFrom(els.entry), X:numFrom(els.cover), Q:numFrom(els.shares),
+                bf:numFrom(els.bfee), d:numFrom(els.days) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outMain.textContent = money(res.net);
+      outMain.className = res.net>0 ? "" : (res.net<0 ? "" : "");
+      outGross.textContent = money(res.gross);
+      outGross.className = res.gross>0 ? "pos" : (res.gross<0 ? "neg" : "");
+      outBorrow.textContent = res.hasFee ? money(res.borrowCost) : "—";
+      outRet.textContent = pct(res.returnPct);
+      outRet.className = res.returnPct>0 ? "pos" : (res.returnPct<0 ? "neg" : "");
+
+      // Law 3: plain-word interpretation under the number
+      var plain;
+      if(res.net > 0){
+        plain = "This short made " + money(res.net) + " — a " + pct(res.returnPct) +
+          " return on the notional sold short";
+        plain += res.hasFee ? ", after a " + money(res.borrowCost) + " borrow fee." : ".";
+      } else if(res.net < 0){
+        plain = "This short lost " + money(res.net) + " — the stock rose against the position, a " +
+          pct(res.returnPct) + " return on the notional";
+        plain += res.hasFee ? ", including a " + money(res.borrowCost) + " borrow fee." : ".";
+        outPlain.className="co-plain warn";
+      } else {
+        plain = "This short broke even on the notional sold short.";
+      }
+      if(res.net >= 0) outPlain.className="co-plain";
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var verb = last.net>=0 ? "profit" : "loss";
+      var line = "Short selling " + verb + ": " + money(last.net) +
+        " (" + pct(last.returnPct) + " on notional) · gross " + money(last.gross);
+      if(last.hasFee) line += " · borrow " + money(last.borrowCost);
+      return line + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["entry","cover","shares","bfee","days"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

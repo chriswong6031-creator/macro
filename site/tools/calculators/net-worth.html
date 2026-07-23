@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Net Worth Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Add up your assets, subtract your liabilities, and see your net worth, total assets, total liabilities, and debt-to-asset ratio in one place.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/net-worth.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Net Worth Calculator">
+<meta property="og:description" content="Add up your assets, subtract your liabilities, and see your net worth, total assets, total liabilities, and debt-to-asset ratio in one place.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/net-worth.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Net Worth Calculator">
+<meta name="twitter:description" content="Add up your assets, subtract your liabilities, and see your net worth, total assets, total liabilities, and debt-to-asset ratio in one place.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Net Worth Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Net Worth Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Net Worth Calculator</h1>
+  <p class="est-dek">Add up your assets, subtract your liabilities, and see your net worth, total assets, total liabilities, and debt-to-asset ratio in one place.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M32 8 v26"/>
+  <rect class="egl-up" x="16" y="14" width="9" height="14" rx="1"/>
+  <rect class="egl-down" x="39" y="20" width="9" height="8" rx="1"/>
+  <path class="egl-still" d="M14 28 h36"/>
+  <path class="egl-draw" d="M20.5 14 L43.5 20"/>
+  <circle class="egl-mark-dot" cx="32" cy="17" r="2.6"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Add up what you own, subtract what you owe, and the difference is your net worth. Fill in only the lines that apply — blanks count as zero.</span><span class="l-zh">把你拥有的加起来，减去你欠下的，两者之差就是你的净资产。只需填写适用的项目——留空即计为零。</span></p>
+
+<div class="calc-in">
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">Assets — what you own</span><span class="l-zh">资产——你拥有的</span> <span class="hint"><span class="l-en">all optional</span><span class="l-zh">均可选</span></span></span></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Cash & savings ($)</span><span class="l-zh">现金与存款（$）</span></span>
+    <input id="cash" inputmode="decimal" autocomplete="off" placeholder="25,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Investments ($)</span><span class="l-zh">投资（$）</span> <span class="hint"><span class="l-en">brokerage, stocks</span><span class="l-zh">证券、股票</span></span></span>
+    <input id="invest" inputmode="decimal" autocomplete="off" placeholder="80,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Retirement accounts ($)</span><span class="l-zh">退休账户（$）</span></span>
+    <input id="retire" inputmode="decimal" autocomplete="off" placeholder="120,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Real estate ($)</span><span class="l-zh">房地产（$）</span> <span class="hint"><span class="l-en">market value</span><span class="l-zh">市值</span></span></span>
+    <input id="realestate" inputmode="decimal" autocomplete="off" placeholder="450,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Vehicles ($)</span><span class="l-zh">车辆（$）</span></span>
+    <input id="vehicles" inputmode="decimal" autocomplete="off" placeholder="20,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Other assets ($)</span><span class="l-zh">其他资产（$）</span></span>
+    <input id="otherassets" inputmode="decimal" autocomplete="off" placeholder="5,000"></label>
+
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">Liabilities — what you owe</span><span class="l-zh">负债——你欠下的</span> <span class="hint"><span class="l-en">all optional</span><span class="l-zh">均可选</span></span></span></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Mortgage ($)</span><span class="l-zh">房贷（$）</span> <span class="hint"><span class="l-en">balance owed</span><span class="l-zh">剩余本金</span></span></span>
+    <input id="mortgage" inputmode="decimal" autocomplete="off" placeholder="320,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Student & other loans ($)</span><span class="l-zh">学生贷款及其他（$）</span></span>
+    <input id="loans" inputmode="decimal" autocomplete="off" placeholder="30,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Credit card debt ($)</span><span class="l-zh">信用卡欠款（$）</span></span>
+    <input id="creditcard" inputmode="decimal" autocomplete="off" placeholder="6,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Other debts ($)</span><span class="l-zh">其他债务（$）</span></span>
+    <input id="otherdebts" inputmode="decimal" autocomplete="off" placeholder="4,000"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">net worth</span><span class="l-zh">净资产</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in any of the lines above to see your net worth.</span><span class="l-zh">填入上方任意项目即可查看净资产。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Total assets</span><span class="l-zh">总资产</span></dt><dd id="out-assets">—</dd></div>
+    <div><dt><span class="l-en">Total liabilities</span><span class="l-zh">总负债</span></dt><dd id="out-liab">—</dd></div>
+    <div><dt><span class="l-en">Debt-to-asset ratio</span><span class="l-zh">资产负债率</span></dt><dd id="out-dta">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Your net worth is everything you <strong>own</strong> minus everything you <strong>owe</strong>. Add up your assets — cash, investments, retirement, property, vehicles — then subtract your liabilities — mortgage, loans, card balances. The number that remains is a single snapshot of your financial standing on this day. It can be positive, zero, or negative, and the sign matters less than the direction it moves over time.</span><span class="l-zh">你的净资产，就是你所<strong>拥有</strong>的一切，减去你所<strong>欠下</strong>的一切。把资产加起来——现金、投资、退休金、房产、车辆——再减去负债——房贷、贷款、信用卡余额。剩下的数字，是你今天财务状况的一张快照。它可以为正、为零，或为负；相比正负号，它随时间移动的方向更重要。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Total assets</strong> = sum of everything you own</span><span class="l-zh"><strong>总资产</strong> = 你拥有的一切之和</span><br>
+<span class="l-en"><strong>Total liabilities</strong> = sum of everything you owe</span><span class="l-zh"><strong>总负债</strong> = 你欠下的一切之和</span><br>
+<span class="l-en"><strong>Net worth</strong> = Total assets − Total liabilities</span><span class="l-zh"><strong>净资产</strong> = 总资产 − 总负债</span><br>
+<span class="l-en">Debt-to-asset ratio = 100 × Total liabilities ÷ Total assets</span><span class="l-zh">资产负债率 = 100 × 总负债 ÷ 总资产</span>
+</div>
+<p><span class="l-en">The debt-to-asset ratio is the share of your assets that is financed by debt. At 0% you owe nothing against what you own; at 100% your debts equal your assets and your net worth is zero; above 100% you owe more than you own, so net worth is negative. It is the same picture as net worth, expressed as a ratio that is easy to compare across very different balance sheets.</span><span class="l-zh">资产负债率，是你的资产中由债务支撑的那一部分占比。为 0% 时，你对所拥有的东西毫无欠款；为 100% 时，债务恰好等于资产，净资产为零；超过 100% 时，你欠的比拥有的还多，净资产因此为负。它与净资产是同一幅图景，只是用一个便于在差异极大的资产负债表间比较的比率来表达。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a household owns <span class="num">$300,000</span> in total assets — a home, a brokerage account, some cash — and owes <span class="num">$180,000</span> in total, mostly a mortgage.</span><span class="l-zh">假设一个家庭拥有总资产 <span class="num">$300,000</span>——一套住房、一个证券账户、一些现金——总共欠款 <span class="num">$180,000</span>，其中大部分是房贷。</span></p>
+<ul>
+<li><span class="l-en">Net worth = <span class="num">300,000 − 180,000 = $120,000</span></span><span class="l-zh">净资产 = <span class="num">300,000 − 180,000 = $120,000</span></span></li>
+<li><span class="l-en">Debt-to-asset ratio = <span class="num">100 × 180,000 ÷ 300,000 = 60%</span></span><span class="l-zh">资产负债率 = <span class="num">100 × 180,000 ÷ 300,000 = 60%</span></span></li>
+<li><span class="l-en">So <span class="num">60%</span> of what the household owns is financed by debt, leaving <span class="num">$120,000</span> of genuinely owned value.</span><span class="l-zh">因此，家庭所拥有的东西中有 <span class="num">60%</span> 由债务支撑，剩下 <span class="num">$120,000</span> 是真正属于自己的净值。</span></li>
+</ul>
+</div>
+<p><span class="l-en">A positive net worth is not the whole story. A household with $120,000 net worth and a 60% debt ratio is more exposed than one with the same net worth and a 20% ratio — the first carries far more debt against its assets, and is more sensitive to falling asset prices or rising rates.</span><span class="l-zh">正的净资产并非全部。一个净资产 $120,000、负债率 60% 的家庭，比另一个同样净资产但负债率 20% 的家庭承担更大风险——前者的资产背负着多得多的债务，对资产价格下跌或利率上升也更为敏感。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Counting the asset, forgetting the loan</span><span class="l-zh">只算资产，忘了贷款</span></span>
+<p><span class="l-en">The most common mistake is entering a home or car at its full market value while leaving out the loan against it. A $450,000 house with a $320,000 mortgage adds only $130,000 to your net worth, not $450,000. Always pair each financed asset with its outstanding balance: enter the property in the assets column and the mortgage in the liabilities column so the two net correctly.</span><span class="l-zh">最常见的错误，是按全额市值填入房产或车辆，却漏掉了针对它的贷款。一套 $450,000 的住房若还欠 $320,000 房贷，实际只为你的净资产增加 $130,000，而非 $450,000。务必把每一项有贷款的资产与其未偿余额配对：在资产栏填入房产，在负债栏填入房贷，两者才能正确相抵。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">Net worth is a clean snapshot, but a snapshot leaves things out. A few honest limits:</span><span class="l-zh">净资产是一张干净的快照，但快照总有遗漏之处。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>Values are estimates.</strong> Homes, private businesses and cars are worth what they sell for, not what you type in. Use conservative market values, and remember a sale may bring costs — commissions, taxes — that shrink the real figure.</span><span class="l-zh"><strong>估值只是估计。</strong>房产、私人企业和车辆值多少，取决于它们能卖出的价格，而非你填入的数字。请采用保守的市值，并记住出售可能产生成本——佣金、税费——从而缩水真实数字。</span></li>
+<li><span class="l-en"><strong>Liquidity is invisible here.</strong> Two people with identical net worth can be worlds apart if one holds mostly cash and the other mostly a house that takes months to sell. Net worth does not tell you what you could spend tomorrow.</span><span class="l-zh"><strong>流动性在这里看不见。</strong>两个净资产相同的人可能天差地别——若一人主要持有现金，另一人主要持有一套要数月才能卖出的房子。净资产不会告诉你明天能动用多少。</span></li>
+<li><span class="l-en"><strong>It is a moment, not a trend.</strong> One reading means little. The value comes from tracking the same calculation over months and years, so the direction — rising, flat, or falling — becomes visible.</span><span class="l-zh"><strong>它是一个瞬间，而非一段趋势。</strong>单次读数意义有限。真正的价值来自于在数月乃至数年间持续用同一方法计算，从而让方向——上升、持平或下降——变得清晰可见。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Net worth is what you own minus what you owe. Track the same number over time — the trend tells you more than any single reading.</span><span class="l-zh">净资产就是所拥有的减去所欠下的。持续追踪同一个数字——趋势比任何单次读数都更能说明问题。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">See what a growing balance can become with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/compounding.html"><span class="l-en">compound growth calculator</span><span class="l-zh">复利增长计算器</span></a><span class="l-en">, or measure a portfolio’s annual growth with the <a href="</span><span class="l-zh">看看不断增长的余额能变成什么，或用 <a href="</span>../../tools/calculators/cagr.html"><span class="l-en">CAGR calculator</span><span class="l-zh">CAGR 计算器</span></a><span class="l-en">.</span><span class="l-zh">衡量投资组合的年化增长。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (net worth = assets − liabilities) ────────────────────────
+  // inputs: {assets:[...], liabs:[...]} — arrays of numbers (NaN for blank).
+  // Returns an outputs object, or {ok:false, msg} when nothing is filled in.
+  // Blank/invalid lines count as zero; never returns NaN/Infinity.
+  function compute(inp){
+    function sum(arr, any){
+      var t=0;
+      for(var i=0;i<arr.length;i++){
+        var v=arr[i];
+        if(isFinite(v)){ t+=v; any.filled=true; }
+      }
+      return t;
+    }
+    var any={filled:false};
+    var totalAssets = sum(inp.assets, any);
+    var totalLiabilities = sum(inp.liabs, any);
+    if(!any.filled) return {ok:false, msg:"Fill in any of the lines above to see your net worth."};
+    var netWorth = totalAssets - totalLiabilities;
+    var dta = totalAssets > 0 ? (100 * totalLiabilities / totalAssets) : null; // null = no assets to ratio against
+    return {
+      ok:true,
+      totalAssets: totalAssets,
+      totalLiabilities: totalLiabilities,
+      netWorth: netWorth,
+      dta: dta,
+      negative: netWorth < 0
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{assets:[300000], liabs:[180000]}, want:{netWorth:120000, totalAssets:300000, totalLiabilities:180000, dta:60} },
+    { in:{assets:[25000,80000,120000,450000,20000,5000], liabs:[320000,30000,6000,4000]},
+      want:{netWorth:340000, totalAssets:700000, totalLiabilities:360000} },
+    { in:{assets:[40000], liabs:[55000]}, want:{netWorth:-15000, totalAssets:40000, totalLiabilities:55000, dta:137.5} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("net-worth self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.01){
+        console.error("net-worth self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var ASSET_IDS = ["cash","invest","retire","realestate","vehicles","otherassets"];
+    var LIAB_IDS  = ["mortgage","loans","creditcard","otherdebts"];
+    var els = {};
+    ASSET_IDS.concat(LIAB_IDS).forEach(function(id){ els[id]=$(id); });
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outAssets=$("out-assets"), outLiab=$("out-liab"), outDta=$("out-dta"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){
+      var neg = n < 0, a = Math.abs(n);
+      return (neg?"−$":"$") + a.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0});
+    }
+    function dash(){
+      outMain.textContent="—"; outMain.className="";
+      [outAssets,outLiab,outDta].forEach(function(e){e.textContent="—"; e.className="";});
+    }
+
+    var last=null;
+    function render(){
+      var inp={
+        assets: ASSET_IDS.map(function(id){ return numFrom(els[id]); }),
+        liabs:  LIAB_IDS.map(function(id){ return numFrom(els[id]); })
+      };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent = money(res.netWorth);
+      outAssets.textContent = money(res.totalAssets);
+      outLiab.textContent = money(res.totalLiabilities);
+      outDta.textContent = res.dta===null ? "—" : res.dta.toFixed(res.dta<10?1:(res.dta % 1 === 0 ? 0 : 1)) + "%";
+      // Law 3: plain-word interpretation under the number
+      var plain;
+      if(res.negative){
+        outMain.className="neg"; outDta.className="neg";
+        plain = "You owe " + money(-res.netWorth) + " more than you own. Chipping away at the highest-cost debt is what moves this toward zero and then positive.";
+        outPlain.className="co-plain warn";
+      } else {
+        outMain.className=""; outDta.className="";
+        var dtaTxt = res.dta===null
+          ? "with no assets recorded yet"
+          : res.dta.toFixed(res.dta<10?1:(res.dta % 1 === 0 ? 0 : 1)) + "% of your assets is financed by debt";
+        plain = "You own " + money(res.netWorth) + " more than you owe — " + dtaTxt + ".";
+        outPlain.className="co-plain";
+      }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var dta = last.dta===null ? "n/a" : (last.dta.toFixed(last.dta % 1 === 0 ? 0 : 1) + "%");
+      return "Net worth: " + money(last.netWorth) +
+        " · assets " + money(last.totalAssets) +
+        " · liabilities " + money(last.totalLiabilities) +
+        " · debt-to-asset " + dta + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ASSET_IDS.concat(LIAB_IDS).forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dollar-Cost Averaging (DCA) Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Project a dollar-cost averaging plan: enter a fixed contribution, cadence, years and expected return to see the final value, total invested and gain.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/dollar-cost-averaging.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Dollar-Cost Averaging (DCA) Calculator">
+<meta property="og:description" content="Project a dollar-cost averaging plan: enter a fixed contribution, cadence, years and expected return to see the final value, total invested and gain.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/dollar-cost-averaging.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dollar-Cost Averaging (DCA) Calculator">
+<meta name="twitter:description" content="Project a dollar-cost averaging plan: enter a fixed contribution, cadence, years and expected return to see the final value, total invested and gain.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Dollar-Cost Averaging (DCA) Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Dollar-Cost Averaging (DCA) Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Dollar-Cost Averaging (DCA) Calculator</h1>
+  <p class="est-dek">Project a dollar-cost averaging plan: enter a fixed contribution, cadence, years and expected return to see the final value, total invested and gain.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M6 32 h52"/>
+  <path class="egl-draw" d="M8 22 C 16 14, 22 26, 30 20 S 44 10, 56 15"/>
+  <path class="egl-mark" d="M14 32 v-13 M26 32 v-9 M38 32 v-16 M50 32 v-18"/>
+  <circle class="egl-mark-dot" cx="14" cy="19" r="1.9"/>
+  <circle class="egl-mark-dot" cx="26" cy="23" r="1.9"/>
+  <circle class="egl-mark-dot" cx="38" cy="16" r="1.9"/>
+  <circle class="egl-mark-dot" cx="50" cy="14" r="1.9"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter how much you invest each period, how often, for how many years, and an expected annual return. You get the projected end value, what you actually put in, and the growth on top.</span><span class="l-zh">填入每期投入金额、投入频率、投入年数，以及一个预期年化回报，即可得到期末的预估价值、你实际投入的本金，以及在此之上的增长。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Contribution per period ($)</span><span class="l-zh">每期投入（$）</span></span>
+    <input id="contrib" inputmode="decimal" autocomplete="off" placeholder="500"></label>
+  <div class="ci">
+    <span class="ci-l"><span class="l-en">Frequency</span><span class="l-zh">投入频率</span> <span class="hint"><span class="l-en">how often you invest</span><span class="l-zh">多久投一次</span></span></span>
+    <div class="ci-seg" role="radiogroup" data-name="freq" id="freq">
+      <button type="button" class="on" data-v="12"><span class="l-en">Monthly</span><span class="l-zh">每月</span></button><button type="button" data-v="52"><span class="l-en">Weekly</span><span class="l-zh">每周</span></button><button type="button" data-v="4"><span class="l-en">Quarterly</span><span class="l-zh">每季</span></button>
+    </div>
+  </div>
+  <label class="ci"><span class="ci-l"><span class="l-en">Number of years</span><span class="l-zh">投入年数</span></span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="5"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Expected annual return (%)</span><span class="l-zh">预期年化回报（%）</span> <span class="hint"><span class="l-en">a hypothetical rate</span><span class="l-zh">一个假设的回报率</span></span></span>
+    <input id="rate" inputmode="decimal" autocomplete="off" placeholder="8"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">projected value</span><span class="l-zh">预估价值</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in all four fields to project the plan.</span><span class="l-zh">填入四个字段即可推算这个计划。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Total invested</span><span class="l-zh">总投入本金</span></dt><dd id="out-invested">—</dd></div>
+    <div><dt><span class="l-en">Investment gain</span><span class="l-zh">投资增长</span></dt><dd id="out-gain">—</dd></div>
+    <div><dt><span class="l-en">Return on invested</span><span class="l-zh">本金回报率</span></dt><dd id="out-return">—</dd></div>
+    <div><dt><span class="l-en">Number of buys</span><span class="l-zh">买入次数</span></dt><dd id="out-buys">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Dollar-cost averaging invests a <strong>fixed amount at a fixed cadence</strong> — say $500 every month — no matter what the price is doing. Because the dollar amount is fixed, that money buys <em>more</em> shares when the price is low and <em>fewer</em> when it is high, so your average cost per share is pulled toward the cheaper end. This calculator projects where a steady plan lands if it earns a given annual return, treating each contribution as an ordinary annuity.</span><span class="l-zh">定投（成本平均法）以<strong>固定的金额、固定的节奏</strong>投入——比如每月 $500——无论价格如何波动。由于投入的金额固定，价格低时这笔钱能买到<em>更多</em>的份额，价格高时买到<em>更少</em>的份额，于是你的每股平均成本会被拉向较低的一端。本计算器在给定年化回报下，把每期投入视作一笔普通年金，推算一个稳定计划最终的落点。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>f</strong> = periods per year (12 monthly · 52 weekly · 4 quarterly)</span><span class="l-zh"><strong>f</strong> = 每年期数（每月 12 · 每周 52 · 每季 4）</span><br>
+<span class="l-en"><strong>N</strong> = years × f &nbsp;·&nbsp; <strong>i</strong> = return% ÷ 100 ÷ f</span><span class="l-zh"><strong>N</strong> = 年数 × f &nbsp;·&nbsp; <strong>i</strong> = 回报% ÷ 100 ÷ f</span><br>
+<span class="l-en"><strong>Final value</strong> = c × ( (1 + i)^N − 1 ) ÷ i</span><span class="l-zh"><strong>期末价值</strong> = c × ( (1 + i)^N − 1 ) ÷ i</span><br>
+<span class="l-en">Total invested = c × N &nbsp;·&nbsp; Gain = Final − Invested</span><span class="l-zh">总投入 = c × N &nbsp;·&nbsp; 增长 = 期末 − 投入</span>
+</div>
+<p><span class="l-en">This is the future value of an <em>ordinary annuity</em> — each contribution arrives at the <em>end</em> of its period and then compounds for the periods that remain. When the return is exactly zero, the money still stacks up: the final value is simply c × N, the total you put in.</span><span class="l-zh">这是<em>普通年金</em>的终值——每期投入在该期的<em>期末</em>到账，之后为剩余的期数复利增长。当回报恰好为零时，本金依然累积：期末价值就等于 c × N，也就是你投入的总额。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader invests <span class="num">$500</span> every month for <span class="num">5 years</span> at a hypothetical <span class="num">8%</span> annual return.</span><span class="l-zh">假设一位交易者每月投入 <span class="num">$500</span>，持续 <span class="num">5 年</span>，假设年化回报为 <span class="num">8%</span>。</span></p>
+<ul>
+<li><span class="l-en">Periods N = <span class="num">5 × 12 = 60</span>, per-period rate i = <span class="num">8 ÷ 100 ÷ 12 ≈ 0.006667</span></span><span class="l-zh">期数 N = <span class="num">5 × 12 = 60</span>，每期利率 i = <span class="num">8 ÷ 100 ÷ 12 ≈ 0.006667</span></span></li>
+<li><span class="l-en">Final value = <span class="num">500 × ((1.006667)^60 − 1) ÷ 0.006667 ≈ $36,738</span></span><span class="l-zh">期末价值 = <span class="num">500 × ((1.006667)^60 − 1) ÷ 0.006667 ≈ $36,738</span></span></li>
+<li><span class="l-en">Total invested = <span class="num">500 × 60 = $30,000</span></span><span class="l-zh">总投入 = <span class="num">500 × 60 = $30,000</span></span></li>
+<li><span class="l-en">Gain = <span class="num">36,738 − 30,000 ≈ $6,738</span> — about <span class="num">22%</span> on the money invested.</span><span class="l-zh">增长 = <span class="num">36,738 − 30,000 ≈ $6,738</span>——约为投入本金的 <span class="num">22%</span>。</span></li>
+</ul>
+</div>
+<p><span class="l-en">Notice that the gain lags a lump sum earning the same rate: most of the money was invested recently and has had little time to compound. That is the honest trade-off of spreading purchases out over time.</span><span class="l-zh">注意，这笔增长低于以相同回报率一次性投入所能得到的收益：大部分资金是近期才投入的，复利的时间很短。这正是把买入分摊到较长时间里所要付出的、诚实的代价。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Treating the return as a promise</span><span class="l-zh">把回报当作承诺</span></span>
+<p><span class="l-en">The expected-return input is a <em>hypothetical constant</em>, not a forecast. Real markets deliver that average as a jagged path — losing stretches, then recoveries — and the end value depends heavily on the order those returns arrive in, especially near the finish when the balance is largest. A plan that averages 8% can still end a five-year window down if the last year is bad. Use this projection to compare cadences and horizons, not to bank on a specific dollar figure.</span><span class="l-zh">预期回报这个输入是一个<em>假设的常数</em>，而非预测。真实市场是以崎岖的路径来兑现这个平均值的——先是下跌，再是复苏——期末价值高度依赖这些回报到来的<em>顺序</em>，尤其在临近终点、余额最大的时候。一个平均 8% 的计划，若最后一年很糟，五年下来仍可能是亏损的。用这个推算去比较不同的节奏与期限，而不要押注于某个具体的金额数字。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">The formula is clean; reality adds friction the math leaves out. A few honest limits:</span><span class="l-zh">公式是干净的，但现实会加入这套算法所忽略的摩擦。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>A constant return.</strong> The model assumes every period earns the same rate. Real returns vary, and their sequence changes the result — the same average can end higher or lower depending on when the good and bad periods fall.</span><span class="l-zh"><strong>恒定的回报。</strong>模型假设每一期都赚取相同的回报率。真实回报会波动，其顺序会改变结果——同样的平均值，好期与坏期出现的时点不同，期末可能更高，也可能更低。</span></li>
+<li><span class="l-en"><strong>No costs or taxes.</strong> Fees, spreads, and taxes on gains all pull the real end value below the projection. Frequent small buys can also mean more transactions to pay for.</span><span class="l-zh"><strong>不含成本与税费。</strong>手续费、买卖价差，以及对收益征收的税，都会把真实的期末价值拉到推算值之下。频繁的小额买入还可能意味着要支付更多笔交易。</span></li>
+<li><span class="l-en"><strong>Fixed, not inflation-adjusted.</strong> The end value is in future dollars. If prices rise over the horizon, its purchasing power is lower than the number suggests.</span><span class="l-zh"><strong>固定金额，未计通胀。</strong>期末价值以未来的名义货币计。若期间物价上涨，其购买力会低于这个数字所显示的水平。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Averaging in trades a shot at the perfect entry for a steady hand and a lower emotional cost — it smooths the path, it does not remove the risk.</span><span class="l-zh">分批投入，是用错过完美入场点的机会，换取一双稳定的手和更低的情绪成本——它平滑了路径，却不会消除风险。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">See how a single lump sum grows with the <a href="</span><span class="l-zh">看看一次性本金如何增长，试试 <a href="</span>../../tools/calculators/compounding.html"><span class="l-en">compounding calculator</span><span class="l-zh">复利计算器</span></a><span class="l-en">, or turn an end value into an annual rate with the <a href="</span><span class="l-zh">，或用 <a href="</span>../../tools/calculators/cagr.html"><span class="l-en">CAGR calculator</span><span class="l-zh">CAGR 计算器</span></a><span class="l-en">.</span><span class="l-zh">把期末价值换算成年化回报率。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/compounding.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Compound Interest Calculator</span></a><a class="est-relcard" href="../../tools/calculators/cagr.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">CAGR Calculator</span></a><a class="est-relcard" href="../../tools/calculators/retirement.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Retirement Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (DCA — ordinary annuity, end-of-period) ───────────────────
+  // inputs: {c contribution, f periods/year, yrs years, r annualPct}. Returns
+  // an outputs object, or {ok:false, msg} for invalid input. No NaN/Infinity.
+  function compute(inp){
+    var c=inp.c, f=inp.f, yrs=inp.yrs, r=inp.r;
+    if(!(c>0)) return {ok:false, msg:"Enter a contribution above zero."};
+    if(!(f>0)) return {ok:false, msg:"Pick how often you invest."};
+    if(!(yrs>0)) return {ok:false, msg:"Enter how many years you'll invest."};
+    if(!isFinite(r)) return {ok:false, msg:"Enter an expected annual return."};
+    var N = Math.round(yrs * f);
+    if(!(N>0)) return {ok:false, msg:"That horizon is too short to make a single contribution."};
+    var i = r / 100 / f;
+    var fv = (i === 0) ? (c * N) : (c * (Math.pow(1 + i, N) - 1) / i);
+    var invested = c * N;
+    var gain = fv - invested;
+    var returnPct = invested > 0 ? (100 * gain / invested) : 0;
+    if(!isFinite(fv) || !isFinite(gain)) return {ok:false, msg:"Those numbers are out of range — try a smaller horizon or return."};
+    return { ok:true, N:N, fv:fv, invested:invested, gain:gain, returnPct:returnPct };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{c:500, f:12, yrs:5,  r:8}, want:{N:60,  fv:36738, invested:30000, gain:6738} },
+    { in:{c:200, f:12, yrs:10, r:0}, want:{N:120, fv:24000, invested:24000, gain:0} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("dollar-cost-averaging self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 1 && got[k] !== w[k]){
+        console.error("dollar-cost-averaging self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { contrib:$("contrib"), years:$("years"), rate:$("rate") };
+    var freqWrap = $("freq");
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outInv=$("out-invested"), outGain=$("out-gain"), outRet=$("out-return"), outBuys=$("out-buys"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    var freq = 12; // default: monthly (matches the .on button)
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function money0(n){ return "$" + Math.round(n).toLocaleString("en-US"); }
+    function dash(){ outMain.textContent="—";
+      [outInv,outGain,outRet,outBuys].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ c:numFrom(els.contrib), f:freq, yrs:numFrom(els.years), r:numFrom(els.rate) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent = money0(res.fv);
+      outInv.textContent  = money(res.invested);
+      outGain.textContent = money(res.gain);
+      outGain.className   = res.gain > 0 ? "pos" : (res.gain < 0 ? "neg" : "");
+      outRet.textContent  = res.returnPct.toFixed(res.returnPct<10 ? 1 : 0) + "%";
+      outRet.className    = res.returnPct > 0 ? "pos" : (res.returnPct < 0 ? "neg" : "");
+      outBuys.textContent = res.N.toLocaleString("en-US");
+      // Law 3: plain-word interpretation under the number
+      var plain = "Investing " + money0(inp.c) + " across " + res.N.toLocaleString("en-US") +
+        " buys projects to " + money0(res.fv) + " — " + money0(res.invested) +
+        " invested plus " + money0(res.gain) + " of growth at this hypothetical rate.";
+      outPlain.textContent = plain; outPlain.className="co-plain";
+    }
+
+    // segmented frequency toggle
+    if(freqWrap){
+      freqWrap.addEventListener("click", function(e){
+        var b = e.target.closest("button[data-v]"); if(!b) return;
+        freq = parseFloat(b.getAttribute("data-v")) || 12;
+        [].slice.call(freqWrap.querySelectorAll("button")).forEach(function(x){ x.classList.toggle("on", x===b); });
+        render();
+      });
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "DCA plan: " + money0(last.fv) + " projected · " + money0(last.invested) +
+        " invested · " + money0(last.gain) + " growth (" +
+        last.returnPct.toFixed(last.returnPct<10 ? 1 : 0) + "% on invested) — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["contrib","years","rate"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

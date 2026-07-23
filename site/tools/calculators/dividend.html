@@ -1,0 +1,414 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dividend Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Turn an investment amount, share price and dividend per share into yearly and monthly income, plus an optional reinvestment growth projection.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/dividend.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Dividend Calculator">
+<meta property="og:description" content="Turn an investment amount, share price and dividend per share into yearly and monthly income, plus an optional reinvestment growth projection.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/dividend.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dividend Calculator">
+<meta name="twitter:description" content="Turn an investment amount, share price and dividend per share into yearly and monthly income, plus an optional reinvestment growth projection.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Dividend Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Dividend Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Dividend Calculator</h1>
+  <p class="est-dek">Turn an investment amount, share price and dividend per share into yearly and monthly income, plus an optional reinvestment growth projection.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><circle class="egl-mark-dot" cx="14" cy="20" r="3"/>
+  <path class="egl-draw" d="M17 20 h30"/>
+  <circle class="egl-still-dot" cx="24" cy="20" r="1.6"/>
+  <circle class="egl-still-dot" cx="33" cy="20" r="1.6"/>
+  <circle class="egl-still-dot" cx="42" cy="20" r="1.6"/>
+  <circle class="egl-mark-dot" cx="50" cy="20" r="2.4"/>
+  <path class="egl-draw2" d="M50 22 C 50 32, 14 34, 14 24"/>
+  <path class="egl-up" d="M14 24 l-3 3 M14 24 l3 3"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter what you’re investing, the share price and the annual dividend per share. You get the yearly and monthly income it throws off — and, if you add a growth rate and a horizon, how that income compounds with reinvestment.</span><span class="l-zh">填入你的投资金额、股价与每股年度股息，即可得到它产生的年度与月度收入；再填入增长率与年限，还能看到收入在股息再投资下如何复利增长。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Amount invested ($)</span><span class="l-zh">投资金额（$）</span></span>
+    <input id="amount" inputmode="decimal" autocomplete="off" placeholder="10,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Share price ($)</span><span class="l-zh">股价（$）</span></span>
+    <input id="price" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Annual dividend / share ($)</span><span class="l-zh">每股年度股息（$）</span></span>
+    <input id="dps" inputmode="decimal" autocomplete="off" placeholder="2"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Dividend growth / yr (%)</span><span class="l-zh">每年股息增长（%）</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <input id="growth" inputmode="decimal" autocomplete="off" placeholder="0"></label>
+  <div class="ci ci-wide">
+    <span class="ci-l"><span class="l-en">Reinvest dividends?</span><span class="l-zh">是否再投资股息？</span> <span class="hint"><span class="l-en">for the projection</span><span class="l-zh">用于测算</span></span></span>
+    <div class="ci-seg" role="radiogroup" data-name="mode" aria-label="Reinvest or take cash">
+      <button class="on" type="button" data-v="reinvest"><span class="l-en">Reinvest</span><span class="l-zh">再投资</span></button><button type="button" data-v="cash"><span class="l-en">Take cash</span><span class="l-zh">领取现金</span></button>
+    </div>
+  </div>
+  <label class="ci"><span class="ci-l"><span class="l-en">Horizon (years)</span><span class="l-zh">年限（年）</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">per year</span><span class="l-zh">每年</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in the amount, share price and dividend per share to see the income.</span><span class="l-zh">填入金额、股价与每股股息即可查看收入。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Dividend yield</span><span class="l-zh">股息率</span></dt><dd id="out-yield">—</dd></div>
+    <div><dt><span class="l-en">Monthly income</span><span class="l-zh">月度收入</span></dt><dd id="out-monthly">—</dd></div>
+    <div><dt><span class="l-en">Shares</span><span class="l-zh">股数</span></dt><dd id="out-shares">—</dd></div>
+    <div><dt><span class="l-en">Projected income / yr</span><span class="l-zh">测算年度收入</span></dt><dd id="out-projincome">—</dd></div>
+    <div><dt><span class="l-en">Projected value</span><span class="l-zh">测算总价值</span></dt><dd id="out-projvalue">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Your annual dividend income is simply the <strong>number of shares you own</strong> times the <strong>dividend per share</strong>. Shares come from your amount invested divided by the share price; the yield is the dividend per share as a percent of that price. Divide the yearly income by twelve for a monthly figure — though most companies actually pay quarterly.</span><span class="l-zh">你的年度股息收入，就是<strong>持有股数</strong>乘以<strong>每股股息</strong>。股数等于投资金额除以股价；股息率则是每股股息占股价的百分比。把年度收入除以十二即得月度数字——尽管多数公司实际上按季度派息。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Shares</strong> = Amount ÷ Share price</span><span class="l-zh"><strong>股数</strong> = 金额 ÷ 股价</span><br>
+<span class="l-en"><strong>Annual income</strong> = Shares × Dividend per share</span><span class="l-zh"><strong>年度收入</strong> = 股数 × 每股股息</span><br>
+<span class="l-en"><strong>Dividend yield</strong> = 100 × Dividend per share ÷ Share price</span><span class="l-zh"><strong>股息率</strong> = 100 × 每股股息 ÷ 股价</span><br>
+<span class="l-en">Monthly income = Annual income ÷ 12</span><span class="l-zh">月度收入 = 年度收入 ÷ 12</span>
+</div>
+<p><span class="l-en">Add a growth rate and a horizon and the projection compounds. If you <em>reinvest</em>, each year’s dividends buy more shares (we hold the price constant to isolate the dividend effect), and the dividend per share itself grows by your growth rate — two engines turning together. If you <em>take the cash</em>, the share count stays put and only the per-share dividend grows.</span><span class="l-zh">再填入增长率与年限，测算便开始复利。若你选择<em>再投资</em>，每年的股息会买入更多股份（我们保持股价不变，以单独呈现股息效应），同时每股股息本身也按你的增长率提高——两台引擎同时运转。若你<em>领取现金</em>，股数保持不变，仅每股股息增长。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader puts <span class="num">$10,000</span> into a stock at <span class="num">$50.00</span> a share that pays <span class="num">$2.00</span> in annual dividends per share.</span><span class="l-zh">假设一位交易者以每股 <span class="num">$50.00</span> 投入 <span class="num">$10,000</span> 于一只每股年派息 <span class="num">$2.00</span> 的股票。</span></p>
+<ul>
+<li><span class="l-en">Shares = <span class="num">10,000 ÷ 50 = 200</span></span><span class="l-zh">股数 = <span class="num">10,000 ÷ 50 = 200</span></span></li>
+<li><span class="l-en">Annual income = <span class="num">200 × 2 = $400</span></span><span class="l-zh">年度收入 = <span class="num">200 × 2 = $400</span></span></li>
+<li><span class="l-en">Dividend yield = <span class="num">100 × 2 ÷ 50 = 4.00%</span></span><span class="l-zh">股息率 = <span class="num">100 × 2 ÷ 50 = 4.00%</span></span></li>
+<li><span class="l-en">Monthly income = <span class="num">400 ÷ 12 = $33.33</span></span><span class="l-zh">月度收入 = <span class="num">400 ÷ 12 = $33.33</span></span></li>
+</ul>
+</div>
+<p><span class="l-en">That $400 is the income at today’s dividend. Hold for a decade with the dividend growing 6% a year and reinvested, and both the share count and the per-share payout climb — the yearly income can end up well above where it started, which is the quiet appeal of dividend growth.</span><span class="l-zh">这 $400 是按当前股息计的收入。若持有十年、股息每年增长 6% 并再投资，股数与每股派息都会攀升——年度收入最终可远高于起点，这正是股息增长的静默魅力。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Chasing the highest yield</span><span class="l-zh">追逐最高股息率</span></span>
+<p><span class="l-en">A very high yield is often a warning, not a bargain. Yield is the dividend divided by the price — so when a stock’s price falls hard, the yield mechanically spikes even as the business weakens. If the company then cuts the dividend, the income you were counting on shrinks and the price can fall further. A yield far above a company’s peers deserves a look at <em>why</em> before it deserves your capital.</span><span class="l-zh">极高的股息率往往是警讯，而非便宜货。股息率等于股息除以价格——所以当股价大跌时，即便基本面在恶化，股息率也会机械性地飙升。若公司随后削减股息，你所依赖的收入会缩水，价格还可能进一步下跌。远高于同业的股息率，先要弄清<em>为何如此</em>，再谈是否投入资本。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">The base income math is exact; the projection is a clean model, not a forecast. A few honest limits:</span><span class="l-zh">基础收入的算法是精确的；测算则是一个干净的模型，而非预测。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>Prices don’t stand still.</strong> The projection holds the share price constant to isolate the dividend. In reality the share price moves, which changes what reinvested dividends buy and the total value of the holding.</span><span class="l-zh"><strong>价格并非静止。</strong>测算为单独呈现股息而保持股价不变。现实中股价会波动，从而改变再投资股息所能买入的份额，以及持仓的总价值。</span></li>
+<li><span class="l-en"><strong>Dividends aren’t promised.</strong> A dividend is declared by the board each period, not guaranteed. Growth rates are assumptions — payouts can be frozen or cut, and a steady growth rate is a smooth line drawn over a bumpy reality.</span><span class="l-zh"><strong>股息并非承诺。</strong>股息由董事会每期决议，而非保证。增长率是假设——派息可能被冻结或削减，恒定的增长率只是画在崎岖现实之上的一条平滑曲线。</span></li>
+<li><span class="l-en"><strong>Taxes and fractional shares.</strong> This ignores dividend taxes, which reduce what you actually reinvest, and assumes fractional shares can be bought. Both shift the real outcome.</span><span class="l-zh"><strong>税收与零股。</strong>此处忽略了会减少你实际再投资金额的股息税，并假设可买入零股。二者都会改变真实结果。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Income today is arithmetic; income in ten years is an assumption. Treat the yearly figure as fact and the projection as a scenario.</span><span class="l-zh">当下的收入是算术；十年后的收入是假设。把年度数字当作事实，把测算当作情景。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">See how reinvestment stacks up over time with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/compounding.html"><span class="l-en">compounding calculator</span><span class="l-zh">复利计算器</span></a><span class="l-en">, or measure a holding’s growth rate with the <a href="</span><span class="l-zh">看再投资如何随时间累积，或用 <a href="</span>../../tools/calculators/cagr.html"><span class="l-en">CAGR calculator</span><span class="l-zh">CAGR 计算器</span></a><span class="l-en">.</span><span class="l-zh">衡量一项持仓的增长率。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (income + optional DRIP/cash projection) ──────────────────
+  // inputs: {A amount, p price, D dps, g growthPct, n years, reinvest bool}.
+  // Returns an outputs object, or {ok:false, msg} for invalid input. Never NaN.
+  function compute(inp){
+    var A=inp.A, p=inp.p, D=inp.D, g=inp.g, n=inp.n, reinvest=inp.reinvest;
+    if(!(A>0)) return {ok:false, msg:"Enter the amount you're investing."};
+    if(!(p>0)) return {ok:false, msg:"Enter the share price."};
+    if(!(D>=0)) return {ok:false, msg:"Enter the annual dividend per share (0 or more)."};
+    var shares = A / p;
+    var annualIncome = shares * D;
+    var yieldPct = 100 * D / p;
+    var monthly = annualIncome / 12;
+
+    var out = {
+      ok:true, shares:shares, annualIncome:annualIncome, yieldPct:yieldPct,
+      monthly:monthly, reinvest:reinvest, hasProj:false
+    };
+
+    // projection only when a positive horizon is given
+    if(n>0){
+      var gr = (isFinite(g) && g!==null) ? g/100 : 0;
+      var sh = shares, dps = D, yrs = Math.floor(n), cumCash = 0;
+      if(reinvest){
+        for(var i=0; i<yrs; i++){
+          var inc = sh * dps;         // this year's dividend income
+          sh += (p>0 ? inc / p : 0);  // buy more shares at a constant price
+          dps = dps * (1 + gr);       // dividend per share grows
+        }
+      } else {
+        // share count fixed; each year's dividend is taken as cash and piles up
+        for(var j=0; j<yrs; j++){ cumCash += sh * dps; dps = dps * (1 + gr); }
+      }
+      out.hasProj = true;
+      out.projYears = yrs;
+      out.projIncome = sh * dps;      // projected annual income after n years
+      out.cumCash = cumCash;          // total dividends collected (cash mode)
+      // holding value is constant-price; in cash mode add the cash collected so
+      // the figure isn't a static "= amount invested" that looks like a bug
+      out.projValue  = reinvest ? (sh * p) : (sh * p + cumCash);
+    }
+    return out;
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{A:10000, p:50, D:2, g:0, n:0, reinvest:true},
+      want:{shares:200, annualIncome:400, yieldPct:4, monthly:400/12} },
+    { in:{A:10000, p:50, D:2, g:6, n:10, reinvest:true},
+      want:{shares:200, annualIncome:400, yieldPct:4} },
+    { in:{A:20000, p:40, D:1.6, g:0, n:0, reinvest:false},
+      want:{shares:500, annualIncome:800, yieldPct:4, monthly:800/12} },
+    // pin the reinvest loop: 200 sh earn $400, buy 8 sh → 208 sh × $2 = $416/yr, value 208×50
+    { in:{A:10000, p:50, D:2, g:0, n:1, reinvest:true},
+      want:{projIncome:416, projValue:10400} },
+    // pin cash mode: 200 sh × $2 = $400 collected; value = holding $10,000 + $400 cash
+    { in:{A:10000, p:50, D:2, g:0, n:1, reinvest:false},
+      want:{projIncome:400, cumCash:400, projValue:10400} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("dividend self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.01){
+        console.error("dividend self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { amount:$("amount"), price:$("price"), dps:$("dps"), growth:$("growth"), years:$("years") };
+    var seg = document.querySelector('.ci-seg[data-name="mode"]');
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outYield=$("out-yield"), outMonthly=$("out-monthly"), outShares=$("out-shares"),
+        outProjInc=$("out-projincome"), outProjVal=$("out-projvalue"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    var reinvest = true;
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function sharesFmt(n){ return n.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2}); }
+    function dash(){ outMain.textContent="—";
+      [outYield,outMonthly,outShares,outProjInc,outProjVal].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={
+        A:numFrom(els.amount), p:numFrom(els.price), D:numFrom(els.dps),
+        g:numFrom(els.growth), n:numFrom(els.years), reinvest:reinvest
+      };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent = money(res.annualIncome);
+      outYield.textContent = res.yieldPct.toFixed(2) + "%";
+      outMonthly.textContent = money(res.monthly);
+      outShares.textContent = sharesFmt(res.shares);
+
+      if(res.hasProj){
+        outProjInc.textContent = money(res.projIncome); outProjInc.className="pos";
+        outProjVal.textContent = money(res.projValue);
+      } else {
+        outProjInc.textContent = "—"; outProjInc.className="";
+        outProjVal.textContent = "—"; outProjVal.className="";
+      }
+
+      // Law 3: plain-word interpretation under the number
+      var plain = "That's " + money(res.annualIncome) + " a year — about " +
+        money(res.monthly) + " a month — a " + res.yieldPct.toFixed(2) +
+        "% dividend yield on " + sharesFmt(res.shares) + " shares.";
+      if(res.hasProj){
+        var verb = res.reinvest ? "reinvested" : "taken as cash";
+        plain += " After " + res.projYears + " year" + (res.projYears===1?"":"s") +
+          " with dividends " + verb + ", the yearly income projects to " +
+          money(res.projIncome) + ".";
+      }
+      outPlain.textContent = plain; outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var s = "Dividend income: " + money(last.annualIncome) + "/yr (" +
+        money(last.monthly) + "/mo) at a " + last.yieldPct.toFixed(2) + "% yield on " +
+        sharesFmt(last.shares) + " shares";
+      if(last.hasProj){
+        s += " · after " + last.projYears + "y " +
+          (last.reinvest?"reinvested":"cash") + ": " + money(last.projIncome) + "/yr";
+      }
+      return s + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    if(seg){
+      seg.addEventListener("click", function(e){
+        var b = e.target.closest("button[data-v]"); if(!b) return;
+        reinvest = (b.getAttribute("data-v") === "reinvest");
+        [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.toggle("on", x===b); });
+        render();
+      });
+    }
+    ["amount","price","dps","growth","years"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

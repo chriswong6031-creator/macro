@@ -2494,6 +2494,75 @@ tr.lab-cell-floor td { opacity: .72; }
 }
 .obx-lede b { color: var(--text); font-weight: 600; }
 
+/* --- Publisher (D02 W1) control-plane panel ------------------------------- */
+/* Config strip: read-only echo of config/marketing.yml publish block. */
+.pub-cfg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 18px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.pub-cfg-grid .eyebrow { display: block; margin-bottom: 2px; }
+.pub-cfg-channels { display: flex; flex-wrap: wrap; gap: 6px; }
+.pub-cfg-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+.pub-cfg-chip.on  { color: var(--ok);  border-color: rgba(80,200,120,.4); }
+.pub-cfg-chip.off { color: var(--muted); }
+
+/* Prominent "needs attention" callout (stuck-posting / quarantined). */
+.pub-callout { border-color: rgba(255,120,120,.4); }
+.pub-alert-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 5px 0;
+  font-size: 12.5px;
+  border-top: 1px solid var(--border);
+}
+.pub-alert-row:first-of-type { border-top: none; }
+.pub-alert-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.pub-alert-tag.warn { color: var(--warn); background: var(--warn-bg); }
+.pub-alert-tag.bad  { color: var(--bad);  background: rgba(255,120,120,.14); }
+.pub-alert-note { color: var(--muted); }
+
+/* Recent-posts + dry-run tables reuse the base table; nudge cell wrapping. */
+.pub-tbl td, .pub-tbl th { padding: 5px 8px; vertical-align: top; }
+.pub-tbl .pub-text { color: var(--muted); overflow-wrap: anywhere; }
+.pub-tbl code { font-size: 11.5px; }
+
+/* Run tally rows. */
+.pub-act-row {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 3px 0;
+  border-top: 1px solid var(--border);
+}
+.pub-act-row:first-of-type { border-top: none; }
+.pub-act-lane {
+  display: inline-block;
+  margin: 0 6px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  background: var(--panel-2, rgba(255,255,255,.05));
+  color: var(--text);
+}
+
 /* --- Sentinel contract card: why the caps are what they are --- */
 .obx-sentinel {
   background: var(--surface);

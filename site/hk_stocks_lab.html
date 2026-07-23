@@ -8,8 +8,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>HK Pick Lab — Mastermind</title>
-<link rel="stylesheet" href="theme.css?v=de86232e">
-<link rel="stylesheet" href="assets/css/2b29051d.css?v=2b29051d">
+<link rel="stylesheet" href="theme.css?v=24ca655a">
+<link rel="stylesheet" href="assets/css/43c72d59.css?v=43c72d59">
 </head>
 <body>
 
@@ -49,9 +49,10 @@
       <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
-        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
+        <a href="stage_analysis.html">📶 <span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central.html"><span class="nav-sub-text">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
@@ -62,19 +63,30 @@
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
-        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
-        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
-        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
-        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="gex.html"><span class="nav-sub-text">🧲 <span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">GEX · screener · flow · dark pool</span><span class="l-zh">GEX · 筛选台 · 资金流 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+            <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+            <a href="movers.html">📈 <span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+            <a href="flow_desk.html">🌊 <span class="l-en">US Options Flow</span><span class="l-zh">美股期权资金流</span><span class="d"><span class="l-en">Market tide · where the money went · biggest bets</span><span class="l-zh">资金潮汐 · 资金流向 · 最大押注</span></span></a>
+            <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
+            <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+            <a href="market_structure.html">🏗️ <span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
+          </div>
+        </div>
+        <a href="leader_radar.html">📡 <span class="l-en">Leader Radar</span><span class="l-zh">领袖雷达</span><span class="d"><span class="l-en">Lifecycle board · regime · handoff watch · rerating watch</span><span class="l-zh">生命周期看板 · 领导力制度 · 交接观察 · 重估观察</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
       <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
-        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · alpha · setups</span><span class="l-zh">先知 · 阿尔法 · 布局</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central_china.html"><span class="nav-sub-text">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
@@ -86,7 +98,7 @@
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="china_intel.html"><span class="nav-sub-text">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
             <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
@@ -105,7 +117,7 @@
       <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
-        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet HK · alpha</span><span class="l-zh">先知港股 · 阿尔法</span></span></a>
         <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
         <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
         <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
@@ -116,7 +128,7 @@
       <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
-        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet TSX · sectors · alpha</span><span class="l-zh">先知TSX · 板块 · 阿尔法</span></span></a>
         <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
         <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
         <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
@@ -126,7 +138,7 @@
       <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
-        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
         <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
       </div>
     </div>
@@ -134,7 +146,7 @@
       <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="vector.html"><span class="nav-sub-text">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
@@ -142,7 +154,7 @@
           </div>
         </div>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="commodities.html"><span class="nav-sub-text">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
             <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
@@ -154,7 +166,7 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9c173d4d.css?v=9c173d4d">
+    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -168,6 +180,7 @@
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
             <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
             <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
             <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
             <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
@@ -187,7 +200,7 @@
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
             <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
-            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
             <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
             <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
             <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
@@ -202,16 +215,20 @@
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signals Lining Up</span><span class="l-zh">信号共振</span></span><span class="d"><span class="l-en">Free daily screener · today's top buy-signal combos · honest win rates</span><span class="l-zh">免费每日筛选器 · 今日最强买入信号组合 · 客观胜率</span></span></span></a>
             <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
-            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
           </div>
         </div>
       </div>
     </div>
+      
+      <a class="nav-link nav-link-plans" href="plans.html">✨ <span class="l-en">Plans</span><span class="l-zh">定价</span></a>
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live.js?v=e1a3ca0d" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -239,7 +256,7 @@
     <p class="pl-eyebrow"><span class="l-en">HK Pick Lab · Display-only · ACCRUING</span><span class="l-zh">HK选股实验室 · 仅展示 · 累积中</span></p>
     <h1 class="pl-title">🧪 <span class="l-en">HK Candidate Pick Engines</span><span class="l-zh">港股候选选股引擎</span></h1>
     <p class="pl-sub"><span class="l-en">20 shadow books running on forward ledgers — measured against a random-control yardstick and the Hang Seng Index. Ruler: 21-session ^HSI excess (next HK session fill, close basis). All data is display-only; nothing here drives live selection or gating.</span><span class="l-zh">20个影子书在前向账本上运行 — 与随机控制基准和恒生指数对比衡量。标尺：21节恒生超额（下一港股交易日入场，收盘价基准）。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。</span></p>
-    
+    <p class="pl-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-23 · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-23 10:09 UTC</p>
     <a class="pl-back" href="hk_stocks.html">← <span class="l-en">Back to HK Stock Desk</span><span class="l-zh">返回港股研判台</span></a>
   </div>
 
@@ -256,10 +273,739 @@
   <!-- ================================================================ -->
   <section data-tab-panel="scoreboard" style="display:block">
     
-    <div class="pl-empty">
-      <div class="pl-empty-icon">🧪</div>
-      <h2><span class="l-en">First accrual tonight</span><span class="l-zh">今晚首次累积</span></h2>
-      <p><span class="l-en">The HK lab runs in the asia-close lane nightly. The scoreboard will appear here after the first snapshot is taken and the first picks are fired.</span><span class="l-zh">HK实验室在亚盘收市通道每晚运行。首次快照拍摄并触发第一批选择后，记分板将出现在这里。</span></p>
+    
+    <div class="sb-halt">
+      ⚠ <span class="l-en">Halt-voided fires this session</span><span class="l-zh">本期因停牌撤销触发</span>:
+      <b>0</b>
+      <span class="l-en">(exec session halted ≥5 consecutive sessions → fire voided per HKPL-R4 halt law; never silent ffill)</span><span class="l-zh">（执行节停牌≥5连续交易节 → 触发撤销，见HKPL-R4停牌法则；绝不静默填充）</span>
+    </div>
+    
+    <div class="sb-note">
+      <b><span class="l-en">How to read this table:</span><span class="l-zh">如何阅读此表：</span></b>
+      <span class="l-en">All 20 HK entry books measured against the Random Control yardstick (pinned at bottom) and ^HSI. ACCRUING = fewer than 25 fires across 3 months — do not act on these numbers yet. STALE = organ data staler than 2 HK sessions; book disabled for that night (HKPL-R7 fail-closed). Knife Avoid and Chase Avoid are INVERSE books — expected negative excess. Do not treat their picks as buy signals.</span><span class="l-zh">所有20本HK入场书均与随机控制基准（固定在底部）和恒生指数对比。ACCRUING = 3个月内少于25次触发 — 暂不据此行动。STALE = 器官数据超过2个港股交易节；该书当夜停用（HKPL-R7故障关闭）。刀口规避和追涨规避是反向书 — 预期负超额。切勿将其选择视为买入信号。</span>
+    </div>
+    <div class="tbl-scroll">
+      <table class="sb-tbl" aria-label="HK Scoreboard">
+        <thead>
+          <tr>
+            <th class="l"><span class="l-en">Book</span><span class="l-zh">书本</span></th>
+            <th><span class="l-en">Fam</span><span class="l-zh">族</span></th>
+            <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+            <th><span class="l-en">N fires</span><span class="l-zh">N触发</span></th>
+            <th><span class="l-en">Halt ✗</span><span class="l-zh">停牌撤</span></th>
+            <th><span class="l-en">Stale nts</span><span class="l-zh">停用夜</span></th>
+            <th><span class="l-en">N open</span><span class="l-zh">N开放</span></th>
+            <th><span class="l-en">Dates</span><span class="l-zh">日期</span></th>
+            <th><span class="l-en">Mo span</span><span class="l-zh">月跨</span></th>
+            <th><span class="l-en">WR21 abs</span><span class="l-zh">WR21绝对</span></th>
+            <th><span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span></th>
+            <th><span class="l-en">Med exc21</span><span class="l-zh">中位超额21</span></th>
+            <th><span class="l-en">MFE med</span><span class="l-zh">MFE中位</span></th>
+            <th><span class="l-en">MAE med</span><span class="l-zh">MAE中位</span></th>
+            <th><span class="l-en">Asym</span><span class="l-zh">非对称</span></th>
+            <th><span class="l-en">NAV exc cum</span><span class="l-zh">NAV累积超额</span></th>
+            <th><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></th>
+            <th><span class="l-en">vs Rand</span><span class="l-zh">对比随机</span></th>
+            <th><span class="l-en">vs Univ</span><span class="l-zh">对比全市场</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">A</span>
+              <span class="l-en">HK 1D Velocity Pure</span>
+              <span class="l-zh">港股1日速度纯</span>
+              
+              
+            </td>
+            <td>A</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>1</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>1</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">A</span>
+              <span class="l-en">HK 1D + Washout Ignition (organ x 1D)</span>
+              <span class="l-zh">港股1日+洗盘点火 (器官x1日)</span>
+              
+              
+            </td>
+            <td>A</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">A</span>
+              <span class="l-en">HK 1D + ADR Overnight Confirmation</span>
+              <span class="l-zh">港股1日+ADR隔夜确认</span>
+              
+              
+            </td>
+            <td>A</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">A</span>
+              <span class="l-en">HK 1D Blastoff (fast cohort 3D gate misses)</span>
+              <span class="l-zh">港股1日起飞 (3日门遗漏的快速群组)</span>
+              
+              
+            </td>
+            <td>A</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">A</span>
+              <span class="l-en">HK 1D + Risk-On Regime</span>
+              <span class="l-zh">港股1日+风险偏好开启</span>
+              
+              
+            </td>
+            <td>A</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>6</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>6</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">B</span>
+              <span class="l-en">HK Washout Ignition (strongest organ state)</span>
+              <span class="l-zh">港股洗盘点火 (最强器官状态)</span>
+              
+              
+            </td>
+            <td>B</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>2</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>2</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">B</span>
+              <span class="l-en">HK Washout + SB Accum Confluence</span>
+              <span class="l-zh">港股洗盘+南向积累汇流</span>
+              
+              
+            </td>
+            <td>B</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">B</span>
+              <span class="l-en">HK Washout + Buyback Confluence</span>
+              <span class="l-zh">港股洗盘+回购汇流</span>
+              
+              
+            </td>
+            <td>B</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">B</span>
+              <span class="l-en">HK Pullback Entry Watch (second-chance)</span>
+              <span class="l-zh">港股回调入场 (第二次机会)</span>
+              
+              
+            </td>
+            <td>B</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="row-inverse">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">B</span>
+              <span class="l-en">HK Knife Avoid (INVERSE — expected negative)</span>
+              <span class="l-zh">港股刀口规避 (反向 — 预期负超额)</span>
+              
+              <span class="avoid-label"><span class="l-en">NOT BUY — AVOID</span><span class="l-zh">非买入 — 规避</span></span>
+            </td>
+            <td>B</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>4</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>4</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">C</span>
+              <span class="l-en">HK CBBC Bear Skew Fuel</span>
+              <span class="l-zh">港股CBBC空头偏斜燃料</span>
+              
+              
+            </td>
+            <td>C</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">C</span>
+              <span class="l-en">HK A/H Discount Value (H3 near-GO edge)</span>
+              <span class="l-zh">港股A/H折价价值 (H3接近通过)</span>
+              
+              
+            </td>
+            <td>C</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>4</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>4</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">C</span>
+              <span class="l-en">HK Short Squeeze Setup (H2a ACCRUE leg)</span>
+              <span class="l-zh">港股轧空形态 (H2a积累腿)</span>
+              
+              
+            </td>
+            <td>C</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>7</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>7</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">C</span>
+              <span class="l-en">HK Catalyst + Narrative Attention</span>
+              <span class="l-zh">港股催化剂+叙事关注</span>
+              
+              
+            </td>
+            <td>C</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">D</span>
+              <span class="l-en">HK Beta Amplifier (Risk-On)</span>
+              <span class="l-zh">港股Beta放大器 (风险偏好开启)</span>
+              
+              
+            </td>
+            <td>D</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">D</span>
+              <span class="l-en">HK Beta Cushion (Risk-Off Defensive)</span>
+              <span class="l-zh">港股Beta缓冲 (防御型)</span>
+              
+              
+            </td>
+            <td>D</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">D</span>
+              <span class="l-en">HK HIBOR/Peg Easy Liquidity Rebound</span>
+              <span class="l-zh">港股HIBOR/联系汇率宽松流动性反弹</span>
+              
+              
+            </td>
+            <td>D</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>0</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">E</span>
+              <span class="l-en">HK Flagship (no signal-gate ablation)</span>
+              <span class="l-zh">港股旗舰 (无信号门消融)</span>
+              
+              
+            </td>
+            <td>E</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>8</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>8</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="row-inverse">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">E</span>
+              <span class="l-en">HK Chase Avoid (INVERSE — chase_risk state)</span>
+              <span class="l-zh">港股追涨规避 (反向 — 追涨风险状态)</span>
+              
+              <span class="avoid-label"><span class="l-en">NOT BUY — AVOID</span><span class="l-zh">非买入 — 规避</span></span>
+            </td>
+            <td>E</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>2</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>2</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="row-random">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge">E</span>
+              <span class="l-en">HK Random Control</span>
+              <span class="l-zh">港股随机基准</span>
+              <span class="sb-yardstick-label"><span class="l-en">(yardstick)</span><span class="l-zh">(基准)</span></span>
+              
+            </td>
+            <td>E</td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>8</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>8</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+          <tr class="">
+            <td class="name-cell l" style="white-space:normal;min-width:180px">
+              <span class="family-badge"></span>
+              <span class="l-en">hklab_flagship2_mirror</span>
+              <span class="l-zh">hklab_flagship2_mirror</span>
+              
+              
+            </td>
+            <td></td>
+            <td>
+              <span class="badge-accruing">
+                <span class="l-en">ACCRUING</span>
+                <span class="l-zh">累积中</span>
+              </span>
+            </td>
+            <td>6</td>
+            <td class="neu">—</td>
+            <td class="neu">0</td>
+            <td>6</td>
+            <td>1</td>
+            <td>0.0</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td class="">—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td class="">—</td>
+            <td class="neg">0.0%</td>
+            <td class="">—</td>
+            <td class="">—</td>
+          </tr>
+          
+        </tbody>
+      </table>
     </div>
     
   </section>
@@ -269,10 +1015,375 @@
   <!-- ================================================================ -->
   <section data-tab-panel="velocity" style="display:none">
     
-    <div class="pl-empty">
-      <div class="pl-empty-icon">⚡</div>
-      <h2><span class="l-en">First accrual tonight</span><span class="l-zh">今晚首次累积</span></h2>
-      <p><span class="l-en">1D velocity picks will appear here after the first nightly build completes.</span><span class="l-zh">首次夜间构建完成后，1日动能选择将出现在这里。</span></p>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 16px;max-width:88ch">
+      <span class="l-en">Family A (books 1–5) — 1D oscillator-based entry timing on the HK tape. The hypothesis: HK has no daily price limits, so a name that prints a 1D confluence and immediately runs is showing real demand. A name that crossed on 2D/3D but did NOT blast off may have something wrong. First operator read: 2026-08-20. Ruler: 21-session ^HSI excess.</span><span class="l-zh">A族（书1–5）— 基于1日振荡器的港股入场时机。假设：港股没有涨跌停限制，因此打印1日汇流后立即上涨的个股显示真实需求。在2D/3D上穿但未立即爆发的个股可能有问题。第一次操作员读取：2026-08-20。标尺：21节恒生超额。</span>
+    </p>
+
+    
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D Velocity Pure</span>
+          <span class="l-zh">港股1日速度纯</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N</span><span class="l-zh">N</span>=1
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">2338.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D StochRSI✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI14&lt;70</span>
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>d1_stoch_xup_bars</b> 2.0</span><span><b>rsi14</b> 46.0</span><span><b>edge_z</b> -0.06</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc</span><span class="l-zh">21日恒生超额</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>2338.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D + Washout Ignition (organ x 1D)</span>
+          <span class="l-zh">港股1日+洗盘点火 (器官x1日)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N</span><span class="l-zh">N</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+    </div>
+    
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D + ADR Overnight Confirmation</span>
+          <span class="l-zh">港股1日+ADR隔夜确认</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N</span><span class="l-zh">N</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+    </div>
+    
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D Blastoff (fast cohort 3D gate misses)</span>
+          <span class="l-zh">港股1日起飞 (3日门遗漏的快速群组)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N</span><span class="l-zh">N</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+    </div>
+    
+    <div class="book-section">
+      <div class="book-hd">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D + Risk-On Regime</span>
+          <span class="l-zh">港股1日+风险偏好开启</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N</span><span class="l-zh">N</span>=6
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">0669.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">Risk-on✓</span><span class="why-chip accent">peg ok</span>
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 2.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> 1.53</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">0992.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">Risk-on✓</span><span class="why-chip accent">peg ok</span>
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> 1.02</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">2338.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">Risk-on✓</span><span class="why-chip accent">peg ok</span>
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> -0.06</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">2382.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">Risk-on✓</span><span class="why-chip accent">peg ok</span>
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 3.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> -0.14</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#5</span>
+            <span class="pick-tk">2628.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Insurance</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">Risk-on✓</span><span class="why-chip accent">peg ok</span>
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> -0.14</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#6</span>
+            <span class="pick-tk">3800.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Energy</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">Risk-on✓</span><span class="why-chip accent">peg ok</span>
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> -0.44</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc</span><span class="l-zh">21日恒生超额</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>0669.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0992.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2338.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2382.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2628.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>3800.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+
+    
+    <div class="stale-cross-box">
+      <h3><span class="l-en">1D Blastoff vs Stale-Cross Diagnostic</span><span class="l-zh">1日起飞 vs 迟滞交叉诊断</span></h3>
+      <p class="stale-cross-note">
+        <span class="l-en">The operator hypothesis: names that crossed 1D momentum and immediately ran (the blastoff cohort) should out-perform names that crossed 2D/3D but &#34;based&#34; for ≥5 sessions without running (|return since cross| &lt; 3%). This side-by-side shows forward 21d HSI-excess for both cohorts from the same scoreboard data. Accruing — first read 2026-08-20.</span><span class="l-zh">操作员假设：1日动量交叉后立即上涨（起飞群组）应优于2D/3D交叉后&#34;盘整&#34;≥5节未上涨（|交叉后回报|&lt;3%）的个股。此对比显示两个群组的前向21日恒生超额（来自相同记分板数据）。累积中 — 首次读取2026-08-20。</span>
+      </p>
+      
+      
+      
+      <div class="diag-col">
+        <h4>⏱ <span class="l-en">Stale-cross cohort</span><span class="l-zh">迟滞交叉群组</span> (2D/3D ≥5 sess, |ret|&lt;3%)</h4>
+        <p style="font-size:12.5px;color:var(--muted);margin:0">
+          <span class="l-en">Names tracked</span><span class="l-zh">追踪个股</span>: <b>28</b> ·
+          <span class="l-en">Forward 21d HSI-excess accrues nightly — grades mature over ~4 weeks.</span><span class="l-zh">前向21日恒生超额每夜累积 — 评级约4周成熟。</span>
+        </p>
+      </div>
+      
     </div>
     
   </section>
@@ -282,11 +1393,2483 @@
   <!-- ================================================================ -->
   <section data-tab-panel="allbooks" style="display:none">
     
-    <div class="pl-empty">
-      <div class="pl-empty-icon">📚</div>
-      <h2><span class="l-en">First accrual tonight</span><span class="l-zh">今晚首次累积</span></h2>
-      <p><span class="l-en">All 20 HK entry books will appear here after the first nightly build.</span><span class="l-zh">首次夜间构建后，所有20本HK入场书将出现在这里。</span></p>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
+      <span class="l-en">Select a book to view today&#39;s picks and recently graded fires. Knife Avoid (Family B) and Chase Avoid (Family E) are INVERSE books — expected negative excess. STALE = organ-dependent book whose input data was staler than 2 HK sessions tonight (HKPL-R7 fail-closed).</span><span class="l-zh">选择一本书查看今日选择和最近评级触发。刀口规避（B族）和追涨规避（E族）是反向书 — 预期负超额。STALE = 器官依存书，今夜输入数据超过2个港股交易节（HKPL-R7故障关闭）。</span>
+    </p>
+    <!-- book chip selector -->
+    <div class="book-chips" id="ab-chips">
+      
+      <button class="book-chip on" data-ab="hklab_1d_pure">
+        <span class="l-en">HK 1D Velocity Pure</span>
+        <span class="l-zh">港股1日速度纯</span>
+        <span class="fam">A</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_1d_ignition">
+        <span class="l-en">HK 1D + Washout Ignition (organ x 1D)</span>
+        <span class="l-zh">港股1日+洗盘点火 (器官x1日)</span>
+        <span class="fam">A</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_1d_adr">
+        <span class="l-en">HK 1D + ADR Overnight Confirmation</span>
+        <span class="l-zh">港股1日+ADR隔夜确认</span>
+        <span class="fam">A</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_1d_blastoff">
+        <span class="l-en">HK 1D Blastoff (fast cohort 3D gate misses)</span>
+        <span class="l-zh">港股1日起飞 (3日门遗漏的快速群组)</span>
+        <span class="fam">A</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_1d_regime">
+        <span class="l-en">HK 1D + Risk-On Regime</span>
+        <span class="l-zh">港股1日+风险偏好开启</span>
+        <span class="fam">A</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_washout_ignite">
+        <span class="l-en">HK Washout Ignition (strongest organ state)</span>
+        <span class="l-zh">港股洗盘点火 (最强器官状态)</span>
+        <span class="fam">B</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_washout_sb">
+        <span class="l-en">HK Washout + SB Accum Confluence</span>
+        <span class="l-zh">港股洗盘+南向积累汇流</span>
+        <span class="fam">B</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_washout_buyback">
+        <span class="l-en">HK Washout + Buyback Confluence</span>
+        <span class="l-zh">港股洗盘+回购汇流</span>
+        <span class="fam">B</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_pullback_entry">
+        <span class="l-en">HK Pullback Entry Watch (second-chance)</span>
+        <span class="l-zh">港股回调入场 (第二次机会)</span>
+        <span class="fam">B</span>
+      </button>
+      
+      <button class="book-chip  chip-avoid" data-ab="hklab_knife_avoid">
+        <span class="l-en">HK Knife Avoid (INVERSE — expected negative)</span>
+        <span class="l-zh">港股刀口规避 (反向 — 预期负超额)</span>
+        <span class="fam">B</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_cbbc_fuel">
+        <span class="l-en">HK CBBC Bear Skew Fuel</span>
+        <span class="l-zh">港股CBBC空头偏斜燃料</span>
+        <span class="fam">C</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_ah_value">
+        <span class="l-en">HK A/H Discount Value (H3 near-GO edge)</span>
+        <span class="l-zh">港股A/H折价价值 (H3接近通过)</span>
+        <span class="fam">C</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_short_squeeze">
+        <span class="l-en">HK Short Squeeze Setup (H2a ACCRUE leg)</span>
+        <span class="l-zh">港股轧空形态 (H2a积累腿)</span>
+        <span class="fam">C</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_catalyst_narrative">
+        <span class="l-en">HK Catalyst + Narrative Attention</span>
+        <span class="l-zh">港股催化剂+叙事关注</span>
+        <span class="fam">C</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_beta_amplifier">
+        <span class="l-en">HK Beta Amplifier (Risk-On)</span>
+        <span class="l-zh">港股Beta放大器 (风险偏好开启)</span>
+        <span class="fam">D</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_beta_cushion">
+        <span class="l-en">HK Beta Cushion (Risk-Off Defensive)</span>
+        <span class="l-zh">港股Beta缓冲 (防御型)</span>
+        <span class="fam">D</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_hibor_easy">
+        <span class="l-en">HK HIBOR/Peg Easy Liquidity Rebound</span>
+        <span class="l-zh">港股HIBOR/联系汇率宽松流动性反弹</span>
+        <span class="fam">D</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_flagship_nogate">
+        <span class="l-en">HK Flagship (no signal-gate ablation)</span>
+        <span class="l-zh">港股旗舰 (无信号门消融)</span>
+        <span class="fam">E</span>
+      </button>
+      
+      <button class="book-chip  chip-avoid" data-ab="hklab_chase_avoid">
+        <span class="l-en">HK Chase Avoid (INVERSE — chase_risk state)</span>
+        <span class="l-zh">港股追涨规避 (反向 — 追涨风险状态)</span>
+        <span class="fam">E</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_random_ctrl">
+        <span class="l-en">HK Random Control</span>
+        <span class="l-zh">港股随机基准</span>
+        <span class="fam">E</span>
+      </button>
+      
+      <button class="book-chip " data-ab="hklab_flagship2_mirror">
+        <span class="l-en">hklab_flagship2_mirror</span>
+        <span class="l-zh">hklab_flagship2_mirror</span>
+        <span class="fam"></span>
+      </button>
+      
     </div>
+    <!-- per-book panels -->
+    
+    <div class="ab-panel" id="ab-hklab_1d_pure" style="display:block">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D Velocity Pure</span>
+          <span class="l-zh">港股1日速度纯</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=1
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">2338.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤2</span>
+            
+            <span class="why-chip accent">1D StochRSI✚≤8</span>
+            
+            <span class="why-chip accent">from_OS</span>
+            
+            <span class="why-chip accent">RSI14&lt;70</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>d1_stoch_xup_bars</b> 2.0</span><span><b>rsi14</b> 46.0</span><span><b>edge_z</b> -0.06</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>2338.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_1d_ignition" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D + Washout Ignition (organ x 1D)</span>
+          <span class="l-zh">港股1日+洗盘点火 (器官x1日)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_1d_adr" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D + ADR Overnight Confirmation</span>
+          <span class="l-zh">港股1日+ADR隔夜确认</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_1d_blastoff" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D Blastoff (fast cohort 3D gate misses)</span>
+          <span class="l-zh">港股1日起飞 (3日门遗漏的快速群组)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_1d_regime" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">A</span>
+          <span class="l-en">HK 1D + Risk-On Regime</span>
+          <span class="l-zh">港股1日+风险偏好开启</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=6
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">0669.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">Risk-on✓</span>
+            
+            <span class="why-chip accent">peg ok</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 2.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> 1.53</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">0992.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">Risk-on✓</span>
+            
+            <span class="why-chip accent">peg ok</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> 1.02</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">2338.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">Risk-on✓</span>
+            
+            <span class="why-chip accent">peg ok</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> -0.06</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">2382.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">Risk-on✓</span>
+            
+            <span class="why-chip accent">peg ok</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 3.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> -0.14</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#5</span>
+            <span class="pick-tk">2628.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Insurance</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">Risk-on✓</span>
+            
+            <span class="why-chip accent">peg ok</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> -0.14</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#6</span>
+            <span class="pick-tk">3800.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Energy</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">Risk-on✓</span>
+            
+            <span class="why-chip accent">peg ok</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>risk_state</b> Risk-on</span><span><b>peg_state</b> weak-side (outflow)</span><span><b>edge_z</b> -0.44</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>0669.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0992.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2338.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2382.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2628.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>3800.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_washout_ignite" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">B</span>
+          <span class="l-en">HK Washout Ignition (strongest organ state)</span>
+          <span class="l-zh">港股洗盘点火 (最强器官状态)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=2
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">1072.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">ignition_watch✓</span>
+            
+            <span class="why-chip accent">organ-state</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>washout_state</b> ignition_watch</span><span><b>confluence_count</b> 2</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">0288.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Consumer</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">ignition_watch✓</span>
+            
+            <span class="why-chip accent">organ-state</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>washout_state</b> ignition_watch</span><span><b>confluence_count</b> 2</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>1072.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0288.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_washout_sb" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">B</span>
+          <span class="l-en">HK Washout + SB Accum Confluence</span>
+          <span class="l-zh">港股洗盘+南向积累汇流</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_washout_buyback" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">B</span>
+          <span class="l-en">HK Washout + Buyback Confluence</span>
+          <span class="l-zh">港股洗盘+回购汇流</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_pullback_entry" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">B</span>
+          <span class="l-en">HK Pullback Entry Watch (second-chance)</span>
+          <span class="l-zh">港股回调入场 (第二次机会)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_knife_avoid" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">B</span>
+          <span class="l-en">HK Knife Avoid (INVERSE — expected negative)</span>
+          <span class="l-zh">港股刀口规避 (反向 — 预期负超额)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=4
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+      <div class="avoid-banner">
+        <b>
+          
+          <span class="l-en">NOT BUY — AVOID book (INVERSE, HKPL §3 Family B)</span><span class="l-zh">非买入 — 规避书（反向，HKPL §3 B族）</span>
+          
+        </b><br>
+        
+        <span class="l-en">Knife Avoid fires names where knife_risk=True — expected NEGATIVE 21-session ^HSI excess (avoid-accuracy scoring). Do NOT treat these as buy signals.</span>
+        <span class="l-zh">刀口规避触发knife_risk=True的个股 — 预期恒生超额为负（规避准确性评分）。切勿将这些视为买入信号。</span>
+        
+      </div>
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess_avoid_accuracy
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card avoid-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">1833.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip">AVOID/inverse</span>
+            
+            <span class="why-chip">knife_risk✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>knife_risk</b> True</span><span><b>off_high</b> -66.9</span><span><b>rsi14</b> 48.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card avoid-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">0268.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip">AVOID/inverse</span>
+            
+            <span class="why-chip">knife_risk✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>knife_risk</b> True</span><span><b>off_high</b> -61.8</span><span><b>rsi14</b> 54.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card avoid-card">
+          <div class="pick-top">
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">0780.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip">AVOID/inverse</span>
+            
+            <span class="why-chip">knife_risk✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>knife_risk</b> True</span><span><b>off_high</b> -47.9</span><span><b>rsi14</b> 52.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card avoid-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">1347.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip">AVOID/inverse</span>
+            
+            <span class="why-chip">knife_risk✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>knife_risk</b> True</span><span><b>off_high</b> -30.6</span><span><b>rsi14</b> 44.0</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>1833.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0268.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0780.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>1347.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_cbbc_fuel" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">C</span>
+          <span class="l-en">HK CBBC Bear Skew Fuel</span>
+          <span class="l-zh">港股CBBC空头偏斜燃料</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_ah_value" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">C</span>
+          <span class="l-en">HK A/H Discount Value (H3 near-GO edge)</span>
+          <span class="l-zh">港股A/H折价价值 (H3接近通过)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=4
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">0939.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Financials &amp; Banks</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">A/H discount pctile✓</span>
+            
+            <span class="why-chip accent">H3 value</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>ah_discount_pctile</b> 33</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">1288.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Financials &amp; Banks</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">A/H discount pctile✓</span>
+            
+            <span class="why-chip accent">H3 value</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>ah_discount_pctile</b> 24</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">3328.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Financials &amp; Banks</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">A/H discount pctile✓</span>
+            
+            <span class="why-chip accent">H3 value</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>ah_discount_pctile</b> 9</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">1398.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Financials &amp; Banks</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">A/H discount pctile✓</span>
+            
+            <span class="why-chip accent">H3 value</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>ah_discount_pctile</b> 6</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>0939.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>1288.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>3328.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>1398.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_short_squeeze" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">C</span>
+          <span class="l-en">HK Short Squeeze Setup (H2a ACCRUE leg)</span>
+          <span class="l-zh">港股轧空形态 (H2a积累腿)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=7
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">3800.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Energy</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">SFC short top Q✓</span>
+            
+            <span class="why-chip accent">RSI 30-50 reclaim✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>sfc_short_pressure_q</b> 4</span><span><b>rsi14</b> 44.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">0017.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Property</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">SFC short top Q✓</span>
+            
+            <span class="why-chip accent">RSI 30-50 reclaim✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>sfc_short_pressure_q</b> 4</span><span><b>rsi14</b> 49.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">2015.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Auto &amp; EV</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">SFC short top Q✓</span>
+            
+            <span class="why-chip accent">RSI 30-50 reclaim✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>sfc_short_pressure_q</b> 4</span><span><b>rsi14</b> 46.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">1209.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Property</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">SFC short top Q✓</span>
+            
+            <span class="why-chip accent">RSI 30-50 reclaim✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>sfc_short_pressure_q</b> 4</span><span><b>rsi14</b> 50.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#5</span>
+            <span class="pick-tk">1833.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">SFC short top Q✓</span>
+            
+            <span class="why-chip accent">RSI 30-50 reclaim✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>sfc_short_pressure_q</b> 4</span><span><b>rsi14</b> 48.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#6</span>
+            <span class="pick-tk">0175.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Auto &amp; EV</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">SFC short top Q✓</span>
+            
+            <span class="why-chip accent">RSI 30-50 reclaim✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>sfc_short_pressure_q</b> 4</span><span><b>rsi14</b> 50.0</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#7</span>
+            <span class="pick-tk">0288.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Consumer</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">SFC short top Q✓</span>
+            
+            <span class="why-chip accent">RSI 30-50 reclaim✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>sfc_short_pressure_q</b> 4</span><span><b>rsi14</b> 50.0</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>3800.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0017.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2015.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>1209.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>1833.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0175.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0288.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_catalyst_narrative" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">C</span>
+          <span class="l-en">HK Catalyst + Narrative Attention</span>
+          <span class="l-zh">港股催化剂+叙事关注</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_beta_amplifier" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">D</span>
+          <span class="l-en">HK Beta Amplifier (Risk-On)</span>
+          <span class="l-zh">港股Beta放大器 (风险偏好开启)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_beta_cushion" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">D</span>
+          <span class="l-en">HK Beta Cushion (Risk-Off Defensive)</span>
+          <span class="l-zh">港股Beta缓冲 (防御型)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_hibor_easy" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">D</span>
+          <span class="l-en">HK HIBOR/Peg Easy Liquidity Rebound</span>
+          <span class="l-zh">港股HIBOR/联系汇率宽松流动性反弹</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=0
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <p class="no-picks"><span class="l-en">No picks today for this book.</span><span class="l-zh">今日此书无选择。</span></p>
+      
+
+      
+      <p class="fires-hd" style="font-style:italic"><span class="l-en">No graded fires yet for this book.</span><span class="l-zh">此书尚无已评级触发。</span></p>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_flagship_nogate" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">E</span>
+          <span class="l-en">HK Flagship (no signal-gate ablation)</span>
+          <span class="l-zh">港股旗舰 (无信号门消融)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=8
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">9999.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">edge_z no-gate ablation</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>edge_z</b> 1.66</span><span><b>tier</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">0669.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">edge_z no-gate ablation</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>edge_z</b> 1.53</span><span><b>tier</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">2359.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Healthcare &amp; Pharma</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">edge_z no-gate ablation</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>edge_z</b> 1.26</span><span><b>tier</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">2888.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Financials &amp; Banks</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">edge_z no-gate ablation</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>edge_z</b> 1.23</span><span><b>tier</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#5</span>
+            <span class="pick-tk">0966.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Insurance</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">edge_z no-gate ablation</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>edge_z</b> 1.03</span><span><b>tier</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#6</span>
+            <span class="pick-tk">0992.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">edge_z no-gate ablation</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>edge_z</b> 1.02</span><span><b>tier</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#7</span>
+            <span class="pick-tk">3993.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Materials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">edge_z no-gate ablation</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>edge_z</b> 0.86</span><span><b>tier</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#8</span>
+            <span class="pick-tk">0019.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Exchange &amp; Diversified</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">edge_z no-gate ablation</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>edge_z</b> 0.8</span><span><b>tier</b> None</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>9999.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0669.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2359.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2888.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0966.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0992.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>3993.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0019.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_chase_avoid" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">E</span>
+          <span class="l-en">HK Chase Avoid (INVERSE — chase_risk state)</span>
+          <span class="l-zh">港股追涨规避 (反向 — 追涨风险状态)</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=2
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+      <div class="avoid-banner">
+        <b>
+          
+          <span class="l-en">NOT BUY — AVOID book (INVERSE, HKPL §3 Family E)</span><span class="l-zh">非买入 — 规避书（反向，HKPL §3 E族）</span>
+          
+        </b><br>
+        
+        <span class="l-en">Chase Avoid fires names in chase_risk washout state (RSI≥70 gapped) — expected NEGATIVE 21-session ^HSI excess (avoid-accuracy scoring). Do NOT treat these as buy signals.</span>
+        <span class="l-zh">追涨规避触发chase_risk洗盘状态的个股（RSI≥70跳空）— 预期恒生超额为负（规避准确性评分）。切勿将这些视为买入信号。</span>
+        
+      </div>
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess_avoid_accuracy
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card avoid-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">0019.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Exchange &amp; Diversified</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip">AVOID/inverse</span>
+            
+            <span class="why-chip">chase_risk state✓</span>
+            
+            <span class="why-chip">RSI≥70 gapped</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>washout_state</b> chase_risk</span><span><b>rsi14</b> 75.0</span><span><b>extended</b> True</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card avoid-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">0144.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip">AVOID/inverse</span>
+            
+            <span class="why-chip">chase_risk state✓</span>
+            
+            <span class="why-chip">RSI≥70 gapped</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>washout_state</b> chase_risk</span><span><b>rsi14</b> 72.0</span><span><b>extended</b> False</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>0019.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0144.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_random_ctrl" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge">E</span>
+          <span class="l-en">HK Random Control</span>
+          <span class="l-zh">港股随机基准</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=8
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">2238.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Auto &amp; EV</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">HK random-ctrl</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>seed</b> hklab_random_ctrl2026-07-23</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">2688.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Telecom &amp; Utilities</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">HK random-ctrl</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>seed</b> hklab_random_ctrl2026-07-23</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">0371.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Telecom &amp; Utilities</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">HK random-ctrl</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>seed</b> hklab_random_ctrl2026-07-23</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">2607.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Healthcare &amp; Pharma</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">HK random-ctrl</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>seed</b> hklab_random_ctrl2026-07-23</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#5</span>
+            <span class="pick-tk">0867.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Healthcare &amp; Pharma</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">HK random-ctrl</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>seed</b> hklab_random_ctrl2026-07-23</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#6</span>
+            <span class="pick-tk">3618.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Financials &amp; Banks</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">HK random-ctrl</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>seed</b> hklab_random_ctrl2026-07-23</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#7</span>
+            <span class="pick-tk">0151.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Consumer</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">HK random-ctrl</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>seed</b> hklab_random_ctrl2026-07-23</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#8</span>
+            <span class="pick-tk">1088.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Energy</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">HK random-ctrl</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>seed</b> hklab_random_ctrl2026-07-23</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>2238.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2688.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0371.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2607.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0867.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>3618.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0151.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>1088.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
+    <div class="ab-panel" id="ab-hklab_flagship2_mirror" style="display:none">
+      <div class="book-hd" style="margin-bottom:10px">
+        <span class="book-name">
+          <span class="family-badge"></span>
+          <span class="l-en">hklab_flagship2_mirror</span>
+          <span class="l-zh">hklab_flagship2_mirror</span>
+        </span>
+        
+        <span class="book-sb">
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=6
+          · <span class="l-en">WR21 HSI exc</span><span class="l-zh">WR21恒生超额</span> —
+          · <span class="badge-accruing">
+              <span class="l-en">ACCRUING</span>
+              <span class="l-zh">累积中</span>
+            </span>
+        </span>
+        
+      </div>
+
+      
+
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        <span class="l-en">Ruler</span><span class="l-zh">标尺</span>: 21d_hsi_excess
+      </p>
+
+      
+      <div class="pick-grid">
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#1</span>
+            <span class="pick-tk">2338.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">flagship2_mirror</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>confluence_n</b> 2</span><span><b>edge_z</b> -0.06</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">2382.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">flagship2_mirror</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>confluence_n</b> 2</span><span><b>edge_z</b> -0.14</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">0669.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials &amp; Transport</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">flagship2_mirror</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>confluence_n</b> 1</span><span><b>edge_z</b> 1.53</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">0992.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Internet &amp; Tech</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">flagship2_mirror</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>confluence_n</b> 1</span><span><b>edge_z</b> 1.02</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#5</span>
+            <span class="pick-tk">2628.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Insurance</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">flagship2_mirror</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>confluence_n</b> 1</span><span><b>edge_z</b> -0.14</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#6</span>
+            <span class="pick-tk">3800.HK</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Energy</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">flagship2_mirror</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>confluence_n</b> 1</span><span><b>edge_z</b> -0.44</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+
+      
+      <p class="fires-hd"><span class="l-en">Recent graded fires</span><span class="l-zh">近期已评级触发</span></p>
+      <table class="fires-tbl">
+        <thead><tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Fire date</span><span class="l-zh">触发日期</span></th>
+          <th><span class="l-en">Fill basis</span><span class="l-zh">入场基准</span></th>
+          <th><span class="l-en">21d HSI exc ret</span><span class="l-zh">21日恒生超额回报</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+        </tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>2338.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2382.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0669.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>0992.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>2628.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>3800.HK</td>
+            <td>2026-07-23</td>
+            <td class="neu">close</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+    </div>
+    
     
   </section>
 
@@ -350,10 +3933,13 @@
       </ul>
 
       
+      <h3><span class="l-en">Notes from last run</span><span class="l-zh">上次运行说明</span></h3>
+      <p>HK Pick Lab — display-only forward-evidence lab. All books ACCRUING until n≥25 fires / ≥3 months / ≥6 distinct fire dates (HKPL-R6). hklab_random_ctrl = yardstick. Primary ruler: 21d ^HSI excess (HKPL-R3). Execution: next HK session close (fill_basis=close); no price limits (HKPL-R4). Halt law: no print at exec → first traded within 5 sessions; else halt_voided. Organ-dependent books disabled when organ data staler than 2 HK sessions (HKPL-R7). Authority: display_only. Never gates or scores anything.</p>
+      
 
       <p style="margin-top:20px;font-size:11.5px;color:var(--muted)">
         <span class="l-en">Authority: display_only. All rows carry authority: &#34;display_only&#34; per HKPL-R1.</span><span class="l-zh">授权：仅展示。所有行按照HKPL-R1携带授权：&#34;display_only&#34;。</span>
-        · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-09 14:35 UTC
+        · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-23 10:09 UTC
       </p>
     </div>
   </section>
@@ -391,7 +3977,6 @@
   });
 })();
 </script>
-<script src="theme.js?v=e63903ba" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
+<script src="theme.js?v=62a16bd4" defer></script>
 </body>
 </html>

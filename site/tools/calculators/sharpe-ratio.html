@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sharpe Ratio Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Compute the Sharpe ratio from portfolio return, the risk-free rate, and volatility. See the excess return per unit of risk, with optional annualizing.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/sharpe-ratio.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Sharpe Ratio Calculator">
+<meta property="og:description" content="Compute the Sharpe ratio from portfolio return, the risk-free rate, and volatility. See the excess return per unit of risk, with optional annualizing.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/sharpe-ratio.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Sharpe Ratio Calculator">
+<meta name="twitter:description" content="Compute the Sharpe ratio from portfolio return, the risk-free rate, and volatility. See the excess return per unit of risk, with optional annualizing.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Sharpe Ratio Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Sharpe Ratio Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Sharpe Ratio Calculator</h1>
+  <p class="est-dek">Compute the Sharpe ratio from portfolio return, the risk-free rate, and volatility. See the excess return per unit of risk, with optional annualizing.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><rect class="egl-fill" x="8" y="19" width="48" height="10" rx="1"/>
+  <path class="egl-still" d="M8 24 h48"/>
+  <path class="egl-draw" d="M12 30 L50 10"/>
+  <path class="egl-up" d="M50 10 l-6 0.7 M50 10 l-0.7 6"/>
+  <circle class="egl-mark-dot" cx="12" cy="30" r="2.4"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter a portfolio’s return, the risk-free rate, and the volatility (standard deviation) of its returns. You get the Sharpe ratio — the excess return earned per unit of risk taken.</span><span class="l-zh">填入组合的收益率、无风险利率，以及收益的波动率（标准差），即可得到夏普比率——每承担一单位风险所换来的超额收益。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Portfolio return Rp (%)</span><span class="l-zh">组合收益率 Rp（%）</span></span>
+    <input id="rp" inputmode="decimal" autocomplete="off" placeholder="12"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Risk-free rate Rf (%)</span><span class="l-zh">无风险利率 Rf（%）</span> <span class="hint"><span class="l-en">T-bill / cash</span><span class="l-zh">国债 / 现金</span></span></span>
+    <input id="rf" inputmode="decimal" autocomplete="off" placeholder="3"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Std deviation σ (%)</span><span class="l-zh">标准差 σ（%）</span> <span class="hint"><span class="l-en">of returns</span><span class="l-zh">收益的</span></span></span>
+    <input id="sd" inputmode="decimal" autocomplete="off" placeholder="15"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Annualize from periods/yr</span><span class="l-zh">按每年周期数年化</span> <span class="hint"><span class="l-en">optional — 12 / 252</span><span class="l-zh">可选——12 / 252</span></span></span>
+    <input id="k" inputmode="decimal" autocomplete="off" placeholder="—"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in return, risk-free rate and σ to see the Sharpe ratio.</span><span class="l-zh">填入收益率、无风险利率与 σ 即可得到夏普比率。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Excess return</span><span class="l-zh">超额收益</span></dt><dd id="out-excess">—</dd></div>
+    <div><dt><span class="l-en">Per unit of risk</span><span class="l-zh">每单位风险</span></dt><dd id="out-perrisk">—</dd></div>
+    <div><dt><span class="l-en">Annualized Sharpe</span><span class="l-zh">年化夏普</span></dt><dd id="out-annual">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">The Sharpe ratio is your <strong>excess return</strong> divided by its <strong>volatility</strong>. Excess return is what the portfolio earned <em>above</em> a risk-free rate — the return you could have had for taking no risk at all; volatility is the standard deviation of those returns. Dividing one by the other answers a single question: how much return did each unit of risk actually buy?</span><span class="l-zh">夏普比率就是<strong>超额收益</strong>除以其<strong>波动率</strong>。超额收益是组合在无风险利率<em>之上</em>多赚的部分——无风险利率是你不承担任何风险也能拿到的回报；波动率则是这些收益的标准差。两者相除回答的是同一个问题：每一单位风险，究竟换来了多少收益？</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Excess return</strong> = Rp − Rf</span><span class="l-zh"><strong>超额收益</strong> = Rp − Rf</span><br>
+<span class="l-en"><strong>Sharpe</strong> = ( Rp − Rf ) ÷ σ</span><span class="l-zh"><strong>夏普</strong> = ( Rp − Rf ) ÷ σ</span><br>
+<span class="l-en"><strong>Annualized</strong> = Sharpe × √k</span><span class="l-zh"><strong>年化</strong> = 夏普 × √k</span><span class="mut"> <span class="l-en">(k = periods per year: 12 monthly, 252 daily)</span><span class="l-zh">（k = 每年周期数：月度 12、日度 252）</span></span>
+</div>
+<p><span class="l-en">The ratio is unit-free: a Sharpe of 0.60 means the portfolio earned 0.60 units of excess return for every unit of volatility. The optional √k step rescales a ratio measured over short periods — monthly or daily returns — up to an annual figure so it can be compared with others quoted per year. σ must be greater than zero; a portfolio with no variation in its returns has no risk to divide by.</span><span class="l-zh">该比率没有单位：夏普为 0.60，意味着每一单位波动率带来 0.60 单位的超额收益。可选的 √k 步骤，把按短周期（月度或日度）测得的比率放大到年度口径，以便与他人按年报出的数字比较。σ 必须大于零；收益毫无波动的组合，没有可供相除的风险。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a portfolio returned <span class="num">12%</span> over a year while cash (the risk-free rate) paid <span class="num">3%</span>. The standard deviation of its returns was <span class="num">15%</span>.</span><span class="l-zh">假设某组合一年收益 <span class="num">12%</span>，同期现金（无风险利率）为 <span class="num">3%</span>，其收益的标准差为 <span class="num">15%</span>。</span></p>
+<ul>
+<li><span class="l-en">Excess return = <span class="num">12 − 3 = 9%</span></span><span class="l-zh">超额收益 = <span class="num">12 − 3 = 9%</span></span></li>
+<li><span class="l-en">Sharpe = <span class="num">9 ÷ 15 = 0.60</span></span><span class="l-zh">夏普 = <span class="num">9 ÷ 15 = 0.60</span></span></li>
+</ul>
+</div>
+<p><span class="l-en">A Sharpe of 0.60 says the portfolio was paid 0.60 units of excess return for each unit of risk it carried. A second portfolio that also returned 12% but swung twice as hard — σ of 30% — would score just 0.30. Same headline return, half the risk-adjusted quality. That is the whole point: the Sharpe ratio refuses to reward a return that was bought with outsized volatility.</span><span class="l-zh">夏普 0.60 表示：组合每承担一单位风险，就获得 0.60 单位的超额收益。另一个同样收益 12%、但波动大一倍——σ 为 30%——的组合，只能得 0.30。名义收益相同，风险调整后的质量却减半。这正是关键所在：夏普比率不会奖励一份靠过大波动换来的收益。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Comparing ratios measured over different periods</span><span class="l-zh">比较不同周期口径的比率</span></span>
+<p><span class="l-en">A Sharpe ratio computed from monthly returns is not comparable to one computed from annual returns — the monthly figure is roughly √12 smaller. Before you rank two funds by Sharpe, make sure both are on the same clock. That is what the annualize step is for: convert the short-period ratio up by √k so like sits next to like. Quoting a raw monthly Sharpe as if it were annual quietly flatters or punishes the number by a factor of more than three.</span><span class="l-zh">用月度收益算出的夏普比率，与用年度收益算出的并不可比——月度数字大约要小 √12 倍。在按夏普给两只基金排名之前，先确认两者用的是同一把尺子。年化步骤正是为此而设：把短周期比率乘以 √k 放大，让同类与同类相比。把原始月度夏普当作年度口径引用，会悄悄地把这个数字美化或贬低三倍以上。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">The Sharpe ratio is a convention, not a law — a useful summary with real blind spots. As a rough reading: below 1 is often called subpar, 1 to 2 good, above 2 very good — but those bands are habit, not truth, and they shift with the market regime and the measurement window. A few honest limits:</span><span class="l-zh">夏普比率是一种惯例，而非定律——它是有用的概括，却有实实在在的盲点。作为粗略参照：低于 1 常被称为一般，1 到 2 为良好，2 以上为优秀——但这些区间是习惯，不是真理，会随市场环境与测量窗口而变。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>It penalizes upside volatility.</strong> Standard deviation counts a big up-month as “risk” exactly like a big down-month. A portfolio that mostly surprises to the upside is scored as if those surprises were dangerous. The Sortino ratio, which divides by downside deviation only, was built to address this.</span><span class="l-zh"><strong>它惩罚向上的波动。</strong>标准差把一个大涨月与一个大跌月同样算作「风险」。一个多为向上惊喜的组合，会被当作那些惊喜很危险来打分。索提诺比率——只用下行标准差相除——正是为解决这一点而生。</span></li>
+<li><span class="l-en"><strong>It assumes returns are roughly normal.</strong> Real returns have fat tails and skew; strategies that sell options or carry hidden crash risk can post a lovely Sharpe for years and then give it all back in a week. A high ratio built on a short, calm sample can be a mirage.</span><span class="l-zh"><strong>它假设收益大致服从正态分布。</strong>真实收益有肥尾与偏度；卖出期权、或暗藏崩盘风险的策略，可能连续多年报出漂亮的夏普，然后在一周内悉数吐回。建立在短暂平静样本上的高比率，可能只是海市蜃楼。</span></li>
+<li><span class="l-en"><strong>The risk-free rate and window are choices.</strong> Which cash rate you subtract, and how long a window you measure, both move the number. Two honest analysts can compute different Sharpe ratios for the same fund. Treat it as one lens among several, not a verdict.</span><span class="l-zh"><strong>无风险利率与窗口都是选择。</strong>你减去哪个现金利率、测量多长的窗口，都会改变结果。两位诚实的分析师，可能为同一只基金算出不同的夏普比率。把它当作众多视角之一，而非最终定论。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">A high return means little until you know what volatility it cost. The Sharpe ratio prices that trade-off — but read it beside the shape of the returns, not on its own.</span><span class="l-zh">在你知道一份收益付出了多少波动之前，高收益本身意义有限。夏普比率为这一取舍定价——但要把它与收益的分布形态放在一起读，而非孤立地看。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Turn a raw gain into an annual rate with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/cagr.html"><span class="l-en">CAGR calculator</span><span class="l-zh">CAGR 计算器</span></a><span class="l-en">, or size a single trade by risk with the <a href="</span><span class="l-zh"> 把原始收益换算成年化利率，或用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">.</span><span class="l-zh"> 按风险为单笔交易定仓。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/portfolio-rebalancing.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Portfolio Rebalancing Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (brief formula — do not re-derive) ────────────────────────
+  // inputs: {Rp return%, Rf risk-free%, sd stddev%, k periods/yr (optional)}.
+  // Returns an outputs object, or {ok:false, msg} for invalid input. Never NaN.
+  function compute(inp){
+    var Rp=inp.Rp, Rf=inp.Rf, sd=inp.sd, k=inp.k;
+    if(!isFinite(Rp)) return {ok:false, msg:"Enter the portfolio's return."};
+    if(!isFinite(Rf)) return {ok:false, msg:"Enter the risk-free rate."};
+    if(!isFinite(sd)) return {ok:false, msg:"Enter the standard deviation of returns."};
+    if(!(sd>0)) return {ok:false, msg:"Standard deviation must be above zero — with no volatility there is no risk to divide by."};
+    var excess = Rp - Rf;
+    var sharpe = excess / sd;
+    var hasK = isFinite(k) && k>0;
+    var annualized = hasK ? sharpe * Math.sqrt(k) : null;
+    return {
+      ok:true, excess:excess, sharpe:sharpe,
+      hasK:hasK, k:hasK?k:null, annualized:annualized
+    };
+  }
+
+  // interpretation band (convention, not law — mirrors the explainer)
+  function band(s){
+    if(s < 0)   return "negative — the portfolio trailed cash after adjusting for risk";
+    if(s < 1)   return "below 1 — commonly read as subpar";
+    if(s <= 2)  return "between 1 and 2 — commonly read as good";
+    return "above 2 — commonly read as very good";
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{Rp:12, Rf:3, sd:15},        want:{sharpe:0.60, excess:9} },
+    { in:{Rp:8,  Rf:2, sd:12, k:12},  want:{sharpe:0.50, annualized:1.7320508} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, key;
+      if(!got.ok){ console.error("sharpe-ratio self-check "+i+": compute failed", got); return; }
+      for(key in w){ if(Math.abs(got[key] - w[key]) > 0.001){
+        console.error("sharpe-ratio self-check "+i+" mismatch on "+key+": got "+got[key]+" want "+w[key]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { rp:$("rp"), rf:$("rf"), sd:$("sd"), k:$("k") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outExcess=$("out-excess"), outPer=$("out-perrisk"), outAnnual=$("out-annual"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var raw=(el.value||"").replace(/,/g,"").trim();
+      if(raw==="") return NaN; var v=parseFloat(raw); return isFinite(v)?v:NaN; }
+    function ratio(n){ return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function pct(n){ return (n>=0?"+":"") + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) + "%"; }
+    function dash(){ outMain.textContent="—";
+      [outExcess,outPer,outAnnual].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ Rp:numFrom(els.rp), Rf:numFrom(els.rf), sd:numFrom(els.sd), k:numFrom(els.k) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent = ratio(res.sharpe);
+      outExcess.textContent = pct(res.excess);
+      outExcess.className = res.excess>=0 ? "pos" : "neg";
+      outPer.textContent = ratio(res.sharpe);
+      outAnnual.textContent = res.hasK ? ratio(res.annualized) : "—";
+      // Law 3: plain-word interpretation under the number
+      var plain = "Each unit of risk earned " + ratio(res.sharpe) +
+        " units of excess return — " + band(res.sharpe) + ".";
+      if(res.hasK){
+        plain += " Annualized from " + res.k.toLocaleString("en-US") +
+          " periods a year, the Sharpe is " + ratio(res.annualized) + ".";
+      }
+      plain += " Bands are convention, not a rule.";
+      outPlain.textContent = plain;
+      outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var s = "Sharpe ratio: " + ratio(last.sharpe) +
+        " · excess return " + pct(last.excess);
+      if(last.hasK) s += " · annualized " + ratio(last.annualized) + " (" + last.k + "/yr)";
+      return s + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["rp","rf","sd","k"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

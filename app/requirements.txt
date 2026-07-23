@@ -27,3 +27,7 @@ pyarrow>=16
 # stamp must never block a paid download).
 pypdf>=4.0
 reportlab>=4.0
+# Billing spine (MNZ W2): app/billing.py — Stripe Checkout + webhook + portal +
+# reconciler. Needs the Entitlements API (GA), so pin >=11. Imported lazily inside
+# app/billing.py so the API process still starts if the dep is briefly absent.
+stripe>=11,<13

@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-22T09:07:37.605012+00:00",
-  "as_of": "2026-07-22",
+  "generated_at": "2026-07-23T09:16:08.871984+00:00",
+  "as_of": "2026-07-23",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 403,
@@ -424,7 +424,7 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 22,
+      "current_opex_days": 21,
       "next_opex_date": "2026-08-21",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
@@ -452,26 +452,26 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-07-22",
-          "age_days_from_today": 0,
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
           "latest_as_of": "2026-07-22 03:29 UTC",
-          "age_days_from_today": 0,
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-07-10",
-          "age_days_from_today": 12,
+          "age_days_from_today": 13,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-22T09:07:37.564965+00:00",
+      "generated_at": "2026-07-23T09:16:08.834998+00:00",
       "ok": true,
       "fail_reasons": [],
       "warnings": [
@@ -481,8 +481,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-22T09:07:37.605004+00:00",
-    "as_of": "2026-07-22",
+    "generated_at_utc": "2026-07-23T09:16:08.871978+00:00",
+    "as_of": "2026-07-23",
     "absent_stores": []
   }
 }
