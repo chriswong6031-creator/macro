@@ -50,12 +50,14 @@ def _r2_client():
     """S3 client for R2, or None when creds are absent (graceful no-op).
 
     Copies scripts/publish_r2._client construction verbatim (region 'auto',
-    s3v4, when_required checksum) — only the *bucket* differs (resolved by the
-    caller from R2_RESEARCH_BUCKET).
+    s3v4, when_required checksum). A SEPARATE Cloudflare account for the research
+    vault is supported via R2_RESEARCH_ENDPOINT / R2_RESEARCH_ACCESS_KEY_ID /
+    R2_RESEARCH_SECRET_ACCESS_KEY (+ R2_RESEARCH_BUCKET); each falls back to the
+    shared R2_* var when unset (the same-account case).
     """
-    ep = os.environ.get("R2_ENDPOINT")
-    ak = os.environ.get("R2_ACCESS_KEY_ID")
-    sk = os.environ.get("R2_SECRET_ACCESS_KEY")
+    ep = os.environ.get("R2_RESEARCH_ENDPOINT") or os.environ.get("R2_ENDPOINT")
+    ak = os.environ.get("R2_RESEARCH_ACCESS_KEY_ID") or os.environ.get("R2_ACCESS_KEY_ID")
+    sk = os.environ.get("R2_RESEARCH_SECRET_ACCESS_KEY") or os.environ.get("R2_SECRET_ACCESS_KEY")
     if not (ep and ak and sk):
         return None
     import boto3

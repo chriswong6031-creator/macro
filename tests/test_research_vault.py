@@ -635,3 +635,23 @@ def test_local_store_list_prefix(tmp_path):
     assert "research_inbox/a.pdf" in inbox
     assert "research_inbox/_processed/a.json" in inbox
     assert "research_vault/a.pdf" not in inbox
+
+
+def test_r2_client_prefers_research_account_creds(monkeypatch):
+    """R2_RESEARCH_* (a separate Cloudflare account) is preferred over the shared
+    R2_* creds, and each falls back to R2_* when unset. Skipped where boto3 is
+    absent (the minimal CI lane); client construction is offline (creds aren't
+    validated until a call), so we can assert the resolved endpoint."""
+    import pytest as _pytest
+    _pytest.importorskip("boto3")
+    from engine.research_vault import r2_store as rs
+    monkeypatch.setenv("R2_ENDPOINT", "https://shared.example.com")
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", "shared-ak")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "shared-sk")
+    monkeypatch.setenv("R2_RESEARCH_ENDPOINT", "https://research.example.com")
+    monkeypatch.setenv("R2_RESEARCH_ACCESS_KEY_ID", "research-ak")
+    monkeypatch.setenv("R2_RESEARCH_SECRET_ACCESS_KEY", "research-sk")
+    assert rs._r2_client().meta.endpoint_url == "https://research.example.com"
+    for _k in ("R2_RESEARCH_ENDPOINT", "R2_RESEARCH_ACCESS_KEY_ID", "R2_RESEARCH_SECRET_ACCESS_KEY"):
+        monkeypatch.delenv(_k, raising=False)
+    assert rs._r2_client().meta.endpoint_url == "https://shared.example.com"
