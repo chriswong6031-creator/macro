@@ -34,7 +34,7 @@ products:
     trial_days: 7
     features: [site_full, terminal_live_options]
     prices:
-      monthly: { lookup_key: insider_monthly, unit_amount: 5900,  interval: month }
+      monthly: { lookup_key: insider_monthly, unit_amount: 6900,  interval: month }
       annual:  { lookup_key: insider_annual,  unit_amount: 58800, interval: year }
   pro:
     tier: pro
@@ -42,7 +42,7 @@ products:
     trial_days: 7
     features: [site_full, terminal_live_options, chat_opus]
     prices:
-      monthly: { lookup_key: pro_monthly, unit_amount: 8900,  interval: month }
+      monthly: { lookup_key: pro_monthly, unit_amount: 9900,  interval: month }
       annual:  { lookup_key: pro_annual,  unit_amount: 82800, interval: year }
 
 # Entitlement precedence — if a customer ever holds overlapping active subscriptions, the

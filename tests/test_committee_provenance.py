@@ -549,8 +549,11 @@ class TestCommitteePageRenderSmoke:
     def test_ask_context_only_badge(self):
         """Ask section must carry the CONTEXT ONLY badge."""
         html = self._render()
-        # The section panel-head has the is-context-badge
-        idx = html.find("cm_ask_section")
+        # The section panel-head has the is-context-badge. Anchor on the panel's
+        # own id="cm_ask_section" — the sticky chapter-nav also links to
+        # href="#cm_ask_section" earlier in the doc, so a bare substring find
+        # would match the nav tab instead of the panel.
+        idx = html.find('id="cm_ask_section"')
         assert idx >= 0
         nearby = html[idx:idx+500]
         assert "CONTEXT ONLY" in nearby or "仅供参考" in nearby  # 仅供参考

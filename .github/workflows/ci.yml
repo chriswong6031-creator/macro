@@ -48,6 +48,21 @@ on:
       - "scripts/check_interfonts_sync.py"
       - "templates/**"
       - ".github/workflows/ci.yml"
+      # Research Vault (RV W1) ingestion spine: sidecar contract, corpus FTS,
+      # catalog, and the idempotent never-raise ingest pipeline. (RV W3) adds the
+      # SSR page builder + its render test + the page template.
+      - "engine/research_vault/**"
+      - "scripts/ingest_research.py"
+      - "scripts/build_research_vault.py"
+      - "tests/test_research_vault.py"
+      # Research Vault (RV W2) serving API + download gate: quota ledger, view
+      # rate-limit, watermark, the app/research.py router + its security tests.
+      - "app/research.py"
+      - "app/main.py"
+      - "tests/test_research_api.py"
+      # Research Vault (RV W3) page + viewer: page test + template.
+      - "tests/test_research_vault_page.py"
+      - "templates/research_vault.html.j2"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
@@ -2478,6 +2493,52 @@ jobs:
         run: pip install pytest fastapi
       - name: identity capture unit tests
         run: python -m pytest tests/test_collect_identity.py -v
+
+  research-vault:
+    # RV W1 ingestion spine: the sidecar contract normalization + every fallback
+    # (missing/blank/bad-JSON, never-drop), catalog upsert ordering + institutions
+    # rollup, corpus FTS5 build + a BODY-only search (proves body is searchable) +
+    # institution/date facets, and the end-to-end ingest via the LOCAL store backend
+    # (idempotency: a 2nd run ingests 0; receipts; needs_metadata path). No R2, no
+    # poppler — LocalStore + a monkeypatched pdftotext keep the suite fully offline.
+    # RV W3 page build: the SSR shell renders from empty + seeded catalogs (honest
+    # empty state / SEO-baked cards), hero + lanes + viewer modal markup, balanced
+    # EN/ZH spans, plain-English <title>, compliance copy, and the body-never-leaks
+    # projection. jinja2 (already a repo dep) is the only page-build need.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        # Pure stdlib engine (sqlite3 + subprocess) + jinja2 for the W3 page build.
+        run: pip install pytest jinja2
+      - name: research vault ingestion-spine + page unit tests
+        run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py -q
+
+  research-vault-api:
+    # RV W2 serving API + download gate (SECURITY-CRITICAL): the app/research.py
+    # router — anon→401, free/unknown→402 (fails CLOSED), insider view 200 (no
+    # quota), download metering 5/20 (server-authoritative, next-day reset),
+    # doc_id traversal/shape/unknown hardening (never a raw R2 fetch), and the
+    # watermark degrade path (libs present AND absent both return a body). Uses a
+    # LocalStore + dependency-overridden auth + monkeypatched tier resolver, so no
+    # live R2/Supabase is hit. Imports app.main, so fastapi + httpx (TestClient)
+    # are installed (mirrors the collect-identity job).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        # fastapi + httpx for the TestClient; pypdf + reportlab so the watermark
+        # HAPPY path is exercised too (the code degrades if they're absent, but CI
+        # proves the real stamp path as well).
+        run: pip install pytest fastapi httpx pypdf reportlab
+      - name: research vault serving-API security tests
+        run: python -m pytest tests/test_research_api.py -q
 
   marketing-social-publisher:
     # D02 W1 live social publisher: tweet_length/validate_postable, the Buffer

@@ -53,6 +53,13 @@
 	# Slice 2 backend — FastAPI (macro-api.service) on localhost. Everything under
 	# /api/* is proxied here; the rest is served as static files below. Per-user
 	# auth lives in the API (Supabase) + (later) a login wall; no shared password.
+	#
+	# RV W2: the Research Vault's /api/research/* routes (catalog, search, view,
+	# download, quota) are ALREADY covered by this /api/* proxy — no extra block is
+	# needed. The private research PDFs live ONLY in the private R2 bucket and are
+	# fetched server-side by the authed API; they have NO public URL and MUST NOT
+	# gain a static file_server rule here (no *.pdf in @static below) — the only
+	# path to a PDF is the require_user + paid + rate-limited/metered API route.
 	reverse_proxy /api/* 127.0.0.1:8000
 
 	# ── Site Access Gate ──────────────────────────────────────────────────────

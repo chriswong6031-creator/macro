@@ -3464,7 +3464,7 @@ def _plans_view_model() -> dict:
         m_cents = int(prices.get("monthly", {}).get("unit_amount", 0))
         a_cents = int(prices.get("annual", {}).get("unit_amount", 0))
         # Per-month equivalents. Dollars are whole here because the catalog prices
-        # are round ($59/$89 monthly; $588/$828 annual → $49/$69 per month) — round()
+        # are round ($69/$99 monthly; $588/$828 annual → $49/$69 per month) — round()
         # keeps the badge honest if a future price isn't a clean multiple of 12.
         monthly_pm = round(m_cents / 100)
         annual_pm = round(a_cents / 12 / 100)

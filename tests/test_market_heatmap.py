@@ -35,7 +35,7 @@ def test_china_contract_and_marketcap_sizing():
     assert p["map_type"] == "stocks"
     assert p["currency"] == "CNY"
     assert p["stockdata_dir"] == "chinastockdata"
-    assert p["stock_url"] == "china_lookup.html#"
+    assert p["stock_url"] == "https://app.mastermind-x.com/terminal?symbol="
     assert p["size_label_zh"] == "市值"
     assert p["size_basis"] == "marketcap"
     assert p["tile_label"] == "name"        # tiles labelled by company name, not the code
