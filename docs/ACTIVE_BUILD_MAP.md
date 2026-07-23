@@ -2,38 +2,122 @@
 
 # Active Build Map
 
-Generated: 2026-07-22T01:12:51.365155+00:00  |  Open PRs: 10  |  Merged (window): 500  |  base: `8f6296706bc3be3ac94754c012f2de195e026d44`
+Generated: 2026-07-23T01:13:38.046758+00:00  |  Open PRs: 6  |  Merged (window): 500  |  base: `a13271944f6b32aa2655b8f34f0a46de1dfbf7cd`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #3179 | chore(routing): Opus builds code, not Sonnet (operator 2026-07-21) | `chore/opus-builds-code-routing` | 2026-07-22 | ⚠ protected:1 |
-| #3178 | Stripe billing spine — checkout/webhook/portal + entitlements (MNZ W2) | `claude/stripe-billing-spine` | 2026-07-21 | ⚠ protected:1 |
-| #3176 | feat(i18n): zh 红涨绿跌 color sweep — remaining 18 dashboards | `claude/zh-mode-board-sweep` | 2026-07-21 | — |
-| #3175 | fix(macro): zh 红涨绿跌 coherence — state JS, sparklines, chips, odometer, quad map, heat bars | `claude/zh-mode-macro-board` | 2026-07-21 | — |
-| #3174 | fix(china): zh direction-convention flip on state gauge + pullback family (reverses #2947 no-flip) | `claude/stoic-williams-d4f68a` | 2026-07-21 | — |
-| #3171 | design(landing): round 2 — three suite-architecture mockups (The Desk / One Frame / One Market Day) | `claude/amazing-keller-51b345` | 2026-07-21 | — |
-| #3133 | docs(marketing): define affiliate creator launch strategy | `codex/affiliate-creator-launch-strategy` | 2026-07-20 | — |
-| #3092 | docs(marketing): add first-1000 distribution strategy | `codex/marketing-1000-leads-warplan` | 2026-07-19 | — |
-| #3085 | feat(case): winner autopsy SQM 2008 | `codex/case-sqm-2008` | 2026-07-19 | — |
-| #3084 | feat(case): winner autopsy MSTR 2025 | `codex/case-mstr-2025` | 2026-07-19 | — |
+| #3258 | feat(research-vault): W0 masterplan + W1 ingestion spine | `claude/research-vault-w1` | 2026-07-22 | ⚠ CONFLICTING / ⚠ protected:2 |
+| #3252 | feat(reports): shareable deep-link filter state + Esc-to-clear | `claude/reports-deeplink-filters` | 2026-07-22 | — |
+| #3251 | feat(foresight): Fable-quality UI revamp — lead-time relay + user-first IA | `claude/wonderful-wing-9c3552` | 2026-07-22 | — |
+| #3223 | feat(gex): Options Desk "Gravity Map" revamp — transmission-grade UI | `claude/beautiful-khayyam-4a699e` | 2026-07-22 | ⚠ CONFLICTING |
+| #3201 | feat(case): winner autopsy OKLO 2025 | `codex/case-oklo-2025` | 2026-07-22 | — |
+| #3200 | feat(case): winner autopsy RBLX 2022 | `codex/case-rblx-2022` | 2026-07-22 | — |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
 ## File Collisions
 
-| PR A | PR B | Shared files | Files |
-|------|------|-------------|-------|
-| #3133 | #3092 | 1 | `research/marketing_dockets/INDEX.md` |
+_No file collisions detected among open PRs._
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #3271 | fix(hk): hk_stocks revamp — plain-word IA, chronic false STALE banner, Pick Lab crash, southbound units ×100 | 2026-07-23 |
+| #3270 | feat(landing): Terminal section → Safari-framed live product showcase + hero real-quote refresh | 2026-07-23 |
+| #3269 | fix(boards): prophet card fit — no clipped stage labels or dates, wider card minimum | 2026-07-22 |
+| #3268 | feat(tools): macro-terminal revamp of /tools + 20 new SEO calculators | 2026-07-22 |
+| #3267 | feat(marketing): live social publisher (Buffer, dark by default) | 2026-07-22 |
+| #3266 | feat(macro): remove Macro Dashboard topbar strip (brand + as-of date + divider) | 2026-07-22 |
+| #3265 | research: postmortem 2026-07-22 — crossovers vs capex bind (Mag-7 dispersion) + integration charter | 2026-07-22 |
+| #3264 | feat(commodities): oil→XEG cross-asset context chip (display-tier, C1-R2) | 2026-07-22 |
+| #3263 | fix(landing): hide Research Reports teaser on mobile compact card (no icon overlap) | 2026-07-22 |
+| #3262 | feat(prophet-card): buy-zone band on the card sparkline (E1 phase 2) | 2026-07-22 |
+| #3261 | feat(admin): compute + surface bot-loop liveness on the Mastermind AI hero | 2026-07-22 |
+| #3260 | fix(landing): terminal chart fills its column (no dead space under axis) | 2026-07-22 |
+| #3259 | fix(landing): fixed-height chat + AI section side-by-side, neural web archived | 2026-07-22 |
+| #3257 | feat(landing): iteration 3 — diagram layout, mx5 gauge, real scorecard-v2, locked terminal feed | 2026-07-22 |
+| #3256 | feat(boards): Prophet card v1 — one flagship scorecard across US/CN/HK/CA/INTL | 2026-07-22 |
+| #3255 | fix(landing): composer class collision, prophet rail legend, economies clipping | 2026-07-22 |
+| #3254 | feat(intl): World Command hero + user-first IA revamp (macro.html design system) | 2026-07-22 |
+| #3250 | feat(themes): State of Themes revamp — stance-lane board + lifecycle signature | 2026-07-22 |
+| #3249 | feat(china): National Team Radar + mx5 revamp of policy-watch & special-situations | 2026-07-22 |
+| #3248 | fix(brain-widget): chip labels never wrap — title ellipsizes instead | 2026-07-22 |
+| #3247 | feat(brain-widget): chat v2 — streaming engine, smooth reveal, message redesign, thread management, power features | 2026-07-22 |
+| #3246 | feat(ipo): gated "Demand (vs range)" revision column + dark-red fix | 2026-07-22 |
+| #3245 | feat(admin): surface alert-triage calibration on the Alerts page | 2026-07-22 |
+| #3244 | feat(landing): iteration 2 — top-down hero, real NVDA data, animated AI chat, pricing aurora | 2026-07-22 |
+| #3243 | feat(hub): wire IPO Radar card onto the AURORA landing hub | 2026-07-22 |
+| #3242 | feat(admin): surface the degraded AI cortex on the Observatory + Master Brain heroes | 2026-07-22 |
+| #3241 | perf(admin): behavioral fixes — cache link crawl, batch GitHub calls, guard deploys | 2026-07-22 |
+| #3240 | fix(tests): retrack test_brain_reconcile_clamps to post-#2372 deterministic-ceiling _reconcile | 2026-07-22 |
+| #3239 | feat(brain): thread rename + delete endpoints (owned, guest-locked) | 2026-07-22 |
+| #3238 | fix(marketing): unbreak earnings fast lane (em dash) + bare-domain link tagging (www host) | 2026-07-22 |
+| #3237 | perf(admin): trim ~415KB of unread payload off the landing + heavy panels | 2026-07-22 |
+| #3236 | fix(nav): rename Flow Desk link "Group Flow Heatmap" → "US Options Flow" | 2026-07-22 |
+| #3235 | fix(nav): restore .site-nav wrapper on the remaining 12 standalone templates (menu sweep complete) | 2026-07-22 |
+| #3234 | render(flow-desk): bake "Options Tape" revamp to live | 2026-07-22 |
+| #3233 | feat(altdata): gauntlet special_situation + de-escalate 0.40→0.20 to its null gate | 2026-07-22 |
+| #3232 | feat(ipo): mx5 aurora-glass flagship revamp — hero, AVOID panel, lock-up timeline, ilx chart + lobe hardening | 2026-07-22 |
+| #3231 | feat(etfs): Fable-design revamp of Real Fund Moves — consensus board, stances & rotation backdrop | 2026-07-22 |
+| #3230 | feat(leader-radar): mx5 design revamp — hero verdict + funnel, de-noised layout | 2026-07-22 |
+| #3229 | feat(intraday-flow): mx5 design revamp — Session Pulse hero + "Look here first" spotlight (V3 UI) | 2026-07-22 |
+| #3228 | design(vector): hero balance + keyboard-focus polish | 2026-07-22 |
+| #3227 | fix(marketing): TSMC earnings-card padding/logo + D05 Truth Social red-team memo | 2026-07-22 |
+| #3226 | feat(flow-desk): user-first "Options Tape" revamp — Fable aurora-glass, honest read, fixed cohorts | 2026-07-22 |
+| #3225 | fix(admin): panel-truth wave 2 — 8 more broken-data bugs across 6 lobes | 2026-07-22 |
+| #3224 | feat(flow-leaders): revamp UI + engine — macro design language + user-first doctrine | 2026-07-22 |
+| #3222 | feat(radar): user-first Divergence Radar revamp — Fable mx-hero + honest track record | 2026-07-22 |
+| #3221 | design(vector): transmission-grade revamp — orange identity, vector signature, forces rail, deep-dive shelf | 2026-07-22 |
+| #3220 | feat(china-news): flash-wire tape revamp — timestamped stories, transmission-grade UI | 2026-07-22 |
+| #3219 | fix(altdata): reconcile earnings_beat test + weight with #3211 metric-only demotion | 2026-07-22 |
+| #3218 | feat(reports): rebuild Research Reports as an aurora-glass research center | 2026-07-22 |
+| #3217 | fix(admin): panel-truth pass — Health/Prophet/Context-Lobe stop misreporting status | 2026-07-22 |
+| #3216 | fix(altdata): down-weight activist_13d 0.55→0.20 to its null gauntlet (board-ranking honesty) | 2026-07-22 |
+| #3215 | feat(intel-hub): regime-condition the hub track-record (V3 regime hardening) | 2026-07-22 |
+| #3214 | fix(admin): security hardening — critical login-lockout bypass + document CSP | 2026-07-22 |
+| #3213 | feat(intel-hub): insider-cluster selection edge — strength ordering + per-feed measurement (V3 Phase 2) | 2026-07-22 |
+| #3212 | feat(commodities): C1-R2 oil→XEG prereg + honest Phase-0 caveat + program reconciliation | 2026-07-22 |
+| #3211 | feat(altdata): robust names + de-noised channels + earnings catalyst clock | 2026-07-22 |
+| #3210 | test(froth-fragility): reconcile bilingual smoke test with mx5 v2 card | 2026-07-22 |
+| #3208 | feat(stock-desk): stop shorting momentum leaders — lean recalibration (V3 Phase 3) | 2026-07-22 |
+| #3207 | feat(china-radar): CN radar-IC grader — CN parity for the signal governor (V3 Phase 1b) | 2026-07-22 |
+| #3206 | fix(commodities): honest active-model verdicts (copper fails DSR, silver marginal) | 2026-07-22 |
+| #3205 | AI Cost: complete remote-ledger sync for remaining Opus lanes | 2026-07-22 |
+| #3204 | AI Cost: unified per-lobe token tracking + illustrative page + remote-ledger sync | 2026-07-22 |
+| #3203 | feat(psq-tilt): W1 hold-leash — Stage-2∩EC picks get 45→56d horizon (provisional, bear-gated, shadow auto-demote) | 2026-07-22 |
+| #3202 | feat(wa): W4 matched-controls fingerprint study (Layer-3b) — pre-onset breakaway vs same-day controls | 2026-07-22 |
+| #3199 | congress: fold long tables behind "Show more" toggles | 2026-07-22 |
+| #3198 | fix(nav): restore .site-nav wrapper on BTC/commodity strategy pages (menus were dead) | 2026-07-22 |
+| #3197 | design(settings): larger dashboard (860×660) + mobile height fallback | 2026-07-22 |
+| #3196 | feat(china-intel-hub): CN/HK parity — signal governor + CN track-record grader (V3 Phase 1b) | 2026-07-22 |
+| #3195 | fix(macro): dialog & popup polish sweep — 11 flagship fixes | 2026-07-22 |
+| #3194 | design(china/hk/canada): port the macro.html mx5 design system to the country dashboards | 2026-07-22 |
+| #3193 | chore(registry): register commodity xsec-momentum phase-0 kill in DO_NOT_REBUILD §2 | 2026-07-22 |
+| #3192 | fix(smart-money): repair Ownership Desk UI/text bugs — tooltip leak, holdings pills, board overflow, machine text | 2026-07-22 |
+| #3191 | feat(intel-hub): close the measure→act loop — de-escalation-only signal governor (V3 Phase 1) | 2026-07-22 |
+| #3190 | fix(site): repair 4 slow/broken sector & subsector pages | 2026-07-22 |
+| #3189 | intl turn-tile popovers → plain-word LENS cards; +commodities title spacing | 2026-07-22 |
+| #3188 | feat(brain): guest access — free Fast lane for everyone, admin-tunable daily cap | 2026-07-22 |
+| #3187 | feat(cmx-w2): Eyes — deterministic chart digests + measure_line + ChartSession + v2 command validation | 2026-07-22 |
+| #3186 | research(cmx): Chart Mastermind masterplan — chartered (W0) | 2026-07-22 |
+| #3185 | feat(metabolism): V12 Surface Curator + Metered Loop — quality gate for UI additions, real token throttle | 2026-07-22 |
+| #3184 | bottom-ledger: policy-free bottom-calling learning instrument (P1) | 2026-07-22 |
+| #3183 | fix(track-record): "Below entry" not "Stopped" + open-marks disclosure (display honesty) | 2026-07-22 |
+| #3182 | research(signal): veto-leg audit — macd_bear hard-blank fails its keep test; Washout Watch shelf proposed | 2026-07-22 |
+| #3181 | residual-alpha: admit curated non-index extras to the board candidate set (CRCL fix) | 2026-07-22 |
+| #3180 | fix(brain-widget): re-localize the widget live on a host language switch | 2026-07-22 |
+| #3179 | chore(routing): Opus builds code, not Sonnet (operator 2026-07-21) | 2026-07-22 |
+| #3178 | Stripe billing spine — checkout/webhook/portal + entitlements (MNZ W2) | 2026-07-22 |
 | #3177 | fix(cls): pre-collapse the mobile nav at parse — 0.33 → 0.03 CLS on phone loads | 2026-07-21 |
+| #3176 | feat(i18n): zh 红涨绿跌 color sweep — remaining 18 dashboards | 2026-07-22 |
+| #3175 | fix(macro): zh 红涨绿跌 coherence — state JS, sparklines, chips, odometer, quad map, heat bars | 2026-07-22 |
+| #3174 | fix(china): zh direction-convention flip on state gauge + pullback family (reverses #2947 no-flip) | 2026-07-22 |
 | #3173 | feat(brain-widget): wire the sidebar Search into a live chat filter | 2026-07-21 |
 | #3172 | design(settings): full settings dashboard modal — Account / Preferences / Sync | 2026-07-21 |
+| #3171 | design(landing): round 2 suite mockups + V3.1 'Daylight, Live' build spec (operator pick) | 2026-07-22 |
 | #3170 | design(brain-widget): drop redundant "New" pill from Chats header | 2026-07-21 |
 | #3169 | fix(markets): defer/load-order heal — same class as the cycle.html blank | 2026-07-21 |
 | #3168 | perf(mobile): breathing-animation sweep wave 2 — 9 more page families off the main thread | 2026-07-21 |
@@ -71,6 +155,7 @@ Generated: 2026-07-22T01:12:51.365155+00:00  |  Open PRs: 10  |  Merged (window)
 | #3136 | fix(theta): keepalive stdin via anonymous FIFO — tail-pipe deadlocked on java death | 2026-07-20 |
 | #3135 | feat(illus): ilx "Signal Ink" illustration format — china/hk/canada off Plotly + HK news revamp | 2026-07-20 |
 | #3134 | feat(brain): env-gated unlimited quota + token ceiling for operator allowlist (both lanes) | 2026-07-20 |
+| #3133 | docs(marketing): define affiliate creator launch strategy | 2026-07-22 |
 | #3132 | Docs: add Beacon SEO publishing and tools docket | 2026-07-20 |
 | #3131 | feat(marketing): watchlist card v2 — portrait 4:5 mobile-first, color-logo avatar chips | 2026-07-20 |
 | #3130 | perf(site): externalize inline CSS to cached hash files (HTML -44%) | 2026-07-20 |
@@ -111,6 +196,7 @@ Generated: 2026-07-22T01:12:51.365155+00:00  |  Open PRs: 10  |  Merged (window)
 | #3095 | fix(collectors): adjustment-basis guard + depth heal for the data/stocks store | 2026-07-20 |
 | #3094 | fix(dag): declare build_confluence_screener in tech_lab_offrender lane | 2026-07-20 |
 | #3093 | feat(brain-widget): host bridges + top-anchor drop-down (W6f Terminal contract) | 2026-07-19 |
+| #3092 | docs(marketing): add first-1000 distribution strategy | 2026-07-22 |
 | #3091 | docs(marketing): D04 complete — Terminal parity port merged (terminal#147) | 2026-07-19 |
 | #3090 | fix(brain): tool-refusal self-correction hint + non-stream synthesis pass | 2026-07-19 |
 | #3089 | feat(brain): W6d finance tool suite + W6e proactive UX — 9 grounded tools, follow-up chips, explain-this-panel | 2026-07-19 |
@@ -439,98 +525,6 @@ Generated: 2026-07-22T01:12:51.365155+00:00  |  Open PRs: 10  |  Merged (window)
 | #2723 | fix(market-state-tune): lane-gate the calibration/tune-log/governance writers (port of #2712 gate) | 2026-07-17 |
 | #2722 | fix(tests): isolate ai_costs usage ledger in causal-llm-runner suite — causal-factory CI green | 2026-07-17 |
 | #2721 | fix(canada): restore body top padding — nav-gap CI green again | 2026-07-17 |
-| #2720 | fix(tests): stop causal LLM-runner mock writing real ai_costs ledger (causal-factory CI red) | 2026-07-17 |
-| #2719 | feat(darkpool): interim Terminal Dark Pool pane artifact (site/darkpool_eod.json) | 2026-07-17 |
-| #2718 | fix(risk-state-live): stale-feed guard — debounced display.verdict must not overpaint the nightly read | 2026-07-17 |
-| #2717 | fix(metabolism): reset dispatched=False on foreign-file/diff aborts — containment inversion (#2682 regression) | 2026-07-17 |
-| #2716 | fix(pick-lab): P0 measurement fixes before first grade maturation (Amendment 1) | 2026-07-17 |
-| #2715 | feat(china-stocks): stage facet filter for the standout grid + Terminal links/names on Turn Setups & Reversion Desk | 2026-07-17 |
-| #2714 | fix(freshness): sweep the #2690 mtime-gate bug class — content-stamp freshness for every committed-artifact gate | 2026-07-17 |
-| #2713 | fix(baskets): probe-gate the deep-store tail-splice — index-only recency probe + full fallback chain + tests | 2026-07-17 |
-| #2712 | fix(ledgers): lane-gate the US risk-radar/recovery/market-state forward-ledger writers (port of #2693 gate) | 2026-07-17 |
-| #2711 | fix(publish_r2): 10/adaptive retries + per-file upload failure tolerance on the R2 sync | 2026-07-17 |
-| #2710 | feat(options): levels.v1 publisher — nightly hub publishes the named-level board + standalone build_levels lane (Voltick Gamma-Levels WP-A2.5) | 2026-07-17 |
-| #2709 | test(canada): refresh macro render-guard assertions gone stale after mx5 card revamp | 2026-07-17 |
-| #2708 | fix(cycle-ontology): port #2697 rollover-lag semantics to classify_phase (phase_v2) | 2026-07-17 |
-| #2707 | research(xsr): 07-16 defensive-rotation miss postmortem + system audit + XSR program charter (W0) | 2026-07-17 |
-| #2706 | fix(china-sector-central): port #2697 two-arm _rolling_over — post-roll names no longer read 'Trending' | 2026-07-17 |
-| #2705 | fix(i18n): plain-EN <title> site-wide — dual-span t()/td() markup showed as literal text in browser tabs | 2026-07-17 |
-| #2704 | fix(daily): alarm-bound git network ops + commit/push split (57m hung-push postmortem) | 2026-07-17 |
-| #2703 | fix(daily): collect timeout 150→185 (first 18:30-ET run died at commit-data, 150.4m) | 2026-07-17 |
-| #2702 | feat(pick-lab): per-portfolio fired-tickers drill-down on us_stocks_lab | 2026-07-17 |
-| #2701 | feat(us-board): migrate standout inclusion gate to signal_gate cascade (CN/HK parity) | 2026-07-17 |
-| #2700 | fix(smart_money): page/container bleed + bilingual markup leaking into attributes | 2026-07-17 |
-| #2699 | masterplan: china standouts × double-confluence — tailwind-blind gap audit + program charter | 2026-07-17 |
-| #2698 | fix(baskets): restore membership coverage in nightly OHLCV pull + per-member staleness tripwire | 2026-07-17 |
-| #2697 | fix(sector-central): rollover-lag audit — decel-aware phase votes, widened rolling-over detector, 21d RS fast lens, basket stale-tape guards | 2026-07-17 |
-| #2696 | fix(hk-freshness): read MultiIndex date level — stop false "southbound degraded" banner | 2026-07-17 |
-| #2695 | fix(baskets): explicit no-coverage disclosure on detail pages — stop silent member omission | 2026-07-17 |
-| #2694 | fix(baskets): verdict-integrity audit sweep — light-mode bars, honest topping claim, emerging debounce, leader context + BVI masterplan (W0) | 2026-07-17 |
-| #2693 | fix(ignition): lane-gate the sector-ignition forward-ledger writers (port of #2684 gate) | 2026-07-17 |
-| #2692 | feat(intl): wire the #2684 pullback-risk radar into the ITR-W1 turn tiles | 2026-07-17 |
-| #2691 | fix(leader-radar): dual-span evidence lines + board chips — ZH survives any data-lang set path | 2026-07-17 |
-| #2690 | fix(polygon-universe): unfreeze the reference cache — asof-based nightly refresh + same-day-only checkpoint | 2026-07-17 |
-| #2689 | fix(leader-radar): store-derived analyst-store birthdate + W-O3 finnhub-leg root-cause record | 2026-07-17 |
-| #2688 | fix(intl): lane-gate cn/hk/ca risk-radar forward-ledger appends (port of #2684 gate) | 2026-07-17 |
-| #2687 | feat(risk-radar): scorecard covers the 7 new intl markets (kr/jp/tw/in/au/gb/ez) | 2026-07-17 |
-| #2686 | fix(forex): theme-safe Broad USD line color (ink→indigo, dark-mode visible) | 2026-07-17 |
-| #2685 | feat(leader-radar): page overhaul — dated regime capsule + stance, freshness token, changed-tonight strip, near-trigger shelf, fire receipts | 2026-07-17 |
-| #2684 | feat(intl): 7-market leading-risk RadarProfiles (KR/JP/TW/IN/AU/GB/EZ) — FX + extension legs, parabolic gate, forward-log governance | 2026-07-17 |
-| #2683 | gauges: US-idiom needle on China/HK/Canada heroes + China sentiment dial | 2026-07-17 |
-| #2682 | feat(ai-cost): unified AI cost ledger + 7-key OAuth pool everywhere + admin AI Cost hub | 2026-07-17 |
-| #2681 | fix(tests): ImportError-guard the autouse net — heal minimal-deps CI jobs | 2026-07-17 |
-| #2680 | feat(mlc): W4 — histogram-fade leg in rollover_risk + momentum-cooling demotion | 2026-07-17 |
-| #2679 | fix(ci): provider keys for the relocated build_news step | 2026-07-17 |
-| #2678 | fix(config): delete orphaned header-less yahoo block absorbed into fred: (2026-06-29 remnant) | 2026-07-17 |
-| #2677 | prereg(mlc): W6 — S-MLC-1/2/3 registered and frozen | 2026-07-17 |
-| #2676 | feat(intl): turns & rotation revamp — per-market turn state machine + fast re-rank + market-action-first page (ITR W1) | 2026-07-17 |
-| #2675 | ops(thetadata-r2sync): raise launchd fd limit to 4096 — first sync died EMFILE | 2026-07-17 |
-| #2674 | canada: mx5 glance+popup dashboard port (US/China/HK UI system) | 2026-07-17 |
-| #2673 | fix(china-news): channel-matched reaction-window scheduled_ref (MN-06 CN port) | 2026-07-16 |
-| #2672 | feat(leader-radar): truth layer — canonical Zweig, data-through as_of, freshness/degraded, contiguity guard, delta keys (schema v2) | 2026-07-16 |
-| #2671 | fix(tests): tolerate missing engine deps in the breadth-divergence stamp fixture | 2026-07-17 |
-| #2670 | fix(news): US news-brief i18n hygiene — bilingual channel labels, scorer strings never render (doctrine Law 2) | 2026-07-16 |
-| #2669 | china: sector drill-down falls back to committed china_search panel (re-render safety) | 2026-07-16 |
-| #2668 | fix(news): enrich_with_qbus echo falls back to shingled-title match (latent dead join) | 2026-07-16 |
-| #2667 | research(mlc): W3 megacap-suction field guide — episode catalog + playbook | 2026-07-16 |
-| #2666 | feat(bonds): macro-style UI makeover + add the stock search bar | 2026-07-16 |
-| #2665 | fix(i18n): bilingual t() spans inside placeholder attributes break at inner quotes (3 pages) | 2026-07-16 |
-| #2664 | ci(font-ui): guard body-level var(--font-ui) resolution — #2647 recurrence tripwire | 2026-07-16 |
-| #2663 | feat(options): levels_engine — named gamma-level taxonomy + narration over options_hub GEX (Voltick Gamma-Levels WP-A1) | 2026-07-16 |
-| #2662 | fix(china): wire real 2D/3D RSI-MACD glyphs into stock-table MACD column | 2026-07-16 |
-| #2661 | fix(news): title_zh for kept US macro headlines on render lanes — flag-gated fill + cache backfill (NWS-04) | 2026-07-16 |
-| #2660 | fix(news-vector): low-value junk gate + channel-matched scheduled_ref (MN-05/MN-06) | 2026-07-16 |
-| #2659 | fix(collect): ^GSPC never collected nightly — wire into yahoo group, heal frozen store, add engine-critical freshness tripwire | 2026-07-16 |
-| #2658 | fix(news): full news.html audit remediation — freshness, providers, release board, doctrine | 2026-07-16 |
-| #2657 | fix(news): macro headline echo read-back joins qbus (id basis + title fallback) | 2026-07-16 |
-| #2656 | research: Voltick competitive sweep + Gamma-Levels build plan (2026-07-16) | 2026-07-16 |
-| #2655 | china_news: bilingual chip labels + hide internal scorer tags | 2026-07-16 |
-| #2654 | feat(darkpool): desk v2 — sortable/filterable table, OE trend + sparklines, ATS per-name join, venue WoW + placeholder/injection fixes | 2026-07-16 |
-| #2653 | feat(options-screener): v2 — advanced filters, presets, column views, skew/IV-spread/GEX joins + broken-placeholder fix | 2026-07-16 |
-| #2652 | news: drop agency-acronym ticker tags on agency-context headlines (MN-08) | 2026-07-16 |
-| #2651 | fix(i18n): stock-table NEW badge renders 新 in ZH mode | 2026-07-16 |
-| #2650 | hk: mx5 glance+popup dashboard port (US/China UI system) | 2026-07-16 |
-| #2649 | fix+feat(nav): repair broken stock-search field and add it to forex/vector | 2026-07-16 |
-| #2648 | committee: deep-space backdrop for the synapse map | 2026-07-16 |
-| #2647 | fix(fonts): vector + 5 standalone families rendered in Times — define --font-ui locally | 2026-07-16 |
-| #2646 | canada: fix false 'Sector drill-down cache MISSING' health warning (HKCA-13) | 2026-07-16 |
-| #2645 | fix(tests): credit momentum debounce fixtures — relative as_of, stop date rot | 2026-07-16 |
-| #2644 | feat(mlc): W2b-2 — sector-grain stance rows + Leadership Board split-view chips | 2026-07-16 |
-| #2643 | heatmap: transparent subsector strips + Chinese subsector names | 2026-07-16 |
-| #2642 | feat(nw): register sector_central site payloads in synapse (US + CN) | 2026-07-16 |
-| #2641 | feat(flow-desk): show data-as-of + updated dates in page header | 2026-07-16 |
-| #2640 | macro dialogs: opaque white background in light mode | 2026-07-16 |
-| #2639 | china: drop 'don't chase' from Sector Temperature Hot/Leaders labels | 2026-07-16 |
-| #2638 | feat(options): U-CHAIN intraday chain snapshot lane — 15-min greeks/OI sweeps for the active universe (Interval Map / Vol Drift data) | 2026-07-16 |
-| #2637 | fix(ci): synapse count pin 451→452 + SIGNAL_BUS regen — heal neural-web red from #2635 | 2026-07-16 |
-| #2636 | fix(tests): session autouse net for the breadth-divergence forward-log stamp (#2613 follow-up) | 2026-07-16 |
-| #2635 | feat(mlc): W2b coherence layer — stance matrix + split-view chips + ACT-NOW sector demotion | 2026-07-16 |
-| #2634 | china: rotation-aware sector ranking + audited board coherence + US-width parity | 2026-07-16 |
-| #2633 | ops(thetadata): nightly R2 offsite sync lane for the deep EOD options store | 2026-07-16 |
-| #2632 | docs(research): ThetaData entitlement record — operator-confirmed private sub incl. Full Trade Stream (WP-LICENSE) | 2026-07-16 |
-| #2631 | feat(hk-stocks): deep-history overlay for the beta panel — scoreboard universe 74 → ~160 | 2026-07-16 |
-| #2630 | fix(ci): validated-claims gate — recognize n't contractions as negation | 2026-07-16 |
-| #2629 | fix(china): tuple-key json.dumps crash — china_standouts.json stale since 07-10 (5x SLA) | 2026-07-16 |
 
 ---
 
