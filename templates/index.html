@@ -141,7 +141,7 @@ html.still{scroll-behavior:auto}
 
 /* ============ COVER ============ */
 .cover{position:relative;overflow:clip}
-.cover-in{max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) 0;display:block;min-height:calc(100vh - 62px)}
+.cover-in{max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) 0;display:block}
 .cov-copy{position:relative;z-index:40;text-align:center;max-width:760px;margin:0 auto;padding-bottom:0}
 .cov-copy h1{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:.99;font-size:clamp(2.15rem,3.5vw,3.05rem);margin:16px 0 0}
 .cov-copy h1 .dim{color:var(--faint)}
@@ -155,7 +155,7 @@ html.still{scroll-behavior:auto}
 @keyframes ping{0%{transform:scale(.5);opacity:1}70%,100%{transform:scale(1.7);opacity:0}}
 
 /* ---- the pyramid: five uniform desk cards, centre-forward ---- */
-.pyr{position:relative;z-index:10;width:100%;max-width:1280px;margin:clamp(8px,1.4vh,16px) auto 0;height:448px}
+.pyr{position:relative;z-index:10;width:100%;max-width:1280px;margin:clamp(8px,1.4vh,16px) auto 0;height:440px}
 .pyr::before{content:"";position:absolute;inset:-10% -4% -4%;pointer-events:none;
   background:
     radial-gradient(42% 40% at 50% 40%,rgba(40,95,255,.07),transparent 70%),
@@ -282,7 +282,7 @@ html.still{scroll-behavior:auto}
 /* — Terminal showcase: dark full-bleed section + Safari-framed live terminal.
      (The old dark-plate terminal + options-flow feed are archived in
      mockups/landing/options_flow_feed.html for the future flow panel.) — */
-.tsec{background:#04070c;margin-top:clamp(40px,6vh,64px);padding:clamp(56px,7.5vw,96px) 0 0;overflow:hidden}
+.tsec{background:#04070c;margin-top:clamp(22px,3vh,36px);padding:clamp(48px,6.5vw,84px) 0 0;overflow:hidden}
 .tlogos{display:flex;justify-content:center;align-items:center;gap:clamp(26px,4.5vw,64px);flex-wrap:wrap;margin-bottom:clamp(40px,5.5vw,72px);opacity:.8}
 .tlogos img{display:block;width:auto;opacity:.75}
 @media (max-width:640px){.tlogos{gap:22px 30px}}
@@ -1126,11 +1126,11 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
           <div class="chat-head">
             <span class="who"><i></i>MASTERMIND AI</span>
             <div class="mseg" id="mseg" tabindex="0">
-              <button type="button" class="on" data-m="flash">⚡ Flash</button>
-              <button type="button" data-m="pro" data-zh="🔬 Pro 研究">🔬 Pro Research</button>
+              <button type="button" class="on" data-m="flash">⚡ Flash AI</button>
+              <button type="button" data-m="pro">🔬 Pro AI</button>
               <div class="mpop" role="tooltip">
-                <div class="r"><span class="ic">⚡</span><span><b data-zh="快答">Flash</b><span data-zh="即时回答，基于实时看板。Insider 无限量。">Instant answers on the live boards. Unlimited on Insider.</span></span></div>
-                <div class="r"><span class="ic">🔬</span><span><b data-zh="Pro 研究">Pro Research</b><span data-zh="20页、附出处的深度研究。Insider 每月20份 · Pro 每月50份。">20-page cited deep dives. 20/mo on Insider · 50/mo on Pro.</span></span></div>
+                <div class="r"><span class="ic">⚡</span><span><b>Flash AI</b><span data-zh="即时回答，基于实时看板。Insider 无限量。">Instant answers on the live boards. Unlimited on Insider.</span></span></div>
+                <div class="r"><span class="ic">🔬</span><span><b>Pro AI</b><span data-zh="20页、附出处的深度研究。Insider 每月20份 · Pro 每月50份。">20-page cited deep dives. 20/mo on Insider · 50/mo on Pro.</span></span></div>
               </div>
             </div>
           </div>
@@ -1164,7 +1164,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <h3 data-zh="免费">Free</h3>
         <p class="who" data-zh="每日研判、六条信号、Terminal——永久免费。">The daily read, six signals, the Terminal — forever.</p>
         <div class="price">$0</div>
-        <p class="gist" data-zh="<b>全部看板与台席</b>、每日研判、<b>每天 6 条信号</b>、完整 Terminal。无需绑卡。"><b>Every dashboard and desk</b>, the daily read, <b>6 signals a day</b>, full Terminal. No card.</p>
+        <p class="gist" data-zh="每日研判、<b>全部宏观看板</b>、<b>每天 6 条信号</b>、完整 Terminal。无需绑卡。">The daily read, <b>every macro dashboard</b>, <b>6 signals a day</b>, full Terminal. No card.</p>
         <a class="btn" href="start.html" style="justify-content:center" data-zh="免费开始">Start free</a>
       </div>
       <div class="tier hot rv" style="--d:.1s">
@@ -1172,7 +1172,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <p class="who" data-zh="随叫随到的分析师，配上完整的工作台席。">The working desk, with the analyst on call.</p>
         <div class="price" data-annual="$49" data-monthly="$59"><span class="was">$59</span>$49 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 17% · $588/年">SAVE 17% · $588/YR</span>
-        <p class="gist" data-zh="<b>无限量 Flash AI</b>、每月 20 次 Pro 研究、<b>日内期权流</b>、电话会记录、每日简报。"><b>Unlimited Flash AI</b>, 20 Pro Research a month, <b>intraday options flow</b>, transcripts, daily briefs.</p>
+        <p class="gist" data-zh="<b>无限量 Flash AI</b>、每月 20 次 Pro AI、<b>日内期权流</b>、内部人/国会与 13F 台席、电话会记录、每日简报。"><b>Unlimited Flash AI</b>, 20 Pro AI dives a month, <b>intraday options flow</b>, the Insider/Congress &amp; 13F desks, transcripts, daily briefs.</p>
         <a class="btn primary" href="start.html" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
       </div>
       <div class="tier rv" style="--d:.16s">
@@ -1180,7 +1180,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <p class="who" data-zh="为那些提出更难问题的人准备。">For the ones who ask harder questions.</p>
         <div class="price" data-annual="$89" data-monthly="$109"><span class="was">$109</span>$89 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 18% · $1,068/年">SAVE 18% · $1,068/YR</span>
-        <p class="gist" data-zh="<b>每月 50 次 Pro 研究</b>、机构研究库、机器人组合、MCP 即将上线。"><b>50 Pro Research a month</b>, the institutional research library, Bot Portfolios, MCP soon.</p>
+        <p class="gist" data-zh="<b>每月 50 次 Pro AI</b>、Mastermind 与机构研究报告、机器人组合、MCP 即将上线。"><b>50 Pro AI dives a month</b>, Mastermind + institutional research reports, Bot Portfolios, MCP soon.</p>
         <a class="btn" href="start.html" style="justify-content:center" data-zh="升级 Pro">Go Pro</a>
       </div>
     </div>
@@ -1201,9 +1201,9 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
           <tr><td class="feat has-tip"><span class="ft" data-zh="每日宏观看板">Daily macro dashboards</span><span class="tipbox" data-zh="美国 · 中国 · 香港 · 加拿大 · 全球——每晚重建。">US · China · Hong Kong · Canada · global — rebuilt nightly.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr><td class="feat has-tip"><span class="ft" data-zh="个股档案">Stock dossiers</span><span class="tipbox" data-zh="2,700+ 只，含趋势、阶段与持仓背景。">2,700+ names with trend, stage and ownership context.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr><td class="feat has-tip"><span class="ft" data-zh="主题轮动通道">Theme rotation lanes</span><span class="tipbox" data-zh="34 个主题、四条大白话通道——通道名就是操作指令。">34 themes in four plain-word lanes — lane names are instructions.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat has-tip"><span class="ft" data-zh="内部人 & 国会台席">Insider &amp; Congress desks</span><span class="tipbox" data-zh="带入场时机的评分跟随候选。">Scored copy candidates with entry timing.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="内部人 & 国会台席">Insider &amp; Congress desks</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="带入场时机的评分跟随候选。">Scored copy candidates with entry timing.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr><td class="feat"><span class="ft" data-zh="特殊机会">Special situations</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
-          <tr><td class="feat has-tip"><span class="ft" data-zh="13F 机构资金流">13F institutional flows</span><span class="tipbox" data-zh="356 只追踪基金，四个季度记忆。">356 tracked funds, four quarters of memory.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="13F 机构资金流">13F institutional flows</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="356 只追踪基金，四个季度记忆。">356 tracked funds, four quarters of memory.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr><td class="feat"><span class="ft" data-zh="比特币 · 大宗 · 外汇">Bitcoin · Commodities · FX</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4" data-zh="信号">SIGNALS</td></tr>
           <tr><td class="feat has-tip"><span class="ft" data-zh="每日买入信号">Daily buy signals</span><span class="tipbox" data-zh="出手前即锁定——战绩公开可查。">Stamped before the move — with a public track record.</span></td><td class="val" data-zh="6 条/天">6 / day</td><td class="val" data-zh="完整名册">Full book</td><td class="val" data-zh="完整名册">Full book</td></tr>
@@ -1214,11 +1214,11 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
           <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="日内期权流">Intraday options flow</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="扫单与大宗成交实时打印。">Sweeps and blocks as they print.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="t-ins"><td class="feat"><span class="ft" data-zh="财报电话会记录">Earnings call transcripts</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4">MASTERMIND AI</td></tr>
-          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="快答分析师">Flash analyst</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="每页即时回答。">Instant answers on every page.</span></td><td class="no">✗</td><td class="val" data-zh="无限量">Unlimited</td><td class="val" data-zh="无限量">Unlimited</td></tr>
-          <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="Pro 研究">Pro Research</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="附带出处的深度分析。">Deep dives with receipts.</span></td><td class="no">✗</td><td class="val" data-zh="20 次/月">20 / mo</td><td class="val" data-zh="50 次/月">50 / mo</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft">Flash AI</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="每页即时回答。">Instant answers on every page.</span></td><td class="no">✗</td><td class="val" data-zh="无限量">Unlimited</td><td class="val" data-zh="无限量">Unlimited</td></tr>
+          <tr class="t-ins"><td class="feat has-tip"><span class="ft">Pro AI</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="附带出处的深度分析。">Deep dives with receipts.</span></td><td class="no">✗</td><td class="val" data-zh="20 次/月">20 / mo</td><td class="val" data-zh="50 次/月">50 / mo</td></tr>
           <tr class="t-ins"><td class="feat"><span class="ft" data-zh="操控 Terminal 图表">Drives Terminal charts</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4" data-zh="研究">RESEARCH</td></tr>
-          <tr class="t-ins"><td class="feat"><span class="ft" data-zh="Mastermind 研究报告">Mastermind research reports</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr class="t-pro"><td class="feat"><span class="ft" data-zh="Mastermind 研究报告">Mastermind research reports</span><span class="mchip pro">PRO</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
           <tr class="t-pro"><td class="feat has-tip"><span class="ft" data-zh="机构研究库">Institutional research library</span><span class="mchip pro">PRO</span><span class="tipbox up" data-zh="摩根大通 · 花旗 · 摩根士丹利 · 瑞银 · 高盛 · 美银。">JPM · Citi · Morgan Stanley · UBS · Goldman Sachs · BofA.</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
           <tr class="t-pro"><td class="feat"><span class="ft" data-zh="Mastermind 机器人组合">Mastermind Bot Portfolios</span><span class="mchip pro">PRO</span></td><td class="no">✗</td><td class="no">✗</td><td class="ok">✓</td></tr>
           <tr class="t-pro"><td class="feat has-tip"><span class="ft" data-zh="MCP 服务器">MCP server</span><span class="mchip pro">PRO</span><span class="tipbox up" data-zh="把 Mastermind 接入你自己的智能体。">Plug Mastermind into your own agents.</span></td><td class="no">✗</td><td class="no">✗</td><td><span class="soon" data-zh="即将推出">COMING SOON</span></td></tr>
