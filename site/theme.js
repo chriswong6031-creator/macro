@@ -2054,13 +2054,21 @@
     if (on) { btn._sdLbl = btn.innerHTML; btn.disabled = true; if (label) btn.textContent = label; }
     else { btn.disabled = false; if (btn._sdLbl != null) btn.innerHTML = btn._sdLbl; }
   }
-  // shared CTA + sign-out wiring across sections
+  // shared CTA + sign-out wiring across sections.
+  // Sign-in / create-account now route to the Terminal's onboarding sheet — ONE
+  // auth surface product-wide (operator order 2026-07-23). The SSO cookie is
+  // scoped to .mastermind-x.com, so signing in on app.* signs in here too; &ret=
+  // brings the user back to this exact page afterward (Terminal originNav).
+  function _mmAuthUrl(mode) {
+    return 'https://app.mastermind-x.com/terminal?' + (mode === 'signup' ? 'signup=1' : 'signin=1')
+      + '&ret=' + encodeURIComponent(location.href);
+  }
   function _sdWireCta(host) {
     host.querySelectorAll('[data-sd-cta]').forEach(function (b) {
       b.addEventListener('click', function () {
         var mode = b.getAttribute('data-sd-cta');
         _closeSDash();
-        openAuthModal(mode === 'signup' ? 'signup' : 'signin');
+        location.href = _mmAuthUrl(mode === 'signup' ? 'signup' : 'signin');
       });
     });
     var som = host.querySelector('#sd-signout-m');
@@ -2712,12 +2720,12 @@
       if (window.MDXAuth && typeof window.MDXAuth.onChange === 'function') {
         window.MDXAuth.onChange(function (user) { _updateSigninLink(user); });
       }
-      // click: open settings pane scrolled/focused to the ACCOUNT section
+      // click: open the product-wide auth surface (the Terminal onboarding sheet).
+      // Was: open the settings pane scrolled to the account section — operator-
+      // reported as broken UX ("Sign in opens the gear panel"), 2026-07-23.
       signinLink.addEventListener('click', function (e) {
         e.preventDefault();
-        open();
-        var acctSec = pop.querySelector('#set-acct-sec');
-        if (acctSec) { setTimeout(function () { acctSec.scrollIntoView({ block: 'nearest' }); var btn = acctSec.querySelector('button'); if (btn) btn.focus(); }, 60); }
+        location.href = 'https://app.mastermind-x.com/terminal?signin=1&ret=' + encodeURIComponent(location.href);
       });
       // initial state
       _updateSigninLink(window.MDXAuth.user ? window.MDXAuth.user() : null);
