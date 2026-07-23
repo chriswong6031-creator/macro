@@ -2374,12 +2374,16 @@ jobs:
     # (86.7% of snapshot rows, ~1475 of 1702 names).  Spec §3 says missing
     # dollar_adv_20d must PASS with liq_unknown=True.
     # Fix: adv.isna() | adv.ge(_LIQ_ADV_MIN) in _apply_liquidity().
-    # Two suites:
+    # Four suites:
     #   test_pick_lab_liquidity.py — four required cases (null-adv pass,
     #                                below-threshold excluded, above-threshold
     #                                pass, close<5+null-adv excluded) plus
     #                                boundary / multi-row regression pins.
     #   test_pick_lab_core.py      — full core suite must not regress.
+    #   test_pick_lab_hk_runner.py — HK runner end-to-end + regression pins
+    #                                (catalyst/standouts/stale-cross shapes,
+    #                                _col container values, snapshot upsert).
+    #   test_pick_lab_hk_render.py — HK lab page renderer suite (needs jinja2).
     # Network-free; no data/ writes.
     runs-on: ubuntu-latest
     steps:
@@ -2388,9 +2392,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: pick lab liquidity gate regression tests
-        run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py -q
+        run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py tests/test_pick_lab_hk_runner.py tests/test_pick_lab_hk_render.py -q
 
   ric-w2-surface:
     # RIC W2 SURFACE: whole-market dealer-surface history engine unit tests.

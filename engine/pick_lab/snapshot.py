@@ -146,11 +146,15 @@ def write_snapshot(
         existing = pd.read_parquet(path)
         if mode == "upsert":
             # Replace existing (asof, ticker) rows; keep rows from other asof dates.
+            # Positional zip, not .at lookups: the monthly partition holds many
+            # asof dates, so the ticker index has duplicates and .at returns a
+            # Series (unhashable as a set key).
             incoming_keys = set(zip(df["asof"], df.index))
-            kept = existing[[
-                (existing.at[t, "asof"], t) not in incoming_keys
-                for t in existing.index
-            ]]
+            keep_mask = [
+                (a, t) not in incoming_keys
+                for a, t in zip(existing["asof"], existing.index)
+            ]
+            kept = existing[keep_mask]
             combined = pd.concat([kept, df])
             n = len(df)
         else:
