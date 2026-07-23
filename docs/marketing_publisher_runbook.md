@@ -114,6 +114,30 @@ In dry-run it only reports what it *would* approve; it mutates nothing. Keep it
 **off** during the aged-account warm-up and turn it on only once you trust the
 pipeline.
 
+### 9b. Scoped exception: publish-time mover/theme posts
+
+`publish.auto_approve_kinds: [mover, theme_list]` (default ON in config) is a
+NARROW carve-out from `require_approval`: it auto-approves **only** items the
+publisher itself generated seconds earlier at the posting slot
+(`engine/marketing/publish_time_content.py`, provenance
+`publisher_live_movers`). These are descriptive live-tape posts — "$X -8% today"
+/ "Theme Tape" member lists — with **no entry advice**, rendered from the same
+v3 template banks, capped by every Sentinel limit, and re-verified against the
+live tape by the post-time gate before sending. There is no operator in the loop
+for them BY DESIGN: a human approving a "+7% right now" claim an hour later
+defeats the freshness that makes the post honest.
+
+Nightly/operator-authored items of **every** kind (including nightly `mover`
+drafts) still require approval — the carve-out keys on the publish-time
+provenance, not just the kind.
+
+Levers:
+- `publish.publish_time_movers.enabled: false` — stop generating them at all.
+- `publish.auto_approve_kinds: []` — keep generating, but they queue for manual
+  approval like everything else (they will usually be stale by the time a human
+  gets there; expect the tape gate to quarantine some at the next slot).
+- The global kill switch (§7) stops everything, as always.
+
 ## 10. COMPLIANCE
 
 - Buffer posts via X's **official OAuth** — approved automation, not scraping.

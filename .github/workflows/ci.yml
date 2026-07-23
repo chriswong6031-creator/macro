@@ -693,6 +693,10 @@ on:
       - "tests/test_marketing_publisher_autoapprove.py"
       # Post-time tape gate: never post yesterday's read against today's tape.
       - "tests/test_marketing_live_verify.py"
+      # Publish-time mover/theme generation: honest live tape posts, scoped
+      # auto-approve. engine/marketing/publish_time_content.py is covered by the
+      # engine/marketing/** entry below.
+      - "tests/test_marketing_publish_time_content.py"
       # Marketing lobe engine unit suite (see the marketing-engine job). Whitelisted
       # 2026-07-23 after it rotted red on main: opportunities.jsonl is a forward
       # ledger the nightly radar fills with live radar-* rows, but the seed round-trip
@@ -2558,7 +2562,7 @@ jobs:
         # test_marketing_live_verify is co-run: the post-time tape gate ships
         # inside the publisher loop (pandas-free here — its earnings guard is
         # fail-soft and the one pandas-dependent test importorskips).
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py -q
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py -q
 
   marketing-engine:
     # Marketing lobe engine unit suite (state, departments, authority ladder,
