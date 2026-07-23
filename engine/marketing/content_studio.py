@@ -1173,10 +1173,18 @@ def content_plan(
                 _mv_top_fact = _mv_facts["facts"][0]["text"] if _mv_facts["facts"] else ""
                 _mv_pct_str = f"{_mv['pct']:+.1f}%"
                 _mv_headline = f"${_mv_ticker} {_mv_pct_str} today"
-                _mv_body = (
-                    f"{_mv_top_fact} Watching how it holds, not chasing the candle. "
-                    f"Levels are on the chart."
-                )
+                # Direction-aware stance (doctrine v3): down = flush-watch, dry;
+                # up = respect, don't chase. Same honest posture either way.
+                if (_mv.get("pct") or 0) < 0:
+                    _mv_body = (
+                        f"{_mv_top_fact} The dip buyers get to find out who was early. "
+                        f"Watching how it holds, not chasing the candle."
+                    )
+                else:
+                    _mv_body = (
+                        f"{_mv_top_fact} Strength worth respecting, not chasing here. "
+                        f"Levels are on the chart."
+                    )
                 _mover_item_dict = {
                     "id": f"post-mover-{_mover_item_counter:03d}",
                     "type": "mover",

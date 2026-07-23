@@ -95,6 +95,27 @@ class _FakePublisher:
         return [{"id": "buf-chan-123", "service": "twitter", "name": "Flagship"}]
 
 
+def _write_fresh_quotes(tmp_path: Path, now: str,
+                        tickers: tuple[str, ...] = ("PLTR",),
+                        *, only_if_absent: bool = False) -> None:
+    """Write a live-quotes snapshot so the publisher's tape gate can verify
+    the fixture tickers (a signal it cannot verify is HELD, by design)."""
+    import json as _json
+    from datetime import datetime, timezone as _tz
+    p = tmp_path / "data" / "marketing"
+    p.mkdir(parents=True, exist_ok=True)
+    snap = p / "live_quotes_snapshot.json"
+    if only_if_absent and snap.exists():
+        return  # a test staged its own tape (e.g. an adverse quote) — keep it
+    dt = datetime.fromisoformat(now.replace("Z", "+00:00")).replace(tzinfo=_tz.utc)
+    ts_ms = int(dt.timestamp() * 1000)
+    snap.write_text(_json.dumps({
+        "asof": now,
+        "quotes": {t: {"price": 100.0, "prevClose": 99.5, "changePct": 0.5,
+                       "ts": ts_ms} for t in tickers},
+    }), encoding="utf-8")
+
+
 def _run_publisher(monkeypatch, tmp_path: Path, argv: list[str], *,
                    fake_publisher: _FakePublisher | None = None,
                    kill_switch: bool = False, now: str = "2026-07-19T13:00:00Z") -> int:
@@ -103,6 +124,7 @@ def _run_publisher(monkeypatch, tmp_path: Path, argv: list[str], *,
 
     monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1" if kill_switch else "0")
     monkeypatch.setenv("BUFFER_TOKEN", "test-token")
+    _write_fresh_quotes(tmp_path, now, only_if_absent=True)
     if fake_publisher is not None:
         monkeypatch.setattr(pub, "_make_publisher",
                             lambda backend, *, token, cfg: fake_publisher)
@@ -532,3 +554,80 @@ def test_runner_skips_future_scheduled_item(monkeypatch, tmp_path):
     assert rc == 0
     assert fake.calls == []  # not due yet
     assert current_statuses(tmp_path)[item_id] == "approved"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11. Runner — live tape gate (post-time freshness verification)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_runner_tape_gate_quarantines_adverse_move(monkeypatch, tmp_path):
+    """A BULL signal whose ticker is down hard TODAY must never post — the
+    plan was written off yesterday's close (the 'engine said buy, it's -7%
+    on earnings' case). Live run → approved → quarantined, zero network calls."""
+    import json as _json
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path)
+    item_id = _seed_approved_item(tmp_path)
+
+    now = "2026-07-19T13:00:00Z"
+    from datetime import datetime, timezone as _tz
+    ts_ms = int(datetime.fromisoformat(now.replace("Z", "+00:00"))
+                .replace(tzinfo=_tz.utc).timestamp() * 1000)
+    (tmp_path / "data" / "marketing").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "data" / "marketing" / "live_quotes_snapshot.json").write_text(
+        _json.dumps({"asof": now, "quotes": {
+            "PLTR": {"price": 93.0, "prevClose": 100.0, "changePct": -7.0,
+                     "ts": ts_ms}}}), encoding="utf-8")
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True, now=now)
+
+    assert rc == 0
+    assert fake.calls == []  # never reached the network
+    assert current_statuses(tmp_path)[item_id] == "quarantined"
+
+
+def test_runner_tape_gate_holds_unverifiable_signal(monkeypatch, tmp_path):
+    """No live quote for the ticker → the signal is HELD (stays approved for
+    the next slot), not posted and not quarantined."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path)
+    item_id = _seed_approved_item(tmp_path)
+
+    fake = _FakePublisher(ok=True)
+    import scripts.marketing_publisher as pub
+    monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1")
+    monkeypatch.setenv("BUFFER_TOKEN", "test-token")
+    monkeypatch.setattr(pub, "_make_publisher",
+                        lambda backend, *, token, cfg: fake)
+    # NOTE: bypass _run_publisher on purpose — no snapshot file is written.
+    rc = pub.main(["--live", "--root", str(tmp_path),
+                   "--now", "2026-07-19T13:00:00Z"])
+
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[item_id] == "approved"  # held, not killed
+
+
+def test_runner_tape_gate_dry_run_never_mutates(monkeypatch, tmp_path):
+    """Dry-run with an adverse quote: the gate reports but writes nothing."""
+    import json as _json
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path)
+    item_id = _seed_approved_item(tmp_path)
+
+    now = "2026-07-19T13:00:00Z"
+    from datetime import datetime, timezone as _tz
+    ts_ms = int(datetime.fromisoformat(now.replace("Z", "+00:00"))
+                .replace(tzinfo=_tz.utc).timestamp() * 1000)
+    (tmp_path / "data" / "marketing").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "data" / "marketing" / "live_quotes_snapshot.json").write_text(
+        _json.dumps({"asof": now, "quotes": {
+            "PLTR": {"price": 93.0, "prevClose": 100.0, "changePct": -7.0,
+                     "ts": ts_ms}}}), encoding="utf-8")
+
+    rc = _run_publisher(monkeypatch, tmp_path, [], kill_switch=False, now=now)
+
+    assert rc == 0
+    assert current_statuses(tmp_path)[item_id] == "approved"  # dry-run: no writes

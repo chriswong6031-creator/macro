@@ -2824,6 +2824,7 @@ jobs:
           git add data/neuralweb/marketing_state.json 2>/dev/null || true
           git add site/neuralwebdata/marketing_lobe.json 2>/dev/null || true
           git add data/marketing/sentinel_report.json 2>/dev/null || true
+          git add data/marketing/content_plan.json 2>/dev/null || true
           git add data/marketing/cashtag_tiers.json 2>/dev/null || true
           git add data/marketing/radar_report.json 2>/dev/null || true
           git add data/marketing/opportunities.jsonl 2>/dev/null || true

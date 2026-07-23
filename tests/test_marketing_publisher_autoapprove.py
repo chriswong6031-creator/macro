@@ -88,6 +88,23 @@ class _FakePublisher:
         return [{"id": "buf-chan-123", "service": "twitter", "name": "Flagship"}]
 
 
+def _write_fresh_quotes(tmp_path: Path, now: str,
+                        tickers: tuple[str, ...] = ("PLTR",)) -> None:
+    """Write a live-quotes snapshot so the publisher's tape gate can verify
+    the fixture tickers (a signal it cannot verify is HELD, by design)."""
+    import json as _json
+    from datetime import datetime, timezone as _tz
+    dt = datetime.fromisoformat(now.replace("Z", "+00:00")).replace(tzinfo=_tz.utc)
+    ts_ms = int(dt.timestamp() * 1000)
+    p = tmp_path / "data" / "marketing"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "live_quotes_snapshot.json").write_text(_json.dumps({
+        "asof": now,
+        "quotes": {t: {"price": 100.0, "prevClose": 99.5, "changePct": 0.5,
+                       "ts": ts_ms} for t in tickers},
+    }), encoding="utf-8")
+
+
 def _run_publisher(monkeypatch, tmp_path: Path, argv: list[str], *,
                    fake_publisher: _FakePublisher | None = None,
                    kill_switch: bool = False, now: str = "2026-07-19T13:00:00Z") -> int:
@@ -95,6 +112,7 @@ def _run_publisher(monkeypatch, tmp_path: Path, argv: list[str], *,
     import scripts.marketing_publisher as pub
     monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1" if kill_switch else "0")
     monkeypatch.setenv("BUFFER_TOKEN", "test-token")
+    _write_fresh_quotes(tmp_path, now)
     if fake_publisher is not None:
         monkeypatch.setattr(pub, "_make_publisher",
                             lambda backend, *, token, cfg: fake_publisher)

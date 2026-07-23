@@ -858,9 +858,27 @@ def emit_from_content_plan(
                         "plan_item_id": qi.get("id"),
                         "chart_id": chart_id,
                     }
+                    # Structured tape-claim stamp for the publisher's post-time
+                    # live gate (engine/marketing/live_verify.py): the ticker the
+                    # copy is about, the thesis direction and levels, and any
+                    # same-day move pct the copy asserts. Without this the gate
+                    # can only regex cashtags out of the text.
+                    if qi.get("ticker"):
+                        source["ticker"] = qi.get("ticker")
                     plan_block = qi.get("_plan")
                     if isinstance(plan_block, dict):
                         source["signal_id"] = plan_block.get("id")
+                        for _sk, _pk in (("direction", "direction"),
+                                         ("entry", "entry"),
+                                         ("invalidation", "invalidation")):
+                            if plan_block.get(_pk) is not None:
+                                source[_sk] = plan_block.get(_pk)
+                    _mv_blk = qi.get("_mover_data")
+                    if isinstance(_mv_blk, dict) and _mv_blk.get("pct") is not None:
+                        source["baseline_pct"] = _mv_blk.get("pct")
+                    _th_blk = qi.get("_theme_data")
+                    if isinstance(_th_blk, dict) and _th_blk.get("agg_pct") is not None:
+                        source["baseline_pct"] = _th_blk.get("agg_pct")
 
                     try:
                         item = make_item(

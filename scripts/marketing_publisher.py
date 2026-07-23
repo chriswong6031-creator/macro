@@ -350,6 +350,23 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
+    tape_quarantined = tape_skipped = 0
+
+    # ── Live tape gate context: load once per run (fail-soft) ────────────────
+    # The plan was written off yesterday's EOD; the tape has been open for
+    # hours by the AM/PM/EOD slots. Every item re-verifies against the freshest
+    # repo-local quotes before it may post (engine/marketing/live_verify.py).
+    try:
+        from engine.marketing import live_verify as _live_verify  # noqa: PLC0415
+        _tape = _live_verify.load_live_quotes(root)
+        _earn_set = _live_verify.load_earnings_guard_set(root, now=now)
+        log.info("live tape gate: %d quotes (%s), %d tickers on earnings guard",
+                 len(_tape.get("quotes") or {}), _tape.get("source"), len(_earn_set))
+    except Exception as _lv_exc:  # noqa: BLE001
+        log.warning("live tape gate unavailable (%s) — signals will be held", _lv_exc)
+        _live_verify = None  # type: ignore[assignment]
+        _tape = {"quotes": {}, "asof": None, "source": "none"}
+        _earn_set = frozenset()
 
     for it in approved_due:
         iid = it["id"]
@@ -369,6 +386,28 @@ def main(argv: list[str] | None = None) -> int:
             if live:
                 _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
             quarantined += 1
+            continue
+
+        # -- live tape gate: never post yesterday's read against today's tape --
+        if _live_verify is not None:
+            verdict = _live_verify.verify_item(
+                it, live=_tape, earnings=_earn_set, now=now, cfg=cfg)
+        else:
+            # Gate module broken: hold signals (fail closed), pass the rest.
+            verdict = ({"action": "skip", "reasons": ["live gate unavailable"]}
+                       if it.get("kind") == "signal"
+                       else {"action": "post", "reasons": []})
+        if verdict["action"] == "quarantine":
+            reason = "tape gate: " + "; ".join(verdict["reasons"])
+            log.warning("item %s (%s) QUARANTINED by tape gate: %s", iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            tape_quarantined += 1
+            continue
+        if verdict["action"] == "skip":
+            log.info("item %s (%s) held by tape gate: %s", iid, account,
+                     "; ".join(verdict["reasons"]))
+            tape_skipped += 1
             continue
 
         # -- per-account daily cap -------------------------------------------
@@ -438,8 +477,10 @@ def main(argv: list[str] | None = None) -> int:
     # ── Summary + activity row ──────────────────────────────────────────────
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
+        "tape_quarantined=%d tape_skipped=%d "
         "skipped_cap=%d skipped_no_channel=%d stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
+        tape_quarantined, tape_skipped,
         skipped_cap, skipped_channel, len(stuck_posting), len(auto_approved),
     )
     try:
@@ -452,6 +493,8 @@ def main(argv: list[str] | None = None) -> int:
             "failed": failed,
             "quarantined": quarantined,
             "would_post": would_post,
+            "tape_quarantined": tape_quarantined,
+            "tape_skipped": tape_skipped,
             "skipped_cap": skipped_cap,
             "skipped_no_channel": skipped_channel,
             "stuck_posting": len(stuck_posting),
