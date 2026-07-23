@@ -45,10 +45,14 @@ on:
       - "templates/**"
       - ".github/workflows/ci.yml"
       # Research Vault (RV W1) ingestion spine: sidecar contract, corpus FTS,
-      # catalog, and the idempotent never-raise ingest pipeline.
+      # catalog, and the idempotent never-raise ingest pipeline. (RV W3) adds the
+      # SSR page builder + its render test + the page template.
       - "engine/research_vault/**"
       - "scripts/ingest_research.py"
+      - "scripts/build_research_vault.py"
       - "tests/test_research_vault.py"
+      - "tests/test_research_vault_page.py"
+      - "templates/research_vault.html.j2"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
@@ -2436,6 +2440,10 @@ jobs:
     # institution/date facets, and the end-to-end ingest via the LOCAL store backend
     # (idempotency: a 2nd run ingests 0; receipts; needs_metadata path). No R2, no
     # poppler — LocalStore + a monkeypatched pdftotext keep the suite fully offline.
+    # RV W3 page build: the SSR shell renders from empty + seeded catalogs (honest
+    # empty state / SEO-baked cards), hero + lanes + viewer modal markup, balanced
+    # EN/ZH spans, plain-English <title>, compliance copy, and the body-never-leaks
+    # projection. jinja2 (already a repo dep) is the only page-build need.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2443,7 +2451,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        # Pure stdlib engine (sqlite3 + subprocess); pytest is the only need.
-        run: pip install pytest
-      - name: research vault ingestion-spine unit tests
-        run: python -m pytest tests/test_research_vault.py -q
+        # Pure stdlib engine (sqlite3 + subprocess) + jinja2 for the W3 page build.
+        run: pip install pytest jinja2
+      - name: research vault ingestion-spine + page unit tests
+        run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py -q
