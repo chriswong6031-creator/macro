@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-23 18:58:54 UTC",
+  "built": "2026-07-23 20:10:14 UTC",
   "session": {
     "region": "us",
-    "open": true,
-    "local_time": "2026-07-23 14:58 EDT"
+    "open": false,
+    "local_time": "2026-07-23 16:10 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -13,20 +13,20 @@
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-22",
-  "polygon_status": "ok",
+  "polygon_status": "unused",
   "n_live_symbols": 12,
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": -1.42
+      "chg_pct": -1.22
     },
     {
       "sym": "QQQ",
-      "chg_pct": -2.08
+      "chg_pct": -1.9
     },
     {
       "sym": "VIX",
-      "chg_pct": 17.73
+      "chg_pct": 16.23
     }
   ],
   "display": {
@@ -96,7 +96,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 75,
+      "score": 78,
       "basis": "live",
       "asof": "live"
     },
