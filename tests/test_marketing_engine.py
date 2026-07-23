@@ -569,15 +569,33 @@ def test_governor_public_safe_subset_excludes_budgets(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_seed_opportunities_roundtrip():
+    """opportunities.jsonl is a forward ledger, not a seed-only snapshot.
+
+    The nightly ``standout-audit-us`` pipeline advances it via
+    ``engine.marketing.radar_internal.sync_opportunities``, which preserves the
+    bootstrap ``seed-*`` rows (mode=shadow) and merges in ``radar-*`` rows that
+    ``emit_opportunities`` stamps mode=live. This test guards that contract, not
+    a frozen bootstrap snapshot: the seeds must persist and stay shadow, and
+    every other row must be a live radar row.
+    """
     from engine.marketing.ledgers import read_jsonl
     opps = read_jsonl(ROOT / "data" / "marketing" / "opportunities.jsonl")
     assert len(opps) >= 1
-    # All seed rows have mode=shadow and id prefix seed-
+
+    # Bootstrap seeds must survive every ledger advance — sync_opportunities
+    # never prunes non-radar rows.
+    seed_rows = [o for o in opps if o.get("opportunity_id", "").startswith("seed-")]
+    assert seed_rows, "bootstrap seed-* rows must persist in the forward ledger"
+
     for o in opps:
-        assert o.get("mode") == "shadow", f"opportunity {o.get('opportunity_id')} not shadow"
-        assert o.get("opportunity_id", "").startswith("seed-"), (
-            f"non-seed id found: {o.get('opportunity_id')}"
-        )
+        oid = o.get("opportunity_id", "")
+        assert oid.startswith(("seed-", "radar-")), f"unexpected opportunity id: {oid!r}"
+        if oid.startswith("seed-"):
+            # Seeds never auto-publish — they stay shadow.
+            assert o.get("mode") == "shadow", f"seed opportunity {oid} not shadow"
+        else:
+            # Nightly radar forward-ledger rows are emitted live.
+            assert o.get("mode") == "live", f"radar opportunity {oid} not live"
 
 
 def test_seed_claims_roundtrip():

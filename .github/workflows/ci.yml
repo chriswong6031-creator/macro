@@ -666,6 +666,16 @@ on:
       - "tests/test_marketing_outbox.py"
       # W1 wiring layer: auto-approve gate + writeless dry-run report + admin panel.
       - "tests/test_marketing_publisher_autoapprove.py"
+      # marketing engine core: seed-ledger round-trips, provenance modes,
+      # opportunity_bus, and the neuralweb marketing_governor public-safe lobe.
+      # Ran by NO workflow before 2026-07-23, so test_seed_opportunities_roundtrip
+      # rotted red the first night standout-audit-us advanced opportunities.jsonl.
+      # (engine/neuralweb/** above already triggers marketing_governor.py.)
+      - "tests/test_marketing_engine.py"
+      - "engine/marketing/**"
+      - "config/marketing.yml"
+      - "data/marketing/opportunities.jsonl"
+      - "data/marketing/claims.jsonl"
   workflow_dispatch:
 
 permissions:
@@ -2449,3 +2459,23 @@ jobs:
         run: pip install pytest pyyaml
       - name: social publisher + outbox + wiring-layer unit tests
         run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py -q
+
+  marketing-engine:
+    # Marketing engine core — previously run by ZERO workflows, so it rotted red on
+    # main undetected (2026-07-23: test_seed_opportunities_roundtrip went red the
+    # first night the standout-audit-us nightly advanced data/marketing/opportunities.jsonl).
+    # opportunities.jsonl is a FORWARD LEDGER: engine.marketing.radar_internal.sync_opportunities
+    # preserves the bootstrap seed-* rows (mode=shadow) and merges in radar-* rows
+    # (mode=live); the round-trip test guards that contract, not a frozen seed snapshot.
+    # Real engine deps (pandas/numpy/pyarrow) are installed so the tests exercise the
+    # real build_and_write paths, not the ImportError fallbacks.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: marketing engine unit tests (ledgers / provenance / opportunity_bus / governor)
+        run: python -m pytest tests/test_marketing_engine.py -q
