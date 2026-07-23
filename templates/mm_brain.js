@@ -62,6 +62,14 @@
   #mmb-launch .ll{font:650 13.5px/1 var(--mmb-font);color:var(--mmb-text);white-space:nowrap}
   #mmb-launch .lk{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;white-space:nowrap}
   #mmb-launch .lt{display:flex;flex-direction:column}
+  /* phones: collapse the labelled pill down to the lone orb — the label is desktop
+     affordance, and the full pill both crowds small screens and sat on top of the
+     back-to-top FAB. theme.js re-homes that FAB just above this orb (it tags
+     <html> with .mmb-has-launch when it mounts us). */
+  @media(max-width:700px){
+    #mmb-launch{right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:8px;gap:0}
+    #mmb-launch .lt{display:none}
+  }
   /* scrim + panel */
   /* Backdrop deepens as you enter focus mode: a light veil behind the compact chatbox,
      full dim behind the expanded overlay. */
@@ -382,7 +390,7 @@
   var st = DOC.createElement('style'); st.textContent = CSS; root.appendChild(st);
 
   var launchHtml = ANCHOR === 'br' ? (
-    '<div id="mmb-launch"><div class="mmb-orb">' + ORB + '</div>' +
+    '<div id="mmb-launch" aria-label="' + L('Ask Mastermind', '问操盘大脑') + '"><div class="mmb-orb">' + ORB + '</div>' +
     '<div class="lt"><span class="ll">' + LB('Ask Mastermind', '问操盘大脑') + '</span>' +
     '<span class="lk">' + LB('Brain · your desk copilot', '大脑 · 你的桌面副驾') + '</span></div></div>') : '';
 
@@ -990,6 +998,7 @@
   function relabel() {
     root.querySelectorAll('.mmb-l[data-en]').forEach(function (el) { el.textContent = zh() ? el.getAttribute('data-zh') : el.getAttribute('data-en'); });
     root.querySelectorAll('[data-ph-en]').forEach(function (el) { el.placeholder = zh() ? el.getAttribute('data-ph-zh') : el.getAttribute('data-ph-en'); });
+    if (launch) launch.setAttribute('aria-label', zh() ? '问操盘大脑' : 'Ask Mastermind');  /* orb-only on phones: keep its accessible name in sync */
     if ($('#mmb-emptystate')) renderEmpty();
     paintThreads();   /* self-routes to the guest sign-in prompt when in guest mode */
     renderQuota();     /* refresh the meter's title in the new language sense */
