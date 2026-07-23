@@ -34,6 +34,11 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      # Research vault store — a SEPARATE Cloudflare account/bucket. Each falls
+      # back to the shared R2_* above when its secret is unset (same-account case).
+      R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+      R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+      R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
       R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
     steps:
       - uses: actions/checkout@v4
